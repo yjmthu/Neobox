@@ -1,0 +1,35 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>icons/ya.svg</file>
+        <file>icons/exe.ico</file>
+        <file>icons/copy.png</file>
+        <file>icons/QCopy.ico</file>
+        <file>icons/checked.png</file>
+        <file>icons/unchecked.png</file>
+        <file>icons/slider_1.png</file>
+        <file>icons/slider_2.png</file>
+        <file>icons/blue_arrow.png</file>
+        <file>icons/blue_purple_arrow.png</file>
+        <file>icons/purple_arrow.png</file>
+        <file>icons/Close_1.png</file>
+        <file>icons/Close_2.png</file>
+        <file>icons/Minimize_1.png</file>
+        <file>icons/Minimize_2.png</file>
+        <file>icons/Minimize.png</file>
+    </qresource>
+    <qresource prefix="/qss">
+        <file>qss/menu_style_linux.qss</file>
+        <file>qss/menu_style_win.qss</file>
+        <file>qss/dialog_tad_style.qss</file>
+    </qresource>
+    <qresource prefix="/scripts">
+        <file>scripts/SpeedBox.desktop</file>
+        <file>scripts/SetWallPaper.sh</file>
+        <file>scripts/plreg.exe</file>
+    </qresource>
+    <qresource prefix="/fonts">
+        <file>fonts/qitijian.otf</file>
+        <file>fonts/netspeed.ttf</file>
+        <file>fonts/smallkaiti.ttf</file>
+    </qresource>
+</RCC>
