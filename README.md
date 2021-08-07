@@ -1,5 +1,5 @@
 # Speed-Box 简介
-Speed Box来源于我的C++大作业，最近放假有时间，就把它改进了一下，目前支持
+Speed Box 是一款非常方便快捷的网速显示软件，它拥有许多好用的功能，目前支持
 - 实时网速——悬浮窗显示网速和内存占用率
 - 划词翻译——手动输入中英文翻译、快捷键划词翻译
 - 切换壁纸——后台、手动切换[Wallhaven](https://wallhaven.cc/)、[Bing](https://cn.bing.com/)、[Unsplash](https://unsplash.com/)、电脑本地以及**所有其它网站的图片**。Cancel changes
@@ -33,9 +33,10 @@ print("D:\\hello.jpg")
 ![](https://github.com/yjmthu/Speed-Box/blob/main/img/img_04.png)
 
 # 编译要求
-- Qt 6.1.2
-- MSVC-2019 64bit
+- Qt版本：Qt 6.0.4 或者 Qt 6.1.2
+- 编译器：MSVC-2019 64bit
 - 使用多字节字符集（所有Windows Api函数都是A版而不是W版）
+- 其余细节可自行修改pro文件
 
 # 下载方式
 
@@ -56,4 +57,5 @@ print("D:\\hello.jpg")
 - 更新内容：使用最新的Qt6编写，优化了窗口外观，增加了语言自动识别功能，改变了一下文件夹名称，优化了底层算法，优化了使用体验。（另外不建议使用上面MFC版本的）
 - 64位Windows 10 [GitHub](https://github.com/yjmthu/Speed-Box/releases/download/21.8.6/Speed-Box_win10_x64_21.8.6.zip)
 * * *
+
 - 未来版本：仍用Qt编写，考虑自定义悬浮窗外观。
