@@ -2,7 +2,7 @@
 Speed Box 是一款非常方便快捷的网速显示软件，它拥有许多好用的功能，目前支持
 - 实时网速——悬浮窗显示网速和内存占用率
 - 划词翻译——手动输入中英文翻译、快捷键划词翻译
-- 切换壁纸——后台、手动切换[Wallhaven](https://wallhaven.cc/)、[Bing](https://cn.bing.com/)、[Unsplash](https://unsplash.com/)、电脑本地以及**所有其它网站的图片**。
+- 切换壁纸——后台、手动切换[Wallhaven](https://wallhaven.cc/)、[Bing](https://cn.bing.com/)、[Unsplash](https://unsplash.com/)、电脑本地以及所有其它网站的图片。
 - 任务栏美化——改变颜色、图标居中、靠右、透明效果、磨砂效果、玻璃效果，时间格式精确到秒。
 - 快捷功能——悬浮窗右键快速关机重启、系统右键增加“复制路径”
 - 防止息屏——防止电脑休眠，比如静态编译Qt要两个多小时，中途万一电脑节电睡眠就不妙了。
