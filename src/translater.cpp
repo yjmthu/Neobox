@@ -121,39 +121,31 @@ bool Translater::nativeEvent(const QByteArray &eventType, void *message, long lo
             activateWindow();  //SwitchToThisWindow(HWND(winId()), TRUE);
             QClipboard* cl = QApplication::clipboard();              //读取剪切板
             QString content = cl->text();
-            if (!content.isEmpty())
-            {
-                ui->TextFrom->setPlainText(content);
-                qout << "剪贴板内容" << content;  
-                int nCount = content.count();
-                for(int i = 0; i < nCount; i++)
-                {
-                    QChar c = content.at(i);
-                    ushort uNum = c.unicode();
-                    if(uNum >= 0x4E00 && uNum <= 0x9FA5)
-                    {
-                        if (from != _zh)
-                        {
-                            from = _zh;
-                            to = _en;
-                            ui->ZHTOEN->setChecked(true);
-                        }
-                        break;
-                    }
-                    else
-                    {
-                        if (from != _en)
-                        {
-                            from = _en;
-                            to = _zh;
-                            ui->ENTOZH->setChecked(true);
-                        }
-                        break;
-                    }
-                }
-                getReply(content.toUtf8());
-            }
-            break;
+            if (content.isEmpty()) break;
+		ui->TextFrom->setPlainText(content);
+	    qout << "剪贴板内容" << content;  
+	    QChar c = content.at(0);
+	    ushort uNum = c.unicode();
+	    if(uNum >= 0x4E00 && uNum <= 0x9FA5)
+	    {
+		if (from != _zh)
+		{
+		    from = _zh;
+		    to = _en;
+		    ui->ZHTOEN->setChecked(true);
+		}
+	    }
+	    else
+	    {
+		if (from != _en)
+		{
+		    from = _en;
+		    to = _zh;
+		    ui->ENTOZH->setChecked(true);
+		}
+	    }
+	    getReply(content.toUtf8());
+	    break;
         }
         case M_WIN_HOT_KEY_SHIFT_A:
         {
