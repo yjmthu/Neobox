@@ -54,7 +54,6 @@ print("D:\\hello.jpg")
 * * *
 - 版本：21.8.6 （最新版本）
 - 更新内容：使用最新的Qt6编写，优化了窗口外观，增加了语言自动识别功能，改变了一下文件夹名称，优化了底层算法，优化了使用体验。（另外不建议使用上面MFC版本的）
-- 64位Windows 10 [蓝奏云](https://wws.lanzoui.com/izlidsbrzmd) 密码：7qiz
 - 64位Windows 10 [GitHub](https://github.com/yjmthu/Speed-Box/releases/download/21.8.6/Speed-Box_win10_x64_21.8.6.zip)
 * * *
 - 未来版本：仍用Qt编写，考虑自定义悬浮窗外观。
