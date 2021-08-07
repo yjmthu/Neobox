@@ -20,9 +20,9 @@ win32 {
     LIBS += -luser32
 #    LIBS += -liphlpapi
 #    LIBS += -lole32
-    LIBS += -luuid
+#    LIBS += -luuid     #注册表需要
     LIBS += -loleaut32
-    LIBS += -ladvapi32
+#    LIBS += -ladvapi32 #注册表需要
 #    LIBS += -lwininet
 #    LIBS += -mwindows
 }
