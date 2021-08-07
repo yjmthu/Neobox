@@ -128,7 +128,7 @@ namespace FuncBox {
         return !outcome->empty();
     }
 
-    bool downloadImage(const char* url, const QString path)
+    bool downloadImage(const char* url, const QString path, bool auto_delete)
     {
         if (QFile::exists(path)) return 1;
         bool OK = false;
@@ -140,7 +140,7 @@ namespace FuncBox {
         if (hSession)
         {
             HINTERNET hOpenUrl = InternetOpenUrl(hSession, url, NULL, 0, INTERNET_FLAG_RELOAD, 0);
-            qout << "删除图片链接：" << url; delete [] url;
+            qout << "删除图片链接：" << url; if (auto_delete) delete [] url;
             if (hOpenUrl)
             {
                 qout << "成功打开网址";
