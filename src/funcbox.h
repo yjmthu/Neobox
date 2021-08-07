@@ -144,7 +144,7 @@ namespace FuncBox {
     QString runCommand(QString program, QStringList argument, short line = 0);
     bool getWebCode(const char*, std::string&);
     bool getBingCode(std::string& code);
-    bool downloadImage(const char*, const QString);
+    bool downloadImage(const char*, const QString, bool auto_delete = true);
     bool getTransCode(const char* url, std::string* outcome);
     BOOL SetWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD AlphaColor);//设置窗口WIN10风格
     void readTrayStyle(); void saveTrayStyle();
