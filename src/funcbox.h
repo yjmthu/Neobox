@@ -153,7 +153,7 @@ namespace FuncBox {
     void setKey(const char key[], BOOL value);
     BOOL checkKey(const char key[]);
 
-    HINSTANCE pShellExecute(_In_opt_ HWND hwnd, _In_opt_ LPCTSTR lpOperation, _In_ LPCTSTR lpFile, _In_opt_ LPCTSTR lpParameters, _In_opt_ LPCTSTR lpDirectory, _In_ INT nShowCmd);
+    //HINSTANCE pShellExecute(_In_opt_ HWND hwnd, _In_opt_ LPCTSTR lpOperation, _In_ LPCTSTR lpFile, _In_opt_ LPCTSTR lpParameters, _In_opt_ LPCTSTR lpDirectory, _In_ INT nShowCmd);
 }
 
 #endif // FUNCBOX_H
