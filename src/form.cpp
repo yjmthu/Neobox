@@ -336,12 +336,10 @@ void Form::get_mem_usage()
 
 void Form::get_net_usage()
 {
-    static int iGetAddressTime = 10;//10秒一次获取网卡信息
-    static DWORD dwIPSize = 0, dwMISize = 0;
-    static DWORD m_last_in_bytes = 0;//总上一秒下载速度
-    static DWORD m_last_out_bytes = 0;//总上一秒上传速度
+    static short iGetAddressTime = 10;//10秒一次获取网卡信息
+    static DWORD m_last_in_bytes = 0 /* 总上一秒下载速度 */,  m_last_out_bytes = 0 /* 总上一秒上传速度 */;
     static pfnGetIfTable GetIfTableT = nullptr; static pfnGetAdaptersAddresses GetAdaptersAddressesT = nullptr;
-    if (VarBox.hIphlpapi == NULL)
+    if (VarBox.hIphlpapi == NULL)           //获取两个函数指针
     {
         VarBox.hIphlpapi = LoadLibrary("iphlpapi.dll");
         if (VarBox.hIphlpapi)
@@ -355,7 +353,7 @@ void Form::get_net_usage()
 
     if (iGetAddressTime == 10)        // 10秒更新
     {
-        dwIPSize = 0;
+        DWORD dwIPSize = 0;
         if (GetAdaptersAddressesT(AF_INET, 0, 0, piaa, &dwIPSize) == ERROR_BUFFER_OVERFLOW)
         {
             HeapFree(GetProcessHeap(), 0, piaa);
@@ -367,6 +365,7 @@ void Form::get_net_usage()
     else
         iGetAddressTime++;
 
+    DWORD dwMISize = 0;
     if (GetIfTableT(mi, &dwMISize, FALSE) == ERROR_INSUFFICIENT_BUFFER)
     {
         dwMISize += sizeof(MIB_IFROW) * 2;
@@ -374,10 +373,9 @@ void Form::get_net_usage()
         mi = (MIB_IFTABLE*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dwMISize);
         GetIfTableT(mi, &dwMISize, FALSE);
     }
-    DWORD m_in_bytes = 0, m_out_bytes = 0; PIP_ADAPTER_ADDRESSES paa;
+    DWORD m_in_bytes = 0, m_out_bytes = 0; PIP_ADAPTER_ADDRESSES paa = nullptr;
     for (DWORD i = 0; i < mi->dwNumEntries; i++)
     {
-        int l = 0;
         paa = &piaa[0];
         while (paa)
         {
@@ -395,7 +393,6 @@ void Form::get_net_usage()
                     m_in_bytes += mi->table[i].dwInOctets;
                     m_out_bytes += mi->table[i].dwOutOctets;
                 }
-                ++l;
             }
             paa = paa->Next;
         }
@@ -404,8 +401,8 @@ void Form::get_net_usage()
     if ( m_last_in_bytes != 0 && isVisible())
     {
         if (isHidden()) show();                                    //如果已经隐藏则显示
-        ui->Labup->setText(formatSpped(m_in_bytes - m_last_in_bytes, false));        //将上传速度显示出来
-        ui->Labdown->setText(formatSpped(m_out_bytes - m_last_out_bytes, true));        //将下载速度显示出来
+        ui->Labup->setText(formatSpped(m_out_bytes - m_last_out_bytes, false));        //将上传速度显示出来
+        ui->Labdown->setText(formatSpped(m_in_bytes - m_last_in_bytes, true));        //将下载速度显示出来
     }
     m_last_out_bytes = m_out_bytes;
     m_last_in_bytes = m_in_bytes;
