@@ -35,6 +35,7 @@ print("D:\\hello.jpg")
 # 编译要求
 - Qt 6.1.2
 - MSVC-2019 64bit
+- 使用多字节字符集（所有Windows Api函数都是A版而不是W版）
 
 # 下载方式
 ***
