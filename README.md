@@ -2,7 +2,7 @@
 Speed Box来源于我的C++大作业，最近放假有时间，就把它改进了一下，目前支持
 - 实时网速——悬浮窗显示网速和内存占用率
 - 划词翻译——手动输入中英文翻译、快捷键划词翻译
-- 切换壁纸——后台、手动切换[Wallhaven](https://wallhaven.cc/)、[Bing](https://cn.bing.com/)、[Unsplash](https://unsplash.com/)、电脑本地以及**所有其它网站的图片**。
+- 切换壁纸——后台、手动切换[Wallhaven](https://wallhaven.cc/)、[Bing](https://cn.bing.com/)、[Unsplash](https://unsplash.com/)、电脑本地以及**所有其它网站的图片**。Cancel changes
 - 任务栏美化——图标居中、靠右、透明效果、磨砂效果、玻璃效果，时间格式精确到秒。
 - 快捷功能——悬浮窗右键快速关机重启、系统右键增加“复制路径”
 - 防止息屏——防止电脑休眠，比如静态编译Qt要两个多小时，中途万一电脑节电睡眠就糟了。
@@ -28,7 +28,14 @@ print("D:\\hello.jpg")
 说了这么多，大家也不一定用得到，下面放几张软件截图
 # 运行效果
 ![](https://github.com/yjmthu/Speed-Box/blob/main/img/img_03.png)
+    
+    
 ![](https://github.com/yjmthu/Speed-Box/blob/main/img/img_04.png)
+
+# 编译要求
+- Qt 6.1.2
+- MSVC-2019 64bit
+
 # 下载方式
 ***
 - 版本：21.6.27（最初版本）
