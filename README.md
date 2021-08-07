@@ -41,9 +41,9 @@ print("D:\\hello.jpg")
 - 64位系统 [蓝奏云](https://wws.lanzoui.com/iocoqs3ejmb) 密码 33ra
 - 32位系统 [蓝奏云](https://wws.lanzoui.com/ict95s3ejkj) 密码 g99a
 ***
-- 版本：21.8.6 （Qt）
+- 版本：21.8.6 （最新版本）
 - 更新内容：使用最新的Qt6编写，优化了窗口外观，增加了语言自动识别功能，改变了一下文件夹名称，优化了底层算法，优化了使用体验。（另外不建议使用上面MFC版本的）
 - 64位Windows 10 [蓝奏云](https://wws.lanzoui.com/ixErIsayzre) 密码：cwgp
-- 说明：GitHub上的代码内容比较旧，没有更新，没有配置环境变量，编译不了也正常。
+- 64位Windows 10 [GitHub](https://github.com/yjmthu/Speed-Box/releases/download/21.6.27/Speed-Box_win10_x64_21.8.6.zip)
 ***
 - 未来版本：仍用Qt编写，考虑自定义悬浮窗外观、增加在任务栏显示网速的功能。
