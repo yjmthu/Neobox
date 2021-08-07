@@ -16,8 +16,8 @@ Speed Box来源于我的C++大作业，最近放假有时间，就把它改进�
 - 打开**设置窗口-路径设置**后，这里有“标准名称”和“新名称”之分，标准名称就是软件默认使用存放壁纸文件的文件夹的名称，新名称就是你想把它改成的名称。
 - 壁纸文件夹默认在“用户/图片”里面的“Wallpapers”目录下，你可以点击“壁纸下载目录”后面的“打开”按钮进行查看。当你想要更换壁纸下载路径时，直接输入路径回车即可。
 - 还有一个就是右键菜单的“打开目录功能”，你可以在这里进行自定义每次点击**“右键菜单-打开目录“**时要打开的目录。
-## 高级命令，这里举个例子
-比如我会Python，并且我找到了一个好的壁纸网站，我能将它上面的壁纸爬下来存储在电脑里面，我就可以把这个爬虫添加到Speed Box里面。这里假设我们在D:\hello.py里面写了爬虫代码并且成功爬取了一张图片保存在D:\hello.jpg，我们在D:\hello.py里面注释掉所有的print输出，只保留一句
+## 高级命令
+这里举个例子，比如我会Python，并且我找到了一个好的壁纸网站，我能将它上面的壁纸爬下来存储在电脑里面，我就可以把这个爬虫添加到Speed Box里面。这里假设我们在D:\hello.py里面写了爬虫代码并且成功爬取了一张图片保存在D:\hello.jpg，我们在D:\hello.py里面注释掉所有的print输出，只保留一句
 ```python
 ......
 print("D:\\hello.jpg")
@@ -38,20 +38,23 @@ print("D:\\hello.jpg")
 - 使用多字节字符集（所有Windows Api函数都是A版而不是W版）
 
 # 下载方式
-***
+
+* * *
 - 版本：21.6.27（最初版本）
 - 发布信息：Qt编写，适用于64位的win10系统。
 - [蓝奏云](https://wws.lanzoui.com/i4A13qqvcmh) 密码:52ca
 - [GitHub](https://github.com/yjmthu/Speed-Box/releases/download/21.6.27/Speed-Box_win10_x64_21.6.27.zip)
-***
+
+* * *
 - 版本：21.8.1.0（第一次更新）
 - 更新内容：MFC编写，同时支持64位和32位系统；单个文件，2-3MB体积，初始内存只占1-2MB；优化了文件结构；改动了界面样式和颜色；变成鼠标左键双击打开翻译，中键单击重启软件；优化了壁纸下载速度和效率；优化了翻译功能；改动右键时不再需要管理员权限；高级功能要输入python的绝对路径，并且需要在py文件前加-u，例如`D:\Ppython3\python.exe -u D:\hello.py`。
 - 64位系统 [蓝奏云](https://wws.lanzoui.com/iocoqs3ejmb) 密码 33ra
 - 32位系统 [蓝奏云](https://wws.lanzoui.com/ict95s3ejkj) 密码 g99a
-***
+
+* * *
 - 版本：21.8.6 （最新版本）
 - 更新内容：使用最新的Qt6编写，优化了窗口外观，增加了语言自动识别功能，改变了一下文件夹名称，优化了底层算法，优化了使用体验。（另外不建议使用上面MFC版本的）
 - 64位Windows 10 [蓝奏云](https://wws.lanzoui.com/ixErIsayzre) 密码：cwgp
-- 64位Windows 10 [GitHub](https://github.com/yjmthu/Speed-Box/releases/download/21.6.27/Speed-Box_win10_x64_21.8.6.zip)
-***
-- 未来版本：仍用Qt编写，考虑自定义悬浮窗外观、增加在任务栏显示网速的功能。
+- 64位Windows 10 [GitHub](https://github.com/yjmthu/Speed-Box/releases/download/21.8.6/Speed-Box_win10_x64_21.8.6.zip)
+* * *
+- 未来版本：仍用Qt编写，考虑自定义悬浮窗外观。
