@@ -405,7 +405,7 @@ void Dialog::on_pBtnApply_clicked()
         {
             if (VarBox.AutoChange)
             {
-                wallpaper->start();
+                Wallpaper::initSet = true; wallpaper->start();
                 change_paper_timer->setInterval(VarBox.TimeInterval * 60000);  // 设置时间间隔,Timer的单位是毫秒
                 if (!change_paper_timer->isActive()) change_paper_timer->start();
                 qout << "开始更换壁纸";
