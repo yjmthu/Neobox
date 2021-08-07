@@ -336,7 +336,7 @@ void Form::get_mem_usage()
 
 void Form::get_net_usage()
 {
-    static short iGetAddressTime = 10;//10秒一次获取网卡信息
+    static short iGetAddressTime = 10;  //10秒一次获取网卡信息
     static DWORD m_last_in_bytes = 0 /* 总上一秒下载速度 */,  m_last_out_bytes = 0 /* 总上一秒上传速度 */;
     static pfnGetIfTable GetIfTableT = nullptr; static pfnGetAdaptersAddresses GetAdaptersAddressesT = nullptr;
     if (VarBox.hIphlpapi == NULL)           //获取两个函数指针

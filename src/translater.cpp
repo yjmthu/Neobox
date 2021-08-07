@@ -122,30 +122,29 @@ bool Translater::nativeEvent(const QByteArray &eventType, void *message, long lo
             QClipboard* cl = QApplication::clipboard();              //读取剪切板
             QString content = cl->text();
             if (content.isEmpty()) break;
-		ui->TextFrom->setPlainText(content);
-	    qout << "剪贴板内容" << content;  
-	    QChar c = content.at(0);
-	    ushort uNum = c.unicode();
-	    if(uNum >= 0x4E00 && uNum <= 0x9FA5)
-	    {
-		if (from != _zh)
-		{
-		    from = _zh;
-		    to = _en;
-		    ui->ZHTOEN->setChecked(true);
-		}
-	    }
-	    else
-	    {
-		if (from != _en)
-		{
-		    from = _en;
-		    to = _zh;
-		    ui->ENTOZH->setChecked(true);
-		}
-	    }
-	    getReply(content.toUtf8());
-	    break;
+            ui->TextFrom->setPlainText(content);
+            qout << "剪贴板内容" << content;
+            ushort uNum = content.at(0).unicode();
+            if(uNum >= 0x4E00 && uNum <= 0x9FA5)
+            {
+                if (from != _zh)
+                {
+                    from = _zh;
+                    to = _en;
+                    ui->ZHTOEN->setChecked(true);
+                }
+            }
+            else
+            {
+                if (from != _en)
+                {
+                    from = _en;
+                    to = _zh;
+                    ui->ENTOZH->setChecked(true);
+                }
+            }
+            getReply(content.toUtf8());
+            break;
         }
         case M_WIN_HOT_KEY_SHIFT_A:
         {

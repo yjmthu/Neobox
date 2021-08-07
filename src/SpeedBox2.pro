@@ -23,7 +23,7 @@ win32 {
     LIBS += -luuid
     LIBS += -loleaut32
     LIBS += -ladvapi32
-    LIBS += -lwininet
+#    LIBS += -lwininet
 #    LIBS += -mwindows
 }
 
@@ -72,7 +72,7 @@ qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
-DISTFILES +=
+# DISTFILES +=
 
 RESOURCES += \
     res.qrc

@@ -24,6 +24,7 @@ private:
     void GetShellAllWnd();
     void SetTaskBarPos(HWND, HWND, HWND, HWND, BOOL);
 
+
 private slots:
     void keepTaskBar();
     void centerTaskBar();

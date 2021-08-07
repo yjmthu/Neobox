@@ -1,9 +1,6 @@
 ﻿#include <fstream>
-#include <winsock2.h>
-#include <iphlpapi.h>
 #include <oaidl.h>
 #include <WinInet.h>
-#include <shlobj.h>
 #include <QApplication>
 #include <QStandardPaths>
 #include <QSettings>
@@ -535,87 +532,4 @@ namespace FuncBox {
         IniWrite.setValue("iPos", (int)VarBox.iPos);
         IniWrite.endGroup();
     }
-
-    INT getValue(const char key[], INT dft)
-    {
-        HKEY pKey; INT value = dft;
-        RegOpenKeyEx(HKEY_CURRENT_USER, TASK_DESK_SUB, 0, KEY_ALL_ACCESS, &pKey);
-        if (pKey)
-        {
-            DWORD dType = REG_DWORD;
-            DWORD cbData = sizeof(int);
-            RegQueryValueEx(pKey, key, 0, &dType, (BYTE*)&value, &cbData);
-            RegCloseKey(pKey);
-        }
-        return value;
-    }
-
-    BOOL delKey(const char key[])
-    {
-        HKEY pKey;
-        RegOpenKeyEx(HKEY_CURRENT_USER, TASK_DESK_SUB, 0, KEY_ALL_ACCESS, &pKey);
-        if (pKey)
-        {
-            DWORD dType = REG_DWORD;
-            DWORD cbData = sizeof(int);
-            int enable_sec;
-            if ((RegQueryValueEx(pKey, key, 0, &dType, (BYTE*)&enable_sec, &cbData) == ERROR_SUCCESS)
-                &&
-                (RegDeleteValue(pKey, key) == ERROR_SUCCESS))
-            {
-                RegCloseKey(pKey);
-                return true;
-            }
-            else
-                RegCloseKey(pKey);
-        }
-        return false;
-    }
-
-    void setKey(const char key[], BOOL value)
-    {
-        HKEY pKey;
-        RegOpenKeyEx(HKEY_CURRENT_USER, TASK_DESK_SUB, 0, KEY_ALL_ACCESS, &pKey);
-        if (pKey)
-        {
-            RegSetValueEx(pKey, key, 0, REG_DWORD, (BYTE*)&value, sizeof(value));
-            RegCloseKey(pKey);
-        }
-    }
-
-    //  检测 TASK_DESK_SUB 下是否存在某值
-    BOOL checkKey(const char key[])
-    {
-        HKEY pKey;
-        RegOpenKeyEx(HKEY_CURRENT_USER, TASK_DESK_SUB, 0, KEY_READ, &pKey);
-        if (pKey)
-        {
-            DWORD dType = REG_DWORD;
-            DWORD cbData = sizeof(BOOL);
-            BOOL enable_sec;
-            if (RegQueryValueEx(pKey, key, 0, &dType, (BYTE*)&enable_sec, &cbData) == ERROR_SUCCESS)
-            {
-                RegCloseKey(pKey);
-                return TRUE;
-            }
-            else
-                RegCloseKey(pKey);
-        }
-        return FALSE;
-    }
-
-//    HINSTANCE pShellExecute(_In_opt_ HWND hwnd, _In_opt_ LPCTSTR lpOperation, _In_ LPCTSTR lpFile, _In_opt_ LPCTSTR lpParameters, _In_opt_ LPCTSTR lpDirectory, _In_ INT nShowCmd)
-//    {
-//        HINSTANCE hInstance = NULL;
-//        typedef HINSTANCE(WINAPI* pfnShellExecute)(_In_opt_ HWND hwnd, _In_opt_ LPCTSTR lpOperation, _In_ LPCTSTR lpFile, _In_opt_ LPCTSTR lpParameters, _In_opt_ LPCTSTR lpDirectory, _In_ INT nShowCmd);
-//        HMODULE hShell32 = LoadLibrary(TEXT("shell32.dll"));
-//        if (hShell32)
-//        {
-//            pfnShellExecute pShellExecuteW = (pfnShellExecute)GetProcAddress(hShell32, "ShellExecuteA");
-//            if (pShellExecuteW)
-//                hInstance = pShellExecuteW(hwnd, lpOperation, lpFile, lpParameters, lpDirectory, nShowCmd);
-//            FreeLibrary(hShell32);
-//        }
-//        return hInstance;
-//    }
 }

@@ -92,7 +92,8 @@ void Dialog::initUi()
 	buttonGroup->setExclusive(true);                     // 按钮之间相互排斥
     ui->lineAppData->setText(FuncBox::get_dat_path());
 	ui->lineAppData->setReadOnly(true);
-    setTheme(); moveDialog();
+    move((VarBox.ScreenWidth - width()) / 2, (VarBox.ScreenHeight - height()) / 2);
+    setTheme();
 }
 
 void Dialog::initChildren()
@@ -244,9 +245,7 @@ void Dialog::showEvent(QShowEvent *event)
     default:
         break;
     }
-    int Tr = 0;
-    FuncBox::getValue(TASKBAR_ACRYLIC_OPACITY, Tr);
-    switch (Tr)
+    switch (QSettings(TASK_DESK_SUB, QSettings::NativeFormat).value(TASKBAR_ACRYLIC_OPACITY).toInt())
     {
     case 10:
         ui->radioButton_11->setChecked(true);
@@ -283,18 +282,6 @@ void Dialog::showEvent(QShowEvent *event)
     ui->label_path_to_open->setText(VarBox.PathToOpen);
     ui->label_path_to_open->setToolTip(VarBox.PathToOpen);
     checkSettings(); event->accept();
-}
-
-/**
- * @brief Dialog::moveDialog
- *
- * @将对话框移动到屏幕中央。
- *
- */
-
-void Dialog::moveDialog()
-{
-    move((VarBox.ScreenWidth - width()) / 2, (VarBox.ScreenHeight - height()) / 2);
 }
 
 /**
@@ -405,7 +392,8 @@ void Dialog::on_pBtnApply_clicked()
         {
             if (VarBox.AutoChange)
             {
-                Wallpaper::initSet = true; wallpaper->start();
+                Wallpaper::initSet = true;
+                wallpaper->start();
                 change_paper_timer->setInterval(VarBox.TimeInterval * 60000);  // 设置时间间隔,Timer的单位是毫秒
                 if (!change_paper_timer->isActive()) change_paper_timer->start();
                 qout << "开始更换壁纸";
@@ -423,7 +411,8 @@ void Dialog::checkSettings()
     ui->chkFile->setChecked(QSettings(reg_keys[0], QSettings::NativeFormat).contains("."));
     ui->chkFolder->setChecked(QSettings(reg_keys[1], QSettings::NativeFormat).contains("."));
     ui->chkFolderBack->setChecked(QSettings(reg_keys[2], QSettings::NativeFormat).contains("."));
-    ui->chkTimeUnit_sec->setChecked(FuncBox::checkKey(SHOW_SECONDS_IN_SYSTEM_CLOCK));
+    ui->chkTimeUnit_sec->setChecked(QSettings(TASK_DESK_SUB, QSettings::NativeFormat).contains(SHOW_SECONDS_IN_SYSTEM_CLOCK));
+
 }
 
 void Dialog::on_pBtnApply_2_clicked()
@@ -538,12 +527,18 @@ void Dialog::on_horizontalSlider_3_valueChanged(int value)
 
 void Dialog::on_chkTimeUnit_min_clicked()
 {
-    FuncBox::delKey(SHOW_SECONDS_IN_SYSTEM_CLOCK);
+    QSettings settings(TASK_DESK_SUB, QSettings::NativeFormat);
+    if (settings.contains(SHOW_SECONDS_IN_SYSTEM_CLOCK))
+        settings.remove(SHOW_SECONDS_IN_SYSTEM_CLOCK);
 }
 
 void Dialog::on_chkTimeUnit_sec_clicked()
 {
-    FuncBox::setKey(SHOW_SECONDS_IN_SYSTEM_CLOCK, TRUE);
+    QSettings settings(TASK_DESK_SUB, QSettings::NativeFormat);
+    if (!settings.contains(SHOW_SECONDS_IN_SYSTEM_CLOCK))
+    {
+        settings.setValue(SHOW_SECONDS_IN_SYSTEM_CLOCK, 1);
+    }
 }
 
 void Dialog::on_radioButton_3_clicked()
@@ -587,17 +582,20 @@ void Dialog::on_pushButton_clicked()
 
 void Dialog::on_radioButton_11_clicked()
 {
-    FuncBox::setKey(TASKBAR_ACRYLIC_OPACITY, 10);
+    QSettings settings(TASK_DESK_SUB, QSettings::NativeFormat);
+    settings.setValue(TASKBAR_ACRYLIC_OPACITY, 10);
 }
 
 void Dialog::on_radioButton_10_clicked()
 {
-    FuncBox::setKey(TASKBAR_ACRYLIC_OPACITY, 5);
+    QSettings settings(TASK_DESK_SUB, QSettings::NativeFormat);
+    settings.setValue(TASKBAR_ACRYLIC_OPACITY, 5);
 }
 
 void Dialog::on_radioButton_12_clicked()
 {
-    FuncBox::setKey(TASKBAR_ACRYLIC_OPACITY, 0);
+    QSettings settings(TASK_DESK_SUB, QSettings::NativeFormat);
+    settings.setValue(TASKBAR_ACRYLIC_OPACITY, 0);
 }
 
 void Dialog::on_radioButton_7_clicked()

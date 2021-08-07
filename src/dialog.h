@@ -42,7 +42,6 @@ private:
     QPoint _startPos;                                    //记录鼠标
     QPoint _endPos;                                      //鼠标移动向量
     short last_checked_button = 0;                       //上次选中的按钮的 id
-	void moveDialog();                                   //把对话框移到屏幕中央。
 	void checkSettings();                                //读取注册表
     void setTheme();
 	void initChildren();

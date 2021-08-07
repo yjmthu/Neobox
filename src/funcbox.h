@@ -23,9 +23,9 @@ typedef enum class _COLOR_THEME
     ClassicWhite = 0, SomeGray = 1, TsinghuaPurple = 2, PekinRed = 3
 } COLOR_THEME;
 
-#define TASK_DESK_SUB                "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced"
 #define SHOW_SECONDS_IN_SYSTEM_CLOCK "ShowSecondsInSystemClock"
 #define TASKBAR_ACRYLIC_OPACITY      "TaskbarAcrylicOpacity"
+#define TASK_DESK_SUB                "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced"
 
 typedef enum _WINDOWCOMPOSITIONATTRIB
 {
@@ -142,12 +142,7 @@ namespace FuncBox {
     bool getTransCode(const char* url, std::string* outcome);
     BOOL SetWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD AlphaColor);//设置窗口WIN10风格
     void readTrayStyle(); void saveTrayStyle();
-    INT getValue(const char key[], INT dft);
-    BOOL delKey(const char key[]);
-    void setKey(const char key[], BOOL value);
-    BOOL checkKey(const char key[]);
-
-//    HINSTANCE pShellExecute(_In_opt_ HWND hwnd, _In_opt_ LPCTSTR lpOperation, _In_ LPCTSTR lpFile, _In_opt_ LPCTSTR lpParameters, _In_opt_ LPCTSTR lpDirectory, _In_ INT nShowCmd);
+    //INT getValue(const char key[], INT dft);
 }
 
 #endif // FUNCBOX_H

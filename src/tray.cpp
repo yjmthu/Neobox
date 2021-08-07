@@ -1,6 +1,4 @@
-﻿
-#include <oleacc.h>
-
+﻿#include <oleacc.h>
 #include <QTimer>
 
 #include "funcbox.h"
