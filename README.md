@@ -27,7 +27,8 @@ print("D:\\hello.jpg")
 然后Speed Box就可以自动调用这个脚本了。其它语言的脚本或者程序也一样，只要输出图片路径，Speed Box就能自动识别，并且能定时调用这个脚本，也可以点击在右键菜单里面点击“换一张图”调用。
 说了这么多，大家也不一定用得到，下面放几张软件截图
 # 运行效果
-![](https://github.com/yjmthu/Speed-Box/blob/main/img/img/img_03.png)
+![](https://github.com/yjmthu/Speed-Box/blob/main/img/img_03.png)
+![](https://github.com/yjmthu/Speed-Box/blob/main/img/img_04.png)
 # 下载方式
 ***
 - 版本：21.6.27（最初版本）
