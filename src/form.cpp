@@ -380,13 +380,10 @@ void Form::get_net_usage()
         paa = &piaa[0];
         while (paa)
         {
-            if (paa->IfType != IF_TYPE_SOFTWARE_LOOPBACK && paa->IfType != IF_TYPE_TUNNEL)
+            if (paa->IfType != IF_TYPE_SOFTWARE_LOOPBACK && paa->IfType != IF_TYPE_TUNNEL && paa->IfIndex == mi->table[i].dwIndex)
             {
-                if (paa->IfIndex == mi->table[i].dwIndex)
-                {
-                    m_in_bytes += mi->table[i].dwInOctets;
-                    m_out_bytes += mi->table[i].dwOutOctets;
-                }
+                m_in_bytes += mi->table[i].dwInOctets;
+                m_out_bytes += mi->table[i].dwOutOctets;
             }
             paa = paa->Next;
         }
