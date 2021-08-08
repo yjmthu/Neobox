@@ -60,6 +60,7 @@ Form::~Form()
     if (VarBox.AppId) delete [] VarBox.AppId;
     if (VarBox.PassWord) delete [] VarBox.PassWord;
     HeapFree(GetProcessHeap(), 0, piaa);
+    HeapFree(GetProcessHeap(), 0, mi);
     if (VarBox.hIphlpapi) FreeLibrary(VarBox.hIphlpapi);
     if (VarBox.hOleacc) FreeLibrary(VarBox.hOleacc);
 }
@@ -383,13 +384,6 @@ void Form::get_net_usage()
             {
                 if (paa->IfIndex == mi->table[i].dwIndex)
                 {
-                    if (wcslen(paa->FriendlyName) > 19)
-                    {
-                        paa->FriendlyName[16] = L'.';
-                        paa->FriendlyName[17] = L'.';
-                        paa->FriendlyName[18] = L'.';
-                        paa->FriendlyName[19] = L'\0';
-                    }
                     m_in_bytes += mi->table[i].dwInOctets;
                     m_out_bytes += mi->table[i].dwOutOctets;
                 }
