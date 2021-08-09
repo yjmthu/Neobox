@@ -64,19 +64,23 @@ QTabBar::tab:selected {
 }
 
 QLineEdit[readOnly="true"]{
+    border-radius: 3px;
     color:gray;
 }
 
 QLineEdit{
+    border-radius: 3px;
     padding:2px;
     background-color: #d1e8f7;
 }
 
 QLineEdit:hover[readOnly="false"]{
+    border-radius: 3px;
     background-color: #6ed1b3;
 }
 
 QToolButton{
+    border-radius: 3px;
     background-color: grey;
 }
 
