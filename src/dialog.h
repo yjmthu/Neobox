@@ -96,6 +96,9 @@ private slots:
     void on_pushButton_9_clicked();
     void on_radioButton_13_clicked();
     void on_radioButton_14_clicked();
+    void on_pushButton_13_clicked();
+    void on_pushButton_10_clicked();
+    void on_pushButton_12_clicked();
 };
 
 #endif // DIALOG_H

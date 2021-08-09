@@ -9,6 +9,7 @@
 #include <QString>
 #include <QDebug>
 
+#define RETCODE_UPDATE                1072       //更新常数，更新软件
 #define RETCODE_RESTART               1073       //重启常数，双击时界面会返回这个常数实现整个程序重新启动。
 #define MSG_APPBAR_MSGID              2731
 
@@ -92,7 +93,7 @@ enum class TaskBarCenterState
 
 struct VAR_BOX
 {
-    const char* PaperTypes[10][2];      //九种壁纸类型
+    const char* const PaperTypes[10][2];      //九种壁纸类型
     QString FamilyNames[10];
     QString FamilyPath;                 //壁纸文件夹的上一级目录
     PAPER_TYPE PaperType;               //当下正在使用的壁纸类型
@@ -120,6 +121,7 @@ struct VAR_BOX
     short RefreshTime;
 
      HANDLE HMutex; HMODULE hOleacc; HMODULE hIphlpapi; void* form;
+     const char* const Version; const char* const Qt;
      ~VAR_BOX();
 };
 
@@ -137,12 +139,13 @@ namespace FuncBox {
     bool build_init_files();                                           //创建程序所需文件
     bool isOnline(bool);                                               //检查是否有网络连接，布尔值代表是否保持检测 30 秒
     char* runCommand(QString program, QStringList argument, short line = 0);
-    bool getWebCode(const char*, std::string&);
+    bool getWebCode(const char*, std::string&, bool auto_delete = true);
     bool getBingCode(std::string& code);
     bool downloadImage(const char*, const QString, bool auto_delete = true);
     bool getTransCode(const char* url, std::string* outcome);
     BOOL SetWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD AlphaColor);//设置窗口WIN10风格
     void readTrayStyle(); void saveTrayStyle();
+    bool versionBefore(const char* A, const char* B);
     //INT getValue(const char key[], INT dft);
 }
 

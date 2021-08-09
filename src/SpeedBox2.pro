@@ -5,7 +5,7 @@ msvc {
     QMAKE_CXXFLAGS += /utf-8
 }
 
-VERSION = 21.8.6.1
+VERSION = 21.8.9.0
 
 QT       += core gui
 
@@ -14,7 +14,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++11
 CONFIG += release
 #CONFIG += debug
-#DEFINES += QT_NO_DEBUG_OUTPUT
+DEFINES += QT_NO_DEBUG_OUTPUT
 
 win32 {
     LIBS += -luser32
@@ -78,3 +78,4 @@ RESOURCES += \
     res.qrc
 
 RC_ICONS += icons/speedbox.ico
+TARGET = SpeedBox

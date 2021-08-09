@@ -27,7 +27,8 @@ VAR_BOX VarBox = {
     QString(), PAPER_TYPE::Latest, COLOR_THEME::ClassicWhite, true, false, false, 1, 15, QString(),
     "X:\\xxx\\python.exe -u X:\\xxx.py", QString(), 0, 0, false, false, nullptr, nullptr, false, false,
     { ACCENT_STATE::ACCENT_DISABLED, ACCENT_STATE::ACCENT_DISABLED }, { 0x11111111, 0x11111111 },
-    /* 背景 */ {0xff, 0xff}, /* 图标 */ TaskBarCenterState::TASK_LEFT, 33, NULL, NULL, NULL, nullptr
+    /* 背景 */ {0xff, 0xff}, /* 图标 */ TaskBarCenterState::TASK_LEFT, 33, NULL, NULL, NULL, nullptr,
+    "21.8.9", "6.1.2"
 };
 
 VAR_BOX::~VAR_BOX()
@@ -56,22 +57,23 @@ namespace FuncBox {
         IniWrite.endGroup();
     }
 
-    bool getWebCode(const char* url, std::string& src)
+    bool getWebCode(const char* url, std::string& src, bool auto_delete)
     {
         bool OK = false;  src.clear();
         HINTERNET hSession = InternetOpen("Firefox", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
         if (hSession != NULL)
         {
             HINTERNET hURL = InternetOpenUrl(hSession, url, NULL, 0, INTERNET_FLAG_DONT_CACHE, 0);
-            delete[] url;
+            if (auto_delete) delete[] url;
             if (hURL != NULL)
             {
-                char Temp[1024] = { 0 };
+                char temp[1025] = { 0 };
                 ULONG Number = 1;
-                while (Number > 0)
+                while (Number > 0 && VarBox.RunApp)
                 {
-                    InternetReadFile(hURL, Temp, 1023, &Number);
-                    src += Temp;
+                    memset(temp, 0, 1024);
+                    InternetReadFile(hURL, temp, 1024, &Number);
+                    src += temp;
                 }
                 OK = !src.empty();
                 InternetCloseHandle(hURL);
@@ -81,7 +83,11 @@ namespace FuncBox {
             InternetCloseHandle(hSession);
             hSession = NULL;
         }
-        return OK;
+        else
+        {
+            if (auto_delete) delete[] url;
+        }
+        return VarBox.RunApp && OK;
     }
 
     bool getBingCode(std::string& code)
@@ -130,7 +136,7 @@ namespace FuncBox {
                     }
                     else
                         break;
-                } while (true);
+                } while (VarBox.RunApp);
                 InternetCloseHandle(hURL);
             }
 
@@ -164,7 +170,7 @@ namespace FuncBox {
                 if (file.open(QIODevice::WriteOnly))
                 {
                     qout << "开始写入图片文件";
-                    while (true)
+                    while (VarBox.RunApp)
                     {
                         Sleep(10); // qout << "下载循环中";
                         InternetReadFile(hOpenUrl, szDownLoad, 1024 * 40, &dwRecv);
@@ -174,7 +180,7 @@ namespace FuncBox {
                         allWrite += dwRecv;
                     }
                     qout << "下载结束";
-                    file.close(); OK = (allWrite != 0) && (allWrite != 235);
+                    file.close(); OK = (allWrite != 0) && (allWrite != 235) && VarBox.RunApp;
                     if (!OK && QFile::exists(path))
                     {
                         QFile::remove(path);
@@ -331,7 +337,7 @@ namespace FuncBox {
                 if (!QFile::exists(file))
                 {
                     qout << "SpeedBox.ini 文件不存在";
-                    sigleSave("SpeedBox", "Version", "21.8.6.1");
+                    sigleSave("SpeedBox", "Version", VarBox.Version);
                     type = 1;
                     continue;
                 }
@@ -340,16 +346,16 @@ namespace FuncBox {
                     char t[12] = { 0 };
                     GetPrivateProfileString("SpeedBox", "Version", t, t, 11, file.toStdString().c_str());
                     qout << "文件存在，版本信息为" << t;
-                    if (StrCompare(t, "21.8.1.0") || StrCompare(t, "21.8.6.1"))
+                    if (versionBefore(t, "21.8.1"))
                     {
-                        type = 2;
+                        qout << "ini文件过期，将其删除。";
+                        QFile::remove(file); sigleSave("SpeedBox", "Version", VarBox.Version);
+                        type = 1;
                         continue;
                     }
                     else
                     {
-                        qout << "ini文件过期，将其删除。";
-                        QFile::remove(file); sigleSave("SpeedBox", "Version", "21.8.6.1");
-                        type = 1;
+                        type = 2;
                         continue;
                     }
                 }
@@ -543,5 +549,31 @@ namespace FuncBox {
         IniWrite.setValue("RefreshTime", VarBox.RefreshTime);
         IniWrite.setValue("iPos", (int)VarBox.iPos);
         IniWrite.endGroup();
+    }
+
+    inline void _getINT(const char* &X, int &x)
+    {
+        while (true)
+        {
+            x += *X - '0';
+            ++X;
+            if (*X == '.' || *X == '\0')
+                return;
+            x *= 10;
+        }
+    }
+    bool versionBefore(const char* A, const char* B)
+    {
+        int a=0, b=0;
+        _getINT(A, a); _getINT(B, b);
+        ++A; ++B;
+        if (a<b) return true; else if (a>b) return false;
+        a = b = 0;
+        _getINT(A, a); _getINT(B, b);
+        ++A; ++B;
+        if (a<b) return true; else if (a>b) return false;
+        a = b = 0;
+        _getINT(A, a); _getINT(B, b);
+        if (a<b) return true; else return false;
     }
 }

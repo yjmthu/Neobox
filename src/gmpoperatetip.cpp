@@ -37,11 +37,11 @@ GMPOperateTip::~GMPOperateTip()
 }
 
 
-void GMPOperateTip::showTip(QString str = "写了些啥")
+void GMPOperateTip::showTip(QString str = "写了些啥", int time)
 {
     tip->setText(str);
     tip->adjustSize();
     setGeometry(centerPos.x()-tip->width()/2, centerPos.y()-tip->height()/2, tip->width(), tip->height());
     setVisible(true);
-    QTimer::singleShot(500, m_pAnimation, SLOT(start()));
+    QTimer::singleShot((time?time:500), m_pAnimation, SLOT(start()));
 }

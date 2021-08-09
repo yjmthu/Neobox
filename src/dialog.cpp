@@ -18,6 +18,8 @@
 #include "blankform.h"
 #include "gmpoperatetip.h"
 #include "dialogwallpaper.h"
+#include "YString.h"
+#include "YJson.h"
 
 const char *color_theme[4] =
 {
@@ -878,7 +880,6 @@ void Dialog::on_pushButton_8_clicked()
     del_file(this, FuncBox::get_dat_path() + "\\AppId.txt");
 }
 
-
 void Dialog::on_pushButton_2_clicked()
 {
     close();
@@ -922,3 +923,109 @@ void Dialog::on_pushButton_11_clicked()
     FuncBox::get_wal_path();
     jobTip->showTip("修改成功！");
 }
+
+// 展示版本信息
+void Dialog::on_pushButton_13_clicked()
+{
+    jobTip->showTip(QString("版本号：") + VarBox.Version, 1000);
+}
+
+// 检查是否有更新
+void Dialog::on_pushButton_10_clicked()
+{
+    static bool wait = false;
+    if (wait) return; else wait = true;
+    std::string str;
+    if (FuncBox::getWebCode("https://raw.githubusercontent.com/yjmthu/Speed-Box/main/Update.json", str, false) && !str.empty())
+    {
+        const YJsonItem json(str);
+        if (json.getType() == YJson::YJSON_OBJECT)
+        {
+            const char* newVersion = json.findItem("Latest Version")->getValueSring();
+            qout << newVersion;
+            if (StrCompare(VarBox.Version, newVersion))
+            {
+                jobTip->showTip("当前已经是最新版本, 不过你仍可尝试下载更新！", 1000);
+                ui->pushButton_12->setEnabled(true);
+            }
+            else
+            {
+                if (FuncBox::versionBefore(VarBox.Version, newVersion))
+                {
+                    jobTip->showTip(((QString("\t有新版本已经出现！\n当前版本：")+=VarBox.Version)+="; 最新版本：")+=newVersion, 2000);
+                    ui->pushButton_12->setEnabled(true);
+                }
+                else
+                {
+                    jobTip->showTip(newVersion);
+                    jobTip->showTip("检查更新失败，请手动打开浏览器下载访问GitHub更新。", 2000);
+                }
+            }
+        }
+    }
+    wait = false;
+}
+
+// 下载更新
+void Dialog::on_pushButton_12_clicked()
+{
+    static bool wait = false;
+    if (wait) return; else wait = true;
+    std::string str; jobTip->showTip("请耐心等待几秒...");
+    if (FuncBox::getWebCode("https://raw.githubusercontent.com/yjmthu/Speed-Box/main/Update.json", str, false) && !str.empty())
+    {
+        YJsonItem json(str);
+        if (json.getType() == YJson::YJSON_OBJECT)
+        {
+            YJsonItem *qtVersion = json.findItem("Qt Version");
+            if (qtVersion->getType() != YJson::YJSON_STRING || !StrCompare(qtVersion->getValueSring(), "6.1.2"))
+            {
+                jobTip->showTip("下载更新失败，请手动打开浏览器到GitHub下载！", 2000);
+                return;
+            }
+            YJsonItem *urls = json.findItem("Files"); YJsonItem *child = nullptr;
+            if (urls && urls->getType() == YJson::YJSON_OBJECT)
+            {
+                if (!(child = urls->findItem("main")))
+                {
+                    jobTip->showTip("下载失败！");
+                    return;
+                }
+                const char* url1 = child->getValueSring();
+                if (!(child = urls->findItem("update")))
+                {
+                    jobTip->showTip("下载失败！");
+                    return;
+                }
+                const char* url2 = child->getValueSring();
+                qout << "文件地址：" << url1 << url2;
+                QString temp_str = FuncBox::get_dat_path()+"\\SpeedBox.exe";
+                if (QFile::exists(temp_str)) QFile::remove(temp_str);
+                if (FuncBox::downloadImage(url1, temp_str, false)
+                        &&
+                    FuncBox::downloadImage(url2, qApp->applicationDirPath().replace("/", "\\")+"\\update.exe", false))
+                {
+                    if (QMessageBox::information(this, "更新已经下载完成，重启后完成更新！", "提示", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
+                    {
+                        VarBox.RunApp = false;
+                        qApp->exit(RETCODE_UPDATE);
+                    }
+                    else
+                        jobTip->showTip("成功取消更新。", 700);
+                }
+                else
+                    jobTip->showTip("下载失败！");
+            }
+            else
+            {
+                jobTip->showTip("未知原因，下载失败！");
+            }
+        }
+        else
+        {
+            jobTip->showTip("下载失败。");
+        }
+    }
+    wait = false;
+}
+

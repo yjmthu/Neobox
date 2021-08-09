@@ -331,7 +331,7 @@ bool Wallpaper::set_from_Random() const
 }
 
 typedef BOOL(WINAPI* pfnPathFileExists)(LPCSTR pszPath);
-BOOL PathFileExists(LPCSTR pszPath)    //设置窗口WIN10风格
+BOOL PathFileExists(LPCSTR pszPath)
 {
     pfnPathFileExists pPathFileExists = NULL;
     BOOL ret = FALSE;

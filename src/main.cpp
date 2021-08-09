@@ -21,12 +21,18 @@ int main(int argc, char* argv[])
     abd.uCallbackMessage = MSG_APPBAR_MSGID;
     SHAppBarMessage(ABM_NEW, &abd);
     w.show();                                                              //显示悬浮窗
-    if (a.exec() == RETCODE_RESTART)                                              //如果收到重启常数
-    {
+    switch (a.exec()) {
+    case RETCODE_RESTART:                                   //如果收到重启常数
         CloseHandle(VarBox.HMutex);
         QProcess::startDetached(a.applicationFilePath());   //重启程序
-        return 0;
+        break;
+    case RETCODE_UPDATE:
+        CloseHandle(VarBox.HMutex);
+        QProcess::startDetached(a.applicationDirPath().replace("/", "\\") + "\\update.exe");   //重启程序
+        break;
+    default:
+        CloseHandle(VarBox.HMutex);
+        break;
     }
-    CloseHandle(VarBox.HMutex);
     return 0;
 }
