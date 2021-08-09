@@ -292,8 +292,8 @@ void Translater::getReply(const QByteArray& text)
         unfinished = false;
         return;
     }
-    std::string q; const char* utf8_q = text.data(), *sign = StrJoin(VarBox.AppId, utf8_q, salt, VarBox.PassWord);
-    delete [] sign; sign = StrJoin(QCryptographicHash::hash(sign, QCryptographicHash::Md5).toHex());   //千万不要画蛇添足再delete[] sign, 也尽量不要在中途使用sign;
+    std::string q;
+    const char* utf8_q = text.data();
     while (*utf8_q)
     {
         if (isalnum((unsigned char)*utf8_q))
@@ -314,6 +314,12 @@ void Translater::getReply(const QByteArray& text)
         }
         ++utf8_q;
     }
+
+    utf8_q = StrJoin(VarBox.AppId, text.data(), salt, VarBox.PassWord);
+    char sign[33]; strcpy_s(sign, 33, QCryptographicHash::hash(utf8_q, QCryptographicHash::Md5).toHex());
+    delete [] utf8_q;
+    qout << "mysign" << sign;
+
     std::string reply_data; std::thread thrd; QEventLoop loop;
     connect(this, &Translater::receivedData, &loop, [&reply_data, &loop, &thrd, this](bool success){
         if (success)
@@ -345,9 +351,8 @@ void Translater::getReply(const QByteArray& text)
         if (thrd.joinable()) thrd.join(); loop.quit();
     });
     /* std::thrd不支持传引用，只支持传值 */
-    //qout << "mysign" << sign;
-    thrd = std::thread(&Translater::requestData, this, StrJoin(API, u8"?q=", q.c_str(), u8"&from=", from, "&to=", to, "&appid=", VarBox.AppId, "&salt=", salt, "&sign=", sign), &reply_data);
-    delete [] sign; loop.exec();    //阻塞函数等待翻译结果，但是不阻塞ui。ui仍然可以编辑改动，不会卡死。
+    thrd = std::thread(&Translater::requestData, this, StrJoin(API, u8"?q=", q.c_str(), u8"&from=", from, u8"&to=", to, u8"&appid=", VarBox.AppId, u8"&salt=", salt, u8"&sign=", sign), &reply_data);
+    loop.exec();    //阻塞函数等待翻译结果，但是不阻塞ui。ui仍然可以编辑改动，不会卡死。
     qout << "翻译函数执行完毕"; unfinished = false;
 }
 
