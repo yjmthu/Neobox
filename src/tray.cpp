@@ -43,7 +43,7 @@ bool Find(IAccessible* paccParent, int iRole, IAccessible** paccChild)
 		if (varChild.vt == VT_I4)
 		{
 			pDisp = NULL;
-			paccParent->get_accChild(varChild, &pDisp); ///////////////////////////////////
+            paccParent->get_accChild(varChild, &pDisp);
 		}
 		else
 			pDisp = varChild.pdispVal;

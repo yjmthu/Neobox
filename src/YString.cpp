@@ -88,15 +88,6 @@ size_t wcslen(const wchar_t** box, size_t num)
     return  len;
 }
 
-int IntLength(long num)
-{
-    int count = num < 0;
-    do {
-        count++;
-    } while (num /= 10);
-    return count;
-}
-
 char* STRING_APPEND(char* head)
 {
     return head;
@@ -183,34 +174,6 @@ void StrCopy(wchar_t* str_old, const wchar_t* str_new_start, const wchar_t* str_
     *++str_old = 0;
 }
 
-char* StrFromInt(long num)
-{
-    size_t len = IntLength(num);
-    char* str = new char[len + 1];
-    if (num < 0) *str = '-';
-    *(str += len) = 0;
-    do {
-        *--str = '0' + num % 10;
-    } while (num /= 10);
-    return str;
-}
-
-char* StrFromDouble(double num)
-{
-    double d = num;
-    char str[64] = { 0 };
-    char* s = str;
-    if (fabs(floor(num) - d) <= DBL_EPSILON && fabs(d) < 1.0e60)
-        sprintf_s(str, sizeof(str), "%.0f", d);
-    else if (fabs(d) < 1.0e-6 || fabs(d) > 1.0e9)
-        sprintf_s(str, sizeof(str), "%e", d);
-    else
-        sprintf_s(str, sizeof(str), "%f", d);
-    size_t len = strlen(str) + 1;
-    char* st = new char[len]; while (*st++ = (char)*s++);
-    return st - len;
-}
-
 bool StrCompare(const char* str_a, const char* str_b, size_t length)
 {
     if (length <= 0)
@@ -283,22 +246,3 @@ const char* StrGoEnd(const char* content)
 {
     while (content && *content) content++; return content;
 }
-
-//char* WtoM(const wchar_t* pwszUnicode)
-//{
-//    if (!pwszUnicode) return nullptr;
-//    int iSize = WideCharToMultiByte(CP_ACP, 0, pwszUnicode, -1, nullptr, 0, nullptr, nullptr);
-//    char* pszMultiByte = new char[iSize];
-//    WideCharToMultiByte(CP_ACP, 0, pwszUnicode, -1, pszMultiByte, iSize, nullptr, nullptr);
-//    return pszMultiByte;
-//}
-
-//wchar_t* MtoW(const char* pszMultiByte)
-//{
-//    //allready include '\0'
-//    if (!pszMultiByte) return nullptr;
-//    int iSize = MultiByteToWideChar(CP_ACP, 0, pszMultiByte, -1, nullptr, 0); //iSize =wcslen(pwsUnicode)+1=6
-//    wchar_t* pwszUnicode = new wchar_t[iSize];             //don't need pwszUnicode = (wchar_t_t *)malloc((iSize+1)*sizeof(wchar_t_t))
-//    MultiByteToWideChar(CP_ACP, 0, pszMultiByte, -1, pwszUnicode, iSize);
-//    return pwszUnicode;
-//}

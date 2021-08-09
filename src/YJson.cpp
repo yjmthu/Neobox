@@ -964,10 +964,11 @@ const char * YJsonItem::parse_number(const char *num)
         }
         while ('0' <= *num && *num <= '9')
         {
-            subscale += (subscale*=10, *num++ - '0');
+            subscale *= 10;
+            subscale += *num++ - '0';
         }
     }
-    _valueint = (int)(_valuedouble *= sign*pow(10, scale + signsubscale*subscale));
+    _valueint = (int)(_valuedouble *= sign * pow(10, scale + signsubscale * subscale));
     _type = YJson::YJSON_NUMBER;
     return num;
 }
@@ -978,9 +979,21 @@ void YJsonItem::print_number()
     if (_valuedouble == 0)
         _valuestring = StrJoin("0");
     else if (fabs(((double)_valueint) - _valuedouble) <= DBL_EPSILON && _valuedouble <= INT_MAX && _valuedouble >= (double)INT_MIN)
-        _valuestring = StrFromInt(_valueint);
+    {
+        char temp[21] = { 0 }; sprintf(temp,"%d",_valueint);
+        _valuestring = StrJoin(temp);
+    }
     else
-        _valuestring = StrFromDouble(_valuedouble);
+    {
+        char temp[64] = {0};
+        if (fabs(floor(_valuedouble)-_valuedouble)<=DBL_EPSILON && fabs(_valuedouble)<1.0e60)
+            sprintf(temp,"%.0f",_valuedouble);
+        else if (fabs(_valuedouble)<1.0e-6 || fabs(_valuedouble)>1.0e9)
+            sprintf(temp,"%e",_valuedouble);
+        else
+            sprintf(temp,"%f",_valuedouble);
+        _valuestring = StrJoin(temp);
+    }
 }
 
 wchar_t parse_hex4(const char* str)
