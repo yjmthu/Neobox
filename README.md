@@ -43,7 +43,9 @@ print("D:\\hello.jpg")
 
 * * *
 - 版本：21.6.27（最初版本）
-- 发布信息：Qt编写，适用于64位的win10系统。
+- 发布信息
+  * Qt编写
+  * 适用于64位的win10系统。
 - [蓝奏云](https://wws.lanzoui.com/i4A13qqvcmh) 密码:52ca
 - [GitHub](https://github.com/yjmthu/Speed-Box/releases/download/21.6.27/Speed-Box_win10_x64_21.6.27.zip)
 
@@ -65,28 +67,28 @@ print("D:\\hello.jpg")
 - 32位系统 [蓝奏云](https://wws.lanzoui.com/ict95s3ejkj) 密码 g99a
 
 * * *
-- 版本：21.8.6 （最新版本）
+- 版本：21.8.6 （不稳定）
 - 更新内容
-- * 使用最新的Qt6编写
-- * 优化了窗口外观
-- * 增加了语言自动识别功能
- * 改变了一下文件夹名称
- * 优化了底层算法
- * 优化了使用体验
- * （另外不建议使用上面MFC版本的）
+  * 使用最新的Qt6编写
+  * 优化了窗口外观
+  * 增加了语言自动识别功能
+  * 改变了一下文件夹名称
+  * 优化了底层算法
+  * 优化了使用体验
+  * （另外不建议使用上面MFC版本的）
 - 64位Windows 10 [GitHub](https://github.com/yjmthu/Speed-Box/releases/download/21.8.6/Speed-Box_win10_x64_21.8.6.zip)
 
 * * *
-- 版本：21.8.9 （最新版本）
+- 版本：21.8.9 （最新稳定版本）
 - 更新内容
- * 可以自动检查更新了！
- * 修复翻译出错的Bug。
- * 由于必应首页的源码进行了重构，所以以前的版本不能使用必应壁纸了。因此这个版本更新了必应壁纸。
- * 改变了界面样式。
- * 优化了一些代码，提高了效率节约内存。
+  * 可以自动检查更新了！
+  * 修复翻译出错的Bug。
+  * 由于必应首页的源码进行了重构，所以以前的版本不能使用必应壁纸了。因此这个版本更新了必应壁纸。
+  * 改变了界面样式。
+  * 优化了一些代码，提高了效率节约内存。
 - 下载地址
- * [GitHub](https://github.com/yjmthu/Speed-Box/releases/download/21.8.9/Speed-Box_win10_x64_21.8.9.zip)
- * [蓝奏云](https://github.com/yjmthu/Speed-Box/releases/download/21.8.9/Speed-Box_win10_x64_21.8.9.zip) 密码：1234
+  * [GitHub](https://github.com/yjmthu/Speed-Box/releases/download/21.8.9/Speed-Box_win10_x64_21.8.9.zip)
+  * [蓝奏云](https://github.com/yjmthu/Speed-Box/releases/download/21.8.9/Speed-Box_win10_x64_21.8.9.zip) 密码：1234
 
 * * *
 - 未来版本：仍用Qt编写，考虑自定义悬浮窗外观。
