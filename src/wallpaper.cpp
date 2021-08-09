@@ -39,17 +39,7 @@ void chooseUrl(const char* &url_1, const char* &url_2)  //选则正确的请求�
 	}
 }
 
-QString getBingName()                           //生成今日必应壁纸的名称
-{
-    QDateTime dateTime(QDateTime::currentDateTime());
-
-    QString name = FuncBox::get_pic_path((short)PAPER_TYPE::Bing);
-    name += "/";
-    name += dateTime.toString("yyyy-MM-dd");
-    return name += "必应壁纸.jpg";
-}
-
-bool setWallpaper(QString img_name)             //根据路径设置壁纸
+bool setWallpaper(const QString &img_name)             //根据路径设置壁纸
 {
     if (QFile::exists(img_name)){ qout << "设置壁纸：" << img_name;
         return SystemParametersInfoW(SPI_SETDESKWALLPAPER, UINT(0), (PVOID)img_name.toStdWString().c_str(), SPIF_SENDCHANGE | SPIF_UPDATEINIFILE);
@@ -279,21 +269,28 @@ bool Wallpaper::set_from_Native() const
 
 bool Wallpaper::set_from_Bing(bool setBing) const
 {
-    QString img_name = getBingName();
+    QDateTime dateTime(QDateTime::currentDateTime());
+
+    QString img_name = FuncBox::get_pic_path((short)PAPER_TYPE::Bing);
+    img_name += "/";
+    img_name += dateTime.toString("yyyy-MM-dd");
+    img_name += "必应壁纸.jpg";
+    qout << "必应壁纸名称：" << img_name;
+
     if (QFile::exists(img_name))
         return (setBing && setWallpaper(img_name)) || true;
 	else
 	{
         std::string img_html;
-		FuncBox::getBingCode(img_html);
+        FuncBox::getBingCode(img_html); qout << img_html.c_str();
         const char* pos_a = img_html.c_str(); const char* pos_b;
 		while (true)
 		{
 			if (*pos_a)
 			{
-                if (StrCompare(pos_a, "<head><link id=\"bgLink\" rel=\"preload\" href=\"", 44))
+                if (StrCompare(pos_a, "<link rel=\"preload\" href=\"", 26))
 				{
-					pos_a += 44;
+                    pos_a += 26;
 					break;
 				}
 				else
@@ -303,23 +300,25 @@ bool Wallpaper::set_from_Bing(bool setBing) const
 				return false;
 		}
 		pos_b = pos_a;
+        qout << "起始点" << pos_b;
 		while (true)
 		{
 			if (*pos_b)
 			{
-                if (StrCompare(pos_b, "\" as=\"image\" /><link rel=\"preload\" href=", 40))
+                if (StrCompare(pos_b, "\"", 1))
 				{
 					--pos_b;
 					break;
 				}
 				else
-					pos_b++;
+                    ++pos_b;
 			}
 			else
 				return false;
 		}
         char* img_id = new char[pos_b - pos_a + 2]; StrCopy(img_id, pos_a, pos_b);
         char* img_url = StrJoin("https://cn.bing.com", img_id); delete[] img_id;
+        qout << "必应壁纸链接：" << img_url;
         return (FuncBox::downloadImage(img_url, img_name) && setBing) && setWallpaper(img_name);
 	}	
 }

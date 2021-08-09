@@ -92,9 +92,11 @@ namespace FuncBox {
             HINTERNET hURL = InternetOpenUrl(hSession, "https://cn.bing.com/", NULL, 0, INTERNET_FLAG_DONT_CACHE, 0);
             if (hURL)
             {
-                CHAR Temp[512] = { 0 };
+                CHAR Temp[513] = { 0 };
                 ULONG Number = 1;
-                InternetReadFile(hURL, Temp, 511, &Number);
+                InternetReadFile(hURL, Temp, 512, &Number);
+                InternetReadFile(hURL, Temp, 512, &Number);
+                InternetReadFile(hURL, Temp, 512, &Number);
                 code += Temp;
                 InternetCloseHandle(hURL);
                 hURL = NULL;

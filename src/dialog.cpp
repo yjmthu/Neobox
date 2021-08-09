@@ -792,7 +792,7 @@ void Dialog::on_pBtn_Save_Tran_Info_clicked()
             VarBox.HaveAppRight = true;
             qout << 1;
             unsigned char c[3] = {0xEF, 0xBB, 0xBF}; size_t len = 0;
-            file.write((char*)c, 3*sizeof (char));
+            file.write((char*)c, 3 * sizeof (char));
             file.write("APP ID\t", 7 * sizeof (char));
             QByteArray s1 = str_1.toUtf8(); len = s1.length();
             qout << 2;

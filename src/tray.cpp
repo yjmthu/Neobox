@@ -87,7 +87,7 @@ bool Find(IAccessible* paccParent, int iRole, IAccessible** paccChild)
 void Tray::SetTaskBarPos(HWND hTaskListWnd, HWND hTrayWnd, HWND hTaskWnd, HWND hReBarWnd, BOOL bMainTray)
 {
 	static int oleft = 0, otop = 0;
-    if (VarBox.hOleacc == NULL)
+    if (VarBox.hOleacc == NULL)        //  获取函数
 	{
 		VarBox.hOleacc = LoadLibrary(TEXT("oleacc.dll"));
 		if (VarBox.hOleacc)
@@ -123,7 +123,6 @@ void Tray::SetTaskBarPos(HWND hTaskListWnd, HWND hTrayWnd, HWND hTaskWnd, HWND h
 				{
 					VARIANT vtChild = pArray[x];
 					{
-
 						VARIANT varState;
 						paccChlid->get_accState(vtChild, &varState);
 						if ((varState.intVal & STATE_SYSTEM_INVISIBLE) == 0)
