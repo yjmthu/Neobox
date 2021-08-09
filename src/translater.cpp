@@ -349,9 +349,9 @@ void Translater::getReply(const QByteArray& text)
                         if (StrCompare(have_item->getValueSring(), "Invalid Access Limit"))
                             emit msgBox("翻译失败，请求间隔时间过短!");
                         else if (StrCompare(have_item->getValueSring(), "UNAUTHORIZED USER"))
-                            emit msgBox("翻译失败，密钥错误！");
+                            emit msgBox("翻译失败，APPID不存在！");
                         else if (StrCompare(have_item->getValueSring(), "Invalid Sign"))
-                            emit msgBox("翻译失败，md5码错误！");
+                            emit msgBox("翻译失败，密钥错误！");
                         else
                             emit msgBox("翻译失败， 其它错误。");
                     }
