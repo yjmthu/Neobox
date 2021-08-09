@@ -282,7 +282,7 @@ void Translater::requestData(const char* url, std::string* data)
 
 void Translater::getReply(const QByteArray& text)
 {
-    qout << "开始执行翻译函数";
+    //qout << "开始执行翻译函数";
     static const char API[] = u8"http://api.fanyi.baidu.com/api/trans/vip/translate";
     static const char salt[] = u8"1435660288";                           //请求参数之一
     unfinished = true;
@@ -293,7 +293,7 @@ void Translater::getReply(const QByteArray& text)
         return;
     }
     std::string q;
-    const char* utf8_q = text.data();
+    const char* utf8_q = text;
     while (*utf8_q)
     {
         if (isalnum((unsigned char)*utf8_q))
@@ -315,7 +315,7 @@ void Translater::getReply(const QByteArray& text)
         ++utf8_q;
     }
 
-    utf8_q = StrJoin(VarBox.AppId, text.data(), salt, VarBox.PassWord);
+    utf8_q = StrJoin(VarBox.AppId, (const char*)text, salt, VarBox.PassWord);
     char sign[33]; strcpy_s(sign, 33, QCryptographicHash::hash(utf8_q, QCryptographicHash::Md5).toHex());
     delete [] utf8_q;
     //qout << "mysign" << sign;
@@ -325,9 +325,9 @@ void Translater::getReply(const QByteArray& text)
         if (success)
         {
             //qout << "翻译请求结果" << reply_data.c_str();
-            YJsonItem json_data(reply_data); YJsonItem* have_item = NULL;
+            YJsonItem json_data(reply_data); YJsonItem* have_item = nullptr;
             if ((have_item = json_data.findItem("trans_result")) &&
-                (have_item = have_item->getChildItem()) && (have_item = have_item->findItem(TEXT("dst"))))
+                (have_item = have_item->getChildItem()) && (have_item = have_item->findItem("dst")))
             {
                 if (have_item->getType() == YJson::YJSON_STRING)
                 {

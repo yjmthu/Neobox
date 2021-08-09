@@ -24,11 +24,21 @@ VAR_BOX VarBox = {
         "最新壁纸","最热壁纸","风景壁纸","动漫壁纸","极简壁纸",
         "随机壁纸","必应壁纸","桌面壁纸","本地壁纸","高级壁纸"
     },
-    "", PAPER_TYPE::Latest, COLOR_THEME::ClassicWhite, true, false, false, 1, 15, "",
-    "X:\\xxx\\python.exe -u X:\\xxx.py", "", 0, 0, false, false, nullptr, nullptr, false, false,
+    QString(), PAPER_TYPE::Latest, COLOR_THEME::ClassicWhite, true, false, false, 1, 15, QString(),
+    "X:\\xxx\\python.exe -u X:\\xxx.py", QString(), 0, 0, false, false, nullptr, nullptr, false, false,
     { ACCENT_STATE::ACCENT_DISABLED, ACCENT_STATE::ACCENT_DISABLED }, { 0x11111111, 0x11111111 },
-    /* 背景 */ {0xff, 0xff},/* 图标 */ TaskBarCenterState::TASK_LEFT, 33, NULL, NULL, NULL, nullptr
+    /* 背景 */ {0xff, 0xff}, /* 图标 */ TaskBarCenterState::TASK_LEFT, 33, NULL, NULL, NULL, nullptr
 };
+
+VAR_BOX::~VAR_BOX()
+{
+    qout << "结构体析构中~";
+    if (AppId) delete [] AppId;
+    if (PassWord) delete [] PassWord;
+    if (hIphlpapi) FreeLibrary(hIphlpapi);
+    if (hOleacc) FreeLibrary(hOleacc);
+    qout << "结构体析构成功。";
+}
 
 namespace FuncBox {
 
@@ -98,11 +108,12 @@ namespace FuncBox {
     // 会删除url
     bool getTransCode(const char* url, std::string* outcome)
     {
+        //qout << "翻译请求：" << url << Qt::endl;
         HINTERNET hSession = InternetOpenA("Microsoft Edge", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
         if (hSession)
         {
             HINTERNET hURL = InternetOpenUrlA(hSession, url, NULL, 0, INTERNET_FLAG_DONT_CACHE, 0);
-            delete [] url; qout << "发送翻译请求成功。";
+            delete [] url; //qout << "发送翻译请求成功。";
             if (hURL)
             {
                 char buffer[1025]; DWORD dwRecv = 0;
@@ -112,7 +123,7 @@ namespace FuncBox {
                     if (dwRecv)
                     {
                         buffer[dwRecv] = 0;
-                        qout << "读入的字节数量：" << dwRecv;
+                        //qout << "读入的字节数量：" << dwRecv;
                         outcome->append(buffer);
                     }
                     else
@@ -123,7 +134,6 @@ namespace FuncBox {
 
             InternetCloseHandle(hSession);
             hSession = NULL;
-            qout << 3;
         }
         else
         {

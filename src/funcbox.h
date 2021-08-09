@@ -90,7 +90,7 @@ enum class TaskBarCenterState
 };
 
 
-typedef struct _VAR_BOX
+struct VAR_BOX
 {
     const char* PaperTypes[10][2];      //九种壁纸类型
     QString FamilyNames[10];
@@ -120,7 +120,8 @@ typedef struct _VAR_BOX
     short RefreshTime;
 
      HANDLE HMutex; HMODULE hOleacc; HMODULE hIphlpapi; void* form;
-} VAR_BOX;
+     ~VAR_BOX();
+};
 
 extern VAR_BOX VarBox;
 
