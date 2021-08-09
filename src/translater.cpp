@@ -318,15 +318,15 @@ void Translater::getReply(const QByteArray& text)
     utf8_q = StrJoin(VarBox.AppId, text.data(), salt, VarBox.PassWord);
     char sign[33]; strcpy_s(sign, 33, QCryptographicHash::hash(utf8_q, QCryptographicHash::Md5).toHex());
     delete [] utf8_q;
-    qout << "mysign" << sign;
+    //qout << "mysign" << sign;
 
     std::string reply_data; std::thread thrd; QEventLoop loop;
     connect(this, &Translater::receivedData, &loop, [&reply_data, &loop, &thrd, this](bool success){
         if (success)
         {
-            qout << "翻译请求结果" << reply_data.c_str();
+            //qout << "翻译请求结果" << reply_data.c_str();
             YJsonItem json_data(reply_data); YJsonItem* have_item = NULL;
-            if ((have_item = json_data.findItem(TEXT("trans_result"))) &&
+            if ((have_item = json_data.findItem("trans_result")) &&
                 (have_item = have_item->getChildItem()) && (have_item = have_item->findItem(TEXT("dst"))))
             {
                 if (have_item->getType() == YJson::YJSON_STRING)
@@ -341,19 +341,38 @@ void Translater::getReply(const QByteArray& text)
             }
             else
             {
-                emit msgBox("翻译失败，可能是翻译速度过快\n翻译内容错误或者密钥信息错误。");
+                if (json_data.findItem("error_code"))
+                {
+                    if (have_item = json_data.findItem("error_msg"))
+                    {
+                        //qout << "错误消息：" << have_item->getValueSring();
+                        if (StrCompare(have_item->getValueSring(), "Invalid Access Limit"))
+                            emit msgBox("翻译失败，请求间隔时间过短!");
+                        else if (StrCompare(have_item->getValueSring(), "UNAUTHORIZED USER"))
+                            emit msgBox("翻译失败，密钥错误！");
+                        else if (StrCompare(have_item->getValueSring(), "Invalid Sign"))
+                            emit msgBox("翻译失败，md5码错误！");
+                        else
+                            emit msgBox("翻译失败， 其它错误。");
+                    }
+                    else
+                        emit msgBox("翻译失败，未知原因。");
+                }
+                else
+                    emit msgBox("翻译失败，未知错误");
             }
         }
         else
         {
-            emit msgBox("翻译请求失败,可能是密钥信息填写错误或者没有网络！");
+            emit msgBox("翻译请求失败,可能是没有网络！");
         }
         if (thrd.joinable()) thrd.join(); loop.quit();
     });
     /* std::thrd不支持传引用，只支持传值 */
     thrd = std::thread(&Translater::requestData, this, StrJoin(API, u8"?q=", q.c_str(), u8"&from=", from, u8"&to=", to, u8"&appid=", VarBox.AppId, u8"&salt=", salt, u8"&sign=", sign), &reply_data);
     loop.exec();    //阻塞函数等待翻译结果，但是不阻塞ui。ui仍然可以编辑改动，不会卡死。
-    qout << "翻译函数执行完毕"; unfinished = false;
+    //qout << "翻译函数执行完毕";
+    unfinished = false;
 }
 
 void Translater::on_isFix_clicked(bool checked)
