@@ -46,8 +46,9 @@ print("D:\\hello.jpg")
 - 发布信息
   * Qt编写
   * 适用于64位的win10系统。
-- [蓝奏云](https://wws.lanzoui.com/i4A13qqvcmh) 密码:52ca
-- [GitHub](https://github.com/yjmthu/Speed-Box/releases/download/21.6.27/Speed-Box_win10_x64_21.6.27.zip)
+- 下载地址
+  * [蓝奏云](https://wws.lanzoui.com/i4A13qqvcmh) 密码:52ca
+  * [GitHub](https://github.com/yjmthu/Speed-Box/releases/download/21.6.27/Speed-Box_win10_x64_21.6.27.zip)
 
 * * *
 - 版本：21.8.1.0（第一次更新）
@@ -63,11 +64,12 @@ print("D:\\hello.jpg")
   * 优化了翻译功能
   * 改动右键时不再需要管理员权限
   * 高级功能要输入python的绝对路径, 并且需要在py文件前加-, 例如 `D:\Ppython3\python.exe -u D:\hello.py`。
-- 64位系统 [蓝奏云](https://wws.lanzoui.com/iocoqs3ejmb) 密码 33ra
-- 32位系统 [蓝奏云](https://wws.lanzoui.com/ict95s3ejkj) 密码 g99a
+- 下载地址
+  * 64位系统 [蓝奏云](https://wws.lanzoui.com/iocoqs3ejmb) 密码 33ra
+  * 32位系统 [蓝奏云](https://wws.lanzoui.com/ict95s3ejkj) 密码 g99a
 
 * * *
-- 版本：21.8.6 （不稳定）
+- 版本：21.8.6
 - 更新内容
   * 使用最新的Qt6编写
   * 优化了窗口外观
@@ -92,4 +94,4 @@ print("D:\\hello.jpg")
   * [蓝奏云](https://wws.lanzoui.com/iATx1sffi5g) 密码：cibk
 
 * * *
-- 未来版本：仍用Qt编写，考虑自定义悬浮窗外观。
+- 未来版本：预计9月初发布，仍用Qt编写，考虑自定义悬浮窗外观。
