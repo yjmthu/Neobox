@@ -1,8 +1,9 @@
 {
-    "Latest Version": "21.9.1",
+    "Latest Version": "21.8.10",
     "Qt Version": "6.1.2",
     "Files": {
         "main": "https://github.com/yjmthu/Speed-Box/releases/download/21.8.6/SpeedBox2.exe",
-        "update": ""
+        "update": "",
+        "zip": "https://github.com/yjmthu/Speed-Box/releases/download/21.8.6/Speed-Box_win10_x64_21.8.6.zip"
     }
 }
