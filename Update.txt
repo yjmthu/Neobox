@@ -1,2 +1,7 @@
-Latest Version: 21.8.6
-url: 
+{
+    "Latest Version": "21.8.6",
+    "Qt Version": "6.1.2",
+    "Files": [
+        "https://github.com/yjmthu/Speed-Box/releases/download/21.8.6/SpeedBox2.exe"
+    ]
+}
