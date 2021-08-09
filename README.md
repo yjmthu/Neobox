@@ -88,7 +88,7 @@ print("D:\\hello.jpg")
   * 优化了一些代码，提高了效率节约内存。
 - 下载地址
   * [GitHub](https://github.com/yjmthu/Speed-Box/releases/download/21.8.9/Speed-Box_win10_x64_21.8.9.zip)
-  * [蓝奏云](https://github.com/yjmthu/Speed-Box/releases/download/21.8.9/Speed-Box_win10_x64_21.8.9.zip) 密码：1234
+  * [蓝奏云](https://wws.lanzoui.com/iATx1sffi5g) 密码：cibk
 
 * * *
 - 未来版本：仍用Qt编写，考虑自定义悬浮窗外观。
