@@ -82,7 +82,7 @@ print("D:\\hello.jpg")
   * [GitHub](https://github.com/yjmthu/Speed-Box/releases/download/21.8.6/Speed-Box_win10_x64_21.8.6.zip)
 
 * * *
-- 版本：21.8.9 （最新稳定版本）
+- 版本：21.8.10 （最新稳定版本）
 - 更新内容
   * 可以自动检查更新了！
   * 修复翻译出错的Bug。
