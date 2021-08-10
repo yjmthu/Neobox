@@ -28,7 +28,7 @@ VAR_BOX VarBox = {
     "X:\\xxx\\python.exe -u X:\\xxx.py", QString(), 0, 0, false, false, nullptr, nullptr, false, false,
     { ACCENT_STATE::ACCENT_DISABLED, ACCENT_STATE::ACCENT_DISABLED }, { 0x11111111, 0x11111111 },
     /* 背景 */ {0xff, 0xff}, /* 图标 */ TaskBarCenterState::TASK_LEFT, 33, NULL, NULL, NULL, nullptr,
-    "21.8.9", "6.1.2"
+    "21.8.10", "6.1.2"
 };
 
 VAR_BOX::~VAR_BOX()

@@ -113,6 +113,7 @@ bool Wallpaper::set_from_Wallhaven() const  // 从数据库中随机抽取一个
 {
     qout << "Wallhaven 开始检查json文件";
     QString file_name = FuncBox::get_dat_path() + "\\ImgData.json";
+    qout << "文件路径" << file_name;
     bool func_ok = false;
 	YJsonItem* jsonObject = nullptr, * jsonArray = nullptr, * find_item = nullptr; int type = 0; bool need_save = false;
 	do {

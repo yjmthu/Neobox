@@ -930,13 +930,13 @@ void Dialog::on_pushButton_13_clicked()
     jobTip->showTip(QString("版本号：") + VarBox.Version, 1000);
 }
 
-// 检查是否有更新
+// 检查是否有更新 https://gitee.com/yjmthu/Speed-Box/raw/main/Update.json
 void Dialog::on_pushButton_10_clicked()
 {
     static bool wait = false;
     if (wait) return; else wait = true;
     std::string str;
-    if (FuncBox::getWebCode("https://raw.githubusercontent.com/yjmthu/Speed-Box/main/Update.json", str, false) && !str.empty())
+    if (FuncBox::getWebCode("https://gitee.com/yjmthu/Speed-Box/raw/main/Update.json", str, false) && !str.empty())
     {
         const YJsonItem json(str);
         if (json.getType() == YJson::YJSON_OBJECT)
@@ -958,7 +958,7 @@ void Dialog::on_pushButton_10_clicked()
                 else
                 {
                     jobTip->showTip(newVersion);
-                    jobTip->showTip("检查更新失败，请手动打开浏览器下载访问GitHub更新。", 2000);
+                    jobTip->showTip("检查更新失败，请手动打开浏览器下载访问Gitee更新。", 2000);
                 }
             }
         }
@@ -966,13 +966,13 @@ void Dialog::on_pushButton_10_clicked()
     wait = false;
 }
 
-// 下载更新
+// 下载更新  https://gitee.com/yjmthu/Speed-Box/raw/main/Update.json
 void Dialog::on_pushButton_12_clicked()
 {
     static bool wait = false;
     if (wait) return; else wait = true;
     std::string str; jobTip->showTip("请耐心等待几秒...");
-    if (FuncBox::getWebCode("https://raw.githubusercontent.com/yjmthu/Speed-Box/main/Update.json", str, false) && !str.empty())
+    if (FuncBox::getWebCode("https://gitee.com/yjmthu/Speed-Box/raw/main/Update.json", str, false) && !str.empty())
     {
         YJsonItem json(str);
         if (json.getType() == YJson::YJSON_OBJECT)
@@ -980,7 +980,7 @@ void Dialog::on_pushButton_12_clicked()
             YJsonItem *qtVersion = json.findItem("Qt Version");
             if (qtVersion->getType() != YJson::YJSON_STRING || !StrCompare(qtVersion->getValueSring(), "6.1.2"))
             {
-                jobTip->showTip("下载更新失败，请手动打开浏览器到GitHub下载！", 2000);
+                jobTip->showTip("下载更新失败，请手动打开浏览器到Gitee下载！", 2000);
                 return;
             }
             YJsonItem *urls = json.findItem("Files"); YJsonItem *child = nullptr;
@@ -1027,5 +1027,11 @@ void Dialog::on_pushButton_12_clicked()
         }
     }
     wait = false;
+}
+
+
+void Dialog::on_pushButton_14_clicked()
+{
+    ShellExecute(NULL, "open", "https://gitee.com/yjmthu/Speed-Box", NULL, NULL, SW_SHOW);
 }
 

@@ -5,7 +5,7 @@ msvc {
     QMAKE_CXXFLAGS += /utf-8
 }
 
-VERSION = 21.8.9.0
+VERSION = 21.8.10.0
 
 QT       += core gui
 

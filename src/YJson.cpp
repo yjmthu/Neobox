@@ -785,21 +785,9 @@ bool YJsonItem::toFile(const std::string name)
     if (_buffer)
     {
         switch (_encode) {
-        case (FILE_ENCODE::CODE_UTF8):
-        {
-            unsigned char c[3] = {0xef, 0xbb, 0xbf};
-            std::ofstream outFile(name, std::ios::out | std::ios::binary);
-            if (outFile.is_open())
-            {
-                outFile.write((char*)c, sizeof(char)*3);
-                outFile.write((char*)(_buffer + 1), strlen(_buffer + 1)*sizeof(char));
-                outFile.write("\n", sizeof(char));
-                outFile.close();
-            }
-            break;
-        }
         case (FILE_ENCODE::CODE_UTF16):
         {
+            cout << "UTF-16" << "保存开始。";
             wchar_t c = 0xfeff, *data = nullptr;
             int len = MultiByteToWideChar(CP_UTF8, 0, _buffer+1, -1, nullptr, 0);
             data = new wchar_t[len];
@@ -816,7 +804,19 @@ bool YJsonItem::toFile(const std::string name)
             break;
         }
         default:
+        {
+            cout << "UTF-8" << "保存开始。";
+            unsigned char c[3] = {0xef, 0xbb, 0xbf};
+            std::ofstream outFile(name, std::ios::out | std::ios::binary);
+            if (outFile.is_open())
+            {
+                outFile.write((char*)c, sizeof(char)*3);
+                outFile.write((char*)(_buffer + 1), strlen(_buffer + 1)*sizeof(char));
+                outFile.write("\n", sizeof(char));
+                outFile.close();
+            }
             break;
+        }
         }
     }
     return false;
@@ -851,11 +851,11 @@ void YJsonItem::joinKeyValue(const char* valuestring, const bool use_key)
         if (_buffer) delete[] _buffer;
         if (FMT)
         {
-            qout << "重复字符串开始" << "depth:" << _depth;
+            //qout << "重复字符串开始" << "depth:" << _depth;
             char* x = StrRepeat(' ', _depth*4);
-            qout << "拼接 x" << x << "长度:" << strlen(x) << "valuestring:" << valuestring;
+            //qout << "拼接 x" << x << "长度:" << strlen(x) << "valuestring:" << valuestring;
             _buffer = StrJoin("\n", x, valuestring);
-            qout << "重复字符串结束 buffer" << _buffer;
+            //qout << "重复字符串结束 buffer" << _buffer;
             delete[] x;
         }
         else

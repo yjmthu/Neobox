@@ -1589,10 +1589,20 @@ background-color: rgb(0, 0, 0);</string>
                 <string notr="true"/>
                </property>
                <property name="text">
-                <string>GitHub网址</string>
+                <string>Github</string>
                </property>
                <property name="flat">
                 <bool>false</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="pushButton_14">
+               <property name="toolTip">
+                <string>https://gitee.com/yjmthu/Speed-Box</string>
+               </property>
+               <property name="text">
+                <string>Gitee</string>
                </property>
               </widget>
              </item>

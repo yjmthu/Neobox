@@ -90,7 +90,8 @@ private slots:
 	void on_radioButton_clicked();
 	void on_pBtnChange_clicked();
 	void on_lineNewName_returnPressed();
-	void on_pushButton_4_clicked();
+    void on_pushButton_14_clicked();
+    void on_pushButton_4_clicked();
     void on_pushButton_6_clicked();
     void on_pushButton_8_clicked();
     void on_pushButton_9_clicked();
