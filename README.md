@@ -91,6 +91,7 @@ print("D:\\hello.jpg")
   * 优化了一些代码，提高了效率节约内存。
 - 下载地址（64位Windows 10）
   * [GitHub](https://github.com/yjmthu/Speed-Box/releases/download/21.8.9/Speed-Box_win10_x64_21.8.9.zip)
+  * [Gitee](https://gitee.com/yjmthu/Speed-Box/attach_files/796908/download/Speed-Box_win10_x64_21.8.9.zip)
   * [蓝奏云](https://wws.lanzoui.com/iATx1sffi5g) 密码：cibk
 
 * * *
