@@ -28,10 +28,10 @@ print("D:\\hello.jpg")
     
 说了这么多，大家也不一定用得到，下面放几张软件截图
 # 运行效果
-![img](https://github.com/yjmthu/Speed-Box/blob/main/img/img_05.png)
+![img](https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_05.png)
     
     
-![img](https://github.com/yjmthu/Speed-Box/blob/main/img/img_04.png)
+![img](https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_04.png)
 
 # 编译要求
 - Qt版本：Qt 6.0.4 或者 Qt 6.1.2
