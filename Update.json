@@ -2,8 +2,8 @@
     "Latest Version": "21.8.9",
     "Qt Version": "6.1.2",
     "Files": {
-        "main": "https://github.com/yjmthu/Speed-Box/releases/download/21.8.9/SpeedBox.exe",
-        "update": "https://github.com/yjmthu/Speed-Box/releases/download/21.8.9/update.exe",
-        "zip": "https://github.com/yjmthu/Speed-Box/releases/download/21.8.9/Speed-Box_win10_x64_21.8.9.zip"
+        "main": "https://gitee.com/yjmthu/Speed-Box/attach_files/796878/download/SpeedBox.exe",
+        "update": "https://gitee.com/yjmthu/Speed-Box/attach_files/796877/download/update.exe",
+        "zip": "https://gitee.com/yjmthu/Speed-Box/attach_files/796879/download/Speed-Box_win10_x64_21.8.9.zip"
     }
 }
