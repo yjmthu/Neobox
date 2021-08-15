@@ -567,7 +567,7 @@ bool VARBOX::downloadImage(const char* url, const QString path, bool auto_delete
                 }
                 qout << "下载结束";
                 file.close();
-                OK = (allWrite >= 0xffff) && VarBox->RunApp;
+                OK = (allWrite >= 16000) && VarBox->RunApp;
                 if (!OK && QFile::exists(path))
                 {
                     QFile::remove(path);
