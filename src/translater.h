@@ -16,7 +16,6 @@ class Translater : public QWidget
 signals:
     void msgBox(const char*);
     void finished(bool);
-    void enableself(bool);
 
 protected:
     bool nativeEvent(const QByteArray &eventType, void *message, long long *result);

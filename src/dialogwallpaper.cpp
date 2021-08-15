@@ -13,7 +13,7 @@ void DialogWallpaper::startWork()                                               
     static const short _ = VARBOX::isOnline(true) && set_from_Bing(false);
     if (VarBox->RunApp && VarBox->AutoChange)
     {
-        qout << "壁纸类型：" << VarBox->PaperTypes[(int)VarBox->PaperType][1];
+        qout << "壁纸类型：" << VarBox->StandardNames[(int)VarBox->PaperType][1];
         switch (VarBox->PaperType)
         {
         case PAPER_TYPE::Advance:

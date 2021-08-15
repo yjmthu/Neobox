@@ -38,7 +38,7 @@ Translater::Translater() :
 
 	ui->setupUi(this);
     BlankFrom *blank = new BlankFrom(this); GMPOperateTip* jobTip = new GMPOperateTip(this);
-    connect(blank->closeButton, &QPushButton::clicked, this, [=](){close(); emit enableself(false);});
+    connect(blank->closeButton, &QPushButton::clicked, VarBox->form, [](){VarBox->form->enableTranslater(false);});
     connect(blank->minButton, &QPushButton::clicked, this, &Translater::hide);
     blank->closeButton->setToolTip("退出"); blank->minButton->setToolTip("隐藏");
     blank->move(width()-100, 0);

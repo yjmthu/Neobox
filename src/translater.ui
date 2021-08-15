@@ -280,7 +280,7 @@ QPushButton:hover {
            <enum>Qt::ClickFocus</enum>
           </property>
           <property name="toolTip">
-           <string>不自动隐藏窗口</string>
+           <string>*不自动隐藏窗口</string>
           </property>
           <property name="text">
            <string>fix</string>

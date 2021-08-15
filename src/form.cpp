@@ -86,7 +86,7 @@ void Form::initForm()
     SetWindowPos(HWND(winId()), HWND_TOPMOST, IniRead.value("x").toInt(), IniRead.value("y").toInt(), 0, 0, SWP_NOSIZE);
     IniRead.endGroup();
     if (VarBox->EnableTranslater)
-        enableTrans(true);
+        enableTranslater(true);
     else
         translater = nullptr;                     //防止野指针
 	ui->LabMemory->setMaximumWidth(30);
@@ -99,8 +99,11 @@ void Form::initConnects()
     menu = new Menu;
 	monitor_timer = new QTimer;
 	animation = new QPropertyAnimation(this, "geometry");                  //用于贴边隐藏的动画
-	connect(monitor_timer, SIGNAL(timeout()), this, SLOT(updateInfo()));   //每秒钟刷新一次界面
-    connect(animation, SIGNAL(finished()), this, SLOT(savePos()));
+    connect(monitor_timer, &QTimer::timeout, this, [=](){
+        get_mem_usage();
+        get_net_usage();
+    });   //每秒钟刷新一次界面
+    connect(animation, &QPropertyAnimation::finished, this, &Form::savePos);
 }
 
 void Form::savePos()
@@ -279,13 +282,7 @@ void Form::startAnimation(int width, int height)
 	animation->start();
 }
 
-void Form::updateInfo()
-{
-	get_mem_usage();
-	get_net_usage();
-}
-
-void Form::enableTrans(bool checked)
+void Form::enableTranslater(bool checked)
 {
     if (checked)
     {
@@ -293,7 +290,6 @@ void Form::enableTrans(bool checked)
         {
             VarBox->EnableTranslater = true;
             translater = new Translater;
-            connect(translater, &Translater::enableself, this, &Form::enableTrans);
         }
         else
         {
@@ -349,10 +345,10 @@ void Form::get_net_usage()
         mi = (MIB_IFTABLE*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dwMISize);
         VarBox->GetIfTable(mi, &dwMISize, FALSE);
     }
-    DWORD m_in_bytes = 0, m_out_bytes = 0; PIP_ADAPTER_ADDRESSES paa = nullptr;
+    DWORD m_in_bytes = 0, m_out_bytes = 0; //PIP_ADAPTER_ADDRESSES paa = nullptr;
     for (DWORD i = 0; i < mi->dwNumEntries; i++)
     {
-        paa = &piaa[0];
+        auto paa = &piaa[0];
         while (paa)
         {
             if (paa->IfType != IF_TYPE_SOFTWARE_LOOPBACK && paa->IfType != IF_TYPE_TUNNEL)
@@ -369,7 +365,6 @@ void Form::get_net_usage()
 
     if ( m_last_in_bytes != 0 && isVisible())
     {
-        if (!isVisible()) show();                                    //如果已经隐藏则显示
         ui->Labup->setText(formatSpped(m_out_bytes - m_last_out_bytes, false));        //将上传速度显示出来
         ui->Labdown->setText(formatSpped(m_in_bytes - m_last_in_bytes, true));        //将下载速度显示出来
     }

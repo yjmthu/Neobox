@@ -58,8 +58,7 @@ public slots:
     void set_wallpaper_fail(const char*);            //弹出消息和设置对话框
 
 private slots:
-	void updateInfo();                           //更新界面数据
-	void enableTrans(bool);                      //启用翻译功能
+    void enableTranslater(bool);                      //启用翻译功能
     void savePos();
 };
 

@@ -21,12 +21,15 @@
 #include "YString.h"
 #include "YJson.h"
 
-constexpr const char *color_theme[4] =
+constexpr const char *color_theme[7] =
 {
     "255,255,255,255",
     "255,255,255,150",
     "155,89,182,150",
-    "255,0,0,200"
+    "255,10,10,150",
+    "50,200,50,150",
+    "135,160,250,150",
+    "200,100,100,150"
 };
 
 constexpr const char *reg_keys[4] = {
@@ -231,13 +234,13 @@ void Dialog::showEvent(QShowEvent *event)
     ui->labTimeInterval->setText(QString::number(VarBox->TimeInterval));
     ui->chkEnableChangePaper->setChecked(VarBox->AutoChange);
     ui->usrCmd->setText(VarBox->UserCommand);
-    ui->linePictuerPath->setText(VarBox->FamilyPath);
+    ui->linePictuerPath->setText(VarBox->MajorDir);
     ui->radioButton_2->setChecked(VarBox->setMax);
     ui->horizontalSlider->setValue(VarBox->dAlphaColor[VarBox->setMax] >> 24);
     ui->horizontalSlider_2->setValue(VarBox->bAlpha[VarBox->setMax]);
     ui->horizontalSlider_3->setValue(VarBox->RefreshTime);
     ui->pushButton_3->setStyleSheet(getStyleSheet());
-    ui->lineNewName->setText(VarBox->FamilyNames[ui->comboBox->currentIndex()]);
+    ui->lineNewName->setText(VarBox->CustomNames[ui->comboBox->currentIndex()]);
     ui->line_APP_ID->setText(VarBox->AppId);
     ui->line_PASS_WORD->setText(VarBox->PassWord);
     ui->checkBox->setChecked(!QSettings("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat).value("SpeedBox").toString().compare(qApp->applicationFilePath().replace("/", "\\")));
@@ -297,8 +300,7 @@ void Dialog::showEvent(QShowEvent *event)
         ui->radioButton_13->setChecked(true);
     ui->pushButton_4->setText("确定");
     ui->comboBox_3->setCurrentIndex((int)VarBox->CurTheme);
-    ui->label_path_to_open->setText(VarBox->PathToOpen);
-    ui->label_path_to_open->setToolTip(VarBox->PathToOpen);
+    ui->lineEdit->setText(VarBox->PathToOpen);
     checkSettings(); event->accept();
 }
 
@@ -486,17 +488,17 @@ void Dialog::on_pBtnOpenPicturePath_clicked()
 	QString str = ui->linePictuerPath->text();
 	QDir dir;
     if (dir.exists(str) || (!str.isEmpty() && dir.mkdir(str)))
-        VarBox->FamilyPath = str.replace("/", "\\");
+        VarBox->MajorDir = str.replace("/", "\\");
 	else
 	{
-        if (dir.exists(VarBox->FamilyPath) || dir.mkdir(VarBox->FamilyPath))
-            ui->linePictuerPath->setText(VarBox->FamilyPath.replace("/", "\\"));
+        if (dir.exists(VarBox->MajorDir) || dir.mkdir(VarBox->MajorDir))
+            ui->linePictuerPath->setText(VarBox->MajorDir.replace("/", "\\"));
 		else
-            VarBox->FamilyPath = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
+            VarBox->MajorDir = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
 	}
     VarBox->get_wal_path();
-    if (dir.exists(VarBox->FamilyPath))
-        VARBOX::runCommand("explorer", QStringList(VarBox->FamilyPath));
+    if (dir.exists(VarBox->MajorDir))
+        VARBOX::runCommand("explorer", QStringList(VarBox->MajorDir));
 	else
 		QMessageBox::warning(this, "警告", "路径不存在！", QMessageBox::Ok, QMessageBox::Ok);
 }
@@ -507,13 +509,13 @@ void Dialog::on_linePictuerPath_returnPressed()
 	QDir dir;
 	if (dir.exists(ui->linePictuerPath->text()))
 	{
-        VarBox->FamilyPath = ui->linePictuerPath->text();
+        VarBox->MajorDir = ui->linePictuerPath->text();
         VarBox->get_wal_path();
 	}
 	else
 	{
 		QMessageBox::warning(this, "警告", "路径不存在！", QMessageBox::Ok, QMessageBox::Ok);
-        ui->linePictuerPath->setText(VarBox->FamilyPath);
+        ui->linePictuerPath->setText(VarBox->MajorDir);
 	}
 }
 
@@ -693,7 +695,7 @@ void Dialog::on_pushButton_3_clicked()
 
 void Dialog::on_comboBox_currentIndexChanged(int index)
 {
-    ui->lineNewName->setText(VarBox->FamilyNames[index]);
+    ui->lineNewName->setText(VarBox->CustomNames[index]);
 }
 
 
@@ -701,12 +703,12 @@ void Dialog::on_pBtnChange_clicked()
 {
 	QString str = ui->lineNewName->text();
 	short i = ui->comboBox->currentIndex();
-    if (VarBox->FamilyNames[i].compare(str))
+    if (VarBox->CustomNames[i].compare(str))
 	{
 		if (str.isEmpty())
         {
 			QMessageBox::warning(this, "警告", "名称不能为空！", QMessageBox::Ok, QMessageBox::Ok);
-            ui->lineNewName->setText(VarBox->FamilyNames[i]);
+            ui->lineNewName->setText(VarBox->CustomNames[i]);
         }
 		else
 		{
@@ -719,35 +721,35 @@ void Dialog::on_pBtnChange_clicked()
                     return;
                 }
             }
-            QString new_name = (i == 7) ? VarBox->FamilyPath + "\\" + str : VarBox->get_wal_path() + "\\" + str;
+            QString new_name = (i == 7) ? VarBox->MajorDir + "\\" + str : VarBox->get_wal_path() + "\\" + str;
             QDir dir;
             if (dir.exists(new_name))
             {
                 if (QMessageBox::question(this, "冲突", "目标路径下有一个同名文件夹，您想直接更换文件夹而不迁移图片吗？",
                     QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
                 {
-                    VarBox->sigleSave("Dirs", VarBox->PaperTypes[i][0], VarBox->FamilyNames[i] = str);
+                    VarBox->sigleSave("Dirs", VarBox->StandardNames[i][0], VarBox->CustomNames[i] = str);
                     jobTip->showTip("更改名称成功！");
                 }
                 else
                 {
                     jobTip->showTip("放心，我什么也没做！");
-                    ui->lineNewName->setText(VarBox->FamilyNames[i]);
+                    ui->lineNewName->setText(VarBox->CustomNames[i]);
                 }
             }
             else
             {
                 QString old_name;
                 if (i == 7)
-                    old_name = VarBox->FamilyPath + "\\" + VarBox->FamilyNames[7];
+                    old_name = VarBox->MajorDir + "\\" + VarBox->CustomNames[7];
                 else
-                    old_name = VarBox->get_wal_path() + "\\" + VarBox->FamilyNames[i];
+                    old_name = VarBox->get_wal_path() + "\\" + VarBox->CustomNames[i];
                 if (dir.exists(old_name))
                     dir.rename(old_name, new_name);
                 else
                     dir.mkdir(new_name);
-                VarBox->FamilyNames[i] = str;
-                VarBox->sigleSave("Dirs", VarBox->PaperTypes[i][0], str);
+                VarBox->CustomNames[i] = str;
+                VarBox->sigleSave("Dirs", VarBox->StandardNames[i][0], str);
                 jobTip->showTip("更换名称成功！");
             }
 		}
@@ -766,16 +768,14 @@ void Dialog::on_lineNewName_returnPressed()
 
 void Dialog::on_radioButton_13_clicked()
 {
-    ui->label_path_to_open->setText(qApp->applicationDirPath().replace("/", "\\"));
-    ui->label_path_to_open->setToolTip(ui->label_path_to_open->text());
+    ui->lineEdit->setText(qApp->applicationDirPath().replace("/", "\\"));
     ui->pushButton_4->setText("确定");
 }
 
 
 void Dialog::on_radioButton_14_clicked()
 {
-    ui->label_path_to_open->setText("点击右侧按钮选择文件");
-    ui->label_path_to_open->setToolTip("点击右侧按钮选择文件");
+    ui->lineEdit->setText("点击右侧按钮选择文件");
     ui->pushButton_4->setText("选择");
 }
 
@@ -788,12 +788,11 @@ void Dialog::on_pushButton_4_clicked()
         ui->pushButton_4->setText("确定");
         if (!dir.isEmpty())
 		{
-            ui->label_path_to_open->setText(dir.replace("/", "\\"));
-            ui->label_path_to_open->setToolTip(ui->label_path_to_open->text());
+            ui->lineEdit->setText(dir.replace("/", "\\"));
 		}
         return;
 	}
-    VarBox->PathToOpen = ui->label_path_to_open->text();
+    VarBox->PathToOpen = ui->lineEdit->text();
     VarBox->get_son_dir(VarBox->PathToOpen);
     VarBox->sigleSave("Dirs", "OpenDir", VarBox->PathToOpen);
     jobTip->showTip("更换路径成功！");
@@ -909,13 +908,13 @@ void Dialog::on_pushButton_2_clicked()
 
 void Dialog::setTheme()
 {
-    ui->frame->setStyleSheet(QString("QFrame{background-color:rgba(%1);}QLabel{border-radius: 3px;background-color: transparent;}Line{background-color:black};").arg(color_theme[(int)VarBox->CurTheme]));
+    ui->frame->setStyleSheet(QString("QFrame{background-color:rgba(%1);}QLabel{border-radius: 3px;background-color: transparent;}Line{background-color:black};").arg(color_theme[static_cast<int>(VarBox->CurTheme)]));
     jobTip->showTip("设置成功！");
 }
 
 void Dialog::on_pushButton_5_clicked()
 {
-    VarBox->CurTheme = (COLOR_THEME)ui->comboBox_3->currentIndex();
+    VarBox->CurTheme = static_cast<COLOR_THEME>(ui->comboBox_3->currentIndex());
     QSettings IniWrite(VarBox->get_ini_path(), QSettings::IniFormat);
     IniWrite.beginGroup("UI");
     IniWrite.setValue("ColorTheme", (int)VarBox->CurTheme);
@@ -934,13 +933,13 @@ void Dialog::on_pushButton_11_clicked()
     QString str = ui->linePictuerPath->text();
     QDir dir;
     if (dir.exists(str) || (!str.isEmpty() && dir.mkdir(str)))
-        VarBox->FamilyPath = str.replace("/", "\\");
+        VarBox->MajorDir = str.replace("/", "\\");
     else
     {
-        if (dir.exists(VarBox->FamilyPath) || dir.mkdir(VarBox->FamilyPath))
-            ui->linePictuerPath->setText(VarBox->FamilyPath.replace("/", "\\"));
+        if (dir.exists(VarBox->MajorDir) || dir.mkdir(VarBox->MajorDir))
+            ui->linePictuerPath->setText(VarBox->MajorDir.replace("/", "\\"));
         else
-            VarBox->FamilyPath = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
+            VarBox->MajorDir = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
     }
     VarBox->get_wal_path();
     jobTip->showTip("修改成功！");

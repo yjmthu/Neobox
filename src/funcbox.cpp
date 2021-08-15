@@ -77,6 +77,10 @@ VARBOX::VARBOX(int w, int h):
         PicHistory.push_back(std::pair<bool, void*>(true, temp_paper));
     CurPic = PicHistory.begin();
     QString file = get_ini_path(); short type = 0; qout << "配置文件目录" << file;
+    if (!QFile::exists(file) && QFile::exists(get_dat_path() + "\\SpeedBox2.ini"))
+    {
+        QFile::rename(get_dat_path() + "\\SpeedBox2.ini", file);
+    }
     while (true)
     {
         if (type == 0)
@@ -115,9 +119,9 @@ VARBOX::VARBOX(int w, int h):
         if (type == 1)
         {
             qout << "创建新的Ini文件。";
-            FamilyPath = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
+            MajorDir = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
             PathToOpen = QDir::toNativeSeparators(qApp->applicationDirPath());
-            NativeDir = FamilyPath;
+            NativeDir = MajorDir;
             QSettings *IniWrite = new QSettings(get_ini_path(), QSettings::IniFormat);
             IniWrite->beginGroup("Wallpaper");
             IniWrite->setValue("PaperType", static_cast<int>(PaperType));
@@ -125,7 +129,7 @@ VARBOX::VARBOX(int w, int h):
             IniWrite->setValue("PageNum", PageNum);
             IniWrite->setValue("setNative", false);
             IniWrite->setValue("AutoChange", false);
-            IniWrite->setValue("NativeDir", FamilyPath);
+            IniWrite->setValue("NativeDir", MajorDir);
             IniWrite->setValue("UserCommand", UserCommand);
             IniWrite->endGroup();
 
@@ -141,11 +145,11 @@ VARBOX::VARBOX(int w, int h):
             IniWrite->endGroup();
 
             IniWrite->beginGroup("Dirs");
-            IniWrite->setValue("FamilyPath", FamilyPath);
+            IniWrite->setValue("MajorDir", MajorDir);
             IniWrite->setValue("OpenDir", PathToOpen);
 
             for (short i = 0; i < 10; i++)
-                IniWrite->setValue(PaperTypes[i][0], FamilyNames[i]);
+                IniWrite->setValue(StandardNames[i][0], CustomNames[i]);
             IniWrite->endGroup(); delete IniWrite;
             saveTrayStyle();
             type = 3;
@@ -174,16 +178,26 @@ VARBOX::VARBOX(int w, int h):
             qout << "读取翻译信息完毕";
             IniRead->beginGroup("Dirs");
             PathToOpen = IniRead->value("OpenDir").toString();
-            FamilyPath = IniRead->value("FamilyPath").toString();
+            if (IniRead->contains("FamilyPath"))
+            {
+                MajorDir = IniRead->value("FamilyPath").toString();
+                IniRead->remove("FamilyPath");
+                IniRead->setValue("MajorDir", MajorDir);
+                CustomNames[7] = IniRead->value("Wallpapers").toString();
+                IniRead->remove("Wallpapers");
+                IniRead->setValue("MajorName", CustomNames[7]);
+            }
+            else
+                MajorDir = IniRead->value("MajorDir").toString();
             for (short i = 0; i < 10; i++)
             {
-                FamilyNames[i] = IniRead->value(PaperTypes[i][0]).toString();
+                CustomNames[i] = IniRead->value(StandardNames[i][0]).toString();
             }
             IniRead->endGroup();
             qout << "读取路径信息完毕";
             IniRead->beginGroup("UI");
             safeEnum = IniRead->value("ColorTheme").toInt();
-            if (safeEnum > 3) safeEnum = 0;
+            if (safeEnum > 6) safeEnum = 0;
             CurTheme = static_cast<COLOR_THEME>(safeEnum);
             IniRead->endGroup();
             delete IniRead;
@@ -279,20 +293,15 @@ bool VARBOX::check_app_right()
             file.close();
             return false;
         }
-        unsigned char c1 = 0, c2 = 0, c3 = 0; file.seekg(0,std::ios::beg);
-        if (!(file.read((char*)&c1, sizeof(char))
-                &&
-              file.read((char*)&c2, sizeof(char))
-                &&
-              file.read((char*)&c3, sizeof(char))
-           ))
+        unsigned char c[3]  = { 0 }; file.seekg(0,std::ios::beg);
+        if (!file.read((char*)c, sizeof(char)*3))
         {
             qout << "文件读取失败1";
             file.close();
             return false;
         }
         size -= sizeof(char) * 3;
-        if (c1 == 0xef && c2 == 0xbb && c3 == 0xbf)
+        if (c[0] == 0xef && c[1] == 0xbb && c[2] == 0xbf)
         {
             char *str = new char[(size_t)size + 1]; str[size] = 0;
             if (!file.read(str, size))
@@ -336,7 +345,6 @@ void VARBOX::readTrayStyle()
     safeEnum = IniRead.value("aMode_s").toUInt();
     if (safeEnum > 6 && safeEnum != 150) safeEnum = 0;
     aMode[1] = static_cast<ACCENT_STATE>(safeEnum);
-    qout << "读取中。。";
     safeEnum = IniRead.value("dAlphaColor_f").toULongLong();
     if (safeEnum > 0xffffffff) safeEnum = 0x11111111;
     dAlphaColor[0] = safeEnum;
@@ -376,21 +384,21 @@ void VARBOX::saveTrayStyle()
 QString VARBOX::get_wal_path()
 {
     QString str;
-    if (FamilyPath.isEmpty() || !get_son_dir(FamilyPath))
+    if (MajorDir.isEmpty() || !get_son_dir(MajorDir))
     {
-        qout << "图片目录为空" << FamilyPath;
-        FamilyPath = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
+        qout << "图片目录为空" << MajorDir;
+        MajorDir = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
     }
-    str = FamilyPath + "\\" + FamilyNames[7];
-    if (FamilyNames[7].isEmpty() || !get_son_dir(str))
+    str = MajorDir + "\\" + CustomNames[7];
+    if (CustomNames[7].isEmpty() || !get_son_dir(str))
     {
-        FamilyNames[7] = PaperTypes[7][1];
-        str = FamilyPath + "\\" + FamilyNames[7];
+        CustomNames[7] = StandardNames[7][1];
+        str = MajorDir + "\\" + CustomNames[7];
     }
     QSettings IniWrite(get_ini_path(), QSettings::IniFormat);
     IniWrite.beginGroup("Dirs");
-    IniWrite.setValue("FamilyPath", FamilyPath);
-    IniWrite.setValue(PaperTypes[7][0], FamilyNames[7]);
+    IniWrite.setValue("MajorDir", MajorDir);
+    IniWrite.setValue(StandardNames[7][0], CustomNames[7]);
     IniWrite.endGroup();
     return str;
 }
@@ -398,17 +406,17 @@ QString VARBOX::get_wal_path()
 QString VARBOX::get_pic_path(short i)
 {
     qout << "获取图片路径开始" << i;
-    QString str = get_wal_path() + "\\" + FamilyNames[i];
-    if (FamilyNames[i].isEmpty() || !get_son_dir(str))
+    QString str = get_wal_path() + "\\" + CustomNames[i];
+    if (CustomNames[i].isEmpty() || !get_son_dir(str))
     {
-        qout << "FamilyPath为空或者无法创建！";
-        FamilyNames[i] = PaperTypes[i][1];
-        str = FamilyPath + "\\", FamilyNames[7] + "\\" + FamilyNames[i];
+        qout << "MajorDir为空或者无法创建！";
+        CustomNames[i] = StandardNames[i][1];
+        str = MajorDir + "\\", CustomNames[7] + "\\" + CustomNames[i];
         get_son_dir(str);
     }
     QSettings IniWrite(get_ini_path(), QSettings::IniFormat);
     IniWrite.beginGroup("Dirs");
-    IniWrite.setValue(PaperTypes[i][0], FamilyNames[i]);
+    IniWrite.setValue(StandardNames[i][0], CustomNames[i]);
     IniWrite.endGroup();
     qout << "最终图片路径结果：" << str;
     return str;
@@ -416,7 +424,7 @@ QString VARBOX::get_pic_path(short i)
 
 QString VARBOX::get_ini_path()
 {
-    return get_dat_path() + "\\SpeedBox2.ini";
+    return get_dat_path() + "\\SpeedBox.ini";
 }
 
 QString VARBOX::get_dat_path()

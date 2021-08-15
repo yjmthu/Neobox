@@ -167,7 +167,7 @@ void Menu::initMenuConnect()
             d->show();
         }
     });   //打开壁纸设置界面
-    connect(translateAct, SIGNAL(triggered(bool)), VarBox->form, SLOT(enableTrans(bool)));    //是否启用翻译功能
+    connect(translateAct, &QAction::triggered, VarBox->form, &Form::enableTranslater);    //是否启用翻译功能
     translateAct->setChecked(VarBox->EnableTranslater);                                 //设置是否选中“划词翻译”
     connect(nextPaperAct, &QAction::triggered, this,
         [=]() {
@@ -234,14 +234,14 @@ void Menu::initMenuConnect()
             if (VarBox->CurPic->first)
             {
                 const wchar_t* pic_path = static_cast<const wchar_t*>(VarBox->CurPic->second);
-                qout << "图片路径：" << QString::fromWCharArray(pic_path);
+                //qout << "图片路径：" << QString::fromWCharArray(pic_path);
                 const wchar_t* pic_name = get_file_name(pic_path);
-                qout << "图片名称：" << QString::fromWCharArray(pic_name);
+                //qout << "图片名称：" << QString::fromWCharArray(pic_name);
                 char id[7] = {0};
                 check_is_wallhaven(pic_name, id);
                 if (*id)
                 {
-                    QString str = VarBox->get_dat_path() + "\\blacklist.json";
+                    QString str = VarBox->get_dat_path() + "\\Blacklist.json";
                     YJsonItem *blackList = nullptr;
                     if (QFile::exists(str))
                     {
@@ -284,7 +284,7 @@ void Menu::OpenFolder() const
 {
 	QStringList argument;                                                           //Windows下用 explorer xxx
     argument << VarBox->PathToOpen;
-    qout << "打开目录" << VarBox->PathToOpen;
+    //qout << "打开目录" << VarBox->PathToOpen;
     VARBOX::runCommand("explorer.exe", argument);
 }
 

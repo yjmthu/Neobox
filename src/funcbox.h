@@ -27,7 +27,7 @@ enum class PAPER_TYPE
 
 enum class COLOR_THEME
 {
-    ClassicWhite = 0, SomeGray = 1, TsinghuaPurple = 2, PekinRed = 3
+    White = 0, Gray = 1, Purple = 2, Red = 3, Green = 4, Blue = 5, Brown = 6
 };
 
 enum class WINDOWCOMPOSITIONATTRIB
@@ -103,29 +103,29 @@ typedef BOOL(WINAPI* pfnDwmGetWindowAttribute)(HWND hwnd, DWORD dwAttribute, PVO
 
 struct VARBOX
 {
-    const char* const Version = "21.8.15", * const Qt = "6.1.2";
+    const char* const Version = "21.8.16", * const Qt = "6.1.2";
     const unsigned char WinVersion; const bool FirstUse[1] = {false};
     std::vector<std::pair<bool, void*>> PicHistory; std::vector<std::pair<bool, void*>>::iterator CurPic;
-    const char* const PaperTypes[10][2] =     //九种壁纸类型
+    const char* const StandardNames[10][2] =     //九种壁纸类型
     {
         {"Latest", "最新壁纸"}, {"Hot", "最热壁纸"}, {"Nature", "风景壁纸"},{"Anime", "动漫壁纸"},
         {"Simple", "极简壁纸"}, {"Random", "随机壁纸"},{"Bing", "必应壁纸"},
-        {"Wallpapers", "桌面壁纸"}, {"Native", "本地壁纸"},{"Advance", "高级壁纸"}
+        {"MajorName", "桌面壁纸"}, {"Native", "本地壁纸"},{"Advance", "高级壁纸"}
     };
-    QString FamilyNames[10] =
+    QString CustomNames[10] =
     {
         "最新壁纸","最热壁纸","风景壁纸","动漫壁纸","极简壁纸",
         "随机壁纸","必应壁纸","桌面壁纸","本地壁纸","高级壁纸"
     };
-    QString FamilyPath;                 //壁纸文件夹的上一级目录
+    QString MajorDir;                 //壁纸文件夹的上一级目录
     PAPER_TYPE PaperType = PAPER_TYPE::Latest;               //当下正在使用的壁纸类型
-    COLOR_THEME CurTheme = COLOR_THEME::ClassicWhite;
+    COLOR_THEME CurTheme = COLOR_THEME::White;
     bool RunApp = true;                        //app运行状态
 
     bool AutoChange = false;
     short PageNum = 1, TimeInterval = 15;
     QString NativeDir;                  //当下正在使用的用户本地壁纸文件夹
-    QString UserCommand = "python.exe -u X:\\xxx.py";                //当下正在使用的用户高级命令
+    QString UserCommand = "python.exe -u ?:\\?????.py";                //当下正在使用的用户高级命令
     QString PathToOpen;                //要打开的文件夹
 
     bool HaveAppRight = false,  EnableTranslater = false, AutoHide = false;;
