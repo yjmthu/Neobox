@@ -38,7 +38,7 @@ Translater::Translater() :
 
 	ui->setupUi(this);
     BlankFrom *blank = new BlankFrom(this); GMPOperateTip* jobTip = new GMPOperateTip(this);
-    connect(blank->closeButton, &QPushButton::clicked, VarBox->form, [](){VarBox->form->enableTranslater(false);});
+    connect(blank->closeButton, &QPushButton::clicked, [](){VarBox->form->enableTranslater(false);});
     connect(blank->minButton, &QPushButton::clicked, this, &Translater::hide);
     blank->closeButton->setToolTip("退出"); blank->minButton->setToolTip("隐藏");
     blank->move(width()-100, 0);
@@ -54,7 +54,7 @@ Translater::Translater() :
     setMinimumSize(TRAN_WIDTH, TRAN_HEIGHT);
     setMaximumSize(TRAN_WIDTH, TRAN_HEIGHT);
 
-    connect(this, &Translater::msgBox, this, [=](const char* str){
+    connect(this, &Translater::msgBox, [=](const char* str){
         jobTip->showTip(str);
     });
 
@@ -314,7 +314,7 @@ void Translater::getReply(const QByteArray& text)
 
     std::string reply_data; std::thread thrd; QEventLoop loop;
 
-    connect(this, &Translater::finished, &loop, [&reply_data, &loop, &thrd, this](bool success){
+    connect(this, &Translater::finished, [&reply_data, &loop, &thrd, this](bool success){
         if (thrd.joinable()) thrd.join(); loop.quit();
         if (!success)
         {

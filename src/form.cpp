@@ -93,26 +93,26 @@ void Form::initForm()
     qout << "初始化悬浮窗界面完毕";
 }
 
+inline void savePos()
+{
+    RECT rt; GetWindowRect(HWND(VarBox->form->winId()), &rt);
+    QSettings IniWrite(VarBox->get_ini_path(), QSettings::IniFormat);
+    IniWrite.beginGroup("UI");
+    IniWrite.setValue("x", (int)rt.left); IniWrite.setValue("y", (int)rt.top);
+    IniWrite.endGroup();
+}
+
 void Form::initConnects()
 {
     dialog = new Dialog;                                             //dialog要比menu先定义，它是menu的依赖。
     menu = new Menu;
 	monitor_timer = new QTimer;
 	animation = new QPropertyAnimation(this, "geometry");                  //用于贴边隐藏的动画
-    connect(monitor_timer, &QTimer::timeout, this, [=](){
+    connect(monitor_timer, &QTimer::timeout, [this](){
         get_mem_usage();
         get_net_usage();
     });   //每秒钟刷新一次界面
-    connect(animation, &QPropertyAnimation::finished, this, &Form::savePos);
-}
-
-void Form::savePos()
-{
-    RECT rt; GetWindowRect(HWND(winId()), &rt);
-    QSettings IniWrite(VarBox->get_ini_path(), QSettings::IniFormat);
-    IniWrite.beginGroup("UI");
-    IniWrite.setValue("x", (int)rt.left); IniWrite.setValue("y", (int)rt.top);
-    IniWrite.endGroup();
+    connect(animation, &QPropertyAnimation::finished, &savePos);
 }
 
 void Form::msgBox(const char* content, const char* title)

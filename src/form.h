@@ -59,7 +59,6 @@ public slots:
 
 private slots:
     void enableTranslater(bool);                      //启用翻译功能
-    void savePos();
 };
 
 #endif // FORM_H

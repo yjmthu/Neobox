@@ -152,31 +152,30 @@ void Menu::Show(int x, int y)           //自动把右键菜单移动到合适�
 void Menu::initMenuConnect()
 {
     connect(wallpaper, &MenuWallpaper::msgBox, VarBox->form, &Form::msgBox);
-    connect(settingDialogAct, &QAction::triggered, this, [](){
-        Dialog *d = VarBox->form->dialog;
-        if (d->isVisible())
+    connect(settingDialogAct, &QAction::triggered, [](){
+        if (VarBox->form->dialog->isVisible())
         {
             qout << "as 1";
-            d->setWindowState(Qt::WindowActive | Qt::WindowNoState);    // 让窗口从最小化恢复正常并激活窗口
+            VarBox->form->dialog->setWindowState(Qt::WindowActive | Qt::WindowNoState);    // 让窗口从最小化恢复正常并激活窗口
             //d->activateWindow();
             //d->raise();
         }
         else
         {
             qout << "as 2";
-            d->show();
+            VarBox->form->dialog->show();
         }
     });   //打开壁纸设置界面
     connect(translateAct, &QAction::triggered, VarBox->form, &Form::enableTranslater);    //是否启用翻译功能
     translateAct->setChecked(VarBox->EnableTranslater);                                 //设置是否选中“划词翻译”
-    connect(nextPaperAct, &QAction::triggered, this,
+    connect(nextPaperAct, &QAction::triggered,
         [=]() {
             if (wallpaper->isActive())
                 QMessageBox::information(VarBox->form->dialog, "提示", "频繁点击是没有效的哦！", QMessageBox::Ok, QMessageBox::Ok);
             else if (Wallpaper::canCreat())
                 wallpaper->start();
         });
-    connect(prevPaperAct, &QAction::triggered, this, [=](){
+    connect(prevPaperAct, &QAction::triggered, [](){
         //QString str =
         if (VarBox->CurPic == VarBox->PicHistory.begin())
         {
@@ -198,15 +197,14 @@ void Menu::initMenuConnect()
             }
         }
     });   //设置受否开机自启
-    connect(noSleepAct, &QAction::triggered, this, [=](bool checked){
+    connect(noSleepAct, &QAction::triggered, [=](bool checked){
         if (checked)                                                                      //启用自动移动鼠标
         {
             MouseMoveTimer = new QTimer;
             MouseMoveTimer->setInterval(45000);
-            connect(MouseMoveTimer, &QTimer::timeout, this, [=](){
+            connect(MouseMoveTimer, &QTimer::timeout, [](){
                 int X = 1;
-                int x = QCursor::pos().x();
-                if (x == VarBox->ScreenWidth) X = -1;
+                if (QCursor::pos().x() == VarBox->ScreenWidth) X = -1;
                 mouse_event(MOUSEEVENTF_MOVE, X, 0, 0, 0);                                        //移动一个像素
                 mouse_event(MOUSEEVENTF_MOVE, -X, 0, 0, 0);                                       //移回原来的位置
             });
@@ -219,7 +217,7 @@ void Menu::initMenuConnect()
         }
     }); //是否自动移动鼠标防止息屏
 	connect(openFolderAct, SIGNAL(triggered()), this, SLOT(OpenFolder()));            //打开exe所在文件夹
-    connect(removePicAct, &QAction::triggered, this, [=](){
+    connect(removePicAct, &QAction::triggered, [this](){
         if (!Wallpaper::canCreat())
         {
             QMessageBox::information(VarBox->form->dialog,"提示", "后台正忙，请稍后！");
@@ -273,7 +271,7 @@ void Menu::initMenuConnect()
         }
     });          //重启电脑
 	connect(shutdownAct, SIGNAL(triggered()), this, SLOT(ShutdownComputer()));        //关闭电脑
-    connect(quitAct, &QAction::triggered, this, []() {
+    connect(quitAct, &QAction::triggered, []() {
         VarBox->RunApp = false;                                                       //以便其它线程知晓，停止正在进行的工作
 		qApp->quit();                                                                 //退出程序
 		});
