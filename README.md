@@ -95,4 +95,4 @@ print("D:\\hello.jpg")
   * [蓝奏云](https://wws.lanzoui.com/ixjz1sg45ud) 密码：ejv5
 
 * * *
-- 未来版本：预计9月初发布，仍用Qt编写，考虑自定义悬浮窗外观。
+- 未来版本：预计9月初发布，仍用Qt编写，考虑自定义悬浮窗外观，增加对Windows 11的支持。
