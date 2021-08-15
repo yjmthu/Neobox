@@ -3,10 +3,27 @@
 
 void MenuWallpaper::startWork()                                                      //根据壁纸类型来判断执行哪个函数
 {
-    if (VarBox.RunApp)
+    if (VarBox->RunApp && VarBox->CurPic != VarBox->PicHistory.end() && ++VarBox->CurPic != VarBox->PicHistory.end())
     {
-        qout << "壁纸类型：" << VarBox.PaperTypes[(int)VarBox.PaperType];
-        switch (VarBox.PaperType)
+        if ((VarBox->CurPic)->first)
+        {
+            if (VARBOX::PathFileExists(static_cast<wchar_t*>(VarBox->CurPic->second)))
+            {
+                SystemParametersInfoW(SPI_SETDESKWALLPAPER, UINT(0), VarBox->CurPic->second, SPIF_SENDCHANGE | SPIF_UPDATEINIFILE);
+            }
+        }
+        else
+        {
+            if (VARBOX::PathFileExists(static_cast<char*>(VarBox->CurPic->second)))
+            {
+                SystemParametersInfoA(SPI_SETDESKWALLPAPER, UINT(0), VarBox->CurPic->second, SPIF_SENDCHANGE | SPIF_UPDATEINIFILE);
+            }
+        }
+    }
+    else if (VarBox->RunApp)
+    {
+        qout << "壁纸类型：" << VarBox->PaperTypes[static_cast<int>(VarBox->PaperType)];
+        switch (VarBox->PaperType)
         {
         case PAPER_TYPE::Advance:
             setAdvance();
@@ -29,7 +46,7 @@ void MenuWallpaper::startWork()                                                 
 
 void MenuWallpaper::setWallhaven()
 {
-	if (FuncBox::isOnline(false))
+    if (VARBOX::isOnline(false))
 		set_from_Wallhaven();
 	else
         emit msgBox("没有网络！", "提示");
@@ -37,7 +54,7 @@ void MenuWallpaper::setWallhaven()
 
 void MenuWallpaper::setBing()
 {
-	if (FuncBox::isOnline(false))
+    if (VARBOX::isOnline(false))
 	{
         if (!set_from_Bing(true)) emit msgBox("设置必应壁纸失败！", "警告");
 	}
@@ -53,7 +70,7 @@ void MenuWallpaper::setNative()
 
 void MenuWallpaper::setRandom()
 {
-	if (FuncBox::isOnline(false))
+    if (VARBOX::isOnline(false))
 	{
         if (!set_from_Random()) emit msgBox("设置随机壁纸失败！", "警告");
 	}

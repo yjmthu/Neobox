@@ -6,29 +6,31 @@
 #endif
 
 #include <windows.h>
+#include <iphlpapi.h>
 #include <QString>
 #include <QDebug>
 
+#define RETCODE_ERROR_EXIT            1071       //异常退出常数
 #define RETCODE_UPDATE                1072       //更新常数，更新软件
 #define RETCODE_RESTART               1073       //重启常数，双击时界面会返回这个常数实现整个程序重新启动。
 #define MSG_APPBAR_MSGID              2731
-
-
-typedef enum class _PAPER_TYPES
-{
-    Latest = 0, Hot = 1, Nature = 2, Anime = 3, Simple = 4, Random = 5, Bing = 6, Wallpapers = 7, Native = 8, Advance = 9
-} PAPER_TYPE;
-
-typedef enum class _COLOR_THEME
-{
-    ClassicWhite = 0, SomeGray = 1, TsinghuaPurple = 2, PekinRed = 3
-} COLOR_THEME;
 
 #define SHOW_SECONDS_IN_SYSTEM_CLOCK "ShowSecondsInSystemClock"
 #define TASKBAR_ACRYLIC_OPACITY      "TaskbarAcrylicOpacity"
 #define TASK_DESK_SUB                "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced"
 
-typedef enum _WINDOWCOMPOSITIONATTRIB
+
+enum class PAPER_TYPE
+{
+    Latest = 0, Hot = 1, Nature = 2, Anime = 3, Simple = 4, Random = 5, Bing = 6, Wallpapers = 7, Native = 8, Advance = 9
+};
+
+enum class COLOR_THEME
+{
+    ClassicWhite = 0, SomeGray = 1, TsinghuaPurple = 2, PekinRed = 3
+};
+
+enum class WINDOWCOMPOSITIONATTRIB
 {
     WCA_UNDEFINED = 0,
     WCA_NCRENDERING_ENABLED = 1,
@@ -54,16 +56,16 @@ typedef enum _WINDOWCOMPOSITIONATTRIB
     WCA_EVER_UNCLOAKED = 21,
     WCA_VISUAL_OWNER = 22,
     WCA_LAST = 23
-} WINDOWCOMPOSITIONATTRIB;
+};
 
-typedef struct _WINDOWCOMPOSITIONATTRIBDATA
+struct WINDOWCOMPOSITIONATTRIBDATA
 {
     WINDOWCOMPOSITIONATTRIB Attrib;
     PVOID pvData;
     SIZE_T cbData;
-} WINDOWCOMPOSITIONATTRIBDATA;
+};
 
-typedef enum class _ACCENT_STATE
+enum class ACCENT_STATE
 {
     ACCENT_DISABLED = 0,
     ACCENT_ENABLE_GRADIENT = 1,
@@ -73,15 +75,15 @@ typedef enum class _ACCENT_STATE
     ACCENT_INVALID_STATE = 5,
     ACCENT_ENABLE_TRANSPARENT = 6,
     ACCENT_NORMAL = 150
-} ACCENT_STATE;
+};
 
-typedef struct _ACCENT_POLICY
+struct ACCENT_POLICY
 {
     ACCENT_STATE AccentState;
     DWORD AccentFlags;
     DWORD GradientColor;
     DWORD AnimationId;
-} ACCENT_POLICY;
+};
 
 enum class TaskBarCenterState
 {
@@ -90,63 +92,89 @@ enum class TaskBarCenterState
     TASK_RIGHT = 2
 };
 
+class Form; struct IAccessible; //void* PMIB_IFTABLE;
+typedef ULONG(WINAPI* pfnGetAdaptersAddresses)(_In_ ULONG Family, _In_ ULONG Flags, _Reserved_ PVOID Reserved, _Out_writes_bytes_opt_(*SizePointer) void* AdapterAddresses, _Inout_ PULONG SizePointer);
+typedef DWORD(WINAPI* pfnGetIfTable)(_Out_writes_bytes_opt_(*pdwSize) PMIB_IFTABLE pIfTable, _Inout_ PULONG pdwSize, _In_ BOOL bOrder);
 
-struct VAR_BOX
+typedef ULONG(WINAPI* pfnAccessibleObjectFromWindow)(_In_ HWND hwnd, _In_ DWORD dwId, _In_ REFIID riid, _Outptr_ void** ppvObject);
+typedef ULONG(WINAPI* pfnAccessibleChildren)(_In_ IAccessible* paccContainer, _In_ LONG iChildStart, _In_ LONG cChildren, _Out_writes_(cChildren) VARIANT* rgvarChildren, _Out_ LONG* pcObtained);
+typedef BOOL(WINAPI* pfnDwmGetWindowAttribute)(HWND hwnd, DWORD dwAttribute, PVOID pvAttribute, DWORD cbAttribute);
+
+
+struct VARBOX
 {
-    const char* const PaperTypes[10][2];      //九种壁纸类型
-    QString FamilyNames[10];
+    const char* const Version = "21.8.15", * const Qt = "6.1.2";
+    const unsigned char WinVersion; const bool FirstUse[1] = {false};
+    std::vector<std::pair<bool, void*>> PicHistory; std::vector<std::pair<bool, void*>>::iterator CurPic;
+    const char* const PaperTypes[10][2] =     //九种壁纸类型
+    {
+        {"Latest", "最新壁纸"}, {"Hot", "最热壁纸"}, {"Nature", "风景壁纸"},{"Anime", "动漫壁纸"},
+        {"Simple", "极简壁纸"}, {"Random", "随机壁纸"},{"Bing", "必应壁纸"},
+        {"Wallpapers", "桌面壁纸"}, {"Native", "本地壁纸"},{"Advance", "高级壁纸"}
+    };
+    QString FamilyNames[10] =
+    {
+        "最新壁纸","最热壁纸","风景壁纸","动漫壁纸","极简壁纸",
+        "随机壁纸","必应壁纸","桌面壁纸","本地壁纸","高级壁纸"
+    };
     QString FamilyPath;                 //壁纸文件夹的上一级目录
-    PAPER_TYPE PaperType;               //当下正在使用的壁纸类型
-    COLOR_THEME CurTheme;
-    bool RunApp;                        //app运行状态
+    PAPER_TYPE PaperType = PAPER_TYPE::Latest;               //当下正在使用的壁纸类型
+    COLOR_THEME CurTheme = COLOR_THEME::ClassicWhite;
+    bool RunApp = true;                        //app运行状态
 
-    bool AutoChange;                    //当下是否已经启用自动更换壁纸
-    bool AutoHide;
-    short PageNum;                      //当下使用的壁纸页面（每页120张图片
-    short TimeInterval;
+    bool AutoChange = false;
+    short PageNum = 1, TimeInterval = 15;
     QString NativeDir;                  //当下正在使用的用户本地壁纸文件夹
-    QString UserCommand;                //当下正在使用的用户高级命令
+    QString UserCommand = "python.exe -u X:\\xxx.py";                //当下正在使用的用户高级命令
     QString PathToOpen;                //要打开的文件夹
 
-    int ScreenWidth;                   //屏幕宽度
-    int ScreenHeight;                  //屏幕高度
+    bool HaveAppRight = false,  EnableTranslater = false, AutoHide = false;;
+    char* AppId = nullptr, * PassWord = nullptr;
 
-    bool HaveAppRight,  EnableTranslater;
-    char* AppId, * PassWord;
+    bool isMax = false, setMax = false;
+    ACCENT_STATE aMode[2] = { ACCENT_STATE::ACCENT_DISABLED, ACCENT_STATE::ACCENT_DISABLED };
+    DWORD dAlphaColor[2] = { 0x11111111, 0x11111111 }; /* 背景 */
+    DWORD bAlpha[2] = {0xff, 0xff};                    /* 图标 */
+    TaskBarCenterState iPos = TaskBarCenterState::TASK_LEFT;
+    short RefreshTime = 33;
 
-    bool WHEN_FULL; bool SET_FULL;
-    ACCENT_STATE aMode[2];
-    DWORD dAlphaColor[2]; DWORD bAlpha[2];
-    TaskBarCenterState iPos;
-    short RefreshTime;
+    const int ScreenWidth, ScreenHeight;                  //屏幕宽高
+    static HANDLE HMutex; HMODULE hOleacc = NULL, hIphlpapi = NULL, hDwmapi = NULL; Form* const form {};
 
-     HANDLE HMutex; HMODULE hOleacc; HMODULE hIphlpapi; void* form;
-     const char* const Version; const char* const Qt;
-     ~VAR_BOX();
+    pfnGetIfTable GetIfTable = nullptr;
+    pfnGetAdaptersAddresses GetAdaptersAddresses = nullptr;
+
+    pfnAccessibleObjectFromWindow AccessibleObjectFromWindow = nullptr;
+    pfnAccessibleChildren AccessibleChildren = nullptr;
+    pfnDwmGetWindowAttribute pDwmGetWindowAttribute = nullptr;
+
+    VARBOX(int, int); ~VARBOX();
+    void loadFunctions();
+    void saveTrayStyle();
+    QString get_pic_path(short i);
+    QString get_wal_path();
+    static QString get_ini_path();
+    static QString get_dat_path();
+    static bool get_son_dir(QString str);
+    static void sigleSave(QString group, QString key, QString value);
+    static bool isOnline(bool);                                               //检查是否有网络连接，布尔值代表是否保持检测 30 秒
+    static char* runCommand(QString program, QStringList argument, short line = 0);
+    static bool getWebCode(const char*, std::string&, bool auto_delete = true);
+    static bool getBingCode(std::string& code);
+    static bool downloadImage(const char*, const QString, bool auto_delete = true);
+    static bool getTransCode(const char* url, std::string& outcome);
+    static BOOL SetWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD AlphaColor);//设置窗口WIN10风格
+    static bool versionBefore(const char* A, const char* B);
+    static BOOL PathFileExists(LPCSTR pszPath);
+    static BOOL PathFileExists(LPWSTR pszPath);
+
+private:
+     bool check_app_right();
+     void readTrayStyle();
 };
 
-extern VAR_BOX VarBox;
+extern VARBOX* VarBox;
 
-namespace FuncBox {
-
-    bool get_son_dir(QString str);
-    void sigleSave(QString group, QString key, QString value);
-    QString get_ini_path();
-    QString get_wal_path();
-    QString get_dat_path();
-    QString get_pic_path(short);
-    bool IsDirExist(const char* csDir);
-    bool build_init_files();                                           //创建程序所需文件
-    bool isOnline(bool);                                               //检查是否有网络连接，布尔值代表是否保持检测 30 秒
-    char* runCommand(QString program, QStringList argument, short line = 0);
-    bool getWebCode(const char*, std::string&, bool auto_delete = true);
-    bool getBingCode(std::string& code);
-    bool downloadImage(const char*, const QString, bool auto_delete = true);
-    bool getTransCode(const char* url, std::string* outcome);
-    BOOL SetWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD AlphaColor);//设置窗口WIN10风格
-    void readTrayStyle(); void saveTrayStyle();
-    bool versionBefore(const char* A, const char* B);
-    //INT getValue(const char key[], INT dft);
-}
+wchar_t* get_reg_paper();
 
 #endif // FUNCBOX_H

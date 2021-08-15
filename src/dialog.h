@@ -19,6 +19,9 @@ class Dialog : public QWidget                            //壁纸设置界面
 {
 	Q_OBJECT
 
+signals:
+    void finished(bool, const char* str = nullptr);
+
 protected:
     void mousePressEvent(QMouseEvent* event);
     void mouseReleaseEvent(QMouseEvent* event);
@@ -89,7 +92,7 @@ private slots:
 	void on_pushButton_clicked();
 	void on_radioButton_clicked();
 	void on_pBtnChange_clicked();
-	void on_lineNewName_returnPressed();
+    void on_lineNewName_returnPressed();
     void on_pushButton_14_clicked();
     void on_pushButton_4_clicked();
     void on_pushButton_6_clicked();
@@ -100,6 +103,7 @@ private slots:
     void on_pushButton_13_clicked();
     void on_pushButton_10_clicked();
     void on_pushButton_12_clicked();
+    void on_checkBox_clicked(bool checked);
 };
 
 #endif // DIALOG_H

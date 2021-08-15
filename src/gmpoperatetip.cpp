@@ -37,11 +37,11 @@ GMPOperateTip::~GMPOperateTip()
 }
 
 
-void GMPOperateTip::showTip(QString str = "写了些啥", int time)
+void GMPOperateTip::showTip(QString str = "写了些啥", unsigned time)
 {
     tip->setText(str);
-    tip->adjustSize();
+    tip->adjustSize();                                   // 自动调整Label大小
     setGeometry(centerPos.x()-tip->width()/2, centerPos.y()-tip->height()/2, tip->width(), tip->height());
-    setVisible(true);
-    QTimer::singleShot((time?time:500), m_pAnimation, SLOT(start()));
+    setVisible(true);                                    // 设置控件可见
+    QTimer::singleShot(time, m_pAnimation, SLOT(start()));
 }

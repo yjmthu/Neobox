@@ -5,12 +5,12 @@
         <file>icons/blue_purple_arrow.png</file>
         <file>icons/close.png</file>
         <file>icons/minimize.png</file>
-        <file>fonts/netspeed.ttf</file>
         <file>fonts/qitijian.otf</file>
-        <file>fonts/smallkaiti.ttf</file>
         <file>icons/ya.ico</file>
         <file>icons/speedbox.ico</file>
         <file>qss/translater_style.qss</file>
         <file>icons/copy.ico</file>
+        <file>fonts/netspeed.ttf</file>
+        <file>fonts/smallkaiti.ttf</file>
     </qresource>
 </RCC>

@@ -95,6 +95,7 @@ YJsonItem::YJsonItem(const std::string str, const YJsonParse type)
                     parse_object(temp);
                     break;
                 case '[':
+                    cout << "加载列表！";
                     parse_array(temp);
                     break;
                 case '\0':
@@ -495,9 +496,9 @@ bool YJsonItem::removeItemByValue(double value)
     return removeItem(findItemByValue(value));
 }
 
-bool YJsonItem::removeItemByValue(char* str)
+bool YJsonItem::removeItemByValue(std::string str)
 {
-    return removeItem(findItemByValue(str));
+    return removeItem(findItemByValue(str.c_str()));
 }
 
 YJsonItem& YJsonItem::operator=(const YJsonItem* s)
@@ -996,48 +997,28 @@ void YJsonItem::print_number()
     }
 }
 
+inline bool _parse_hex4(const char* str, wchar_t& h)
+{
+    if (*str >= '0' && *str <= '9')
+        h += (*str) - '0';
+    else if (*str >= 'A' && *str <= 'F')
+        h += 10 + (*str) - 'A';
+    else if (*str >= 'a' && *str <= 'f')
+        h += 10 + (*str) - 'a';
+    else
+        return true;
+    return false;
+}
+
 wchar_t parse_hex4(const char* str)
 {
     wchar_t h = 0;
-    if (*str >= '0' && *str <= '9')
-        h += (*str) - '0';
-    else if (*str >= 'A' && *str <= 'F')
-        h += 10 + (*str) - 'A';
-    else if (*str >= 'a' && *str <= 'f')
-        h += 10 + (*str) - 'a';
-    else
-        return 0;
-    h = h << 4; ++str;
-    if (*str >= '0' && *str <= '9')
-        h += (*str) - '0';
-    else if (*str >= 'A' && *str <= 'F')
-        h += 10 + (*str) - 'A';
-    else if (*str >= 'a' && *str <= 'f')
-        h += 10 + (*str) - 'a';
-    else
-        return 0;
-    h = h << 4; ++str;
-    if (*str >= '0' && *str <= '9') 
-        h += (*str) - '0';
-    else if (*str >= 'A' && *str <= 'F') 
-        h += 10 + (*str) - 'A'; 
-    else if (*str >= 'a' && *str <= 'f') 
-        h += 10 + (*str) - 'a';
-    else 
-        return 0;
-    h = h << 4; ++str;
-    if (*str >= '0' && *str <= '9') 
-        h += (*str) - '0'; 
-    else if (*str >= 'A' && *str <= 'F') 
-        h += 10 + (*str) - 'A'; 
-    else if (*str >= 'a' && *str <= 'f') 
-        h += 10 + (*str) - 'a'; 
-    else 
+    if (_parse_hex4(str, h) || _parse_hex4(++str, h = h<<4) || _parse_hex4(++str, h = h<<4) || _parse_hex4(++str, h = h<<4))
         return 0;
     return h;
 }
 
-static const unsigned char firstByteMark[7] = { 0x00, 0x00, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC };
+constexpr const unsigned char firstByteMark[7] = { 0x00, 0x00, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC };
 
 const char *YJsonItem::parse_string(const char *str)
 {

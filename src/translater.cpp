@@ -18,8 +18,6 @@
 #include "gmpoperatetip.h"
 #include "translater.h"
 
-//#define appid "20210503000812254"
-//#define password QString("Q_2PPxmCr66r6B2hi0ts")
 #define M_WIN_HOT_KEY_SHIFT_Z 1001
 #define M_WIN_HOT_KEY_SHIFT_A 1002
 
@@ -45,6 +43,14 @@ Translater::Translater() :
     blank->closeButton->setToolTip("退出"); blank->minButton->setToolTip("隐藏");
     blank->move(width()-100, 0);
 	ui->TextFrom->installEventFilter(this);
+
+    if (*VarBox->FirstUse)
+    {
+        ui->TextFrom->setPlainText("一秒钟只能翻译一次。");
+        ui->TextTo->setPlainText("You can only translate once a second.");
+        *const_cast<bool*>(VarBox->FirstUse) = false;
+    }
+
     setMinimumSize(TRAN_WIDTH, TRAN_HEIGHT);
     setMaximumSize(TRAN_WIDTH, TRAN_HEIGHT);
 
@@ -72,16 +78,18 @@ Translater::Translater() :
 
 Translater::~Translater()
 {
+    qout << "析构Translater开始";
     UnregisterHotKey(HWND(winId()), M_WIN_HOT_KEY_SHIFT_Z);
     UnregisterHotKey(HWND(winId()), M_WIN_HOT_KEY_SHIFT_A);
     delete ui;
+    qout << "析构Translater结束";
 }
 
 void Translater::showEvent(QShowEvent* event)
 {
-    int x, y;  RECT rt; ui->isFix->setChecked(!VarBox.AutoHide);
+    int x, y;  RECT rt; ui->isFix->setChecked(!VarBox->AutoHide);
     static const int w = (GetWindowRect(HWND(winId()), &rt), rt.right - rt.left), h = (rt.bottom - rt.top), sw = GetSystemMetrics(SM_CXSCREEN);
-    GetWindowRect(HWND(((Form*)VarBox.form)->winId()), &rt);
+    GetWindowRect(HWND(VarBox->form->winId()), &rt);
     if (rt.top > h)
         y = rt.top - h;
     else
@@ -98,8 +106,8 @@ void Translater::showEvent(QShowEvent* event)
     cursor.movePosition(QTextCursor::End);
     ui->TextFrom->setTextCursor(cursor);
     ui->TextFrom->setFocus();
-    if (VarBox.AutoHide)
-        QTimer::singleShot(10000, this, [=](void){ if (isVisible() && VarBox.AutoHide) close();});
+    if (VarBox->AutoHide)
+        QTimer::singleShot(10000, this, [=](void){ if (isVisible() && VarBox->AutoHide) close();});
     event->accept();
 }
 
@@ -223,17 +231,6 @@ bool Translater::eventFilter(QObject* target, QEvent* event)
 			}
 		}
 	}
-//    else if (target == ui->ENTOZH || target == ui->ZHTOEN)
-//    {
-//        if (event->type() == QEvent::MouseButtonDblClick)
-//        {
-//            if (static_cast<QMouseEvent*>(event)->button() == Qt::LeftButton)
-//            {
-//                event->accept();
-//                return true;
-//            }
-//        }
-//    }
 	return QWidget::eventFilter(target, event);
 }
 
@@ -275,11 +272,6 @@ void Translater::keyPressEvent(QKeyEvent* event)
 	}
 }
 
-void Translater::requestData(const char* url, std::string* data)
-{
-    emit receivedData(FuncBox::getTransCode(url, data));
-}
-
 void Translater::getReply(const QByteArray& text)
 {
     //qout << "开始执行翻译函数";
@@ -315,61 +307,64 @@ void Translater::getReply(const QByteArray& text)
         ++utf8_q;
     }
 
-    utf8_q = StrJoin(VarBox.AppId, (const char*)text, salt, VarBox.PassWord);
+    utf8_q = StrJoin(VarBox->AppId, (const char*)text, salt, VarBox->PassWord);
     char sign[33]; strcpy_s(sign, 33, QCryptographicHash::hash(utf8_q, QCryptographicHash::Md5).toHex());
     delete [] utf8_q;
     //qout << "mysign" << sign;
 
     std::string reply_data; std::thread thrd; QEventLoop loop;
-    connect(this, &Translater::receivedData, &loop, [&reply_data, &loop, &thrd, this](bool success){
-        if (success)
+
+    connect(this, &Translater::finished, &loop, [&reply_data, &loop, &thrd, this](bool success){
+        if (thrd.joinable()) thrd.join(); loop.quit();
+        if (!success)
         {
-            //qout << "翻译请求结果" << reply_data.c_str();
-            YJsonItem json_data(reply_data); YJsonItem* have_item = nullptr;
-            if ((have_item = json_data.findItem("trans_result")) &&
-                (have_item = have_item->getChildItem()) && (have_item = have_item->findItem("dst")))
+            emit msgBox("翻译请求失败,可能是没有网络！");
+            return ;
+        }
+        //qout << "翻译请求结果" << reply_data.c_str();
+        YJsonItem json_data(reply_data); YJsonItem* have_item = nullptr;
+        if ((have_item = json_data.findItem("trans_result")) &&
+            (have_item = have_item->getChildItem()) && (have_item = have_item->findItem("dst")))
+        {
+            if (have_item->getType() == YJson::YJSON_STRING)
             {
-                if (have_item->getType() == YJson::YJSON_STRING)
-                {
-                    ui->TextTo->setPlainText(have_item->getValueSring());
-                    QTextCursor cursor = ui->TextFrom->textCursor();
-                    cursor.movePosition(QTextCursor::End);
-                    ui->TextFrom->setTextCursor(cursor);
-                }
-                else
-                    emit msgBox("未知错误。");
+                ui->TextTo->setPlainText(have_item->getValueSring());
+                QTextCursor cursor = ui->TextFrom->textCursor();
+                cursor.movePosition(QTextCursor::End);
+                ui->TextFrom->setTextCursor(cursor);
             }
             else
-            {
-                if (json_data.findItem("error_code"))
-                {
-                    if (have_item = json_data.findItem("error_msg"))
-                    {
-                        //qout << "错误消息：" << have_item->getValueSring();
-                        if (StrCompare(have_item->getValueSring(), "Invalid Access Limit"))
-                            emit msgBox("翻译失败，请求间隔时间过短!");
-                        else if (StrCompare(have_item->getValueSring(), "UNAUTHORIZED USER"))
-                            emit msgBox("翻译失败，APPID不存在！");
-                        else if (StrCompare(have_item->getValueSring(), "Invalid Sign"))
-                            emit msgBox("翻译失败，密钥错误！");
-                        else
-                            emit msgBox("翻译失败， 其它错误。");
-                    }
-                    else
-                        emit msgBox("翻译失败，未知原因。");
-                }
-                else
-                    emit msgBox("翻译失败，未知错误");
-            }
+                emit msgBox("未知错误。");
         }
         else
         {
-            emit msgBox("翻译请求失败,可能是没有网络！");
+            if (json_data.findItem("error_code"))
+            {
+                if (have_item = json_data.findItem("error_msg"))
+                {
+                    //qout << "错误消息：" << have_item->getValueSring();
+                    if (StrCompare(have_item->getValueSring(), "Invalid Access Limit"))
+                        emit msgBox("翻译失败，请求间隔时间过短!");
+                    else if (StrCompare(have_item->getValueSring(), "UNAUTHORIZED USER"))
+                        emit msgBox("翻译失败，APPID不存在！");
+                    else if (StrCompare(have_item->getValueSring(), "Invalid Sign"))
+                        emit msgBox("翻译失败，密钥错误！");
+                    else
+                        emit msgBox("翻译失败， 其它错误。");
+                }
+                else
+                    emit msgBox("翻译失败，未知原因。");
+            }
+            else
+                emit msgBox("翻译失败，未知错误");
         }
-        if (thrd.joinable()) thrd.join(); loop.quit();
     });
-    /* std::thrd不支持传引用，只支持传值 */
-    thrd = std::thread(&Translater::requestData, this, StrJoin(API, u8"?q=", q.c_str(), u8"&from=", from, u8"&to=", to, u8"&appid=", VarBox.AppId, u8"&salt=", salt, u8"&sign=", sign), &reply_data);
+    thrd = std::thread([&](){
+        if (VARBOX::getTransCode(StrJoin(API, u8"?q=", q.c_str(), u8"&from=", from, u8"&to=", to, u8"&appid=", VarBox->AppId, u8"&salt=", salt, u8"&sign=", sign), reply_data))
+            emit finished(true);
+        else
+            emit finished(false);
+    });
     loop.exec();    //阻塞函数等待翻译结果，但是不阻塞ui。ui仍然可以编辑改动，不会卡死。
     //qout << "翻译函数执行完毕";
     unfinished = false;
@@ -377,13 +372,13 @@ void Translater::getReply(const QByteArray& text)
 
 void Translater::on_isFix_clicked(bool checked)
 {
-    VarBox.AutoHide = !checked;
-    QSettings IniWrite(FuncBox::get_ini_path(), QSettings::IniFormat);
+    VarBox->AutoHide = !checked;
+    QSettings IniWrite(VarBox->get_ini_path(), QSettings::IniFormat);
     IniWrite.beginGroup("Translate");
-    IniWrite.setValue("AutoHide", VarBox.AutoHide);
+    IniWrite.setValue("AutoHide", VarBox->AutoHide);
     IniWrite.endGroup();
-    if (VarBox.AutoHide)
-        QTimer::singleShot(10000, this, [=](void){ if (isVisible() && VarBox.AutoHide) close();});
+    if (VarBox->AutoHide)
+        QTimer::singleShot(10000, this, [=](void){ if (isVisible() && VarBox->AutoHide) close();});
 }
 
 void Translater::on_ENTOZH_clicked(bool checked)

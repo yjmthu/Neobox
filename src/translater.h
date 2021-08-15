@@ -15,7 +15,7 @@ class Translater : public QWidget
 
 signals:
     void msgBox(const char*);
-    void receivedData(bool);
+    void finished(bool);
     void enableself(bool);
 
 protected:

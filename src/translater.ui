@@ -109,7 +109,7 @@ border-image: url(:/icons/ya.ico);
 }</string>
         </property>
         <property name="plainText">
-         <string>一秒钟只能翻译一次。</string>
+         <string/>
         </property>
        </widget>
       </item>
@@ -132,7 +132,7 @@ border-image: url(:/icons/ya.ico);
          <bool>true</bool>
         </property>
         <property name="plainText">
-         <string>You can only translate once a second.</string>
+         <string/>
         </property>
        </widget>
       </item>
@@ -191,6 +191,18 @@ QPushButton:hover {
         </item>
         <item>
          <widget class="QRadioButton" name="ENTOZH">
+          <property name="minimumSize">
+           <size>
+            <width>37</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>37</width>
+            <height>16777215</height>
+           </size>
+          </property>
           <property name="focusPolicy">
            <enum>Qt::ClickFocus</enum>
           </property>
@@ -220,6 +232,18 @@ QPushButton:hover {
         </item>
         <item>
          <widget class="QRadioButton" name="ZHTOEN">
+          <property name="minimumSize">
+           <size>
+            <width>37</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>37</width>
+            <height>16777215</height>
+           </size>
+          </property>
           <property name="focusPolicy">
            <enum>Qt::ClickFocus</enum>
           </property>

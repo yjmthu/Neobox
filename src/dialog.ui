@@ -555,6 +555,18 @@
            <layout class="QHBoxLayout" name="horizontalLayout_16">
             <item>
              <widget class="QGroupBox" name="groupBox">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>180</width>
+                <height>16777215</height>
+               </size>
+              </property>
               <property name="toolTip">
                <string>分别修改没有或有最大化窗口时任务栏的状态</string>
               </property>
@@ -863,6 +875,18 @@ background-color: rgb(0, 0, 0);</string>
                </item>
                <item>
                 <widget class="QRadioButton" name="radioButton_11">
+                 <property name="minimumSize">
+                  <size>
+                   <width>35</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>35</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
                  <property name="toolTip">
                   <string>不透明</string>
                  </property>
@@ -889,6 +913,18 @@ background-color: rgb(0, 0, 0);</string>
                </item>
                <item>
                 <widget class="QRadioButton" name="radioButton_10">
+                 <property name="minimumSize">
+                  <size>
+                   <width>35</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>35</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
                  <property name="toolTip">
                   <string>半透明</string>
                  </property>
@@ -912,6 +948,18 @@ background-color: rgb(0, 0, 0);</string>
                </item>
                <item>
                 <widget class="QRadioButton" name="radioButton_12">
+                 <property name="minimumSize">
+                  <size>
+                   <width>35</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>35</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
                  <property name="toolTip">
                   <string>全透明</string>
                  </property>
@@ -1331,9 +1379,6 @@ background-color: rgb(0, 0, 0);</string>
           <string>其它设置</string>
          </attribute>
          <layout class="QVBoxLayout" name="verticalLayout_4">
-          <property name="spacing">
-           <number>8</number>
-          </property>
           <item>
            <widget class="QGroupBox" name="groupBox_17">
             <property name="title">
@@ -1484,80 +1529,127 @@ background-color: rgb(0, 0, 0);</string>
            </layout>
           </item>
           <item>
-           <widget class="QGroupBox" name="groupBox_7">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>16777215</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="title">
-             <string>系统右键功能</string>
-            </property>
-            <layout class="QHBoxLayout" name="horizontalLayout_11">
-             <item>
-              <widget class="QCheckBox" name="chkFile">
-               <property name="cursor">
-                <cursorShape>PointingHandCursor</cursorShape>
+           <layout class="QHBoxLayout" name="horizontalLayout_28">
+            <item>
+             <widget class="QGroupBox" name="groupBox_7">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="title">
+               <string>系统右键功能</string>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_11">
+               <item>
+                <widget class="QCheckBox" name="chkFile">
+                 <property name="cursor">
+                  <cursorShape>PointingHandCursor</cursorShape>
+                 </property>
+                 <property name="toolTip">
+                  <string>右键单击文件时，出现“复制路径”选项</string>
+                 </property>
+                 <property name="text">
+                  <string>文件</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="chkFolder">
+                 <property name="cursor">
+                  <cursorShape>PointingHandCursor</cursorShape>
+                 </property>
+                 <property name="toolTip">
+                  <string>右键单击文件夹时，出现“复制路径”选项</string>
+                 </property>
+                 <property name="text">
+                  <string>文件夹</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="chkFolderBack">
+                 <property name="cursor">
+                  <cursorShape>PointingHandCursor</cursorShape>
+                 </property>
+                 <property name="toolTip">
+                  <string>右键单击空白处时（如桌面），显示“复制路径”选项</string>
+                 </property>
+                 <property name="text">
+                  <string>文件夹背景</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="pBtnApply_2">
+                 <property name="cursor">
+                  <cursorShape>PointingHandCursor</cursorShape>
+                 </property>
+                 <property name="toolTip">
+                  <string>立即修改注册表</string>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true"/>
+                 </property>
+                 <property name="text">
+                  <string>应用</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupBox_20">
+              <property name="maximumSize">
+               <size>
+                <width>80</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="title">
+               <string>开机自启</string>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_29">
+               <property name="spacing">
+                <number>6</number>
                </property>
-               <property name="toolTip">
-                <string>右键单击文件时，出现“复制路径”选项</string>
+               <property name="leftMargin">
+                <number>9</number>
                </property>
-               <property name="text">
-                <string>文件</string>
+               <property name="topMargin">
+                <number>9</number>
                </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QCheckBox" name="chkFolder">
-               <property name="cursor">
-                <cursorShape>PointingHandCursor</cursorShape>
+               <property name="rightMargin">
+                <number>9</number>
                </property>
-               <property name="toolTip">
-                <string>右键单击文件夹时，出现“复制路径”选项</string>
+               <property name="bottomMargin">
+                <number>9</number>
                </property>
-               <property name="text">
-                <string>文件夹</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QCheckBox" name="chkFolderBack">
-               <property name="cursor">
-                <cursorShape>PointingHandCursor</cursorShape>
-               </property>
-               <property name="toolTip">
-                <string>右键单击空白处时（如桌面），显示“复制路径”选项</string>
-               </property>
-               <property name="text">
-                <string>文件夹背景</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="pBtnApply_2">
-               <property name="cursor">
-                <cursorShape>PointingHandCursor</cursorShape>
-               </property>
-               <property name="toolTip">
-                <string>立即修改注册表</string>
-               </property>
-               <property name="styleSheet">
-                <string notr="true"/>
-               </property>
-               <property name="text">
-                <string>应用</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
+               <item>
+                <widget class="QCheckBox" name="checkBox">
+                 <property name="maximumSize">
+                  <size>
+                   <width>15</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string/>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+           </layout>
           </item>
           <item>
            <widget class="QGroupBox" name="groupBox_19">

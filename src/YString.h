@@ -12,8 +12,10 @@ size_t wcslen(const wchar_t** box, size_t num);
 wchar_t* StrRepeat(const wchar_t c, size_t count);
 char* StrRepeat(const char c, size_t count);
 bool StrCompare(const char* str_a, const char* str_b, size_t length);
+bool StrCompare(const wchar_t* str_a, const wchar_t* str_b, size_t length);
 bool StrCompareA(const char* str_a, const char* str_b);
 bool StrCompare(const char* str_a, const char* str_b);
+bool StrCompare(const wchar_t* str_a, const wchar_t* str_b);
 wchar_t* StrJoinX(const wchar_t* start, const wchar_t* end, const wchar_t* dist, const wchar_t** box, size_t num);
 char* StrJoinX(const char* start, const char* end, const char* dist, const char** box, size_t num);
 wchar_t* StrCopy(wchar_t* str_old, const wchar_t* str_new);
@@ -22,7 +24,6 @@ void StrCopy(char* str_old, const char* str_new_start, const char* str_new_end);
 void StrCopy(wchar_t* str_old, const wchar_t* str_new_start, const wchar_t* str_new_end);
 char* StrContainStr(char* str_a, char* str_b);
 const char* StrSkip(const char* content);
-const char* StrGoEnd(const char* content);
 
 char* STRING_APPEND(char* head);
 wchar_t* STRING_APPEND(wchar_t* head);
@@ -73,7 +74,7 @@ wchar_t* StrJoin(const wchar_t* head, Types...args)
 {
     if (!head)
         return nullptr;
-    wchar_t *str = new wchar_t[StrLength(head, args...) + 1];
+    wchar_t *str = new wchar_t[wcslen(head, args...) + 1];
     STRING_APPEND(str, head, args...);
     return str;
 }
@@ -88,14 +89,24 @@ char* StrJoin(const char* head, Types...args)
     return str;
 }
 
-template <typename T>
-inline bool StrCheckRange(char tc, T str)
+inline bool StrCheckRange(const char tc, const char* str)
 {
-    return ((int)tc >= (int)*str) && ((int)tc <= (int)str[2]);
+    return (tc >= *str) && (tc <= str[2]);
 }
 
-template <typename T, typename...Args>
-bool StrCheckRange(char tc, T str, Args...args)
+inline bool StrCheckRange(const wchar_t tc, const wchar_t* str)
+{
+    return (tc >= *str) && (tc <= str[2]);
+}
+
+template <typename...Args>
+bool StrCheckRange(const char tc, const char* str, Args...args)
+{
+    return StrCheckRange(tc, str) || StrCheckRange(tc, args...);
+}
+
+template <typename...Args>
+bool StrCheckRange(const wchar_t tc, const wchar_t* str, Args...args)
 {
     return StrCheckRange(tc, str) || StrCheckRange(tc, args...);
 }
@@ -112,6 +123,20 @@ const char* StrContainRange(const char* start, int length, Args...args)
         return nullptr;
     }
     return start;   
+}
+
+template <typename...Args>
+const wchar_t* StrContainRange(const wchar_t* start, int length, Args...args)
+{
+    if (length <= 0 || start == nullptr)
+        return nullptr;
+    while (length--)
+    {
+        if (*start && StrCheckRange(*start++, args...))
+            continue;
+        return nullptr;
+    }
+    return start;
 }
 
 #endif // !YSTRING_H

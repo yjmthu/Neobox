@@ -13,7 +13,7 @@ class GMPOperateTip: public QWidget
 public:
     explicit GMPOperateTip(QWidget* parent = nullptr);
     ~GMPOperateTip();
-    void showTip(QString, int time=0);
+    void showTip(QString, unsigned time=500);
 private:
     QPoint centerPos;
     QGraphicsOpacityEffect *m_pOpacity;

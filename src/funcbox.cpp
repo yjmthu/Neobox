@@ -9,571 +9,716 @@
 
 #include "funcbox.h"
 #include "YString.h"
+#include "form.h"
 
 #pragma comment(lib,"wininet.lib")
 
-typedef BOOL(WINAPI* pfnSetWindowCompositionAttribute)(HWND, struct _WINDOWCOMPOSITIONATTRIBDATA*);
 
-VAR_BOX VarBox = {
-    {
-        {"Latest", "最新壁纸"}, {"Hot", "最热壁纸"}, {"Nature", "风景壁纸"},{"Anime", "动漫壁纸"},
-        {"Simple", "极简壁纸"}, {"Random", "随机壁纸"},{"Bing", "必应壁纸"},
-        {"Wallpapers", "桌面壁纸"}, {"Native", "本地壁纸"},{"Advance", "高级壁纸"}
-    },
-    {
-        "最新壁纸","最热壁纸","风景壁纸","动漫壁纸","极简壁纸",
-        "随机壁纸","必应壁纸","桌面壁纸","本地壁纸","高级壁纸"
-    },
-    QString(), PAPER_TYPE::Latest, COLOR_THEME::ClassicWhite, true, false, false, 1, 15, QString(),
-    "X:\\xxx\\python.exe -u X:\\xxx.py", QString(), 0, 0, false, false, nullptr, nullptr, false, false,
-    { ACCENT_STATE::ACCENT_DISABLED, ACCENT_STATE::ACCENT_DISABLED }, { 0x11111111, 0x11111111 },
-    /* 背景 */ {0xff, 0xff}, /* 图标 */ TaskBarCenterState::TASK_LEFT, 33, NULL, NULL, NULL, nullptr,
-    "21.8.10", "6.1.2"
-};
-
-VAR_BOX::~VAR_BOX()
+unsigned char GetNtVersionNumbers()
 {
-    qout << "结构体析构中~";
-    if (AppId) delete [] AppId;
-    if (PassWord) delete [] PassWord;
-    if (hIphlpapi) FreeLibrary(hIphlpapi);
-    if (hOleacc) FreeLibrary(hOleacc);
-    qout << "结构体析构成功。";
+    HMODULE hModNtdll= NULL;
+    DWORD dwMajorVer = 0, dwMinorVer = 0, dwBuildNumber = 0;
+    if (hModNtdll= LoadLibraryA("ntdll.dll"))
+    {
+        typedef void (WINAPI *pfRTLGETNTVERSIONNUMBERS)(DWORD*,DWORD*, DWORD*);
+        pfRTLGETNTVERSIONNUMBERS pfRtlGetNtVersionNumbers;
+        pfRtlGetNtVersionNumbers = (pfRTLGETNTVERSIONNUMBERS)GetProcAddress(hModNtdll, "RtlGetNtVersionNumbers");
+        if (pfRtlGetNtVersionNumbers)
+        {
+           pfRtlGetNtVersionNumbers(&dwMajorVer, &dwMinorVer,&dwBuildNumber);
+           dwBuildNumber&= 0x0ffff;
+        }
+
+        FreeLibrary(hModNtdll);
+    }
+    if (dwMajorVer>10)
+        return 11;
+    else if (dwMajorVer==10)
+    {
+        if (dwMinorVer==0)
+        {
+            if (dwBuildNumber >= 21996)
+                return 11;
+            else
+                return 10;
+        }
+        else if (dwMinorVer > 0)
+            return 11;
+    }
+    else if (dwMajorVer==7)
+    {
+        if (dwMinorVer == 1)
+            return 7;
+    }
+    return 0;
 }
 
-namespace FuncBox {
-
-    bool IsDirExist(QString csDir)
+wchar_t* get_reg_paper()
+{
+    QSettings set("HKEY_CURRENT_USER\\Control Panel\\Desktop", QSettings::NativeFormat);
+    if (set.contains("WallPaper"))
     {
-        QDir dir;
-        return dir.exists(csDir);
+        return StrJoin(set.value("WallPaper").toString().toStdWString().c_str());
     }
+    return nullptr;
+}
 
-    void sigleSave(QString group, QString key, QString value)
-    {
-        QSettings IniWrite(get_ini_path(), QSettings::IniFormat);
-        IniWrite.beginGroup(group);
-        IniWrite.setValue(key, value);
-        IniWrite.endGroup();
-    }
+VARBOX* VarBox = nullptr;
+HANDLE VARBOX::HMutex = NULL;
 
-    bool getWebCode(const char* url, std::string& src, bool auto_delete)
+VARBOX::VARBOX(int w, int h):
+    WinVersion(GetNtVersionNumbers()), ScreenWidth(w), ScreenHeight(h),
+    hOleacc(LoadLibrary("oleacc.dll")), hIphlpapi(LoadLibrary("iphlpapi.dll")), hDwmapi(LoadLibrary("dwmapi.dll"))
+{
+    qout << "VarBox构造函数开始。";
+    loadFunctions();
+    wchar_t* temp_paper = get_reg_paper();
+    if (temp_paper)
+        PicHistory.push_back(std::pair<bool, void*>(true, temp_paper));
+    CurPic = PicHistory.begin();
+    QString file = get_ini_path(); short type = 0; qout << "配置文件目录" << file;
+    while (true)
     {
-        bool OK = false;  src.clear();
-        HINTERNET hSession = InternetOpen("Firefox", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
-        if (hSession != NULL)
+        if (type == 0)
         {
-            HINTERNET hURL = InternetOpenUrl(hSession, url, NULL, 0, INTERNET_FLAG_DONT_CACHE, 0);
-            if (auto_delete) delete[] url;
-            if (hURL != NULL)
+            if (!QFile::exists(file))
             {
-                char temp[1025] = { 0 };
-                ULONG Number = 1;
-                while (Number > 0 && VarBox.RunApp)
-                {
-                    memset(temp, 0, 1024);
-                    InternetReadFile(hURL, temp, 1024, &Number);
-                    src += temp;
-                }
-                OK = !src.empty();
-                InternetCloseHandle(hURL);
-                hURL = NULL;
-            }
-
-            InternetCloseHandle(hSession);
-            hSession = NULL;
-        }
-        else
-        {
-            if (auto_delete) delete[] url;
-        }
-        return VarBox.RunApp && OK;
-    }
-
-    bool getBingCode(std::string& code)
-    {
-        HINTERNET hSession = InternetOpen("Chromium", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
-        if (hSession)
-        {
-            HINTERNET hURL = InternetOpenUrl(hSession, "https://cn.bing.com/", NULL, 0, INTERNET_FLAG_DONT_CACHE, 0);
-            if (hURL)
-            {
-                CHAR Temp[513] = { 0 };
-                ULONG Number = 1;
-                InternetReadFile(hURL, Temp, 512, &Number);
-                InternetReadFile(hURL, Temp, 512, &Number);
-                InternetReadFile(hURL, Temp, 512, &Number);
-                code += Temp;
-                InternetCloseHandle(hURL);
-                hURL = NULL;
-            }
-            InternetCloseHandle(hSession);
-            hSession = NULL;
-        }
-        return !code.empty();
-    }
-
-    // 会删除url
-    bool getTransCode(const char* url, std::string* outcome)
-    {
-        //qout << "翻译请求：" << url << Qt::endl;
-        HINTERNET hSession = InternetOpenA("Microsoft Edge", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
-        if (hSession)
-        {
-            HINTERNET hURL = InternetOpenUrlA(hSession, url, NULL, 0, INTERNET_FLAG_DONT_CACHE, 0);
-            delete [] url; //qout << "发送翻译请求成功。";
-            if (hURL)
-            {
-                char buffer[1025]; DWORD dwRecv = 0;
-                do {
-                    memset(buffer, 0, 1024);
-                    InternetReadFile(hURL, buffer, 1024, &dwRecv);
-                    if (dwRecv)
-                    {
-                        buffer[dwRecv] = 0;
-                        //qout << "读入的字节数量：" << dwRecv;
-                        outcome->append(buffer);
-                    }
-                    else
-                        break;
-                } while (VarBox.RunApp);
-                InternetCloseHandle(hURL);
-            }
-
-            InternetCloseHandle(hSession);
-            hSession = NULL;
-        }
-        else
-        {
-            delete [] url;
-        }
-        return !outcome->empty();
-    }
-
-    bool downloadImage(const char* url, const QString path, bool auto_delete)
-    {
-        if (QFile::exists(path)) return 1;
-        bool OK = false;
-        DWORD dwRecv = 0;
-        int allWrite = 0;
-        char* szDownLoad = new char[1024 * 40];
-        memset(szDownLoad, 0, 1024 * 40 * sizeof(char));
-        HINTERNET hSession = InternetOpen("Chromium", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
-        if (hSession)
-        {
-            HINTERNET hOpenUrl = InternetOpenUrl(hSession, url, NULL, 0, INTERNET_FLAG_RELOAD, 0);
-            if (auto_delete) delete [] url;
-            if (hOpenUrl)
-            {
-                qout << "成功打开网址";
-                QFile file(path);
-                if (file.open(QIODevice::WriteOnly))
-                {
-                    qout << "开始写入图片文件";
-                    while (VarBox.RunApp)
-                    {
-                        Sleep(10); // qout << "下载循环中";
-                        InternetReadFile(hOpenUrl, szDownLoad, 1024 * 40, &dwRecv);
-                        if (!dwRecv)
-                            break;
-                        file.write(szDownLoad, dwRecv);
-                        allWrite += dwRecv;
-                    }
-                    qout << "下载结束";
-                    file.close(); OK = (allWrite != 0) && (allWrite != 235) && VarBox.RunApp;
-                    if (!OK && QFile::exists(path))
-                    {
-                        QFile::remove(path);
-                        qout << "删除错误文件";
-                    }
-                    else
-                    {
-                        qout << "下载成功！";
-                    }
-                }
-                InternetCloseHandle(hOpenUrl);
-            }
-            InternetCloseHandle(hSession);
-        }
-        else
-        {
-            if (auto_delete) delete [] url;
-        }
-        delete[] szDownLoad;
-        qout << "退出函数" << OK;
-        return OK;
-    }
-
-    bool get_son_dir(QString str)
-    {
-        QDir dir;
-        return dir.exists(str) || dir.mkdir(str);
-    }
-
-    // 获取壁纸文件夹
-    QString get_wal_path()
-    {
-        QString str;
-        if (VarBox.FamilyPath.isEmpty() || !get_son_dir(VarBox.FamilyPath))
-        {
-            qout << "图片目录为空" << VarBox.FamilyPath;
-            VarBox.FamilyPath = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
-        }
-        str = VarBox.FamilyPath + "\\" + VarBox.FamilyNames[7];
-        if (VarBox.FamilyNames[7].isEmpty() || !get_son_dir(str))
-        {
-            VarBox.FamilyNames[7] = VarBox.PaperTypes[7][1];
-            str = VarBox.FamilyPath + "\\" + VarBox.FamilyNames[7];
-        }
-        QSettings IniWrite(get_ini_path(), QSettings::IniFormat);
-        IniWrite.beginGroup("Dirs");
-        IniWrite.setValue("FamilyPath", VarBox.FamilyPath);
-        IniWrite.setValue(VarBox.PaperTypes[7][0], VarBox.FamilyNames[7]);
-        IniWrite.endGroup();
-        return str;
-    }
-
-    QString get_pic_path(short i)
-    {
-        qout << "获取图片路径开始" << i;
-        QString str = get_wal_path() + "\\" + VarBox.FamilyNames[i];
-        if (VarBox.FamilyNames[i].isEmpty() || !get_son_dir(str))
-        {
-            qout << "FamilyPath为空或者无法创建！";
-            VarBox.FamilyNames[i] = VarBox.PaperTypes[i][1];
-            str = VarBox.FamilyPath + "\\", VarBox.FamilyNames[7] + "\\" + VarBox.FamilyNames[i];
-            get_son_dir(str);
-        }
-        QSettings IniWrite(get_ini_path(), QSettings::IniFormat);
-        IniWrite.beginGroup("Dirs");
-        IniWrite.setValue(VarBox.PaperTypes[i][0], VarBox.FamilyNames[i]);
-        IniWrite.endGroup();
-        qout << "最终图片路径结果：" << str;
-        return str;
-    }
-
-    QString get_ini_path()
-    {
-        return get_dat_path() + "\\SpeedBox2.ini";
-    }
-
-    QString get_dat_path()
-    {
-        QString str = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::HomeLocation) +  "/AppData/Local/SpeedBox");
-        get_son_dir(str);
-        return str;
-    }
-
-    bool check_app_right()
-    {
-        QString appid_path = get_dat_path() + "\\AppId.txt";
-        if (!QFile::exists(appid_path)) return false;
-        std::ifstream file(appid_path.toStdString(), std::ios::in | std::ios::binary);
-        if( file.is_open())
-        {
-            qout << "成功打开密钥文件";
-            file.seekg(0, std::ios::end );
-            int size = file.tellg();
-            if (size < 20)
-            {
-                file.close();
-                return false;
-            }
-            unsigned char c1 = 0, c2 = 0, c3 = 0; file.seekg(0,std::ios::beg);
-            if (!(file.read((char*)&c1, sizeof(char))
-                    &&
-                  file.read((char*)&c2, sizeof(char))
-                    &&
-                  file.read((char*)&c3, sizeof(char))
-               ))
-            {
-                qout << "文件读取失败1";
-                file.close();
-                return false;
-            }
-            size -= sizeof(char) * 3;
-            if (c1 == 0xef && c2 == 0xbb && c3 == 0xbf)
-            {
-                char *str = new char[(size_t)size + 1]; str[size] = 0;
-                if (!file.read(str, size))
-                {
-                    qout << "文件读取失败2";
-                    file.close();
-                    delete[] str; return false;
-                }
-                else
-                {
-                    char* ptr0 = str + 7; char* ptr = ptr0; while (*++ptr && *ptr != '\n');
-                    if (*ptr) {
-                        *ptr = 0; VarBox.AppId = StrJoin(ptr0);
-                        ptr += 10; ptr0 = ptr;
-                        while (*++ptr && *ptr != '\n');
-                        if (*ptr) {
-                            *ptr = 0;
-                            VarBox.PassWord = StrJoin(ptr0); file.close();
-                            delete[] str; return true;
-                        }
-                    }
-                }
-                delete[] str;
+                qout << "SpeedBox.ini 文件不存在";
+                sigleSave("SpeedBox", "Version", Version);
+                type = 1;
+                continue;
             }
             else
             {
-                qout << "文件没有utf-8 bom头";
-            }
-            file.close();
-        }
-        return false;
-    }
-
-    bool build_init_files()
-    {
-        //getTransCode(TEXT("http://api.fanyi.baidu.com/api/trans/vip/translate?q=English&from=zh&to=en&appid=20210503000812254&salt=1435660288&sign=a1b039c74a3e7b44ad981a1dae445f06", abc);
-        QString file = get_ini_path(); short type = 0; qout << "配置文件目录" << file;
-        while (true)
-        {
-            if (type == 0)
-            {
-                if (!QFile::exists(file))
+                //char t[12] = { 0 };
+                //GetPrivateProfileString("SpeedBox", "Version", t, t, 11, file.toStdString().c_str());
+                QSettings set(file, QSettings::IniFormat);
+                set.beginGroup("SpeedBox");
+                QByteArray x = set.value("Version").toByteArray();
+                set.endGroup();
+                qout << "文件存在，版本信息为" << x;
+                if (VARBOX::versionBefore(x, "21.8.1"))
                 {
-                    qout << "SpeedBox.ini 文件不存在";
-                    sigleSave("SpeedBox", "Version", VarBox.Version);
+                    qout << "ini文件过期，将其删除。";
+                    QFile::remove(file); sigleSave("SpeedBox", "Version", Version);
                     type = 1;
                     continue;
                 }
                 else
                 {
-                    char t[12] = { 0 };
-                    GetPrivateProfileString("SpeedBox", "Version", t, t, 11, file.toStdString().c_str());
-                    qout << "文件存在，版本信息为" << t;
-                    if (versionBefore(t, "21.8.1"))
-                    {
-                        qout << "ini文件过期，将其删除。";
-                        QFile::remove(file); sigleSave("SpeedBox", "Version", VarBox.Version);
-                        type = 1;
-                        continue;
+                    qout << "版本支持，继续读取";
+                    type = 2;
+                    continue;
+                }
+            }
+        }
+        if (type == 1)
+        {
+            qout << "创建新的Ini文件。";
+            FamilyPath = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
+            PathToOpen = QDir::toNativeSeparators(qApp->applicationDirPath());
+            NativeDir = FamilyPath;
+            QSettings *IniWrite = new QSettings(get_ini_path(), QSettings::IniFormat);
+            IniWrite->beginGroup("Wallpaper");
+            IniWrite->setValue("PaperType", static_cast<int>(PaperType));
+            IniWrite->setValue("TimeInerval", TimeInterval);
+            IniWrite->setValue("PageNum", PageNum);
+            IniWrite->setValue("setNative", false);
+            IniWrite->setValue("AutoChange", false);
+            IniWrite->setValue("NativeDir", FamilyPath);
+            IniWrite->setValue("UserCommand", UserCommand);
+            IniWrite->endGroup();
+
+            IniWrite->beginGroup("Translate");
+            IniWrite->setValue("EnableTranslater", false);
+            IniWrite->setValue("AutoHide", true);
+            IniWrite->endGroup();
+
+            IniWrite->beginGroup("UI");
+            IniWrite->setValue("ColorTheme", static_cast<int>(CurTheme));
+            IniWrite->setValue("x", 100);
+            IniWrite->setValue("y", 100);
+            IniWrite->endGroup();
+
+            IniWrite->beginGroup("Dirs");
+            IniWrite->setValue("FamilyPath", FamilyPath);
+            IniWrite->setValue("OpenDir", PathToOpen);
+
+            for (short i = 0; i < 10; i++)
+                IniWrite->setValue(PaperTypes[i][0], FamilyNames[i]);
+            IniWrite->endGroup(); delete IniWrite;
+            saveTrayStyle();
+            type = 3;
+            qout << "创建新的ini文件完毕。";
+            continue;
+        }
+        else if (type == 2)
+        {
+            qout << "开始读取设置。";
+            QSettings *IniRead = new QSettings(file, QSettings::IniFormat);
+            IniRead->beginGroup("Wallpaper");
+            NativeDir = IniRead->value("NativeDir").toString();
+            unsigned safeEnum = IniRead->value("PaperType").toInt();
+            if (safeEnum>9) safeEnum = 0;
+            PaperType = static_cast<PAPER_TYPE>(safeEnum);
+            TimeInterval = IniRead->value("TimeInerval").toInt();
+            PageNum = IniRead->value("PageNum").toInt();
+            UserCommand = IniRead->value("UserCommand").toString();
+            AutoChange = IniRead->value("AutoChange").toBool();
+            IniRead->endGroup();
+            qout << "读取壁纸信息完毕";
+            IniRead->beginGroup("Translate");
+            AutoHide = IniRead->value("AutoHide").toBool();
+            EnableTranslater = IniRead->value("EnableTranslater").toBool();
+            IniRead->endGroup();
+            qout << "读取翻译信息完毕";
+            IniRead->beginGroup("Dirs");
+            PathToOpen = IniRead->value("OpenDir").toString();
+            FamilyPath = IniRead->value("FamilyPath").toString();
+            for (short i = 0; i < 10; i++)
+            {
+                FamilyNames[i] = IniRead->value(PaperTypes[i][0]).toString();
+            }
+            IniRead->endGroup();
+            qout << "读取路径信息完毕";
+            IniRead->beginGroup("UI");
+            safeEnum = IniRead->value("ColorTheme").toInt();
+            if (safeEnum > 3) safeEnum = 0;
+            CurTheme = static_cast<COLOR_THEME>(safeEnum);
+            IniRead->endGroup();
+            delete IniRead;
+            qout << "开始读取风格";
+            readTrayStyle();
+            qout << "读取设置完毕。";
+            type = 3;
+            continue;
+        }
+        else if (type == 3)
+        {
+            for (short i = 0; i < 7; i++)
+                get_pic_path(i);
+            if (!get_son_dir(PathToOpen))
+            {
+                PathToOpen = QDir::toNativeSeparators(qApp->applicationDirPath());
+                sigleSave("Dirs", "OpenDir", PathToOpen);
+            }
+            HaveAppRight = check_app_right();
+            EnableTranslater = HaveAppRight && EnableTranslater;
+            break;
+        }
+    }
+    qout << "VarBox构造函数结束。";
+}
+
+VARBOX::~VARBOX()
+{
+    qout << "结构体析构中~";
+    delete form;
+    for (auto x: PicHistory)
+    {
+        if (x.first)
+        {
+            delete [] static_cast<wchar_t*>(x.second);
+        }
+        else
+        {
+            delete [] static_cast<char*>(x.second);
+        }
+    }
+    if (AppId) delete [] AppId;
+    if (PassWord) delete [] PassWord;
+    if (hIphlpapi) FreeLibrary(hIphlpapi);
+    if (hOleacc) FreeLibrary(hOleacc);
+    if (hDwmapi) FreeLibrary(hDwmapi);
+    qout << "结构体析构成功。";
+}
+
+void VARBOX::loadFunctions()
+{
+    if (!WinVersion)
+    {
+        qApp->exit(RETCODE_ERROR_EXIT);
+        return;
+    }
+    if (hOleacc)
+    {
+        AccessibleObjectFromWindow = (pfnAccessibleObjectFromWindow)GetProcAddress(hOleacc, "AccessibleObjectFromWindow");
+        AccessibleChildren = (pfnAccessibleChildren)GetProcAddress(hOleacc, "AccessibleChildren");
+    }
+
+    if (hIphlpapi)           //获取两个函数指针
+    {
+        GetAdaptersAddresses = (pfnGetAdaptersAddresses)GetProcAddress(hIphlpapi, "GetAdaptersAddresses");
+        GetIfTable = (pfnGetIfTable)GetProcAddress(hIphlpapi, "GetIfTable");
+    }
+
+    if (hDwmapi)
+    {
+        pDwmGetWindowAttribute = (pfnDwmGetWindowAttribute)GetProcAddress(hDwmapi, "DwmGetWindowAttribute");
+    }
+
+
+    if (!(GetIfTable && GetAdaptersAddresses && AccessibleObjectFromWindow && AccessibleChildren && pDwmGetWindowAttribute))
+    {
+        qApp->exit(RETCODE_ERROR_EXIT);
+    }
+}
+
+bool VARBOX::check_app_right()
+{
+    QString appid_path = get_dat_path() + "\\AppId.txt";
+    if (!QFile::exists(appid_path)) return false;
+    std::ifstream file(appid_path.toStdString(), std::ios::in | std::ios::binary);
+    if( file.is_open())
+    {
+        qout << "成功打开密钥文件";
+        file.seekg(0, std::ios::end );
+        int size = file.tellg();
+        if (size < 20)
+        {
+            file.close();
+            return false;
+        }
+        unsigned char c1 = 0, c2 = 0, c3 = 0; file.seekg(0,std::ios::beg);
+        if (!(file.read((char*)&c1, sizeof(char))
+                &&
+              file.read((char*)&c2, sizeof(char))
+                &&
+              file.read((char*)&c3, sizeof(char))
+           ))
+        {
+            qout << "文件读取失败1";
+            file.close();
+            return false;
+        }
+        size -= sizeof(char) * 3;
+        if (c1 == 0xef && c2 == 0xbb && c3 == 0xbf)
+        {
+            char *str = new char[(size_t)size + 1]; str[size] = 0;
+            if (!file.read(str, size))
+            {
+                qout << "文件读取失败2";
+                file.close();
+                delete[] str; return false;
+            }
+            else
+            {
+                char* ptr0 = str + 7; char* ptr = ptr0; while (*++ptr && *ptr != '\n');
+                if (*ptr) {
+                    *ptr = 0; AppId = StrJoin(ptr0);
+                    ptr += 10; ptr0 = ptr;
+                    while (*++ptr && *ptr != '\n');
+                    if (*ptr) {
+                        *ptr = 0;
+                        PassWord = StrJoin(ptr0); file.close();
+                        delete[] str; return true;
                     }
-                    else
-                    {
-                        type = 2;
-                        continue;
-                    }
                 }
             }
-            if (type == 1)
+            delete[] str;
+        }
+        else
+        {
+            qout << "文件没有utf-8 bom头";
+        }
+        file.close();
+    }
+    return false;
+}
+
+void VARBOX::readTrayStyle()
+{
+    QSettings IniRead(get_ini_path(), QSettings::IniFormat);
+    IniRead.beginGroup("TaskStyle");
+    unsigned long long safeEnum = IniRead.value("aMode_f").toUInt();
+    if (safeEnum > 6 && safeEnum != 150) safeEnum = 0;
+    aMode[0] = static_cast<ACCENT_STATE>(safeEnum);
+    safeEnum = IniRead.value("aMode_s").toUInt();
+    if (safeEnum > 6 && safeEnum != 150) safeEnum = 0;
+    aMode[1] = static_cast<ACCENT_STATE>(safeEnum);
+    qout << "读取中。。";
+    safeEnum = IniRead.value("dAlphaColor_f").toULongLong();
+    if (safeEnum > 0xffffffff) safeEnum = 0x11111111;
+    dAlphaColor[0] = safeEnum;
+    safeEnum = IniRead.value("dAlphaColor_s").toULongLong();
+    if (safeEnum > 0xffffffff) safeEnum = 0x11111111;
+    dAlphaColor[1] = safeEnum;
+    safeEnum = IniRead.value("bAlpha_f").toUInt();
+    if (safeEnum > 0xff) safeEnum = 0xff;
+    bAlpha[0] = safeEnum;
+    safeEnum = IniRead.value("bAlpha_s").toUInt();
+    if (safeEnum > 0xff) safeEnum = 0xff;
+    bAlpha[1] = safeEnum;
+    safeEnum = IniRead.value("RefreshTime").toInt();
+    if (safeEnum<33||safeEnum>198) safeEnum = 33;
+    RefreshTime = safeEnum;
+    safeEnum = IniRead.value("iPos").toInt();
+    if (safeEnum > 2) safeEnum = 0;
+    iPos = static_cast<TaskBarCenterState>(safeEnum);
+    IniRead.endGroup();
+}
+
+void VARBOX::saveTrayStyle()
+{
+    QSettings IniWrite(get_ini_path(), QSettings::IniFormat);
+    IniWrite.beginGroup("TaskStyle");
+    IniWrite.setValue("aMode_f", static_cast<int>(aMode[0]));
+    IniWrite.setValue("aMode_s", static_cast<int>(aMode[1]));
+    IniWrite.setValue("dAlphaColor_f", static_cast<unsigned long long>(dAlphaColor[0]));
+    IniWrite.setValue("dAlphaColor_s", static_cast<unsigned long long>(dAlphaColor[1]));
+    IniWrite.setValue("bAlpha_f", static_cast<int>(bAlpha[0]));
+    IniWrite.setValue("bAlpha_s", static_cast<int>(bAlpha[1]));
+    IniWrite.setValue("RefreshTime", RefreshTime);
+    IniWrite.setValue("iPos",  static_cast<int>(iPos));
+    IniWrite.endGroup();
+}
+
+QString VARBOX::get_wal_path()
+{
+    QString str;
+    if (FamilyPath.isEmpty() || !get_son_dir(FamilyPath))
+    {
+        qout << "图片目录为空" << FamilyPath;
+        FamilyPath = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
+    }
+    str = FamilyPath + "\\" + FamilyNames[7];
+    if (FamilyNames[7].isEmpty() || !get_son_dir(str))
+    {
+        FamilyNames[7] = PaperTypes[7][1];
+        str = FamilyPath + "\\" + FamilyNames[7];
+    }
+    QSettings IniWrite(get_ini_path(), QSettings::IniFormat);
+    IniWrite.beginGroup("Dirs");
+    IniWrite.setValue("FamilyPath", FamilyPath);
+    IniWrite.setValue(PaperTypes[7][0], FamilyNames[7]);
+    IniWrite.endGroup();
+    return str;
+}
+
+QString VARBOX::get_pic_path(short i)
+{
+    qout << "获取图片路径开始" << i;
+    QString str = get_wal_path() + "\\" + FamilyNames[i];
+    if (FamilyNames[i].isEmpty() || !get_son_dir(str))
+    {
+        qout << "FamilyPath为空或者无法创建！";
+        FamilyNames[i] = PaperTypes[i][1];
+        str = FamilyPath + "\\", FamilyNames[7] + "\\" + FamilyNames[i];
+        get_son_dir(str);
+    }
+    QSettings IniWrite(get_ini_path(), QSettings::IniFormat);
+    IniWrite.beginGroup("Dirs");
+    IniWrite.setValue(PaperTypes[i][0], FamilyNames[i]);
+    IniWrite.endGroup();
+    qout << "最终图片路径结果：" << str;
+    return str;
+}
+
+QString VARBOX::get_ini_path()
+{
+    return get_dat_path() + "\\SpeedBox2.ini";
+}
+
+QString VARBOX::get_dat_path()
+{
+    QString str = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::HomeLocation) +  "/AppData/Local/SpeedBox");
+    get_son_dir(str);
+    return str;
+}
+
+bool VARBOX::get_son_dir(QString str)
+{
+    QDir dir;
+    return dir.exists(str) || dir.mkdir(str);
+}
+
+void VARBOX::sigleSave(QString group, QString key, QString value)
+{
+    QSettings IniWrite(get_ini_path(), QSettings::IniFormat);
+    IniWrite.beginGroup(group);
+    IniWrite.setValue(key, value);
+    IniWrite.endGroup();
+}
+
+bool VARBOX::getWebCode(const char* url, std::string& src, bool auto_delete)
+{
+    src.clear();
+    HINTERNET hSession = InternetOpen("Firefox", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+    if (hSession != NULL)
+    {
+        HINTERNET hURL = InternetOpenUrl(hSession, url, NULL, 0, INTERNET_FLAG_DONT_CACHE, 0);
+        if (auto_delete) delete[] url;
+        if (hURL)
+        {
+            char temp[1025] = { 0 };
+            DWORD dwRecv = 1;
+            while (dwRecv > 0 && VarBox->RunApp)
             {
-                qout << "创建新的Ini文件。";
-                VarBox.FamilyPath = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
-                VarBox.PathToOpen = QDir::toNativeSeparators(qApp->applicationDirPath());
-                VarBox.NativeDir = VarBox.FamilyPath;
-                QSettings *IniWrite = new QSettings(get_ini_path(), QSettings::IniFormat);
-                IniWrite->beginGroup("Wallpaper");
-                IniWrite->setValue("PaperType", (int)VarBox.PaperType);
-                IniWrite->setValue("TimeInerval", VarBox.TimeInterval);
-                IniWrite->setValue("PageNum", VarBox.PageNum);
-                IniWrite->setValue("setNative", false);
-                IniWrite->setValue("AutoChange", false);
-                IniWrite->setValue("NativeDir", VarBox.FamilyPath);
-                IniWrite->setValue("UserCommand", VarBox.UserCommand);
-                IniWrite->endGroup();
-
-                IniWrite->beginGroup("Translate");
-                IniWrite->setValue("EnableTranslater", false);
-                IniWrite->setValue("AutoHide", true);
-                IniWrite->endGroup();
-
-                IniWrite->beginGroup("UI");
-                IniWrite->setValue("ColorTheme", (int)VarBox.CurTheme);
-                IniWrite->setValue("x", 100);
-                IniWrite->setValue("y", 100);
-                IniWrite->endGroup();
-
-                IniWrite->beginGroup("Dirs");
-                IniWrite->setValue("FamilyPath", VarBox.FamilyPath);
-                IniWrite->setValue("OpenDir", VarBox.PathToOpen);
-
-                for (short i = 0; i < 10; i++)
-                    IniWrite->setValue(VarBox.PaperTypes[i][0], VarBox.FamilyNames[i]);
-                IniWrite->endGroup(); delete IniWrite;
-                saveTrayStyle();
-                type = 3;
-                qout << "创建新的ini文件完毕。";
-                continue;
+                memset(temp, 0, 1024);
+                InternetReadFile(hURL, temp, 1024, &dwRecv);
+                src += temp;
             }
-            else if (type == 2)
-            {
-                QSettings *IniRead = new QSettings(get_ini_path(), QSettings::IniFormat);
-                IniRead->beginGroup("Wallpaper");
-                VarBox.NativeDir = IniRead->value("NativeDir").toString();
-                VarBox.PaperType = (PAPER_TYPE)IniRead->value("PaperType").toInt();
-                VarBox.TimeInterval = IniRead->value("TimeInerval").toInt();
-                VarBox.PageNum = IniRead->value("PageNum").toInt();
-                VarBox.UserCommand = IniRead->value("UserCommand").toString();
-                VarBox.AutoChange = IniRead->value("AutoChange").toBool();
-                IniRead->endGroup();
+            InternetCloseHandle(hURL);
+            hURL = NULL;
+        }
 
-                IniRead->beginGroup("Translate");
-                VarBox.AutoHide = IniRead->value("AutoHide").toBool();
-                VarBox.EnableTranslater = IniRead->value("EnableTranslater").toBool();
-                IniRead->endGroup();
+        InternetCloseHandle(hSession);
+        hSession = NULL;
+    }
+    else
+    {
+        if (auto_delete) delete[] url;
+    }
+    return VarBox->RunApp && !src.empty();
+}
 
-                IniRead->beginGroup("Dirs");
-                VarBox.PathToOpen = IniRead->value("OpenDir").toString();
-                VarBox.FamilyPath = IniRead->value("FamilyPath").toString();
-                for (short i = 0; i < 10; i++)
+bool VARBOX::getBingCode(std::string& code)
+{
+    HINTERNET hSession = InternetOpen("Chromium", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+    if (hSession)
+    {
+        HINTERNET hURL = InternetOpenUrl(hSession, "https://cn.bing.com/", NULL, 0, INTERNET_FLAG_DONT_CACHE, 0);
+        if (hURL)
+        {
+            char temp[513] = { 0 };
+            DWORD dwRecv = 1;
+            InternetReadFile(hURL, temp, 512, &dwRecv);
+            code += temp;
+            memset(temp, 0, 512);
+            InternetReadFile(hURL, temp, 512, &dwRecv);
+            code += temp;
+            memset(temp, 0, 512);
+            InternetReadFile(hURL, temp, 512, &dwRecv);
+            code += temp;
+            InternetCloseHandle(hURL);
+            hURL = NULL;
+        }
+        InternetCloseHandle(hSession);
+        hSession = NULL;
+    }
+    return !code.empty();
+}
+
+// 会删除url
+bool VARBOX::getTransCode(const char* url, std::string& outcome)
+{
+    //qout << "翻译请求：" << url << Qt::endl;
+    HINTERNET hSession = InternetOpenA("Microsoft Edge", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+    if (hSession)
+    {
+        HINTERNET hURL = InternetOpenUrlA(hSession, url, NULL, 0, INTERNET_FLAG_DONT_CACHE, 0);
+        delete [] url; //qout << "发送翻译请求成功。";
+        if (hURL)
+        {
+            char buffer[1025] = { 0 }; DWORD dwRecv = 0;
+            do {
+                memset(buffer, 0, 1024);
+                InternetReadFile(hURL, buffer, 1024, &dwRecv);
+                if (dwRecv)
                 {
-                    VarBox.FamilyNames[i] = IniRead->value(VarBox.PaperTypes[i][0]).toString();
+                    buffer[dwRecv] = 0;
+                    //qout << "读入的字节数量：" << dwRecv;
+                    outcome.append(buffer);
                 }
-                IniRead->endGroup();
+                else
+                    break;
+            } while (VarBox->RunApp);
+            InternetCloseHandle(hURL);
+        }
 
-                IniRead->beginGroup("UI");
-                VarBox.CurTheme = (COLOR_THEME)IniRead->value("ColorTheme").toInt();
-                IniRead->endGroup(); delete IniRead;
-                readTrayStyle();
-                type = 3;
-                continue;
-            }
-            else if (type == 3)
+        InternetCloseHandle(hSession);
+        hSession = NULL;
+    }
+    else
+    {
+        delete [] url;
+    }
+    return !outcome.empty();
+}
+
+bool VARBOX::downloadImage(const char* url, const QString path, bool auto_delete)
+{
+    if (QFile::exists(path)) return 1;
+    bool OK = false;
+    DWORD dwRecv = 0;
+    DWORD allWrite = 0;
+    char* szDownLoad = new char[1024 * 40];
+    HINTERNET hSession = InternetOpen("Chromium", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+    if (hSession)
+    {
+        HINTERNET hOpenUrl = InternetOpenUrl(hSession, url, NULL, 0, INTERNET_FLAG_RELOAD, 0);
+        if (auto_delete) delete [] url;
+        if (hOpenUrl)
+        {
+            qout << "成功打开网址";
+            QFile file(path);
+            if (file.open(QIODevice::WriteOnly))
             {
-                for (short i = 0; i < 7; i++)
-                    get_pic_path(i);
-                if (!get_son_dir(VarBox.PathToOpen))
+                qout << "开始写入图片文件";
+                while (VarBox->RunApp)
                 {
-                    VarBox.PathToOpen = QDir::toNativeSeparators(qApp->applicationDirPath());
-                    sigleSave("Dirs", "OpenDir", VarBox.PathToOpen);
+                    //memset(szDownLoad, 0, 1024 * 40 * sizeof(char));
+                    Sleep(10); // qout << "下载循环中";
+                    InternetReadFile(hOpenUrl, szDownLoad, 1024 * 40, &dwRecv);
+                    if (!dwRecv)
+                        break;
+                    file.write(szDownLoad, dwRecv);
+                    allWrite += dwRecv;
                 }
-                VarBox.HaveAppRight = check_app_right();
-                VarBox.EnableTranslater = VarBox.HaveAppRight && VarBox.EnableTranslater;
-                qout << "VarBox.HaveAppRight" << VarBox.HaveAppRight;
-                if (VarBox.HaveAppRight){
-                    qout << "AppId" << VarBox.AppId;
-                    qout << "PassWord" << VarBox.PassWord;
+                qout << "下载结束";
+                file.close();
+                OK = (allWrite >= 0xffff) && VarBox->RunApp;
+                if (!OK && QFile::exists(path))
+                {
+                    QFile::remove(path);
+                    qout << "删除错误文件";
                 }
-                qout << "VarBox.EnableTranslater" << VarBox.EnableTranslater;
-                break;
+                else
+                {
+                    qout << "下载成功！";
+                }
             }
+            InternetCloseHandle(hOpenUrl);
         }
-        return true;
+        InternetCloseHandle(hSession);
     }
-
-    char* runCommand(QString program, QStringList argument, short line)
+    else
     {
-        QProcess process;
-        process.setProgram(program);
-        process.setArguments(argument);
-        process.start();
-        process.waitForStarted(); //等待程序启动
-        process.waitForFinished(5000);
-        if (line) {
-            for (int c = 1; c < line; c++)
-                process.readLine();
-            return StrJoin((const char*)process.readLine());
-        }
-        else return nullptr;
+        if (auto_delete) delete [] url;
     }
+    delete[] szDownLoad;
+    qout << "退出函数" << OK;
+    return OK;
+}
 
-    bool isOnline(bool wait)
+char* VARBOX::runCommand(QString program, QStringList argument, short line)
+{
+    QProcess process;
+    process.setProgram(program);
+    process.setArguments(argument);
+    process.start();
+    process.waitForStarted(); //等待程序启动
+    process.waitForFinished(5000);
+    if (line) {
+        for (int c = 1; c < line; c++)
+            process.readLine();
+        return StrJoin((const char*)process.readLine());
+    }
+    else return nullptr;
+}
+
+bool VARBOX::isOnline(bool wait)
+{
+    qout << "检测网络连接中。";
+    DWORD flag;
+    for (int c = 1; VarBox->RunApp && (c <= (wait ? 30 : 1)); c++)
     {
-        qout << "检测网络连接中。";
-        DWORD flag;
-        for (int c = 1; VarBox.RunApp && (c <= (wait ? 30 : 1)); c++)
+        if (VarBox->RunApp && InternetGetConnectedState(&flag, 0))
         {
-            if (VarBox.RunApp && InternetGetConnectedState(&flag, 0))
-            {
-                qout << "网络连接正常。";
-                return true;
-            }
-            else if (VarBox.RunApp)
-                for (short j = 1; VarBox.RunApp && (j <= 6); j++)
-                    Sleep(500);
-            qout << "再次检测网络连接。";
+            qout << "网络连接正常。";
+            return true;
         }
-        qout << "没有网络连接。";
-        return false;
+        else if (VarBox->RunApp)
+            for (short j = 1; VarBox->RunApp && (j <= 6); j++)
+                Sleep(500);
+        qout << "再次检测网络连接。";
     }
+    qout << "没有网络连接。";
+    return false;
+}
 
-    BOOL SetWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD AlphaColor)    //设置窗口WIN10风格
+BOOL VARBOX::SetWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD AlphaColor)    //设置窗口WIN10风格
+{
+    typedef BOOL(WINAPI* pfnSetWindowCompositionAttribute)(HWND, struct WINDOWCOMPOSITIONATTRIBDATA*);
+    pfnSetWindowCompositionAttribute pSetWindowCompositionAttribute = NULL;
+    if (mode == ACCENT_STATE::ACCENT_DISABLED)
     {
-        pfnSetWindowCompositionAttribute pSetWindowCompositionAttribute = NULL;
-        if (mode == ACCENT_STATE::ACCENT_DISABLED)
+        //		if (bAccentNormal == FALSE)
         {
-            //		if (bAccentNormal == FALSE)
-            {
-                SendMessage(hWnd, WM_THEMECHANGED, 0, 0);
-                //			bAccentNormal = TRUE;
-            }
-            return TRUE;
+            SendMessage(hWnd, WM_THEMECHANGED, 0, 0);
+            //			bAccentNormal = TRUE;
         }
-        //	bAccentNormal = FALSE;
-        BOOL ret = FALSE;
-        HMODULE hUser = GetModuleHandle("user32.dll");
-        if (hUser)
-            pSetWindowCompositionAttribute = (pfnSetWindowCompositionAttribute)GetProcAddress(hUser, "SetWindowCompositionAttribute");
-        if (pSetWindowCompositionAttribute)
-        {
-            ACCENT_POLICY accent = { mode, 2, AlphaColor, 0 };
-            _WINDOWCOMPOSITIONATTRIBDATA data;
-            data.Attrib = WCA_ACCENT_POLICY;
-            data.pvData = &accent;
-            data.cbData = sizeof(accent);
-            ret = pSetWindowCompositionAttribute(hWnd, &data);
-        }
-        return ret;
+        return TRUE;
     }
+    //	bAccentNormal = FALSE;
+    BOOL ret = FALSE;
+    HMODULE hUser = GetModuleHandle("user32.dll");
+    if (hUser)
+        pSetWindowCompositionAttribute = (pfnSetWindowCompositionAttribute)GetProcAddress(hUser, "SetWindowCompositionAttribute");
+    if (pSetWindowCompositionAttribute)
+    {
+        ACCENT_POLICY accent = { mode, 2, AlphaColor, 0 };
+        WINDOWCOMPOSITIONATTRIBDATA data;
+        data.Attrib = WINDOWCOMPOSITIONATTRIB::WCA_ACCENT_POLICY;
+        data.pvData = &accent;
+        data.cbData = sizeof(accent);
+        ret = pSetWindowCompositionAttribute(hWnd, &data);
+    }
+    return ret;
+}
 
-    void readTrayStyle()
+inline void _getINT(const char* &X, int &x)
+{
+    while (true)
     {
-        QSettings IniRead(get_ini_path(), QSettings::IniFormat);
-        IniRead.beginGroup("TaskStyle");
-        VarBox.aMode[0] = (_ACCENT_STATE)(IniRead.value("aMode_f").toUInt());
-        VarBox.aMode[1] = (_ACCENT_STATE)(IniRead.value("aMode_s").toUInt());
-        VarBox.dAlphaColor[0] = IniRead.value("dAlphaColor_f").toULongLong();
-        VarBox.dAlphaColor[1] = IniRead.value("dAlphaColor_s").toULongLong();
-        VarBox.bAlpha[0] = IniRead.value("bAlpha_f").toUInt();
-        VarBox.bAlpha[1] = IniRead.value("bAlpha_s").toUInt();
-        VarBox.RefreshTime = IniRead.value("RefreshTime").toInt();
-        VarBox.iPos = (TaskBarCenterState)IniRead.value("iPos").toInt();
-        IniRead.endGroup();
+        x += *X - '0';
+        ++X;
+        if (*X == '.' || *X == '\0')
+            return;
+        x *= 10;
     }
+}
+bool VARBOX::versionBefore(const char* A, const char* B)
+{
+    int a=0, b=0;
+    _getINT(A, a); _getINT(B, b);
+    ++A; ++B;
+    if (a<b) return true; else if (a>b) return false;
+    a = b = 0;
+    _getINT(A, a); _getINT(B, b);
+    ++A; ++B;
+    if (a<b) return true; else if (a>b) return false;
+    a = b = 0;
+    _getINT(A, a); _getINT(B, b);
+    if (a<b) return true; else return false;
+}
 
-    void saveTrayStyle()
+BOOL VARBOX::PathFileExists(LPCSTR pszPath)
+{
+    typedef BOOL(WINAPI* pfnPathFileExists)(LPCSTR pszPath);
+    pfnPathFileExists pPathFileExists = NULL;
+    BOOL ret = FALSE;
+    HMODULE hUser = GetModuleHandle(TEXT("Shlwapi.dll"));
+    if (hUser)
+        pPathFileExists = (pfnPathFileExists)GetProcAddress(hUser, "PathFileExistsA");
+    if (pPathFileExists)
     {
-        QSettings IniWrite(get_ini_path(), QSettings::IniFormat);
-        IniWrite.beginGroup("TaskStyle");
-        IniWrite.setValue("aMode_f", (int)VarBox.aMode[0]);
-        IniWrite.setValue("aMode_s", (int)VarBox.aMode[1]);
-        IniWrite.setValue("dAlphaColor_f", (unsigned long long)VarBox.dAlphaColor[0]);
-        IniWrite.setValue("dAlphaColor_s", (unsigned long long)VarBox.dAlphaColor[1]);
-        IniWrite.setValue("bAlpha_f", (int)VarBox.bAlpha[0]);
-        IniWrite.setValue("bAlpha_s", (int)VarBox.bAlpha[1]);
-        IniWrite.setValue("RefreshTime", VarBox.RefreshTime);
-        IniWrite.setValue("iPos", (int)VarBox.iPos);
-        IniWrite.endGroup();
+        qout << "找到函数！";
+        ret = pPathFileExists(pszPath);
     }
+    else
+    {
+        qout << "找不到函数！";
+    }
+    return ret;
+}
 
-    inline void _getINT(const char* &X, int &x)
+BOOL VARBOX::PathFileExists(LPWSTR pszPath)
+{
+    typedef BOOL(WINAPI* pfnPathFileExists)(LPWSTR pszPath);
+    pfnPathFileExists pPathFileExists = NULL;
+    BOOL ret = FALSE;
+    HMODULE hUser = GetModuleHandle(TEXT("Shlwapi.dll"));
+    if (hUser)
+        pPathFileExists = (pfnPathFileExists)GetProcAddress(hUser, "PathFileExistsW");
+    if (pPathFileExists)
     {
-        while (true)
-        {
-            x += *X - '0';
-            ++X;
-            if (*X == '.' || *X == '\0')
-                return;
-            x *= 10;
-        }
+        qout << "找到函数！";
+        ret = pPathFileExists(pszPath);
     }
-    bool versionBefore(const char* A, const char* B)
+    else
     {
-        int a=0, b=0;
-        _getINT(A, a); _getINT(B, b);
-        ++A; ++B;
-        if (a<b) return true; else if (a>b) return false;
-        a = b = 0;
-        _getINT(A, a); _getINT(B, b);
-        ++A; ++B;
-        if (a<b) return true; else if (a>b) return false;
-        a = b = 0;
-        _getINT(A, a); _getINT(B, b);
-        if (a<b) return true; else return false;
+        qout << "找不到函数！";
     }
+    return ret;
 }

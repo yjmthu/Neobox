@@ -21,6 +21,11 @@ BlankFrom::BlankFrom(QWidget* p):
     //setStyleSheet("QToolTip{border:1px solid rgb(118, 118, 118); background-color: #ffffff; color:#484848; font-size:12px;}");
 }
 
+BlankFrom::~BlankFrom()
+{
+    qDebug("析构BlankForm");
+}
+
 void BlankFrom::enterEvent(QEnterEvent *)
 {
     closeButton->setStyleSheet("QPushButton{border-image: url(:/icons/close.png);border-radius:7px;}");

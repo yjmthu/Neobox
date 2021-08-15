@@ -122,6 +122,9 @@ margin-bottom: 4px;</string>
       </item>
       <item>
        <layout class="QVBoxLayout" name="verticalLayout">
+        <property name="spacing">
+         <number>0</number>
+        </property>
         <item>
          <widget class="QLabel" name="Labup">
           <property name="minimumSize">
@@ -135,15 +138,6 @@ margin-bottom: 4px;</string>
             <width>16777215</width>
             <height>16777215</height>
            </size>
-          </property>
-          <property name="font">
-           <font>
-            <family>黑体</family>
-            <pointsize>9</pointsize>
-            <weight>50</weight>
-            <italic>false</italic>
-            <bold>false</bold>
-           </font>
           </property>
           <property name="cursor">
            <cursorShape>PointingHandCursor</cursorShape>
@@ -174,15 +168,6 @@ border-top-right-radius: 5px;</string>
             <width>16777215</width>
             <height>16777215</height>
            </size>
-          </property>
-          <property name="font">
-           <font>
-            <family>楷体</family>
-            <pointsize>9</pointsize>
-            <weight>50</weight>
-            <italic>false</italic>
-            <bold>false</bold>
-           </font>
           </property>
           <property name="cursor">
            <cursorShape>PointingHandCursor</cursorShape>

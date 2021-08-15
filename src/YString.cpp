@@ -49,30 +49,6 @@ char* StrRepeat(const char c, size_t count)
     }
 }
 
-//size_t StrLength(const char* str)
-//{
-//    if (str)
-//    {
-//        size_t len = -1;     // it's no problem.
-//        while (str[++len]);
-//        return len;
-//    }
-//    else
-//        return 0;
-//}
-
-
-//size_t StrLength(const wchar_t* str)
-//{
-//    if (str)
-//    {
-//        size_t len = -1;     // it's no problem.
-//        while (str[++len]);
-//        return len;
-//    }
-//    else
-//        return 0;
-//}
 
 size_t strlen(const char** box, size_t num)
 {
@@ -180,7 +156,21 @@ bool StrCompare(const char* str_a, const char* str_b, size_t length)
         return true;
     while (length)
     {
-        if (str_a[--length] != str_b[length])
+        --length;
+        if (str_a[length] != str_b[length])
+            return false;
+    }
+    return true;
+}
+
+bool StrCompare(const wchar_t* str_a, const wchar_t* str_b, size_t length)
+{
+    if (length <= 0)
+        return true;
+    while (length)
+    {
+        --length;
+        if (str_a[length] != str_b[length])
             return false;
     }
     return true;
@@ -193,7 +183,8 @@ bool StrCompareA(const char* str_a, const char* str_b)
         return false;
     while (length_a)
     {
-        if (str_a[--length_a] != str_b[length_a])
+        --length_a;
+        if (str_a[length_a] != str_b[length_a])
         {
             if ('a' <= str_a[length_a] && str_a[length_a] <= 'z' && str_a[length_a] - str_b[length_a] == 'a' - 'A')
                 continue;
@@ -213,7 +204,22 @@ bool StrCompare(const char* str_a, const char* str_b)
         return false;
     while (length_a)
     {
-        if (str_a[--length_a] != str_b[length_a])
+        --length_a;
+        if (str_a[length_a] != str_b[length_a])
+            return false;
+    }
+    return true;
+}
+
+bool StrCompare(const wchar_t* str_a, const wchar_t* str_b)
+{
+    size_t  length_a = wcslen(str_a), length_b = wcslen(str_b);
+    if (length_a != length_b)
+        return false;
+    while (length_a)
+    {
+        --length_a;
+        if (str_a[length_a] != str_b[length_a])
             return false;
     }
     return true;
@@ -240,9 +246,4 @@ char* StrContainStr(char* str_a, char* str_b)
 const char* StrSkip(const char* content)
 {
     while (content && *content && (unsigned char)*content <= 32) content++; return content;
-}
-
-const char* StrGoEnd(const char* content)
-{
-    while (content && *content) content++; return content;
 }

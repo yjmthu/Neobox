@@ -91,7 +91,7 @@ public:
     bool removeItem(const char* key);
     bool removeItemByValue(int value);
     bool removeItemByValue(double value);
-    bool removeItemByValue(char* value);
+    bool removeItemByValue(std::string value);
 
     static YJsonDebug DEBUG_OUT_PUT;
 

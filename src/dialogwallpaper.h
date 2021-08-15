@@ -14,6 +14,7 @@ public:
     void setRandom() override;
     void setAdvance() override;
     void startWork() override;
+    ~DialogWallpaper();
 };
 
 #endif // DIALOGWALLPAPER_H

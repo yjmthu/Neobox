@@ -1,5 +1,4 @@
 ﻿#include <winsock2.h>
-#include <iphlpapi.h>
 
 #include <QRect>
 #include <QMessageBox>
@@ -12,15 +11,12 @@
 #include "ui_form.h"
 #include "wallpaper.h"
 
-typedef ULONG(WINAPI* pfnGetAdaptersAddresses)(_In_ ULONG Family, _In_ ULONG Flags, _Reserved_ PVOID Reserved, _Out_writes_bytes_opt_(*SizePointer) PIP_ADAPTER_ADDRESSES AdapterAddresses, _Inout_ PULONG SizePointer);
-typedef DWORD(WINAPI* pfnGetIfTable)(_Out_writes_bytes_opt_(*pdwSize) PMIB_IFTABLE pIfTable, _Inout_ PULONG pdwSize, _In_ BOOL bOrder);
-
 PIP_ADAPTER_ADDRESSES piaa;//网卡结构
 MIB_IFTABLE *mi;    //网速结构
 
-QString formatSpped(long long dw, bool up_down)
+inline QString formatSpped(long long dw, bool up_down)
 {
-    static const char* units[] = { "\342\206\221", "\342\206\223", "B", "KB", "MB" };
+    static const char* units[] = { "\342\206\221", "\342\206\223", "", "K", "M" };
 	long double DW = dw;
 	ushort the_unit = 2;
 	if (DW >= 1024)
@@ -33,7 +29,7 @@ QString formatSpped(long long dw, bool up_down)
 			the_unit++;
 		}
 	}
-    return  QString("%1  %2 %3").arg(units[up_down], QString::number(DW, 'f', 1), units[the_unit]);
+    return  QString("%1  %2 %3B").arg(units[up_down], QString::number(DW, 'f', 1), units[the_unit]);
 }
 
 
@@ -41,7 +37,7 @@ Form::Form(QWidget* parent) :
 	QWidget(parent),
 	ui(new Ui::Form)
 {
-    VarBox.form = this;
+    Form** p = const_cast<Form**>(&(VarBox->form)); *p = this;
     ui->setupUi(this);                                                     //创建界面
     ui->LabMemory->installEventFilter(this);
 	initForm();                                                            //初始化大小、位置、翻译功能
@@ -51,7 +47,8 @@ Form::Form(QWidget* parent) :
 
 Form::~Form()
 {
-    if (VarBox.EnableTranslater) delete translater;
+    qout << "析构Form开始";
+    if (VarBox->EnableTranslater) delete translater;
     delete monitor_timer;
     delete menu;
     delete dialog;
@@ -59,6 +56,7 @@ Form::~Form()
     delete animation;
     HeapFree(GetProcessHeap(), 0, piaa);
     HeapFree(GetProcessHeap(), 0, mi);
+    qout << "析构Form结束";
 }
 
 void Form::initForm()
@@ -72,27 +70,22 @@ void Form::initForm()
     font.setBold(true);
     ui->LabMemory->setFont(font);
     font_use = QFontDatabase::addApplicationFont(":/fonts/netspeed.ttf");
-	fontFamilies = QFontDatabase::applicationFontFamilies(font_use);
-	font.setFamily(fontFamilies.at(0));
-	font.setPointSize(8);
-	font.setBold(true);
-	ui->Labdown->setFont(font);
-	ui->Labup->setFont(font);
+    fontFamilies = QFontDatabase::applicationFontFamilies(font_use);
+    font.setFamily(fontFamilies.at(0));
+    font.setPointSize(8);
+    font.setBold(true);
+    ui->Labdown->setFont(font);
+    ui->Labup->setFont(font);
     setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
     setAttribute(Qt::WA_TranslucentBackground);
     //setStyleSheet("background:transparent");
 	setMinimumSize(FORM_WIDTH, FORM_HEIGHT);
 	setMaximumSize(FORM_WIDTH, FORM_HEIGHT);
-    qout << "初始化文件开始~";
-    FuncBox::build_init_files();                  //初始化文件，读取悬浮窗位置以及其它设置。
-    qout << "初始化文件结束";
-    int x, y;                                     //存储悬浮窗位置坐标。
-    QSettings IniRead(FuncBox::get_ini_path(), QSettings::IniFormat);
+    QSettings IniRead(VarBox->get_ini_path(), QSettings::IniFormat);
     IniRead.beginGroup("UI");
-    x = IniRead.value("x").toInt(); y = IniRead.value("y").toInt();
+    SetWindowPos(HWND(winId()), HWND_TOPMOST, IniRead.value("x").toInt(), IniRead.value("y").toInt(), 0, 0, SWP_NOSIZE);
     IniRead.endGroup();
-    SetWindowPos(HWND(winId()), HWND_TOPMOST, x, y, 0, 0, SWP_NOSIZE);
-    if (VarBox.EnableTranslater)
+    if (VarBox->EnableTranslater)
         enableTrans(true);
     else
         translater = nullptr;                     //防止野指针
@@ -113,7 +106,7 @@ void Form::initConnects()
 void Form::savePos()
 {
     RECT rt; GetWindowRect(HWND(winId()), &rt);
-    QSettings IniWrite(FuncBox::get_ini_path(), QSettings::IniFormat);
+    QSettings IniWrite(VarBox->get_ini_path(), QSettings::IniFormat);
     IniWrite.beginGroup("UI");
     IniWrite.setValue("x", (int)rt.left); IniWrite.setValue("y", (int)rt.top);
     IniWrite.endGroup();
@@ -121,7 +114,7 @@ void Form::savePos()
 
 void Form::msgBox(const char* content, const char* title)
 {
-    QMessageBox::information(nullptr, title, content, QMessageBox::Ok, QMessageBox::Ok);
+    QMessageBox::information(dialog, title, content, QMessageBox::Ok, QMessageBox::Ok);
 }
 
 
@@ -185,7 +178,7 @@ void Form::mousePressEvent(QMouseEvent* event)
 	}
     else if (event->button() == Qt::MiddleButton)
     {
-        VarBox.RunApp = false;
+        VarBox->RunApp = false;
         qApp->exit(RETCODE_RESTART);
     }
 	event->accept();
@@ -204,7 +197,7 @@ void Form::mouseReleaseEvent(QMouseEvent* event)
 
 void Form::mouseDoubleClickEvent(QMouseEvent*)
 {
-    if (VarBox.EnableTranslater)
+    if (VarBox->EnableTranslater)
     {
         if (!translater->isVisible())
             translater->show();
@@ -215,7 +208,7 @@ void Form::mouseDoubleClickEvent(QMouseEvent*)
 
 void Form::mouseMoveEvent(QMouseEvent* event)
 {
-    if (VarBox.EnableTranslater && !translater->isHidden())
+    if (VarBox->EnableTranslater && !translater->isHidden())
     {
         translater->close();
     }
@@ -237,9 +230,9 @@ void Form::leaveEvent(QEvent* event)
 void Form::tb_hide()
 {
 	QPoint pos = frameGeometry().topLeft();
-    if (pos.x() + FORM_WIDTH >= VarBox.ScreenWidth)  // 右侧隐藏
+    if (pos.x() + FORM_WIDTH >= VarBox->ScreenWidth)  // 右侧隐藏
 	{
-        startAnimation(VarBox.ScreenWidth - 2, pos.y());
+        startAnimation(VarBox->ScreenWidth - 2, pos.y());
 		moved = true;
 	}
 	else if (pos.x() <= 2)                    // 左侧隐藏
@@ -258,9 +251,9 @@ void Form::tb_show()
 {
 	QPoint pos = frameGeometry().topLeft();
 	if (moved) {
-        if (pos.x() + FORM_WIDTH >= VarBox.ScreenWidth)   // 右侧显示
+        if (pos.x() + FORM_WIDTH >= VarBox->ScreenWidth)   // 右侧显示
 		{
-            startAnimation(VarBox.ScreenWidth - FORM_WIDTH + 2, pos.y());
+            startAnimation(VarBox->ScreenWidth - FORM_WIDTH + 2, pos.y());
 			moved = false;
 		}
 		else if (pos.x() <= 0)                    // 左侧显示
@@ -296,28 +289,28 @@ void Form::enableTrans(bool checked)
 {
     if (checked)
     {
-        if (VarBox.HaveAppRight)
+        if (VarBox->HaveAppRight)
         {
-            VarBox.EnableTranslater = true;
+            VarBox->EnableTranslater = true;
             translater = new Translater;
             connect(translater, &Translater::enableself, this, &Form::enableTrans);
         }
         else
         {
-            QMessageBox::warning(nullptr, "错误", "未找到APP ID和密钥！请打开设置并确认是否填写正确。");
-            VarBox.EnableTranslater = false;
+            QMessageBox::warning(dialog, "错误", "未找到APP ID和密钥！请打开设置并确认是否填写正确。");
+            VarBox->EnableTranslater = false;
         }
     }
     else
     {
-        VarBox.EnableTranslater = false;
+        VarBox->EnableTranslater = false;
         delete translater;
         translater = nullptr;
     }
 
-    QSettings IniWrite(FuncBox::get_ini_path(), QSettings::IniFormat);
+    QSettings IniWrite(VarBox->get_ini_path(), QSettings::IniFormat);
     IniWrite.beginGroup("Translate");
-    IniWrite.setValue("EnableTranslater", VarBox.EnableTranslater);
+    IniWrite.setValue("EnableTranslater", VarBox->EnableTranslater);
     IniWrite.endGroup();
 }
 
@@ -333,27 +326,15 @@ void Form::get_net_usage()
 {
     static short iGetAddressTime = 10;  //10秒一次获取网卡信息
     static DWORD m_last_in_bytes = 0 /* 总上一秒下载字节 */,  m_last_out_bytes = 0 /* 总上一秒上传字节 */;
-    static pfnGetIfTable GetIfTable = nullptr; static pfnGetAdaptersAddresses GetAdaptersAddresses = nullptr;
-    if (VarBox.hIphlpapi == NULL)           //获取两个函数指针
-    {
-        VarBox.hIphlpapi = LoadLibrary("iphlpapi.dll");
-        if (VarBox.hIphlpapi)
-        {
-            GetAdaptersAddresses = (pfnGetAdaptersAddresses)GetProcAddress(VarBox.hIphlpapi, "GetAdaptersAddresses");
-            GetIfTable = (pfnGetIfTable)GetProcAddress(VarBox.hIphlpapi, "GetIfTable");
-        }
-    }
-
-    if (!(VarBox.hIphlpapi && GetIfTable && GetAdaptersAddresses)) return;
 
     if (iGetAddressTime == 10)        // 10秒更新
     {
         DWORD dwIPSize = 0;
-        if (GetAdaptersAddresses(AF_INET, 0, 0, piaa, &dwIPSize) == ERROR_BUFFER_OVERFLOW)
+        if (VarBox->GetAdaptersAddresses(AF_INET, 0, 0, piaa, &dwIPSize) == ERROR_BUFFER_OVERFLOW)
         {
             HeapFree(GetProcessHeap(), 0, piaa);
             piaa = (PIP_ADAPTER_ADDRESSES)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dwIPSize);
-            GetAdaptersAddresses(AF_INET, 0, 0, piaa, &dwIPSize);
+            VarBox->GetAdaptersAddresses(AF_INET, 0, 0, piaa, &dwIPSize);
         }
         iGetAddressTime = 0;
     }
@@ -361,12 +342,12 @@ void Form::get_net_usage()
         iGetAddressTime++;
 
     DWORD dwMISize = 0;
-    if (GetIfTable(mi, &dwMISize, FALSE) == ERROR_INSUFFICIENT_BUFFER)
+    if (VarBox->GetIfTable(mi, &dwMISize, FALSE) == ERROR_INSUFFICIENT_BUFFER)
     {
         dwMISize += sizeof(MIB_IFROW) * 2;
         HeapFree(GetProcessHeap(), 0, mi);
         mi = (MIB_IFTABLE*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dwMISize);
-        GetIfTable(mi, &dwMISize, FALSE);
+        VarBox->GetIfTable(mi, &dwMISize, FALSE);
     }
     DWORD m_in_bytes = 0, m_out_bytes = 0; PIP_ADAPTER_ADDRESSES paa = nullptr;
     for (DWORD i = 0; i < mi->dwNumEntries; i++)

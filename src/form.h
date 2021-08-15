@@ -7,8 +7,8 @@
 #include "menu.h"
 
 
-#define FORM_WIDTH  92        //适用于2560x1600的屏幕
-#define FORM_HEIGHT 40        //适用于2560x1600的屏幕
+#define FORM_WIDTH  92
+#define FORM_HEIGHT 40
 
 class QPropertyAnimation;
 namespace Ui {
