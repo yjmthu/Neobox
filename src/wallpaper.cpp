@@ -132,16 +132,16 @@ bool Wallpaper::set_from_Wallhaven() const  // 从数据库中随机抽取一个
 			}
 			else
 			{
-                jsonObject = new YJsonItem(file_name.toStdString(), YJsonParse::YJson_File);
-				if (!YJsonItem::ep && jsonObject->getType() == YJson::YJSON_OBJECT &&
+                jsonObject = new YJsonItem(file_name.toStdString(), YJSON_PARSE::FILE);
+                if (!YJsonItem::ep && jsonObject->getType() == YJSON_TYPE::YJSON_OBJECT &&
                     (find_item = jsonObject->findItem("PaperType")) &&
-					find_item->getType() == YJson::YJSON_STRING &&
+                    find_item->getType() == YJSON_TYPE::YJSON_STRING &&
                     StrCompare(find_item->getValueSring(), VarBox->StandardNames[(int)VarBox->PaperType][0]) &&
                     (find_item = jsonObject->findItem("PageNum")) &&
-					find_item->getType() == YJson::YJSON_NUMBER &&
+                    find_item->getType() == YJSON_TYPE::YJSON_NUMBER &&
                     find_item->getValueInt() == VarBox->PageNum &&
                     (jsonArray = jsonObject->findItem("ImgUrls")) &&
-					jsonArray->getType() == YJson::YJSON_ARRAY)
+                    jsonArray->getType() == YJSON_TYPE::YJSON_ARRAY)
 				{
 					if (!jsonArray->getChildItem())
 					{
@@ -162,10 +162,10 @@ bool Wallpaper::set_from_Wallhaven() const  // 从数据库中随机抽取一个
 		else if (type == 1)
 		{
             qout << "Wallhaven 创建新的Json对象";
-            jsonObject = new YJsonItem("{}");
+            jsonObject = YJsonItem::newObject();
             jsonObject->appendItem(VarBox->StandardNames[static_cast<int>(VarBox->PaperType)][0], "PaperType");
             jsonObject->appendItem(VarBox->PageNum, "PageNum");
-            jsonArray = jsonObject->appendItem(YJsonItem::newArray(), "ImgUrls");
+            jsonArray = jsonObject->appendItem(YJsonItem::Array(), "ImgUrls");
             qout << "Wallhaven 尝试从wallhaven下载源码";
 			need_save = get_url_from_Wallhaven(*jsonArray);
             qout << "Wallhaven 源码下载完毕";
@@ -184,13 +184,13 @@ bool Wallpaper::set_from_Wallhaven() const  // 从数据库中随机抽取一个
                 if (QFile::exists(temp))
                 {
                     qout << "黑名单文件存在！";
-                    YJsonItem *blacklist = new YJsonItem(temp.toStdString(), YJsonParse::YJson_File);
-                    if (blacklist->getType() == YJson::YJSON_ARRAY)
+                    YJsonItem *blacklist = new YJsonItem(temp.toStdString(), YJSON_PARSE::FILE);
+                    if (blacklist->getType() == YJSON_TYPE::YJSON_ARRAY)
                         for (unsigned char x = 0; x < 0xff && pic_num; ++x)
                         {
                             srand((unsigned)time(0)+x);           // 防止出现重复
                             YJsonItem &item = img_data[rand() % pic_num];
-                            if (item.getType() == YJson::YJSON_STRING)
+                            if (item.getType() == YJSON_TYPE::YJSON_STRING)
                             {
                                 pic = item.getValueSring();
                                 qout << "随机id" << pic;

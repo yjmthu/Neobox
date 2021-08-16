@@ -1006,7 +1006,7 @@ void Dialog::on_pushButton_10_clicked()
             return;
         }
         const YJsonItem json(str);
-        if (json.getType() != YJson::YJSON_OBJECT)
+        if (json.getType() != YJSON_TYPE::YJSON_OBJECT)
         {
             emit finished(false, "Gitee源出现问题！");
             return;
@@ -1065,19 +1065,19 @@ void Dialog::on_pushButton_12_clicked()
             return;
         }
         YJsonItem json(str);
-        if (json.getType() != YJson::YJSON_OBJECT)
+        if (json.getType() != YJSON_TYPE::YJSON_OBJECT)
         {
             emit finished(false, "Gitee源出现问题！");
             return;
         }
         YJsonItem *qtVersion = json.findItem("Qt Version");
-        if (qtVersion->getType() != YJson::YJSON_STRING || !StrCompare(qtVersion->getValueSring(), "6.1.2"))
+        if (qtVersion->getType() != YJSON_TYPE::YJSON_STRING || !StrCompare(qtVersion->getValueSring(), "6.1.2"))
         {
             jobTip->showTip("下载更新失败，请手动打开浏览器到Gitee下载！", 3000);
             return;
         }
         YJsonItem *urls = json.findItem("Files"); YJsonItem *child = nullptr;
-        if (urls && urls->getType() == YJson::YJSON_OBJECT)
+        if (urls && urls->getType() == YJSON_TYPE::YJSON_OBJECT)
         {
             if (!(child = urls->findItem("main")))
             {

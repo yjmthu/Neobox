@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <string>
 
-typedef enum class _YJSON{
+enum class YJSON_TYPE{
     YJSON_FALSE=0,
     YJSON_TRUE=1,
     YJSON_NULL=2,
@@ -9,24 +9,24 @@ typedef enum class _YJSON{
     YJSON_STRING=4,
     YJSON_ARRAY=5,
     YJSON_OBJECT=6,
-} YJson;
+};
 
-typedef enum class _YJSON_PARSE{
-    YJson_File = 0,
-    YJson_String = 1
-} YJsonParse;
+enum class YJSON_PARSE{
+    FILE = 0,
+    STRING = 1
+};
 
-typedef enum class _FILE_ENCODE{
-    CODE_UTF8 = 0,
-    CODE_UTF16 = 1,
-    CODE_GBK = 2,
-    CODE_OTHER = 3
-} FILE_ENCODE;
+enum class YJSON_ENCODE{
+    UTF8 = 0,
+    UTF16 = 1,
+    GBK = 2,
+    OTHER = 3
+};
 
-typedef enum class _YJSON_DEBUG{
-    YJSON_HIDE = 0,
-    YJSON_SHOW = 1
-} YJsonDebug;
+enum class YJSON_DEBUG{
+    HIDE = 0,
+    SHOW = 1
+};
 
 class YJsonItem
 {
@@ -35,14 +35,16 @@ protected:
 public:
     YJsonItem(const YJsonItem&);
     YJsonItem(const YJsonItem*);
-    YJsonItem(const std::string, const YJsonParse=YJsonParse::YJson_String);
+    YJsonItem(const std::string, const YJSON_PARSE=YJSON_PARSE::STRING);
     ~YJsonItem();
     static bool FMT; static const char* ep;
 
-    static YJsonItem newArray();
-    static YJsonItem newObject();
+    static YJsonItem Array();
+    static YJsonItem Object();
+    static YJsonItem* newArray();
+    static YJsonItem* newObject();
 
-    YJson getType() const;
+    YJSON_TYPE getType() const;
     YJsonItem* getPrevItem() const;
     YJsonItem* getNextItem() const;
     YJsonItem* getChildItem() const;
@@ -93,7 +95,7 @@ public:
     bool removeItemByValue(double value);
     bool removeItemByValue(std::string value);
 
-    static YJsonDebug DEBUG_OUT_PUT;
+    static YJSON_DEBUG DEBUG_OUT_PUT;
 
 private:
 	YJsonItem *_next = nullptr,*_prev = nullptr;
@@ -104,10 +106,10 @@ private:
 	double _valuedouble = 0;
 
     char *_keystring = nullptr;
-    YJson _type = YJson::YJSON_NULL;
+    YJSON_TYPE _type = YJSON_TYPE::YJSON_NULL;
 
     char *_buffer = nullptr;
-    int _depth = 1; static FILE_ENCODE _encode;
+    int _depth = 1; static YJSON_ENCODE _encode;
 
     const char *parse_value(const char *value);
     void print_value();
@@ -127,7 +129,7 @@ private:
     void UpdateDepth(int depth);
 
     bool removeItem(YJsonItem*);
-    YJsonItem* appendItem(YJson type);
+    YJsonItem* appendItem(YJSON_TYPE type);
 
     friend std::ostream& operator<<(std::ostream &out, YJsonItem &c1);
     friend std::ostream& operator<<(std::ostream &out, YJsonItem *c1);

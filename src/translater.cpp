@@ -326,7 +326,7 @@ void Translater::getReply(const QByteArray& text)
         if ((have_item = json_data.findItem("trans_result")) &&
             (have_item = have_item->getChildItem()) && (have_item = have_item->findItem("dst")))
         {
-            if (have_item->getType() == YJson::YJSON_STRING)
+            if (have_item->getType() == YJSON_TYPE::YJSON_STRING)
             {
                 ui->TextTo->setPlainText(have_item->getValueSring());
                 QTextCursor cursor = ui->TextFrom->textCursor();

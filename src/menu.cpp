@@ -243,15 +243,15 @@ void Menu::initMenuConnect()
                     YJsonItem *blackList = nullptr;
                     if (QFile::exists(str))
                     {
-                        blackList = new YJsonItem(str.toStdString(), YJsonParse::YJson_File);
-                        if (blackList->getType() != YJson::YJSON_ARRAY)
+                        blackList = new YJsonItem(str.toStdString(), YJSON_PARSE::FILE);
+                        if (blackList->getType() != YJSON_TYPE::YJSON_ARRAY)
                         {
                             delete blackList;
-                            blackList = new YJsonItem("[]", YJsonParse::YJson_String);
+                            blackList = YJsonItem::newArray();
                         }
                     }
                     else
-                        blackList = new YJsonItem("[]", YJsonParse::YJson_String);
+                        blackList = YJsonItem::newArray();
                     blackList->appendItem(id);
                     blackList->toFile(str.toStdString());
                     delete  blackList;
