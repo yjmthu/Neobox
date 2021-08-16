@@ -16,7 +16,6 @@
 bool YJsonItem::FMT = true;
 YJSON_DEBUG YJsonItem::DEBUG_OUT_PUT = YJSON_DEBUG::SHOW;
 const char* YJsonItem::ep = nullptr;
-YJSON_ENCODE YJsonItem::_encode = YJSON_ENCODE::OTHER;
 
 YJsonItem::YJsonItem() {}
 
@@ -37,6 +36,7 @@ YJsonItem::YJsonItem(const std::string str, const YJSON_PARSE type)
     case YJSON_PARSE::FILE:
     {
         char *json_str = nullptr;
+        YJSON_ENCODE file_encode = YJSON_ENCODE::OTHER;
         std::ifstream file(str, std::ios::in | std::ios::binary);
         if (file.is_open())
         {
@@ -56,13 +56,13 @@ YJsonItem::YJsonItem(const std::string str, const YJSON_PARSE type)
             size -= sizeof(char) * 3;
             if (c[0] == 0xef && c[1] == 0xbb && c[2] == 0xbf)
             {
-                _encode = YJSON_ENCODE::UTF8;
+                file_encode = YJSON_ENCODE::UTF8;
                 json_str = new char[size + 1]; json_str[size] = 0;
                 file.read(json_str, size); file.close();
             }
             else if (c[0] == 0xff && c[1] == 0xfe)
             {
-                _encode = YJSON_ENCODE::UTF16;
+                file_encode = YJSON_ENCODE::UTF16;
                 if ((size + sizeof (char)) % sizeof (wchar_t))
                 {
                     file.close(); return;
@@ -78,10 +78,10 @@ YJsonItem::YJsonItem(const std::string str, const YJSON_PARSE type)
             }
             else
             {
-                _encode = YJSON_ENCODE::OTHER;
+                file_encode = YJSON_ENCODE::OTHER;
                 file.close(); return;
             }
-            if (_encode != YJSON_ENCODE::OTHER)
+            if (file_encode != YJSON_ENCODE::OTHER)
             {
                 const char* temp = StrSkip(json_str);
                 switch (*temp)
@@ -787,14 +787,14 @@ const char* YJsonItem::toString(bool fmt)
         return nullptr;
 }
 
-bool YJsonItem::toFile(const std::string name)
+bool YJsonItem::toFile(const std::string name, const YJSON_ENCODE& file_encode)
 {
     FMT = 1; qout << "开始打印";
     UpdateDepth(0); print_value();
     qout << "打印成功";
     if (_buffer)
     {
-        switch (_encode) {
+        switch (file_encode) {
         case (YJSON_ENCODE::UTF16):
         {
             cout << "UTF-16" << "保存开始。";

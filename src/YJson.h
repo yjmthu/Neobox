@@ -57,7 +57,7 @@ public:
     int getChildNum() const;
 
     const char* toString(bool fmt = true);
-    bool toFile(const std::string file_name);
+    bool toFile(const std::string file_name, const YJSON_ENCODE& file_encode=YJSON_ENCODE::UTF8);
 
     YJsonItem& operator=(const YJsonItem*);
     YJsonItem& operator=(const YJsonItem&);
@@ -109,7 +109,7 @@ private:
     YJSON_TYPE _type = YJSON_TYPE::YJSON_NULL;
 
     char *_buffer = nullptr;
-    int _depth = 1; static YJSON_ENCODE _encode;
+    int _depth = 1;
 
     const char *parse_value(const char *value);
     void print_value();
