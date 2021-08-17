@@ -274,7 +274,7 @@ void Translater::keyPressEvent(QKeyEvent* event)
 
 void Translater::getReply(const QByteArray& text)
 {
-    //qout << "开始执行翻译函数";
+    qout << "开始执行翻译函数";
     static const char API[] = u8"http://api.fanyi.baidu.com/api/trans/vip/translate";
     static const char salt[] = u8"1435660288";                           //请求参数之一
     unfinished = true;
@@ -310,11 +310,11 @@ void Translater::getReply(const QByteArray& text)
     utf8_q = StrJoin(VarBox->AppId, (const char*)text, salt, VarBox->PassWord);
     char sign[33]; strcpy_s(sign, 33, QCryptographicHash::hash(utf8_q, QCryptographicHash::Md5).toHex());
     delete [] utf8_q;
-    //qout << "mysign" << sign;
+    qout << "mysign" << sign;
 
     std::string reply_data; std::thread thrd; QEventLoop loop;
 
-    connect(this, &Translater::finished, [&reply_data, &loop, &thrd, this](bool success){
+    connect(this, &Translater::finished, this, [&](bool success){
         if (thrd.joinable()) thrd.join(); loop.quit();
         if (!success)
         {
@@ -366,7 +366,7 @@ void Translater::getReply(const QByteArray& text)
             emit finished(false);
     });
     loop.exec();    //阻塞函数等待翻译结果，但是不阻塞ui。ui仍然可以编辑改动，不会卡死。
-    //qout << "翻译函数执行完毕";
+    qout << "翻译函数执行完毕";
     unfinished = false;
 }
 

@@ -136,7 +136,7 @@ struct VARBOX
     DWORD dAlphaColor[2] = { 0x11111111, 0x11111111 }; /* 背景 */
     DWORD bAlpha[2] = {0xff, 0xff};                    /* 图标 */
     TaskBarCenterState iPos = TaskBarCenterState::TASK_LEFT;
-    short RefreshTime = 33;
+    unsigned short RefreshTime = 33;
 
     const int ScreenWidth, ScreenHeight;                  //屏幕宽高
     static HANDLE HMutex; HMODULE hOleacc = NULL, hIphlpapi = NULL, hDwmapi = NULL; Form* const form {};

@@ -10,10 +10,10 @@ DialogWallpaper::~DialogWallpaper()
 
 void DialogWallpaper::startWork()                                                      //根据壁纸类型来判断执行哪个函数
 {
-    static const short _ = VARBOX::isOnline(true) && set_from_Bing(false);
+    static const char _ = VARBOX::isOnline(true) && set_from_Bing(false);
     if (VarBox->RunApp && VarBox->AutoChange)
     {
-        qout << "壁纸类型：" << VarBox->StandardNames[(int)VarBox->PaperType][1];
+        //qout << "壁纸类型：" << VarBox->StandardNames[(int)VarBox->PaperType][1];
         switch (VarBox->PaperType)
         {
         case PAPER_TYPE::Advance:

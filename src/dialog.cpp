@@ -122,7 +122,7 @@ void Dialog::initChildren()
 
 void Dialog::initConnects()
 {
-    connect(wallpaper, SIGNAL(setFailed(const char*)), VarBox->form, SLOT(set_wallpaper_fail(const char*)));
+    connect(wallpaper, &DialogWallpaper::setFailed, VarBox->form, &Form::set_wallpaper_fail);
     connect(change_paper_timer, &QTimer::timeout, wallpaper, &DialogWallpaper::start);
     connect(wallpaper, &DialogWallpaper::msgBox, VarBox->form, &Form::msgBox);
 	for (int c = 0; c <= 9; c++)
@@ -965,7 +965,7 @@ void Dialog::on_pushButton_10_clicked()
 
     std::thread thrd; QEventLoop loop;
 
-    connect(this, &Dialog::finished, [&loop, &thrd, this](bool success, const char* str){
+    connect(this, &Dialog::finished, this, [&loop, &thrd, this](bool success, const char* str){
         if (thrd.joinable()) thrd.join(); loop.quit();
         if (!VarBox->RunApp)     // 用户在检查过程中退出了软件
         {
@@ -1040,7 +1040,7 @@ void Dialog::on_pushButton_12_clicked()
 
     std::thread thrd; QEventLoop loop;
 
-    connect(this, &Dialog::finished, [&loop, &thrd, this](bool success, const char* str){
+    connect(this, &Dialog::finished, &loop, [&loop, &thrd, this](bool success, const char* str){
         if (thrd.joinable()) thrd.join(); loop.quit();
         if (!success)
         {
