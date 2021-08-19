@@ -103,7 +103,7 @@ typedef BOOL(WINAPI* pfnDwmGetWindowAttribute)(HWND hwnd, DWORD dwAttribute, PVO
 
 struct VARBOX
 {
-    const char* const Version = "21.8.16", * const Qt = "6.1.2";
+    const char* const Version = "21.8.20", * const Qt = "6.1.2";
     const unsigned char WinVersion; const bool FirstUse[1] = {false};
     std::vector<std::pair<bool, void*>> PicHistory; std::vector<std::pair<bool, void*>>::iterator CurPic;
     const char* const StandardNames[10][2] =     //九种壁纸类型
@@ -123,7 +123,8 @@ struct VARBOX
     bool RunApp = true;                        //app运行状态
 
     bool AutoChange = false;
-    short PageNum = 1, TimeInterval = 15;
+    unsigned char PageNum = 1, TimeInterval = 15;
+    bool UseDateAsBingName = true, AutoSaveBingPicture = true, AutoRotationBingPicture = true;
     QString NativeDir;                  //当下正在使用的用户本地壁纸文件夹
     QString UserCommand = "python.exe -u ?:\\?????.py";                //当下正在使用的用户高级命令
     QString PathToOpen;                //要打开的文件夹

@@ -35,7 +35,7 @@ protected:
 public:
     YJsonItem(const YJsonItem&);
     YJsonItem(const YJsonItem*);
-    YJsonItem(const std::string, const YJSON_PARSE=YJSON_PARSE::STRING);
+    YJsonItem(const std::string, const YJSON_PARSE);
     ~YJsonItem();
     static bool FMT; static const char* ep;
 
@@ -51,7 +51,7 @@ public:
     const YJsonItem* getTopItem() const;
     YJsonItem* getParentItem() const;
 
-    const char *getValueSring() const;
+    const char *getValueString() const;
 	int getValueInt() const;
 	double getValueDouble() const;
     int getChildNum() const;

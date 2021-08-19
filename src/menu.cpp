@@ -177,24 +177,33 @@ void Menu::initMenuConnect()
         });
     connect(prevPaperAct, &QAction::triggered, [](){
         //QString str =
-        if (VarBox->CurPic == VarBox->PicHistory.begin())
+        while (true)
         {
-            QMessageBox::information(VarBox->form->dialog, "提示", "无法找到更早的壁纸历史记录！", QMessageBox::Ok, QMessageBox::Ok);
-            return ;
-        }
-        if ((--VarBox->CurPic)->first)
-        {
-            if (VARBOX::PathFileExists(static_cast<wchar_t*>(VarBox->CurPic->second)))
+            if (VarBox->CurPic == VarBox->PicHistory.begin())
             {
-                SystemParametersInfoW(SPI_SETDESKWALLPAPER, UINT(0), VarBox->CurPic->second, SPIF_SENDCHANGE | SPIF_UPDATEINIFILE);
+                QMessageBox::information(VarBox->form->dialog, "提示", "无法找到更早的壁纸历史记录！", QMessageBox::Ok, QMessageBox::Ok);
+                return ;
             }
-        }
-        else
-        {
-            if (VARBOX::PathFileExists(static_cast<char*>(VarBox->CurPic->second)))
+            if ((--VarBox->CurPic)->first)
             {
-                SystemParametersInfoA(SPI_SETDESKWALLPAPER, UINT(0), VarBox->CurPic->second, SPIF_SENDCHANGE | SPIF_UPDATEINIFILE);
+                if (VARBOX::PathFileExists(static_cast<wchar_t*>(VarBox->CurPic->second)))
+                {
+                    SystemParametersInfoW(SPI_SETDESKWALLPAPER, UINT(0), VarBox->CurPic->second, SPIF_SENDCHANGE | SPIF_UPDATEINIFILE);
+                    return;
+                }
+                delete [] static_cast<wchar_t*>(VarBox->CurPic->second);
             }
+            else
+            {
+                if (VARBOX::PathFileExists(static_cast<char*>(VarBox->CurPic->second)))
+                {
+                    SystemParametersInfoA(SPI_SETDESKWALLPAPER, UINT(0), VarBox->CurPic->second, SPIF_SENDCHANGE | SPIF_UPDATEINIFILE);
+                    return;
+                }
+                delete [] static_cast<char*>(VarBox->CurPic->second);
+            }
+            VarBox->CurPic = VarBox->PicHistory.erase(VarBox->CurPic);
+            --VarBox->CurPic;
         }
     });   //设置受否开机自启
     connect(noSleepAct, &QAction::triggered, [=](bool checked){
@@ -223,51 +232,89 @@ void Menu::initMenuConnect()
             QMessageBox::information(VarBox->form->dialog,"提示", "后台正忙，请稍后！");
             return ;
         }
-        switch (VarBox->PaperType) {
-        case PAPER_TYPE::Bing:
-            QMessageBox::information(VarBox->form->dialog, "提示", "不喜欢必应壁纸的话需要更换壁纸类型！");
-            break;
-        default:
-            qout << "不喜欢该壁纸。";
+        qout << "不喜欢该壁纸。";
+        if (VarBox->PaperType == PAPER_TYPE::Bing && !VarBox->AutoRotationBingPicture)
+        {
+            QMessageBox::information(VarBox->form->dialog, "提示", "壁纸切换列表中没有替代方案，如果不喜欢此张壁纸，\n请切换壁纸类型或者启用必应壁纸轮换。");
+            return;
+        }
+        if (VarBox->CurPic->first)
+        {
+            const wchar_t* pic_path = static_cast<const wchar_t*>(VarBox->CurPic->second);
+            //qout << "图片路径：" << QString::fromWCharArray(pic_path);
+            const wchar_t* pic_name = get_file_name(pic_path);
+            //qout << "图片名称：" << QString::fromWCharArray(pic_name);
+            char id[7] = {0};
+            check_is_wallhaven(pic_name, id);
+            if (*id)
+            {
+                QString str = VarBox->get_dat_path() + "\\Blacklist.json";
+                YJsonItem *blackList = nullptr;
+                if (QFile::exists(str))
+                {
+                    blackList = new YJsonItem(str.toStdString(), YJSON_PARSE::FILE);
+                    if (blackList->getType() != YJSON_TYPE::YJSON_ARRAY)
+                    {
+                        delete blackList;
+                        blackList = YJsonItem::newArray();
+                    }
+                }
+                else
+                    blackList = YJsonItem::newArray();
+                blackList->appendItem(id);
+                blackList->toFile(str.toStdString());
+                delete  blackList;
+            }
+            DeleteFileW(pic_path);
+            delete [] pic_path;
+        }
+        else
+        {
+            const char* pic_path = static_cast<const char*>(VarBox->CurPic->second);
+            DeleteFileA(pic_path);
+            delete [] pic_path;
+        }
+        VarBox->CurPic = VarBox->PicHistory.erase(VarBox->CurPic);
+        while (true)
+        {
+            if (VarBox->CurPic != VarBox->PicHistory.begin())
+            {
+                --VarBox->CurPic;
+                wallpaper->start();
+                break;
+            }
+            if (VarBox->CurPic == VarBox->PicHistory.end())
+            {
+                wallpaper->start();
+                break;
+            }
+
             if (VarBox->CurPic->first)
             {
-                const wchar_t* pic_path = static_cast<const wchar_t*>(VarBox->CurPic->second);
-                //qout << "图片路径：" << QString::fromWCharArray(pic_path);
-                const wchar_t* pic_name = get_file_name(pic_path);
-                //qout << "图片名称：" << QString::fromWCharArray(pic_name);
-                char id[7] = {0};
-                check_is_wallhaven(pic_name, id);
-                if (*id)
+                if (VARBOX::PathFileExists(static_cast<wchar_t*>(VarBox->CurPic->second)))
                 {
-                    QString str = VarBox->get_dat_path() + "\\Blacklist.json";
-                    YJsonItem *blackList = nullptr;
-                    if (QFile::exists(str))
-                    {
-                        blackList = new YJsonItem(str.toStdString(), YJSON_PARSE::FILE);
-                        if (blackList->getType() != YJSON_TYPE::YJSON_ARRAY)
-                        {
-                            delete blackList;
-                            blackList = YJsonItem::newArray();
-                        }
-                    }
-                    else
-                        blackList = YJsonItem::newArray();
-                    blackList->appendItem(id);
-                    blackList->toFile(str.toStdString());
-                    delete  blackList;
+                    SystemParametersInfoW(SPI_SETDESKWALLPAPER, UINT(0), VarBox->CurPic->second, SPIF_SENDCHANGE | SPIF_UPDATEINIFILE);
+                    break;
                 }
-                DeleteFileW(pic_path);
-                delete [] pic_path;
+                else
+                {
+                    delete [] static_cast<wchar_t*>(VarBox->CurPic->second);
+                    VarBox->CurPic = VarBox->PicHistory.erase(VarBox->CurPic);
+                }
             }
             else
             {
-                const char* pic_path = static_cast<const char*>(VarBox->CurPic->second);
-                DeleteFileA(pic_path);
-                delete [] pic_path;
+                if (VARBOX::PathFileExists(static_cast<char*>(VarBox->CurPic->second)))
+                {
+                    SystemParametersInfoA(SPI_SETDESKWALLPAPER, UINT(0), VarBox->CurPic->second, SPIF_SENDCHANGE | SPIF_UPDATEINIFILE);
+                    break;
+                }
+                else
+                {
+                    delete [] static_cast<char*>(VarBox->CurPic->second);
+                    VarBox->CurPic = VarBox->PicHistory.erase(VarBox->CurPic);
+                }
             }
-            VarBox->CurPic = VarBox->PicHistory.erase(VarBox->CurPic);
-            wallpaper->start();
-            break;
         }
     });          //重启电脑
 	connect(shutdownAct, SIGNAL(triggered()), this, SLOT(ShutdownComputer()));        //关闭电脑

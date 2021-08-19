@@ -9,7 +9,7 @@ msvc {
 }
 
 # 版本信息
-VERSION = 21.8.16.0
+VERSION = 21.8.20.0
 # 图标
 RC_ICONS += icons/speedbox.ico
 # 公司名称
@@ -35,7 +35,7 @@ CONFIG += release
 #CONFIG += debug
 
 # 禁用qDebug()
-# DEFINES += QT_NO_DEBUG_OUTPUT
+DEFINES += QT_NO_DEBUG_OUTPUT
 
 win32 {
     LIBS += -luser32
@@ -48,6 +48,7 @@ DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000
 SOURCES += \
     YJson.cpp \
     YString.cpp \
+    bingsetting.cpp \
     blankform.cpp \
     gmpoperatetip.cpp \
     main.cpp \
@@ -64,6 +65,7 @@ SOURCES += \
 HEADERS += \
     YJson.h \
     YString.h \
+    bingsetting.h \
     blankform.h \
     dialog.h \
     dialogwallpaper.h \
@@ -77,6 +79,7 @@ HEADERS += \
     wallpaper.h
 
 FORMS += \
+    bing_setting.ui \
     dialog.ui \
     form.ui \
     translater.ui

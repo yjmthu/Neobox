@@ -90,7 +90,7 @@ YJsonItem::YJsonItem(const std::string str, const YJSON_PARSE type)
                     parse_object(temp);
                     break;
                 case '[':
-                    cout << "加载列表！";
+                    //cout << "加载列表！";
                     parse_array(temp);
                     break;
                 case '\0':
@@ -236,7 +236,7 @@ void YJsonItem::clearContent()
     if (ep) ep = nullptr; _valueint = 0; _valuedouble = 0;
 }
 
-const char* YJsonItem::getValueSring() const
+const char* YJsonItem::getValueString() const
 {
     return _valuestring;
 }
@@ -815,7 +815,7 @@ bool YJsonItem::toFile(const std::string name, const YJSON_ENCODE& file_encode)
         }
         default:
         {
-            cout << "UTF-8" << "保存开始。";
+            //cout << "UTF-8" << "保存开始。";
             unsigned char c[3] = {0xef, 0xbb, 0xbf};
             std::ofstream outFile(name, std::ios::out | std::ios::binary);
             if (outFile.is_open())
@@ -1093,7 +1093,7 @@ const char *YJsonItem::parse_string(const char *str)
 
 void YJsonItem::print_string(bool use_keystring)
 {
-    qout << "打印字符开始";
+    //qout << "打印字符开始";
     if (use_keystring ) { if (!_keystring) return; }
     else { if (!_valuestring) return; }
     if (_buffer) (delete[] _buffer, _buffer = nullptr);
@@ -1269,7 +1269,7 @@ const char* YJsonItem::parse_object(const char *value)
 
 void YJsonItem::print_object()
 {
-    qout << "打印字典开始";
+    //qout << "打印字典开始";
     if (_buffer) (delete[] _buffer, _buffer=nullptr);
 
     char **entries = nullptr; int i=0, numentries=0;

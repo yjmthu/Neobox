@@ -131,6 +131,7 @@ VARBOX::VARBOX(int w, int h):
             IniWrite->setValue("AutoChange", false);
             IniWrite->setValue("NativeDir", MajorDir);
             IniWrite->setValue("UserCommand", UserCommand);
+            IniWrite->setValue("UseDateAsBingName", UseDateAsBingName);
             IniWrite->endGroup();
 
             IniWrite->beginGroup("Translate");
@@ -169,6 +170,18 @@ VARBOX::VARBOX(int w, int h):
             PageNum = IniRead->value("PageNum").toInt();
             UserCommand = IniRead->value("UserCommand").toString();
             AutoChange = IniRead->value("AutoChange").toBool();
+            if (IniRead->contains("AutoRotationBingPicture"))
+            {
+                UseDateAsBingName = IniRead->value("UseDateAsBingName").toBool();
+                AutoSaveBingPicture = IniRead->value("AutoSaveBingPicture").toBool();
+                AutoRotationBingPicture = IniRead->value("AutoRotationBingPicture").toBool();
+            }
+            else
+            {
+                IniRead->setValue("AutoSaveBingPicture", AutoSaveBingPicture);
+                IniRead->setValue("UseDateAsBingName", UseDateAsBingName);
+                IniRead->setValue("AutoRotationBingPicture", AutoRotationBingPicture);
+            }
             IniRead->endGroup();
             qout << "读取壁纸信息完毕";
             IniRead->beginGroup("Translate");

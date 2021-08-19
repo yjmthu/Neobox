@@ -32,14 +32,16 @@ protected:
 public:
 	explicit Form(QWidget* parent = nullptr);
     ~Form();
+    inline Dialog* getDialog() const { return dialog; };                              //设置对话
+    inline Menu* getMenu() const { return menu; };                                  //右键菜单
 
 private:
+    friend class Menu;  //friend class Translater; //右键菜单可以访问私有数据
 	Ui::Form* ui;                                //ui指向悬浮窗界面
-    friend class Menu;  friend class Translater; //右键菜单可以访问私有数据
-	QPoint _startPos;                            //记录鼠标
-	QPoint _endPos;                              //鼠标移动向量
-	Menu* menu;                                  //右键菜单
     Dialog* dialog;                              //设置对话
+    Menu* menu;                                  //右键菜单
+	QPoint _startPos;                            //记录鼠标
+    QPoint _endPos;                              //鼠标移动向
 	QTimer* monitor_timer;                       //每隔一秒钟刷新一次数据
     Translater* translater;                      //翻译类，自带ui
 	bool moved = false;
@@ -56,8 +58,6 @@ private:
 public slots:
     void msgBox(const char*, const char*);           //弹出消息
     void set_wallpaper_fail(const char*);            //弹出消息和设置对话框
-
-private slots:
     void enableTranslater(bool);                      //启用翻译功能
 };
 

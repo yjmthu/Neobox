@@ -35,7 +35,7 @@ inline QString formatSpped(long long dw, bool up_down)
 
 Form::Form(QWidget* parent) :
 	QWidget(parent),
-	ui(new Ui::Form)
+    ui(new Ui::Form)
 {
     Form** p = const_cast<Form**>(&(VarBox->form)); *p = this;
     ui->setupUi(this);                                                     //创建界面

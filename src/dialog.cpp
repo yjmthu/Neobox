@@ -12,14 +12,15 @@
 #include <QTimer>
 #include <QFile>
 
+#include "YString.h"
+#include "YJson.h"
 #include "dialog.h"
 #include "ui_dialog.h"
 #include "form.h"
 #include "blankform.h"
 #include "gmpoperatetip.h"
 #include "dialogwallpaper.h"
-#include "YString.h"
-#include "YJson.h"
+#include "bingsetting.h"
 
 constexpr const char *color_theme[7] =
 {
@@ -106,7 +107,6 @@ void Dialog::initUi()
     buttonGroup->addButton(ui->rBtnAdvance, (int)PAPER_TYPE::Advance);
 	buttonGroup->setExclusive(true);                     // 按钮之间相互排斥
     ui->lineAppData->setText(VarBox->get_dat_path());
-	ui->lineAppData->setReadOnly(true);
     move((VarBox->ScreenWidth - width()) / 2, (VarBox->ScreenHeight - height()) / 2);
     setTheme();
 }
@@ -413,6 +413,8 @@ void Dialog::on_pBtnApply_clicked()
             if (VarBox->AutoChange)
             {
                 Wallpaper::initSet = true;
+                if (VarBox->PaperType == PAPER_TYPE::Bing)
+                    Wallpaper::bing = 0;
                 wallpaper->start();
                 change_paper_timer->setInterval(VarBox->TimeInterval * 60000);  // 设置时间间隔,Timer的单位是毫秒
                 if (!change_paper_timer->isActive()) change_paper_timer->start();
@@ -965,7 +967,7 @@ void Dialog::on_pushButton_10_clicked()
 
     std::thread thrd; QEventLoop loop;
 
-    connect(this, &Dialog::finished, this, [&loop, &thrd, this](bool success, const char* str){
+    connect(this, &Dialog::finished, &loop, [&loop, &thrd, this](bool success, const char* str){
         if (thrd.joinable()) thrd.join(); loop.quit();
         if (!VarBox->RunApp)     // 用户在检查过程中退出了软件
         {
@@ -1005,13 +1007,13 @@ void Dialog::on_pushButton_10_clicked()
             emit finished(false, "下载失败！");
             return;
         }
-        const YJsonItem json(str);
+        const YJsonItem json(str, YJSON_PARSE::STRING);
         if (json.getType() != YJSON_TYPE::YJSON_OBJECT)
         {
             emit finished(false, "Gitee源出现问题！");
             return;
         }
-        emit finished(true, StrJoin(json.findItem("Latest Version")->getValueSring()));
+        emit finished(true, StrJoin(json.findItem("Latest Version")->getValueString()));
     });
     loop.exec();
     wait = false;
@@ -1064,14 +1066,14 @@ void Dialog::on_pushButton_12_clicked()
             emit finished(false, "下载失败！");
             return;
         }
-        YJsonItem json(str);
+        YJsonItem json(str, YJSON_PARSE::STRING);
         if (json.getType() != YJSON_TYPE::YJSON_OBJECT)
         {
             emit finished(false, "Gitee源出现问题！");
             return;
         }
         YJsonItem *qtVersion = json.findItem("Qt Version");
-        if (qtVersion->getType() != YJSON_TYPE::YJSON_STRING || !StrCompare(qtVersion->getValueSring(), "6.1.2"))
+        if (qtVersion->getType() != YJSON_TYPE::YJSON_STRING || !StrCompare(qtVersion->getValueString(), "6.1.2"))
         {
             jobTip->showTip("下载更新失败，请手动打开浏览器到Gitee下载！", 3000);
             return;
@@ -1084,13 +1086,13 @@ void Dialog::on_pushButton_12_clicked()
                 emit finished(false, "下载失败！");
                 return;
             }
-            const char* url1 = child->getValueSring();
+            const char* url1 = child->getValueString();
             if (!(child = urls->findItem("update")))
             {
                 emit finished(false, "下载失败！");
                 return;
             }
-            const char* url2 = child->getValueSring();
+            const char* url2 = child->getValueString();
             qout << "文件地址：" << url1 << url2;
             QString temp_str_1 = VarBox->get_dat_path()+"\\SpeedBox.exe";
             QString temp_str_2 = qApp->applicationDirPath().replace("/", "\\")+"\\update.exe";
@@ -1132,5 +1134,24 @@ void Dialog::on_checkBox_clicked(bool checked)
     else
         reg->remove("SpeedBox");
     delete reg;
+}
+
+
+void Dialog::on_toolButton_clicked()
+{
+    BingSetting x;
+    x.move(frameGeometry().x()+(width()-x.width())/2, frameGeometry().y()+(height()-x.height())/2);
+    x.exec();
+}
+
+
+void Dialog::on_toolButton_2_clicked()
+{
+    QString titile = "请选择一个文件夹";
+    QString dir = QFileDialog::getExistingDirectory(NULL, titile, VarBox->MajorDir, QFileDialog::ShowDirsOnly);
+    if (!dir.isEmpty())
+    {
+        ui->linePictuerPath->setText(QDir::toNativeSeparators(dir));
+    }
 }
 

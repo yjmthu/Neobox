@@ -12,5 +12,6 @@
         <file>icons/copy.ico</file>
         <file>fonts/netspeed.ttf</file>
         <file>fonts/smallkaiti.ttf</file>
+        <file>qss/bing_style.qss</file>
     </qresource>
 </RCC>

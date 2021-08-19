@@ -22,7 +22,7 @@ void MenuWallpaper::startWork()                                                 
     }
     else if (VarBox->RunApp)
     {
-        qout << "壁纸类型：" << VarBox->StandardNames[static_cast<int>(VarBox->PaperType)];
+        qout << "壁纸类型：" << VarBox->StandardNames[static_cast<int>(VarBox->PaperType)][1];
         switch (VarBox->PaperType)
         {
         case PAPER_TYPE::Advance:

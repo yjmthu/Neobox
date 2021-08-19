@@ -274,7 +274,7 @@ void Translater::keyPressEvent(QKeyEvent* event)
 
 void Translater::getReply(const QByteArray& text)
 {
-    qout << "开始执行翻译函数";
+    //out << "开始执行翻译函数";
     static const char API[] = u8"http://api.fanyi.baidu.com/api/trans/vip/translate";
     static const char salt[] = u8"1435660288";                           //请求参数之一
     unfinished = true;
@@ -308,9 +308,10 @@ void Translater::getReply(const QByteArray& text)
     }
 
     utf8_q = StrJoin(VarBox->AppId, (const char*)text, salt, VarBox->PassWord);
-    char sign[33]; strcpy_s(sign, 33, QCryptographicHash::hash(utf8_q, QCryptographicHash::Md5).toHex());
+    QByteArray sign = QCryptographicHash::hash(utf8_q, QCryptographicHash::Md5).toHex();
+    ///char sign[33]; strcpy_s(sign, 33, QCryptographicHash::hash(utf8_q, QCryptographicHash::Md5).toHex());
     delete [] utf8_q;
-    qout << "mysign" << sign;
+    //qout << "mysign" << sign.data();
 
     std::string reply_data; std::thread thrd; QEventLoop loop;
 
@@ -322,13 +323,13 @@ void Translater::getReply(const QByteArray& text)
             return ;
         }
         //qout << "翻译请求结果" << reply_data.c_str();
-        YJsonItem json_data(reply_data); YJsonItem* have_item = nullptr;
+        YJsonItem json_data(reply_data, YJSON_PARSE::STRING); YJsonItem* have_item = nullptr;
         if ((have_item = json_data.findItem("trans_result")) &&
             (have_item = have_item->getChildItem()) && (have_item = have_item->findItem("dst")))
         {
             if (have_item->getType() == YJSON_TYPE::YJSON_STRING)
             {
-                ui->TextTo->setPlainText(have_item->getValueSring());
+                ui->TextTo->setPlainText(have_item->getValueString());
                 QTextCursor cursor = ui->TextFrom->textCursor();
                 cursor.movePosition(QTextCursor::End);
                 ui->TextFrom->setTextCursor(cursor);
@@ -343,11 +344,11 @@ void Translater::getReply(const QByteArray& text)
                 if (have_item = json_data.findItem("error_msg"))
                 {
                     //qout << "错误消息：" << have_item->getValueSring();
-                    if (StrCompare(have_item->getValueSring(), "Invalid Access Limit"))
+                    if (StrCompare(have_item->getValueString(), "Invalid Access Limit"))
                         emit msgBox("翻译失败，请求间隔时间过短!");
-                    else if (StrCompare(have_item->getValueSring(), "UNAUTHORIZED USER"))
+                    else if (StrCompare(have_item->getValueString(), "UNAUTHORIZED USER"))
                         emit msgBox("翻译失败，APPID不存在！");
-                    else if (StrCompare(have_item->getValueSring(), "Invalid Sign"))
+                    else if (StrCompare(have_item->getValueString(), "Invalid Sign"))
                         emit msgBox("翻译失败，密钥错误！");
                     else
                         emit msgBox("翻译失败， 其它错误。");
@@ -360,13 +361,13 @@ void Translater::getReply(const QByteArray& text)
         }
     });
     thrd = std::thread([&](){
-        if (VARBOX::getTransCode(StrJoin(API, u8"?q=", q.c_str(), u8"&from=", from, u8"&to=", to, u8"&appid=", VarBox->AppId, u8"&salt=", salt, u8"&sign=", sign), reply_data))
+        if (VARBOX::getTransCode(StrJoin(API, u8"?q=", q.c_str(), u8"&from=", from, u8"&to=", to, u8"&appid=", VarBox->AppId, u8"&salt=", salt, u8"&sign=", sign.data()), reply_data))
             emit finished(true);
         else
             emit finished(false);
     });
     loop.exec();    //阻塞函数等待翻译结果，但是不阻塞ui。ui仍然可以编辑改动，不会卡死。
-    qout << "翻译函数执行完毕";
+    //qout << "翻译函数执行完毕";
     unfinished = false;
 }
 

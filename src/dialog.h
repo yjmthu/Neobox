@@ -95,6 +95,7 @@ private slots:
     void on_lineNewName_returnPressed();
     void on_pushButton_14_clicked();
     void on_pushButton_4_clicked();
+    void on_toolButton_clicked();
     void on_pushButton_6_clicked();
     void on_pushButton_8_clicked();
     void on_pushButton_9_clicked();
@@ -104,6 +105,7 @@ private slots:
     void on_pushButton_10_clicked();
     void on_pushButton_12_clicked();
     void on_checkBox_clicked(bool checked);
+    void on_toolButton_2_clicked();
 };
 
 #endif // DIALOG_H
