@@ -79,6 +79,11 @@ QLineEdit:hover[readOnly="false"]{
     background-color: #6ed1b3;
 }
 
+QLineEdit:hover[readOnly="true"]{
+    border-radius: 3px;
+    background-color: #c0e0ff;
+}
+
 QToolButton{
     border-radius: 3px;
     background-color: grey;
@@ -156,7 +161,7 @@ QPushButton:hover {
 
 QComboBox {
     border-radius: 3px;
-    padding: 3px 8px;
+    padding: 1px 5px;
     background-color: rgba(23, 234, 234, 100);
 }
 
