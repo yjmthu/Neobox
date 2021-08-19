@@ -203,7 +203,8 @@ void Menu::initMenuConnect()
                 delete [] static_cast<char*>(VarBox->CurPic->second);
             }
             VarBox->CurPic = VarBox->PicHistory.erase(VarBox->CurPic);
-            --VarBox->CurPic;
+            if (VarBox->CurPic != VarBox->PicHistory.begin())
+                --VarBox->CurPic;
         }
     });   //设置受否开机自启
     connect(noSleepAct, &QAction::triggered, [=](bool checked){
