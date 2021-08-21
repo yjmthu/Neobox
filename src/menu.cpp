@@ -26,15 +26,14 @@ void check_is_wallhaven(const wchar_t* pic, char* id)
     qout << 99;
     if (wcslen(pic) != 20)
         return ;
-    if (StrCompare(pic, L"wallhaven-", 10) && StrContainRange(pic+10, 6, L"a-z", L"0-9") &&
-            (StrCompare(pic+16, L".png") || StrCompare(pic+16, L".jpg")))
+    if (wcsncmp(pic, L"wallhaven-", 10) && StrContainRange(pic+10, 6, L"a-z", L"0-9") &&
+            (wcscmp(pic+16, L".png") || wcscmp(pic+16, L".jpg")))
     {
         for (int i=0; i <= 5; ++i)
         {
             id[i] = static_cast<char>(pic[10+i]);
         }
     }
-
 }
 
 Menu::Menu() :
@@ -253,7 +252,7 @@ void Menu::initMenuConnect()
                 YJsonItem *blackList = nullptr;
                 if (QFile::exists(str))
                 {
-                    blackList = new YJsonItem(str.toStdString(), YJSON_PARSE::FILE);
+                    blackList = YJsonItem::newFromFile(str.toStdWString());
                     if (blackList->getType() != YJSON_TYPE::YJSON_ARRAY)
                     {
                         delete blackList;
@@ -263,7 +262,7 @@ void Menu::initMenuConnect()
                 else
                     blackList = YJsonItem::newArray();
                 blackList->appendItem(id);
-                blackList->toFile(str.toStdString());
+                blackList->toFile(str.toStdWString(), YJSON_ENCODE::UTF8);
                 delete  blackList;
             }
             DeleteFileW(pic_path);

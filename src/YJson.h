@@ -11,16 +11,10 @@ enum class YJSON_TYPE{
     YJSON_OBJECT=6,
 };
 
-enum class YJSON_PARSE{
-    FILE = 0,
-    STRING = 1
-};
-
 enum class YJSON_ENCODE{
     UTF8 = 0,
     UTF16 = 1,
-    GBK = 2,
-    OTHER = 3
+    OTHER = 2
 };
 
 enum class YJSON_DEBUG{
@@ -31,33 +25,36 @@ enum class YJSON_DEBUG{
 class YJsonItem
 {
 protected:
-    YJsonItem();
+    inline YJsonItem(){};
+
 public:
     YJsonItem(const YJsonItem&);
-    YJsonItem(const YJsonItem*);
-    YJsonItem(const std::string, const YJSON_PARSE);
+    YJsonItem(const std::string&);
+    YJsonItem(const std::wstring&);
     ~YJsonItem();
-    static bool FMT; static const char* ep;
+    static YJsonItem* newFromFile(const std::wstring&);
+    static std::pair<bool, std::string> ep;
 
     static YJsonItem Array();
     static YJsonItem Object();
     static YJsonItem* newArray();
     static YJsonItem* newObject();
 
-    YJSON_TYPE getType() const;
-    YJsonItem* getPrevItem() const;
-    YJsonItem* getNextItem() const;
-    YJsonItem* getChildItem() const;
-    const YJsonItem* getTopItem() const;
-    YJsonItem* getParentItem() const;
+    inline YJSON_TYPE getType() const { return _type; };
+    inline YJsonItem* getPrevItem() const { return _prev; };
+    inline YJsonItem* getNextItem() const { return _next; };
+    inline YJsonItem* getChildItem() const { return _child; };
+    inline YJsonItem* getParentItem() const { return _parent; };
 
-    const char *getValueString() const;
-	int getValueInt() const;
-	double getValueDouble() const;
+    inline const char *getValueString() const { return _valuestring; };
+    inline int getValueInt() const { return _valueint; };
+    inline double getValueDouble() const { return _valuedouble; };
+
     int getChildNum() const;
+    const YJsonItem* getTopItem() const;
 
     const char* toString(bool fmt = true);
-    bool toFile(const std::string file_name, const YJSON_ENCODE& file_encode=YJSON_ENCODE::UTF8);
+    bool toFile(const std::wstring file_name, const YJSON_ENCODE& file_encode);
 
     YJsonItem& operator=(const YJsonItem*);
     YJsonItem& operator=(const YJsonItem&);
@@ -83,8 +80,8 @@ public:
     YJsonItem* findItemByValue(double value) const;
     YJsonItem* findItemByValue(const char* str) const;
 
-    YJsonItem* appendItem(const YJsonItem&, const char* key = nullptr);
-    YJsonItem* appendItem(const YJsonItem*, const char* key = nullptr);
+    YJsonItem* appendItem(const YJsonItem&, const char* key=nullptr);
+    YJsonItem* appendItem(const YJsonItem*, const char* key=nullptr);
     YJsonItem* appendItem(int, const char* key=nullptr);
     YJsonItem* appendItem(double, const char* key=nullptr);
     YJsonItem* appendItem(const char*, const char* key=nullptr);
@@ -111,19 +108,32 @@ private:
     char *_buffer = nullptr;
     int _depth = 1;
 
-    const char *parse_value(const char *value);
+    template<typename Type>
+    bool strict_parse(Type);
+
+    template<typename Type>
+    Type parse_value(Type);
     void print_value();
-    const char *parse_number(const char *num);
+
+    template<typename Type>
+    Type parse_number(Type);
     void print_number();
-    const char *parse_string(const char *str);
+
+    template<typename Type>
+    Type parse_string(Type str);
     void print_string(bool use_keystring = false);
-    const char *parse_array(const char *value);
+
+    template<typename Type>
+    Type parse_array(Type value);
     void print_array();
-    const char *parse_object(const char *value);
+
+    template<typename Type>
+    Type parse_object(Type value);
     void print_object();
 
     void joinKeyValue(const char* valuestring, const bool use_key = true);
     void clearContent();
+
     void CopyJson(const YJsonItem*, YJsonItem*);
     void TakeJson(YJsonItem*, YJsonItem*, bool cpoy_key = true);
     void UpdateDepth(int depth);

@@ -133,11 +133,11 @@ bool Wallpaper::set_from_Wallhaven() const  // 从数据库中随机抽取一个
 			}
 			else
 			{
-                jsonObject = new YJsonItem(file_name.toStdString(), YJSON_PARSE::FILE);
-                if (!YJsonItem::ep && jsonObject->getType() == YJSON_TYPE::YJSON_OBJECT &&
+                jsonObject = YJsonItem::newFromFile(file_name.toStdWString());
+                if (!YJsonItem::ep.first && jsonObject->getType() == YJSON_TYPE::YJSON_OBJECT &&
                     (find_item = jsonObject->findItem("PaperType")) &&
                     find_item->getType() == YJSON_TYPE::YJSON_STRING &&
-                    StrCompare(find_item->getValueString(), VarBox->StandardNames[(int)VarBox->PaperType][0]) &&
+                    !strcmp(find_item->getValueString(), VarBox->StandardNames[(int)VarBox->PaperType][0]) &&
                     (find_item = jsonObject->findItem("PageNum")) &&
                     find_item->getType() == YJSON_TYPE::YJSON_NUMBER &&
                     find_item->getValueInt() == VarBox->PageNum &&
@@ -185,7 +185,7 @@ bool Wallpaper::set_from_Wallhaven() const  // 从数据库中随机抽取一个
                 if (QFile::exists(temp))
                 {
                     //qout << "黑名单文件存在！";
-                    YJsonItem *blacklist = new YJsonItem(temp.toStdString(), YJSON_PARSE::FILE);
+                    YJsonItem *blacklist = YJsonItem::newFromFile(temp.toStdWString());
                     if (blacklist->getType() == YJSON_TYPE::YJSON_ARRAY)
                         for (unsigned char x = 0; x < 0xff && pic_num; ++x)
                         {
@@ -234,7 +234,7 @@ bool Wallpaper::set_from_Wallhaven() const  // 从数据库中随机抽取一个
                 if (need_save)
                 {
                     //qout << "保存 json 文件";
-                    jsonObject->toFile(file_name.toStdString());
+                    jsonObject->toFile(file_name.toStdWString(), YJSON_ENCODE::UTF8);
                     //qout << "json 文件保存完毕";
                 }
 			}
@@ -270,7 +270,7 @@ bool Wallpaper::get_url_from_Wallhaven(YJsonItem& jsonArray) const            //
             char math_pos[7] = { 0 };
 			while (*pos)
 			{
-                if (StrCompare(pos, str_a, 48) && StrContainRange(pos + 48, 6, "a-z", "0-9") && StrCompare(pos + 54, str_b, 49))
+                if (!strncmp<const char*>(pos, str_a, 48) && StrContainRange(pos + 48, 6, "a-z", "0-9") && !strncmp<const char*>(pos + 54, str_b, 49))
 				{
 					StrCopy(math_pos, pos + 48, pos + 53);
 					jsonArray += math_pos; pos += 103;
@@ -413,7 +413,7 @@ bool Wallpaper::set_from_Bing(bool setBing) const
 bool Wallpaper::set_from_Bing(bool setBing) const
 {
     if (!VarBox->AutoRotationBingPicture || bing < -7 || bing > 0) bing = 0;
-    //qout << "必应值: " << (int)bing;
+    qout << "必应值: " << (int)bing;
 
     std::string today = QDateTime::currentDateTime().toString("yyyy-MM-dd").toStdString();
     QString file_name = VARBOX::get_dat_path() + "\\BingData.json";
@@ -424,27 +424,30 @@ bool Wallpaper::set_from_Bing(bool setBing) const
         switch (type) {
         case 0:
         {
-            //qout << "必应文件存在";
-            file_data = new YJsonItem(file_name.toStdString(), YJSON_PARSE::FILE);
-            if (!StrCompare(file_data->findItem("today")->getValueString(), today.c_str()))
+            qout << "必应文件存在";
+            file_data = YJsonItem::newFromFile(file_name.toStdWString());
+            qout << "孩子地址" << int64_t(file_data->findItem("today"));
+            if (strcmp(file_data->findItem("today")->getValueString(), today.c_str()))
             {
-                //qout << "必应文件过期，将开始下载最新数据";
+                qout << "必应文件过期，将开始下载最新数据";
                 delete file_data;
                 file_data = nullptr;
                 need_save = true;
                 type = 1;
                 continue;
             }
+            qout << "必应文件为最新";
             temp = file_data->findItem("images")->findItem(-bing);
+            qout << "查找到images";
             type = 3;
             continue;
         }
         case 1:
         {
-            //qout << "必应文件不存在或过期";
+            qout << "必应文件不存在或过期";
             std::string img_html;
             VARBOX::getWebCode("https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8&mkt=zh-CN", img_html, false);
-            YJsonItem bing_data(img_html, YJSON_PARSE::STRING); YJsonItem *find;
+            YJsonItem bing_data(img_html); YJsonItem *find;
             if (bing_data.getType() != YJSON_TYPE::YJSON_OBJECT || !(find = bing_data.findItem("images")) || !(find = find->getChildItem()))
                 return false;
             file_data = YJsonItem::newObject();
@@ -454,7 +457,7 @@ bool Wallpaper::set_from_Bing(bool setBing) const
             do {
                 temp = imgs->appendItem(YJsonItem::Object());
                 ptr_1 = ptr_2 = find->findItem("copyright")->getValueString();
-                while (*ptr_2 && !StrCompare(ptr_2, pattern_str, 5))++ptr_2;
+                while (*ptr_2 && strncmp<const char*>(ptr_2, pattern_str, 5))++ptr_2;
                 ptr_3 = new char[ptr_2-ptr_1+1] {0};
                 StrCopy(ptr_3, ptr_1, --ptr_2);
                 temp->appendItem(ptr_3, "copyright");
@@ -488,33 +491,33 @@ bool Wallpaper::set_from_Bing(bool setBing) const
             }
             else
             {
-                //qout << "使用CopyRight名称";
-                img_name += QString::fromUtf8(temp->findItem("copyright")->getValueString());
+                qout << "使用CopyRight名称";
+                img_name += temp->findItem("copyright")->getValueString();
                 img_name += ".jpg";
             }
-            //qout << "必应壁纸名称：" << img_name;
-            //qout << "必应壁纸链接：" << img_url;
+            qout << "必应壁纸名称：" << img_name;
+            qout << "必应壁纸链接：" << img_url;
             if (need_save)
             {
-                //qout << "需要保存必应数据";
-                file_data->toFile(file_name.toStdString());
+                qout << "需要保存必应数据";
+                file_data->toFile(file_name.toStdWString(), YJSON_ENCODE::UTF8);
             }
             delete file_data;
 
             if (QFile::exists(img_name))
             {
-                //qout << "必应壁纸存在！";
+                qout << "必应壁纸存在！";
                 --bing;
                 return (setBing && setWallpaper(img_name)) || true;
             }
 
             if ((VARBOX::downloadImage(img_url, img_name) && setBing) && setWallpaper(img_name))
             {
-                //qout << "必应壁纸下载成功";
+                qout << "必应壁纸下载成功";
                 --bing;
                 return true;
             }
-            //qout << "必应壁纸下载失败";
+            qout << "必应壁纸下载失败";
             return false;
         }
         }

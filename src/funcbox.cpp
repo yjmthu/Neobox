@@ -13,7 +13,6 @@
 
 #pragma comment(lib,"wininet.lib")
 
-
 unsigned char GetNtVersionNumbers()
 {
     HMODULE hModNtdll= NULL;
@@ -88,7 +87,6 @@ VARBOX::VARBOX(int w, int h):
             if (!QFile::exists(file))
             {
                 qout << "SpeedBox.ini 文件不存在";
-                sigleSave("SpeedBox", "Version", Version);
                 type = 1;
                 continue;
             }
@@ -104,7 +102,7 @@ VARBOX::VARBOX(int w, int h):
                 if (VARBOX::versionBefore(x, "21.8.1"))
                 {
                     qout << "ini文件过期，将其删除。";
-                    QFile::remove(file); sigleSave("SpeedBox", "Version", Version);
+                    QFile::remove(file);
                     type = 1;
                     continue;
                 }
@@ -123,6 +121,9 @@ VARBOX::VARBOX(int w, int h):
             PathToOpen = QDir::toNativeSeparators(qApp->applicationDirPath());
             NativeDir = MajorDir;
             QSettings *IniWrite = new QSettings(get_ini_path(), QSettings::IniFormat);
+            IniWrite->beginGroup("SpeedBox");
+            IniWrite->setValue("Version", Version);
+            IniWrite->endGroup();
             IniWrite->beginGroup("Wallpaper");
             IniWrite->setValue("PaperType", static_cast<int>(PaperType));
             IniWrite->setValue("TimeInerval", TimeInterval);
@@ -161,6 +162,9 @@ VARBOX::VARBOX(int w, int h):
         {
             qout << "开始读取设置。";
             QSettings *IniRead = new QSettings(file, QSettings::IniFormat);
+            IniRead->beginGroup("SpeedBox");
+            IniRead->setValue("Version", Version);
+            IniRead->endGroup();
             IniRead->beginGroup("Wallpaper");
             NativeDir = IniRead->value("NativeDir").toString();
             unsigned safeEnum = IniRead->value("PaperType").toInt();
@@ -295,7 +299,7 @@ bool VARBOX::check_app_right()
 {
     QString appid_path = get_dat_path() + "\\AppId.txt";
     if (!QFile::exists(appid_path)) return false;
-    std::ifstream file(appid_path.toStdString(), std::ios::in | std::ios::binary);
+    std::ifstream file(appid_path.toStdWString(), std::ios::in | std::ios::binary);
     if( file.is_open())
     {
         qout << "成功打开密钥文件";
@@ -493,32 +497,32 @@ bool VARBOX::getWebCode(const char* url, std::string& src, bool auto_delete)
     return VarBox->RunApp && !src.empty();
 }
 
-bool VARBOX::getBingCode(std::string& code)
-{
-    HINTERNET hSession = InternetOpen("Chromium", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
-    if (hSession)
-    {
-        HINTERNET hURL = InternetOpenUrl(hSession, "https://cn.bing.com/", NULL, 0, INTERNET_FLAG_DONT_CACHE, 0);
-        if (hURL)
-        {
-            char temp[513] = { 0 };
-            DWORD dwRecv = 1;
-            InternetReadFile(hURL, temp, 512, &dwRecv);
-            code += temp;
-            memset(temp, 0, 512);
-            InternetReadFile(hURL, temp, 512, &dwRecv);
-            code += temp;
-            memset(temp, 0, 512);
-            InternetReadFile(hURL, temp, 512, &dwRecv);
-            code += temp;
-            InternetCloseHandle(hURL);
-            hURL = NULL;
-        }
-        InternetCloseHandle(hSession);
-        hSession = NULL;
-    }
-    return !code.empty();
-}
+//bool VARBOX::getBingCode(std::string& code)
+//{
+//    HINTERNET hSession = InternetOpen("Chromium", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+//    if (hSession)
+//    {
+//        HINTERNET hURL = InternetOpenUrl(hSession, "https://cn.bing.com/", NULL, 0, INTERNET_FLAG_DONT_CACHE, 0);
+//        if (hURL)
+//        {
+//            char temp[513] = { 0 };
+//            DWORD dwRecv = 1;
+//            InternetReadFile(hURL, temp, 512, &dwRecv);
+//            code += temp;
+//            memset(temp, 0, 512);
+//            InternetReadFile(hURL, temp, 512, &dwRecv);
+//            code += temp;
+//            memset(temp, 0, 512);
+//            InternetReadFile(hURL, temp, 512, &dwRecv);
+//            code += temp;
+//            InternetCloseHandle(hURL);
+//            hURL = NULL;
+//        }
+//        InternetCloseHandle(hSession);
+//        hSession = NULL;
+//    }
+//    return !code.empty();
+//}
 
 // 会删除url
 bool VARBOX::getTransCode(const char* url, std::string& outcome)

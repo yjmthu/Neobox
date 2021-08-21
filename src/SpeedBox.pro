@@ -9,7 +9,7 @@ msvc {
 }
 
 # 版本信息
-VERSION = 21.8.20.0
+VERSION = 21.8.22.0
 # 图标
 RC_ICONS += icons/speedbox.ico
 # 公司名称
@@ -63,6 +63,7 @@ SOURCES += \
     wallpaper.cpp \
 
 HEADERS += \
+    YEncode.h \
     YJson.h \
     YString.h \
     bingsetting.h \

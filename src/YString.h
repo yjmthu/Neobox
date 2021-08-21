@@ -4,32 +4,91 @@
 
 #include <QDebug>
 #include <string>
+#include <deque>
 
 bool StrIsEmpty(const char* m);
 bool StrIsEmpty(const wchar_t* m);
-size_t strlen(const char** box, size_t num);
-size_t wcslen(const wchar_t** box, size_t num);
 wchar_t* StrRepeat(const wchar_t c, size_t count);
 char* StrRepeat(const char c, size_t count);
-bool StrCompare(const char* str_a, const char* str_b, size_t length);
-bool StrCompare(const wchar_t* str_a, const wchar_t* str_b, size_t length);
-bool StrCompareA(const char* str_a, const char* str_b);
-bool StrCompare(const char* str_a, const char* str_b);
-bool StrCompare(const wchar_t* str_a, const wchar_t* str_b);
-wchar_t* StrJoinX(const wchar_t* start, const wchar_t* end, const wchar_t* dist, const wchar_t** box, size_t num);
-char* StrJoinX(const char* start, const char* end, const char* dist, const char** box, size_t num);
-wchar_t* StrCopy(wchar_t* str_old, const wchar_t* str_new);
-char* StrCopy(char* str_old, const char* str_new);
+char* StrJoinX(const char* start, const char* end, const char* dist, const std::deque<char*>& box);
 void StrCopy(char* str_old, const char* str_new_start, const char* str_new_end);
 void StrCopy(wchar_t* str_old, const wchar_t* str_new_start, const wchar_t* str_new_end);
 char* StrContainStr(char* str_a, char* str_b);
-const char* StrSkip(const char* content);
 
 char* STRING_APPEND(char* head);
 wchar_t* STRING_APPEND(wchar_t* head);
 char* STRING_APPEND(char* head, const char* first);
 wchar_t* STRING_APPEND(wchar_t* head, const wchar_t* first);
 
+template <typename T>
+int strcmp(T s1, const char* s2)
+{
+    static_assert ((    std::is_same<T, std::deque<char>::const_iterator>::value
+                      ||
+                        std::is_same<T, std::vector<char>::const_iterator>::value
+                      ||
+                        std::is_same<T, std::string::const_iterator>::value
+                      ||
+                        std::is_same<T, const char*>::value
+                   ), "error in type");
+      char c1, c2;
+      do {
+            c1 = *s1++;
+            c2 = *s2++;
+            if (c1 == '\0')
+                return c1 - c2;
+      } while (c1 == c2);
+      return c1 - c2;
+}
+
+template <typename T>
+int strncmp(T s1, const char* s2, size_t n)
+{
+    static_assert ( std::is_same<T, std::deque<char>::const_iterator>::value
+                  ||
+                    std::is_same<T, std::vector<char>::const_iterator>::value
+                  ||
+                    std::is_same<T, std::string::const_iterator>::value
+                  ||
+                    std::is_same<T, const char*>::value
+                   , "error in type");
+    char c1 = '\0';
+    char c2 = '\0';
+    if (n >= 4)
+    {
+        size_t n4 = n >> 2;
+        do
+        {
+            c1 = *s1++;
+            c2 = *s2++;
+            if (c1 == '\0' || c1 != c2)
+                return c1 - c2;
+            c1 = *s1++;
+            c2 = *s2++;
+            if (c1 == '\0' || c1 != c2)
+                return c1 - c2;
+            c1 = *s1++;
+            c2 = *s2++;
+            if (c1 == '\0' || c1 != c2)
+                return c1 - c2;
+            c1 = *s1++;
+            c2 = *s2++;
+            if (c1 == '\0' || c1 != c2)
+                return c1 - c2;
+        } while (--n4 > 0);
+        n &= 3;
+    }
+
+    while (n > 0)
+    {
+        c1 = *s1++;
+        c2 = *s2++;
+        if (c1 == '\0' || c1 != c2)
+            return c1 - c2;
+        n--;
+    }
+    return c1 - c2;
+}
 
 template <typename... Types>
 size_t strlen(const char* head, Types...args)
@@ -137,6 +196,20 @@ const wchar_t* StrContainRange(const wchar_t* start, int length, Args...args)
         return nullptr;
     }
     return start;
+}
+
+template <typename T>
+T StrSkip(T content)
+{
+    static_assert(   std::is_same<T, std::string::const_iterator>::value
+                 ||
+                     std::is_same<T, std::vector<char>::const_iterator>::value
+                 ||
+                     std::is_same<T, std::deque<char>::const_iterator>::value
+                 ||
+                     std::is_same<T, const char*>::value
+            , "error in type");
+    while (*content && static_cast<const unsigned char>(*content) <= 32) content++; return content;
 }
 
 #endif // !YSTRING_H

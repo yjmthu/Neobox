@@ -979,7 +979,7 @@ void Dialog::on_pushButton_10_clicked()
             jobTip->showTip(str);
             return ;
         }
-        if (StrCompare(VarBox->Version, str))
+        if (!strcmp(VarBox->Version, str))
         {
             jobTip->showTip("当前已经是最新版本, 不过你仍可尝试下载更新！", 1000);
             ui->pushButton_12->setEnabled(true);
@@ -1007,7 +1007,7 @@ void Dialog::on_pushButton_10_clicked()
             emit finished(false, "下载失败！");
             return;
         }
-        const YJsonItem json(str, YJSON_PARSE::STRING);
+        const YJsonItem json(str);
         if (json.getType() != YJSON_TYPE::YJSON_OBJECT)
         {
             emit finished(false, "Gitee源出现问题！");
@@ -1066,14 +1066,14 @@ void Dialog::on_pushButton_12_clicked()
             emit finished(false, "下载失败！");
             return;
         }
-        YJsonItem json(str, YJSON_PARSE::STRING);
+        YJsonItem json(str);
         if (json.getType() != YJSON_TYPE::YJSON_OBJECT)
         {
             emit finished(false, "Gitee源出现问题！");
             return;
         }
         YJsonItem *qtVersion = json.findItem("Qt Version");
-        if (qtVersion->getType() != YJSON_TYPE::YJSON_STRING || !StrCompare(qtVersion->getValueString(), "6.1.2"))
+        if (qtVersion->getType() != YJSON_TYPE::YJSON_STRING || strcmp(qtVersion->getValueString(), "6.1.2"))
         {
             jobTip->showTip("下载更新失败，请手动打开浏览器到Gitee下载！", 3000);
             return;

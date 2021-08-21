@@ -103,9 +103,9 @@ typedef BOOL(WINAPI* pfnDwmGetWindowAttribute)(HWND hwnd, DWORD dwAttribute, PVO
 
 struct VARBOX
 {
-    const char* const Version = "21.8.20", * const Qt = "6.1.2";
+    const char* const Version = "21.8.22", * const Qt = "6.1.2";
     const unsigned char WinVersion; const bool FirstUse[1] = {false};
-    std::vector<std::pair<bool, void*>> PicHistory; std::vector<std::pair<bool, void*>>::iterator CurPic;
+    std::list<std::pair<bool, void*>> PicHistory; std::list<std::pair<bool, void*>>::const_iterator CurPic;
     const char* const StandardNames[10][2] =     //九种壁纸类型
     {
         {"Latest", "最新壁纸"}, {"Hot", "最热壁纸"}, {"Nature", "风景壁纸"},{"Anime", "动漫壁纸"},
@@ -161,7 +161,7 @@ struct VARBOX
     static bool isOnline(bool);                                               //检查是否有网络连接，布尔值代表是否保持检测 30 秒
     static char* runCommand(QString program, QStringList argument, short line = 0);
     static bool getWebCode(const char*, std::string&, bool auto_delete = true);
-    static bool getBingCode(std::string& code);
+    //static bool getBingCode(std::string& code);
     static bool downloadImage(const char*, const QString, bool auto_delete = true);
     static bool getTransCode(const char* url, std::string& outcome);
     static BOOL SetWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD AlphaColor);//设置窗口WIN10风格
