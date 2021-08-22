@@ -17,11 +17,6 @@ enum class YJSON_ENCODE{
     OTHER = 2
 };
 
-enum class YJSON_DEBUG{
-    HIDE = 0,
-    SHOW = 1
-};
-
 class YJsonItem
 {
 protected:
@@ -29,7 +24,9 @@ protected:
 
 public:
     YJsonItem(const YJsonItem&);
+    YJsonItem(const char*);
     YJsonItem(const std::string&);
+    YJsonItem(const wchar_t*);
     YJsonItem(const std::wstring&);
     ~YJsonItem();
     static YJsonItem* newFromFile(const std::wstring&);
@@ -53,8 +50,8 @@ public:
     int getChildNum() const;
     const YJsonItem* getTopItem() const;
 
-    const char* toString(bool fmt = true);
-    bool toFile(const std::wstring file_name, const YJSON_ENCODE& file_encode);
+    char* toString(bool fmt=true);
+    bool toFile(const std::wstring name, const YJSON_ENCODE& encode, bool fmt=false);
 
     YJsonItem& operator=(const YJsonItem*);
     YJsonItem& operator=(const YJsonItem&);
@@ -71,8 +68,6 @@ public:
     YJsonItem& operator+=(int);
     YJsonItem& operator+=(double);
     YJsonItem& operator+=(const char*);
-    YJsonItem& operator++();
-    YJsonItem& operator--();
 
     YJsonItem* findItem(int index) const;
     YJsonItem* findItem(const char* key) const;
@@ -92,8 +87,6 @@ public:
     bool removeItemByValue(double value);
     bool removeItemByValue(std::string value);
 
-    static YJSON_DEBUG DEBUG_OUT_PUT;
-
 private:
 	YJsonItem *_next = nullptr,*_prev = nullptr;
     
@@ -105,45 +98,39 @@ private:
     char *_keystring = nullptr;
     YJSON_TYPE _type = YJSON_TYPE::YJSON_NULL;
 
-    char *_buffer = nullptr;
-    int _depth = 1;
-
     template<typename Type>
     bool strict_parse(Type);
 
     template<typename Type>
     Type parse_value(Type);
-    void print_value();
+    char* print_value();
+    char* print_value(int depth);
 
     template<typename Type>
     Type parse_number(Type);
-    void print_number();
+    char* print_number();
 
     template<typename Type>
     Type parse_string(Type str);
-    void print_string(bool use_keystring = false);
+    char* print_string(const char* const);
 
     template<typename Type>
     Type parse_array(Type value);
-    void print_array();
+    char* print_array();
+    char* print_array(int depth);
 
     template<typename Type>
     Type parse_object(Type value);
-    void print_object();
+    char* print_object();
+    char* print_object(int depth);
 
-    void joinKeyValue(const char* valuestring, const bool use_key = true);
+    char* joinKeyValue(const char* valuestring, int depth, bool delvalue);
+    char* joinKeyValue(const char* valuestring, bool delvalue);
     void clearContent();
 
     void CopyJson(const YJsonItem*, YJsonItem*);
     void TakeJson(YJsonItem*, YJsonItem*, bool cpoy_key = true);
-    void UpdateDepth(int depth);
 
     bool removeItem(YJsonItem*);
     YJsonItem* appendItem(YJSON_TYPE type);
-
-    friend std::ostream& operator<<(std::ostream &out, YJsonItem &c1);
-    friend std::ostream& operator<<(std::ostream &out, YJsonItem *c1);
-    friend std::ostream& operator<<(std::ostream &out, const YJsonItem &c1);
-    friend std::ostream& operator<<(std::ostream &out, const YJsonItem *c1);
-    friend std::ostream& operator<<(std::ostream &out, YJsonItem &&c1);
 };

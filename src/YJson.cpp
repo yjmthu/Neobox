@@ -9,9 +9,9 @@
 
 #define TYPE_CHAECK()     static_assert(std::is_same<T, std::string::const_iterator>::value ||\
                               std::is_same<T, std::vector<char>::const_iterator>::value ||\
-                              std::is_same<T, std::deque<char>::const_iterator>::value, "error in type")
+                              std::is_same<T, std::deque<char>::const_iterator>::value ||\
+                              std::is_same<T, const char*>::value, "error in type")
 
-YJSON_DEBUG YJsonItem::DEBUG_OUT_PUT = YJSON_DEBUG::SHOW;
 std::pair<bool, std::string> YJsonItem::ep = std::pair<bool, std::string>(false, std::string());
 
 YJsonItem::YJsonItem(const YJsonItem& js)
@@ -21,14 +21,25 @@ YJsonItem::YJsonItem(const YJsonItem& js)
 
 YJsonItem::YJsonItem(const std::string& str)
 {
-    qout << str.c_str();
     strict_parse(str.cbegin());
+}
+
+YJsonItem::YJsonItem(const char* str)
+{
+    strict_parse(str);
 }
 
 YJsonItem::YJsonItem(const std::wstring& str)
 {
-    std::string dstr;
-    utf16_to_utf8<std::string&, std::wstring::const_iterator>(dstr, str.cbegin());
+    std::deque<char> dstr;
+    utf16_to_utf8<std::deque<char>&, std::wstring::const_iterator>(dstr, str.cbegin());
+    strict_parse(dstr.cbegin());
+}
+
+YJsonItem::YJsonItem(const wchar_t* str)
+{
+    std::deque<char> dstr;
+    utf16_to_utf8<std::deque<char>&, const wchar_t*>(dstr, str);
     strict_parse(dstr.cbegin());
 }
 
@@ -57,7 +68,6 @@ YJsonItem* YJsonItem::newFromFile(const std::wstring& str)
 {
     qout << "从文件加载";
     YJsonItem* json = nullptr;
-    YJSON_ENCODE file_encode = YJSON_ENCODE::OTHER;
     std::ifstream file(str, std::ios::in | std::ios::binary);
     if (file.is_open())
     {
@@ -79,7 +89,6 @@ YJsonItem* YJsonItem::newFromFile(const std::wstring& str)
         {
             qout << "utf8编码格式";
             std::vector<char> json_vector;
-            file_encode = YJSON_ENCODE::UTF8;
             json_vector.resize(size + 1);
             json_vector[size] = 0;
             file.read(reinterpret_cast<char*>(&json_vector[0]), size);
@@ -89,8 +98,7 @@ YJsonItem* YJsonItem::newFromFile(const std::wstring& str)
         }
         else if (c[0] == 0xff && c[1] == 0xfe)
         {
-            qout << "utf16编马哥";
-            file_encode = YJSON_ENCODE::UTF16;
+            qout << "utf16编码格式";
             if ((size + sizeof (char)) % sizeof (wchar_t))
             {
                 file.close(); return nullptr;
@@ -109,12 +117,7 @@ YJsonItem* YJsonItem::newFromFile(const std::wstring& str)
         }
         else
         {
-            file_encode = YJSON_ENCODE::OTHER;
             file.close();
-        }
-        if (file_encode == YJSON_ENCODE::OTHER)
-        {
-            qout << "unsuported encode";
             ep.first = true;
             ep.second = "文件编码格式不支持。";
         }
@@ -123,7 +126,7 @@ YJsonItem* YJsonItem::newFromFile(const std::wstring& str)
     {
         ep.first = true; ep.second = "文件错误";
     }
-    qout << "文件初始化结束";
+    //qout << "文件初始化结束";
     return json;
 }
 
@@ -209,14 +212,14 @@ void YJsonItem::TakeJson(YJsonItem* js, YJsonItem* parent, bool copy_key)
 	_valuestring = js->_valuestring; js->_valuestring = nullptr;
 	_valueint = js->_valueint; js->_valueint = 0;
 	_valuedouble = js->_valuedouble; js->_valuedouble = 0;
-    _buffer = js->_buffer; js->_buffer = nullptr;
+    //_buffer = js->_buffer; js->_buffer = nullptr;
     ep = js->ep; js->ep.first = false;
 }
 
 //清除_buffer, _valuestring, _child, 以及ep、valueint、 _valuedouble
 void YJsonItem::clearContent()
 {
-    if (_buffer) (delete[] _buffer, _buffer = nullptr);
+    //if (_buffer) (delete[] _buffer, _buffer = nullptr);
     if (_valuestring) (delete _valuestring, _valuestring = nullptr);
     if (_child) (delete _child, _child = nullptr);
     if (ep.first) ep.first = false; _valueint = 0; _valuedouble = 0;
@@ -231,7 +234,7 @@ int YJsonItem::getChildNum() const
 
 YJsonItem::~YJsonItem()
 {
-    if (_buffer) delete[] _buffer;
+    //if (_buffer) delete[] _buffer;
     if (_keystring) delete[] _keystring;
     if (_valuestring) delete[] _valuestring;
     if (_child) delete _child;
@@ -253,7 +256,6 @@ YJsonItem* YJsonItem::findItem(const char* key) const
         if (child && child->_keystring)
         {
             do {
-                qout << "比较键值：" << child->_keystring << key;
                 if (!strcmp<const char*>(child->_keystring, key))
                     return child;
             } while (child = child->_next);
@@ -604,142 +606,17 @@ YJsonItem& YJsonItem::operator[](const char* i) const
     return *findItem(i);
 }
 
-YJsonItem& YJsonItem::operator++()
+char* YJsonItem::toString(bool fmt)
 {
-    if (_next)
-    {
-        if (_prev)
-        {
-            _prev->_next = new YJsonItem;
-            _prev->_next->TakeJson(this, _parent); TakeJson(_next, nullptr);
-
-            _prev->_next->_next = this; _prev->_next->_prev = _prev; _prev = _prev->_next;
-            if (_next->_next)
-            {
-                _next->_next->_prev = this;
-                _parent = _next->_next; _next->_prev = nullptr; _next->_next = nullptr; delete _next;
-                _next = _parent; _parent = _prev->_parent;
-            }
-            else
-            {
-                _next->_prev = nullptr; _next->_next = nullptr; delete _next; _next = nullptr;
-            }
-        }
-        else
-        {
-            _prev = new YJsonItem;
-            _prev->TakeJson(this, _parent); TakeJson(_next, nullptr);
-
-            _prev->_next = this;
-            if (_next->_next)
-            {
-                _next->_next->_prev = this;
-                _parent = _next->_next; _next->_prev = nullptr; _next->_next = nullptr; delete _next;
-                _next = _parent; _parent = _prev->_parent;
-            }
-            else
-            {
-                _next->_prev = nullptr; _next->_next = nullptr; delete _next; _next = nullptr;
-            }
-        }
-    } 
-    return *this;
+    return fmt?print_value(0):print_value();
 }
 
-YJsonItem& YJsonItem::operator--()
+bool YJsonItem::toFile(const std::wstring name, const YJSON_ENCODE& file_encode, bool fmt)
 {
-    if (_prev)
-    {
-        if (_next)
-        {
-            _next->_prev = new YJsonItem;
-            _next->_prev->TakeJson(this, _parent); TakeJson(_prev, nullptr);
-            _next->_prev->_prev = this; _next->_prev->_next = _next; _next = _next->_prev;
-            if (_prev->_prev)
-            {
-                _prev->_prev->_next = this;
-                _parent = _prev->_prev; _prev->_prev = nullptr; _prev->_next = nullptr; delete _prev;
-                _prev = _parent; _parent = _next->_parent;
-            }
-            else
-            {
-                _prev->_prev = nullptr; _prev->_next = nullptr; delete _prev; _prev = nullptr; _parent->_child = this;
-            }
-        }
-        else
-        {
-            _next = new YJsonItem;
-            _next->TakeJson(this, _parent); TakeJson(_prev, nullptr);
-            _next->_prev = this;
-            if (_prev->_prev)
-            {
-                _prev->_prev->_next = this;
-                _parent = _prev->_prev; _prev->_prev = nullptr; _prev->_next = nullptr; delete _prev;
-                _prev = _parent; _parent = _next->_parent;
-            }
-            else
-            {
-                _prev->_prev = nullptr; _prev->_next = nullptr; delete _prev; _prev = nullptr; _parent->_child = this;
-            }
-        }
-    } 
-    return *this;
-}
-
-std::ostream  &operator<<(std::ostream &out, YJsonItem *c1)
-{
-    c1->UpdateDepth(0);
-    c1->print_value();
-    out << ((const char*)c1->_buffer)+1 << std::endl;
-	return out;
-}
-
-std::ostream  &operator<<(std::ostream &out, YJsonItem &c1)
-{
-    c1.UpdateDepth(0);
-    c1.print_value();
-    out << (const char*)c1._buffer << std::endl;
-	return out;
-}
-
-std::ostream  &operator<<(std::ostream &out, YJsonItem &&c1)
-{
-    c1.UpdateDepth(0);
-    c1.print_value();
-    out << (const char*)c1._buffer << std::endl;
-	return out;
-}
-
-std::ostream  &operator<<(std::ostream &out, const YJsonItem *c1)
-{
-    out << YJsonItem(*c1);
-	return out;
-}
-
-std::ostream  &operator<<(std::ostream &out, const YJsonItem &c1)
-{
-	out << YJsonItem(c1);
-	return out;
-}
-
-const char* YJsonItem::toString(bool fmt)
-{
-    UpdateDepth(0);
-    print_value();
-    if (_buffer)
-        return _buffer+fmt;
-    else if (ep.first)
-        return nullptr;
-    else
-        return nullptr;
-}
-
-bool YJsonItem::toFile(const std::wstring name, const YJSON_ENCODE& file_encode)
-{
-    qout << "开始打印";
-    UpdateDepth(0); print_value();
-    qout << "打印成功";
-    if (_buffer)
+    //qout << "开始打印";
+    char* buffer = fmt?print_value(0):print_value();
+    //qout << "打印成功";
+    if (buffer)
     {
         switch (file_encode) {
         case (YJSON_ENCODE::UTF16):
@@ -747,7 +624,7 @@ bool YJsonItem::toFile(const std::wstring name, const YJSON_ENCODE& file_encode)
             std::cout << "UTF-16" << "保存开始。";
             std::wstring data;
             data.push_back(0xfeff);
-            utf8_to_utf16<std::wstring&, const char*>(data, _buffer+1);
+            utf8_to_utf16<std::wstring&, const char*>(data, buffer);
             data.back() = L'\n';
             std::ofstream outFile(name, std::ios::out | std::ios::binary);
             if (outFile.is_open())
@@ -765,120 +642,124 @@ bool YJsonItem::toFile(const std::wstring name, const YJSON_ENCODE& file_encode)
             if (outFile.is_open())
             {
                 outFile.write(reinterpret_cast<const char*>(c), sizeof(char)*3);
-                outFile.write((const char*)(_buffer + 1), strlen(_buffer + 1)*sizeof(char));
+                outFile.write((const char*)(buffer), strlen(buffer)*sizeof(char));
                 outFile.write("\n", sizeof(char));
                 outFile.close();
             }
             break;
         }
         }
+        delete [] buffer;
     }
     return false;
 }
 
-void YJsonItem::UpdateDepth(int depth)
+char* YJsonItem::joinKeyValue(const char* valuestring, int depth, bool delvalue)
 {
-    _depth = depth;
-    if (_child)
-        _child->UpdateDepth(depth + 1);
-    if (_next)
-        _next->UpdateDepth(depth);
-}
-
-void YJsonItem::joinKeyValue(const char* valuestring, const bool use_key)
-{
-    if (use_key && _keystring && (print_string(true), _buffer))
+    char* buffer = nullptr;
+    char* x = StrRepeat(' ', depth*4);
+    if (_keystring)
     {
-        char *key = _buffer; _buffer = nullptr;
-        if (true)
-        {
-            char* x = StrRepeat(' ', _depth*4);
-            _buffer = StrJoin("\n", x, key, ": ", valuestring);
-            delete[] x;
-        }
-        else
-            _buffer = StrJoin(key, ":", valuestring);
+        char *key = print_string(_keystring);
+        buffer = StrJoin(x, key, ": ", valuestring);
         delete[] key;
     }
     else
     {
-        if (_buffer) delete[] _buffer;
-        if (true)
-        {
-            char* x = StrRepeat(' ', _depth*4);
-            _buffer = StrJoin("\n", x, valuestring);
-            delete[] x;
-        }
-        else
-            _buffer = StrJoin(valuestring);
+        buffer = StrJoin(x, valuestring);
     }
+    delete[] x;
+    if (delvalue) delete[] valuestring;
+    return buffer;
+}
+
+char* YJsonItem::joinKeyValue(const char* valuestring,  bool delvalue)
+{
+    char* buffer = nullptr;
+    if (_keystring)
+    {
+        char *key = print_string(_keystring);
+        buffer = StrJoin(key, ":", valuestring);
+        delete[] key;
+    }
+    else
+    {
+        buffer = StrJoin(valuestring);
+    }
+    if (delvalue) delete[] valuestring;
+    return buffer;
 }
 
 template <typename T>
 T YJsonItem::parse_value(T value)
 {
     TYPE_CHAECK();
-    qout << "加载数据";
-    //value = StrSkip(value);
+    //qout << "加载数据";
     if (!*value || ep.first || T() == value) return T();
-    qout << "剩余字符串开头：" << *value;
-    if (!strncmp(value, "null", 4))    { _type= YJSON_TYPE::YJSON_NULL;  return value+4; }
+    //qout << "剩余字符串开头：" << *value;
+    if (!strncmp(value, "null", 4))     { _type= YJSON_TYPE::YJSON_NULL;  return value+4; }
     if (!strncmp(value, "false", 5))    { _type= YJSON_TYPE::YJSON_FALSE; return value+5; }
-    if (!strncmp(value, "true", 4))    { _type= YJSON_TYPE::YJSON_TRUE; _valueint=1;    return value+4; }
-    if (*value=='\"')                { return parse_string(value); }
+    if (!strncmp(value, "true", 4))     { _type= YJSON_TYPE::YJSON_TRUE; _valueint=1;    return value+4; }
+    if (*value=='\"')                   { return parse_string(value); }
     if (*value=='-' || (*value>='0' && *value<='9'))    { return parse_number(value); }
-    if (*value=='[')                { return parse_array(value); }
-    if (*value=='{')                { return parse_object(value); }
+    if (*value=='[')                    { return parse_array(value); }
+    if (*value=='{')                    { return parse_object(value); }
 
-    qout << "加载数据出错";
+    //qout << "加载数据出错";
     return T();                              /* failure. */
 }
 
-void YJsonItem::print_value()
+char* YJsonItem::print_value()
 {
     switch (_type)
     {
-        case YJSON_TYPE::YJSON_NULL:
-        {
-            joinKeyValue("null");
-            break;
-        }
-        case YJSON_TYPE::YJSON_FALSE:
-        {
-            joinKeyValue("false");
-            break;
-        }
-        case YJSON_TYPE::YJSON_TRUE:
-        {
-            joinKeyValue("true");
-            break;
-        }
-        case YJSON_TYPE::YJSON_NUMBER:
-        {
-            print_number();
-            joinKeyValue(_valuestring);
-            break;
-        }
-        case YJSON_TYPE::YJSON_STRING:
-        {
-            print_string();
-            char* x = _buffer; _buffer = nullptr;
-            joinKeyValue(x);
-            delete[] x;
-            break;
-        }
-        case YJSON_TYPE::YJSON_ARRAY:
-        {
-            print_array();
-            break;
-        }
-        case YJSON_TYPE::YJSON_OBJECT:
-        {
-            print_object();
-            break;
-        }
-        default:
-            break;
+    case YJSON_TYPE::YJSON_NULL:
+        return  joinKeyValue("null", false);
+    case YJSON_TYPE::YJSON_FALSE:
+        return joinKeyValue("false", false);
+    case YJSON_TYPE::YJSON_TRUE:
+        return joinKeyValue("true", false);
+    case YJSON_TYPE::YJSON_NUMBER:
+    {
+        return joinKeyValue(print_number(), true);
+    }
+    case YJSON_TYPE::YJSON_STRING:
+    {
+        return joinKeyValue(print_string(_valuestring), true);;
+    }
+    case YJSON_TYPE::YJSON_ARRAY:
+        return print_array();
+    case YJSON_TYPE::YJSON_OBJECT:
+        return print_object();
+    default:
+        return nullptr;
+    }
+}
+
+char* YJsonItem::print_value(int depth)
+{
+    switch (_type)
+    {
+    case YJSON_TYPE::YJSON_NULL:
+        return  joinKeyValue("null", depth, false);
+    case YJSON_TYPE::YJSON_FALSE:
+        return joinKeyValue("false", depth, false);
+    case YJSON_TYPE::YJSON_TRUE:
+        return joinKeyValue("true", depth, false);
+    case YJSON_TYPE::YJSON_NUMBER:
+    {
+        return joinKeyValue(print_number(), depth, true);
+    }
+    case YJSON_TYPE::YJSON_STRING:
+    {
+        return joinKeyValue(print_string(_valuestring), depth, true);;
+    }
+    case YJSON_TYPE::YJSON_ARRAY:
+        return print_array(depth);
+    case YJSON_TYPE::YJSON_OBJECT:
+        return print_object(depth);
+    default:
+        return nullptr;
     }
 }
 
@@ -926,20 +807,20 @@ T YJsonItem::parse_number(T num)
             subscale += *num++ - '0';
         }
     }
-    _valueint = (int)(_valuedouble *= sign * pow(10, scale + signsubscale * subscale));
+    _valueint = static_cast<int>(_valuedouble *= sign * pow(10, scale + signsubscale * subscale));
     _type = YJSON_TYPE::YJSON_NUMBER;
     return num;
 }
 
-void YJsonItem::print_number()
+char* YJsonItem::print_number()
 {
-    if (_valuestring) delete[] _valuestring;
+    char* buffer = nullptr;
     if (_valuedouble == 0)
-        _valuestring = StrJoin("0");
+        buffer = StrJoin("0");
     else if (fabs(((double)_valueint) - _valuedouble) <= DBL_EPSILON && _valuedouble <= INT_MAX && _valuedouble >= (double)INT_MIN)
     {
         char temp[21] = { 0 }; sprintf(temp,"%d",_valueint);
-        _valuestring = StrJoin(temp);
+        buffer = StrJoin(temp);
     }
     else
     {
@@ -950,12 +831,13 @@ void YJsonItem::print_number()
             sprintf(temp,"%e",_valuedouble);
         else
             sprintf(temp,"%f",_valuedouble);
-        _valuestring = StrJoin(temp);
+        buffer = StrJoin(temp);
     }
+    return buffer;
 }
 
 template<typename T>
-inline bool _parse_hex4(T str, wchar_t& h)
+inline bool _parse_hex4(T str, uint16_t& h)
 {
     TYPE_CHAECK();
     if (*str >= '0' && *str <= '9')
@@ -970,10 +852,10 @@ inline bool _parse_hex4(T str, wchar_t& h)
 }
 
 template<typename T>
-wchar_t parse_hex4(T str)
+uint16_t parse_hex4(T str)
 {
     TYPE_CHAECK();
-    wchar_t h = 0;
+    uint16_t h = 0;
     if (_parse_hex4(str, h) || _parse_hex4(++str, h = h<<4) || _parse_hex4(++str, h = h<<4) || _parse_hex4(++str, h = h<<4))
         return 0;
     return h;
@@ -1041,18 +923,15 @@ T YJsonItem::parse_string(T str)
     *ptr2 = 0; ++str;
     _type= YJSON_TYPE::YJSON_STRING;
     while (*str != '\"' && *str) if (*str++ == '\\') ++str;
-    qout << "所得字符串：" << _valuestring;
+    //qout << "所得字符串：" << _valuestring;
     return ++str;
 }
 
-void YJsonItem::print_string(bool use_keystring)
+char* YJsonItem::print_string(const char* const str)
 {
     //qout << "打印字符开始";
-    if (use_keystring ) { if (!_keystring) return; }
-    else { if (!_valuestring) return; }
-    if (_buffer) (delete[] _buffer, _buffer = nullptr);
 
-    const char* const str = use_keystring ? _keystring:_valuestring;
+    char* buffer = nullptr;
     //cout << "输出字符串" << str << endl;
     const char* ptr; char* ptr2;
     size_t len = 0, flag = 0; unsigned char token;
@@ -1062,17 +941,16 @@ void YJsonItem::print_string(bool use_keystring)
     if (!flag)
     {
         len = ptr - str;
-        qout << len << str;
-        _buffer = new char[len + 3];
-        ptr2 = _buffer; *ptr2++ = '\"';
+        buffer = new char[len + 3];
+        ptr2 = buffer; *ptr2++ = '\"';
         memcpy(ptr2, str, len);
-        *(ptr2 += len) = '\"'; *++ptr2 = 0; qout << "=====打印字符结束=====";
-        return;
+        *(ptr2 += len) = '\"'; *++ptr2 = 0;
+        return buffer;
     }
     if (!str)
     {
-        _buffer = StrJoin("\"\"");
-        return;
+        buffer = StrJoin("\"\"");
+        return buffer;
     }
     ptr = str;
     while ((token = (unsigned char)*ptr) && ++len)
@@ -1081,9 +959,9 @@ void YJsonItem::print_string(bool use_keystring)
         else if (token < 32) len += 5; ptr++;
     }
     
-    memset(_buffer = new char[len + 3], 0, (len + 3) * sizeof(char));
+    memset(buffer = new char[len + 3], 0, (len + 3) * sizeof(char));
 
-    ptr2 = _buffer; ptr = str;
+    ptr2 = buffer; ptr = str;
     *ptr2++ = '\"';
     while (*ptr)
     {
@@ -1104,25 +982,22 @@ void YJsonItem::print_string(bool use_keystring)
             }
         }
     }
-    *ptr2 = '\"'; *++ptr2 = 0; qout << "打印字符结束";
+    *ptr2 = '\"'; *++ptr2 = 0;
+    return buffer;
 }
 
 template<typename T>
 T YJsonItem::parse_array(T value)
 {
     TYPE_CHAECK();
-    qout << "加载列表";
+    //qout << "加载列表";
     YJsonItem *child = nullptr;
-    if (*value != '[') { ep.first = true; return T(); }    /* not an array! */
-
     _type = YJSON_TYPE::YJSON_ARRAY;
     value=StrSkip(++value);
     if (*value==']')
     {
-        _child = nullptr;
         return value+1;    /* empty array. */
     }
-
     _child = child = new YJsonItem;
     _child->_parent = this;
     value = StrSkip(child->parse_value(StrSkip(value)));    /* skip any spacing, get the value. */
@@ -1140,45 +1015,59 @@ T YJsonItem::parse_array(T value)
 
     if (*value == ']')
     {
-        qout << "加载列表结束";
+        //qout << "加载列表结束";
         return value + 1;
     }
     ep.first = true;
-    return T();           /* malformed. */
+    ep.second = "未匹配到列表结尾‘]’。";
+    return T();
 }
 
-void YJsonItem::print_array()
+char* YJsonItem::print_array()
 {
-    qout << "打印列表开始";
-    if (_buffer) (delete[] _buffer, _buffer = nullptr);
+    //qout << "打印列表开始";
     std::deque<char*> entries;
     YJsonItem *child = _child;
 
     if (!child)
     {
-        joinKeyValue("[]");
-        return;
+        return joinKeyValue("[]", false);
     }
     do {
-        child->print_value();
-        if (!child->_buffer)
-            return;
-        entries.push_back(child->_buffer);
+        entries.push_back(child->print_value());
     } while (child = child->_next);
-    char* str_start = (joinKeyValue("["), _buffer),
-           * str_end = (_buffer = nullptr, joinKeyValue("]", false), _buffer);
-    _buffer = StrJoinX(str_start, (const char*)str_end, ",", entries);
-    if (str_start) delete[] str_start;
-    if (str_end) delete[] str_end;
-    qout << "打印列表结束";
+
+    return StrJoinE(joinKeyValue("[", false), "]", ",", entries);
+}
+
+char* YJsonItem::print_array(int depth)
+{
+    //qout << "打印列表开始";
+    std::deque<char*> entries;
+    YJsonItem *child = _child;
+
+    if (!child)
+    {
+        return joinKeyValue("[]", false);
+    }
+    do {
+        entries.push_back(child->print_value(depth+1));
+    } while (child = child->_next);
+
+    char* str_start = joinKeyValue("[\n", depth, false);
+    ++(depth *= 4);
+    char *str_end = new char[2+depth] {0};
+    *str_end = '\n'; str_end[depth] = ']';
+    while (--depth) str_end[depth] = ' ';
+    //qout << "打印列表结束";
+    return StrJoinD(str_start, (const char*)str_end, ",\n", entries);;
 }
 
 template<typename T>
 T YJsonItem::parse_object(T value)
 {
     TYPE_CHAECK();
-    qout << "加载字典：";
-    if (value == T() || *value != '{')    {ep.first = true; return T();}    /* not an object! */
+    //qout << "加载字典：";
     YJsonItem *child = nullptr;
     _type = YJSON_TYPE::YJSON_OBJECT;
     value = StrSkip(++value);
@@ -1206,47 +1095,63 @@ T YJsonItem::parse_object(T value)
         if (*value!=':')
         {
             ep.first = true;
-            ep.second = "错误：加载字典时，没有找到冒号。";
+            ep.second = "错误：加载字典时，没有匹配到‘:’。";
             return T();
         }
         value = StrSkip(child->parse_value(StrSkip(value+1)));    /* skip any spacing, get the value. */
-        if (!*value) return T();
+        if (!(*value)) return T();
     }
     
     if (*value=='}')
     {
-        qout << "加载字典结束";
+        //qout << "加载字典结束";
         return value+1;
     }
     ep.first = true;
-    ep.second = "错误：加载字典时，没有找结尾大括号。";
+    ep.second = "错误：加载字典时，没有匹配到结尾‘}’。";
     return T();
 }
 
-void YJsonItem::print_object()
+char* YJsonItem::print_object()
 {
     //qout << "打印字典开始";
-    if (_buffer) (delete[] _buffer, _buffer=nullptr);
 
     std::deque<char*> entries;
     YJsonItem *child = _child;
+    char* buffer = nullptr;
     if (!child)
     {
-        joinKeyValue("{}");
-        return;
+        return joinKeyValue("{}", false);;
     }
     do {
-        child->print_value();
-        if (!child->_buffer)
-            return;
-        entries.push_back(child->_buffer);
+        if (!(buffer = child->print_value()))
+            return nullptr;
+        entries.push_back(buffer);
     } while (child = child->_next);
-    qout << "开始拼接字符串";
-    char *str_start = (joinKeyValue("{"), _buffer), *str_end = (_buffer = nullptr, joinKeyValue("}", false), _buffer);
-    qout << "初始字符串：" << str_start << "结束字符串" << str_end;
+    return StrJoinE(joinKeyValue("{", false), "}", ",", entries);
+}
 
-    _buffer = StrJoinX(str_start, (const char*)str_end, ",", entries);
-    if (str_start) delete[] str_start;
-    if (str_end) delete[] str_end;
-    qout << "打印字典结束";
+char* YJsonItem::print_object(int depth)
+{
+    //qout << "打印字典开始";
+
+    std::deque<char*> entries;
+    YJsonItem *child = _child;
+    char* buffer = nullptr;
+    if (!child)
+    {
+        return joinKeyValue("{}", false);;
+    }
+    do {
+        if (!(buffer = child->print_value(depth+1)))
+            return nullptr;
+        entries.push_back(buffer);
+    } while (child = child->_next);
+    //qout << "开始拼接字符串";
+    char *str_start = joinKeyValue("{\n", depth, false);
+    ++(depth *= 4);
+    char *str_end = new char[2+depth] {0};
+    *str_end = '\n'; str_end[depth] = '}';
+    while (--depth) str_end[depth] = ' ';
+    return StrJoinD(str_start, str_end, ",\n", entries);
 }

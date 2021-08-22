@@ -126,7 +126,7 @@ struct VARBOX
     unsigned char PageNum = 1, TimeInterval = 15;
     bool UseDateAsBingName = true, AutoSaveBingPicture = true, AutoRotationBingPicture = true;
     QString NativeDir;                  //当下正在使用的用户本地壁纸文件夹
-    QString UserCommand = "python.exe -u ?:\\?????.py";                //当下正在使用的用户高级命令
+    QString UserCommand = "python.exe -u X:\\xxxxx.py";                //当下正在使用的用户高级命令
     QString PathToOpen;                //要打开的文件夹
 
     bool HaveAppRight = false,  EnableTranslater = false, AutoHide = false;;

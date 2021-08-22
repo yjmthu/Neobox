@@ -328,6 +328,19 @@
                  </property>
                 </widget>
                </item>
+               <item>
+                <widget class="QCheckBox" name="checkBox_3">
+                 <property name="toolTip">
+                  <string>软件启动刚时更换一次壁纸，即使没有勾选自动更换壁纸也有效。</string>
+                 </property>
+                 <property name="text">
+                  <string>首更</string>
+                 </property>
+                 <property name="checked">
+                  <bool>false</bool>
+                 </property>
+                </widget>
+               </item>
               </layout>
              </widget>
             </item>
@@ -369,6 +382,16 @@
                 <widget class="QLabel" name="label_2">
                  <property name="text">
                   <string>1</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="checkBox_2">
+                 <property name="toolTip">
+                  <string>刷新图片链接文件（不要频繁勾选）</string>
+                 </property>
+                 <property name="text">
+                  <string>刷新</string>
                  </property>
                 </widget>
                </item>

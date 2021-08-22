@@ -225,6 +225,7 @@ void Dialog::mouseMoveEvent(QMouseEvent* event)
 void Dialog::showEvent(QShowEvent *event)
 {
     qout << "showEvent被调用！";
+    ui->checkBox_2->setChecked(false);
     last_checked_button = (int)VarBox->PaperType;
     ui->BtnChooseFolder->setEnabled(last_checked_button == 7);
     buttonGroup->button(last_checked_button)->setChecked(true);
@@ -376,6 +377,7 @@ void Dialog::on_pBtnOk_clicked()
 
 void Dialog::on_pBtnApply_clicked()
 {
+    Wallpaper::update = ui->checkBox_2->isChecked();
     VarBox->PaperType = (PAPER_TYPE)buttonGroup->checkedId();
     VarBox->NativeDir = ui->LinePath->text();
     VarBox->PageNum = ui->SliderPageNum->value();
@@ -875,7 +877,7 @@ void Dialog::on_pushButton_7_clicked()
                 setEnabled(false);
                 VarBox->form->setEnabled(false);
                 VarBox->RunApp = false;
-                if (QMessageBox::question(this, "提示", "您想退出后重启吗？", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)==QMessageBox::Yes)
+                if (QMessageBox::question(this, "提示", "您想退出后重启软件吗？", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)==QMessageBox::Yes)
                     qApp->exit(RETCODE_RESTART);
                 else
                     qApp->quit();
@@ -1039,7 +1041,6 @@ void Dialog::on_pushButton_12_clicked()
         QMessageBox::information(this, "提示", "没有网络！");
         return;
     }
-
     std::thread thrd; QEventLoop loop;
 
     connect(this, &Dialog::finished, &loop, [&loop, &thrd, this](bool success, const char* str){
@@ -1050,7 +1051,7 @@ void Dialog::on_pushButton_12_clicked()
             return ;
         }
         if (!VarBox->RunApp) return;        // 用户在检查过程中退出了软件
-        if (QMessageBox::information(this, "提示", "更新已经下载完成，重启后完成更新！", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
+        if (QMessageBox::information(this, "提示", "更新已经下载完成，点击确认重启软件后完成更新！", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
         {
             VarBox->RunApp = false;
             qApp->exit(RETCODE_UPDATE);

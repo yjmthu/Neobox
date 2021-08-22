@@ -32,7 +32,7 @@ public:
     virtual void startWork() = 0;                          //根据壁纸类型决定执行public里面哪个set函数
     static bool initSet; static bool canCreat(); static void cleanThread();
     Wallpaper(); ~Wallpaper(); bool isActive();
-    static char bing;
+    static char bing; static bool update;
 };
 
 #endif // WALLPAPER_H

@@ -30,7 +30,7 @@ bool utf8_to_utf16(C1 utf16, C2 utf8)
         if (static_cast<unsigned char>(*utf8) < 0x80)
         {
             utf16.push_back(*utf8);
-            ++utf8;
+            utf8 += 1;
         }
         else if (static_cast<unsigned char>(*utf8) < 0xE0)
         {

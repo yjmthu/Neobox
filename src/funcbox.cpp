@@ -422,7 +422,7 @@ QString VARBOX::get_wal_path()
 
 QString VARBOX::get_pic_path(short i)
 {
-    qout << "获取图片路径开始" << i;
+    //qout << "获取图片路径开始" << i;
     QString str = get_wal_path() + "\\" + CustomNames[i];
     if (CustomNames[i].isEmpty() || !get_son_dir(str))
     {
@@ -435,7 +435,7 @@ QString VARBOX::get_pic_path(short i)
     IniWrite.beginGroup("Dirs");
     IniWrite.setValue(StandardNames[i][0], CustomNames[i]);
     IniWrite.endGroup();
-    qout << "最终图片路径结果：" << str;
+    //qout << "最终图片路径结果：" << str;
     return str;
 }
 

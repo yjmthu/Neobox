@@ -102,20 +102,8 @@ size_t wcslen(const std::deque<wchar_t*>& str_box)
     return len;
 }
 
-wchar_t* StrJoinX(const wchar_t* start, const wchar_t* end, const wchar_t* dist, const std::deque<wchar_t*>& box)
-{
-    if (!start || !end || !dist || box.empty())
-        return nullptr;
-    size_t len = wcslen(start, end) + wcslen(box) + wcslen(dist) * (box.size() - 1);
-    wchar_t* str = new wchar_t[len + 1];
-    wchar_t* ptr = STRING_APPEND(str, start);
-    for (wchar_t* k: box)
-        ptr = STRING_APPEND(ptr, k, dist);
-    STRING_APPEND(--ptr, end);
-    return str;
-}
 
-char* StrJoinX(const char* start, const char* end, const char* dist, const std::deque<char*>& box)
+char* StrJoinD(const char* start, const char* end, const char* dist, const std::deque<char*>& box)
 {
     if (!start || !end || !dist || box.empty())
         return nullptr;
@@ -123,8 +111,29 @@ char* StrJoinX(const char* start, const char* end, const char* dist, const std::
     char* str = new char[len + 1];
     char* ptr = STRING_APPEND(str, start);
     for (char*k: box)
+    {
         ptr = STRING_APPEND(ptr, k, dist);
+        delete[] k;
+    }
+    STRING_APPEND(ptr-2, end);
+    delete [] start; delete [] end;
+    return str;
+}
+
+char* StrJoinE(const char* start, const char* end, const char* dist, const std::deque<char*>& box)
+{
+    if (!start || !end || !dist || box.empty())
+        return nullptr;
+    size_t len = strlen(start, end) + strlen(box) + strlen(dist) * (box.size() - 1);
+    char* str = new char[len + 1];
+    char* ptr = STRING_APPEND(str, start);
+    for (char*k: box)
+    {
+        ptr = STRING_APPEND(ptr, k, dist);
+        delete[] k;
+    }
     STRING_APPEND(--ptr, end);
+    delete [] start;
     return str;
 }
 
