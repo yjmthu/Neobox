@@ -105,11 +105,11 @@ YJsonItem* YJsonItem::newFromFile(const std::wstring& str)
             }
             else
             {
-                std::string json_str;
+                std::deque<char> json_str;
                 wchar_t* json_str_temp = new wchar_t[size/sizeof(wchar_t) + 1];
                 char *ptr = reinterpret_cast<char*>(json_str_temp); *ptr = c[2];
                 file.read(++ptr, size);
-                utf16_to_utf8<std::string&, const wchar_t*>(json_str, json_str_temp);
+                utf16_to_utf8<std::deque<char>&, const wchar_t*>(json_str, json_str_temp);
                 delete [] json_str_temp; file.close();
                 json = new YJsonItem();
                 json->strict_parse(json_str.cbegin());
@@ -161,7 +161,7 @@ YJsonItem* YJsonItem::newObject()
 //复制json，当parent为NULL，如果自己有key用自己的key
 void YJsonItem::CopyJson(const YJsonItem* json, YJsonItem* parent)
 {
-    if (json->ep.first) return;
+    if (ep.first) return;
     _type = json->_type;
 
     if (!(_parent = parent) || parent->_type != YJSON_TYPE::YJSON_OBJECT)
@@ -195,31 +195,9 @@ void YJsonItem::CopyJson(const YJsonItem* json, YJsonItem* parent)
     }
 }
 
-void YJsonItem::TakeJson(YJsonItem* js, YJsonItem* parent, bool copy_key)
-{
-    if (parent) _parent = parent;
-    _type = js->_type; js->_type = YJSON_TYPE::YJSON_NULL;
-    _child = js->_child; js->_child = nullptr;
-    if (_child)
-    {
-        YJsonItem* child = _child; child->_parent = this;
-        while (child = child->_next) child->_parent = this;
-    }
-    if (copy_key)
-    {
-        _keystring = js->_keystring; js->_keystring = nullptr;
-    }
-	_valuestring = js->_valuestring; js->_valuestring = nullptr;
-	_valueint = js->_valueint; js->_valueint = 0;
-	_valuedouble = js->_valuedouble; js->_valuedouble = 0;
-    //_buffer = js->_buffer; js->_buffer = nullptr;
-    ep = js->ep; js->ep.first = false;
-}
-
-//清除_buffer, _valuestring, _child, 以及ep、valueint、 _valuedouble
+//清除_valuestring, _child, 以及ep、valueint、 _valuedouble
 void YJsonItem::clearContent()
 {
-    //if (_buffer) (delete[] _buffer, _buffer = nullptr);
     if (_valuestring) (delete _valuestring, _valuestring = nullptr);
     if (_child) (delete _child, _child = nullptr);
     if (ep.first) ep.first = false; _valueint = 0; _valuedouble = 0;
@@ -234,7 +212,6 @@ int YJsonItem::getChildNum() const
 
 YJsonItem::~YJsonItem()
 {
-    //if (_buffer) delete[] _buffer;
     if (_keystring) delete[] _keystring;
     if (_valuestring) delete[] _valuestring;
     if (_child) delete _child;
@@ -373,7 +350,7 @@ YJsonItem* YJsonItem::appendItem(const YJsonItem* js, const char* key)
         {if (!key && !js->_keystring) return nullptr;}
     else
         {if (key || js->_keystring) return nullptr;}
-    YJsonItem* child = appendItem(js->_type); *child = js;
+    YJsonItem* child = appendItem(js->_type); *child = *js;
     if (key)
     {
         if (child->_keystring) delete[] child->_keystring;
@@ -408,9 +385,8 @@ YJsonItem* YJsonItem::appendItem(const char* str, const char* key)
 {
     if (_type == YJSON_TYPE::YJSON_OBJECT) {
         if (!key) return nullptr;
-    } else {
-        if (key) return nullptr;
     }
+    else if (key || _type != YJSON_TYPE::YJSON_ARRAY) return nullptr;
     YJsonItem* child = appendItem(YJSON_TYPE::YJSON_STRING);
     child->_valuestring = StrJoin(str); if (key) child->_keystring = StrJoin(key);
     return child;
@@ -464,16 +440,6 @@ bool YJsonItem::removeItemByValue(std::string str)
     return removeItem(findItemByValue(str.c_str()));
 }
 
-YJsonItem& YJsonItem::operator=(const YJsonItem* s)
-{
-    if (s == this)
-        return *this;
-    else if (s->getTopItem() == getTopItem())
-        return (*this = YJsonItem(*s));
-    clearContent(); CopyJson(s, _parent);
-    return *this;
-}
-
 YJsonItem& YJsonItem::operator=(const YJsonItem& s)
 {
     if (&s == this)
@@ -486,61 +452,24 @@ YJsonItem& YJsonItem::operator=(const YJsonItem& s)
 
 YJsonItem& YJsonItem::operator=(YJsonItem&& s)
 {
-    if (&s == this) return *this;
-    clearContent(); TakeJson(&s, _parent, false); s._next = nullptr;
-    return *this;
-}
-
-YJsonItem& YJsonItem::operator=(int value)
-{
-    clearContent(); _type = YJSON_TYPE::YJSON_NUMBER;
-    _valuedouble = _valueint = value;
-    return *this;
-}
-
-YJsonItem& YJsonItem::operator=(double value)
-{
-    clearContent(); _type = YJSON_TYPE::YJSON_NUMBER;
-    _valueint = (int)value; _valuedouble = value;
-    return *this;
-}
-
-YJsonItem& YJsonItem::operator=(const char* str)
-{
-    clearContent(); _type = YJSON_TYPE::YJSON_STRING;
-    _valuestring = StrJoin(str);
-    return *this;
-}
-
-YJsonItem YJsonItem::operator+(const YJsonItem*that)
-{
-    if (ep.first || !that || that->ep.first || _type != YJSON_TYPE::YJSON_ARRAY || _type != YJSON_TYPE::YJSON_OBJECT || _type != that->_type)
-    {
-        YJsonItem s;
-        return s;
-    }
-    else
-    {
-        YJsonItem js(*this); js += that;
-        return js;
-    }
-}
-
-YJsonItem YJsonItem::operator+(const YJsonItem& that)
-{
-    return *this + &that;
-}
-
-YJsonItem& YJsonItem::operator+=(const YJsonItem* js)
-{
-    if (js == this)
-    {
-        return *this += YJsonItem(*this);
-    }
-    if (ep.first || !js || js->ep.first || _type != js->_type || (_type != YJSON_TYPE::YJSON_ARRAY && _type != YJSON_TYPE::YJSON_OBJECT))
+    if (&s == this)
         return *this;
+    else if (s.getTopItem() == this->getTopItem())
+        return (*this = YJsonItem(s));
+    clearContent(); CopyJson(&s, _parent);
+    return *this;
+}
+
+bool YJsonItem::joinItem(const YJsonItem & js)
+{
+    if (&js == this)
+    {
+        return joinItem(YJsonItem(*this));
+    }
+    if (ep.first || _type != js._type || (_type != YJSON_TYPE::YJSON_ARRAY && _type != YJSON_TYPE::YJSON_OBJECT))
+        return false;
     YJsonItem *child = _child;
-    YJsonItem *childx = js->_child;
+    YJsonItem *childx = js._child;
     if (child)
     {
         while (child->_next) child = child->_next;
@@ -558,42 +487,20 @@ YJsonItem& YJsonItem::operator+=(const YJsonItem* js)
     {
         *this = js;
     }
-    return *this;
+    return true;
 }
 
-YJsonItem& YJsonItem::operator+=(const YJsonItem& js)
+YJsonItem YJsonItem::joinItem(const YJsonItem & j1, const YJsonItem & j2)
 {
-    return (*this += &js);
-}
-
-YJsonItem& YJsonItem::operator+=(const char* str)
-{
-    if (_type == YJSON_TYPE::YJSON_ARRAY)
+    if (ep.first || j1._type != YJSON_TYPE::YJSON_ARRAY || j1._type != YJSON_TYPE::YJSON_OBJECT || j2._type != j1._type)
     {
-        YJsonItem *item = appendItem(YJSON_TYPE::YJSON_STRING);
-        item->_valuestring = StrJoin(str);
+        return YJsonItem();
     }
-    return *this;
-}
-
-YJsonItem& YJsonItem::operator+=(int value)
-{
-    if (_type == YJSON_TYPE::YJSON_ARRAY)
+    else
     {
-        YJsonItem *item = appendItem(YJSON_TYPE::YJSON_NUMBER);
-        item->_valuedouble = item->_valueint = value;
+        YJsonItem js(j1); js.joinItem(j2);
+        return js;
     }
-    return *this;
-}
-
-YJsonItem& YJsonItem::operator+=(double value)
-{
-    if (_type == YJSON_TYPE::YJSON_ARRAY)
-    {
-        YJsonItem *item = appendItem(YJSON_TYPE::YJSON_NUMBER);
-        item->_valueint = (int)value; item->_valuedouble = value;
-    }
-    return *this;
 }
 
 YJsonItem& YJsonItem::operator[](int i) const
@@ -608,12 +515,14 @@ YJsonItem& YJsonItem::operator[](const char* i) const
 
 char* YJsonItem::toString(bool fmt)
 {
+    if (ep.first) return nullptr;
     return fmt?print_value(0):print_value();
 }
 
 bool YJsonItem::toFile(const std::wstring name, const YJSON_ENCODE& file_encode, bool fmt)
 {
     //qout << "开始打印";
+    if (ep.first) return false;
     char* buffer = fmt?print_value(0):print_value();
     //qout << "打印成功";
     if (buffer)
@@ -861,15 +770,13 @@ uint16_t parse_hex4(T str)
     return h;
 }
 
-constexpr const unsigned char firstByteMark[7] = { 0x00, 0x00, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC };
-
 template<typename T>
 T YJsonItem::parse_string(T str)
 {
     TYPE_CHAECK();
     //cout << "加载字符串：" << str << endl;
     T ptr = str + 1;
-    char* ptr2; unsigned uc, uc2;
+    char* ptr2; uint32_t uc, uc2;
     size_t len = 0;
     if (*str != '\"') {
         //cout << "不是字符串！" << endl;
@@ -893,15 +800,15 @@ T YJsonItem::parse_string(T str)
             case 'n': *ptr2++ = '\n';    break;
             case 'r': *ptr2++ = '\r';    break;
             case 't': *ptr2++ = '\t';    break;
-            case 'u': uc=parse_hex4(ptr+1);ptr+=4;    /* get the unicode char. */
+            case 'u': uc=parse_hex4(ptr+1);ptr+=4;                                                   /* get the unicode char. */
 
-                if ((uc>=0xDC00 && uc<=0xDFFF) || uc==0)    break;    /* check for invalid.    */
+                if ((uc>=utf16FirstWcharMark[1] && uc<utf16FirstWcharMark[2]) || uc==0)    break;    /* check for invalid.    */
 
-                if (uc>=0xD800 && uc<=0xDBFF)    /* UTF16 surrogate pairs.    */
+                if (uc>=utf16FirstWcharMark[0] && uc<utf16FirstWcharMark[1])                         /* UTF16 surrogate pairs.    */
                 {
-                    if (ptr[1]!='\\' || ptr[2]!='u')    break;    /* missing second-half of surrogate.    */
+                    if (ptr[1]!='\\' || ptr[2]!='u')    break;                                       /* missing second-half of surrogate.    */
                     uc2=parse_hex4(ptr+3);ptr+=6;
-                    if (uc2<0xDC00 || uc2>0xDFFF)        break;    /* invalid second-half of surrogate.    */
+                    if (uc2<utf16FirstWcharMark[1] || uc2>=utf16FirstWcharMark[2])        break;     /* invalid second-half of surrogate.    */
                     uc=0x10000 + (((uc&0x3FF)<<10) | (uc2&0x3FF));
                 }
 
@@ -911,7 +818,7 @@ T YJsonItem::parse_string(T str)
                     case 4: *--ptr2 =((uc | 0x80) & 0xBF); uc >>= 6;
                     case 3: *--ptr2 =((uc | 0x80) & 0xBF); uc >>= 6;
                     case 2: *--ptr2 =((uc | 0x80) & 0xBF); uc >>= 6;
-                    case 1: *--ptr2 =(uc | firstByteMark[len]);
+                    case 1: *--ptr2 =(uc | utf8FirstCharMark[len]);
                 }
                 ptr2+=len;
                 break;

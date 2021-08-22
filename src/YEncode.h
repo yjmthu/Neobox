@@ -1,10 +1,12 @@
 #ifndef YENCODE_H
 #define YENCODE_H
 
+#include <funcbox.h>
 #include <deque>
 #include <vector>
 #include <string>
 
+constexpr const uint16_t utf16FirstWcharMark[3] = { 0xD800, 0xDC00, 0xE000 };
 template <class C1, class C2>
 bool utf8_to_utf16(C1 utf16, C2 utf8)
 {
@@ -68,13 +70,15 @@ bool utf8_to_utf16(C1 utf16, C2 utf8)
                 word &= ((utf8[3] & 0x3F) << 12) | ((utf8[4] & 0x3F) << 6) | (utf8[5] & 0x3F);
                 utf8 += 6;
             }
-            utf16.push_back(0xD800 | (word >> 10));
-            utf16.push_back(0xDC00 | (word & 0x3FF));
+            utf16.push_back(utf16FirstWcharMark[0] | (word >> 10));
+            utf16.push_back(utf16FirstWcharMark[1] | (word & 0x3FF));
         }
     }
     utf16.push_back(0);
     return true;
 }
+
+constexpr const unsigned char utf8FirstCharMark[7] = { 0x00, 0x00, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC };
 
 template <typename  C1, typename C2>
 bool utf16_to_utf8(C1 utf8, C2 utf16)
@@ -97,59 +101,35 @@ bool utf16_to_utf8(C1 utf8, C2 utf16)
             )
                     )
             , "error in type");
+    uint32_t unicode;
+    uint8_t len;
     while (*utf16)
     {
-        if (*utf16 < 0x80)   // 6位以内，1字节
+        unicode = *utf16;
+        if (unicode < 0x80) len = 1;           // 6位以内，1字节
+        else if (unicode < 0x800) len = 2;     // 11位以内，2字节
+        else if (unicode >= utf16FirstWcharMark[0] && unicode < utf16FirstWcharMark[1])   // 双宽字节，对应4~6字节
         {
-            utf8.push_back(*utf16);
+            if (*++utf16 < utf16FirstWcharMark[1] || *utf16 >= utf16FirstWcharMark[2]) return false;
+            unicode = ((unicode & 0x3FF) << 10) | (*utf16 & 0x3FF);
+            if (unicode < 0x200000) len = 4; else if (unicode < 0x4000000) len = 5; else len =6;
         }
-        else if (*utf16 < 0x800)     // 11位以内，2字节
-        {
-            utf8.push_back(0xC0 | (*utf16 >> 6));
-            utf8.push_back(0x80 | (*utf16 & 0x3F));
-        }
-        else if (*utf16 >= 0xD800 && *utf16 < 0xDC00)
-        {
-            uint32_t word = (*utf16 & 0x3FF) << 10;
-            if (!*(++utf16)) return false;
-            if (*utf16 >= 0xDC00 && *utf16 < 0xE000)
-            {
-                word |= *utf16 & 0x3FF;
-                if (word < 0x200000)   // 21位以内
-                {
-                    utf8.push_back(0xF0 | (word >> 18));
-                }
-                else
-                {
-                    if (word < 0x4000000)    // 26位以内
-                    {
-                        utf8.push_back(0xF8 | (word >> 24));
-                    }
-                    else
-                    {
-                        utf8.push_back(0xF8 | (word >> 30));
-                        utf8.push_back(0x80 | ((word >> 24) & 0x3F));
-
-                    }
-                    utf8.push_back(0x80 | ((word >> 18) & 0x3F));
-                }
-                utf8.push_back(0x80 | ((word >> 12) & 0x3F));
-                utf8.push_back(0x80 | ((word >> 6) & 0x3F));
-                utf8.push_back(0x80 | (word & 0x3F));
-            }
-            else
-                return false;
-
-        }
-        else    // 16位以内，3字节
-        {
-            utf8.push_back(0xE0 | (*utf16 >> 12));
-            utf8.push_back(0x80 | (*utf16 >> 6) & 0x3F);
-            utf8.push_back(0x80 | (*utf16 & 0x3F));
+        else if (unicode >= utf16FirstWcharMark[1] && unicode < utf16FirstWcharMark[2])   // 双宽字节第二位，无效
+            return false;
+        else len = 3;                          // 16位以内，3字节
+        utf8.resize(utf8.size() + len);
+        auto ptr = utf8.end();
+        switch (len) {
+        case 6: *--ptr = 0x80 | (unicode & 0x3F); unicode >>= 6;
+        case 5: *--ptr = 0x80 | (unicode & 0x3F); unicode >>= 6;
+        case 4: *--ptr = 0x80 | (unicode & 0x3F); unicode >>= 6;
+        case 3: *--ptr = 0x80 | (unicode & 0x3F); unicode >>= 6;
+        case 2: *--ptr = 0x80 | (unicode & 0x3F); unicode >>= 6;
+        default: *--ptr = utf8FirstCharMark[len] | unicode;
         }
         ++utf16;
     }
-    utf8.push_back(0);
+    if (utf8.back()) utf8.push_back(0);
     return true;
 }
 

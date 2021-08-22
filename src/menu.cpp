@@ -26,8 +26,8 @@ void check_is_wallhaven(const wchar_t* pic, char* id)
     qout << 99;
     if (wcslen(pic) != 20)
         return ;
-    if (wcsncmp(pic, L"wallhaven-", 10) && StrContainRange(pic+10, 6, L"a-z", L"0-9") &&
-            (wcscmp(pic+16, L".png") || wcscmp(pic+16, L".jpg")))
+    if (!wcsncmp(pic, L"wallhaven-", 10) && StrContainRange(pic+10, 6, L"a-z", L"0-9") &&
+            (!wcscmp(pic+16, L".png") || !wcscmp(pic+16, L".jpg")))
     {
         for (int i=0; i <= 5; ++i)
         {

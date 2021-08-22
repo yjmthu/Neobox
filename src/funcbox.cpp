@@ -92,8 +92,6 @@ VARBOX::VARBOX(int w, int h):
             }
             else
             {
-                //char t[12] = { 0 };
-                //GetPrivateProfileString("SpeedBox", "Version", t, t, 11, file.toStdString().c_str());
                 QSettings set(file, QSettings::IniFormat);
                 set.beginGroup("SpeedBox");
                 QByteArray x = set.value("Version").toByteArray();

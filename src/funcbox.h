@@ -103,7 +103,7 @@ typedef BOOL(WINAPI* pfnDwmGetWindowAttribute)(HWND hwnd, DWORD dwAttribute, PVO
 
 struct VARBOX
 {
-    const char* const Version = "21.8.22", * const Qt = "6.1.2";
+    const char* const Version = "21.8.23", * const Qt = "6.1.2";
     const unsigned char WinVersion; const bool FirstUse[1] = {false};
     std::list<std::pair<bool, void*>> PicHistory; std::list<std::pair<bool, void*>>::const_iterator CurPic;
     const char* const StandardNames[10][2] =     //九种壁纸类型

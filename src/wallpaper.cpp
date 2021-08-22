@@ -274,7 +274,7 @@ bool Wallpaper::get_url_from_Wallhaven(YJsonItem& jsonArray) const            //
                 if (!strncmp<const char*>(pos, str_a, 48) && StrContainRange(pos + 48, 6, "a-z", "0-9") && !strncmp<const char*>(pos + 54, str_b, 49))
 				{
 					StrCopy(math_pos, pos + 48, pos + 53);
-					jsonArray += math_pos; pos += 103;
+                    jsonArray.appendItem(math_pos); pos += 103;
 				}
 				else
 					++pos;
@@ -308,108 +308,6 @@ bool Wallpaper::set_from_Native() const
     return false;
 };
 
-/* old
-bool Wallpaper::set_from_Bing(bool setBing) const
-{
-    QDateTime dateTime(QDateTime::currentDateTime());
-
-    QString img_name = VarBox->get_pic_path((short)PAPER_TYPE::Bing);
-    img_name += "\\";
-    img_name += dateTime.toString("yyyy-MM-dd");
-    img_name += "必应壁纸.jpg";
-    qout << "必应壁纸名称：" << img_name;
-
-    if (QFile::exists(img_name))
-        return (setBing && setWallpaper(img_name)) || true;
-	else
-	{
-        std::string img_html;
-        VARBOX::getBingCode(img_html);
-        const char* pos_a; const char* pos_b;
-        int type = 1;
-		while (true)
-		{
-            switch (type) {
-            case 0:
-                pos_a = img_html.c_str();
-                qout << "源码" << pos_a;
-                qout << "第一种";
-                type = 2;
-                continue;
-            case 1:
-                pos_a = img_html.c_str();
-                qout << "第二种";
-                type = 3;
-                continue;
-            case 2:
-                if (*pos_a)
-                {
-                    if (StrCompare(pos_a, "<link rel=\"preload\" href=\"/th?id=", 33))
-                    {
-                        pos_a += 26;
-                        type = 4;
-                    }
-                    else
-                    {
-                        type = 2;
-                        pos_a++;
-                    }
-                }
-                else
-                {
-                    type = 5;
-                }
-                continue;
-            case 3:
-                if (*pos_a)
-                {
-                    if (StrCompare(pos_a, "<head><link id=\"bgLink\" rel=\"preload\" href=\"", 44))
-                    {
-                        pos_a += 44;
-                        type = 4;
-                    }
-                    else
-                    {
-                        pos_a++;
-                        type = 3;
-                    }
-                }
-                else
-                {
-                    type = 0;
-                }
-                continue;
-            case 4:
-                break;
-            default:
-                return false;
-            }
-            break;
-		}
-		pos_b = pos_a;
-        qout << "起始点" << pos_b;
-		while (true)
-		{
-			if (*pos_b)
-			{
-                if (StrCompare(pos_b, "\"", 1))
-				{
-					--pos_b;
-					break;
-				}
-				else
-                    ++pos_b;
-			}
-			else
-				return false;
-		}
-        char* img_id = new char[pos_b - pos_a + 2]; StrCopy(img_id, pos_a, pos_b);
-        char* img_url = StrJoin("https://cn.bing.com", img_id); delete[] img_id;
-        qout << "必应壁纸链接：" << img_url;
-        return (VARBOX::downloadImage(img_url, img_name) && setBing) && setWallpaper(img_name);
-	}	
-}
-*/
 
 bool Wallpaper::set_from_Bing(bool setBing) const
 {
@@ -500,7 +398,7 @@ bool Wallpaper::set_from_Bing(bool setBing) const
             if (need_save)
             {
                 qout << "需要保存必应数据";
-                file_data->toFile(file_name.toStdWString(), YJSON_ENCODE::UTF8);
+                file_data->toFile(file_name.toStdWString(), YJSON_ENCODE::UTF16);
             }
             delete file_data;
 

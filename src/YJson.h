@@ -53,21 +53,13 @@ public:
     char* toString(bool fmt=true);
     bool toFile(const std::wstring name, const YJSON_ENCODE& encode, bool fmt=false);
 
-    YJsonItem& operator=(const YJsonItem*);
     YJsonItem& operator=(const YJsonItem&);
     YJsonItem& operator=(YJsonItem&&);
-    YJsonItem& operator=(int);
-    YJsonItem& operator=(double);
-    YJsonItem& operator=(const char*);
     YJsonItem& operator[](int) const;
     YJsonItem& operator[](const char*) const;
-    YJsonItem operator+(const YJsonItem*);
-    YJsonItem operator+(const YJsonItem&);
-    YJsonItem& operator+=(const YJsonItem&);
-    YJsonItem& operator+=(const YJsonItem*);
-    YJsonItem& operator+=(int);
-    YJsonItem& operator+=(double);
-    YJsonItem& operator+=(const char*);
+
+    bool joinItem(const YJsonItem&);
+    static YJsonItem joinItem(const YJsonItem&, const YJsonItem&);
 
     YJsonItem* findItem(int index) const;
     YJsonItem* findItem(const char* key) const;
@@ -129,7 +121,6 @@ private:
     void clearContent();
 
     void CopyJson(const YJsonItem*, YJsonItem*);
-    void TakeJson(YJsonItem*, YJsonItem*, bool cpoy_key = true);
 
     bool removeItem(YJsonItem*);
     YJsonItem* appendItem(YJSON_TYPE type);
