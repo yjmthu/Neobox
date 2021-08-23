@@ -307,7 +307,7 @@ void Translater::getReply(const QByteArray& text)
         ++utf8_q;
     }
 
-    utf8_q = StrJoin(VarBox->AppId, (const char*)text, salt, VarBox->PassWord);
+    utf8_q = StrJoin<char>(VarBox->AppId, (const char*)text, salt, VarBox->PassWord);
     QByteArray sign = QCryptographicHash::hash(utf8_q, QCryptographicHash::Md5).toHex();
     ///char sign[33]; strcpy_s(sign, 33, QCryptographicHash::hash(utf8_q, QCryptographicHash::Md5).toHex());
     delete [] utf8_q;
@@ -364,7 +364,7 @@ void Translater::getReply(const QByteArray& text)
     });
     qout << "开始执行线程";
     thrd = std::thread([&](){
-        if (VARBOX::getTransCode(StrJoin(API, u8"?q=", q.c_str(), u8"&from=", from, u8"&to=", to, u8"&appid=", VarBox->AppId, u8"&salt=", salt, u8"&sign=", sign.data()), reply_data))
+        if (VARBOX::getTransCode(StrJoin<char>(API, u8"?q=", q.c_str(), u8"&from=", from, u8"&to=", to, u8"&appid=", VarBox->AppId, u8"&salt=", salt, u8"&sign=", sign.data()), reply_data))
             emit finished(true);
         else
             emit finished(false);

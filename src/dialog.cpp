@@ -1015,7 +1015,7 @@ void Dialog::on_pushButton_10_clicked()
             emit finished(false, "Gitee源出现问题！");
             return;
         }
-        emit finished(true, StrJoin(json.findItem("Latest Version")->getValueString()));
+        emit finished(true, StrJoin<char>(json.findItem("Latest Version")->getValueString()));
     });
     loop.exec();
     wait = false;

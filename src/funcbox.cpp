@@ -57,7 +57,7 @@ wchar_t* get_reg_paper()
     QSettings set("HKEY_CURRENT_USER\\Control Panel\\Desktop", QSettings::NativeFormat);
     if (set.contains("WallPaper"))
     {
-        return StrJoin(set.value("WallPaper").toString().toStdWString().c_str());
+        return StrJoin<wchar_t>(set.value("WallPaper").toString().toStdWString().c_str());
     }
     return nullptr;
 }
@@ -329,12 +329,12 @@ bool VARBOX::check_app_right()
             {
                 char* ptr0 = str + 7; char* ptr = ptr0; while (*++ptr && *ptr != '\n');
                 if (*ptr) {
-                    *ptr = 0; AppId = StrJoin(ptr0);
+                    *ptr = 0; AppId = StrJoin<char>(ptr0);
                     ptr += 10; ptr0 = ptr;
                     while (*++ptr && *ptr != '\n');
                     if (*ptr) {
                         *ptr = 0;
-                        PassWord = StrJoin(ptr0); file.close();
+                        PassWord = StrJoin<char>(ptr0); file.close();
                         delete[] str; return true;
                     }
                 }
@@ -625,7 +625,7 @@ char* VARBOX::runCommand(QString program, QStringList argument, short line)
     if (line) {
         for (int c = 1; c < line; c++)
             process.readLine();
-        return StrJoin((const char*)process.readLine());
+        return StrJoin<char>((const char*)process.readLine());
     }
     else return nullptr;
 }

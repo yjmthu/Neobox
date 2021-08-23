@@ -47,7 +47,6 @@ DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000
 
 SOURCES += \
     YJson.cpp \
-    YString.cpp \
     bingsetting.cpp \
     blankform.cpp \
     gmpoperatetip.cpp \

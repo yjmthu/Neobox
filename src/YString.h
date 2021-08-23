@@ -6,32 +6,72 @@
 #include <string>
 #include <deque>
 
-bool StrIsEmpty(const char* m);
-bool StrIsEmpty(const wchar_t* m);
-wchar_t* StrRepeat(const wchar_t c, size_t count);
-char* StrRepeat(const char c, size_t count);
-char* StrJoinD(const char* start, const char* end, const char* dist, const std::deque<char*>& box);
-char* StrJoinE(const char* start, const char* end, const char* dist, const std::deque<char*>& box);
-void StrCopy(char* str_old, const char* str_new_start, const char* str_new_end);
-void StrCopy(wchar_t* str_old, const wchar_t* str_new_start, const wchar_t* str_new_end);
-char* StrContainStr(char* str_a, char* str_b);
+inline size_t strlen(const std::deque<char*>& str_box)
+{
+    size_t len = 0;
+    for (auto*x: str_box) len += strlen(x);
+    return len;
+}
 
-char* STRING_APPEND(char* head);
-wchar_t* STRING_APPEND(wchar_t* head);
-char* STRING_APPEND(char* head, const char* first);
-wchar_t* STRING_APPEND(wchar_t* head, const wchar_t* first);
+inline size_t wcslen(const std::deque<wchar_t*>& str_box)
+{
+    size_t len = 0;
+    for (auto*x: str_box) len += wcslen(x);
+    return len;
+}
+
+typedef size_t(*PF1)(const wchar_t*);
+typedef size_t(*PF2)(const char*);
+
+template <typename T, typename... Types>
+typename std::enable_if<std::is_same<T, wchar_t>::value || std::is_same<T, char>::value, size_t>::type
+strlen(const T* head, Types...args)
+{
+    static const void* const str_cpoy_funcs[] = {(void*)((PF1)(wcslen)), (void*)((PF2)(strlen))};
+    size_t len = ((typename std::conditional<std::is_same<T, wchar_t>::value,PF1,PF2>::type)(str_cpoy_funcs[std::is_same<T, char>::value]))(head);
+    char array[] = {'\0', (len += strlen(args), '\0')...};
+    return len;
+}
 
 template <typename T>
-int strcmp(T s1, const char* s2)
+typename std::enable_if<std::is_same_v<T, wchar_t> || std::is_same_v<T, char>,void>::type
+StrCopy(T* str_old, const T* str_new_start, const T* str_new_end)
 {
-    static_assert ((    std::is_same<T, std::deque<char>::const_iterator>::value
+    while (str_new_start != str_new_end) *str_old++ = *str_new_start++;
+    *str_old = *str_new_end;
+    *++str_old = 0;
+}
+
+template <typename T>
+typename std::enable_if<std::is_same_v<T, wchar_t> || std::is_same_v<T, char>,T*>::type
+StrRepeat(const T c, size_t count)
+{
+    if (count < 0)
+        return nullptr;
+    else if (count == 0)
+    {
+        T* x = new T[1]; *x = 0;
+        return x;
+    }
+    else
+    {
+        T* str = new T[count + 1];
+        str[count] = 0;
+        while (count--) str[count] = c;
+        return str;
+    }
+}
+
+template <typename T>
+typename std::enable_if<std::is_same<T, std::deque<char>::const_iterator>::value
                       ||
                         std::is_same<T, std::vector<char>::const_iterator>::value
                       ||
                         std::is_same<T, std::string::const_iterator>::value
                       ||
-                        std::is_same<T, const char*>::value
-                   ), "error in type");
+                        std::is_same<T, const char*>::value, int>::type
+strcmp(T s1, const char* s2)
+{
       char c1, c2;
       do {
             c1 = *s1++;
@@ -91,125 +131,89 @@ int strncmp(T s1, const char* s2, size_t n)
     return c1 - c2;
 }
 
-template <typename... Types>
-size_t strlen(const char* head, Types...args)
+template <typename T>
+typename std::enable_if<std::is_same_v<T, wchar_t> || std::is_same_v<T, char>,T*>::type
+ByteCpy(T* s1, const T* s2)
 {
-    return strlen(head) + strlen(args...);
+    if (s1)
+    {
+        while (*s1++ = *s2++);
+        return --s1;
+    }
+    else
+        return s1;
 }
 
-template <typename... Types>
-size_t wcslen(const wchar_t* head, Types...args)
+
+template <typename T, typename... Types>
+typename std::enable_if<std::is_same_v<T, wchar_t> || std::is_same_v<T, char>,T*>::type
+ByteCpy(T* head, const T* first, Types...args)
 {
-    return wcslen(head) + wcslen(args...);
+    static_assert (std::is_same<T, char>::value || std::is_same<T, wchar_t>::value, "error in type");
+    return ByteCpy<T>(ByteCpy<T>(head, first), args...);
 }
 
-template <typename... Types>
-wchar_t* STRING_APPEND(wchar_t* head, const wchar_t* first, Types...args)
+template <typename T, typename... Types>
+typename std::enable_if<std::is_same_v<T, wchar_t> || std::is_same_v<T, char>,T>::type
+StrAppend(T* head, Types...args)
 {
-    return STRING_APPEND(STRING_APPEND(head, first), args...);
-}
-
-template <typename... Types>
-char* STRING_APPEND(char* head, const char* first, Types...args)
-{
-    return STRING_APPEND(STRING_APPEND(head, first), args...);
-}
-
-template <typename... Types>
-wchar_t* StrAppend(wchar_t* head, Types...args)
-{
+    static_assert (std::is_same<T, char>::value || std::is_same<T, wchar_t>::value, "error in type");
     while (*head) ++head; --head;
-    return STRING_APPEND(head, args...);
+    return ByteCpy<T>(head, args...);
 }
 
-template <typename... Types>
-char* StrAppend(char* head, Types...args)
-{
-    while (*head) ++head; --head;
-    return STRING_APPEND(head, args...);
-}
-
-template <typename... Types>
-wchar_t* StrJoin(const wchar_t* head, Types...args)
+template <typename T, typename... Types>
+typename std::enable_if<std::is_same_v<T, wchar_t> || std::is_same_v<T, char>, T*>::type
+StrJoin(const T* head, Types...args)
 {
     if (!head)
         return nullptr;
-    wchar_t *str = new wchar_t[wcslen(head, args...) + 1];
-    STRING_APPEND(str, head, args...);
+    T *str = new T[strlen(head, args...) + 1];
+    ByteCpy<T>(str, head, args...);
     return str;
 }
 
-template <typename... Types>
-char* StrJoin(const char* head, Types...args)
-{
-    if (!head)
-        return nullptr;
-    char *str = new char[strlen(head, args...) + 1];
-    STRING_APPEND(str, head, args...);
-    return str;
-}
-
-inline bool StrCheckRange(const char tc, const char* str)
+template <typename T>
+inline typename std::enable_if<std::is_same<T, char>::value||std::is_same<T, wchar_t>::value, bool>::type
+CharInRanges(const T tc, const T* str)
 {
     return (tc >= *str) && (tc <= str[2]);
 }
 
-inline bool StrCheckRange(const wchar_t tc, const wchar_t* str)
+template <typename T, typename...Args>
+typename std::enable_if<std::is_same<T, char>::value||std::is_same<T, wchar_t>::value, bool>::type
+CharInRanges(const T tc, const T* str, Args...args)
 {
-    return (tc >= *str) && (tc <= str[2]);
+    return CharInRanges<T>(tc, str) || CharInRanges<T>(tc, args...);
 }
 
-template <typename...Args>
-bool StrCheckRange(const char tc, const char* str, Args...args)
-{
-    return StrCheckRange(tc, str) || StrCheckRange(tc, args...);
-}
-
-template <typename...Args>
-bool StrCheckRange(const wchar_t tc, const wchar_t* str, Args...args)
-{
-    return StrCheckRange(tc, str) || StrCheckRange(tc, args...);
-}
-
-template <typename...Args>
-const char* StrContainRange(const char* start, int length, Args...args)
+template <typename T, typename...Args>
+typename std::enable_if<std::is_same<T, char>::value||std::is_same<T, wchar_t>::value, const T*>::type
+StrContainCharInRanges(const T* start, int length, Args...args)
 {
     if (length <= 0 || start == nullptr)
         return nullptr;
     while (length--)
     {
-        if (*start && StrCheckRange(*start++, args...))
+        if (*start && CharInRanges<T>(*start++, args...))
             continue;
         return nullptr;
     }
     return start;   
 }
 
-template <typename...Args>
-const wchar_t* StrContainRange(const wchar_t* start, int length, Args...args)
-{
-    if (length <= 0 || start == nullptr)
-        return nullptr;
-    while (length--)
-    {
-        if (*start && StrCheckRange(*start++, args...))
-            continue;
-        return nullptr;
-    }
-    return start;
-}
-
 template <typename T>
-T StrSkip(T content)
+typename std::enable_if<
+                    std::is_same<T, std::string::const_iterator>::value
+                ||
+                    std::is_same<T, std::vector<char>::const_iterator>::value
+                ||
+                    std::is_same<T, std::deque<char>::const_iterator>::value
+                ||
+                    std::is_same<T, const char*>::value
+                     ,T>::type
+StrSkip(T content)
 {
-    static_assert(   std::is_same<T, std::string::const_iterator>::value
-                 ||
-                     std::is_same<T, std::vector<char>::const_iterator>::value
-                 ||
-                     std::is_same<T, std::deque<char>::const_iterator>::value
-                 ||
-                     std::is_same<T, const char*>::value
-            , "error in type");
     while (*content && static_cast<const unsigned char>(*content) <= 32) content++; return content;
 }
 

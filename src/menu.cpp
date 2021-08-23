@@ -12,13 +12,12 @@
 #include "form.h"
 #include "menuwallpaper.h"
 
-template<typename  T>
-T get_file_name(T file_path)
+const wchar_t* get_file_name(const wchar_t* file_path)
 {
-    T ptr = file_path;
+    const wchar_t* ptr = file_path;
     while (*++ptr);
-    while(*--ptr != '\\');
-    return StrJoin(++ptr);
+    while (*--ptr != '\\');
+    return StrJoin<wchar_t>(++ptr);
 }
 
 void check_is_wallhaven(const wchar_t* pic, char* id)
@@ -26,7 +25,7 @@ void check_is_wallhaven(const wchar_t* pic, char* id)
     qout << 99;
     if (wcslen(pic) != 20)
         return ;
-    if (!wcsncmp(pic, L"wallhaven-", 10) && StrContainRange(pic+10, 6, L"a-z", L"0-9") &&
+    if (!wcsncmp(pic, L"wallhaven-", 10) && StrContainCharInRanges<wchar_t>(pic+10, 6, L"a-z", L"0-9") &&
             (!wcscmp(pic+16, L".png") || !wcscmp(pic+16, L".jpg")))
     {
         for (int i=0; i <= 5; ++i)
@@ -262,11 +261,12 @@ void Menu::initMenuConnect()
                 else
                     blackList = YJsonItem::newArray();
                 blackList->appendItem(id);
-                blackList->toFile(str.toStdWString(), YJSON_ENCODE::UTF8);
+                blackList->toFile(str.toStdWString(), YJSON_ENCODE::UTF8, true);
                 delete  blackList;
             }
             DeleteFileW(pic_path);
             delete [] pic_path;
+            delete [] pic_name;
         }
         else
         {
@@ -336,7 +336,7 @@ void Menu::OpenFolder() const
 void Menu::ShutdownComputer() const
 {
     HANDLE hToken; TOKEN_PRIVILEGES tkp;
-    typedef BOOL (*pfnOpenProcessToken)(HANDLE  ProcessHandle,DWORD   DesiredAccess,PHANDLE TokenHandle);
+    typedef BOOL (*pfnOpenProcessToken)(HANDLE  ProcessHandle,DWORD DesiredAccess,PHANDLE TokenHandle);
     typedef BOOL (*pfnLookupPrivilegeValue)(LPCSTR lpSystemName,LPCSTR lpName,PLUID  lpLuid);
     typedef BOOL (*pfnAdjustTokenPrivileges)(HANDLE TokenHandle,BOOL DisableAllPrivileges,PTOKEN_PRIVILEGES NewState, DWORD BufferLength,PTOKEN_PRIVILEGES PreviousState,PDWORD ReturnLength);
     typedef BOOL (*pfnInitiateSystemShutdownEx)(LPSTR lpMachineName,LPSTR lpMessage,DWORD dwTimeout,BOOL  bForceAppsClosed,BOOL  bRebootAfterShutdown,DWORD dwReason);
