@@ -95,4 +95,33 @@ print("D:\\hello.jpg")
   * [蓝奏云](https://wws.lanzoui.com/ixjz1sg45ud) 密码：ejv5
 
 * * *
-- 未来版本：预计9月初发布，仍用Qt编写，考虑自定义悬浮窗外观，增加对Windows 11的支持。
+- 版本：21.9.10 (最新稳定版本)
+- 更新内容
+  * 修复右边图标太多时居中不正常的问题
+  * 修复任务栏透明度显示不正常的问题
+  * 尝试增加发布者信息
+  * 增加一些操作完成提示
+  * 解决了下载更新卡住的问题
+  * 将开机自启移动到了软件设置-其他设置下
+  * 移除了快捷重启功能。
+  * 增加了壁纸历史记录功能，可以通过右键菜单来切换上一张图。
+  * 增加了壁纸黑名单功能，可以将不喜欢的wallhaven壁纸删除并加入黑名单，将其他类型的壁纸直接删除。
+  * 增加了win11检测功能，win11下部分功能无法使用
+  * 更改配置文件名称，更改配置文件键盘值对名称
+  * 增加主题颜色
+  * 完善tooltip提示，前面带*号的表示点击后会保存
+  * 移动控件的位置，改变了部分颜色
+  * 完全解除更新按钮的禁用
+  * 解决了更新中极小概率发生的出错问题
+  * 改善了上下壁纸切换逻辑，当列表中的壁纸不存在自动时，将其从列表中移除并跳过。
+  * 必应壁纸更加精彩，弃用了从必应首页爬取壁纸的方法，改用必应官方的api，可以设置循环切换最近八天壁纸，可以使用壁纸信息作为壁纸名称，可以自定义每次启动是否后台保存必应壁纸。
+  * 路径设置-壁纸下载目录增加了选择文件夹按钮。
+  * 增加了刷新功能，可以刷新用了很久的图片集合。
+  * 将首次更换壁纸和定时更换壁纸区别开来，可选择软件启动时更换一次壁纸
+- 下载地址(64位)
+  * Windows 10 [GitHub](https://github.com/yjmthu/Speed-Box/releases/download/21.8.10/Speed-Box_win10_x64_21.8.10.zip)
+  * Windows 10 [Gitee](https://gitee.com/yjmthu/Speed-Box/attach_files/797630/download/Speed-Box_win10_x64_21.8.10.zip)
+  * Windows 10 [蓝奏云](https://wws.lanzoui.com/i2CHhttejef) 密码：3rvr
+  * Windows 11 [GitHub](https://github.com/yjmthu/Speed-Box/releases/download/21.8.10/Speed-Box_win10_x64_21.8.10.zip)
+  * Windows 11 [Gitee](https://gitee.com/yjmthu/Speed-Box/attach_files/797630/download/Speed-Box_win10_x64_21.8.10.zip)
+  * Windows 11 [蓝奏云](https://wws.lanzoui.com/isKtpttejpg) 密码：402u
