@@ -119,9 +119,6 @@ print("D:\\hello.jpg")
   * 增加了刷新功能，可以刷新用了很久的图片集合。
   * 将首次更换壁纸和定时更换壁纸区别开来，可选择软件启动时更换一次壁纸
 - 下载地址(64位)
-  * Windows 10 [GitHub](https://github.com/yjmthu/Speed-Box/releases/download/21.9.10/Speed-Box_win10x64_21.9.10.zip)
-  * Windows 10 [Gitee](https://gitee.com/yjmthu/Speed-Box/attach_files/827082/download/Speed-Box_win10x64_21.9.10.zip)
-  * Windows 10 [蓝奏云](https://wws.lanzoui.com/i2CHhttejef) 密码：3rvr
-  * Windows 11 [GitHub](https://github.com/yjmthu/Speed-Box/releases/download/21.9.10/Speed-Box_win11x64_21.9.10.zip)
-  * Windows 11 [Gitee](https://gitee.com/yjmthu/Speed-Box/attach_files/827083/download/Speed-Box_win11x64_21.9.10.zip)
-  * Windows 11 [蓝奏云](https://wws.lanzoui.com/isKtpttejpg) 密码：402u
+- 下载地址(64位)
+  * Windows 10、windows 11  [Gitee](https://gitee.com/yjmthu/Speed-Box/attach_files/827405/download/Speed-Box_x64_v21.9.10.zip)
+  * Windows 10、windows 11  [蓝奏云](https://wws.lanzoui.com/i2eNRttp15e) 密码：aznz
