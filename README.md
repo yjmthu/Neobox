@@ -119,5 +119,4 @@ print("D:\\hello.jpg")
   * 增加了刷新功能，可以刷新用了很久的图片集合。
   * 将首次更换壁纸和定时更换壁纸区别开来，可选择软件启动时更换一次壁纸
 - 下载地址(64位)
-- 下载地址(64位)
-  * Windows 10、windows 11  [蓝奏云](https://wws.lanzoui.com/imUiRtupmfg) 密码：1fxy
+  * Windows 10、windows 11  [蓝奏云](https://wws.lanzoui.com/ix19Utviasb) 密码：v910
