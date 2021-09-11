@@ -29,8 +29,8 @@ print("D:\\hello.jpg")
 说了这么多，大家也不一定用得到，下面放几张软件截图
 # 运行效果
 ![img](https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_08.png)
-    
-    
+
+
 ![img](https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_09.png)
 
 
