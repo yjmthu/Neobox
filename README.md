@@ -31,7 +31,7 @@ print("D:\\hello.jpg")
 ![img](https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_08.png)
 
 
-![img](https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_09.png)
+![img](https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_09.jpg)
 
 
 ![img](https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_06.jpg)
