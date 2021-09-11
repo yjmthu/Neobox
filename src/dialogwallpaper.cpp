@@ -14,7 +14,6 @@ void DialogWallpaper::iniStart()
     if (VarBox->FirstChange)
     {
         thrd = new std::thread(&Wallpaper::startWork, this);
-        _is_working = true;
     }
 }
 
@@ -63,8 +62,7 @@ void DialogWallpaper::setRandom()
 
 void DialogWallpaper::setNative()
 {
-	if (!set_from_Native())
-        emit setFailed("请更换本地文件夹、改变壁纸类型或取消自动更换壁纸！");
+    set_from_Native(true);
 }
 
 void DialogWallpaper::setAdvance()

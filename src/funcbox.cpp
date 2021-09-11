@@ -744,3 +744,29 @@ BOOL VARBOX::PathFileExists(LPWSTR pszPath)
     }
     return ret;
 }
+
+BOOL VARBOX::OneDriveFile(const char *file)
+{
+     HANDLE hFileRead = CreateFileA(file, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+     if(hFileRead==INVALID_HANDLE_VALUE)
+         return false;
+     char lpFileDataBuffer[1] = {0};
+     DWORD dwReadedSize;
+     if(!ReadFile(hFileRead,lpFileDataBuffer,1,&dwReadedSize, NULL))  return false;
+     if (!dwReadedSize) return false;
+     CloseHandle(hFileRead);
+     return true;
+}
+
+BOOL VARBOX::OneDriveFile(const wchar_t *file)
+{
+    HANDLE hFileRead = CreateFileW(file, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if(hFileRead==INVALID_HANDLE_VALUE)
+        return false;
+    char lpFileDataBuffer[1] = {0};
+    DWORD dwReadedSize;
+    if(!ReadFile(hFileRead,lpFileDataBuffer,1,&dwReadedSize, NULL))  return false;
+    if (!dwReadedSize) return false;
+    CloseHandle(hFileRead);
+    return true;
+}

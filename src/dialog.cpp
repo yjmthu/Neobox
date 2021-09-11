@@ -1023,7 +1023,7 @@ void Dialog::on_pushButton_12_clicked()
             return;
         }
         YJsonItem *qtVersion = json.findItem("Qt Version");
-        if (qtVersion->getType() != YJSON_TYPE::YJSON_STRING || strcmp(qtVersion->getValueString(), "6.1.2"))
+        if (qtVersion->getType() != YJSON_TYPE::YJSON_STRING || strcmp(qtVersion->getValueString(), "6.1.3"))
         {
             jobTip->showTip("下载更新失败，请手动打开浏览器到Gitee下载！", 3000);
             return;

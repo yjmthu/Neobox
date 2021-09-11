@@ -15,6 +15,10 @@ public:
     void setRandom() override;
     void setAdvance() override;
     void startWork() override;
+
+public slots:
+    void previousPic();
+    void removePic();
 };
 
 #endif // MENUWALLPAPER_H

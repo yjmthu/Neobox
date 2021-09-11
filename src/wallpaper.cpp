@@ -80,7 +80,10 @@ Wallpaper::Wallpaper()
 
 Wallpaper::~Wallpaper()
 {
-    cleanThread();
+    if (thrd)
+    {
+        thrd->join(); delete thrd; thrd = nullptr;
+    }
 }
 
 void Wallpaper::start()
@@ -88,7 +91,6 @@ void Wallpaper::start()
     if (!thrd)
     {
 		thrd = new std::thread(&Wallpaper::startWork, this);
-        _is_working = true;
     }
 	else
         emit msgBox("和后台壁纸切换冲突，请稍后再试。", "提示");
@@ -96,35 +98,17 @@ void Wallpaper::start()
 
 void Wallpaper::clean()
 {
-    cleanThread();
-    _is_working = false;
-}
-
-void Wallpaper::cleanThread()
-{
-    if (thrd)
-    {
-        thrd->join(); delete thrd; thrd = nullptr;
-    }
-}
-
-bool Wallpaper::isActive()
-{
-    return _is_working;
-}
-
-bool Wallpaper::canCreat()
-{
-    return !thrd;
+    qout << "清理线程";
+    if (thrd) thrd->join(); delete thrd; thrd = nullptr;
 }
 
 bool Wallpaper::set_from_Wallhaven() const  // 从数据库中随机抽取一个链接地址进行设置。
 {
-    qout << "Wallhaven 开始检查json文件";
+    // qout << "Wallhaven 开始检查json文件";
     QString file_name = VarBox->get_dat_path() + "\\ImgData.json";
-    qout << "文件路径" << file_name;
+    // qout << "文件路径" << file_name;
     bool func_ok = false;
-	YJsonItem* jsonObject = nullptr, * jsonArray = nullptr, * find_item = nullptr; int type = 0; bool need_save = false;
+    YJsonItem* jsonObject = nullptr, *jsonArray = nullptr, * find_item = nullptr; int type = 0; bool need_save = false;
 	do {
 		if (type == 0)
 		{
@@ -286,7 +270,7 @@ bool Wallpaper::get_url_from_Wallhaven(YJsonItem& jsonArray) const            //
 	return func_ok;
 }
 
-bool Wallpaper::set_from_Native() const
+void Wallpaper::set_from_Native(bool net) const
 {
     QDir dir(VarBox->NativeDir);
     if (dir.exists())
@@ -303,10 +287,27 @@ bool Wallpaper::set_from_Native() const
         {
             QString file_name = dir[QRandomGenerator::global()->bounded(dir_count)];  //随机生成文件名称。
             file_name = VarBox->NativeDir + "/" + file_name;
-            return VarBox->RunApp && setWallpaper(file_name);
+            if ((GetFileAttributesW(file_name.toStdWString().c_str()) & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS))
+            {
+                if (VARBOX::isOnline(net))
+                {
+                    if (!VARBOX::OneDriveFile(file_name.toStdWString().c_str()))
+                    {
+                        emit setFailed("请更换本地文件夹、改变壁纸类型或取消自动更换壁纸！");
+                        return;
+                    }
+                }
+                else
+                {
+                    emit msgBox("没有网络！", "提示");
+                    return;
+                }
+            }
+            VarBox->RunApp && setWallpaper(file_name);
+            return;
         }
     }
-    return false;
+    emit setFailed("请更换本地文件夹、改变壁纸类型或取消自动更换壁纸！");
 };
 
 

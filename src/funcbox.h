@@ -168,6 +168,9 @@ struct VARBOX
     static bool versionBefore(const char* A, const char* B);
     static BOOL PathFileExists(LPCSTR pszPath);
     static BOOL PathFileExists(LPWSTR pszPath);
+    static BOOL OneDriveFile(const char* file);
+    static BOOL OneDriveFile(const wchar_t*file);
+
 
 private:
      bool check_app_right();
