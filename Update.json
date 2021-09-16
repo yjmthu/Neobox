@@ -1,9 +1,9 @@
 {
     "Platform": "Winindows 10&11; 64bit",
-    "Latest Version": "21.9.10",
+    "Latest Version": "21.9.17",
     "Qt Version": "6.1.3",
     "Files": {
-        "main": "https://gitee.com/yjmthu/Speed-Box/attach_files/828662/download/SpeedBox.exe",
+        "main": "https://gitee.com/yjmthu/Speed-Box/attach_files/833811/download/SpeedBox.exe",
         "update": "https://gitee.com/yjmthu/Speed-Box/raw/main/update/update.exe",
         "zip": "https://gitee.com/yjmthu/Speed-Box/repository/archive/21.9.10?format=zip"
     }
