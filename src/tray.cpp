@@ -242,20 +242,20 @@ void Tray::GetShellAllWnd()
 {
 	while (IsWindow(hTray) == FALSE)
 	{
-		hTray = FindWindow(szShellTray, NULL);
+        hTray = FindWindowA(szShellTray, NULL);
 		if (hTray == NULL)
 			Sleep(100);
 	}
 	while (IsWindow(hReBarWnd) == FALSE)
 	{
-		hReBarWnd = FindWindowEx(hTray, 0, TEXT("ReBarWindow32"), NULL);
+        hReBarWnd = FindWindowExA(hTray, 0, "ReBarWindow32", NULL);
 		if (hReBarWnd == NULL)
 			Sleep(100);
 	}
 	if (IsWindow(hTaskWnd) == FALSE)
-		hTaskWnd = FindWindowEx(hReBarWnd, NULL, TEXT("MSTaskSwWClass"), NULL);
+        hTaskWnd = FindWindowExA(hReBarWnd, NULL, "MSTaskSwWClass", NULL);
 	if (IsWindow(hTaskListWnd) == FALSE)
-		hTaskListWnd = FindWindowEx(hTaskWnd, NULL, TEXT("MSTaskListWClass"), NULL);
+        hTaskListWnd = FindWindowExA(hTaskWnd, NULL, "MSTaskListWClass", NULL);
 }
 
 Tray::Tray()
@@ -288,26 +288,26 @@ Tray::~Tray()
 void Tray::keepTaskBar()
 {
     VarBox->isMax = FALSE;
-	HWND hTray = FindWindow(szShellTray, NULL);
+    HWND hTray = FindWindowA(szShellTray, NULL);
 	if (hTray)
 	{
         EnumWindows(IsZoomedFunc, (LPARAM)MonitorFromWindow(hTray, MONITOR_DEFAULTTONEAREST));
         VARBOX::SetWindowCompositionAttribute(hTray, VarBox->aMode[VarBox->isMax], VarBox->dAlphaColor[VarBox->isMax]);
 		LONG_PTR exStyle = GetWindowLongPtr(hTray, GWL_EXSTYLE);
 		exStyle |= WS_EX_LAYERED;
-		SetWindowLongPtr(hTray, GWL_EXSTYLE, exStyle);
+        SetWindowLongPtrA(hTray, GWL_EXSTYLE, exStyle);
         SetLayeredWindowAttributes(hTray, NULL, (BYTE)VarBox->bAlpha[VarBox->isMax], LWA_ALPHA);
 	}
-	HWND hSecondaryTray = FindWindow(szSecondaryTray, NULL);
+    HWND hSecondaryTray = FindWindowA(szSecondaryTray, NULL);
 	while (hSecondaryTray)
 	{
         EnumWindows(IsZoomedFunc, (LPARAM)MonitorFromWindow(hSecondaryTray, MONITOR_DEFAULTTONEAREST));
         VARBOX::SetWindowCompositionAttribute(hSecondaryTray, VarBox->aMode[VarBox->isMax], VarBox->dAlphaColor[VarBox->isMax]);
 		LONG_PTR exStyle = GetWindowLongPtr(hSecondaryTray, GWL_EXSTYLE);
 		exStyle |= WS_EX_LAYERED;
-		SetWindowLongPtr(hSecondaryTray, GWL_EXSTYLE, exStyle);
+        SetWindowLongPtrA(hSecondaryTray, GWL_EXSTYLE, exStyle);
         SetLayeredWindowAttributes(hSecondaryTray, NULL, (BYTE)VarBox->bAlpha[VarBox->isMax], LWA_ALPHA);
-		hSecondaryTray = FindWindowEx(NULL, hSecondaryTray, szSecondaryTray, NULL);
+        hSecondaryTray = FindWindowExA(NULL, hSecondaryTray, szSecondaryTray, NULL);
 	}
     if ((VarBox->aMode[1] == ACCENT_STATE::ACCENT_DISABLED) && (VarBox->aMode[0] == ACCENT_STATE::ACCENT_DISABLED))
         beautifyTask->stop();
@@ -317,16 +317,16 @@ void Tray::centerTaskBar()
 {
 	GetShellAllWnd();
 	SetTaskBarPos(hTaskListWnd, hTray, hTaskWnd, hReBarWnd, TRUE);
-	HWND hSecondaryTray = FindWindow(szSecondaryTray, NULL);
+    HWND hSecondaryTray = FindWindowA(szSecondaryTray, NULL);
 	while (hSecondaryTray)
 	{
-        HWND hSReBarWnd = FindWindowEx(hSecondaryTray, 0, "WorkerW", NULL);
+        HWND hSReBarWnd = FindWindowExA(hSecondaryTray, 0, "WorkerW", NULL);
 		if (hSReBarWnd)
 		{
-            HWND hSTaskListWnd = FindWindowEx(hSReBarWnd, NULL, "MSTaskListWClass", NULL);
+            HWND hSTaskListWnd = FindWindowExA(hSReBarWnd, NULL, "MSTaskListWClass", NULL);
 			if (hSTaskListWnd)
 				SetTaskBarPos(hSTaskListWnd, hSecondaryTray, hSReBarWnd, hSReBarWnd, FALSE);
 		}
-		hSecondaryTray = FindWindowEx(NULL, hSecondaryTray, szSecondaryTray, NULL);
+        hSecondaryTray = FindWindowExA(NULL, hSecondaryTray, szSecondaryTray, NULL);
 	}
 }

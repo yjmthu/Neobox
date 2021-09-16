@@ -12,9 +12,7 @@ int main(int argc, char* argv[])
 {
     VARBOX::HMutex = CreateMutex(NULL, FALSE, TEXT("__SpeedBox__"));
     if (GetLastError() == ERROR_ALREADY_EXISTS)
-    {
         return 0;
-    }
     QApplication a(argc, argv);                                            //创建app
     a.setQuitOnLastWindowClosed(false);                                    //防止QFileDialog被当成最主窗口导致程序结束
     if (QFile::exists(a.applicationDirPath() + "/update.exe"))

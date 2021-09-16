@@ -11,6 +11,7 @@
 #define FORM_HEIGHT 40
 
 class QPropertyAnimation;
+class DesktopMask;
 namespace Ui {
 	class Form;
 }
@@ -38,6 +39,7 @@ public:
 private:
     friend class Menu;  //friend class Translater; //右键菜单可以访问私有数据
     friend class FormSetting;
+    DesktopMask* m_mask;
 	Ui::Form* ui;                                //ui指向悬浮窗界面
     Dialog* dialog;                              //设置对话
     Menu* menu;                                  //右键菜单

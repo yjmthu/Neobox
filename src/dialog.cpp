@@ -206,7 +206,6 @@ void Dialog::showEvent(QShowEvent *event)
     ui->line_APP_ID->setText(VarBox->AppId);
     ui->line_PASS_WORD->setText(VarBox->PassWord);
     ui->checkBox->setChecked(!QSettings("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat).value("SpeedBox").toString().compare(qApp->applicationFilePath().replace("/", "\\")));
-
     switch (VarBox->aMode[VarBox->setMax])
     {
     case (ACCENT_STATE::ACCENT_DISABLED):                       // 默认
@@ -264,6 +263,7 @@ void Dialog::showEvent(QShowEvent *event)
     ui->comboBox_3->setCurrentIndex((int)VarBox->CurTheme);
     ui->lineEdit->setText(VarBox->PathToOpen);
     ui->checkBox_3->setChecked(VarBox->FirstChange);
+    ui->BtnChooseFolder->setEnabled(ui->rBtnNative->isChecked());
     checkSettings(); event->accept();
 }
 
@@ -878,7 +878,7 @@ void Dialog::on_pushButton_5_clicked()
 
 void Dialog::on_pushButton_9_clicked()
 {
-    ShellExecute(NULL, "open", "https://github.com/yjmthu/Speed-Box", NULL, NULL, SW_SHOW);
+    ShellExecuteA(NULL, "open", "https://github.com/yjmthu/Speed-Box", NULL, NULL, SW_SHOW);
 }
 
 void Dialog::on_pushButton_11_clicked()
@@ -1023,7 +1023,7 @@ void Dialog::on_pushButton_12_clicked()
             return;
         }
         YJsonItem *qtVersion = json.findItem("Qt Version");
-        if (qtVersion->getType() != YJSON_TYPE::YJSON_STRING || strcmp(qtVersion->getValueString(), "6.1.3"))
+        if (qtVersion->getType() != YJSON_TYPE::YJSON_STRING || strcmp(qtVersion->getValueString(), VarBox->Qt))
         {
             jobTip->showTip("下载更新失败，请手动打开浏览器到Gitee下载！", 3000);
             return;
@@ -1070,7 +1070,7 @@ void Dialog::on_pushButton_12_clicked()
 
 void Dialog::on_pushButton_14_clicked()
 {
-    ShellExecute(NULL, "open", "https://gitee.com/yjmthu/Speed-Box", NULL, NULL, SW_SHOW);
+    ShellExecuteA(NULL, "open", "https://gitee.com/yjmthu/Speed-Box", NULL, NULL, SW_SHOW);
 }
 
 

@@ -283,31 +283,40 @@ void Wallpaper::set_from_Native(bool net) const
         filters << QString("*.wbep");
         dir.setFilter(QDir::Files | QDir::NoSymLinks);                                //设置类型过滤器，只为文件格式
         int dir_count = dir.count();
-        if (dir_count)
+        if (!dir_count)
         {
-            QString file_name = dir[QRandomGenerator::global()->bounded(dir_count)];  //随机生成文件名称。
-            file_name = VarBox->NativeDir + "/" + file_name;
-            if ((GetFileAttributesW(file_name.toStdWString().c_str()) & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS))
+            if (!VARBOX::isOnline(false))
             {
-                if (VARBOX::isOnline(net))
+                if (VARBOX::isOnline(true))
+                    goto label_normal;
+            }
+            else
+                goto label_quit;
+        }
+label_normal:
+        QString file_name = dir[QRandomGenerator::global()->bounded(dir_count)];  //随机生成文件名称。
+        file_name = VarBox->NativeDir + "/" + file_name;
+        if ((GetFileAttributesW(file_name.toStdWString().c_str()) & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS))
+        {
+            if (VARBOX::isOnline(net))
+            {
+                if (!VARBOX::OneDriveFile(file_name.toStdWString().c_str()))
                 {
-                    if (!VARBOX::OneDriveFile(file_name.toStdWString().c_str()))
-                    {
-                        emit setFailed("请更换本地文件夹、改变壁纸类型或取消自动更换壁纸！");
-                        return;
-                    }
-                }
-                else
-                {
-                    emit msgBox("没有网络！", "提示");
+                    qout << "文件属性：" <<GetFileAttributesW(file_name.toStdWString().c_str());
+                    emit setFailed("本地文件无效，请更换本地文件夹、改变壁纸类型或取消自动更换壁纸！");
                     return;
                 }
             }
-            VarBox->RunApp && setWallpaper(file_name);
-            return;
+            else
+            {
+                emit msgBox("没有网络！", "提示");
+                return;
+            }
         }
+        VarBox->RunApp && setWallpaper(file_name);
+        return;
     }
-    emit setFailed("请更换本地文件夹、改变壁纸类型或取消自动更换壁纸！");
+label_quit: emit setFailed("请更换本地文件夹、改变壁纸类型或取消自动更换壁纸！");
 };
 
 
@@ -318,12 +327,10 @@ bool Wallpaper::set_from_Bing(bool setBing) const
 
     std::string today = QDateTime::currentDateTime().toString("yyyy-MM-dd").toStdString();
     QString file_name = VARBOX::get_dat_path() + "\\BingData.json";
-    char type = QFile::exists(file_name) ? 0:1;
     bool need_save = false;
     YJsonItem *file_data = nullptr, *temp = nullptr;
-    while (true) {
-        switch (type) {
-        case 0:
+    if (!QFile::exists(file_name)) goto label_1;
+label_0:
         {
             //qout << "必应文件存在";
             file_data = YJsonItem::newFromFile(file_name.toStdWString());
@@ -334,16 +341,15 @@ bool Wallpaper::set_from_Bing(bool setBing) const
                 bing = 0;
                 file_data = nullptr;
                 need_save = true;
-                type = 1;
-                continue;
+                PX_UNUSED(need_save);
+                goto label_1;
             }
             //qout << "必应文件为最新";
             temp = file_data->findItem("images")->findItem(-bing);
             //qout << "查找到images";
-            type = 3;
-            continue;
+            goto label_2;
         }
-        case 1:
+label_1:
         {
             //qout << "必应文件不存在或过期";
             std::string img_html;
@@ -366,15 +372,9 @@ bool Wallpaper::set_from_Bing(bool setBing) const
             } while (find = find->getNextItem());
             temp = imgs->findItem(-bing);
             need_save = true;
-            type = 3;
-            continue;
+            goto label_2;
         }
-        case 2:
-        {
-            //qout << "出现错误";
-            break;
-        }
-        default:
+label_2:
         {
             const char * const img_url = StrJoin<char>("https://cn.bing.com", temp->findItem("url")->getValueString());
             QString img_name = VarBox->get_pic_path((short)PAPER_TYPE::Bing) + "\\";
@@ -417,8 +417,7 @@ bool Wallpaper::set_from_Bing(bool setBing) const
                 if (!cur_name.compare(img_name))
                 {
                     --bing;
-                    type = 0;
-                    continue;
+                    goto label_0;
                 }
             }
 
@@ -436,11 +435,9 @@ bool Wallpaper::set_from_Bing(bool setBing) const
                 return true;
             }
             //qout << "必应壁纸下载失败";
-            return false;
+            goto label_3;
         }
-        }
-        break;
-    }
+label_3:
     return false;
 }
 

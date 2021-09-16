@@ -1,6 +1,6 @@
 # 使用多字节字符集
-DEFINES  -= UNICODE
-DEFINES  += UMBCS
+#DEFINES  -= UNICODE
+#DEFINES  += UMBCS
 
 # 使用msvc编译器和utf-8编码编译
 msvc {
@@ -9,7 +9,7 @@ msvc {
 }
 
 # 版本信息
-VERSION = 21.9.10.0
+VERSION = 21.9.17.0
 # 图标
 RC_ICONS += icons/speedbox.ico
 # 公司名称
@@ -49,6 +49,7 @@ SOURCES += \
     YJson.cpp \
     bingsetting.cpp \
     blankform.cpp \
+    desktopmask.cpp \
     formsetting.cpp \
     gmpoperatetip.cpp \
     main.cpp \
@@ -68,6 +69,7 @@ HEADERS += \
     YString.h \
     bingsetting.h \
     blankform.h \
+    desktopmask.h \
     dialog.h \
     dialogwallpaper.h \
     form.h \

@@ -129,17 +129,11 @@ void Menu::initMenuConnect()
     connect(wallpaper, &MenuWallpaper::msgBox, VarBox->form, &Form::msgBox);
     connect(settingDialogAct, &QAction::triggered, [](){
         if (VarBox->form->dialog->isVisible())
-        {
-            qout << "as 1";
             VarBox->form->dialog->setWindowState(Qt::WindowActive | Qt::WindowNoState);    // 让窗口从最小化恢复正常并激活窗口
             //d->activateWindow();
             //d->raise();
-        }
         else
-        {
-            qout << "as 2";
             VarBox->form->dialog->show();
-        }
     });   //打开壁纸设置界面
     connect(translateAct, &QAction::triggered, VarBox->form, &Form::enableTranslater);    //是否启用翻译功能
     translateAct->setChecked(VarBox->EnableTranslater);                                 //设置是否选中“划词翻译”
@@ -169,14 +163,14 @@ void Menu::initMenuConnect()
             MouseMoveTimer->stop();
             delete MouseMoveTimer;
         }
-    }); //是否自动移动鼠标防止息屏
+    });                                                                               //是否自动移动鼠标防止息屏
 	connect(openFolderAct, SIGNAL(triggered()), this, SLOT(OpenFolder()));            //打开exe所在文件夹
     connect(removePicAct, &QAction::triggered, wallpaper, &MenuWallpaper::removePic);          //重启电脑
 	connect(shutdownAct, SIGNAL(triggered()), this, SLOT(ShutdownComputer()));        //关闭电脑
-    connect(quitAct, &QAction::triggered, []() {
+    connect(quitAct, &QAction::triggered, [](){
         VarBox->RunApp = false;                                                       //以便其它线程知晓，停止正在进行的工作
-		qApp->quit();                                                                 //退出程序
-		});
+        qApp->quit();                                                                 //退出程序
+    });
 }
 
 
@@ -192,10 +186,10 @@ void Menu::ShutdownComputer() const
 {
     HANDLE hToken; TOKEN_PRIVILEGES tkp;
     typedef BOOL (*pfnOpenProcessToken)(HANDLE  ProcessHandle,DWORD DesiredAccess,PHANDLE TokenHandle);
-    typedef BOOL (*pfnLookupPrivilegeValue)(LPCSTR lpSystemName,LPCSTR lpName,PLUID  lpLuid);
+    typedef BOOL (*pfnLookupPrivilegeValue)(LPCWSTR lpSystemName,LPCWSTR lpName,PLUID  lpLuid);
     typedef BOOL (*pfnAdjustTokenPrivileges)(HANDLE TokenHandle,BOOL DisableAllPrivileges,PTOKEN_PRIVILEGES NewState, DWORD BufferLength,PTOKEN_PRIVILEGES PreviousState,PDWORD ReturnLength);
     typedef BOOL (*pfnInitiateSystemShutdownEx)(LPSTR lpMachineName,LPSTR lpMessage,DWORD dwTimeout,BOOL  bForceAppsClosed,BOOL  bRebootAfterShutdown,DWORD dwReason);
-    HMODULE hAdvapi32 = LoadLibrary("Advapi32.dll");
+    HMODULE hAdvapi32 = LoadLibraryA("Advapi32.dll");
     pfnOpenProcessToken pOpenProcessToken = NULL;
     pfnLookupPrivilegeValue pLookupPrivilegeValue = NULL;
     pfnAdjustTokenPrivileges pAdjustTokenPrivileges = NULL;
@@ -203,9 +197,9 @@ void Menu::ShutdownComputer() const
     if (hAdvapi32)
     {
         pOpenProcessToken = (pfnOpenProcessToken)GetProcAddress(hAdvapi32, "OpenProcessToken");
-        pLookupPrivilegeValue = (pfnLookupPrivilegeValue)GetProcAddress(hAdvapi32, "LookupPrivilegeValueA");
+        pLookupPrivilegeValue = (pfnLookupPrivilegeValue)GetProcAddress(hAdvapi32, "LookupPrivilegeValueW");
         pAdjustTokenPrivileges = (pfnAdjustTokenPrivileges)GetProcAddress(hAdvapi32, "AdjustTokenPrivileges");
-        pInitiateSystemShutdownEx = (pfnInitiateSystemShutdownEx)GetProcAddress(hAdvapi32, "InitiateSystemShutdownExA");
+        pInitiateSystemShutdownEx = (pfnInitiateSystemShutdownEx)GetProcAddress(hAdvapi32, "InitiateSystemShutdownExW");
     }
     if (!pOpenProcessToken || !pLookupPrivilegeValue || !pAdjustTokenPrivileges || !pInitiateSystemShutdownEx || !pOpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken))
     {

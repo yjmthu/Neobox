@@ -11,6 +11,7 @@
 #include "ui_form.h"
 #include "wallpaper.h"
 #include "formsetting.h"
+#include "desktopmask.h"
 
 PIP_ADAPTER_ADDRESSES piaa;//网卡结构
 MIB_IFTABLE *mi;    //网速结构
@@ -55,6 +56,7 @@ Form::~Form()
     delete dialog;
     delete ui;
     delete animation;
+    delete m_mask;
     HeapFree(GetProcessHeap(), 0, piaa);
     HeapFree(GetProcessHeap(), 0, mi);
     qout << "析构Form结束";
@@ -92,7 +94,10 @@ void Form::initForm()
     else
         translater = nullptr;                     //防止野指针
 	ui->LabMemory->setMaximumWidth(30);
+    m_mask = new DesktopMask();
     qout << "初始化悬浮窗界面完毕";
+
+    //VARBOX::SetWindowCompositionAttribute(HWND(winId()), ACCENT_STATE::ACCENT_ENABLE_ACRYLICBLURBEHIND, 0);
 }
 
 inline void savePos()

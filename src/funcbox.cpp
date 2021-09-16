@@ -57,7 +57,7 @@ HANDLE VARBOX::HMutex = NULL;
 
 VARBOX::VARBOX(int w, int h):
     WinVersion(GetNtVersionNumbers()), ScreenWidth(w), ScreenHeight(h),
-    hOleacc(LoadLibrary("oleacc.dll")), hIphlpapi(LoadLibrary("iphlpapi.dll")), hDwmapi(LoadLibrary("dwmapi.dll"))
+    hOleacc(LoadLibraryA("oleacc.dll")), hIphlpapi(LoadLibraryA("iphlpapi.dll")), hDwmapi(LoadLibraryA("dwmapi.dll"))
 {
     qout << "VarBox构造函数开始。";
     loadFunctions();
@@ -465,10 +465,10 @@ void VARBOX::sigleSave(QString group, QString key, QString value)
 bool VARBOX::getWebCode(const char* url, std::string& src, bool auto_delete)
 {
     src.clear();
-    HINTERNET hSession = InternetOpen("Firefox", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+    HINTERNET hSession = InternetOpenA("Firefox", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
     if (hSession != NULL)
     {
-        HINTERNET hURL = InternetOpenUrl(hSession, url, NULL, 0, INTERNET_FLAG_DONT_CACHE, 0);
+        HINTERNET hURL = InternetOpenUrlA(hSession, url, NULL, 0, INTERNET_FLAG_DONT_CACHE, 0);
         if (auto_delete) delete[] url;
         if (hURL)
         {
@@ -493,33 +493,6 @@ bool VARBOX::getWebCode(const char* url, std::string& src, bool auto_delete)
     }
     return VarBox->RunApp && !src.empty();
 }
-
-//bool VARBOX::getBingCode(std::string& code)
-//{
-//    HINTERNET hSession = InternetOpen("Chromium", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
-//    if (hSession)
-//    {
-//        HINTERNET hURL = InternetOpenUrl(hSession, "https://cn.bing.com/", NULL, 0, INTERNET_FLAG_DONT_CACHE, 0);
-//        if (hURL)
-//        {
-//            char temp[513] = { 0 };
-//            DWORD dwRecv = 1;
-//            InternetReadFile(hURL, temp, 512, &dwRecv);
-//            code += temp;
-//            memset(temp, 0, 512);
-//            InternetReadFile(hURL, temp, 512, &dwRecv);
-//            code += temp;
-//            memset(temp, 0, 512);
-//            InternetReadFile(hURL, temp, 512, &dwRecv);
-//            code += temp;
-//            InternetCloseHandle(hURL);
-//            hURL = NULL;
-//        }
-//        InternetCloseHandle(hSession);
-//        hSession = NULL;
-//    }
-//    return !code.empty();
-//}
 
 // 会删除url
 bool VARBOX::getTransCode(const char* url, std::string& outcome)
@@ -565,10 +538,10 @@ bool VARBOX::downloadImage(const char* url, const QString path, bool auto_delete
     DWORD dwRecv = 0;
     DWORD allWrite = 0;
     char* szDownLoad = new char[1024 * 40];
-    HINTERNET hSession = InternetOpen("Chromium", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+    HINTERNET hSession = InternetOpenA("Chromium", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
     if (hSession)
     {
-        HINTERNET hOpenUrl = InternetOpenUrl(hSession, url, NULL, 0, INTERNET_FLAG_RELOAD, 0);
+        HINTERNET hOpenUrl = InternetOpenUrlA(hSession, url, NULL, 0, INTERNET_FLAG_RELOAD, 0);
         if (auto_delete) delete [] url;
         if (hOpenUrl)
         {
@@ -657,14 +630,14 @@ BOOL VARBOX::SetWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD A
     {
         //		if (bAccentNormal == FALSE)
         {
-            SendMessage(hWnd, WM_THEMECHANGED, 0, 0);
+            SendMessageA(hWnd, WM_THEMECHANGED, 0, 0);
             //			bAccentNormal = TRUE;
         }
         return TRUE;
     }
     //	bAccentNormal = FALSE;
     BOOL ret = FALSE;
-    HMODULE hUser = GetModuleHandle("user32.dll");
+    HMODULE hUser = GetModuleHandleA("user32.dll");
     if (hUser)
         pSetWindowCompositionAttribute = (pfnSetWindowCompositionAttribute)GetProcAddress(hUser, "SetWindowCompositionAttribute");
     if (pSetWindowCompositionAttribute)
@@ -710,7 +683,7 @@ BOOL VARBOX::PathFileExists(LPCSTR pszPath)
     typedef BOOL(WINAPI* pfnPathFileExists)(LPCSTR pszPath);
     pfnPathFileExists pPathFileExists = NULL;
     BOOL ret = FALSE;
-    HMODULE hUser = GetModuleHandle(TEXT("Shlwapi.dll"));
+    HMODULE hUser = GetModuleHandleA("Shlwapi.dll");
     if (hUser)
         pPathFileExists = (pfnPathFileExists)GetProcAddress(hUser, "PathFileExistsA");
     if (pPathFileExists)
@@ -730,7 +703,7 @@ BOOL VARBOX::PathFileExists(LPWSTR pszPath)
     typedef BOOL(WINAPI* pfnPathFileExists)(LPWSTR pszPath);
     pfnPathFileExists pPathFileExists = NULL;
     BOOL ret = FALSE;
-    HMODULE hUser = GetModuleHandle(TEXT("Shlwapi.dll"));
+    HMODULE hUser = GetModuleHandleW(L"Shlwapi.dll");
     if (hUser)
         pPathFileExists = (pfnPathFileExists)GetProcAddress(hUser, "PathFileExistsW");
     if (pPathFileExists)
@@ -747,26 +720,53 @@ BOOL VARBOX::PathFileExists(LPWSTR pszPath)
 
 BOOL VARBOX::OneDriveFile(const char *file)
 {
-     HANDLE hFileRead = CreateFileA(file, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-     if(hFileRead==INVALID_HANDLE_VALUE)
-         return false;
-     char lpFileDataBuffer[1] = {0};
-     DWORD dwReadedSize;
-     if(!ReadFile(hFileRead,lpFileDataBuffer,1,&dwReadedSize, NULL))  return false;
-     if (!dwReadedSize) return false;
-     CloseHandle(hFileRead);
-     return true;
+    if (FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS & GetFileAttributesA(file))
+    {
+        if (!isOnline(false)) return false;
+        for (int i = 0; i < 30 && VarBox->RunApp; i++)
+        {
+            HANDLE hFileRead = CreateFileA(file, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+            if(hFileRead==INVALID_HANDLE_VALUE)
+             return false;
+            char lpFileDataBuffer[1] = {0};
+            DWORD dwReadedSize = 0;
+            if(ReadFile(hFileRead,lpFileDataBuffer,1,&dwReadedSize, NULL) && dwReadedSize)  return true;
+            CloseHandle(hFileRead);
+            for (short j = 1; VarBox->RunApp && (j <= 6); j++)
+                Sleep(500);
+        }
+    }
+    else
+    {
+        return true;
+    }
+    return false;
 }
 
 BOOL VARBOX::OneDriveFile(const wchar_t *file)
 {
-    HANDLE hFileRead = CreateFileW(file, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if(hFileRead==INVALID_HANDLE_VALUE)
-        return false;
-    char lpFileDataBuffer[1] = {0};
-    DWORD dwReadedSize;
-    if(!ReadFile(hFileRead,lpFileDataBuffer,1,&dwReadedSize, NULL))  return false;
-    if (!dwReadedSize) return false;
-    CloseHandle(hFileRead);
-    return true;
+    if (FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS & GetFileAttributesW(file))
+    {
+        if (!isOnline(false)) return false;
+        for (int i = 0; i < 30 && VarBox->RunApp; i++)
+        {
+            HANDLE hFileRead = CreateFileW(file, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+            if(hFileRead==INVALID_HANDLE_VALUE)
+            {
+                qout << "非法路径";
+                return false;
+            }
+            char lpFileDataBuffer[1] = {0};
+            DWORD dwReadedSize = 0;
+            if(ReadFile(hFileRead,lpFileDataBuffer,1,&dwReadedSize, NULL) && dwReadedSize)  return true;
+            CloseHandle(hFileRead);
+            for (short j = 1; VarBox->RunApp && (j <= 6); j++)
+                Sleep(500);
+        }
+    }
+    else
+    {
+        return true;
+    }
+    return false;
 }
