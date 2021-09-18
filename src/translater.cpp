@@ -57,23 +57,8 @@ Translater::Translater() :
     connect(this, &Translater::msgBox, [=](const char* str){
         jobTip->showTip(str);
     });
-
-    if (RegisterHotKey(HWND(winId()), M_WIN_HOT_KEY_SHIFT_Z, MOD_SHIFT, 'Z'))
-    {
-        qDebug() << "注册热键 SHIFT + Z 成功.";
-    }
-    else
-    {
-        qout << "注册热键 SHIFT + Z 失败.";
-    }
-    if (RegisterHotKey(HWND(winId()), M_WIN_HOT_KEY_SHIFT_A, MOD_SHIFT, 'A'))
-    {
-        qDebug() << "注册热键  SHIFT + A 成功.";
-    }
-    else
-    {
-        qout << "注册热键 SHIFT + A 失败.";
-    }
+    RegisterHotKey(HWND(winId()), M_WIN_HOT_KEY_SHIFT_Z, MOD_SHIFT, 'Z');
+    RegisterHotKey(HWND(winId()), M_WIN_HOT_KEY_SHIFT_A, MOD_SHIFT, 'A');
     initConnects();
 }
 
