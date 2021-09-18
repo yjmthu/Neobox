@@ -22,6 +22,7 @@
 #include "dialogwallpaper.h"
 #include "bingsetting.h"
 #include "formsetting.h"
+#include "desktopmask.h"
 
 constexpr const char *color_theme[7] =
 {
@@ -117,6 +118,41 @@ void Dialog::initConnects()
     connect(wallpaper, &DialogWallpaper::msgBox, VarBox->form, &Form::msgBox);
 	for (int c = 0; c <= 9; c++)
         if ((c != (int)PAPER_TYPE::Native) && (c != 7)) connect(buttonGroup->button(c), &QPushButton::clicked, [=]() {last_checked_button = c;});
+    connect(ui->rBtnNative, &QRadioButton::toggled, this, &Dialog::rBtnNativeLinkWithToolBtn);
+    connect(ui->BtnChooseFolder, &QToolButton::clicked, this, &Dialog::chooseFolder);
+    connect(ui->pBtnCancel, &QPushButton::clicked, this, &Dialog::close);
+    connect(ui->pBtnOk, &QPushButton::clicked, this, &Dialog::saveWallpaperSettings);
+    connect(ui->pBtnOpenAppData, &QPushButton::clicked, [](){VARBOX::runCommand("explorer", QStringList(VarBox->get_dat_path()));});
+    connect(ui->pBtnOpenPicturePath, &QPushButton::clicked, this, &Dialog::openPicturePath);
+    connect(ui->linePictuerPath, &QLineEdit::returnPressed, this, &Dialog::linePictuerPathReturn);
+    connect(ui->pBtnSaveTaskSettings, &QPushButton::clicked, [this](){VarBox->saveTrayStyle(); jobTip->showTip("保存成功！");});
+    connect(ui->cBxAutoStart, &QPushButton::clicked, [this](bool checked){
+        QSettings* reg = new QSettings(
+            "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
+            QSettings::NativeFormat);
+        if (checked)
+            reg->setValue("SpeedBox", qApp->applicationFilePath().replace("/", "\\"));
+        else
+            reg->remove("SpeedBox");
+        delete reg;
+        jobTip->showTip("修改成功！");
+    });
+    connect(ui->tBtnSetBing, &QToolButton::clicked, this, [this](){
+        BingSetting x;
+        x.move(frameGeometry().x()+(width()-x.width())/2, frameGeometry().y()+(height()-x.height())/2);
+        x.exec();
+    });
+    connect(ui->pBtnCustomName, &QPushButton::clicked, this, &Dialog::setCustomName);
+    connect(ui->lineNewName, &QLineEdit::returnPressed, this, &Dialog::setCustomName);
+    connect(ui->pBtnApply, &QPushButton::clicked, this, &Dialog::applyWallpaperSettings);
+    connect(ui->cBxstandardName, &QComboBox::currentIndexChanged, this, &Dialog::cBxstandardNameCurIndex);
+    connect(ui->sLdPageNum, &QSlider::valueChanged, this, &Dialog::sLdPageNumCurNum);
+    connect(ui->sLdUpdateRefreshTime, &QSlider::valueChanged, this, &Dialog::sLdUpdateTimeCurNum);
+    connect(ui->sLdTaskAlph, &QSlider::valueChanged, this, &Dialog::sLdTaskAlphCurNum);
+    connect(ui->sLdIconAlph, &QSlider::valueChanged, this, &Dialog::sLdIconAlphCurNum);
+    connect(ui->sLdTimeInterval, &QSlider::valueChanged, this, [this](int value){ui->labTimeInterval->setText(QString::number(value, 10));});
+    connect(ui->rBtnWinTaskNormal, &QRadioButton::clicked, [this](){changeType(false);});
+    connect(ui->rBtnWinTaskMax, &QRadioButton::clicked, [this](){changeType(true);});
 }
 
 void Dialog::initBehaviors()
@@ -191,21 +227,21 @@ void Dialog::showEvent(QShowEvent *event)
     ui->BtnChooseFolder->setEnabled(last_checked_button == 7);
     buttonGroup->button(last_checked_button)->setChecked(true);
     ui->LinePath->setText(VarBox->NativeDir);
-    ui->SliderPageNum->setValue(VarBox->PageNum);
-    ui->SliderTimeInterval->setValue(VarBox->TimeInterval);
+    ui->sLdPageNum->setValue(VarBox->PageNum);
+    ui->sLdTimeInterval->setValue(VarBox->TimeInterval);
     ui->labTimeInterval->setText(QString::number(VarBox->TimeInterval));
     ui->chkEnableChangePaper->setChecked(VarBox->AutoChange);
     ui->usrCmd->setText(VarBox->UserCommand);
     ui->linePictuerPath->setText(VarBox->MajorDir);
-    ui->radioButton_2->setChecked(VarBox->setMax);
-    ui->horizontalSlider->setValue(VarBox->dAlphaColor[VarBox->setMax] >> 24);
-    ui->horizontalSlider_2->setValue(VarBox->bAlpha[VarBox->setMax]);
-    ui->horizontalSlider_3->setValue(VarBox->RefreshTime);
+    ui->rBtnWinTaskMax->setChecked(VarBox->setMax);
+    ui->sLdTaskAlph->setValue(VarBox->dAlphaColor[VarBox->setMax] >> 24);
+    ui->sLdIconAlph->setValue(VarBox->bAlpha[VarBox->setMax]);
+    ui->sLdUpdateRefreshTime->setValue(VarBox->RefreshTime);
     ui->pushButton_3->setStyleSheet(getStyleSheet());
-    ui->lineNewName->setText(VarBox->CustomNames[ui->comboBox->currentIndex()]);
+    ui->lineNewName->setText(VarBox->CustomNames[ui->cBxstandardName->currentIndex()]);
     ui->line_APP_ID->setText(VarBox->AppId);
     ui->line_PASS_WORD->setText(VarBox->PassWord);
-    ui->checkBox->setChecked(!QSettings("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat).value("SpeedBox").toString().compare(qApp->applicationFilePath().replace("/", "\\")));
+    ui->cBxAutoStart->setChecked(!QSettings("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat).value("SpeedBox").toString().compare(qApp->applicationFilePath().replace("/", "\\")));
     switch (VarBox->aMode[VarBox->setMax])
     {
     case (ACCENT_STATE::ACCENT_DISABLED):                       // 默认
@@ -264,6 +300,7 @@ void Dialog::showEvent(QShowEvent *event)
     ui->lineEdit->setText(VarBox->PathToOpen);
     ui->checkBox_3->setChecked(VarBox->FirstChange);
     ui->BtnChooseFolder->setEnabled(ui->rBtnNative->isChecked());
+    ui->checkBox_4->setChecked(VarBox->ControlDesktopIcon);
     checkSettings(); event->accept();
 }
 
@@ -276,12 +313,12 @@ void Dialog::showEvent(QShowEvent *event)
  *
  */
 
-void Dialog::on_rBtnNative_toggled(bool checked)
+void Dialog::rBtnNativeLinkWithToolBtn(bool checked)
 {
 	ui->BtnChooseFolder->setEnabled(checked);
 }
 
-void Dialog::on_BtnChooseFolder_clicked()
+void Dialog::chooseFolder()
 {
 	QDir d;
     if (VarBox->NativeDir.isEmpty() || (!d.exists(VarBox->NativeDir) && !d.mkdir(VarBox->NativeDir)))
@@ -301,29 +338,19 @@ void Dialog::on_BtnChooseFolder_clicked()
         ui->LinePath->setText(QDir::toNativeSeparators(dir));
 }
 
-void Dialog::on_SliderTimeInterval_valueChanged(int value)
-{
-	ui->labTimeInterval->setText(QString::number(value, 10));  // 十进制整数转化为字符串
-}
-
-void Dialog::on_SliderPageNum_valueChanged(int value)
+void Dialog::sLdPageNumCurNum(int value)
 {
 	ui->label_2->setText(QString::number(value, 10));
 }
 
-void Dialog::on_pBtnCancel_clicked()
-{
-	close();
-}
-
-void Dialog::on_pBtnOk_clicked()
+void Dialog::saveWallpaperSettings()
 {
     QSettings IniWrite(VarBox->get_ini_path(), QSettings::IniFormat);
     IniWrite.beginGroup("Wallpaper");
     IniWrite.setValue("PaperType", buttonGroup->checkedId());
     IniWrite.setValue("NativeDir", ui->LinePath->text());
-    IniWrite.setValue("PageNum", ui->SliderPageNum->value());
-    IniWrite.setValue("TimeInerval", ui->SliderTimeInterval->value());
+    IniWrite.setValue("PageNum", ui->sLdPageNum->value());
+    IniWrite.setValue("TimeInerval", ui->sLdTimeInterval->value());
     IniWrite.setValue("AutoChange", ui->chkEnableChangePaper->isChecked());
     IniWrite.setValue("UserCommand", ui->usrCmd->text());
     IniWrite.setValue("FirstChange", ui->checkBox_3->isChecked());
@@ -338,13 +365,13 @@ void Dialog::on_pBtnOk_clicked()
  *
  */
 
-void Dialog::on_pBtnApply_clicked()
+void Dialog::applyWallpaperSettings()
 {
     Wallpaper::update = ui->checkBox_2->isChecked();
     VarBox->PaperType = (PAPER_TYPE)buttonGroup->checkedId();
     VarBox->NativeDir = ui->LinePath->text();
-    VarBox->PageNum = ui->SliderPageNum->value();
-    VarBox->TimeInterval = ui->SliderTimeInterval->value();
+    VarBox->PageNum = ui->sLdPageNum->value();
+    VarBox->TimeInterval = ui->sLdTimeInterval->value();
     VarBox->AutoChange = ui->chkEnableChangePaper->isChecked();
     VarBox->UserCommand = ui->usrCmd->text();
     VarBox->FirstChange = ui->checkBox_3->isChecked();
@@ -389,7 +416,7 @@ void Dialog::on_pBtnApply_clicked()
             else
                 if (change_paper_timer->isActive()) change_paper_timer->stop();
             if (QMessageBox::question(this, "提示", "应用成功！是否保存设置？", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
-                on_pBtnOk_clicked();
+                saveWallpaperSettings();
         }
     }
 }
@@ -446,12 +473,7 @@ void Dialog::on_pBtnApply_2_clicked()
     jobTip->showTip("设置成功！");
 }
 
-void Dialog::on_pBtnOpenAppData_clicked()
-{
-    VARBOX::runCommand("explorer", QStringList(VarBox->get_dat_path()));
-}
-
-void Dialog::on_pBtnOpenPicturePath_clicked()
+void Dialog::openPicturePath()
 {
 	QString str = ui->linePictuerPath->text();
 	QDir dir;
@@ -472,7 +494,7 @@ void Dialog::on_pBtnOpenPicturePath_clicked()
 }
 
 
-void Dialog::on_linePictuerPath_returnPressed()
+void Dialog::linePictuerPathReturn()
 {
 	QDir dir;
 	if (dir.exists(ui->linePictuerPath->text()))
@@ -487,7 +509,7 @@ void Dialog::on_linePictuerPath_returnPressed()
 	}
 }
 
-void Dialog::on_horizontalSlider_valueChanged(int value)
+void Dialog::sLdTaskAlphCurNum(int value)
 {
     DWORD bAlphaB = (DWORD)value << 24;
     ui->label_4->setText(QString::number(value, 10));
@@ -496,7 +518,7 @@ void Dialog::on_horizontalSlider_valueChanged(int value)
         tray->beautifyTask->start();
 }
 
-void Dialog::on_horizontalSlider_2_valueChanged(int value)
+void Dialog::sLdIconAlphCurNum(int value)
 {
     ui->label_6->setText(QString::number(value, 10));
     VarBox->bAlpha[VarBox->setMax] = value;
@@ -504,7 +526,7 @@ void Dialog::on_horizontalSlider_2_valueChanged(int value)
         tray->beautifyTask->start();
 }
 
-void Dialog::on_horizontalSlider_3_valueChanged(int value)
+void Dialog::sLdUpdateTimeCurNum(int value)
 {
     ui->label_17->setText(QString::number(value, 10));
     tray->beautifyTask->setInterval(value);
@@ -564,12 +586,6 @@ void Dialog::on_radioButton_6_clicked()
     VarBox->aMode[VarBox->setMax] = ACCENT_STATE::ACCENT_ENABLE_ACRYLICBLURBEHIND;
 }
 
-void Dialog::on_pushButton_clicked()
-{
-    VarBox->saveTrayStyle();
-    jobTip->showTip("保存完毕！");
-}
-
 void Dialog::on_radioButton_11_clicked()
 {
     QSettings settings(TASK_DESK_SUB, QSettings::NativeFormat);
@@ -614,8 +630,8 @@ void Dialog::on_radioButton_9_clicked()
 void Dialog::changeType(BOOL ok)
 {
     VarBox->setMax = ok;
-    ui->horizontalSlider->setValue(VarBox->dAlphaColor[ok] >> 24);
-    ui->horizontalSlider_2->setValue(VarBox->bAlpha[ok]);
+    ui->sLdTaskAlph->setValue(VarBox->dAlphaColor[ok] >> 24);
+    ui->sLdIconAlph->setValue(VarBox->bAlpha[ok]);
 	ui->pushButton_3->setStyleSheet(getStyleSheet());
     switch (VarBox->aMode[ok])
 	{
@@ -636,16 +652,6 @@ void Dialog::changeType(BOOL ok)
 	}
 }
 
-void Dialog::on_radioButton_clicked()
-{
-	changeType(false);
-}
-
-void Dialog::on_radioButton_2_clicked()
-{
-	changeType(true);
-}
-
 void Dialog::on_pushButton_3_clicked()
 {
     uint32_t col = VarBox->dAlphaColor[VarBox->setMax] & 0xffffff;
@@ -655,20 +661,20 @@ void Dialog::on_pushButton_3_clicked()
 		short r = color.red(), g = color.green(), b = color.blue();
 		QString str = QString("background-color: rgb(%1, %2, %3)").arg(QString::number(r), QString::number(g), QString::number(b));
 		ui->pushButton_3->setStyleSheet(str);
-        VarBox->dAlphaColor[VarBox->setMax] = (ui->horizontalSlider->value() << 24) + RGB(r, g, b);
+        VarBox->dAlphaColor[VarBox->setMax] = (ui->sLdTaskAlph->value() << 24) + RGB(r, g, b);
 	}
 }
 
-void Dialog::on_comboBox_currentIndexChanged(int index)
+void Dialog::cBxstandardNameCurIndex(int index)
 {
     ui->lineNewName->setText(VarBox->CustomNames[index]);
 }
 
 
-void Dialog::on_pBtnChange_clicked()
+void Dialog::setCustomName()
 {
 	QString str = ui->lineNewName->text();
-	short i = ui->comboBox->currentIndex();
+    short i = ui->cBxstandardName->currentIndex();
     if (VarBox->CustomNames[i].compare(str))
 	{
 		if (str.isEmpty())
@@ -724,12 +730,6 @@ void Dialog::on_pBtnChange_clicked()
     {
         jobTip->showTip("似乎什么也没做。");
     }
-}
-
-void Dialog::on_lineNewName_returnPressed()
-{
-	on_pBtnChange_clicked();
-
 }
 
 void Dialog::on_radioButton_13_clicked()
@@ -918,8 +918,8 @@ void Dialog::on_pushButton_10_clicked()
 
     std::thread thrd; QEventLoop loop;
 
-    connect(this, &Dialog::finished, &loop, [&loop, &thrd, this](bool success, const char* str){
-        if (thrd.joinable()) thrd.join(); loop.quit();
+    connect(this, &Dialog::finished, &loop, std::bind([this](QEventLoop* loop, std::thread* thrd, bool success, const char* str){
+        if (thrd->joinable()) thrd->join(); loop->quit();
         if (!VarBox->RunApp)     // 用户在检查过程中退出了软件
         {
             if (success) delete [] str;
@@ -949,7 +949,7 @@ void Dialog::on_pushButton_10_clicked()
             }
         }
         delete [] str;
-    });
+    }, &loop, &thrd, std::placeholders::_1, std::placeholders::_2));
 
     thrd = std::thread([this](){
         std::string str;
@@ -992,8 +992,8 @@ void Dialog::on_pushButton_12_clicked()
     }
     std::thread thrd; QEventLoop loop;
 
-    connect(this, &Dialog::finished, &loop, [&loop, &thrd, this](bool success, const char* str){
-        if (thrd.joinable()) thrd.join(); loop.quit();
+    connect(this, &Dialog::finished, &loop, std::bind([this](QEventLoop* loop, std::thread* thrd, bool success, const char* str){
+        if (thrd->joinable()) thrd->join(); loop->quit();
         if (!success)
         {
             jobTip->showTip(str, 800);
@@ -1007,7 +1007,7 @@ void Dialog::on_pushButton_12_clicked()
         }
         else
             jobTip->showTip("成功取消更新。", 700);
-    });
+    }, &loop, &thrd, std::placeholders::_1, std::placeholders::_2));
 
     thrd = std::thread([this](){
         std::string str; //jobTip->showTip("请耐心等待几秒...");
@@ -1074,28 +1074,6 @@ void Dialog::on_pushButton_14_clicked()
 }
 
 
-void Dialog::on_checkBox_clicked(bool checked)
-{
-    QSettings* reg = new QSettings(
-        "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
-        QSettings::NativeFormat);
-    if (checked)
-        reg->setValue("SpeedBox", qApp->applicationFilePath().replace("/", "\\"));
-    else
-        reg->remove("SpeedBox");
-    delete reg;
-    jobTip->showTip("修改成功！");
-}
-
-
-void Dialog::on_toolButton_clicked()
-{
-    BingSetting x;
-    x.move(frameGeometry().x()+(width()-x.width())/2, frameGeometry().y()+(height()-x.height())/2);
-    x.exec();
-}
-
-
 void Dialog::on_toolButton_2_clicked()
 {
     QString titile = "请选择一个文件夹";
@@ -1112,5 +1090,23 @@ void Dialog::on_pushButton_6_clicked()
     FormSetting d;
     d.move(frameGeometry().x()+(width()-d.width())/2, frameGeometry().y()+(height()-d.height())/2);
     d.exec();
+}
+
+
+void Dialog::on_checkBox_4_clicked(bool checked)
+{
+    QSettings IniWrite(VarBox->get_ini_path(), QSettings::IniFormat);
+    IniWrite.beginGroup("UI");
+    IniWrite.setValue("ControlDesktopIcon", checked);
+    if (checked)
+    {
+        VarBox->ControlDesktopIcon = new DesktopMask;
+    }
+    else
+    {
+        delete VarBox->ControlDesktopIcon;
+        VarBox->ControlDesktopIcon = nullptr;
+    }
+    jobTip->showTip("设置并保存成功！");
 }
 

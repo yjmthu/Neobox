@@ -171,7 +171,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QToolButton" name="toolButton">
+                <widget class="QToolButton" name="tBtnSetBing">
                  <property name="toolTip">
                   <string>必应设置</string>
                  </property>
@@ -284,7 +284,7 @@
               </property>
               <layout class="QHBoxLayout" name="horizontalLayout_9">
                <item>
-                <widget class="QSlider" name="SliderTimeInterval">
+                <widget class="QSlider" name="sLdTimeInterval">
                  <property name="cursor">
                   <cursorShape>PointingHandCursor</cursorShape>
                  </property>
@@ -354,7 +354,7 @@
               </property>
               <layout class="QHBoxLayout" name="horizontalLayout_7">
                <item>
-                <widget class="QSlider" name="SliderPageNum">
+                <widget class="QSlider" name="sLdPageNum">
                  <property name="cursor">
                   <cursorShape>PointingHandCursor</cursorShape>
                  </property>
@@ -608,7 +608,7 @@
               </property>
               <layout class="QHBoxLayout" name="horizontalLayout_12">
                <item>
-                <widget class="QRadioButton" name="radioButton">
+                <widget class="QRadioButton" name="rBtnWinTaskNormal">
                  <property name="toolTip">
                   <string>没有最大化窗口时任务栏的状态</string>
                  </property>
@@ -621,7 +621,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QRadioButton" name="radioButton_2">
+                <widget class="QRadioButton" name="rBtnWinTaskMax">
                  <property name="toolTip">
                   <string>有最大化窗口时任务栏的状态</string>
                  </property>
@@ -687,7 +687,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QSlider" name="horizontalSlider">
+                <widget class="QSlider" name="sLdTaskAlph">
                  <property name="cursor">
                   <cursorShape>PointingHandCursor</cursorShape>
                  </property>
@@ -752,7 +752,7 @@ background-color: rgb(0, 0, 0);</string>
                 </widget>
                </item>
                <item>
-                <widget class="QSlider" name="horizontalSlider_2">
+                <widget class="QSlider" name="sLdIconAlph">
                  <property name="cursor">
                   <cursorShape>PointingHandCursor</cursorShape>
                  </property>
@@ -790,7 +790,7 @@ background-color: rgb(0, 0, 0);</string>
               </property>
               <layout class="QHBoxLayout" name="horizontalLayout_17">
                <item>
-                <widget class="QSlider" name="horizontalSlider_3">
+                <widget class="QSlider" name="sLdUpdateRefreshTime">
                  <property name="cursor">
                   <cursorShape>PointingHandCursor</cursorShape>
                  </property>
@@ -880,6 +880,12 @@ background-color: rgb(0, 0, 0);</string>
             </item>
             <item>
              <widget class="QGroupBox" name="groupBox_12">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="maximumSize">
                <size>
                 <width>16777215</width>
@@ -893,19 +899,6 @@ background-color: rgb(0, 0, 0);</string>
                <string>开机时任务栏透明度</string>
               </property>
               <layout class="QHBoxLayout" name="horizontalLayout_19">
-               <item>
-                <spacer name="horizontalSpacer_2">
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>40</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
                <item>
                 <widget class="QRadioButton" name="radioButton_11">
                  <property name="minimumSize">
@@ -932,19 +925,6 @@ background-color: rgb(0, 0, 0);</string>
                 </widget>
                </item>
                <item>
-                <spacer name="horizontalSpacer_8">
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>40</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-               <item>
                 <widget class="QRadioButton" name="radioButton_10">
                  <property name="minimumSize">
                   <size>
@@ -965,19 +945,6 @@ background-color: rgb(0, 0, 0);</string>
                   <string>中</string>
                  </property>
                 </widget>
-               </item>
-               <item>
-                <spacer name="horizontalSpacer_7">
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>40</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                </spacer>
                </item>
                <item>
                 <widget class="QRadioButton" name="radioButton_12">
@@ -1001,8 +968,49 @@ background-color: rgb(0, 0, 0);</string>
                  </property>
                 </widget>
                </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupBox_22">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>100</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="title">
+               <string>桌面图标控制</string>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_31">
                <item>
-                <spacer name="horizontalSpacer_14">
+                <spacer name="horizontalSpacer">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="checkBox_4">
+                 <property name="text">
+                  <string>开启</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_2">
                  <property name="orientation">
                   <enum>Qt::Horizontal</enum>
                  </property>
@@ -1060,7 +1068,7 @@ background-color: rgb(0, 0, 0);</string>
                </widget>
               </item>
               <item>
-               <widget class="QPushButton" name="pushButton">
+               <widget class="QPushButton" name="pBtnSaveTaskSettings">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
                   <horstretch>0</horstretch>
@@ -1121,7 +1129,7 @@ background-color: rgb(0, 0, 0);</string>
               </widget>
              </item>
              <item>
-              <widget class="QComboBox" name="comboBox">
+              <widget class="QComboBox" name="cBxstandardName">
                <property name="cursor">
                 <cursorShape>OpenHandCursor</cursorShape>
                </property>
@@ -1182,7 +1190,7 @@ background-color: rgb(0, 0, 0);</string>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="pBtnChange">
+              <widget class="QPushButton" name="pBtnCustomName">
                <property name="cursor">
                 <cursorShape>PointingHandCursor</cursorShape>
                </property>
@@ -1667,7 +1675,7 @@ background-color: rgb(0, 0, 0);</string>
                 <number>9</number>
                </property>
                <item>
-                <widget class="QCheckBox" name="checkBox">
+                <widget class="QCheckBox" name="cBxAutoStart">
                  <property name="maximumSize">
                   <size>
                    <width>15</width>

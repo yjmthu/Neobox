@@ -93,6 +93,7 @@ enum class TaskBarCenterState
 };
 
 class Form; struct IAccessible; //void* PMIB_IFTABLE;
+class DesktopMask;
 typedef ULONG(WINAPI* pfnGetAdaptersAddresses)(_In_ ULONG Family, _In_ ULONG Flags, _Reserved_ PVOID Reserved, _Out_writes_bytes_opt_(*SizePointer) void* AdapterAddresses, _Inout_ PULONG SizePointer);
 typedef DWORD(WINAPI* pfnGetIfTable)(_Out_writes_bytes_opt_(*pdwSize) PMIB_IFTABLE pIfTable, _Inout_ PULONG pdwSize, _In_ BOOL bOrder);
 
@@ -103,7 +104,7 @@ typedef BOOL(WINAPI* pfnDwmGetWindowAttribute)(HWND hwnd, DWORD dwAttribute, PVO
 
 struct VARBOX
 {
-    const char* const Version = "21.9.17", * const Qt = "6.1.3";
+    const char* const Version = "21.9.18", * const Qt = "6.1.3";
     const unsigned char WinVersion; const bool FirstUse[1] = {false};
     std::list<std::pair<bool, void*>> PicHistory; std::list<std::pair<bool, void*>>::const_iterator CurPic;
     const char* const StandardNames[10][2] =     //九种壁纸类型
@@ -141,6 +142,7 @@ struct VARBOX
 
     const int ScreenWidth, ScreenHeight;                  //屏幕宽高
     static HANDLE HMutex; HMODULE hOleacc = NULL, hIphlpapi = NULL, hDwmapi = NULL; Form* const form {};
+    DesktopMask *ControlDesktopIcon = nullptr;
 
     pfnGetIfTable GetIfTable = nullptr;
     pfnGetAdaptersAddresses GetAdaptersAddresses = nullptr;
@@ -160,7 +162,7 @@ struct VARBOX
     static void sigleSave(QString group, QString key, QString value);
     static bool isOnline(bool);                                               //检查是否有网络连接，布尔值代表是否保持检测 30 秒
     static char* runCommand(QString program, QStringList argument, short line = 0);
-    static bool getWebCode(const char*, std::string&, bool auto_delete = true);
+    static bool getWebCode(const char*, std::string&, bool auto_delete);
     //static bool getBingCode(std::string& code);
     static bool downloadImage(const char*, const QString, bool auto_delete = true);
     static bool getTransCode(const char* url, std::string& outcome);
@@ -170,7 +172,7 @@ struct VARBOX
     static BOOL PathFileExists(LPWSTR pszPath);
     static BOOL OneDriveFile(const char* file);
     static BOOL OneDriveFile(const wchar_t*file);
-
+    static void MSG(const char*);
 
 private:
      bool check_app_right();

@@ -6,10 +6,12 @@
 #include <QSettings>
 #include <QProcess>
 #include <QDir>
+#include <QMessageBox>
 
 #include "funcbox.h"
 #include "YString.h"
 #include "form.h"
+#include "desktopmask.h"
 
 #pragma comment(lib,"wininet.lib")
 
@@ -60,6 +62,7 @@ VARBOX::VARBOX(int w, int h):
     hOleacc(LoadLibraryA("oleacc.dll")), hIphlpapi(LoadLibraryA("iphlpapi.dll")), hDwmapi(LoadLibraryA("dwmapi.dll"))
 {
     qout << "VarBox构造函数开始。";
+    VarBox = this;
     loadFunctions();
     QSettings set("HKEY_CURRENT_USER\\Control Panel\\Desktop", QSettings::NativeFormat);
     if (set.contains("WallPaper"))
@@ -135,6 +138,7 @@ VARBOX::VARBOX(int w, int h):
             IniWrite->setValue("ColorTheme", static_cast<int>(CurTheme));
             IniWrite->setValue("x", 100);
             IniWrite->setValue("y", 100);
+            IniWrite->setValue("ControlDesktopIcon", (bool)ControlDesktopIcon);
             IniWrite->endGroup();
 
             IniWrite->beginGroup("Dirs");
@@ -210,6 +214,13 @@ VARBOX::VARBOX(int w, int h):
             IniRead->endGroup();
             qout << "读取路径信息完毕";
             IniRead->beginGroup("UI");
+            if (IniRead->contains("ControlDesktopIcon"))
+            {
+                if (IniRead->value("ControlDesktopIcon").toBool())
+                    ControlDesktopIcon = new DesktopMask;
+            }
+            else
+                IniRead->setValue("ControlDesktopIcon", false);
             safeEnum = IniRead->value("ColorTheme").toInt();
             if (safeEnum > 6) safeEnum = 0;
             CurTheme = static_cast<COLOR_THEME>(safeEnum);
@@ -253,6 +264,7 @@ VARBOX::~VARBOX()
             delete [] static_cast<char*>(x.second);
         }
     }
+    if (ControlDesktopIcon) delete ControlDesktopIcon;
     if (AppId) delete [] AppId;
     if (PassWord) delete [] PassWord;
     if (hIphlpapi) FreeLibrary(hIphlpapi);
@@ -769,4 +781,9 @@ BOOL VARBOX::OneDriveFile(const wchar_t *file)
         return true;
     }
     return false;
+}
+
+void VARBOX::MSG(const char *str)
+{
+    QMessageBox::information(nullptr, "DEBUG", str);
 }

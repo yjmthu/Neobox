@@ -14,6 +14,8 @@
 #include "ui_form.h"
 
 constexpr char style_style[] = "QFrame{border-radius:%1px;background-color:rgba(%2,%3,%4,%5);}";
+ACCENT_STATE FormSetting::win_style = ACCENT_STATE::ACCENT_NORMAL;
+ACCENT_STATE FormSetting::temp_win_style = ACCENT_STATE::ACCENT_NORMAL;
 
 YJsonItem* load_style(const std::string style)
 {
@@ -100,27 +102,47 @@ FormSetting::FormSetting(QDialog*) :
     b = temp->findItem(2)->getValueInt();
     a = temp->findItem(3)->getValueInt();
     p = old_style->findItem("border-radius")->getValueInt();
-    ui->pushButton->setStyleSheet(QString("QPushButton{background-color: rgb(%1, %2, %3);}").arg(r).arg(g).arg(b));
+    ui->pushButton->setStyleSheet(QString("QPushButton{background-color: rgb(%1, %2, %3);border: 1px solid black;}").arg(r).arg(g).arg(b));
     new_color = QColor(r, g, b);
     ui->horizontalSlider->setValue(a);
-    if (p == 0)
-    {
+    switch (p) {
+    case 0:
         ui->radioButton->setChecked(true);
-    }
-    else if (p == 3)
-    {
+        break;
+    case 3:
         ui->radioButton_2->setChecked(true);
-    }
-    else
-    {
+        break;
+    default:
         ui->radioButton_3->setChecked(true);
+        break;
     }
+    switch (win_style) {
+    case ACCENT_STATE::ACCENT_ENABLE_TRANSPARENT:
+        ui->radioButton_5->setChecked(true);
+        break;
+    case ACCENT_STATE::ACCENT_ENABLE_BLURBEHIND:
+        ui->radioButton_6->setChecked(true);
+        break;
+    case ACCENT_STATE::ACCENT_ENABLE_ACRYLICBLURBEHIND:
+        ui->radioButton_7->setChecked(true);
+        break;
+    default:
+        ui->radioButton_4->setChecked(true);
+        break;
+    }
+    initConnects();
 }
 
 FormSetting::~FormSetting()
 {
     delete old_style;
     delete ui;
+}
+
+void FormSetting::initConnects()
+{
+    connect(ui->pushButton, &QPushButton::clicked, this, &FormSetting::pushButton_clicked);
+    connect(ui->horizontalSlider, &QSlider::valueChanged, this, &FormSetting::horizontalSlider_valueChanged);
 }
 
 bool FormSetting::eventFilter(QObject* target, QEvent* event)
@@ -159,11 +181,12 @@ void FormSetting::closeEvent(QCloseEvent *event)
     b = temp->findItem(2)->getValueInt();
     a = temp->findItem(3)->getValueInt();
     p = old_style->findItem("border-radius")->getValueInt();
+    VARBOX::SetWindowCompositionAttribute(HWND(VarBox->form->winId()), win_style, (a << 24) & RGB(r, g, b));
     VarBox->form->ui->frame->setStyleSheet((QString(style_style).arg(p).arg(r).arg(g).arg(b).arg(a)));
     event->accept();
 }
 
-void FormSetting::on_pushButton_clicked()
+void FormSetting::pushButton_clicked()
 {
     YJsonItem& temp = (*old_style)["background-color"];
     int r = 8, g = 8, b=8;
@@ -177,13 +200,13 @@ void FormSetting::on_pushButton_clicked()
     if (color.isValid())
     {
         new_color = color;
-        ui->pushButton->setStyleSheet(QString("QPushButton{background-color: rgb(%1, %2, %3);}").arg(new_color.red()).arg(new_color.green()).arg(new_color.blue()));
+        ui->pushButton->setStyleSheet(QString("QPushButton{background-color: rgb(%1, %2, %3);border: 1px solid black;}").arg(new_color.red()).arg(new_color.green()).arg(new_color.blue()));
         ui->pushButton->showNormal();
     }
 }
 
 
-void FormSetting::on_horizontalSlider_valueChanged(int value)
+void FormSetting::horizontalSlider_valueChanged(int value)
 {
     ui->label_8->setText(QString::number(value));
 }
@@ -196,6 +219,7 @@ void FormSetting::on_pushButton_2_clicked()
     p = js->findItem("border-radius")->getValueInt();
     delete js;
     VarBox->form->ui->frame->setStyleSheet(QString(style_style).arg(p).arg(r).arg(g).arg(b).arg(a));
+    jobTip->showTip("预览成功！");
 }
 
 void FormSetting::on_pushButton_7_clicked()
@@ -210,12 +234,13 @@ void FormSetting::on_pushButton_7_clicked()
         b = temp[2].getValueInt();
         a = temp[3].getValueInt();
     }
-    ui->pushButton->setStyleSheet(QString("QPushButton{background-color: rgb(%1, %2, %3);}").arg(r).arg(g).arg(b));
+    ui->pushButton->setStyleSheet(QString("QPushButton{background-color: rgb(%1, %2, %3);border: 1px solid black;}").arg(r).arg(g).arg(b));
     ui->horizontalSlider->setValue(a);
     YJsonItem *js = load_style(VarBox->form->ui->frame->styleSheet().toStdString());
     p = js->findItem("border-radius")->getValueInt();
     delete js;
     VarBox->form->ui->frame->setStyleSheet((QString(style_style).arg(p).arg(r).arg(g).arg(b).arg(a)));
+    jobTip->showTip("恢复成功！");
 }
 
 
@@ -225,9 +250,11 @@ void FormSetting::on_pushButton_5_clicked()
     //预览默认
     constexpr int r = 8, g = 8, b=8, a = 190, p=3;
     new_color = QColor(r,g,b);
-    ui->pushButton->setStyleSheet(QString("background-color: rgb(%1, %2, %3)").arg(r).arg(g).arg(b));
+    ui->pushButton->setStyleSheet(QString("QPushButton{background-color: rgb(%1, %2, %3);border: 1px solid black;}").arg(r).arg(g).arg(b));
     ui->horizontalSlider->setValue(a);
     ui->radioButton_2->setChecked(true);
+    temp_win_style = ACCENT_STATE::ACCENT_NORMAL;
+    VARBOX::SetWindowCompositionAttribute(HWND(VarBox->form->winId()), temp_win_style, (a << 24) & RGB(r, g, b));
     VarBox->form->ui->frame->setStyleSheet((QString(style_style).arg(p).arg(r).arg(g).arg(b).arg(a)));
 }
 
@@ -262,15 +289,24 @@ void FormSetting::on_pushButton_6_clicked()
     else p = 10;
     QString style = QString(style_style).arg(p).arg(r).arg(g).arg(b).arg(a);
     old_style = load_style(style.toStdString());
+    temp_win_style = ACCENT_STATE::ACCENT_NORMAL;
+    if (ui->radioButton_5->isChecked())
+        temp_win_style = ACCENT_STATE::ACCENT_ENABLE_TRANSPARENT;
+    else if (ui->radioButton_6->isChecked())
+        temp_win_style = ACCENT_STATE::ACCENT_ENABLE_BLURBEHIND;
+    else if (ui->radioButton_7->isChecked())
+        temp_win_style = ACCENT_STATE::ACCENT_ENABLE_ACRYLICBLURBEHIND;
+    old_style->appendItem(static_cast<int>(win_style = temp_win_style), "win-style");
+    VARBOX::SetWindowCompositionAttribute(HWND(VarBox->form->winId()), win_style, (a << 24) & RGB(r, g, b));
     VarBox->form->ui->frame->setStyleSheet(style);
     QString file = VARBOX::get_dat_path() + "\\" + "FormStyle.json";
     if (QFile::exists(file))
     {
         YJsonItem &&s = YJsonItem::Object();
-        YJsonItem *js = s.findItem("form-frame");
+        YJsonItem &js = s["form-frame"];
         if (js)
         {
-            *js = *old_style;
+            js = *old_style;
         }
         else
         {
@@ -304,9 +340,40 @@ void FormSetting::load_style_from_file()
             b = temp->findItem(2)->getValueInt();
             a = temp->findItem(3)->getValueInt();
             p = js->findItem("border-radius")->getValueInt();
+            win_style = static_cast<ACCENT_STATE>(js->findItem("win-style")->getValueInt());
         }
         delete s;
     }
+    VARBOX::SetWindowCompositionAttribute(HWND(VarBox->form->winId()), win_style, (a << 24) & RGB(r, g, b));
     VarBox->form->ui->frame->setStyleSheet(QString(style_style).arg(p).arg(r).arg(g).arg(b).arg(a));
+}
+
+
+void FormSetting::on_pushButton_4_clicked()
+{
+    //预览风格
+    int r = 8, g = 8, b=8, a = 190, p = 3;
+    YJsonItem *js = load_style(VarBox->form->ui->frame->styleSheet().toStdString());
+    p = js->findItem("border-radius")->getValueInt();
+    YJsonItem &temp = *(js->findItem("background-color"));
+    if (temp && temp.getType() == YJSON_TYPE::YJSON_ARRAY)
+    {
+        r = temp[0].getValueInt();
+        g = temp[1].getValueInt();
+        b = temp[2].getValueInt();
+        a = temp[3].getValueInt();
+    }
+    delete js;
+    VarBox->form->ui->frame->setStyleSheet(QString(style_style).arg(p).arg(r).arg(g).arg(b).arg(a));
+
+    temp_win_style = ACCENT_STATE::ACCENT_NORMAL;
+    if (ui->radioButton_5->isChecked())
+        temp_win_style = ACCENT_STATE::ACCENT_ENABLE_TRANSPARENT;
+    else if (ui->radioButton_6->isChecked())
+        temp_win_style = ACCENT_STATE::ACCENT_ENABLE_BLURBEHIND;
+    else if (ui->radioButton_7->isChecked())
+        temp_win_style = ACCENT_STATE::ACCENT_ENABLE_ACRYLICBLURBEHIND;
+    VARBOX::SetWindowCompositionAttribute(HWND(VarBox->form->winId()), temp_win_style, (a << 24) & RGB(r, g, b));
+    jobTip->showTip("预览成功！");
 }
 

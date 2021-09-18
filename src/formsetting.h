@@ -11,6 +11,8 @@ namespace Ui {
 class FormSetting;
 }
 
+enum class ACCENT_STATE;
+
 class FormSetting : public SpeedWidget<QDialog>
 {
     Q_OBJECT
@@ -24,9 +26,8 @@ public:
     static void load_style_from_file();
 
 private slots:
-    void on_pushButton_clicked();
-
-    void on_horizontalSlider_valueChanged(int value);
+    void pushButton_clicked();
+    void horizontalSlider_valueChanged(int value);
 
     void on_pushButton_2_clicked();
 
@@ -38,10 +39,14 @@ private slots:
 
     void on_pushButton_6_clicked();
 
+    void on_pushButton_4_clicked();
+
 private:
     Ui::FormSetting *ui;
     QColor new_color;
     YJsonItem *old_style = nullptr;
+    static ACCENT_STATE win_style, temp_win_style;
+    void initConnects();
 };
 
 #endif // FORMSETTING_H

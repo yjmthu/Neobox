@@ -74,6 +74,7 @@ Translater::Translater() :
     {
         qout << "注册热键 SHIFT + A 失败.";
     }
+    initConnects();
 }
 
 Translater::~Translater()
@@ -83,6 +84,14 @@ Translater::~Translater()
     UnregisterHotKey(HWND(winId()), M_WIN_HOT_KEY_SHIFT_A);
     delete ui;
     qout << "析构Translater结束";
+}
+
+void Translater::initConnects()
+{
+    connect(ui->isFix, &QCheckBox::clicked, this, &Translater::setFix);
+    connect(ui->ENTOZH, &QRadioButton::clicked, this, &Translater::startEnToZh);
+    connect(ui->ZHTOEN, &QRadioButton::clicked, this, &Translater::startZhToEn);
+    connect(ui->pBtnCopyTranlate, &QPushButton::clicked, this, &Translater::copyTranlate);
 }
 
 void Translater::showEvent(QShowEvent* event)
@@ -107,7 +116,7 @@ void Translater::showEvent(QShowEvent* event)
     ui->TextFrom->setTextCursor(cursor);
     ui->TextFrom->setFocus();
     if (VarBox->AutoHide)
-        QTimer::singleShot(10000, this, [=](void){ if (isVisible() && VarBox->AutoHide) close();});
+        QTimer::singleShot(10000, this, [=](void){ if (isVisible() && VarBox->AutoHide) hide();});
     event->accept();
 }
 
@@ -212,12 +221,11 @@ bool Translater::eventFilter(QObject* target, QEvent* event)
 
 			if (k->key() == Qt::Key_Return)       //回车键
 			{
-                if (unfinished)
+                if (thrd)
                 {
                     event->accept();
                     return true;
                 }
-                unfinished = true;
                 getReply(ui->TextFrom->toPlainText().toUtf8());
                 event->accept();
 				return true;
@@ -245,12 +253,11 @@ void Translater::keyPressEvent(QKeyEvent* event)
 	}
 	else if ((event->key() == Qt::Key_Alt) || (event->key() == Qt::Key_AltGr))  //按下Alt键切换中英文转换
 	{
-        if (unfinished)
+        if (thrd)
         {
             event->accept();
             return;
         }
-        unfinished = true;
         if (ui->ZHTOEN->isChecked())
         {
             ui->ENTOZH->setChecked(true);
@@ -277,11 +284,9 @@ void Translater::getReply(const QByteArray& text)
     qout << "开始执行翻译函数";
     static const char API[] = u8"http://api.fanyi.baidu.com/api/trans/vip/translate";
     static const char salt[] = u8"1435660288";                           //请求参数之一
-    unfinished = true;
     if (!text.length())
     {
         emit msgBox("内容为空！");
-        unfinished = false;
         return;
     }
     std::string q;
@@ -309,73 +314,70 @@ void Translater::getReply(const QByteArray& text)
 
     utf8_q = StrJoin<char>(VarBox->AppId, (const char*)text, salt, VarBox->PassWord);
     QByteArray sign = QCryptographicHash::hash(utf8_q, QCryptographicHash::Md5).toHex();
-    ///char sign[33]; strcpy_s(sign, 33, QCryptographicHash::hash(utf8_q, QCryptographicHash::Md5).toHex());
     delete [] utf8_q;
-    qout << "mysign" << sign.data();
+    std::string reply_data; QEventLoop loop;
 
-    std::string reply_data; std::thread thrd; QEventLoop loop;
-
-    connect(this, &Translater::finished, &loop, [&](bool success){
-        qout << "处理请求结果";
-        if (thrd.joinable()) thrd.join(); loop.quit();
-        if (!success)
-        {
-            emit msgBox("翻译请求失败,可能是没有网络！");
-            return ;
-        }
-        qout << "翻译请求结果" << reply_data.c_str();
-        YJsonItem json_data(reply_data); YJsonItem* have_item = nullptr;
-        if ((have_item = json_data.findItem("trans_result")) &&
-            (have_item = have_item->getChildItem()) && (have_item = have_item->findItem("dst")))
-        {
-            qout << "没有错误";
-            if (have_item->getType() == YJSON_TYPE::YJSON_STRING)
+    connect(this, &Translater::finished, &loop,
+        std::bind([this](QEventLoop* loop, std::string* reply_data, bool success)
             {
-                ui->TextTo->setPlainText(have_item->getValueString());
-                QTextCursor cursor = ui->TextFrom->textCursor();
-                cursor.movePosition(QTextCursor::End);
-                ui->TextFrom->setTextCursor(cursor);
-            }
-            else
-                emit msgBox("未知错误。");
-        }
-        else
-        {
-            if (json_data.findItem("error_code"))
-            {
-                if (have_item = json_data.findItem("error_msg"))
+                if (thrd->joinable()) thrd->join();
+                loop->quit();
+                delete thrd;
+                if (!success)
                 {
-                    qout << "错误消息：" << have_item->getValueString();
-                    if (!strcmp(have_item->getValueString(), "Invalid Access Limit"))
-                        emit msgBox("翻译失败，请求间隔时间过短!");
-                    else if (!strcmp(have_item->getValueString(), "UNAUTHORIZED USER"))
-                        emit msgBox("翻译失败，APPID不存在！");
-                    else if (!strcmp(have_item->getValueString(), "Invalid Sign"))
-                        emit msgBox("翻译失败，密钥错误！");
+                    emit msgBox("翻译请求失败,可能是没有网络！");
+                    thrd = nullptr;
+                    return ;
+                }
+                YJsonItem json_data(*reply_data); YJsonItem* have_item = nullptr;
+                if ((have_item = json_data.findItem("trans_result")) &&
+                    (have_item = have_item->getChildItem()) && (have_item = have_item->findItem("dst")))
+                {
+                    if (have_item->getType() == YJSON_TYPE::YJSON_STRING)
+                    {
+                        ui->TextTo->setPlainText(have_item->getValueString());
+                        QTextCursor cursor = ui->TextFrom->textCursor();
+                        cursor.movePosition(QTextCursor::End);
+                        ui->TextFrom->setTextCursor(cursor);
+                    }
                     else
-                        emit msgBox("翻译失败， 其它错误。");
+                        emit msgBox("未知错误。");
                 }
                 else
-                    emit msgBox("翻译失败，未知原因。");
-            }
-            else
-                emit msgBox("翻译失败，未知错误");
-        }
-    });
-    qout << "开始执行线程";
-    thrd = std::thread([&](){
+                {
+                    if (json_data.findItem("error_code"))
+                    {
+                        if (have_item = json_data.findItem("error_msg"))
+                        {
+                            qout << "错误消息：" << have_item->getValueString();
+                            if (!strcmp(have_item->getValueString(), "Invalid Access Limit"))
+                                emit msgBox("翻译失败，请求间隔时间过短!");
+                            else if (!strcmp(have_item->getValueString(), "UNAUTHORIZED USER"))
+                                emit msgBox("翻译失败，APPID不存在！");
+                            else if (!strcmp(have_item->getValueString(), "Invalid Sign"))
+                                emit msgBox("翻译失败，密钥错误！");
+                            else
+                                emit msgBox("翻译失败， 其它错误。");
+                        }
+                        else
+                            emit msgBox("翻译失败，未知原因。");
+                    }
+                    else
+                        emit msgBox("翻译失败，未知错误");
+                }
+                thrd = nullptr;
+    }, &loop, &reply_data, std::placeholders::_1));
+
+    thrd = new std::thread([&](){
         if (VARBOX::getTransCode(StrJoin<char>(API, u8"?q=", q.c_str(), u8"&from=", from, u8"&to=", to, u8"&appid=", VarBox->AppId, u8"&salt=", salt, u8"&sign=", sign.data()), reply_data))
             emit finished(true);
         else
             emit finished(false);
-        qout << "线程执行完毕";
     });
     loop.exec();    //阻塞函数等待翻译结果，但是不阻塞ui。ui仍然可以编辑改动，不会卡死。
-    qout << "翻译函数执行完毕";
-    unfinished = false;
 }
 
-void Translater::on_isFix_clicked(bool checked)
+void Translater::setFix(bool checked)
 {
     VarBox->AutoHide = !checked;
     QSettings IniWrite(VarBox->get_ini_path(), QSettings::IniFormat);
@@ -383,13 +385,12 @@ void Translater::on_isFix_clicked(bool checked)
     IniWrite.setValue("AutoHide", VarBox->AutoHide);
     IniWrite.endGroup();
     if (VarBox->AutoHide)
-        QTimer::singleShot(10000, this, [=](void){ if (isVisible() && VarBox->AutoHide) close();});
+        QTimer::singleShot(10000, this, [=](void){ if (isVisible() && VarBox->AutoHide) hide();});
 }
 
-void Translater::on_ENTOZH_clicked(bool checked)
+void Translater::startEnToZh(bool checked)
 {
-    if (unfinished) return;
-    unfinished = true;
+    if (thrd) return;
 	if (checked)
 	{
         from = _en;
@@ -403,10 +404,9 @@ void Translater::on_ENTOZH_clicked(bool checked)
     getReply(ui->TextFrom->toPlainText().toUtf8());
 }
 
-void Translater::on_ZHTOEN_clicked(bool checked)
+void Translater::startZhToEn(bool checked)
 {
-    if (unfinished) return;
-    unfinished = true;
+    if (thrd) return;
 	if (checked)
 	{
         from = _zh;
@@ -420,7 +420,7 @@ void Translater::on_ZHTOEN_clicked(bool checked)
     getReply(ui->TextFrom->toPlainText().toUtf8());
 }
 
-void Translater::on_pBtnCopyTranlate_clicked()
+void Translater::copyTranlate()
 {
 	QApplication::clipboard()->setText(ui->TextTo->toPlainText());
     emit msgBox("复制成功！");

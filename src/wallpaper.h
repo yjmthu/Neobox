@@ -11,13 +11,13 @@ class Wallpaper: public QObject
     Q_OBJECT
 
 signals:
-    void finished() const; void msgBox(const char*, const char*) const; void setFailed(const char*) const;
+    void finished(); void msgBox(const char*, const char*); void setFailed(const char*);
 public slots:
     void start(); void clean();
 protected:
     bool set_from_Wallhaven() const;           //从ImgData.db中选取链接下载图片设置壁纸，返回成功状态
     bool set_from_Bing(bool) const;            //从必应下载壁纸，根据传入的布尔值决定是否设置为壁纸
-    void set_from_Native(bool) const;              //从本地文件夹选取图片设为壁纸
+    void set_from_Native(bool);              //从本地文件夹选取图片设为壁纸
     bool set_from_Random() const;              //随机下载图片设置壁纸
     bool set_from_Advance() const;             //根据高级命令设置壁纸
     bool get_url_from_Wallhaven(YJsonItem&) const;   //从Wallhaven获取120个壁纸链接

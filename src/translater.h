@@ -5,6 +5,10 @@
 
 class Form;
 
+namespace std {
+class thread;
+}
+
 namespace Ui {
 class Translater;
 }
@@ -32,13 +36,14 @@ private:
     const char _en[3], _zh[3];                              //翻译方向，默认中译英
     const char* from, * to;
     void requestData(const char*, std::string*);
-    bool unfinished = false;
+    std::thread *thrd = nullptr;
+    void initConnects();
 
 private slots:
-    void on_isFix_clicked(bool checked);
-    void on_pBtnCopyTranlate_clicked();
-    void on_ENTOZH_clicked(bool checked);
-    void on_ZHTOEN_clicked(bool checked);
+    void setFix(bool checked);
+    void copyTranlate();
+    void startEnToZh(bool checked);
+    void startZhToEn(bool checked);
     void getReply(const QByteArray&);
 };
 

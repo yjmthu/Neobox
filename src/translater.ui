@@ -129,7 +129,7 @@ border-image: url(:/icons/ya.ico);
 }</string>
         </property>
         <property name="readOnly">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
         <property name="plainText">
          <string/>

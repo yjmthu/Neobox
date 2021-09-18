@@ -56,7 +56,6 @@ Form::~Form()
     delete dialog;
     delete ui;
     delete animation;
-    delete m_mask;
     HeapFree(GetProcessHeap(), 0, piaa);
     HeapFree(GetProcessHeap(), 0, mi);
     qout << "析构Form结束";
@@ -94,10 +93,7 @@ void Form::initForm()
     else
         translater = nullptr;                     //防止野指针
 	ui->LabMemory->setMaximumWidth(30);
-    m_mask = new DesktopMask();
     qout << "初始化悬浮窗界面完毕";
-
-    //VARBOX::SetWindowCompositionAttribute(HWND(winId()), ACCENT_STATE::ACCENT_ENABLE_ACRYLICBLURBEHIND, 0);
 }
 
 inline void savePos()
@@ -220,7 +216,7 @@ void Form::mouseMoveEvent(QMouseEvent* event)
 {
     if (VarBox->EnableTranslater && !translater->isHidden())
     {
-        translater->close();
+        translater->hide();
     }
 	_endPos = event->pos() - _startPos;  //计算位置变化情况。
 	move(pos() + _endPos);               //当前位置加上位置变化情况，从而实现悬浮窗和鼠标同时移动。

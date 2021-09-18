@@ -44,9 +44,9 @@ public:
     inline YJsonItem* getChildItem() const { return _child; }
     inline YJsonItem* getParentItem() const { return _parent; }
 
-    inline const char *getValueString() const { return _valuestring; }
-    inline int getValueInt() const { return _valueint; }
-    inline double getValueDouble() const { return _valuedouble; }
+    inline const char *getValueString() const { if (this) return _valuestring; else return nullptr;}
+    inline int getValueInt() const { if (this) return _valueint; else return 0;}
+    inline double getValueDouble() const { if (this) return _valuedouble; else return 0;}
 
     int getChildNum() const;
     const YJsonItem* getTopItem() const;
