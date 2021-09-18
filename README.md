@@ -36,6 +36,8 @@ print("D:\\hello.jpg")
 
 ![img](https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_06.jpg)
 
+![img](https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_11.jpg)
+
 # 编译要求
 - Qt版本：Qt 6.0.4 或者 Qt 6.1.2
 - 编译器：MSVC-2019 64bit
