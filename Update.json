@@ -3,7 +3,7 @@
     "Latest Version": "21.9.18",
     "Qt Version": "6.1.3",
     "Files": {
-        "main": "https://gitee.com/yjmthu/Speed-Box/blob/main/update/SpeedBox.exe",
+        "main": "https://gitee.com/yjmthu/Speed-Box/raw/main/update/SpeedBox.exe",
         "update": "https://gitee.com/yjmthu/Speed-Box/raw/main/update/update.exe",
         "zip": "https://gitee.com/yjmthu/Speed-Box/repository/archive/21.9.10?format=zip"
     }
