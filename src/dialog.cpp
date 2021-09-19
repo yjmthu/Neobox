@@ -876,10 +876,6 @@ void Dialog::on_pushButton_5_clicked()
 }
 
 
-void Dialog::on_pushButton_9_clicked()
-{
-    ShellExecuteA(NULL, "open", "https://github.com/yjmthu/Speed-Box", NULL, NULL, SW_SHOW);
-}
 
 void Dialog::on_pushButton_11_clicked()
 {
@@ -945,7 +941,7 @@ void Dialog::on_pushButton_10_clicked()
             else
             {
                 jobTip->showTip(str, 800);
-                jobTip->showTip("检查更新失败，请手动打开浏览器下载访问Gitee更新。", 3000);
+                jobTip->showTip("更新失败，当前版本过高，请手动打开官网更新。", 3000);
             }
         }
         delete [] str;
@@ -1025,7 +1021,7 @@ void Dialog::on_pushButton_12_clicked()
         YJson *qtVersion = json.find("Qt Version");
         if (qtVersion->getType() != YJSON_TYPE::YJSON_STRING || strcmp(qtVersion->getValueString(), VarBox->Qt))
         {
-            jobTip->showTip("下载更新失败，请手动打开浏览器到Gitee下载！", 3000);
+            jobTip->showTip("更新失败，当前Qt版本过低，请手动打开官网下载更新！", 3000);
             return;
         }
         YJson *urls = json.find("Files"); YJson *child = nullptr;
@@ -1070,7 +1066,7 @@ void Dialog::on_pushButton_12_clicked()
 
 void Dialog::on_pushButton_14_clicked()
 {
-    ShellExecuteA(NULL, "open", "https://gitee.com/yjmthu/Speed-Box", NULL, NULL, SW_SHOW);
+    ShellExecuteA(NULL, "open", "https://speed-box.github.io", NULL, NULL, SW_SHOW);
 }
 
 

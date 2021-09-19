@@ -82,7 +82,6 @@ private slots:
     void on_pushButton_14_clicked();
     void on_pushButton_4_clicked();
     void on_checkBox_4_clicked(bool checked);
-    void on_pushButton_9_clicked();
     void on_radioButton_13_clicked();
     void on_radioButton_14_clicked();
     void on_pushButton_13_clicked();
