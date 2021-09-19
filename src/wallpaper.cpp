@@ -1,4 +1,5 @@
-﻿#include <QDateTime>
+﻿#include <fstream>
+#include <QDateTime>
 #include <QRandomGenerator>
 #include <QDir>
 #include <QFile>
@@ -108,26 +109,26 @@ bool Wallpaper::set_from_Wallhaven() const  // 从数据库中随机抽取一个
     QString file_name = VarBox->get_dat_path() + "\\ImgData.json";
     // qout << "文件路径" << file_name;
     bool func_ok = false;
-    YJsonItem* jsonObject = nullptr, *jsonArray = nullptr, * find_item = nullptr; bool need_save = false;
+    YJson* jsonObject = nullptr, *jsonArray = nullptr, * find_item = nullptr; bool need_save = false;
     if (Wallpaper::update)
     {
         Wallpaper::update = false;
         goto label_1;
     }
     if (!QFile::exists(file_name)) goto label_1;
-    jsonObject = YJsonItem::newFromFile(file_name.toStdWString());
-    if (YJsonItem::ep.first) goto label_1;
+    jsonObject = new YJson(std::ifstream(file_name.toStdWString(), std::ios::in | std::ios::binary));
+    if (YJson::ep.first) goto label_1;
     if (jsonObject->getType() == YJSON_TYPE::YJSON_OBJECT &&
-        (find_item = jsonObject->findItem("PaperType")) &&
+        (find_item = jsonObject->find("PaperType")) &&
         find_item->getType() == YJSON_TYPE::YJSON_STRING &&
         !strcmp(find_item->getValueString(), VarBox->StandardNames[(int)VarBox->PaperType][0]) &&
-        (find_item = jsonObject->findItem("PageNum")) &&
+        (find_item = jsonObject->find("PageNum")) &&
         find_item->getType() == YJSON_TYPE::YJSON_NUMBER &&
         find_item->getValueInt() == VarBox->PageNum &&
-        (jsonArray = jsonObject->findItem("ImgUrls")) &&
+        (jsonArray = jsonObject->find("ImgUrls")) &&
         jsonArray->getType() == YJSON_TYPE::YJSON_ARRAY)
     {
-        if (!jsonArray->getChildItem())
+        if (!jsonArray->getChild())
         {
             //qout << "找到json文件但是没有孩子！";
             need_save = get_url_from_Wallhaven(*jsonArray);
@@ -140,17 +141,17 @@ bool Wallpaper::set_from_Wallhaven() const  // 从数据库中随机抽取一个
     delete jsonObject; jsonObject = nullptr;
 label_1:
     //qout << "Wallhaven 创建新的Json对象";
-    jsonObject = YJsonItem::newObject();
-    jsonObject->appendItem(VarBox->StandardNames[static_cast<int>(VarBox->PaperType)][0], "PaperType");
-    jsonObject->appendItem(VarBox->PageNum, "PageNum");
-    jsonArray = jsonObject->appendItem(YJsonItem::Array(), "ImgUrls");
+    jsonObject = new YJson(YJSON::OBJECT);
+    jsonObject->append(VarBox->StandardNames[static_cast<int>(VarBox->PaperType)][0], "PaperType");
+    jsonObject->append(VarBox->PageNum, "PageNum");
+    jsonArray = jsonObject->append(YJSON::ARRAY, "ImgUrls");
     //qout << "Wallhaven 尝试从wallhaven下载源码";
     need_save = get_url_from_Wallhaven(*jsonArray);
     if (!need_save) return false;
     //qout << "Wallhaven 源码下载完毕";
 label_2:
     //qout << "Wallhaven 开始设置";
-    YJsonItem& img_data = *jsonArray;
+    YJson& img_data = *jsonArray;
     int pic_num = img_data.getChildNum();
     if (pic_num)
     {
@@ -160,20 +161,20 @@ label_2:
         if (QFile::exists(temp))
         {
             //qout << "黑名单文件存在！";
-            YJsonItem *blacklist = YJsonItem::newFromFile(temp.toStdWString());
-            if (blacklist->getType() == YJSON_TYPE::YJSON_ARRAY)
+            YJson blacklist(std::ifstream(temp.toStdWString(), std::ios::in | std::ios::binary));
+            if (blacklist.getType() == YJSON_TYPE::YJSON_ARRAY)
                 for (unsigned char x = 0; x < 0xff && pic_num; ++x)
                 {
                     srand((unsigned)time(0)+x);           // 防止出现重复
-                    YJsonItem &item = img_data[rand() % pic_num];
+                    YJson &item = img_data[rand() % pic_num];
                     if (item.getType() == YJSON_TYPE::YJSON_STRING)
                     {
                         pic = item.getValueString();
                         //qout << "随机id" << pic;
-                        if (blacklist->findItemByValue(pic))
+                        if (blacklist.findByValue(pic))
                         {
                             //qout << "在黑名单里面";
-                            img_data.removeItemByValue(pic);
+                            img_data.removeByValue(pic);
                             --pic_num;
                             need_save = true;
                             pic = nullptr;
@@ -185,12 +186,11 @@ label_2:
                         }
                     }
                 }
-            delete blacklist;
         }
         else
         {
             srand((unsigned)time(0));
-            YJsonItem& item = img_data[rand() % pic_num];
+            YJson& item = img_data[rand() % pic_num];
             pic = item.getValueString();
         }
         if (pic && strlen(pic) == 6)
@@ -223,7 +223,7 @@ label_2:
 	return func_ok;
 }
 
-bool Wallpaper::get_url_from_Wallhaven(YJsonItem& jsonArray) const            //从Wallhaven下载图片地址到ImgData.db
+bool Wallpaper::get_url_from_Wallhaven(YJson& jsonArray) const            //从Wallhaven下载图片地址到ImgData.db
 {
     std::string html; const char *url_1, *url_2, *url;
 	chooseUrl(url_1, url_2); bool func_ok = true;
@@ -247,7 +247,7 @@ bool Wallpaper::get_url_from_Wallhaven(YJsonItem& jsonArray) const            //
                 if (!strncmp<const char*>(pos, str_a, 48) && StrContainCharInRanges<char>(pos + 48, 6, "a-z", "0-9") && !strncmp<const char*>(pos + 54, str_b, 49))
 				{
                     StrCopy<char>(math_pos, pos + 48, pos + 53);
-                    jsonArray.appendItem(math_pos); pos += 103;
+                    jsonArray.append(math_pos); pos += 103;
 				}
 				else
 					++pos;
@@ -316,13 +316,13 @@ bool Wallpaper::set_from_Bing(bool setBing) const
     std::string today = QDateTime::currentDateTime().toString("yyyy-MM-dd").toStdString();
     QString file_name = VARBOX::get_dat_path() + "\\BingData.json";
     bool need_save = false;
-    YJsonItem *file_data = nullptr, *temp = nullptr;
+    YJson *file_data = nullptr, *temp = nullptr;
     if (!QFile::exists(file_name)) goto label_1;
 label_0:
         {
             //qout << "必应文件存在";
-            file_data = YJsonItem::newFromFile(file_name.toStdWString());
-            if (strcmp(file_data->findItem("today")->getValueString(), today.c_str()))
+            file_data = new YJson(std::ifstream(file_name.toStdWString(), std::ios::in | std::ios::binary));
+            if (strcmp(file_data->find("today")->getValueString(), today.c_str()))
             {
                 //qout << "必应文件过期，将开始下载最新数据";
                 delete file_data;
@@ -333,7 +333,7 @@ label_0:
                 goto label_1;
             }
             //qout << "必应文件为最新";
-            temp = file_data->findItem("images")->findItem(-bing);
+            temp = file_data->find("images")->find(-bing);
             //qout << "查找到images";
             goto label_2;
         }
@@ -342,29 +342,29 @@ label_1:
             //qout << "必应文件不存在或过期";
             std::string img_html;
             VARBOX::getWebCode("https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8&mkt=zh-CN", img_html, false);
-            YJsonItem bing_data(img_html); YJsonItem *find;
-            if (bing_data.getType() != YJSON_TYPE::YJSON_OBJECT || !(find = bing_data.findItem("images")) || !(find = find->getChildItem()))
+            YJson bing_data(img_html); YJson *find;
+            if (bing_data.getType() != YJSON_TYPE::YJSON_OBJECT || !(find = bing_data.find("images")) || !(find = find->getChild()))
                 return false;
-            file_data = YJsonItem::newObject();
-            file_data->appendItem(today.c_str(), "today");
-            YJsonItem* imgs = file_data->appendItem(YJsonItem::Array(), "images");
+            file_data = new YJson(YJSON::OBJECT);
+            file_data->append(today.c_str(), "today");
+            YJson* imgs = file_data->append(YJSON::ARRAY, "images");
             constexpr const char pattern_str[] = u8" (© "; const char* ptr_1, *ptr_2; char *ptr_3;
             do {
-                temp = imgs->appendItem(YJsonItem::Object());
-                ptr_1 = ptr_2 = find->findItem("copyright")->getValueString();
+                temp = imgs->append(YJSON::OBJECT);
+                ptr_1 = ptr_2 = find->find("copyright")->getValueString();
                 while (*ptr_2 && strncmp<const char*>(ptr_2, pattern_str, 5))++ptr_2;
                 ptr_3 = new char[ptr_2-ptr_1+1] {0};
                 StrCopy<char>(ptr_3, ptr_1, --ptr_2);
-                temp->appendItem(ptr_3, "copyright");
-                temp->appendItem(find->findItem("url")->getValueString(), "url");
-            } while (find = find->getNextItem());
-            temp = imgs->findItem(-bing);
+                temp->append(ptr_3, "copyright");
+                temp->append(find->find("url")->getValueString(), "url");
+            } while (find = find->getNext());
+            temp = imgs->find(-bing);
             need_save = true;
             goto label_2;
         }
 label_2:
         {
-            const char * const img_url = StrJoin<char>("https://cn.bing.com", temp->findItem("url")->getValueString());
+            const char * const img_url = StrJoin<char>("https://cn.bing.com", temp->find("url")->getValueString());
             QString img_name = VarBox->get_pic_path((short)PAPER_TYPE::Bing) + "\\";
             if (VarBox->UseDateAsBingName)
             {
@@ -381,7 +381,7 @@ label_2:
             else
             {
                 //qout << "使用CopyRight名称";
-                img_name += temp->findItem("copyright")->getValueString();
+                img_name += temp->find("copyright")->getValueString();
                 img_name += ".jpg";
             }
 

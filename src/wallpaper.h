@@ -1,7 +1,7 @@
 ﻿#ifndef WALLPAPER_H
 #define WALLPAPER_H
 
-class YJsonItem;
+class YJson;
 #include <thread>
 #include <QObject>
 #include <QString>
@@ -20,7 +20,7 @@ protected:
     void set_from_Native(bool);              //从本地文件夹选取图片设为壁纸
     bool set_from_Random() const;              //随机下载图片设置壁纸
     bool set_from_Advance() const;             //根据高级命令设置壁纸
-    bool get_url_from_Wallhaven(YJsonItem&) const;   //从Wallhaven获取120个壁纸链接
+    bool get_url_from_Wallhaven(YJson&) const;   //从Wallhaven获取120个壁纸链接
     static std::thread* thrd;
 
 public:

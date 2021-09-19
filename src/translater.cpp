@@ -314,9 +314,9 @@ void Translater::getReply(const QByteArray& text)
                     thrd = nullptr;
                     return ;
                 }
-                YJsonItem json_data(*reply_data); YJsonItem* have_item = nullptr;
-                if ((have_item = json_data.findItem("trans_result")) &&
-                    (have_item = have_item->getChildItem()) && (have_item = have_item->findItem("dst")))
+                YJson json_data(*reply_data); YJson* have_item = nullptr;
+                if ((have_item = json_data.find("trans_result")) &&
+                    (have_item = have_item->getChild()) && (have_item = have_item->find("dst")))
                 {
                     if (have_item->getType() == YJSON_TYPE::YJSON_STRING)
                     {
@@ -330,9 +330,9 @@ void Translater::getReply(const QByteArray& text)
                 }
                 else
                 {
-                    if (json_data.findItem("error_code"))
+                    if (json_data.find("error_code"))
                     {
-                        if (have_item = json_data.findItem("error_msg"))
+                        if (have_item = json_data.find("error_msg"))
                         {
                             qout << "错误消息：" << have_item->getValueString();
                             if (!strcmp(have_item->getValueString(), "Invalid Access Limit"))

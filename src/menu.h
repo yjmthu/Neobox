@@ -39,7 +39,7 @@ private:
     QAction* quitAct;                    //关闭程序
 
     MenuWallpaper* wallpaper;            //用于壁纸更换
-	QTimer* MouseMoveTimer;              //用于定时移动鼠标，防止息屏
+    QTimer* MouseMoveTimer = nullptr;              //用于定时移动鼠标，防止息屏
 
 private slots:
 	void OpenFolder() const;             //打开程序所在文件夹

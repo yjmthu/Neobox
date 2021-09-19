@@ -5,7 +5,7 @@
 
 class GMPOperateTip;
 class QColorDialog;
-class YJsonItem;
+class YJson;
 
 namespace Ui {
 class FormSetting;
@@ -44,7 +44,7 @@ private slots:
 private:
     Ui::FormSetting *ui;
     QColor new_color;
-    YJsonItem *old_style = nullptr;
+    YJson *old_style = nullptr;
     static ACCENT_STATE win_style, temp_win_style;
     void initConnects();
 };

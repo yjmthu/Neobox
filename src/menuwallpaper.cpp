@@ -1,4 +1,5 @@
-﻿#include <QFile>
+﻿#include <fstream>
+#include <QFile>
 
 #include "YString.h"
 #include "YJson.h"
@@ -245,19 +246,19 @@ void MenuWallpaper::removePic()
                 if (*id)
                 {
                     QString str = VarBox->get_dat_path() + "\\Blacklist.json";
-                    YJsonItem *blackList = nullptr;
+                    YJson *blackList = nullptr;
                     if (QFile::exists(str))
                     {
-                        blackList = YJsonItem::newFromFile(str.toStdWString());
+                        blackList = new YJson(std::ifstream(str.toStdWString(), std::ios::in | std::ios::binary));
                         if (blackList->getType() != YJSON_TYPE::YJSON_ARRAY)
                         {
                             delete blackList;
-                            blackList = YJsonItem::newArray();
+                            blackList = new YJson(YJSON::ARRAY);
                         }
                     }
                     else
-                        blackList = YJsonItem::newArray();
-                    blackList->appendItem(id);
+                        blackList = new YJson(YJSON::ARRAY);
+                    blackList->append(id);
                     blackList->toFile(str.toStdWString(), YJSON_ENCODE::UTF8, true);
                     delete  blackList;
                 }

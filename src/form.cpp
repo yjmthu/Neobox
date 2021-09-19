@@ -50,7 +50,7 @@ Form::Form(QWidget* parent) :
 Form::~Form()
 {
     qout << "析构Form开始";
-    if (VarBox->EnableTranslater) delete translater;
+    delete translater;
     delete monitor_timer;
     delete menu;
     delete dialog;

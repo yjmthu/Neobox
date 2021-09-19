@@ -264,9 +264,9 @@ VARBOX::~VARBOX()
             delete [] static_cast<char*>(x.second);
         }
     }
-    if (ControlDesktopIcon) delete ControlDesktopIcon;
-    if (AppId) delete [] AppId;
-    if (PassWord) delete [] PassWord;
+    delete ControlDesktopIcon;
+    delete [] AppId;
+    delete [] PassWord;
     if (hIphlpapi) FreeLibrary(hIphlpapi);
     if (hOleacc) FreeLibrary(hOleacc);
     if (hDwmapi) FreeLibrary(hDwmapi);

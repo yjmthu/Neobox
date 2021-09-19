@@ -45,7 +45,7 @@ private:
 	QPoint _startPos;                            //记录鼠标
     QPoint _endPos;                              //鼠标移动向
 	QTimer* monitor_timer;                       //每隔一秒钟刷新一次数据
-    Translater* translater;                      //翻译类，自带ui
+    Translater* translater = nullptr;                      //翻译类，自带ui
 	bool moved = false;
 	void initForm();                             //根据设置文件初始化悬浮窗
 	void initConnects();                         //初始化连接

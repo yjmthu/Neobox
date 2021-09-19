@@ -2,6 +2,11 @@
 #define YJSON_H
 #include <string>
 
+enum class YJSON{
+    ARRAY=5,
+    OBJECT=6
+};
+
 enum class YJSON_TYPE{
     YJSON_FALSE=0,
     YJSON_TRUE=1,
@@ -18,67 +23,65 @@ enum class YJSON_ENCODE{
     OTHER = 2
 };
 
-class YJsonItem
+class YJson
 {
 protected:
-    inline YJsonItem(){};
+    inline YJson(){};
 
 public:
-    inline YJsonItem(const YJsonItem& js) { CopyJson(&js, nullptr); }
-    explicit YJsonItem(const char* str);
-    explicit YJsonItem(const std::string& str);
-    explicit YJsonItem(const wchar_t*);
-    explicit YJsonItem(const std::wstring&);
-    ~YJsonItem();
-    static YJsonItem* newFromFile(const std::wstring&);
+    inline explicit YJson(YJSON type) {_type = static_cast<YJSON_TYPE>(type);};
+    inline explicit YJson(const YJson& js) { CopyJson(&js, nullptr); }
+    inline explicit YJson(std::ifstream && file) { LoadFile(file); };
+    inline explicit YJson(std::ifstream & file) { LoadFile(file); };
+    explicit YJson(const char* str);
+    explicit YJson(const std::string& str);
+    explicit YJson(const wchar_t*);
+    explicit YJson(const std::wstring&);
+    ~YJson();
     static std::pair<bool, std::string> ep;
 
-    static YJsonItem Array();
-    static YJsonItem Object();
-    static YJsonItem* newArray();
-    static YJsonItem* newObject();
-
     inline YJSON_TYPE getType() const { return _type; }
-    inline YJsonItem* getPrevItem() const { return _prev; }
-    inline YJsonItem* getNextItem() const { return _next; }
-    inline YJsonItem* getChildItem() const { return _child; }
-    inline YJsonItem* getParentItem() const { return _parent; }
+    inline YJson* getPrev() const { return _prev; }
+    inline YJson* getNext() const { return _next; }
+    inline YJson* getChild() const { return _child; }
+    inline YJson* getParent() const { return _parent; }
 
     inline const char *getValueString() const { if (this) return _valuestring; else return nullptr;}
     inline int getValueInt() const { if (this) return _valueint; else return 0;}
     inline double getValueDouble() const { if (this) return _valuedouble; else return 0;}
 
     int getChildNum() const;
-    const YJsonItem* getTopItem() const;
+    const YJson* getTop() const;
 
     char* toString(bool fmt=true);
     bool toFile(const std::wstring name, const YJSON_ENCODE& encode, bool fmt=false);
 
-    YJsonItem& operator=(const YJsonItem&);
-    YJsonItem& operator=(YJsonItem&&);
-    inline YJsonItem& operator[](int i) const { return *findItem(i); }
-    inline YJsonItem& operator[](const char* key) const { return *findItem(key); }
-    inline operator bool(){YJsonItem* s = this; return s;};
+    YJson& operator=(const YJson&);
+    YJson& operator=(YJson&&);
+    inline YJson& operator[](int i) const { return *find(i); }
+    inline YJson& operator[](const char* key) const { return *find(key); }
+    inline operator bool(){YJson* s = this; return s;};
 
-    bool joinItem(const YJsonItem&);
-    static YJsonItem joinItem(const YJsonItem&, const YJsonItem&);
+    bool join(const YJson&);
+    static YJson join(const YJson&, const YJson&);
 
-    YJsonItem* findItem(int index) const;
-    YJsonItem* findItem(const char* key) const;
-    YJsonItem* findItemByValue(int value) const;
-    YJsonItem* findItemByValue(double value) const;
-    YJsonItem* findItemByValue(const char* str) const;
+    YJson* find(int index) const;
+    YJson* find(const char* key) const;
+    YJson* findByValue(int value) const;
+    YJson* findByValue(double value) const;
+    YJson* findByValue(const char* str) const;
 
-    YJsonItem* appendItem(const YJsonItem&, const char* key=nullptr);
-    YJsonItem* appendItem(int, const char* key=nullptr);
-    YJsonItem* appendItem(double, const char* key=nullptr);
-    YJsonItem* appendItem(const char*, const char* key=nullptr);
+    YJson* append(const YJson&, const char* key=nullptr);
+    YJson* append(YJSON type, const char* key=nullptr);
+    YJson* append(int, const char* key=nullptr);
+    YJson* append(double, const char* key=nullptr);
+    YJson* append(const char*, const char* key=nullptr);
 
-    inline bool removeItem(int index) { return removeItem(findItem(index)); }
-    inline bool removeItem(const char* key) { return removeItem(findItem(key)); }
-    inline bool removeItemByValue(int value) { return removeItem(findItemByValue(value)); }
-    inline bool removeItemByValue(double value) { return removeItem(findItemByValue(value)); }
-    inline bool removeItemByValue(const std::string & str) { return removeItem(findItemByValue(str.c_str())); }
+    inline bool remove(int index) { return remove(find(index)); }
+    inline bool remove(const char* key) { return remove(find(key)); }
+    inline bool removeByValue(int value) { return remove(findByValue(value)); }
+    inline bool removeByValue(double value) { return remove(findByValue(value)); }
+    inline bool removeByValue(const std::string & str) { return remove(findByValue(str.c_str())); }
 
     inline bool clear(){
         if (_type != YJSON_TYPE::YJSON_ARRAY && _type != YJSON_TYPE::YJSON_OBJECT) return false;
@@ -87,9 +90,9 @@ public:
     }
 
 private:
-	YJsonItem *_next = nullptr,*_prev = nullptr;
+    YJson *_next = nullptr,*_prev = nullptr;
     
-	YJsonItem *_child = nullptr; YJsonItem *_parent = nullptr;
+    YJson *_child = nullptr; YJson *_parent = nullptr;
     char *_valuestring = nullptr;
 	int _valueint = 0;
 	double _valuedouble = 0;
@@ -127,10 +130,11 @@ private:
     char* joinKeyValue(const char* valuestring, bool delvalue);
     void clearContent();
 
-    void CopyJson(const YJsonItem*, YJsonItem*);
+    void LoadFile(std::ifstream &);
+    void CopyJson(const YJson*, YJson*);
 
-    bool removeItem(YJsonItem*);
-    YJsonItem* appendItem(YJSON_TYPE type);
+    bool remove(YJson*);
+    YJson* append(YJSON_TYPE type);
 };
 
 #endif

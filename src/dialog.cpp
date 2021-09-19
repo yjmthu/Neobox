@@ -958,13 +958,13 @@ void Dialog::on_pushButton_10_clicked()
             emit finished(false, "下载失败！");
             return;
         }
-        const YJsonItem json(str);
+        const YJson json(str);
         if (json.getType() != YJSON_TYPE::YJSON_OBJECT)
         {
             emit finished(false, "Gitee源出现问题！");
             return;
         }
-        emit finished(true, StrJoin<char>(json.findItem("Latest Version")->getValueString()));
+        emit finished(true, StrJoin<char>(json.find("Latest Version")->getValueString()));
     });
     loop.exec();
     wait = false;
@@ -1016,28 +1016,28 @@ void Dialog::on_pushButton_12_clicked()
             emit finished(false, "下载失败！");
             return;
         }
-        YJsonItem json(str);
+        YJson json(str);
         if (json.getType() != YJSON_TYPE::YJSON_OBJECT)
         {
             emit finished(false, "Gitee源出现问题！");
             return;
         }
-        YJsonItem *qtVersion = json.findItem("Qt Version");
+        YJson *qtVersion = json.find("Qt Version");
         if (qtVersion->getType() != YJSON_TYPE::YJSON_STRING || strcmp(qtVersion->getValueString(), VarBox->Qt))
         {
             jobTip->showTip("下载更新失败，请手动打开浏览器到Gitee下载！", 3000);
             return;
         }
-        YJsonItem *urls = json.findItem("Files"); YJsonItem *child = nullptr;
+        YJson *urls = json.find("Files"); YJson *child = nullptr;
         if (urls && urls->getType() == YJSON_TYPE::YJSON_OBJECT)
         {
-            if (!(child = urls->findItem("main")))
+            if (!(child = urls->find("main")))
             {
                 emit finished(false, "下载失败！");
                 return;
             }
             const char* url1 = child->getValueString();
-            if (!(child = urls->findItem("update")))
+            if (!(child = urls->find("update")))
             {
                 emit finished(false, "下载失败！");
                 return;

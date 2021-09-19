@@ -23,11 +23,7 @@ Menu::Menu() :
 Menu::~Menu()
 {
     qout << "析构menu开始";
-    if (noSleepAct->isChecked())
-    {
-        MouseMoveTimer->stop();
-        delete MouseMoveTimer;
-    }
+    delete MouseMoveTimer;
     delete quitAct;
     delete shutdownAct;
     delete removePicAct;
@@ -162,6 +158,7 @@ void Menu::initMenuConnect()
         {
             MouseMoveTimer->stop();
             delete MouseMoveTimer;
+            MouseMoveTimer = nullptr;
         }
     });                                                                               //是否自动移动鼠标防止息屏
 	connect(openFolderAct, SIGNAL(triggered()), this, SLOT(OpenFolder()));            //打开exe所在文件夹
