@@ -26,10 +26,10 @@ enum class YJSON_ENCODE{
 class YJson
 {
 protected:
-    inline YJson(){};
+    inline explicit YJson() { };
 
 public:
-    inline explicit YJson(YJSON type) {_type = static_cast<YJSON_TYPE>(type);};
+    inline explicit YJson(YJSON type):_type(static_cast<YJSON_TYPE>(type)) { };
     inline explicit YJson(const YJson& js) { CopyJson(&js, nullptr); }
     inline explicit YJson(std::ifstream && file) { LoadFile(file); };
     inline explicit YJson(std::ifstream & file) { LoadFile(file); };
@@ -46,9 +46,9 @@ public:
     inline YJson* getChild() const { return _child; }
     inline YJson* getParent() const { return _parent; }
 
-    inline const char *getValueString() const { if (this) return _valuestring; else return nullptr;}
-    inline int getValueInt() const { if (this) return _valueint; else return 0;}
-    inline double getValueDouble() const { if (this) return _valuedouble; else return 0;}
+    inline const char *getValueString() const { if (this) return _value; else return nullptr;}
+    inline int getValueInt() const { if (this && _type == YJSON_TYPE::YJSON_NUMBER) return *reinterpret_cast<double*>(_value); else return 0;}
+    inline double getValueDouble() const { if (this && _type == YJSON_TYPE::YJSON_NUMBER) return *reinterpret_cast<double*>(_value); else return 0;}
 
     int getChildNum() const;
     const YJson* getTop() const;
@@ -67,21 +67,21 @@ public:
 
     YJson* find(int index) const;
     YJson* find(const char* key) const;
-    YJson* findByValue(int value) const;
-    YJson* findByValue(double value) const;
-    YJson* findByValue(const char* str) const;
+    inline YJson* findByVal(int value) const {return findByVal(static_cast<double>(value));};
+    YJson* findByVal(double value) const;
+    YJson* findByVal(const char* str) const;
 
     YJson* append(const YJson&, const char* key=nullptr);
     YJson* append(YJSON type, const char* key=nullptr);
-    YJson* append(int, const char* key=nullptr);
+    inline YJson* append(int value, const char* key=nullptr) { return append(static_cast<double>(value), key);};
     YJson* append(double, const char* key=nullptr);
     YJson* append(const char*, const char* key=nullptr);
 
     inline bool remove(int index) { return remove(find(index)); }
     inline bool remove(const char* key) { return remove(find(key)); }
-    inline bool removeByValue(int value) { return remove(findByValue(value)); }
-    inline bool removeByValue(double value) { return remove(findByValue(value)); }
-    inline bool removeByValue(const std::string & str) { return remove(findByValue(str.c_str())); }
+    inline bool removeByVal(int value) { return remove(findByVal(value)); }
+    inline bool removeByVal(double value) { return remove(findByVal(value)); }
+    inline bool removeByVal(const std::string & str) { return remove(findByVal(str.c_str())); }
 
     inline bool clear(){
         if (_type != YJSON_TYPE::YJSON_ARRAY && _type != YJSON_TYPE::YJSON_OBJECT) return false;
@@ -90,14 +90,8 @@ public:
     }
 
 private:
-    YJson *_next = nullptr,*_prev = nullptr;
-    
-    YJson *_child = nullptr; YJson *_parent = nullptr;
-    char *_valuestring = nullptr;
-	int _valueint = 0;
-	double _valuedouble = 0;
-
-    char *_keystring = nullptr;
+    YJson *_next = nullptr,*_prev = nullptr, *_child = nullptr, *_parent = nullptr;
+    char *_key = nullptr, *_value = nullptr;
     YJSON_TYPE _type = YJSON_TYPE::YJSON_NULL;
 
     template<typename Type>

@@ -106,7 +106,7 @@ struct VARBOX
 {
     const char* const Version = "21.9.18", * const Qt = "6.1.3";
     const unsigned char WinVersion; const bool FirstUse[1] = {false};
-    std::list<std::pair<bool, void*>> PicHistory; std::list<std::pair<bool, void*>>::const_iterator CurPic;
+    std::list<std::pair<bool, wchar_t*>> PicHistory; std::list<std::pair<bool, wchar_t*>>::const_iterator CurPic;
     const char* const StandardNames[10][2] =     //九种壁纸类型
     {
         {"Latest", "最新壁纸"}, {"Hot", "最热壁纸"}, {"Nature", "风景壁纸"},{"Anime", "动漫壁纸"},

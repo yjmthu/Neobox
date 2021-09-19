@@ -176,12 +176,12 @@ bool FormSetting::eventFilter(QObject* target, QEvent* event)
 void FormSetting::closeEvent(QCloseEvent *event)
 {
     int r = 8, g = 8, b=8, a = 190, p;
-    YJson *temp = old_style->find("background-color");
-    r = temp->find(0)->getValueInt();
-    g = temp->find(1)->getValueInt();
-    b = temp->find(2)->getValueInt();
-    a = temp->find(3)->getValueInt();
-    p = old_style->find("border-radius")->getValueInt();
+    YJson &temp = (*old_style)["background-color"];
+    r = temp[0].getValueInt();
+    g = temp[1].getValueInt();
+    b = temp[2].getValueInt();
+    a = temp[3].getValueInt();
+    p = (*old_style)["border-radius"].getValueInt();
     VARBOX::SetWindowCompositionAttribute(HWND(VarBox->form->winId()), win_style, (a << 24) & RGB(r, g, b));
     VarBox->form->ui->frame->setStyleSheet((QString(style_style).arg(p).arg(r).arg(g).arg(b).arg(a)));
     event->accept();

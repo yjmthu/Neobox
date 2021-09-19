@@ -68,7 +68,7 @@ VARBOX::VARBOX(int w, int h):
     if (set.contains("WallPaper"))
     {
         std::wstring temp_paper = set.value("WallPaper").toString().toStdWString();
-        if (!temp_paper.empty()) PicHistory.push_back(std::pair<bool, void*>(true, StrJoin<wchar_t>(temp_paper.c_str())));
+        if (!temp_paper.empty()) PicHistory.push_back(std::pair<bool, wchar_t*>(true, StrJoin<wchar_t>(temp_paper.c_str())));
     }
     CurPic = PicHistory.begin();
     QString file = get_ini_path(); short type = 0; qout << "配置文件目录" << file;
@@ -257,11 +257,11 @@ VARBOX::~VARBOX()
     {
         if (x.first)
         {
-            delete [] static_cast<wchar_t*>(x.second);
+            delete [] x.second;
         }
         else
         {
-            delete [] static_cast<char*>(x.second);
+            delete [] reinterpret_cast<char*>(x.second);
         }
     }
     delete ControlDesktopIcon;

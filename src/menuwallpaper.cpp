@@ -36,13 +36,13 @@ void MenuWallpaper::startWork()                                                 
     {
         if ((VarBox->CurPic)->first)
         {
-            if (VARBOX::PathFileExists(static_cast<wchar_t*>(VarBox->CurPic->second)))
+            if (VARBOX::PathFileExists(VarBox->CurPic->second))
             {
-                if ((GetFileAttributesW(static_cast<wchar_t*>(VarBox->CurPic->second)) & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS))
+                if ((GetFileAttributesW(VarBox->CurPic->second) & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS))
                 {
                     if (VARBOX::isOnline(false))
                     {
-                        if (!VARBOX::OneDriveFile(static_cast<wchar_t*>(VarBox->CurPic->second)))
+                        if (!VARBOX::OneDriveFile(VarBox->CurPic->second))
                         {
                             emit finished();
                             return;
@@ -60,13 +60,13 @@ void MenuWallpaper::startWork()                                                 
         }
         else
         {
-            if (VARBOX::PathFileExists(static_cast<char*>(VarBox->CurPic->second)))
+            if (VARBOX::PathFileExists(reinterpret_cast<char*>(VarBox->CurPic->second)))
             {
-                if ((GetFileAttributesA(static_cast<char*>(VarBox->CurPic->second)) & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS))
+                if ((GetFileAttributesA(reinterpret_cast<char*>(VarBox->CurPic->second)) & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS))
                 {
                     if (VARBOX::isOnline(false))
                     {
-                        if (!VARBOX::OneDriveFile(static_cast<char*>(VarBox->CurPic->second)))
+                        if (!VARBOX::OneDriveFile(reinterpret_cast<char*>(VarBox->CurPic->second)))
                         {
                             emit finished();
                             return;
@@ -162,13 +162,13 @@ void MenuWallpaper::previousPic()
                 }
                 if ((--VarBox->CurPic)->first)
                 {
-                    if (VARBOX::PathFileExists(static_cast<wchar_t*>(VarBox->CurPic->second)))
+                    if (VARBOX::PathFileExists(VarBox->CurPic->second))
                     {
-                        if ((GetFileAttributesW(static_cast<wchar_t*>(VarBox->CurPic->second)) & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS))
+                        if ((GetFileAttributesW(VarBox->CurPic->second) & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS))
                         {
                             if (VARBOX::isOnline(false))
                             {
-                                if (!VARBOX::OneDriveFile(static_cast<wchar_t*>(VarBox->CurPic->second)))
+                                if (!VARBOX::OneDriveFile(VarBox->CurPic->second))
                                 {
                                     emit finished();
                                     return;
@@ -185,17 +185,17 @@ void MenuWallpaper::previousPic()
                         emit finished();
                         return;
                     }
-                    delete [] static_cast<wchar_t*>(VarBox->CurPic->second);
+                    delete [] VarBox->CurPic->second;
                 }
                 else
                 {
-                    if (VARBOX::PathFileExists(static_cast<char*>(VarBox->CurPic->second)))
+                    if (VARBOX::PathFileExists(reinterpret_cast<char*>(VarBox->CurPic->second)))
                     {
-                        if ((GetFileAttributesA(static_cast<char*>(VarBox->CurPic->second)) & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS))
+                        if ((GetFileAttributesA(reinterpret_cast<char*>(VarBox->CurPic->second)) & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS))
                         {
                             if (VARBOX::isOnline(false))
                             {
-                                if (!VARBOX::OneDriveFile(static_cast<char*>(VarBox->CurPic->second)))
+                                if (!VARBOX::OneDriveFile(reinterpret_cast<char*>(VarBox->CurPic->second)))
                                 {
                                     emit finished();
                                     return;
@@ -212,7 +212,7 @@ void MenuWallpaper::previousPic()
                         emit finished();
                         return;
                     }
-                    delete [] static_cast<char*>(VarBox->CurPic->second);
+                    delete [] reinterpret_cast<char*>(VarBox->CurPic->second);
                 }
                 VarBox->CurPic = VarBox->PicHistory.erase(VarBox->CurPic);
                 if (VarBox->CurPic != VarBox->PicHistory.begin())
@@ -239,7 +239,7 @@ void MenuWallpaper::removePic()
             }
             if (VarBox->CurPic->first)
             {
-                const wchar_t* pic_path = static_cast<const wchar_t*>(VarBox->CurPic->second);
+                const wchar_t* pic_path = VarBox->CurPic->second;
                 const wchar_t* pic_name = get_file_name(pic_path);
                 char id[7] = {0};
                 check_is_wallhaven(pic_name, id);
@@ -268,7 +268,7 @@ void MenuWallpaper::removePic()
             }
             else
             {
-                const char* pic_path = static_cast<const char*>(VarBox->CurPic->second);
+                const char* pic_path = reinterpret_cast<const char*>(VarBox->CurPic->second);
                 DeleteFileA(pic_path);
                 delete [] pic_path;
             }

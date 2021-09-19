@@ -49,7 +49,7 @@ inline bool setWallpaper(const QString &img_name)             //根据路径设�
     {
         //qout << "设置壁纸：" << img_name;
         wchar_t* temp = StrJoin<wchar_t>(img_name.toStdWString().c_str());
-        VarBox->PicHistory.push_back(std::pair<bool, void*>(true, temp));
+        VarBox->PicHistory.push_back(std::pair<bool, wchar_t*>(true, temp));
         VarBox->CurPic = --VarBox->PicHistory.end();
         return SystemParametersInfoW(SPI_SETDESKWALLPAPER, UINT(0), (PVOID)temp, SPIF_SENDCHANGE | SPIF_UPDATEINIFILE);
     }
@@ -171,10 +171,10 @@ label_2:
                     {
                         pic = item.getValueString();
                         //qout << "随机id" << pic;
-                        if (blacklist.findByValue(pic))
+                        if (blacklist.findByVal(pic))
                         {
                             //qout << "在黑名单里面";
-                            img_data.removeByValue(pic);
+                            img_data.removeByVal(pic);
                             --pic_num;
                             need_save = true;
                             pic = nullptr;
@@ -396,11 +396,11 @@ label_2:
                 QString cur_name;
                 if (VarBox->CurPic->first)
                 {
-                    cur_name = QString::fromWCharArray(static_cast<wchar_t*>(VarBox->CurPic->second));
+                    cur_name = QString::fromWCharArray(VarBox->CurPic->second);
                 }
                 else
                 {
-                    cur_name = static_cast<char*>(VarBox->CurPic->second);
+                    cur_name = reinterpret_cast<char*>(VarBox->CurPic->second);
                 }
                 if (!cur_name.compare(img_name))
                 {
@@ -470,7 +470,7 @@ bool Wallpaper::set_from_Advance() const
                     {
                         SystemParametersInfoA(SPI_SETDESKWALLPAPER, UINT(0), (PVOID)program_output, SPIF_SENDCHANGE | SPIF_UPDATEINIFILE);
                         //这里当然不需要 delete [] program_output;
-                        VarBox->PicHistory.push_back(std::pair<bool, void*>(false, program_output));
+                        VarBox->PicHistory.push_back(std::pair<bool, wchar_t*>(false, reinterpret_cast<wchar_t*>(program_output)));
                         VarBox->CurPic = --VarBox->PicHistory.end();
                         return true;
                     }
