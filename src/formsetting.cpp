@@ -313,13 +313,13 @@ void FormSetting::on_pushButton_6_clicked()
         {
             s.append(*old_style, "form-frame");
         }
-        s.toFile(file.toStdWString(), YJSON_ENCODE::UTF8);
+        s.toFile(file.toStdWString(), YJSON_ENCODE::UTF8, true);
     }
     else
     {
         YJson s(YJSON::OBJECT);
         s.append(*old_style, "form-frame");
-        s.toFile(file.toStdWString(), YJSON_ENCODE::UTF8);
+        s.toFile(file.toStdWString(), YJSON_ENCODE::UTF8, true);
     }
     jobTip->showTip("保存成功！");
 }

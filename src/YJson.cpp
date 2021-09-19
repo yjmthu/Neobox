@@ -149,20 +149,16 @@ void YJson::CopyJson(const YJson* json, YJson* parent)
     else if (_type == YJSON_TYPE::YJSON_STRING)
         _value = StrJoin<char>(reinterpret_cast<char*>(json->_value));
     else if (_type == YJSON_TYPE::YJSON_NUMBER)
-        _value = reinterpret_cast<char*>(new double(*reinterpret_cast<double*>(json->_value)));
+    {
+        _value = new char[sizeof (double)];
+        memcpy(_value, json->_value, sizeof (double));
+    }
 }
 
 //清除_valuestring, _child, 以及ep、valueint、 _valuedouble
 void YJson::clearContent()
 {
-    switch (_type) {
-    case YJSON_TYPE::YJSON_NUMBER:
-        delete (double*)_value;
-    default:
-        break;
-    case YJSON_TYPE::YJSON_STRING:
-        delete [] (char*)_value;
-    }
+    delete [] _value;
     _value = nullptr;
     delete _child, _child = nullptr;
     if (ep.first) ep.first = false;
@@ -177,14 +173,7 @@ int YJson::getChildNum() const
 
 YJson::~YJson()
 {
-    switch (_type) {
-    case YJSON_TYPE::YJSON_NUMBER:
-        delete (double*)_value;
-    default:
-        break;
-    case YJSON_TYPE::YJSON_STRING:
-        delete [] _value;
-    }
+    delete [] _value;
     delete[] _key;
     delete _child;
     if (_prev) _prev->_next = nullptr;
@@ -327,7 +316,8 @@ YJson* YJson::append(double value, const char* key)
     else
         {if (key) return nullptr;}
     YJson* child = append(YJSON_TYPE::YJSON_NUMBER);
-    child->_value = reinterpret_cast<char*>(new double(value));
+    child->_value = new char[sizeof (double)];
+    memcpy(child->_value, &value, sizeof (double));
     if (key) child->_key = StrJoin<char>(key);
     return child;
 }
@@ -454,7 +444,7 @@ bool YJson::toFile(const std::wstring name, const YJSON_ENCODE& file_encode, boo
             std::ofstream outFile(name, std::ios::out | std::ios::binary);
             if (outFile.is_open())
             {
-                outFile.write(reinterpret_cast<const char*>(data.data()), data.length()*sizeof(wchar_t));
+                outFile.write(reinterpret_cast<const char*>(data.data()), data.length() * sizeof(wchar_t));
                 outFile.close();
             }
             break;
@@ -466,8 +456,8 @@ bool YJson::toFile(const std::wstring name, const YJSON_ENCODE& file_encode, boo
             std::ofstream outFile(name, std::ios::out | std::ios::binary);
             if (outFile.is_open())
             {
-                outFile.write(reinterpret_cast<const char*>(c), sizeof(char)*3);
-                outFile.write((const char*)(buffer), strlen(buffer)*sizeof(char));
+                outFile.write(reinterpret_cast<const char*>(c), 3);
+                outFile.write((const char*)(buffer), strlen(buffer));
                 outFile.write("\n", sizeof(char));
                 outFile.close();
             }
@@ -586,8 +576,8 @@ T YJson::parse_number(T num)
     TYPE_CHAECK();
     qout << "检测到数字";
     _type = YJSON_TYPE::YJSON_NUMBER;
-    double *value_ptr = new double(0);
-    _value = reinterpret_cast<char*>(value_ptr);
+    _value = new char[sizeof (double)] {0};
+    double *value_ptr = reinterpret_cast<double*>(_value);
     short sign = 1;
     int scale = 0;
     int signsubscale = 1, subscale = 0;
@@ -597,7 +587,6 @@ T YJson::parse_number(T num)
     }
     if (*num=='0')
     {
-        *value_ptr = 0;
         return ++num;
     }
     if ('1' <= *num && *num <= '9')
@@ -634,23 +623,23 @@ T YJson::parse_number(T num)
 char* YJson::print_number()
 {
     char* buffer = nullptr;
-    double _valuedouble = *reinterpret_cast<double*>(_value);
-    if (_valuedouble == 0)
+    double valuedouble = *reinterpret_cast<double*>(_value);
+    if (valuedouble == 0)
         buffer = StrJoin<char>("0");
-    else if (fabs(round(_valuedouble) - _valuedouble) <= DBL_EPSILON && _valuedouble <= INT_MAX && _valuedouble >= (double)INT_MIN)
+    else if (fabs(round(valuedouble) - valuedouble) <= DBL_EPSILON && valuedouble <= INT_MAX && valuedouble >= (double)INT_MIN)
     {
-        char temp[21] = { 0 }; sprintf(temp,"%.0lf",_valuedouble);
+        char temp[21] = { 0 }; sprintf(temp,"%.0lf",valuedouble);
         buffer = StrJoin<char>(temp);
     }
     else
     {
         char temp[64] = {0};
-        if (fabs(floor(_valuedouble)-_valuedouble)<=DBL_EPSILON && fabs(_valuedouble)<1.0e60)
-            sprintf(temp,"%.0f",_valuedouble);
-        else if (fabs(_valuedouble)<1.0e-6 || fabs(_valuedouble)>1.0e9)
-            sprintf(temp,"%e",_valuedouble);
+        if (fabs(floor(valuedouble)-valuedouble)<=DBL_EPSILON && fabs(valuedouble)<1.0e60)
+            sprintf(temp,"%.0f",valuedouble);
+        else if (fabs(valuedouble)<1.0e-6 || fabs(valuedouble)>1.0e9)
+            sprintf(temp,"%e",valuedouble);
         else
-            sprintf(temp,"%f",_valuedouble);
+            sprintf(temp,"%f",valuedouble);
         buffer = StrJoin<char>(temp);
     }
     return buffer;
@@ -747,8 +736,6 @@ T YJson::parse_string(T str)
 
 char* YJson::print_string(const char* const str)
 {
-    //qout << "打印字符开始";
-
     char* buffer = nullptr;
     //cout << "输出字符串" << str << endl;
     const char* ptr; char* ptr2;
@@ -831,11 +818,7 @@ T YJson::parse_array(T value)
         if (!*value) return T();
     }
 
-    if (*value == ']')
-    {
-        //qout << "加载列表结束";
-        return value + 1;
-    }
+    if (*value == ']') return value + 1;
     ep.first = true;
     ep.second = "未匹配到列表结尾‘]’。";
     return T();
@@ -864,9 +847,7 @@ char* YJson::print_array(int depth)
     YJson *child = _child;
     char*buffer = nullptr;
     if (!child)
-    {
         return joinKeyValue("[]", false);
-    }
     do {
         entries.push_back(child->print_value(depth+1));
     } while (child = child->_next);
@@ -938,10 +919,7 @@ char* YJson::print_object()
     std::deque<char*> entries;
     YJson *child = _child;
     char* buffer = nullptr;
-    if (!child)
-    {
-        return joinKeyValue("{}", false);;
-    }
+    if (!child) return joinKeyValue("{}", false);;
     do {
         if (!(buffer = child->print_value()))
             return nullptr;
@@ -953,14 +931,10 @@ char* YJson::print_object()
 char* YJson::print_object(int depth)
 {
     //qout << "打印字典开始";
-
     std::deque<char*> entries;
     YJson *child = _child;
     char* buffer = nullptr;
-    if (!child)
-    {
-        return joinKeyValue("{}", false);;
-    }
+    if (!child) return joinKeyValue("{}", false);;
     do {
         if (!(buffer = child->print_value(depth+1)))
             return nullptr;
