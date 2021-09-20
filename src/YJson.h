@@ -30,7 +30,7 @@ protected:
 
 public:
     inline explicit YJson(YJSON type):_type(static_cast<YJSON_TYPE>(type)) { };
-    inline explicit YJson(const YJson& js) { CopyJson(&js, nullptr); }
+    inline explicit YJson(const YJson& js): _type(js._type), _value(js._value) { CopyJson(&js, nullptr); }
     inline explicit YJson(std::ifstream && file) { LoadFile(file); };
     inline explicit YJson(std::ifstream & file) { LoadFile(file); };
     explicit YJson(const char* str);
@@ -53,14 +53,14 @@ public:
     int getChildNum() const;
     const YJson* getTop() const;
 
-    char* toString(bool fmt=true);
+    char* toString(bool fmt=false);
     bool toFile(const std::wstring name, const YJSON_ENCODE& encode, bool fmt=false);
 
     YJson& operator=(const YJson&);
-    YJson& operator=(YJson&&);
+    YJson& operator=(const YJson&&);
     inline YJson& operator[](int i) const { return *find(i); }
     inline YJson& operator[](const char* key) const { return *find(key); }
-    inline operator bool(){YJson* s = this; return s;};
+    inline operator bool() const { const YJson* s = this; return s; };
 
     bool join(const YJson&);
     static YJson join(const YJson&, const YJson&);
@@ -90,9 +90,9 @@ public:
     }
 
 private:
+    YJSON_TYPE _type = YJSON_TYPE::YJSON_NULL;
     YJson *_next = nullptr,*_prev = nullptr, *_child = nullptr, *_parent = nullptr;
     char *_key = nullptr, *_value = nullptr;
-    YJSON_TYPE _type = YJSON_TYPE::YJSON_NULL;
 
     template<typename Type>
     bool strict_parse(Type);
@@ -122,7 +122,6 @@ private:
 
     char* joinKeyValue(const char* valuestring, int depth, bool delvalue);
     char* joinKeyValue(const char* valuestring, bool delvalue);
-    void clearContent();
 
     void LoadFile(std::ifstream &);
     void CopyJson(const YJson*, YJson*);

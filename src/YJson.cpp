@@ -55,7 +55,6 @@ void YJson::LoadFile(std::ifstream& file)
 {
     qout << "从文件加载";
     //std::ifstream file(str, std::ios::in | std::ios::binary);
-    _type = YJSON_TYPE::YJSON_OBJECT;
     if (file.is_open())
     {
         file.seekg(0, std::ios::end);
@@ -122,7 +121,6 @@ void YJson::LoadFile(std::ifstream& file)
 void YJson::CopyJson(const YJson* json, YJson* parent)
 {
     if (ep.first) return;
-    _type = json->_type;
 
     if (!(_parent = parent) || parent->_type != YJSON_TYPE::YJSON_OBJECT)
     {
@@ -155,15 +153,6 @@ void YJson::CopyJson(const YJson* json, YJson* parent)
     }
 }
 
-//清除_valuestring, _child, 以及ep、valueint、 _valuedouble
-void YJson::clearContent()
-{
-    delete [] _value;
-    _value = nullptr;
-    delete _child, _child = nullptr;
-    if (ep.first) ep.first = false;
-}
-
 int YJson::getChildNum() const
 {
     int j = 0; YJson* child = _child;
@@ -177,13 +166,7 @@ YJson::~YJson()
     delete[] _key;
     delete _child;
     if (_prev) _prev->_next = nullptr;
-    if (_next)
-    {
-        YJson * temp_next  = _next;
-        _next = nullptr;
-        temp_next->_prev = nullptr;
-        delete temp_next;
-    }
+    delete _next;
 }
 
 YJson* YJson::find(const char* key) const
@@ -362,26 +345,31 @@ YJson& YJson::operator=(const YJson& s)
         return *this;
     else if (s.getTop() == this->getTop())
         return (*this = YJson(s));
-    clearContent(); CopyJson(&s, _parent);
+    delete [] _value;
+    _value = nullptr;
+    delete _child, _child = nullptr;
+    if (ep.first) ep.first = false;
+    _type = s._type;
+    CopyJson(&s, _parent);
     return *this;
 }
 
-YJson& YJson::operator=(YJson&& s)
+YJson& YJson::operator=(const YJson&& s)
 {
-    if (&s == this)
-        return *this;
-    else if (s.getTop() == this->getTop())
-        return (*this = YJson(s));
-    clearContent(); CopyJson(&s, _parent);
+    if (ep.first) ep.first = false;
+    delete [] _value;
+    delete _child;
+    _type = s._type;
+    _child = s._child;
+    _value = s._value;
+    memset(const_cast<YJson*>(&s), 0, sizeof (YJson));
     return *this;
 }
 
 bool YJson::join(const YJson & js)
 {
     if (&js == this)
-    {
         return join(YJson(*this));
-    }
     if (ep.first || _type != js._type || (_type != YJSON_TYPE::YJSON_ARRAY && _type != YJSON_TYPE::YJSON_OBJECT))
         return false;
     YJson *child = _child;
