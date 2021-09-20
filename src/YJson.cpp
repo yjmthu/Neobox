@@ -348,21 +348,18 @@ YJson& YJson::operator=(const YJson& s)
     delete [] _value;
     _value = nullptr;
     delete _child, _child = nullptr;
-    if (ep.first) ep.first = false;
+    ep.first = false;
     _type = s._type;
     CopyJson(&s, _parent);
     return *this;
 }
 
-YJson& YJson::operator=(const YJson&& s)
+YJson& YJson::operator=(YJson&& s)
 {
-    if (ep.first) ep.first = false;
-    delete [] _value;
-    delete _child;
-    _type = s._type;
-    _child = s._child;
-    _value = s._value;
-    memset(const_cast<YJson*>(&s), 0, sizeof (YJson));
+    ep.first = false;
+    std::swap(_type, s._type);
+    std::swap(_child, s._child);
+    std::swap(_value, s._value);
     return *this;
 }
 

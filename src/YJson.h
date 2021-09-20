@@ -57,7 +57,7 @@ public:
     bool toFile(const std::wstring name, const YJSON_ENCODE& encode, bool fmt=false);
 
     YJson& operator=(const YJson&);
-    YJson& operator=(const YJson&&);
+    YJson& operator=(YJson&&);
     inline YJson& operator[](int i) const { return *find(i); }
     inline YJson& operator[](const char* key) const { return *find(key); }
     inline operator bool() const { const YJson* s = this; return s; };
