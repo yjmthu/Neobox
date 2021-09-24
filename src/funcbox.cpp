@@ -222,7 +222,7 @@ VARBOX::VARBOX(int w, int h):
             else
                 IniRead->setValue("ControlDesktopIcon", false);
             safeEnum = IniRead->value("ColorTheme").toInt();
-            if (safeEnum > 6) safeEnum = 0;
+            if (safeEnum > 7) safeEnum = 0;
             CurTheme = static_cast<COLOR_THEME>(safeEnum);
             IniRead->endGroup();
             delete IniRead;

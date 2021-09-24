@@ -24,7 +24,7 @@
 #include "formsetting.h"
 #include "desktopmask.h"
 
-constexpr const char *color_theme[7] =
+constexpr const char *color_theme[8] =
 {
     "255,255,255,255",
     "255,255,255,150",
@@ -32,7 +32,8 @@ constexpr const char *color_theme[7] =
     "255,10,10,150",
     "50,200,50,150",
     "135,160,250,150",
-    "200,100,100,150"
+    "200,100,100,150",
+    "0,0,0,100"
 };
 
 constexpr const char *reg_keys[4] = {

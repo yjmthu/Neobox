@@ -1511,6 +1511,11 @@ background-color: rgb(0, 0, 0);</string>
                    <string>咖啡褐</string>
                   </property>
                  </item>
+                 <item>
+                  <property name="text">
+                   <string>暗夜黑</string>
+                  </property>
+                 </item>
                 </widget>
                </item>
                <item>
