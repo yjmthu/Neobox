@@ -25,7 +25,6 @@ protected:
 	void mouseReleaseEvent(QMouseEvent* event);
 	void mouseDoubleClickEvent(QMouseEvent* event);
 	void mouseMoveEvent(QMouseEvent* event);
-    bool eventFilter(QObject *target, QEvent *event);       //事件过滤器
     void enterEvent(QEnterEvent* event);
 	void leaveEvent(QEvent* event);
     bool nativeEvent(const QByteArray &eventType, void *message, long long *result);
@@ -53,8 +52,6 @@ private:
 	void get_net_usage();                        //读取网速
 
 	QPropertyAnimation* animation;               //贴边隐藏动画效果
-    void tb_hide();                 //隐藏悬浮窗
-    void tb_show();                 //显示悬浮窗
 	void startAnimation(int width, int height);  // 隐藏/显示动画效果
 
 public slots:

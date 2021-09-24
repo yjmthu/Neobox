@@ -9,7 +9,7 @@ msvc {
 }
 
 # 版本信息
-VERSION = 21.9.20.0
+VERSION = 21.9.24.0
 # 图标
 RC_ICONS += icons/speedbox.ico
 # 公司名称

@@ -1,7 +1,4 @@
-﻿//#ifdef _DEBUG
-//#include "vld.h"
-//#endif
-#include <QScreen>
+﻿#include <QScreen>
 #include <QProcess>
 #include <QFile>
 
@@ -10,7 +7,7 @@
 
 int main(int argc, char* argv[])
 {
-    VARBOX::HMutex = CreateMutex(NULL, FALSE, TEXT("__SpeedBox__"));
+    VARBOX::HMutex = CreateMutexW(NULL, FALSE, L"__SpeedBox__");
     if (GetLastError() == ERROR_ALREADY_EXISTS)
         return 0;
     QApplication a(argc, argv);                                            //创建app

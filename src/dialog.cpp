@@ -45,7 +45,7 @@ constexpr const char *reg_keys[4] = {
 inline QString getStyleSheet()
 {
     QColor col(VarBox->dAlphaColor[VarBox->setMax] & 0xffffff);
-    return QString("QPushButton{background-color: rgb(%1, %2, %3)}").arg(QString::number(col.blue()), QString::number(col.green()), QString::number(col.red()));
+    return QString("QPushButton{background-color: rgb(%1, %2, %3);border-radius: 3px; border: 1px solid black;}").arg(QString::number(col.blue()), QString::number(col.green()), QString::number(col.red()));
 }
 
 
@@ -167,12 +167,6 @@ void Dialog::initBehaviors()
 
 void Dialog::initButtonFilter()
 {
-    QList<QPushButton *> pBtns = findChildren<QPushButton *>();
-    QList<QPushButton *>::iterator pBtnList = pBtns.begin();
-    for (pBtnList = pBtns.begin(); pBtnList != pBtns.end(); pBtnList++)
-    {
-        (*pBtnList)->installEventFilter(this);
-    }
     QList<QSlider *> sliders = findChildren<QSlider *>();
     QList<QSlider *>::iterator sliderList = sliders.begin();
     for (sliderList = sliders.begin(); sliderList != sliders.end(); sliderList++)
@@ -659,7 +653,7 @@ void Dialog::on_pushButton_3_clicked()
 	if (color.isValid())
 	{
 		short r = color.red(), g = color.green(), b = color.blue();
-		QString str = QString("background-color: rgb(%1, %2, %3)").arg(QString::number(r), QString::number(g), QString::number(b));
+        QString str = QString("QPushButton{background-color: rgb(%1, %2, %3);border-radius: 3px; border: 1px solid black;}").arg(QString::number(r), QString::number(g), QString::number(b));
 		ui->pushButton_3->setStyleSheet(str);
         VarBox->dAlphaColor[VarBox->setMax] = (ui->sLdTaskAlph->value() << 24) + RGB(r, g, b);
 	}

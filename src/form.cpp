@@ -41,7 +41,6 @@ Form::Form(QWidget* parent) :
 {
     Form** p = const_cast<Form**>(&(VarBox->form)); *p = this;
     ui->setupUi(this);                                                     //创建界面
-    ui->LabMemory->installEventFilter(this);
 	initForm();                                                            //初始化大小、位置、翻译功能
 	initConnects();
 	monitor_timer->start(1000);                                            //开始检测网速和内存
@@ -151,25 +150,6 @@ bool Form::nativeEvent(const QByteArray &, void *message, long long *)
     return false;
 }
 
-bool Form::eventFilter(QObject* target, QEvent* event)
-{
-    if (target == ui->LabMemory)
-    {
-        switch ((QEvent::Type)(event->type()))
-        {
-        case QEvent::MouseButtonPress:
-            mousePressEvent(static_cast<QMouseEvent*>(event));
-            return true;
-        case QEvent::MouseButtonRelease:
-            mouseReleaseEvent(static_cast<QMouseEvent*>(event));
-            return true;
-        default:
-            break;
-        }
-    }
-    return QWidget::eventFilter(target, event);
-}
-
 void Form::mousePressEvent(QMouseEvent* event)
 {
 	if (event->button() == Qt::LeftButton)                   // 鼠标左键点击悬浮窗
@@ -225,54 +205,46 @@ void Form::mouseMoveEvent(QMouseEvent* event)
 
 void Form::enterEvent(QEnterEvent* event)     //鼠标进入事件
 {
-    tb_show(); event->accept();
+    QPoint pos = frameGeometry().topLeft();
+    if (moved) {
+        if (pos.x() + FORM_WIDTH >= VarBox->ScreenWidth)   // 右侧显示
+        {
+            startAnimation(VarBox->ScreenWidth - FORM_WIDTH + 2, pos.y());
+            moved = false;
+        }
+        else if (pos.x() <= 0)                    // 左侧显示
+        {
+            startAnimation(0, pos.y());
+            moved = false;
+        }
+        else if (pos.y() <= 0)                    // 顶层显示
+        {
+            startAnimation(pos.x(), 0);
+            moved = false;
+        }
+    }
+    event->accept();
 }
 
 void Form::leaveEvent(QEvent* event)
 {
-    tb_hide(); event->accept();
-}
-
-void Form::tb_hide()
-{
-	QPoint pos = frameGeometry().topLeft();
+    QPoint pos = frameGeometry().topLeft();
     if (pos.x() + FORM_WIDTH >= VarBox->ScreenWidth)  // 右侧隐藏
-	{
+    {
         startAnimation(VarBox->ScreenWidth - 2, pos.y());
-		moved = true;
-	}
-	else if (pos.x() <= 2)                    // 左侧隐藏
-	{
-		startAnimation(2 - FORM_WIDTH, pos.y());
-		moved = true;
-	}
-	else if (pos.y() <= 2)                    // 顶层隐藏
-	{
-		startAnimation(pos.x(), 2 - FORM_HEIGHT);
-		moved = true;
-	}
-}
-
-void Form::tb_show()
-{
-	QPoint pos = frameGeometry().topLeft();
-	if (moved) {
-        if (pos.x() + FORM_WIDTH >= VarBox->ScreenWidth)   // 右侧显示
-		{
-            startAnimation(VarBox->ScreenWidth - FORM_WIDTH + 2, pos.y());
-			moved = false;
-		}
-		else if (pos.x() <= 0)                    // 左侧显示
-		{
-			startAnimation(0, pos.y());
-			moved = false;
-		}
-		else if (pos.y() <= 0)                    // 顶层显示
-		{
-			startAnimation(pos.x(), 0);
-			moved = false;
-		}
-	}
+        moved = true;
+    }
+    else if (pos.x() <= 2)                    // 左侧隐藏
+    {
+        startAnimation(2 - FORM_WIDTH, pos.y());
+        moved = true;
+    }
+    else if (pos.y() <= 2)                    // 顶层隐藏
+    {
+        startAnimation(pos.x(), 2 - FORM_HEIGHT);
+        moved = true;
+    }
+    event->accept();
 }
 
 void Form::startAnimation(int width, int height)

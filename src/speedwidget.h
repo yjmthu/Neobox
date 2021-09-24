@@ -40,7 +40,6 @@ public:
     ~SpeedWidget();
 
 private:
-    bool mouse_moved = false;
     QPoint _startPos;                                    //记录鼠标
     QPoint _endPos;                                      //鼠标移动向量
 };
@@ -75,7 +74,6 @@ void SpeedWidget<Parent>::mouseReleaseEvent(QMouseEvent* event)
     {
         static_cast<Parent*>(this)->setMouseTracking(false);           // 停止跟踪鼠标。
         _endPos = event->pos() - _startPos;
-        mouse_moved = false;
     }
     event->accept();
 }
@@ -85,7 +83,6 @@ void SpeedWidget<Parent>::mouseMoveEvent(QMouseEvent* event)
 {
     _endPos = event->pos() - _startPos;  //计算位置变化情况。
     static_cast<Parent*>(this)->move(static_cast<Parent*>(this)->pos() + _endPos);               //当前位置加上位置变化情况，从而实现悬浮窗和鼠标同时移动。
-    mouse_moved = true;
     event->accept();
 }
 

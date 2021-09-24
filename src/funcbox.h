@@ -27,7 +27,7 @@ enum class PAPER_TYPE
 
 enum class COLOR_THEME
 {
-    White = 0, Gray = 1, Purple = 2, Red = 3, Green = 4, Blue = 5, Brown = 6
+    White = 0, Gray = 1, Purple = 2, Red = 3, Green = 4, Blue = 5, Brown = 6, Black = 7
 };
 
 enum class WINDOWCOMPOSITIONATTRIB
@@ -104,7 +104,7 @@ typedef BOOL(WINAPI* pfnDwmGetWindowAttribute)(HWND hwnd, DWORD dwAttribute, PVO
 
 struct VARBOX
 {
-    const char* const Version = "21.9.20", * const Qt = "6.1.3";
+    const char* const Version = "21.9.24", * const Qt = "6.1.3";
     const unsigned char WinVersion; const bool FirstUse[1] = {false};
     std::list<std::pair<bool, wchar_t*>> PicHistory; std::list<std::pair<bool, wchar_t*>>::const_iterator CurPic;
     const char* const StandardNames[10][2] =     //九种壁纸类型
