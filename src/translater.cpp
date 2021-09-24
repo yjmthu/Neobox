@@ -21,7 +21,7 @@
 #define M_WIN_HOT_KEY_SHIFT_Z 1001
 #define M_WIN_HOT_KEY_SHIFT_A 1002
 
-#define TRAN_HEIGHT 290
+#define TRAN_HEIGHT 300
 #define TRAN_WIDTH 240
 
 Translater::Translater() :
