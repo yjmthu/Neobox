@@ -51,7 +51,7 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_2">
         <item>
-         <widget class="QLabel" name="label_2">
+         <widget class="QLabel" name="Icon">
           <property name="minimumSize">
            <size>
             <width>20</width>
@@ -75,7 +75,13 @@ border-image: url(:/icons/ya.ico);
          </widget>
         </item>
         <item>
-         <widget class="QLabel" name="label">
+         <widget class="QLabel" name="Title">
+          <property name="styleSheet">
+           <string notr="true">QLabel{
+	color: rgb(0, 0, 0);
+	border: None;
+}</string>
+          </property>
           <property name="text">
            <string>极简翻译</string>
           </property>
@@ -99,14 +105,10 @@ border-image: url(:/icons/ya.ico);
       <item>
        <widget class="QPlainTextEdit" name="TextFrom">
         <property name="toolTip">
-         <string>输入你想翻译的文本</string>
+         <string/>
         </property>
         <property name="styleSheet">
-         <string notr="true">QPlainTextEdit {
-    background-color: rgba(8, 8, 8, 150);
-    color: #ffff00;
-	border: 1px solid #00ffff
-}</string>
+         <string notr="true"/>
         </property>
         <property name="plainText">
          <string/>
@@ -119,14 +121,10 @@ border-image: url(:/icons/ya.ico);
          <enum>Qt::ClickFocus</enum>
         </property>
         <property name="toolTip">
-         <string>这里将显示翻译结果</string>
+         <string/>
         </property>
         <property name="styleSheet">
-         <string notr="true">QPlainTextEdit {
-    background-color: rgba(8, 8, 8, 150);
-    color: #00ffff;
-	border: 1px solid #00ffff
-}</string>
+         <string notr="true"/>
         </property>
         <property name="readOnly">
          <bool>false</bool>
@@ -140,6 +138,12 @@ border-image: url(:/icons/ya.ico);
        <layout class="QHBoxLayout" name="horizontalLayout">
         <item>
          <widget class="QPushButton" name="pBtnCopyTranlate">
+          <property name="minimumSize">
+           <size>
+            <width>30</width>
+            <height>20</height>
+           </size>
+          </property>
           <property name="maximumSize">
            <size>
             <width>30</width>
@@ -156,20 +160,14 @@ border-image: url(:/icons/ya.ico);
            <string>复制翻译结果</string>
           </property>
           <property name="styleSheet">
-           <string notr="true">QPushButton {
-	background-color: transparent;
-}
-
-QPushButton:hover {
-	background-color: rgb(229, 242, 250);
-}</string>
+           <string notr="true"/>
           </property>
           <property name="text">
            <string/>
           </property>
           <property name="icon">
            <iconset resource="res.qrc">
-            <normaloff>:/icons/copy.ico</normaloff>:/icons/copy.ico</iconset>
+            <normaloff>:/icons/drip_copy.ico</normaloff>:/icons/drip_copy.ico</iconset>
           </property>
           <property name="flat">
            <bool>true</bool>
@@ -177,113 +175,150 @@ QPushButton:hover {
          </widget>
         </item>
         <item>
-         <spacer name="horizontalSpacer_2">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
-         <widget class="QRadioButton" name="ENTOZH">
+         <widget class="QPushButton" name="bBtnClean">
           <property name="minimumSize">
            <size>
-            <width>37</width>
-            <height>0</height>
+            <width>30</width>
+            <height>20</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
-            <width>37</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="focusPolicy">
-           <enum>Qt::ClickFocus</enum>
-          </property>
-          <property name="toolTip">
-           <string>翻译为中文</string>
-          </property>
-          <property name="text">
-           <string>zh</string>
-          </property>
-          <property name="checked">
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <spacer name="horizontalSpacer_3">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
+            <width>30</width>
             <height>20</height>
            </size>
           </property>
-         </spacer>
-        </item>
-        <item>
-         <widget class="QRadioButton" name="ZHTOEN">
-          <property name="minimumSize">
-           <size>
-            <width>37</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>37</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="focusPolicy">
-           <enum>Qt::ClickFocus</enum>
-          </property>
           <property name="toolTip">
-           <string>翻译为英文</string>
+           <string>清空文本</string>
+          </property>
+          <property name="styleSheet">
+           <string notr="true"/>
           </property>
           <property name="text">
-           <string>en</string>
+           <string/>
           </property>
-          <property name="checked">
+          <property name="icon">
+           <iconset resource="res.qrc">
+            <normaloff>:/icons/drip_trash.ico</normaloff>:/icons/drip_trash.ico</iconset>
+          </property>
+          <property name="flat">
            <bool>true</bool>
           </property>
          </widget>
         </item>
         <item>
-         <spacer name="horizontalSpacer_4">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
+         <widget class="QPushButton" name="pBtnEnToZh">
+          <property name="minimumSize">
            <size>
-            <width>40</width>
+            <width>30</width>
             <height>20</height>
            </size>
           </property>
-         </spacer>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="isFix">
-          <property name="cursor">
-           <cursorShape>PointingHandCursor</cursorShape>
-          </property>
-          <property name="focusPolicy">
-           <enum>Qt::ClickFocus</enum>
+          <property name="maximumSize">
+           <size>
+            <width>30</width>
+            <height>20</height>
+           </size>
           </property>
           <property name="toolTip">
-           <string>*不自动隐藏窗口</string>
+           <string>翻译为中文</string>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">
+</string>
           </property>
           <property name="text">
-           <string>fix</string>
+           <string/>
+          </property>
+          <property name="icon">
+           <iconset resource="res.qrc">
+            <normaloff>:/icons/empty_zh.ico</normaloff>:/icons/empty_zh.ico</iconset>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pBtnZhToEn">
+          <property name="minimumSize">
+           <size>
+            <width>30</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>30</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>翻译为英文</string>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">
+</string>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="icon">
+           <iconset resource="res.qrc">
+            <normaloff>:/icons/black_en.ico</normaloff>:/icons/black_en.ico</iconset>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pBtnPin">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+            <horstretch>30</horstretch>
+            <verstretch>20</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>30</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>30</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>防止隐藏</string>
+          </property>
+          <property name="styleSheet">
+           <string notr="true"/>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="icon">
+           <iconset resource="res.qrc">
+            <normaloff>:/icons/drip_pin.ico</normaloff>:/icons/drip_pin.ico</iconset>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
           </property>
          </widget>
         </item>

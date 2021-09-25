@@ -44,13 +44,19 @@ Translater::Translater() :
     blank->closeButton->setToolTip("退出"); blank->minButton->setToolTip("隐藏");
     blank->move(width()-100, 0);
 	ui->TextFrom->installEventFilter(this);
+    ui->TextFrom->setContextMenuPolicy(Qt::CustomContextMenu);
+    ui->TextTo->setContextMenuPolicy(Qt::CustomContextMenu);
 
     if (*VarBox->FirstUse)
     {
-        ui->TextFrom->setPlainText("一秒钟只能翻译一次。");
-        ui->TextTo->setPlainText("You can only translate once a second.");
+        ui->TextFrom->setPlainText("在这输入你想翻译的文本,一秒钟只能翻译一次。");
+        ui->TextTo->setPlainText("Enter the text you want to translate here. You can only translate it once a second.");
         *const_cast<bool*>(VarBox->FirstUse) = false;
     }
+    auto btngrp = new QButtonGroup(this);
+    btngrp->addButton(ui->pBtnEnToZh, 0);
+    btngrp->addButton(ui->pBtnZhToEn, 1);
+    btngrp->setExclusive(true);
 
     setMinimumSize(TRAN_WIDTH, TRAN_HEIGHT);
     setMaximumSize(TRAN_WIDTH, TRAN_HEIGHT);
@@ -74,15 +80,47 @@ Translater::~Translater()
 
 void Translater::initConnects()
 {
-    connect(ui->isFix, &QCheckBox::clicked, this, &Translater::setFix);
-    connect(ui->ENTOZH, &QRadioButton::clicked, this, &Translater::startEnToZh);
-    connect(ui->ZHTOEN, &QRadioButton::clicked, this, &Translater::startZhToEn);
+    connect(ui->pBtnPin, &QPushButton::clicked, this, &Translater::setFix);
+    connect(ui->pBtnEnToZh, &QPushButton::clicked, this, &Translater::startEnToZh);
+    connect(ui->pBtnZhToEn, &QPushButton::clicked, this, [=](bool checked){startEnToZh(!checked);});
     connect(ui->pBtnCopyTranlate, &QPushButton::clicked, this, &Translater::copyTranlate);
+    connect(ui->bBtnClean, &QPushButton::clicked, this, [this](){
+        ui->TextFrom->clear();ui->TextTo->clear();
+    });
+    QString menu_style("QMenu{"
+                    "border-radius:3px;"
+                    "background-color: white;"
+                    "color: black;"
+                    "border: 1px solid rgb(0,255,255);"
+                "}"
+                "QMenu::item {"
+                    "background-color: transparent;"
+                    "padding: 6px 3px;"
+                    "border-radius: 3px;"
+                "}"
+                "QMenu::item:selected {"
+                    "background-color: yellow;"
+                    "border-radius: 3px;"
+                    "padding: 6px 3px;"
+                "}");
+    connect(ui->TextFrom, &QPlainTextEdit::customContextMenuRequested, ui->TextFrom, [=](const QPoint &pos){
+        QMenu* menu = ui->TextFrom->createStandardContextMenu();
+        menu->setStyleSheet(menu_style);
+        menu->exec((pos + ui->TextFrom->pos()) + this->pos());
+        delete menu;
+    });
+    connect(ui->TextTo, &QPlainTextEdit::customContextMenuRequested, ui->TextFrom, [=](const QPoint &pos){
+        QMenu* menu = ui->TextTo->createStandardContextMenu();
+        menu->setStyleSheet(menu_style);
+        menu->exec((pos + ui->TextTo->pos()) + this->pos());
+        delete menu;
+    });
 }
 
 void Translater::showEvent(QShowEvent* event)
 {
-    int x, y;  RECT rt; ui->isFix->setChecked(!VarBox->AutoHide);
+    int x, y;  RECT rt; ui->pBtnPin->setChecked(!VarBox->AutoHide);
+    ui->pBtnPin->setIcon(QIcon(VarBox->AutoHide?":/icons/drip_pin.ico": ":/icons/drip_blue_pin.ico"));
     static const int w = (GetWindowRect(HWND(winId()), &rt), rt.right - rt.left), h = (rt.bottom - rt.top), sw = GetSystemMetrics(SM_CXSCREEN);
     GetWindowRect(HWND(VarBox->form->winId()), &rt);
     if (rt.top > h)
@@ -130,20 +168,18 @@ bool Translater::nativeEvent(const QByteArray &eventType, void *message, long lo
             ushort uNum = content.at(0).unicode();
             if(uNum >= 0x4E00 && uNum <= 0x9FA5)
             {
-                if (from != _zh)
+                if (from == _en)
                 {
-                    from = _zh;
-                    to = _en;
-                    ui->ZHTOEN->setChecked(true);
+                    ui->pBtnZhToEn->click();
+                    break;
                 }
             }
             else
             {
-                if (from != _en)
+                if (from == _zh)
                 {
-                    from = _en;
-                    to = _zh;
-                    ui->ENTOZH->setChecked(true);
+                    ui->pBtnEnToZh->click();
+                    break;
                 }
             }
             getReply(content.toUtf8());
@@ -209,21 +245,15 @@ bool Translater::eventFilter(QObject* target, QEvent* event)
 			{
                 QString text = ui->TextFrom->toPlainText();
                 auto cur = ui->TextFrom->textCursor();
-                if (!text.length())
-                    emit msgBox("内容为空！");
+                if (!text.length()) goto label_end;
                 else if (cur.position() >= QTextCursor::Start && text.at(cur.position()-1) == ' ')
                 {
                     cur.deletePreviousChar();
                     cur.insertText("\n");
-                    event->accept();
-                    return true;
+                    goto label_end;
                 }
-                if (thrd)
-                {
-                    event->accept();
-                    return true;
-                }
-                getReply(text.toUtf8());
+                if (!thrd) getReply(text.toUtf8());
+label_end:
                 event->accept();
 				return true;
 			}
@@ -255,20 +285,10 @@ void Translater::keyPressEvent(QKeyEvent* event)
             event->accept();
             return;
         }
-        if (ui->ZHTOEN->isChecked())
-        {
-            ui->ENTOZH->setChecked(true);
-            from = _en;
-            to = _zh;
-            getReply(ui->TextFrom->toPlainText().toUtf8());
-        }
+        if (ui->pBtnZhToEn->isChecked())
+            ui->pBtnEnToZh->click();
         else
-        {
-            ui->ZHTOEN->setChecked(true);
-            from = _zh;
-            to = _en;
-            getReply(ui->TextFrom->toPlainText().toUtf8());
-        }
+            ui->pBtnZhToEn->click();
         event->accept();
 	}
 }
@@ -278,11 +298,10 @@ void Translater::getReply(const QByteArray& text)
     qout << "开始执行翻译函数";
     static const char API[] = u8"http://api.fanyi.baidu.com/api/trans/vip/translate";
     static const char salt[] = u8"1435660288";                           //请求参数之一
-    if (!text.length())
-    {
-        emit msgBox("内容为空！");
-        return;
-    }
+
+    auto time_now = GetTickCount();
+    if (time_now - last_post_time < 1000) Sleep(last_post_time + 1000 - time_now);
+
     const char* utf8_q = text;
     std::string &&q = urlEncode(utf8_q, strlen(utf8_q));
 
@@ -316,6 +335,7 @@ void Translater::getReply(const QByteArray& text)
                     QTextCursor cursor = ui->TextFrom->textCursor();
                     cursor.movePosition(QTextCursor::End);
                     ui->TextFrom->setTextCursor(cursor);
+                    last_post_time = GetTickCount();
                 }
                 else
                 {
@@ -325,7 +345,7 @@ void Translater::getReply(const QByteArray& text)
                         {
                             qout << "错误消息：" << have_item->getValueString();
                             if (!strcmp(have_item->getValueString(), "Invalid Access Limit"))
-                                emit msgBox("翻译失败，请求间隔时间过短!");
+                                emit msgBox("翻译失败，使用公共密钥造成请求间隔时间过短!");
                             else if (!strcmp(have_item->getValueString(), "UNAUTHORIZED USER"))
                                 emit msgBox("翻译失败，APPID不存在！");
                             else if (!strcmp(have_item->getValueString(), "Invalid Sign"))
@@ -353,6 +373,7 @@ void Translater::getReply(const QByteArray& text)
 
 void Translater::setFix(bool checked)
 {
+    ui->pBtnPin->setIcon(QIcon(checked?":/icons/drip_blue_pin.ico":":/icons/drip_pin.ico"));
     VarBox->AutoHide = !checked;
     QSettings IniWrite(VarBox->get_ini_path(), QSettings::IniFormat);
     IniWrite.beginGroup("Translate");
@@ -364,6 +385,8 @@ void Translater::setFix(bool checked)
 
 void Translater::startEnToZh(bool checked)
 {
+    ui->pBtnEnToZh->setIcon(QIcon(checked?":/icons/black_zh.ico": ":/icons/empty_zh.ico"));
+    ui->pBtnZhToEn->setIcon(QIcon(checked?":/icons/empty_en.ico":":/icons/black_en.ico"));
     if (thrd) return;
 	if (checked)
 	{
@@ -375,23 +398,8 @@ void Translater::startEnToZh(bool checked)
         from = _zh;
         to = _en;
 	}
-    getReply(ui->TextFrom->toPlainText().toUtf8());
-}
-
-void Translater::startZhToEn(bool checked)
-{
-    if (thrd) return;
-	if (checked)
-	{
-        from = _zh;
-        to = _en;
-	}
-	else
-	{
-        from = _en;
-        to = _zh;
-	}
-    getReply(ui->TextFrom->toPlainText().toUtf8());
+    QString str = ui->TextFrom->toPlainText();
+    if (!str.isEmpty()) getReply(str.toUtf8());
 }
 
 void Translater::copyTranlate()

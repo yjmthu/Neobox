@@ -35,6 +35,7 @@ private:
     Ui::Translater *ui;                                     //界面
     const char _en[3], _zh[3];                              //翻译方向，默认中译英
     const char* from, * to;
+    uint64_t last_post_time;
     void requestData(const char*, std::string*);
     std::thread *thrd = nullptr;
     void initConnects();
@@ -43,7 +44,6 @@ private slots:
     void setFix(bool checked);
     void copyTranlate();
     void startEnToZh(bool checked);
-    void startZhToEn(bool checked);
     void getReply(const QByteArray&);
 };
 

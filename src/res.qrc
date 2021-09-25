@@ -13,5 +13,13 @@
         <file>fonts/netspeed.ttf</file>
         <file>fonts/smallkaiti.ttf</file>
         <file>qss/bing_style.qss</file>
+        <file>icons/drip_copy.ico</file>
+        <file>icons/drip_pin.ico</file>
+        <file>icons/drip_trash.ico</file>
+        <file>icons/black_en.ico</file>
+        <file>icons/black_zh.ico</file>
+        <file>icons/empty_en.ico</file>
+        <file>icons/empty_zh.ico</file>
+        <file>icons/drip_blue_pin.ico</file>
     </qresource>
 </RCC>

@@ -11,60 +11,25 @@ QWidget {
 QFrame {
     border: 1px solid rgb(0,255,255);
 }
-QRadioButton:hover {
-    color: green;
-}
-
-QRadioButton:checked {
-    color: #3498db;
-}
-
-QRadioButton:checked:hover {
-    color: #55007f;
-}
-
-QRadioButton::indicator {
-    width: 10px;
-    height: 10px;
-    border-radius:          6px;
-    background-color:       white;
-    border:                 1px solid black;
-}
-
-QRadioButton::indicator:hover {
-    width: 10px;
-    height: 10px;
-    border-radius:          6px;
-    background-color:       white;
-    border:                 1px solid #e5f2fa;
-}
-
-QRadioButton::indicator:checked {
-    width: 8px;
-    height: 8px;
-    border-radius: 5px;
-    background-color: #3498db;
-    border: 1px solid #3498db;
-}
-
-QRadioButton::indicator:checked:hover {
-    width: 8px;
-    height: 8px;
-    border-radius: 5px;
-    background-color: #55007f;
-    border: 1px solid #55007f;
-}
 
 QPushButton {
-    padding: 6px 14px 6px 14px;
-    border-radius: 4px;
-    background-color: rgba(229, 242, 250, 255);
-    color: #3498db;
+        background-color: transparent;
 }
 
 QPushButton:hover {
-    padding: 6px 14px 6px 14px;
-    border-radius: 4px;
-    background-color: #c8e3f5;
-    color: #3498db;
+        background-color: rgb(229, 242, 250);
+}
+
+QPushButton:checked:hover {
+        background-color: rgb(229, 242, 250);
+}
+
+QPushButton:checked {
+        background-color: transparent;
+}
+
+QPlainTextEdit {
+    background-color: rgba(8, 8, 8, 150);
+    color: #ffff00;
+        border: 1px solid #00ffff
 }
