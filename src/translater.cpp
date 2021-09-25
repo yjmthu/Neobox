@@ -11,6 +11,7 @@
 #include <QFile>
 #include <QCryptographicHash>
 
+#include "YEncode.h"
 #include "YString.h"
 #include "YJson.h"
 #include "form.h"
@@ -206,12 +207,23 @@ bool Translater::eventFilter(QObject* target, QEvent* event)
 
 			if (k->key() == Qt::Key_Return)       //回车键
 			{
+                QString text = ui->TextFrom->toPlainText();
+                auto cur = ui->TextFrom->textCursor();
+                if (!text.length())
+                    emit msgBox("内容为空！");
+                else if (cur.position() >= QTextCursor::Start && text.at(cur.position()-1) == ' ')
+                {
+                    cur.deletePreviousChar();
+                    cur.insertText("\n");
+                    event->accept();
+                    return true;
+                }
                 if (thrd)
                 {
                     event->accept();
                     return true;
                 }
-                getReply(ui->TextFrom->toPlainText().toUtf8());
+                getReply(text.toUtf8());
                 event->accept();
 				return true;
 			}
@@ -259,9 +271,6 @@ void Translater::keyPressEvent(QKeyEvent* event)
         }
         event->accept();
 	}
-	else
-	{
-	}
 }
 
 void Translater::getReply(const QByteArray& text)
@@ -274,28 +283,8 @@ void Translater::getReply(const QByteArray& text)
         emit msgBox("内容为空！");
         return;
     }
-    std::string q;
     const char* utf8_q = text;
-    while (*utf8_q)
-    {
-        if (isalnum((unsigned char)*utf8_q))
-        {
-            char tempbuff[2] = { 0 };
-            sprintf_s(tempbuff, u8"%c", (unsigned char)*utf8_q);
-            q.append(tempbuff);
-        }
-        else if (isspace((unsigned char)*utf8_q))
-        {
-            q.append("+");
-        }
-        else
-        {
-            char tempbuff[4];
-            sprintf_s(tempbuff, u8"%%%X%X", ((unsigned char)*utf8_q) >> 4, ((unsigned char)*utf8_q) & 0xf);
-            q.append(tempbuff);
-        }
-        ++utf8_q;
-    }
+    std::string &&q = urlEncode(utf8_q, strlen(utf8_q));
 
     utf8_q = StrJoin<char>(VarBox->AppId, (const char*)text, salt, VarBox->PassWord);
     QByteArray sign = QCryptographicHash::hash(utf8_q, QCryptographicHash::Md5).toHex();
@@ -316,17 +305,17 @@ void Translater::getReply(const QByteArray& text)
                 }
                 YJson json_data(*reply_data); YJson* have_item = nullptr;
                 if ((have_item = json_data.find("trans_result")) &&
-                    (have_item = have_item->getChild()) && (have_item = have_item->find("dst")))
+                    (have_item = have_item->getChild()))
                 {
-                    if (have_item->getType() == YJSON_TYPE::YJSON_STRING)
-                    {
-                        ui->TextTo->setPlainText(have_item->getValueString());
-                        QTextCursor cursor = ui->TextFrom->textCursor();
-                        cursor.movePosition(QTextCursor::End);
-                        ui->TextFrom->setTextCursor(cursor);
-                    }
-                    else
-                        emit msgBox("未知错误。");
+                    YJson * temp = nullptr;
+                    ui->TextTo->clear();
+                    do {
+                        temp = have_item->find("dst");
+                        ui->TextTo->appendPlainText(temp->getValueString());
+                    } while (have_item = have_item->getNext());
+                    QTextCursor cursor = ui->TextFrom->textCursor();
+                    cursor.movePosition(QTextCursor::End);
+                    ui->TextFrom->setTextCursor(cursor);
                 }
                 else
                 {

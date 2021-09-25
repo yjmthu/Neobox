@@ -118,4 +118,31 @@ bool utf16_to_utf8(C1 utf8, C2 utf16)
     return true;
 }
 
+inline unsigned char ToHex(unsigned char x)
+{
+    return  x > 9 ? x + 55 : x + 48;
+}
+
+template <typename T1>
+typename std::enable_if<std::is_same<T1, const char*>::value || std::is_same<T1, std::string::const_iterator>::value, std::string>::type
+urlEncode(T1 str, size_t length)
+{
+    std::string strTemp;
+    for (size_t i = 0; i < length; i++)
+    {
+        if (isalnum((unsigned char)str[i]) || strchr("-_.~", str[i]))
+            strTemp.push_back(str[i]);
+        else if (str[i] == ' ')
+            strTemp.push_back('+');
+        else
+        {
+            strTemp.push_back('%');
+            strTemp.push_back(ToHex((unsigned char)str[i] >> 4));
+            strTemp.push_back(ToHex((unsigned char)str[i] % 16));
+        }
+    }
+    return strTemp;
+}
+
+
 #endif // YENCODE_H
