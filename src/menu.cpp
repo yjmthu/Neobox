@@ -12,8 +12,8 @@
 #include "form.h"
 #include "menuwallpaper.h"
 
-Menu::Menu() :
-    QMenu(nullptr)
+Menu::Menu(QWidget* parent) :
+    QMenu(parent)
 {
     initActions();
 	initUi();
@@ -33,14 +33,14 @@ Menu::~Menu()
     delete nextPaperAct;
     delete prevPaperAct;
     delete translateAct;
-    delete wallpaper;
     qout << "析构menu结束";
 }
 
 void Menu::initUi()
 {
     setWindowFlag(Qt::FramelessWindowHint);                       //没有任务栏图标
-	setAttribute(Qt::WA_TranslucentBackground);                   //背景透明
+    setAttribute(Qt::WA_TranslucentBackground, true);                   //背景透明
+    setAttribute(Qt::WA_DeleteOnClose, true);
     QFile qss(":/qss/menu_style.qss");                            //读取样式表
 	qss.open(QFile::ReadOnly);
 	setStyleSheet(qss.readAll());
@@ -57,8 +57,6 @@ void Menu::initUi()
 
 void Menu::initActions()
 {
-    wallpaper = new MenuWallpaper;                                //新建壁纸处理类
-
     settingDialogAct = new QAction;
     settingDialogAct->setText("软件设置");
     addAction(settingDialogAct);
@@ -122,7 +120,6 @@ void Menu::Show(int x, int y)           //自动把右键菜单移动到合适�
 
 void Menu::initMenuConnect()
 {
-    connect(wallpaper, &MenuWallpaper::msgBox, VarBox->form, &Form::msgBox);
     connect(settingDialogAct, &QAction::triggered, [](){
         if (VarBox->form->dialog->isVisible())
             VarBox->form->dialog->setWindowState(Qt::WindowActive | Qt::WindowNoState);    // 让窗口从最小化恢复正常并激活窗口
@@ -130,17 +127,17 @@ void Menu::initMenuConnect()
             //d->raise();
         else
             VarBox->form->dialog->show();
-    });   //打开壁纸设置界面
+    });                                                                                  //打开壁纸设置界面
     connect(translateAct, &QAction::triggered, VarBox->form, &Form::enableTranslater);    //是否启用翻译功能
     translateAct->setChecked(VarBox->EnableTranslater);                                 //设置是否选中“划词翻译”
     connect(nextPaperAct, &QAction::triggered,
         [=]() {
-            if (wallpaper->isActive())
+            if (VarBox->form->wallpaper->isActive())
                 QMessageBox::information(VarBox->form->dialog, "提示", "频繁点击是没有效的哦！", QMessageBox::Ok, QMessageBox::Ok);
             else if (Wallpaper::canCreat())
-                wallpaper->start();
+                VarBox->form->wallpaper->start();
         });
-    connect(prevPaperAct, &QAction::triggered, wallpaper, &MenuWallpaper::previousPic);   //设置受否开机自启
+    connect(prevPaperAct, &QAction::triggered, VarBox->form->wallpaper, &MenuWallpaper::previousPic);   //设置受否开机自启
     connect(noSleepAct, &QAction::triggered, [=](bool checked){
         if (checked)                                                                      //启用自动移动鼠标
         {
@@ -162,7 +159,7 @@ void Menu::initMenuConnect()
         }
     });                                                                               //是否自动移动鼠标防止息屏
 	connect(openFolderAct, SIGNAL(triggered()), this, SLOT(OpenFolder()));            //打开exe所在文件夹
-    connect(removePicAct, &QAction::triggered, wallpaper, &MenuWallpaper::removePic);          //重启电脑
+    connect(removePicAct, &QAction::triggered, VarBox->form->wallpaper, &MenuWallpaper::removePic);          //重启电脑
 	connect(shutdownAct, SIGNAL(triggered()), this, SLOT(ShutdownComputer()));        //关闭电脑
     connect(quitAct, &QAction::triggered, [](){
         VarBox->RunApp = false;                                                       //以便其它线程知晓，停止正在进行的工作

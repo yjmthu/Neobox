@@ -18,7 +18,7 @@ protected:
     void showEvent(QShowEvent *event);
 
 public:
-    explicit Menu();
+    explicit Menu(QWidget* parent);
 	~Menu();
     void Show(int, int);          // 自动移动menu到合适位置，防止menu出现在屏幕之外。
 
@@ -38,7 +38,6 @@ private:
     QAction* shutdownAct;                //关机
     QAction* quitAct;                    //关闭程序
 
-    MenuWallpaper* wallpaper;            //用于壁纸更换
     QTimer* MouseMoveTimer = nullptr;              //用于定时移动鼠标，防止息屏
 
 private slots:

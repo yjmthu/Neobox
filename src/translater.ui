@@ -108,7 +108,12 @@ border-image: url(:/icons/ya.ico);
          <string/>
         </property>
         <property name="styleSheet">
-         <string notr="true"/>
+         <string notr="true">QPlainTextEdit {
+    background-color: rgba(8, 8, 8, 150);
+    color: #ffff00;
+        border: 1px solid #ff00ff
+}
+</string>
         </property>
         <property name="plainText">
          <string/>
@@ -124,7 +129,12 @@ border-image: url(:/icons/ya.ico);
          <string/>
         </property>
         <property name="styleSheet">
-         <string notr="true"/>
+         <string notr="true">QPlainTextEdit {
+    background-color: rgba(8, 8, 8, 150);
+    color: #00ffff;
+    border: 1px solid #ff00ff
+}
+</string>
         </property>
         <property name="readOnly">
          <bool>false</bool>
@@ -224,8 +234,7 @@ border-image: url(:/icons/ya.ico);
            <string>翻译为中文</string>
           </property>
           <property name="styleSheet">
-           <string notr="true">
-</string>
+           <string notr="true"/>
           </property>
           <property name="text">
            <string/>
@@ -260,8 +269,7 @@ border-image: url(:/icons/ya.ico);
            <string>翻译为英文</string>
           </property>
           <property name="styleSheet">
-           <string notr="true">
-</string>
+           <string notr="true"/>
           </property>
           <property name="text">
            <string/>

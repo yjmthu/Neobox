@@ -12,6 +12,7 @@
 #include "wallpaper.h"
 #include "formsetting.h"
 #include "desktopmask.h"
+#include "menuwallpaper.h"
 
 PIP_ADAPTER_ADDRESSES piaa;//网卡结构
 MIB_IFTABLE *mi;    //网速结构
@@ -49,9 +50,9 @@ Form::Form(QWidget* parent) :
 Form::~Form()
 {
     qout << "析构Form开始";
+    delete wallpaper;
     delete translater;
     delete monitor_timer;
-    delete menu;
     delete dialog;
     delete ui;
     delete animation;
@@ -87,6 +88,7 @@ void Form::initForm()
     IniRead.beginGroup("UI");
     SetWindowPos(HWND(winId()), HWND_TOPMOST, IniRead.value("x").toInt(), IniRead.value("y").toInt(), 0, 0, SWP_NOSIZE);
     IniRead.endGroup();
+
     if (VarBox->EnableTranslater)
         enableTranslater(true);
     else
@@ -106,10 +108,11 @@ inline void savePos()
 
 void Form::initConnects()
 {
+    wallpaper = new MenuWallpaper;                                //新建壁纸处理类
     dialog = new Dialog;                                             //dialog要比menu先定义，它是menu的依赖。
-    menu = new Menu;
 	monitor_timer = new QTimer;
 	animation = new QPropertyAnimation(this, "geometry");                  //用于贴边隐藏的动画
+    connect(wallpaper, &MenuWallpaper::msgBox, this, &Form::msgBox);
     connect(monitor_timer, &QTimer::timeout, [this](){
         get_mem_usage();
         get_net_usage();
@@ -160,7 +163,7 @@ void Form::mousePressEvent(QMouseEvent* event)
 	else if (event->button() == Qt::RightButton)             // 鼠标右键点击悬浮窗
     {
         QPointF pt = event->globalPosition();
-        menu->Show(pt.x(), pt.y());
+        (new Menu(this))->Show(pt.x(), pt.y());
 	}
     else if (event->button() == Qt::MiddleButton)
     {

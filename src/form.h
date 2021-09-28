@@ -33,19 +33,18 @@ public:
 	explicit Form(QWidget* parent = nullptr);
     ~Form();
     inline Dialog* getDialog() const { return dialog; };                              //设置对话
-    inline Menu* getMenu() const { return menu; };                                  //右键菜单
 
 private:
     friend class Menu;  //friend class Translater; //右键菜单可以访问私有数据
     friend class FormSetting;
 	Ui::Form* ui;                                //ui指向悬浮窗界面
     Dialog* dialog;                              //设置对话
-    Menu* menu;                                  //右键菜单
 	QPoint _startPos;                            //记录鼠标
     QPoint _endPos;                              //鼠标移动向
 	QTimer* monitor_timer;                       //每隔一秒钟刷新一次数据
     Translater* translater = nullptr;                      //翻译类，自带ui
 	bool moved = false;
+    MenuWallpaper* wallpaper;                    //用于壁纸更换
 	void initForm();                             //根据设置文件初始化悬浮窗
 	void initConnects();                         //初始化连接
 	void get_mem_usage();                        //读取内存占用率

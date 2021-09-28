@@ -27,9 +27,3 @@ QPushButton:checked:hover {
 QPushButton:checked {
         background-color: transparent;
 }
-
-QPlainTextEdit {
-    background-color: rgba(8, 8, 8, 150);
-    color: #ffff00;
-        border: 1px solid #00ffff
-}

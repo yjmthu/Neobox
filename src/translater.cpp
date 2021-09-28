@@ -10,6 +10,7 @@
 #include <QTimer>
 #include <QFile>
 #include <QCryptographicHash>
+#include <sapi.h> //导入语音头文件
 
 #include "YEncode.h"
 #include "YString.h"
@@ -24,6 +25,24 @@
 
 #define TRAN_HEIGHT 300
 #define TRAN_WIDTH 240
+
+bool  MSSpeak(LPCTSTR speakContent) // 文字转为语音
+{
+    ISpVoice *pVoice = NULL;  //初始化COM接口
+    if (FAILED(::CoInitialize(NULL)))
+        return false;         // MessageBoxW(NULL, (LPCWSTR)L"COM接口初始化失败！", (LPCWSTR)L"提示", MB_ICONWARNING | MB_CANCELTRYCONTINUE | MB_DEFBUTTON2); //获取SpVoice接口
+    HRESULT hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void**)&pVoice);
+    if (SUCCEEDED(hr))
+    {
+        pVoice->SetVolume((USHORT)100);    //设置音量，范围是 0 -100
+        pVoice->SetRate(0);                //设置速度，范围是 -10 - 10
+        pVoice->Speak(speakContent, 0, NULL);
+        pVoice->Release();
+        pVoice = NULL;
+    }
+    CoUninitialize();                      //释放com资源
+    return true;
+}
 
 Translater::Translater() :
     QWidget(nullptr),
@@ -106,12 +125,14 @@ void Translater::initConnects()
     connect(ui->TextFrom, &QPlainTextEdit::customContextMenuRequested, ui->TextFrom, [=](const QPoint &pos){
         QMenu* menu = ui->TextFrom->createStandardContextMenu();
         menu->setStyleSheet(menu_style);
+        menu->connect(menu->addAction("Read All"), &QAction::triggered, [this](){MSSpeak(ui->TextFrom->toPlainText().toStdWString().c_str());});
         menu->exec((pos + ui->TextFrom->pos()) + this->pos());
         delete menu;
     });
     connect(ui->TextTo, &QPlainTextEdit::customContextMenuRequested, ui->TextFrom, [=](const QPoint &pos){
         QMenu* menu = ui->TextTo->createStandardContextMenu();
         menu->setStyleSheet(menu_style);
+        menu->connect(menu->addAction("Read All"), &QAction::triggered, [this](){MSSpeak(ui->TextTo->toPlainText().toStdWString().c_str());});
         menu->exec((pos + ui->TextTo->pos()) + this->pos());
         delete menu;
     });
