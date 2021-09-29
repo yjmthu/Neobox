@@ -24,7 +24,7 @@ signals:
 
 protected:
     bool eventFilter(QObject *target, QEvent *event);       //事件过滤器
-    void showEvent(QShowEvent *event);
+    void closeEvent(QCloseEvent*event);
 
 public:
     explicit Dialog();
@@ -33,17 +33,12 @@ public:
 private:
     friend void del_file(Dialog *di ,QString str);
     Ui::Dialog* ui;
-    DialogWallpaper* wallpaper;                          //壁纸处理类
-	QTimer* change_paper_timer;                          //定时更换壁纸
-    Tray* tray;
 	QButtonGroup* buttonGroup;                           //单选按钮组合，互斥，添加按钮id
     short last_checked_button = 0;                       //上次选中的按钮的 id
 	void checkSettings();                                //读取注册表
-    void setTheme();
 	void initChildren();
 	void initUi();
 	void initConnects();
-	void initBehaviors();
     void initButtonFilter();
 	void changeType(BOOL);
 

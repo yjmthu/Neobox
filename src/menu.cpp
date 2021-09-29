@@ -23,7 +23,6 @@ Menu::Menu(QWidget* parent) :
 Menu::~Menu()
 {
     qout << "析构menu开始";
-    delete MouseMoveTimer;
     delete quitAct;
     delete shutdownAct;
     delete removePicAct;
@@ -105,6 +104,7 @@ void Menu::showEvent(QShowEvent *event)
 
 void Menu::Show(int x, int y)           //自动把右键菜单移动到合适位置
 {
+    noSleepAct->setChecked(VarBox->form->MouseMoveTimer);
 	int px, py;
     if (x + MENU_WIDTH < VarBox->ScreenWidth)   //菜单右边界不超出屏幕时
 		px = x;
@@ -121,45 +121,53 @@ void Menu::Show(int x, int y)           //自动把右键菜单移动到合适�
 void Menu::initMenuConnect()
 {
     connect(settingDialogAct, &QAction::triggered, [](){
-        if (VarBox->form->dialog->isVisible())
-            VarBox->form->dialog->setWindowState(Qt::WindowActive | Qt::WindowNoState);    // 让窗口从最小化恢复正常并激活窗口
-            //d->activateWindow();
-            //d->raise();
+        if (VarBox->dialog)
+        {
+            if (VarBox->dialog->isVisible())
+                VarBox->dialog->setWindowState(Qt::WindowActive | Qt::WindowNoState);    // 让窗口从最小化恢复正常并激活窗口
+                //d->activateWindow();
+                //d->raise();
+            else
+                VarBox->dialog->show();
+        }
         else
-            VarBox->form->dialog->show();
+        {
+            *const_cast<Dialog**>(&(VarBox->dialog)) = new Dialog;
+            VarBox->dialog->show();
+        }
     });                                                                                  //打开壁纸设置界面
     connect(translateAct, &QAction::triggered, VarBox->form, &Form::enableTranslater);    //是否启用翻译功能
     translateAct->setChecked(VarBox->EnableTranslater);                                 //设置是否选中“划词翻译”
     connect(nextPaperAct, &QAction::triggered,
         [=]() {
-            if (VarBox->form->wallpaper->isActive())
-                QMessageBox::information(VarBox->form->dialog, "提示", "频繁点击是没有效的哦！", QMessageBox::Ok, QMessageBox::Ok);
+            if (VarBox->mwallpaper->isActive())
+                VARBOX::MSG("频繁点击是没有效的哦！", "提示");
             else if (Wallpaper::canCreat())
-                VarBox->form->wallpaper->start();
+                VarBox->mwallpaper->start();
         });
-    connect(prevPaperAct, &QAction::triggered, VarBox->form->wallpaper, &MenuWallpaper::previousPic);   //设置受否开机自启
-    connect(noSleepAct, &QAction::triggered, [=](bool checked){
+    connect(prevPaperAct, &QAction::triggered, VarBox->mwallpaper, &MenuWallpaper::previousPic);   //设置受否开机自启
+    connect(noSleepAct, &QAction::triggered, VarBox, [=](bool checked){
         if (checked)                                                                      //启用自动移动鼠标
         {
-            MouseMoveTimer = new QTimer;
-            MouseMoveTimer->setInterval(45000);
-            connect(MouseMoveTimer, &QTimer::timeout, [](){
+            VarBox->form->MouseMoveTimer = new QTimer;
+            VarBox->form->MouseMoveTimer->setInterval(45000);
+            connect(VarBox->form->MouseMoveTimer, &QTimer::timeout, [](){
                 int X = 1;
                 if (QCursor::pos().x() == VarBox->ScreenWidth) X = -1;
                 mouse_event(MOUSEEVENTF_MOVE, X, 0, 0, 0);                                        //移动一个像素
                 mouse_event(MOUSEEVENTF_MOVE, -X, 0, 0, 0);                                       //移回原来的位置
             });
-            MouseMoveTimer->start();
+            VarBox->form->MouseMoveTimer->start();
         }
         else                                                                              //禁用自动移动鼠标
         {
-            MouseMoveTimer->stop();
-            delete MouseMoveTimer;
-            MouseMoveTimer = nullptr;
+            VarBox->form->MouseMoveTimer->stop();
+            delete VarBox->form->MouseMoveTimer;
+            VarBox->form->MouseMoveTimer = nullptr;
         }
     });                                                                               //是否自动移动鼠标防止息屏
 	connect(openFolderAct, SIGNAL(triggered()), this, SLOT(OpenFolder()));            //打开exe所在文件夹
-    connect(removePicAct, &QAction::triggered, VarBox->form->wallpaper, &MenuWallpaper::removePic);          //重启电脑
+    connect(removePicAct, &QAction::triggered, VarBox->mwallpaper, &MenuWallpaper::removePic);          //重启电脑
 	connect(shutdownAct, SIGNAL(triggered()), this, SLOT(ShutdownComputer()));        //关闭电脑
     connect(quitAct, &QAction::triggered, [](){
         VarBox->RunApp = false;                                                       //以便其它线程知晓，停止正在进行的工作
@@ -197,7 +205,7 @@ void Menu::ShutdownComputer() const
     }
     if (!pOpenProcessToken || !pLookupPrivilegeValue || !pAdjustTokenPrivileges || !pInitiateSystemShutdownEx || !pOpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken))
     {
-        QMessageBox::warning(VarBox->form->dialog, "警告", "获取模块失败", QMessageBox::Ok);
+        VARBOX::MSG("获取模块失败", "警告", QMessageBox::Ok);
         return;
     }
     pLookupPrivilegeValue(NULL, SE_SHUTDOWN_NAME, &tkp.Privileges[0].Luid);
@@ -206,7 +214,7 @@ void Menu::ShutdownComputer() const
     pAdjustTokenPrivileges(hToken, FALSE, &tkp, sizeof(TOKEN_PRIVILEGES), (PTOKEN_PRIVILEGES)NULL, NULL);
     if (GetLastError() != ERROR_SUCCESS)
     {
-        QMessageBox::warning(VarBox->form->dialog, "警告", "关机失败", QMessageBox::Ok);
+        VARBOX::MSG("关机失败", "警告", QMessageBox::Ok);
         return;
     }
     pInitiateSystemShutdownEx(NULL, NULL, 0, TRUE, FALSE, NULL);

@@ -136,10 +136,14 @@ void YJson::CopyJson(const YJson* json, YJson* parent)
         YJson *child = nullptr, *childx = nullptr;
         if (child = json->_child)
         {
-            childx = _child = new YJson(static_cast<YJSON>(_type)); _child->CopyJson(child, this);
+            childx = _child = new YJson(static_cast<YJSON>(_type));
+            _child->_type = child->_type;
+            _child->CopyJson(child, this);
             while (child = child->_next)
             {
-                childx->_next = new YJson; childx->_next->CopyJson(child, this);
+                childx->_next = new YJson;
+                childx->_next->_type = child->_type;
+                childx->_next->CopyJson(child, this);
                 childx->_next->_prev = childx; childx = childx->_next;
             }
         }
@@ -341,6 +345,7 @@ bool YJson::remove(YJson* item)
 
 YJson& YJson::operator=(const YJson& s)
 {
+    qout << "常饮用";
     if (&s == this)
         return *this;
     else if (s.getTop() == this->getTop())

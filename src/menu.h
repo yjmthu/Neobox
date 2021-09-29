@@ -38,8 +38,6 @@ private:
     QAction* shutdownAct;                //关机
     QAction* quitAct;                    //关闭程序
 
-    QTimer* MouseMoveTimer = nullptr;              //用于定时移动鼠标，防止息屏
-
 private slots:
 	void OpenFolder() const;             //打开程序所在文件夹
 	void ShutdownComputer() const;       //关闭电脑

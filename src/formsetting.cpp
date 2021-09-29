@@ -303,16 +303,12 @@ void FormSetting::on_pushButton_6_clicked()
     QString file = VARBOX::get_dat_path() + "\\" + "FormStyle.json";
     if (QFile::exists(file))
     {
-        YJson s(YJSON::OBJECT);
+        YJson s(std::ifstream(file.toStdWString(), std::ios::in | std::ios::binary));
         YJson &js = s["form-frame"];
         if (js)
-        {
             js = *old_style;
-        }
         else
-        {
-            s.append(*old_style, "form-frame");
-        }
+            s.append(*const_cast<const YJson*>(old_style), "form-frame");
         s.toFile(file.toStdWString(), YJSON_ENCODE::UTF8, true);
     }
     else

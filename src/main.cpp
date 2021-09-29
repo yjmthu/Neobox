@@ -17,14 +17,6 @@ int main(int argc, char* argv[])
     QScreen* screen = QGuiApplication::primaryScreen();                    //获取屏幕分辨率
     QRect geo = screen->geometry();
     VarBox = new VARBOX(geo.width(), geo.height());
-    Form* form = new Form;
-    APPBARDATA abd;
-    memset(&abd, 0, sizeof(abd));
-    abd.cbSize = sizeof(APPBARDATA);
-    abd.hWnd = HWND(form->winId());
-    abd.uCallbackMessage = MSG_APPBAR_MSGID;
-    SHAppBarMessage(ABM_NEW, &abd);
-    form->show();                                                              //显示悬浮窗
     switch (a.exec()) {
     case RETCODE_RESTART:                                   //如果收到重启常数
         CloseHandle(VARBOX::HMutex);

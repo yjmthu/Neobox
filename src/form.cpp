@@ -40,7 +40,7 @@ Form::Form(QWidget* parent) :
     QWidget(parent),
     ui(new Ui::Form)
 {
-    Form** p = const_cast<Form**>(&(VarBox->form)); *p = this;
+    *const_cast<Form**>(&(VarBox->form)) = this;
     ui->setupUi(this);                                                     //创建界面
 	initForm();                                                            //初始化大小、位置、翻译功能
 	initConnects();
@@ -50,10 +50,9 @@ Form::Form(QWidget* parent) :
 Form::~Form()
 {
     qout << "析构Form开始";
-    delete wallpaper;
+    delete MouseMoveTimer;
     delete translater;
     delete monitor_timer;
-    delete dialog;
     delete ui;
     delete animation;
     HeapFree(GetProcessHeap(), 0, piaa);
@@ -83,7 +82,9 @@ void Form::initForm()
     //setStyleSheet("background:transparent");
 	setMinimumSize(FORM_WIDTH, FORM_HEIGHT);
 	setMaximumSize(FORM_WIDTH, FORM_HEIGHT);
+
     FormSetting::load_style_from_file();
+
     QSettings IniRead(VarBox->get_ini_path(), QSettings::IniFormat);
     IniRead.beginGroup("UI");
     SetWindowPos(HWND(winId()), HWND_TOPMOST, IniRead.value("x").toInt(), IniRead.value("y").toInt(), 0, 0, SWP_NOSIZE);
@@ -108,11 +109,9 @@ inline void savePos()
 
 void Form::initConnects()
 {
-    wallpaper = new MenuWallpaper;                                //新建壁纸处理类
-    dialog = new Dialog;                                             //dialog要比menu先定义，它是menu的依赖。
+    // dialog = new Dialog;                                             //dialog要比menu先定义，它是menu的依赖。
 	monitor_timer = new QTimer;
 	animation = new QPropertyAnimation(this, "geometry");                  //用于贴边隐藏的动画
-    connect(wallpaper, &MenuWallpaper::msgBox, this, &Form::msgBox);
     connect(monitor_timer, &QTimer::timeout, [this](){
         get_mem_usage();
         get_net_usage();
@@ -120,16 +119,11 @@ void Form::initConnects()
     connect(animation, &QPropertyAnimation::finished, &savePos);
 }
 
-void Form::msgBox(const char* content, const char* title)
-{
-    QMessageBox::information(dialog, title, content, QMessageBox::Ok, QMessageBox::Ok);
-}
-
 
 void Form::set_wallpaper_fail(const char* str)
 {
-    msgBox(str, "出错");
-    dialog->show();
+    VARBOX::MSG(str, "出错");
+    // dialog->show();
 }
 
 bool Form::nativeEvent(const QByteArray &, void *message, long long *)
@@ -271,7 +265,7 @@ void Form::enableTranslater(bool checked)
         }
         else
         {
-            QMessageBox::warning(dialog, "错误", "未找到APP ID和密钥！请打开设置并确认是否填写正确。");
+            VARBOX::MSG("未找到APP ID和密钥！请打开设置并确认是否填写正确。", "错误");
             VarBox->EnableTranslater = false;
         }
     }

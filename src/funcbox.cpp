@@ -7,11 +7,14 @@
 #include <QProcess>
 #include <QDir>
 #include <QMessageBox>
+#include <QTimer>
 
 #include "funcbox.h"
 #include "YString.h"
 #include "form.h"
 #include "desktopmask.h"
+#include "dialogwallpaper.h"
+#include "menuwallpaper.h"
 
 #pragma comment(lib,"wininet.lib")
 
@@ -58,6 +61,7 @@ VARBOX* VarBox = nullptr;
 HANDLE VARBOX::HMutex = NULL;
 
 VARBOX::VARBOX(int w, int h):
+    QObject(nullptr),
     WinVersion(GetNtVersionNumbers()), ScreenWidth(w), ScreenHeight(h),
     hOleacc(LoadLibraryA("oleacc.dll")), hIphlpapi(LoadLibraryA("iphlpapi.dll")), hDwmapi(LoadLibraryA("dwmapi.dll"))
 {
@@ -71,181 +75,10 @@ VARBOX::VARBOX(int w, int h):
         if (!temp_paper.empty()) PicHistory.push_back(std::pair<bool, wchar_t*>(true, StrJoin<wchar_t>(temp_paper.c_str())));
     }
     CurPic = PicHistory.begin();
-    QString file = get_ini_path(); short type = 0; qout << "配置文件目录" << file;
-    if (!QFile::exists(file) && QFile::exists(get_dat_path() + "\\SpeedBox2.ini"))
-    {
-        QFile::rename(get_dat_path() + "\\SpeedBox2.ini", file);
-    }
-    while (true)
-    {
-        if (type == 0)
-        {
-            if (!QFile::exists(file))
-            {
-                qout << "SpeedBox.ini 文件不存在";
-                type = 1;
-                continue;
-            }
-            else
-            {
-                QSettings set(file, QSettings::IniFormat);
-                set.beginGroup("SpeedBox");
-                QByteArray x = set.value("Version").toByteArray();
-                set.endGroup();
-                qout << "文件存在，版本信息为" << x;
-                if (VARBOX::versionBefore(x, "21.8.1"))
-                {
-                    qout << "ini文件过期，将其删除。";
-                    QFile::remove(file);
-                    type = 1;
-                    continue;
-                }
-                else
-                {
-                    qout << "版本支持，继续读取";
-                    type = 2;
-                    continue;
-                }
-            }
-        }
-        if (type == 1)
-        {
-            qout << "创建新的Ini文件。";
-            MajorDir = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
-            PathToOpen = QDir::toNativeSeparators(qApp->applicationDirPath());
-            NativeDir = MajorDir;
-            QSettings *IniWrite = new QSettings(get_ini_path(), QSettings::IniFormat);
-            IniWrite->beginGroup("SpeedBox");
-            IniWrite->setValue("Version", Version);
-            IniWrite->endGroup();
-            IniWrite->beginGroup("Wallpaper");
-            IniWrite->setValue("PaperType", static_cast<int>(PaperType));
-            IniWrite->setValue("TimeInerval", TimeInterval);
-            IniWrite->setValue("PageNum", PageNum);
-            IniWrite->setValue("setNative", false);
-            IniWrite->setValue("AutoChange", false);
-            IniWrite->setValue("NativeDir", MajorDir);
-            IniWrite->setValue("UserCommand", UserCommand);
-            IniWrite->setValue("UseDateAsBingName", UseDateAsBingName);
-            IniWrite->endGroup();
-
-            IniWrite->beginGroup("Translate");
-            IniWrite->setValue("EnableTranslater", false);
-            IniWrite->setValue("AutoHide", true);
-            IniWrite->endGroup();
-
-            IniWrite->beginGroup("UI");
-            IniWrite->setValue("ColorTheme", static_cast<int>(CurTheme));
-            IniWrite->setValue("x", 100);
-            IniWrite->setValue("y", 100);
-            IniWrite->setValue("ControlDesktopIcon", (bool)ControlDesktopIcon);
-            IniWrite->endGroup();
-
-            IniWrite->beginGroup("Dirs");
-            IniWrite->setValue("MajorDir", MajorDir);
-            IniWrite->setValue("OpenDir", PathToOpen);
-
-            for (short i = 0; i < 10; i++)
-                IniWrite->setValue(StandardNames[i][0], CustomNames[i]);
-            IniWrite->endGroup(); delete IniWrite;
-            saveTrayStyle();
-            type = 3;
-            qout << "创建新的ini文件完毕。";
-            continue;
-        }
-        else if (type == 2)
-        {
-            qout << "开始读取设置。";
-            QSettings *IniRead = new QSettings(file, QSettings::IniFormat);
-            IniRead->beginGroup("SpeedBox");
-            IniRead->setValue("Version", Version);
-            IniRead->endGroup();
-            IniRead->beginGroup("Wallpaper");
-            NativeDir = IniRead->value("NativeDir").toString();
-            unsigned safeEnum = IniRead->value("PaperType").toInt();
-            if (safeEnum>9) safeEnum = 0;
-            PaperType = static_cast<PAPER_TYPE>(safeEnum);
-            TimeInterval = IniRead->value("TimeInerval").toInt();
-            PageNum = IniRead->value("PageNum").toInt();
-            UserCommand = IniRead->value("UserCommand").toString();
-            AutoChange = IniRead->value("AutoChange").toBool();
-            if (IniRead->contains("AutoRotationBingPicture"))
-            {
-                UseDateAsBingName = IniRead->value("UseDateAsBingName").toBool();
-                AutoSaveBingPicture = IniRead->value("AutoSaveBingPicture").toBool();
-                AutoRotationBingPicture = IniRead->value("AutoRotationBingPicture").toBool();
-            }
-            else
-            {
-                IniRead->setValue("AutoSaveBingPicture", AutoSaveBingPicture);
-                IniRead->setValue("UseDateAsBingName", UseDateAsBingName);
-                IniRead->setValue("AutoRotationBingPicture", AutoRotationBingPicture);
-            }
-            if (IniRead->contains("FirstChange"))
-            {
-                FirstChange = IniRead->value("FirstChange").toBool();
-            }
-            else
-                IniRead->setValue("FirstChange", FirstChange);
-            IniRead->endGroup();
-            qout << "读取壁纸信息完毕";
-            IniRead->beginGroup("Translate");
-            AutoHide = IniRead->value("AutoHide").toBool();
-            EnableTranslater = IniRead->value("EnableTranslater").toBool();
-            IniRead->endGroup();
-            qout << "读取翻译信息完毕";
-            IniRead->beginGroup("Dirs");
-            PathToOpen = IniRead->value("OpenDir").toString();
-            if (IniRead->contains("FamilyPath"))
-            {
-                MajorDir = IniRead->value("FamilyPath").toString();
-                IniRead->remove("FamilyPath");
-                IniRead->setValue("MajorDir", MajorDir);
-                CustomNames[7] = IniRead->value("Wallpapers").toString();
-                IniRead->remove("Wallpapers");
-                IniRead->setValue("MajorName", CustomNames[7]);
-            }
-            else
-                MajorDir = IniRead->value("MajorDir").toString();
-            for (short i = 0; i < 10; i++)
-            {
-                CustomNames[i] = IniRead->value(StandardNames[i][0]).toString();
-            }
-            IniRead->endGroup();
-            qout << "读取路径信息完毕";
-            IniRead->beginGroup("UI");
-            if (IniRead->contains("ControlDesktopIcon"))
-            {
-                if (IniRead->value("ControlDesktopIcon").toBool())
-                    ControlDesktopIcon = new DesktopMask;
-            }
-            else
-                IniRead->setValue("ControlDesktopIcon", false);
-            safeEnum = IniRead->value("ColorTheme").toInt();
-            if (safeEnum > 7) safeEnum = 0;
-            CurTheme = static_cast<COLOR_THEME>(safeEnum);
-            IniRead->endGroup();
-            delete IniRead;
-            qout << "开始读取风格";
-            readTrayStyle();
-            qout << "读取设置完毕。";
-            type = 3;
-            continue;
-        }
-        else if (type == 3)
-        {
-            for (short i = 0; i < 7; i++)
-                get_pic_path(i);
-            if (!get_son_dir(PathToOpen))
-            {
-                PathToOpen = QDir::toNativeSeparators(qApp->applicationDirPath());
-                sigleSave("Dirs", "OpenDir", PathToOpen);
-            }
-            HaveAppRight = check_app_right();
-            EnableTranslater = HaveAppRight && EnableTranslater;
-            break;
-        }
-    }
+    initFile();
+    initChildren();
+    initConnections();
+    initBehaviors();
     qout << "VarBox构造函数结束。";
 }
 
@@ -253,6 +86,11 @@ VARBOX::~VARBOX()
 {
     qout << "结构体析构中~";
     delete form;
+    delete tray;
+    delete change_paper_timer;
+    delete mwallpaper;
+    delete dwallpaper;
+    delete dialog;
     for (auto x: PicHistory)
     {
         if (x.first)
@@ -390,6 +228,202 @@ void VARBOX::readTrayStyle()
     if (safeEnum > 2) safeEnum = 0;
     iPos = static_cast<TaskBarCenterState>(safeEnum);
     IniRead.endGroup();
+}
+
+void VARBOX::initFile()
+{
+    QString file = get_ini_path(); qout << "配置文件目录" << file;
+    if (!QFile::exists(file) && QFile::exists(get_dat_path() + "\\SpeedBox2.ini"))
+    {
+        QFile::rename(get_dat_path() + "\\SpeedBox2.ini", file);
+    }
+    if (!QFile::exists(file))
+    {
+        qout << "SpeedBox.ini 文件不存在";
+        goto label_1;
+    }
+    else
+    {
+        QSettings set(file, QSettings::IniFormat);
+        set.beginGroup("SpeedBox");
+        QByteArray x = set.value("Version").toByteArray();
+        set.endGroup();
+        qout << "文件存在，版本信息为" << x;
+        if (VARBOX::versionBefore(x, "21.8.1"))
+        {
+            qout << "ini文件过期，将其删除。";
+            QFile::remove(file);
+            goto label_1;
+        }
+        else
+        {
+            qout << "版本支持，继续读取";
+            goto label_2;
+        }
+    }
+label_1:
+        {
+            qout << "创建新的Ini文件。";
+            MajorDir = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
+            PathToOpen = QDir::toNativeSeparators(qApp->applicationDirPath());
+            NativeDir = MajorDir;
+            QSettings *IniWrite = new QSettings(get_ini_path(), QSettings::IniFormat);
+            IniWrite->beginGroup("SpeedBox");
+            IniWrite->setValue("Version", Version);
+            IniWrite->endGroup();
+            IniWrite->beginGroup("Wallpaper");
+            IniWrite->setValue("PaperType", static_cast<int>(PaperType));
+            IniWrite->setValue("TimeInerval", TimeInterval);
+            IniWrite->setValue("PageNum", PageNum);
+            IniWrite->setValue("setNative", false);
+            IniWrite->setValue("AutoChange", false);
+            IniWrite->setValue("NativeDir", MajorDir);
+            IniWrite->setValue("UserCommand", UserCommand);
+            IniWrite->setValue("UseDateAsBingName", UseDateAsBingName);
+            IniWrite->endGroup();
+
+            IniWrite->beginGroup("Translate");
+            IniWrite->setValue("EnableTranslater", false);
+            IniWrite->setValue("AutoHide", true);
+            IniWrite->endGroup();
+
+            IniWrite->beginGroup("UI");
+            IniWrite->setValue("ColorTheme", static_cast<int>(CurTheme));
+            IniWrite->setValue("x", 100);
+            IniWrite->setValue("y", 100);
+            IniWrite->setValue("ControlDesktopIcon", (bool)ControlDesktopIcon);
+            IniWrite->endGroup();
+
+            IniWrite->beginGroup("Dirs");
+            IniWrite->setValue("MajorDir", MajorDir);
+            IniWrite->setValue("OpenDir", PathToOpen);
+
+            for (short i = 0; i < 10; i++)
+                IniWrite->setValue(StandardNames[i][0], CustomNames[i]);
+            IniWrite->endGroup(); delete IniWrite;
+            saveTrayStyle();
+            qout << "创建新的ini文件完毕。";
+            goto label_3;
+        }
+label_2:
+        {
+            qout << "开始读取设置。";
+            QSettings *IniRead = new QSettings(file, QSettings::IniFormat);
+            IniRead->beginGroup("SpeedBox");
+            IniRead->setValue("Version", Version);
+            IniRead->endGroup();
+            IniRead->beginGroup("Wallpaper");
+            NativeDir = IniRead->value("NativeDir").toString();
+            unsigned safeEnum = IniRead->value("PaperType").toInt();
+            if (safeEnum>9) safeEnum = 0;
+            PaperType = static_cast<PAPER_TYPE>(safeEnum);
+            TimeInterval = IniRead->value("TimeInerval").toInt();
+            PageNum = IniRead->value("PageNum").toInt();
+            UserCommand = IniRead->value("UserCommand").toString();
+            AutoChange = IniRead->value("AutoChange").toBool();
+            if (IniRead->contains("AutoRotationBingPicture"))
+            {
+                UseDateAsBingName = IniRead->value("UseDateAsBingName").toBool();
+                AutoSaveBingPicture = IniRead->value("AutoSaveBingPicture").toBool();
+                AutoRotationBingPicture = IniRead->value("AutoRotationBingPicture").toBool();
+            }
+            else
+            {
+                IniRead->setValue("AutoSaveBingPicture", AutoSaveBingPicture);
+                IniRead->setValue("UseDateAsBingName", UseDateAsBingName);
+                IniRead->setValue("AutoRotationBingPicture", AutoRotationBingPicture);
+            }
+            if (IniRead->contains("FirstChange"))
+            {
+                FirstChange = IniRead->value("FirstChange").toBool();
+            }
+            else
+                IniRead->setValue("FirstChange", FirstChange);
+            IniRead->endGroup();
+            qout << "读取壁纸信息完毕";
+            IniRead->beginGroup("Translate");
+            AutoHide = IniRead->value("AutoHide").toBool();
+            EnableTranslater = IniRead->value("EnableTranslater").toBool();
+            IniRead->endGroup();
+            qout << "读取翻译信息完毕";
+            IniRead->beginGroup("Dirs");
+            PathToOpen = IniRead->value("OpenDir").toString();
+            if (IniRead->contains("FamilyPath"))
+            {
+                MajorDir = IniRead->value("FamilyPath").toString();
+                IniRead->remove("FamilyPath");
+                IniRead->setValue("MajorDir", MajorDir);
+                CustomNames[7] = IniRead->value("Wallpapers").toString();
+                IniRead->remove("Wallpapers");
+                IniRead->setValue("MajorName", CustomNames[7]);
+            }
+            else
+                MajorDir = IniRead->value("MajorDir").toString();
+            for (short i = 0; i < 10; i++)
+            {
+                CustomNames[i] = IniRead->value(StandardNames[i][0]).toString();
+            }
+            IniRead->endGroup();
+            qout << "读取路径信息完毕";
+            IniRead->beginGroup("UI");
+            if (IniRead->contains("ControlDesktopIcon"))
+            {
+                if (IniRead->value("ControlDesktopIcon").toBool())
+                    ControlDesktopIcon = new DesktopMask;
+            }
+            else
+                IniRead->setValue("ControlDesktopIcon", false);
+            safeEnum = IniRead->value("ColorTheme").toInt();
+            if (safeEnum > 7) safeEnum = 0;
+            CurTheme = static_cast<COLOR_THEME>(safeEnum);
+            IniRead->endGroup();
+            delete IniRead;
+            qout << "开始读取风格";
+            readTrayStyle();
+            qout << "读取设置完毕。";
+        }
+label_3:
+        {
+            for (short i = 0; i < 7; i++)
+                get_pic_path(i);
+            if (!get_son_dir(PathToOpen))
+            {
+                PathToOpen = QDir::toNativeSeparators(qApp->applicationDirPath());
+                sigleSave("Dirs", "OpenDir", PathToOpen);
+            }
+            HaveAppRight = check_app_right();
+            EnableTranslater = HaveAppRight && EnableTranslater;
+        }
+}
+
+void VARBOX::initChildren()
+{
+    dwallpaper = new DialogWallpaper;                    // 创建壁纸更换类
+    mwallpaper = new MenuWallpaper;                      // 新建壁纸处理类
+    change_paper_timer = new QTimer;                     // 定时器，定时更换壁纸
+    tray = new Tray;
+    Form* form = new Form;
+    static APPBARDATA abd = {0};
+    abd.cbSize = sizeof(APPBARDATA);
+    abd.hWnd = HWND(form->winId());
+    abd.uCallbackMessage = MSG_APPBAR_MSGID;
+    SHAppBarMessage(ABM_NEW, &abd);
+}
+
+void VARBOX::initConnections()
+{
+    // connect(dwallpaper, &DialogWallpaper::setFailed, VarBox->form, &Form::set_wallpaper_fail);
+    connect(change_paper_timer, &QTimer::timeout, dwallpaper, &DialogWallpaper::start);
+    connect(dwallpaper, &DialogWallpaper::msgBox, this, [](const char*s1, const char*s2){VARBOX::MSG(s1, s2);});
+    connect(mwallpaper, &MenuWallpaper::msgBox, this, [](const char*s1, const char*s2){VARBOX::MSG(s1, s2);});
+}
+
+void VARBOX::initBehaviors()
+{
+    VarBox->change_paper_timer->setInterval(VarBox->TimeInterval * 60000);
+    if (VarBox->FirstChange) VarBox->dwallpaper->start();                                  // Timer默认第一次不启动，这里要加上。
+    if (VarBox->AutoChange) VarBox->change_paper_timer->start();
+    form->show();                                                              //显示悬浮窗
 }
 
 void VARBOX::saveTrayStyle()
@@ -783,7 +817,12 @@ BOOL VARBOX::OneDriveFile(const wchar_t *file)
     return false;
 }
 
-void VARBOX::MSG(const char *str)
+void VARBOX::MSG(const char *text, const char* title, QMessageBox::StandardButtons s)
 {
-    QMessageBox::information(nullptr, "DEBUG", str);
+    QMessageBox message(QMessageBox::Information, title, text, s, NULL);
+    QFile qss(":/qss/dialog_style.qss");
+    qss.open(QFile::ReadOnly);
+    message.setStyleSheet(QString(qss.readAll()));
+    qss.close();
+    message.exec();
 }

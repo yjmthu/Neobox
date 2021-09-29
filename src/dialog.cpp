@@ -58,16 +58,12 @@ Dialog::Dialog():
     initChildren();
     initUi();
 	initConnects();
-	initBehaviors();
     initButtonFilter();
 }
 
 Dialog::~Dialog()
 {
     qout << "析构dialog开始";
-    delete tray;
-    delete change_paper_timer;
-    delete wallpaper;
     delete buttonGroup;
     delete ui;
     qout << "析构dialog结束";
@@ -76,7 +72,7 @@ Dialog::~Dialog()
 void Dialog::initUi()
 {
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window | Qt::WindowSystemMenuHint | Qt::WindowMinimizeButtonHint);  //| Qt::WindowStaysOnTopHint
-
+    setAttribute(Qt::WA_DeleteOnClose, true);
     if (VarBox->WinVersion != 0xA)
     {
         ui->radioButton_7->setEnabled(false);
@@ -100,123 +96,7 @@ void Dialog::initUi()
     buttonGroup->addButton(ui->rBtnAdvance, (int)PAPER_TYPE::Advance);
 	buttonGroup->setExclusive(true);                     // 按钮之间相互排斥
     ui->lineAppData->setText(VarBox->get_dat_path());
-    move((VarBox->ScreenWidth - width()) / 2, (VarBox->ScreenHeight - height()) / 2);
-    setTheme();
-}
 
-void Dialog::initChildren()
-{
-	buttonGroup = new QButtonGroup;
-    wallpaper = new DialogWallpaper;                     // 创建壁纸更换类
-    change_paper_timer = new QTimer;                     // 定时器，定时更换壁纸
-    tray = new Tray;
-}
-
-void Dialog::initConnects()
-{
-    connect(wallpaper, &DialogWallpaper::setFailed, VarBox->form, &Form::set_wallpaper_fail);
-    connect(change_paper_timer, &QTimer::timeout, wallpaper, &DialogWallpaper::start);
-    connect(wallpaper, &DialogWallpaper::msgBox, VarBox->form, &Form::msgBox);
-	for (int c = 0; c <= 9; c++)
-        if ((c != (int)PAPER_TYPE::Native) && (c != 7)) connect(buttonGroup->button(c), &QPushButton::clicked, [=]() {last_checked_button = c;});
-    connect(ui->rBtnNative, &QRadioButton::toggled, this, &Dialog::rBtnNativeLinkWithToolBtn);
-    connect(ui->BtnChooseFolder, &QToolButton::clicked, this, &Dialog::chooseFolder);
-    connect(ui->pBtnCancel, &QPushButton::clicked, this, &Dialog::close);
-    connect(ui->pBtnOk, &QPushButton::clicked, this, &Dialog::saveWallpaperSettings);
-    connect(ui->pBtnOpenAppData, &QPushButton::clicked, [](){VARBOX::runCommand("explorer", QStringList(VarBox->get_dat_path()));});
-    connect(ui->pBtnOpenPicturePath, &QPushButton::clicked, this, &Dialog::openPicturePath);
-    connect(ui->linePictuerPath, &QLineEdit::returnPressed, this, &Dialog::linePictuerPathReturn);
-    connect(ui->pBtnSaveTaskSettings, &QPushButton::clicked, [this](){VarBox->saveTrayStyle(); jobTip->showTip("保存成功！");});
-    connect(ui->cBxAutoStart, &QPushButton::clicked, [this](bool checked){
-        QSettings* reg = new QSettings(
-            "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
-            QSettings::NativeFormat);
-        if (checked)
-            reg->setValue("SpeedBox", qApp->applicationFilePath().replace("/", "\\"));
-        else
-            reg->remove("SpeedBox");
-        delete reg;
-        jobTip->showTip("修改成功！");
-    });
-    connect(ui->tBtnSetBing, &QToolButton::clicked, this, [this](){
-        BingSetting x;
-        x.move(frameGeometry().x()+(width()-x.width())/2, frameGeometry().y()+(height()-x.height())/2);
-        x.exec();
-    });
-    connect(ui->pBtnCustomName, &QPushButton::clicked, this, &Dialog::setCustomName);
-    connect(ui->lineNewName, &QLineEdit::returnPressed, this, &Dialog::setCustomName);
-    connect(ui->pBtnApply, &QPushButton::clicked, this, &Dialog::applyWallpaperSettings);
-    connect(ui->cBxstandardName, &QComboBox::currentIndexChanged, this, &Dialog::cBxstandardNameCurIndex);
-    connect(ui->sLdPageNum, &QSlider::valueChanged, this, &Dialog::sLdPageNumCurNum);
-    connect(ui->sLdUpdateRefreshTime, &QSlider::valueChanged, this, &Dialog::sLdUpdateTimeCurNum);
-    connect(ui->sLdTaskAlph, &QSlider::valueChanged, this, &Dialog::sLdTaskAlphCurNum);
-    connect(ui->sLdIconAlph, &QSlider::valueChanged, this, &Dialog::sLdIconAlphCurNum);
-    connect(ui->sLdTimeInterval, &QSlider::valueChanged, this, [this](int value){ui->labTimeInterval->setText(QString::number(value, 10));});
-    connect(ui->rBtnWinTaskNormal, &QRadioButton::clicked, [this](){changeType(false);});
-    connect(ui->rBtnWinTaskMax, &QRadioButton::clicked, [this](){changeType(true);});
-}
-
-void Dialog::initBehaviors()
-{
-    change_paper_timer->setInterval(VarBox->TimeInterval * 60000);
-    if (VarBox->FirstChange) wallpaper->start();                                  // Timer默认第一次不启动，这里要加上。
-    if (VarBox->AutoChange)
-	{
-        change_paper_timer->start();
-	}
-}
-
-void Dialog::initButtonFilter()
-{
-    QList<QSlider *> sliders = findChildren<QSlider *>();
-    QList<QSlider *>::iterator sliderList = sliders.begin();
-    for (sliderList = sliders.begin(); sliderList != sliders.end(); sliderList++)
-    {
-        (*sliderList)->installEventFilter(this);
-    }
-    QList<QComboBox *> combs = findChildren<QComboBox *>();
-    QList<QComboBox *>::iterator combList = combs.begin();
-    for (combList = combs.begin(); combList != combs.end(); combList++)
-    {
-        (*combList)->installEventFilter(this);
-        (*combList)->setView(new QListView());
-    }
-}
-
-bool Dialog::eventFilter(QObject* target, QEvent* event)
-{
-    if (/*typeid (*target) == typeid (QPushButton) || */typeid (*target) == typeid (QComboBox))
-    {
-        if ((QEvent::Type)(event->type()) == QEvent::MouseMove)
-            return true;
-    }
-    else if (typeid (*target) == typeid (QSlider))
-    {
-        QMouseEvent *env = static_cast<QMouseEvent *>(event);
-        QSlider *tar = static_cast<QSlider *>(target);
-        //static bool clicked = false;
-        switch ((QEvent::Type)(env->type()))
-        {
-        case QEvent::MouseMove:
-            tar->setValue(((double)env->pos().x() / (double)tar->width() * (tar->maximum() - tar->minimum())) + tar->minimum());
-            return true;
-        case QEvent::MouseButtonPress:
-            tar->setValue(((double)env->pos().x() / (double)tar->width() * (tar->maximum() - tar->minimum())) + tar->minimum());
-            tar->setMouseTracking(true);
-            return true;
-        case QEvent::MouseButtonRelease:
-            tar->setMouseTracking(false);
-            return true;
-        default:
-            break;
-        }
-    }
-    return QWidget::eventFilter(target, event);
-}
-
-void Dialog::showEvent(QShowEvent *event)
-{
-    qout << "showEvent被调用！";
     ui->checkBox_2->setChecked(false);
     last_checked_button = (int)VarBox->PaperType;
     ui->BtnChooseFolder->setEnabled(last_checked_button == 7);
@@ -296,7 +176,109 @@ void Dialog::showEvent(QShowEvent *event)
     ui->checkBox_3->setChecked(VarBox->FirstChange);
     ui->BtnChooseFolder->setEnabled(ui->rBtnNative->isChecked());
     ui->checkBox_4->setChecked(VarBox->ControlDesktopIcon);
-    checkSettings(); event->accept();
+    ui->frame->setStyleSheet(QString("QFrame{background-color:rgba(%1);}QLabel{border-radius: 3px;background-color: transparent;}Line{background-color:black};").arg(color_theme[static_cast<int>(VarBox->CurTheme)]));
+    checkSettings();
+    move((VarBox->ScreenWidth - width()) / 2, (VarBox->ScreenHeight - height()) / 2);
+}
+
+void Dialog::initChildren()
+{
+	buttonGroup = new QButtonGroup;
+}
+
+void Dialog::initConnects()
+{
+	for (int c = 0; c <= 9; c++)
+        if ((c != (int)PAPER_TYPE::Native) && (c != 7)) connect(buttonGroup->button(c), &QPushButton::clicked, [=]() {last_checked_button = c;});
+    connect(ui->rBtnNative, &QRadioButton::toggled, this, &Dialog::rBtnNativeLinkWithToolBtn);
+    connect(ui->BtnChooseFolder, &QToolButton::clicked, this, &Dialog::chooseFolder);
+    connect(ui->pBtnCancel, &QPushButton::clicked, this, &Dialog::close);
+    connect(ui->pBtnOk, &QPushButton::clicked, this, &Dialog::saveWallpaperSettings);
+    connect(ui->pBtnOpenAppData, &QPushButton::clicked, [](){VARBOX::runCommand("explorer", QStringList(VarBox->get_dat_path()));});
+    connect(ui->pBtnOpenPicturePath, &QPushButton::clicked, this, &Dialog::openPicturePath);
+    connect(ui->linePictuerPath, &QLineEdit::returnPressed, this, &Dialog::linePictuerPathReturn);
+    connect(ui->pBtnSaveTaskSettings, &QPushButton::clicked, [this](){VarBox->saveTrayStyle(); jobTip->showTip("保存成功！");});
+    connect(ui->cBxAutoStart, &QPushButton::clicked, [this](bool checked){
+        QSettings* reg = new QSettings(
+            "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
+            QSettings::NativeFormat);
+        if (checked)
+            reg->setValue("SpeedBox", qApp->applicationFilePath().replace("/", "\\"));
+        else
+            reg->remove("SpeedBox");
+        delete reg;
+        jobTip->showTip("修改成功！");
+    });
+    connect(ui->tBtnSetBing, &QToolButton::clicked, this, [this](){
+        BingSetting x;
+        x.move(frameGeometry().x()+(width()-x.width())/2, frameGeometry().y()+(height()-x.height())/2);
+        x.exec();
+    });
+    connect(ui->pBtnCustomName, &QPushButton::clicked, this, &Dialog::setCustomName);
+    connect(ui->lineNewName, &QLineEdit::returnPressed, this, &Dialog::setCustomName);
+    connect(ui->pBtnApply, &QPushButton::clicked, this, &Dialog::applyWallpaperSettings);
+    connect(ui->cBxstandardName, &QComboBox::currentIndexChanged, this, &Dialog::cBxstandardNameCurIndex);
+    connect(ui->sLdPageNum, &QSlider::valueChanged, this, &Dialog::sLdPageNumCurNum);
+    connect(ui->sLdUpdateRefreshTime, &QSlider::valueChanged, this, &Dialog::sLdUpdateTimeCurNum);
+    connect(ui->sLdTaskAlph, &QSlider::valueChanged, this, &Dialog::sLdTaskAlphCurNum);
+    connect(ui->sLdIconAlph, &QSlider::valueChanged, this, &Dialog::sLdIconAlphCurNum);
+    connect(ui->sLdTimeInterval, &QSlider::valueChanged, this, [this](int value){ui->labTimeInterval->setText(QString::number(value, 10));});
+    connect(ui->rBtnWinTaskNormal, &QRadioButton::clicked, [this](){changeType(false);});
+    connect(ui->rBtnWinTaskMax, &QRadioButton::clicked, [this](){changeType(true);});
+}
+
+void Dialog::initButtonFilter()
+{
+    QList<QSlider *> sliders = findChildren<QSlider *>();
+    QList<QSlider *>::iterator sliderList = sliders.begin();
+    for (sliderList = sliders.begin(); sliderList != sliders.end(); sliderList++)
+    {
+        (*sliderList)->installEventFilter(this);
+    }
+    QList<QComboBox *> combs = findChildren<QComboBox *>();
+    QList<QComboBox *>::iterator combList = combs.begin();
+    for (combList = combs.begin(); combList != combs.end(); combList++)
+    {
+        (*combList)->installEventFilter(this);
+        (*combList)->setView(new QListView());
+    }
+}
+
+bool Dialog::eventFilter(QObject* target, QEvent* event)
+{
+    if (/*typeid (*target) == typeid (QPushButton) || */typeid (*target) == typeid (QComboBox))
+    {
+        if ((QEvent::Type)(event->type()) == QEvent::MouseMove)
+            return true;
+    }
+    else if (typeid (*target) == typeid (QSlider))
+    {
+        QMouseEvent *env = static_cast<QMouseEvent *>(event);
+        QSlider *tar = static_cast<QSlider *>(target);
+        //static bool clicked = false;
+        switch ((QEvent::Type)(env->type()))
+        {
+        case QEvent::MouseMove:
+            tar->setValue(((double)env->pos().x() / (double)tar->width() * (tar->maximum() - tar->minimum())) + tar->minimum());
+            return true;
+        case QEvent::MouseButtonPress:
+            tar->setValue(((double)env->pos().x() / (double)tar->width() * (tar->maximum() - tar->minimum())) + tar->minimum());
+            tar->setMouseTracking(true);
+            return true;
+        case QEvent::MouseButtonRelease:
+            tar->setMouseTracking(false);
+            return true;
+        default:
+            break;
+        }
+    }
+    return QWidget::eventFilter(target, event);
+}
+
+void Dialog::closeEvent(QCloseEvent *event)
+{
+    *const_cast<Dialog**>(&(VarBox->dialog)) = nullptr;
+    event->accept();
 }
 
 /**
@@ -374,13 +356,13 @@ void Dialog::applyWallpaperSettings()
     {
         if (type == 0)
         {
-            if (wallpaper->isActive())
+            if (VarBox->dwallpaper->isActive())
             {
                 if (QMessageBox::question(this, "警告", "您之前的壁纸类型更换正在生效中，是否终止？", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
                 {
                     setEnabled(false);
                     VarBox->RunApp = false;
-                    wallpaper->clean();
+                    VarBox->dwallpaper->clean();
                     VarBox->RunApp = true;
                     setEnabled(true);
                     if (QMessageBox::question(this, "提示", "终止成功！是否继续？", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
@@ -403,13 +385,13 @@ void Dialog::applyWallpaperSettings()
                 Wallpaper::initSet = true;
                 if (VarBox->PaperType == PAPER_TYPE::Bing)
                     Wallpaper::bing = 0;
-                wallpaper->iniStart();
-                change_paper_timer->setInterval(VarBox->TimeInterval * 60000);  // 设置时间间隔,Timer的单位是毫秒
-                if (!change_paper_timer->isActive()) change_paper_timer->start();
+                VarBox->dwallpaper->iniStart();
+                VarBox->change_paper_timer->setInterval(VarBox->TimeInterval * 60000);  // 设置时间间隔,Timer的单位是毫秒
+                if (!VarBox->change_paper_timer->isActive()) VarBox->change_paper_timer->start();
                 qout << "开始更换壁纸";
             }
             else
-                if (change_paper_timer->isActive()) change_paper_timer->stop();
+                if (VarBox->change_paper_timer->isActive()) VarBox->change_paper_timer->stop();
             if (QMessageBox::question(this, "提示", "应用成功！是否保存设置？", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
                 saveWallpaperSettings();
         }
@@ -509,25 +491,25 @@ void Dialog::sLdTaskAlphCurNum(int value)
     DWORD bAlphaB = (DWORD)value << 24;
     ui->label_4->setText(QString::number(value, 10));
     VarBox->dAlphaColor[VarBox->setMax] = bAlphaB + (VarBox->dAlphaColor[VarBox->setMax] & 0xffffff);
-    if (!tray->beautifyTask->isActive())
-        tray->beautifyTask->start();
+    if (!VarBox->tray->beautifyTask->isActive())
+        VarBox->tray->beautifyTask->start();
 }
 
 void Dialog::sLdIconAlphCurNum(int value)
 {
     ui->label_6->setText(QString::number(value, 10));
     VarBox->bAlpha[VarBox->setMax] = value;
-    if (!tray->beautifyTask->isActive())
-        tray->beautifyTask->start();
+    if (!VarBox->tray->beautifyTask->isActive())
+        VarBox->tray->beautifyTask->start();
 }
 
 void Dialog::sLdUpdateTimeCurNum(int value)
 {
     ui->label_17->setText(QString::number(value, 10));
-    tray->beautifyTask->setInterval(value);
+    VarBox->tray->beautifyTask->setInterval(value);
     VarBox->RefreshTime = value;
-    if (!tray->beautifyTask->isActive())
-        tray->beautifyTask->start();
+    if (!VarBox->tray->beautifyTask->isActive())
+        VarBox->tray->beautifyTask->start();
 }
 
 void Dialog::on_chkTimeUnit_min_clicked()
@@ -557,7 +539,7 @@ void Dialog::on_radioButton_4_clicked()
 {
     if ((VarBox->aMode[0] == ACCENT_STATE::ACCENT_DISABLED)&&(VarBox->aMode[1] == ACCENT_STATE::ACCENT_DISABLED))
     {
-        tray->beautifyTask->start(VarBox->RefreshTime);
+        VarBox->tray->beautifyTask->start(VarBox->RefreshTime);
     }
     VarBox->aMode[VarBox->setMax] = ACCENT_STATE::ACCENT_ENABLE_TRANSPARENTGRADIENT;
 }
@@ -567,7 +549,7 @@ void Dialog::on_radioButton_5_clicked()
 {
     if ((VarBox->aMode[0] == ACCENT_STATE::ACCENT_DISABLED)&&(VarBox->aMode[1] == ACCENT_STATE::ACCENT_DISABLED))
     {
-        tray->beautifyTask->start(VarBox->RefreshTime);
+        VarBox->tray->beautifyTask->start(VarBox->RefreshTime);
     }
     VarBox->aMode[VarBox->setMax] = ACCENT_STATE::ACCENT_ENABLE_BLURBEHIND;
 }
@@ -576,7 +558,7 @@ void Dialog::on_radioButton_6_clicked()
 {
     if ((VarBox->aMode[0] == ACCENT_STATE::ACCENT_DISABLED)&&(VarBox->aMode[1] == ACCENT_STATE::ACCENT_DISABLED))
     {
-        tray->beautifyTask->start(VarBox->RefreshTime);
+        VarBox->tray->beautifyTask->start(VarBox->RefreshTime);
     }
     VarBox->aMode[VarBox->setMax] = ACCENT_STATE::ACCENT_ENABLE_ACRYLICBLURBEHIND;
 }
@@ -610,7 +592,7 @@ void Dialog::on_radioButton_7_clicked()
 void Dialog::on_radioButton_8_clicked()
 {
     if (VarBox->iPos == TaskBarCenterState::TASK_LEFT)
-        tray->centerTask->start();
+        VarBox->tray->centerTask->start();
     qout << "居中点击";
     VarBox->iPos = TaskBarCenterState::TASK_CENTER;
 }
@@ -618,7 +600,7 @@ void Dialog::on_radioButton_8_clicked()
 void Dialog::on_radioButton_9_clicked()
 {
     if (VarBox->iPos == TaskBarCenterState::TASK_LEFT)
-        tray->centerTask->start();
+        VarBox->tray->centerTask->start();
     VarBox->iPos = TaskBarCenterState::TASK_RIGHT;
 }
 
@@ -854,11 +836,6 @@ void Dialog::on_pushButton_2_clicked()
     close();
 }
 
-void Dialog::setTheme()
-{
-    ui->frame->setStyleSheet(QString("QFrame{background-color:rgba(%1);}QLabel{border-radius: 3px;background-color: transparent;}Line{background-color:black};").arg(color_theme[static_cast<int>(VarBox->CurTheme)]));
-    jobTip->showTip("设置成功！");
-}
 
 void Dialog::on_pushButton_5_clicked()
 {
@@ -866,7 +843,8 @@ void Dialog::on_pushButton_5_clicked()
     QSettings IniWrite(VarBox->get_ini_path(), QSettings::IniFormat);
     IniWrite.beginGroup("UI");
     IniWrite.setValue("ColorTheme", (int)VarBox->CurTheme);
-    setTheme();
+    ui->frame->setStyleSheet(QString("QFrame{background-color:rgba(%1);}QLabel{border-radius: 3px;background-color: transparent;}Line{background-color:black};").arg(color_theme[static_cast<int>(VarBox->CurTheme)]));
+    jobTip->showTip("设置成功！");
     qDebug() << (int)VarBox->CurTheme;
 }
 

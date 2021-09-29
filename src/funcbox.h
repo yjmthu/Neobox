@@ -9,6 +9,7 @@
 #include <iphlpapi.h>
 #include <QString>
 #include <QDebug>
+#include <QMessageBox>
 
 #define RETCODE_ERROR_EXIT            1071       //异常退出常数
 #define RETCODE_UPDATE                1072       //更新常数，更新软件
@@ -92,7 +93,7 @@ enum class TaskBarCenterState
     TASK_RIGHT = 2
 };
 
-class Form; struct IAccessible; //void* PMIB_IFTABLE;
+class Form; class Dialog; class DialogWallpaper; class Tray; class MenuWallpaper; struct IAccessible; //void* PMIB_IFTABLE;
 class DesktopMask;
 typedef ULONG(WINAPI* pfnGetAdaptersAddresses)(_In_ ULONG Family, _In_ ULONG Flags, _Reserved_ PVOID Reserved, _Out_writes_bytes_opt_(*SizePointer) void* AdapterAddresses, _Inout_ PULONG SizePointer);
 typedef DWORD(WINAPI* pfnGetIfTable)(_Out_writes_bytes_opt_(*pdwSize) PMIB_IFTABLE pIfTable, _Inout_ PULONG pdwSize, _In_ BOOL bOrder);
@@ -102,8 +103,11 @@ typedef ULONG(WINAPI* pfnAccessibleChildren)(_In_ IAccessible* paccContainer, _I
 typedef BOOL(WINAPI* pfnDwmGetWindowAttribute)(HWND hwnd, DWORD dwAttribute, PVOID pvAttribute, DWORD cbAttribute);
 
 
-struct VARBOX
+class VARBOX: public QObject
 {
+    Q_OBJECT
+
+public:
     const char* const Version = "21.10.1", * const Qt = "6.1.3";
     const unsigned char WinVersion; const bool FirstUse[1] = {false};
     std::list<std::pair<bool, wchar_t*>> PicHistory; std::list<std::pair<bool, wchar_t*>>::const_iterator CurPic;
@@ -141,7 +145,8 @@ struct VARBOX
     unsigned short RefreshTime = 33; bool FirstChange = true;
 
     const int ScreenWidth, ScreenHeight;                  //屏幕宽高
-    static HANDLE HMutex; HMODULE hOleacc = NULL, hIphlpapi = NULL, hDwmapi = NULL; Form* const form {};
+    static HANDLE HMutex; HMODULE hOleacc = NULL, hIphlpapi = NULL, hDwmapi = NULL;
+    Form* const form {0}; Dialog*const dialog {0};
     DesktopMask *ControlDesktopIcon = nullptr;
 
     pfnGetIfTable GetIfTable = nullptr;
@@ -156,6 +161,11 @@ struct VARBOX
     void saveTrayStyle();
     QString get_pic_path(short i);
     QString get_wal_path();
+    DialogWallpaper* dwallpaper;                          //壁纸处理类
+    MenuWallpaper* mwallpaper;                    //用于壁纸更换
+    QTimer* change_paper_timer;                          //定时更换壁纸
+    Tray* tray;
+
     static QString get_ini_path();
     static QString get_dat_path();
     static bool get_son_dir(QString str);
@@ -172,11 +182,15 @@ struct VARBOX
     static BOOL PathFileExists(LPWSTR pszPath);
     static BOOL OneDriveFile(const char* file);
     static BOOL OneDriveFile(const wchar_t*file);
-    static void MSG(const char*);
+    static void MSG(const char* text, const char* title="提示", QMessageBox::StandardButtons buttons=QMessageBox::Ok);
 
 private:
      bool check_app_right();
      void readTrayStyle();
+     void initFile();
+     void initChildren();
+     void initConnections();
+     void initBehaviors();
 };
 
 extern VARBOX* VarBox;
