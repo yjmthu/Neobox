@@ -249,9 +249,11 @@ void MenuWallpaper::removePic()
                     YJson *blackList = nullptr;
                     if (QFile::exists(str))
                     {
-                        blackList = new YJson(std::ifstream(str.toStdWString(), std::ios::in | std::ios::binary));
+                        blackList = new YJson(str.toStdWString(), YJSON_ENCODE::UTF8BOM);
+                        qout << 123;
                         if (blackList->getType() != YJSON_TYPE::YJSON_ARRAY)
                         {
+                            qout << "不是Arry";
                             delete blackList;
                             blackList = new YJson(YJSON::ARRAY);
                         }

@@ -18,9 +18,13 @@ enum class YJSON_TYPE{
 };
 
 enum class YJSON_ENCODE{
+    AUTO = -1,
     UTF8 = 0,
-    UTF16 = 1,
-    OTHER = 2
+    UTF8BOM = 1,
+    UTF16 = 2,
+    UTF16BOM = 3,
+    ANSI = 4,
+    OTHER = 4
 };
 
 class YJson
@@ -31,8 +35,9 @@ protected:
 public:
     inline explicit YJson(YJSON type):_type(static_cast<YJSON_TYPE>(type)) { };
     inline explicit YJson(const YJson& js): _type(js._type), _value(js._value) { CopyJson(&js, nullptr); }
-    inline explicit YJson(std::ifstream && file) { LoadFile(file); };
+    inline explicit YJson(std::ifstream && file) noexcept { LoadFile(file); };
     inline explicit YJson(std::ifstream & file) { LoadFile(file); };
+    explicit YJson(const std::wstring& path, YJSON_ENCODE encode);
     explicit YJson(const char* str);
     explicit YJson(const std::string& str);
     explicit YJson(const wchar_t*);
@@ -57,7 +62,7 @@ public:
     bool toFile(const std::wstring name, const YJSON_ENCODE& encode, bool fmt=false);
 
     YJson& operator=(const YJson&);
-    YJson& operator=(YJson&&);
+    YJson& operator=(YJson&&) noexcept;
     inline YJson& operator[](int i) const { return *find(i); }
     inline YJson& operator[](const char* key) const { return *find(key); }
     inline operator bool() const { const YJson* s = this; return s; };

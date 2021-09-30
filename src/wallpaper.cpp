@@ -116,7 +116,7 @@ bool Wallpaper::set_from_Wallhaven() const  // 从数据库中随机抽取一个
         goto label_1;
     }
     if (!QFile::exists(file_name)) goto label_1;
-    jsonObject = new YJson(std::ifstream(file_name.toStdWString(), std::ios::in | std::ios::binary));
+    jsonObject = new YJson(file_name.toStdWString(), YJSON_ENCODE::UTF8);
     if (YJson::ep.first) goto label_1;
     if (jsonObject->getType() == YJSON_TYPE::YJSON_OBJECT &&
         (find_item = jsonObject->find("PaperType")) &&
@@ -147,7 +147,11 @@ label_1:
     jsonArray = jsonObject->append(YJSON::ARRAY, "ImgUrls");
     //qout << "Wallhaven 尝试从wallhaven下载源码";
     need_save = get_url_from_Wallhaven(*jsonArray);
-    if (!need_save) return false;
+    if (!need_save)
+    {
+        delete jsonObject; jsonObject = nullptr;
+        return false;
+    }
     //qout << "Wallhaven 源码下载完毕";
 label_2:
     //qout << "Wallhaven 开始设置";
@@ -161,7 +165,7 @@ label_2:
         if (QFile::exists(temp))
         {
             //qout << "黑名单文件存在！";
-            YJson blacklist(std::ifstream(temp.toStdWString(), std::ios::in | std::ios::binary));
+            YJson blacklist(temp.toStdWString(), YJSON_ENCODE::UTF8BOM);
             if (blacklist.getType() == YJSON_TYPE::YJSON_ARRAY)
                 for (unsigned char x = 0; x < 0xff && pic_num; ++x)
                 {
@@ -321,7 +325,7 @@ bool Wallpaper::set_from_Bing(bool setBing) const
 label_0:
         {
             //qout << "必应文件存在";
-            file_data = new YJson(std::ifstream(file_name.toStdWString(), std::ios::in | std::ios::binary));
+            file_data = new YJson(file_name.toStdWString(), YJSON_ENCODE::UTF16BOM);
             if (strcmp(file_data->find("today")->getValueString(), today.c_str()))
             {
                 //qout << "必应文件过期，将开始下载最新数据";

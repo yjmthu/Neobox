@@ -35,7 +35,7 @@ CONFIG += release
 #CONFIG += debug
 
 # 禁用qDebug()
-# DEFINES += QT_NO_DEBUG_OUTPUT
+DEFINES += QT_NO_DEBUG_OUTPUT
 
 win32 {
     LIBS += -luser32

@@ -33,7 +33,6 @@ bool utf8_to_utf16(C1 utf16, C2 utf8)
         )
                    )
             , "error in type");
-    std::cout << "Qt: 为何禁用cout1。\n";
     uint32_t unicode;
     uint8_t len;// bool double_wchar = false;
     do {
