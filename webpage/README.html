@@ -384,7 +384,7 @@ code {
 <strong>大多数设置都有Tool Tip提示</strong>，你只需要把鼠标放在按钮上面悬停一下就可以看到它的功能解释。这里需要详细说明的功能只有三个个——翻译功能、路径设置、壁纸设置中的高级命令。</p>
 <h2 id="%E5%88%92%E8%AF%8D%E7%BF%BB%E8%AF%91">[划词翻译]</h2>
 <ul>
-<li>划词翻译功能再实现的过程中调用了百度翻译的api，因此需要app id和密码。如果你在启用了翻译功能，就需要输入它们。我这里暂时提供一个APP ID：<strong>20210503000812254</strong>，密钥：<strong>Q_2PPxmCr66r6B2hi0ts</strong>。注册一个ID是免费的，建议大家自己去<a href="http://api.fanyi.baidu.com/">注册</a>。</li>
+<li>划词翻译功能再实现的过程中调用了百度翻译的api，因此需要app id和密码。如果你在启用了翻译功能，就需要输入它们。我这里暂时提供一个APP ID：<strong>20210503000812254</strong>，密钥：<strong>Q_2PPxmCr66r6B2hi0ts</strong>。注册一个ID是免费的，大家不嫌麻烦可以自己去<a href="http://api.fanyi.baidu.com/">注册</a>。</li>
 <li>在右键菜单<strong>启用</strong>划词翻译后，你可以鼠标<strong>左键双击</strong>悬浮窗，“极简翻译”的窗口就会自己弹出来了，你还可以按下 <strong>“Shift+Z”</strong> 键，直接呼唤出划词翻译，你也可以在 <em>选中</em> 一段文本后，按下 <strong>“Ctrl+C”</strong> 键将其复制，再按下 <strong>“Shift+Z”</strong> 键将其直接翻译。如果启用了fix，“极简翻译”窗口就会不自动消失，如果取消选中&quot;fix&quot;，“极简翻译”就会在10秒钟之后自动消失。此外，你还可以用快捷键 <strong>&quot;Shift+A&quot;</strong> 关闭“极简翻译”窗口。当输入焦点在“极简翻译”内的时候，你可以 <strong>回车直接翻译，按下ALt切换中英文结果，按下delete键清空输入，按Esc关闭窗口</strong> 。</li>
 </ul>
 <h2 id="%E8%B7%AF%E5%BE%84%E8%AE%BE%E7%BD%AE">[路径设置]</h2>
@@ -394,12 +394,12 @@ code {
 <li>还有一个就是右键菜单的“打开目录功能”，你可以在这里进行自定义每次点击 <strong>“右键菜单-打开目录“</strong> 时要打开的目录。</li>
 </ul>
 <h2 id="%E9%AB%98%E7%BA%A7%E5%91%BD%E4%BB%A4">[高级命令]</h2>
-<p>这里举个例子，比如我会Python，并且我找到了一个好的壁纸网站（比如<a href="https://bz.zzzmh.cn/index">极简壁纸</a>），我能将它上面的壁纸下载来存储在电脑里面，我就可以把这个爬虫添加到 <strong>Speed Box</strong> 里面。这里假设我们在<code>D:\hello.py</code>里面写了爬虫代码并且成功下载了一张图片保存在<code>D:\hello.jpg</code>，我们在<code>D:\hello.py</code>里面注释掉所有的print输出，只保留一句</p>
+<p>这里举个例子，比如我会Python，在<code>D:\hello.py</code>里面写了爬虫代码并且成功下载了一张图片保存在<code>D:\hello.jpg</code>，我们在<code>D:\hello.py</code>里面注释掉所有的print输出，只保留一句</p>
 <pre class="hljs"><code><div>print(<span class="hljs-string">"D:\\hello.jpg"</span>)
 </div></code></pre>
 <p>这时候我们就可以把Speed Box里面的高级命令设置为
 <code>python D:\hello.py</code>
-然后Speed Box就可以自动调用这个脚本了。其它语言的脚本或者程序也一样，只要输出图片路径，Speed Box就能自动识别，并且能定时调用这个脚本，也可以点击在右键菜单里面点击 <em>“换一张图”</em> 调用。</p>
+然后Speed Box就可以自动调用这个脚本了。其它语言的脚本或者程序也一样，只要输出图片路径，Speed Box就能自动识别，并且能定时调用这个脚本，也可以点击在右键菜单里面点击 <em>“下一张图”</em> 调用。</p>
 <h1 id="%E8%BF%90%E8%A1%8C%E6%95%88%E6%9E%9C">运行效果</h1>
 <ol>
 <li>
@@ -434,22 +434,14 @@ code {
 <ul>
 <li>更新内容
 <ul>
-<li>修复右边图标太多时居中不正常的问题</li>
-<li>修复任务栏透明度显示不正常的问题</li>
-<li>尝试增加发布者信息</li>
-<li>增加一些操作完成提示</li>
-<li>解决了下载更新卡住的问题</li>
+<li>修复一些比较影响使用的问题</li>
 <li>将开机自启移动到了软件设置-其他设置下</li>
 <li>移除了快捷重启功能。</li>
 <li>增加了壁纸历史记录功能，可以通过右键菜单来切换上一张图。</li>
 <li>增加了壁纸黑名单功能，可以将不喜欢的wallhaven壁纸删除并加入黑名单，将其他类型的壁纸直接删除。</li>
-<li>增加了win11检测功能，win11下部分功能无法使用</li>
-<li>更改配置文件名称，更改配置文件键盘值对名称</li>
 <li>增加主题颜色</li>
 <li>完善tooltip提示，前面带* 号的表示点击后会保存</li>
 <li>移动控件的位置，改变了部分颜色</li>
-<li>完全解除更新按钮的禁用</li>
-<li>解决了更新中极小概率发生的出错问题</li>
 <li>改善了上下壁纸切换逻辑，当列表中的壁纸不存在自动时，将其从列表中移除并跳过。</li>
 <li>必应壁纸更加精彩，弃用了从必应首页爬取壁纸的方法，改用必应官方的api，可以设置循环切换最近八天壁纸，可以使用壁纸信息作为壁纸名称，可以自定义每次启动是否后台保存必应壁纸。</li>
 <li>路径设置-壁纸下载目录增加了选择文件夹按钮。</li>
@@ -493,25 +485,12 @@ code {
 <li>下载方式
 <ul>
 <li>21.9.10以上版本直接在&quot;右键菜单-&gt;软件设置-&gt;其他设置-&gt;关于&quot;中点击&quot;下载更新&quot;按钮即可完成更新</li>
-<li>下载地址 <a href="https://wws.lanzoui.com/b020l1esh">蓝奏云</a>  密码: <code>52pojie</code></li>
+<li>下载地址 Win10、Win11 <a href="https://wws.lanzoui.com/b020l1esh">蓝奏云</a>  密码: <code>52pojie</code></li>
 </ul>
 </li>
 </ul>
 <h1 id="%E8%BD%AF%E4%BB%B6%E9%97%AE%E9%A2%98%E8%AF%B4%E6%98%8E">软件问题说明</h1>
 <ul>
-<li>
-<p>软件体积比较大</p>
-<ul>
-<li>说明：这不是我的锅，写过Qt程序的都知道，Qt编译后要带一大堆dll文件，我这把能删的都删了压缩才9MB，已经很小了。</li>
-</ul>
-</li>
-<li>
-<p>更新时缺少dll</p>
-<ul>
-<li>解决办法1：右键-打开目录，删除文件update.exe，重新检查更新并下载更新</li>
-<li>解决办法2：安装mingw编译器，并且配置好环境变量</li>
-</ul>
-</li>
 <li>
 <p>部分电脑右键无法正常添加“复制路径”功能</p>
 <ul>
