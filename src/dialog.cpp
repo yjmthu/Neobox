@@ -98,10 +98,10 @@ void Dialog::initUi()
     ui->lineAppData->setText(VarBox->get_dat_path());
 
     ui->checkBox_2->setChecked(false);
-    last_checked_button = (int)VarBox->PaperType;
-    ui->BtnChooseFolder->setEnabled(last_checked_button == 7);
-    buttonGroup->button(last_checked_button)->setChecked(true);
     ui->LinePath->setText(VarBox->NativeDir);
+    ui->label_17->setText(QString::number(VarBox->RefreshTime));
+    ui->label_4->setText(QString::number(VarBox->dAlphaColor[0] >> 24));
+    ui->label_6->setText(QString::number(VarBox->bAlpha[0]));
     ui->sLdPageNum->setValue(VarBox->PageNum);
     ui->sLdTimeInterval->setValue(VarBox->TimeInterval);
     ui->labTimeInterval->setText(QString::number(VarBox->TimeInterval));
@@ -188,9 +188,7 @@ void Dialog::initChildren()
 
 void Dialog::initConnects()
 {
-	for (int c = 0; c <= 9; c++)
-        if ((c != (int)PAPER_TYPE::Native) && (c != 7)) connect(buttonGroup->button(c), &QPushButton::clicked, [=]() {last_checked_button = c;});
-    connect(ui->rBtnNative, &QRadioButton::toggled, this, &Dialog::rBtnNativeLinkWithToolBtn);
+    connect(ui->rBtnNative, &QRadioButton::toggled, this, [this](bool checked){ui->BtnChooseFolder->setEnabled(checked);});
     connect(ui->BtnChooseFolder, &QToolButton::clicked, this, &Dialog::chooseFolder);
     connect(ui->pBtnCancel, &QPushButton::clicked, this, &Dialog::close);
     connect(ui->pBtnOk, &QPushButton::clicked, this, &Dialog::saveWallpaperSettings);
@@ -290,11 +288,6 @@ void Dialog::closeEvent(QCloseEvent *event)
  *
  */
 
-void Dialog::rBtnNativeLinkWithToolBtn(bool checked)
-{
-	ui->BtnChooseFolder->setEnabled(checked);
-}
-
 void Dialog::chooseFolder()
 {
 	QDir d;
@@ -306,12 +299,7 @@ void Dialog::chooseFolder()
 	}
 	QString titile = "请选择一个文件夹";
     QString dir = QFileDialog::getExistingDirectory(NULL, titile, VarBox->NativeDir, QFileDialog::ShowDirsOnly);
-    if (dir.isEmpty())
-	{
-		buttonGroup->button(last_checked_button)->setChecked(true);
-		ui->BtnChooseFolder->setEnabled(last_checked_button == 7);
-	}
-    else
+    if (!dir.isEmpty())
         ui->LinePath->setText(QDir::toNativeSeparators(dir));
 }
 

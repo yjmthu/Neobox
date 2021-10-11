@@ -34,7 +34,6 @@ private:
     friend void del_file(Dialog *di ,QString str);
     Ui::Dialog* ui;
 	QButtonGroup* buttonGroup;                           //单选按钮组合，互斥，添加按钮id
-    short last_checked_button = 0;                       //上次选中的按钮的 id
 	void checkSettings();                                //读取注册表
 	void initChildren();
 	void initUi();
@@ -43,7 +42,6 @@ private:
 	void changeType(BOOL);
 
 private slots:
-    void rBtnNativeLinkWithToolBtn(bool checked);        //当“本地”单选按钮被选中时，下面的选择文件夹按钮可用，反之不可用。
     void chooseFolder();                                 //当选择文件夹按钮被点击时，弹出选择文件夹的对话框。
     void saveWallpaperSettings();                            //确定被按钮点击时，保存设置数据，退出对话框。
     void applyWallpaperSettings();                         //应用按钮点击时，保存设置数据，应用设置，最后退出对话框。
