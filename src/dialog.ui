@@ -985,6 +985,12 @@ background-color: rgb(0, 0, 0);</string>
                 <height>16777215</height>
                </size>
               </property>
+              <property name="mouseTracking">
+               <bool>false</bool>
+              </property>
+              <property name="statusTip">
+               <string/>
+              </property>
               <property name="title">
                <string>桌面图标控制</string>
               </property>
@@ -1004,6 +1010,12 @@ background-color: rgb(0, 0, 0);</string>
                </item>
                <item>
                 <widget class="QCheckBox" name="checkBox_4">
+                 <property name="toolTip">
+                  <string>鼠标在桌面左边缘上下滑动显示桌面图标，在右边缘上下滑动隐藏桌面图标。</string>
+                 </property>
+                 <property name="statusTip">
+                  <string>*鼠标在桌面左边缘上下滑动显示桌面图标，在右边缘上下滑动隐藏桌面图标。</string>
+                 </property>
                  <property name="text">
                   <string>开启</string>
                  </property>
