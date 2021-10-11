@@ -41,19 +41,19 @@ print("D:\\hello.jpg")
 # 运行效果
 
 ### 1\. 悬浮窗界面、壁纸设置界面和翻译界面
-![]([img]https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_08.png[/img])
+![](https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_08.png)
 
 
 ### 2\. 悬浮窗界面、桌面美化界面和右键菜单界面
-![]([img]https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_09.jpg[/img])
+![](https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_09.jpg])
 
 
 ### 3\. 悬浮窗界面、Tooltip、任务栏美化、图标居中
-![]([img]https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_06.jpg[/img])
+![](https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_06.jpg)
 
 
 ### 4\. 悬浮窗美化之圆角效果、玻璃效果、透明效果
-![]([img]https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_11.jpg[/img])
+![](https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_11.jpg)
 
 
 # 下载方式
