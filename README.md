@@ -45,7 +45,7 @@ print("D:\\hello.jpg")
 
 
 ### 2\. 悬浮窗界面、桌面美化界面和右键菜单界面
-![](https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_09.jpg])
+![](https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_09.jpg)
 
 
 ### 3\. 悬浮窗界面、Tooltip、任务栏美化、图标居中
