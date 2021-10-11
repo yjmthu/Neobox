@@ -1027,7 +1027,7 @@ void Dialog::on_pushButton_12_clicked()
 
 void Dialog::on_pushButton_14_clicked()
 {
-    ShellExecuteA(NULL, "open", "https://speed-box.github.io", NULL, NULL, SW_SHOW);
+    ShellExecuteA(NULL, "open", "https://yjmthu.github.io/Speed-Box", NULL, NULL, SW_SHOW);
 }
 
 

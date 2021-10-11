@@ -72,7 +72,7 @@
       <item>
        <widget class="QTabWidget" name="tabWidget">
         <property name="currentIndex">
-         <number>0</number>
+         <number>3</number>
         </property>
         <widget class="QWidget" name="tab">
          <attribute name="title">
@@ -1733,7 +1733,7 @@ background-color: rgb(0, 0, 0);</string>
              <item>
               <widget class="QPushButton" name="pushButton_14">
                <property name="toolTip">
-                <string>https://speed-box.github.io/</string>
+                <string>https://yjmthu.github.io/Speed-Box</string>
                </property>
                <property name="text">
                 <string>官方网站</string>
