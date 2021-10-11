@@ -20,7 +20,7 @@ Speed Box 是一款集众多常用功能于一身的网速显示软件，单界�
 
 ## \$ 划词翻译
 * 如果你在启用了翻译功能，就需要输入百度翻译的app id和密码。我这里暂时提供一个APP ID：**<u>20210503000812254</u>**，密钥：**<u>Q_2PPxmCr66r6B2hi0ts</u>**。~~注册一个ID是免费的，如果不嫌麻烦的话可以自己去[注册](http://api.fanyi.baidu.com/)~~。
-* 在右键菜单**启用**划词翻译后，你可以鼠标**左键双击**悬浮窗，“极简翻译”的窗口就会自己弹出来了，你还可以按下 <kbd>Shift</kbd>+<kbd>Z</kbd>键，直接呼唤出划词翻译，你也可以在 *选中* 一段文本后，按下<kbd>Ctrl</kbd>+<kbd>C</kbd>键将其复制，再按下<kbd>Shift</kbd>+<kbd>Z</kbd>键将其直接翻译。如果启用了<img src="https://gitee.com/yjmthu/Speed-Box/raw/main/src/icons/drip_pin.ico" style="zoom:6%" />，“极简翻译”窗口就会不自动消失，如果取消选中<img src="https://gitee.com/yjmthu/Speed-Box/raw/main/src/icons/drip_blue_pin.ico" style="zoom:6%" />，“极简翻译”就会在10秒钟之后自动消失。此外，你还可以用快捷键<kbd>Shift</kbd>+<kbd>A</kbd>关闭“极简翻译”窗口。当输入焦点在“极简翻译”内的时候，你可以 **回车直接翻译，按下<kbd>ALt</kbd>切换中英文结果，按下<kbd>Delete</kbd>键清空输入，按Esc关闭窗口** 。
+* 在右键菜单**启用**划词翻译后，你可以鼠标**左键双击**悬浮窗，“极简翻译”的窗口就会自己弹出来了，你还可以按下 <kbd>Shift</kbd>+<kbd>Z</kbd>键，直接呼唤出划词翻译，你也可以在 *选中* 一段文本后，按下<kbd>Ctrl</kbd>+<kbd>C</kbd>键将其复制，再按下<kbd>Shift</kbd>+<kbd>Z</kbd>键将其直接翻译。如果启用了<img src="https://gitee.com/yjmthu/Speed-Box/raw/main/src/icons/drip_pin.ico" width=14 />，“极简翻译”窗口就会不自动消失，如果取消选中<img src="https://gitee.com/yjmthu/Speed-Box/raw/main/src/icons/drip_blue_pin.ico" width=14 />，“极简翻译”就会在10秒钟之后自动消失。此外，你还可以用快捷键<kbd>Shift</kbd>+<kbd>A</kbd>关闭“极简翻译”窗口。当输入焦点在“极简翻译”内的时候，你可以 **回车直接翻译，按下<kbd>ALt</kbd>切换中英文结果，按下<kbd>Delete</kbd>键清空输入，按Esc关闭窗口** 。
 
 
 ## \$ 路径设置
@@ -94,6 +94,6 @@ print("D:\\hello.jpg")
 
 # 软件问题说明
 
-  * 部分电脑右键无法正常添加“复制路径”功能
-      + 右键以管理员身份运行Speed Box即可正常设置
+  * 部分电脑右键无法正常添加“复制路径”功能。
+      + 右键以管理员身份运行Speed Box即可正常设置。
   + 不建议把Speed Box可执行文件在读写需要管理员权限的文件夹下。
