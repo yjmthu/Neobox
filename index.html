@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>README.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="speed-box-%E7%AE%80%E4%BB%8B">Speed-Box 简介</h1>
+<p>Speed Box 是一款集众多常用功能于一身的网速显示软件，单界面内存占用6-15M，目前支持</p>
+<ul>
+<li>实时网速——悬浮窗显示网速和内存占用率。</li>
+<li>智能隐藏——全屏时自动隐藏、贴边时自动隐藏。</li>
+<li>划词翻译——手动输入中英文翻译、选中文本后通过快捷键&quot;Ctrl+C&quot;和“Shift+Z”实现划词翻译。</li>
+<li>切换壁纸——后台/手动切换<a href="https://wallhaven.cc/">Wallhaven</a>、<a href="https://cn.bing.com/">Bing</a>、<a href="https://unsplash.com/">Unsplash</a>、电脑本地 以及所有其它网站的图片，将不喜欢的壁纸直接删除或加入黑名单。</li>
+<li>任务栏美化——改变颜色、图标居中、靠右、透明效果、磨砂效果、玻璃效果，桌面右下角时间格式精确到秒。（ <strong>借鉴了坛友cgbsmy发布的 <a href="https://www.52pojie.cn/forum.php?mod=viewthread&amp;tid=1182669&amp;highlight=tray"> TrayS </a></strong> ）</li>
+<li>快捷功能——悬浮窗右键关机、系统右键增加“复制路径”选项。</li>
+<li>防止息屏——防止电脑屏幕自动关闭。</li>
+<li>隐藏图标——通过鼠标滑动隐藏/显示桌面上的所有图标。</li>
+<li>自动更新——点击按钮自动下载更新。</li>
+</ul>
+<p>== 源代码 == ：<a href="https://github.com/yjmthu/Speed-Box">GitHub</a>（保持最新）、<a href="https://gitee.com/yjmthu/Speed-Box">Gitee</a>（更新滞后）</p>
+<h1 id="%E5%8A%9F%E8%83%BD%E4%BB%8B%E7%BB%8D">功能介绍</h1>
+<p>在Speed Box的网速悬浮窗处单击右键，即可看到有许多快捷功能，这些功能看文字就很容易知道是什么意思了。再点击其中的“软件设置”可以打开设置界面，可以看到这里有 <em>壁纸设置</em> 、 <em>桌面美化</em> 、 <em>路径设置</em> 、 <em>其它设置</em>  等。
+<strong>大多数设置都有Tool Tip提示</strong>，你只需要把鼠标放在按钮上面悬停一下就可以看到它的功能解释。这里需要详细说明的功能只有三个个——翻译功能、路径设置、壁纸设置中的高级命令。</p>
+<h2 id="%E5%88%92%E8%AF%8D%E7%BF%BB%E8%AF%91">[划词翻译]</h2>
+<ul>
+<li>划词翻译功能再实现的过程中调用了百度翻译的api，因此需要app id和密码。如果你在启用了翻译功能，就需要输入它们。我这里暂时提供一个APP ID：<strong>20210503000812254</strong>，密钥：<strong>Q_2PPxmCr66r6B2hi0ts</strong>。注册一个ID是免费的，大家不嫌麻烦可以自己去<a href="http://api.fanyi.baidu.com/">注册</a>。</li>
+<li>在右键菜单<strong>启用</strong>划词翻译后，你可以鼠标<strong>左键双击</strong>悬浮窗，“极简翻译”的窗口就会自己弹出来了，你还可以按下 <strong>“Shift+Z”</strong> 键，直接呼唤出划词翻译，你也可以在 <em>选中</em> 一段文本后，按下 <strong>“Ctrl+C”</strong> 键将其复制，再按下 <strong>“Shift+Z”</strong> 键将其直接翻译。如果启用了fix，“极简翻译”窗口就会不自动消失，如果取消选中&quot;fix&quot;，“极简翻译”就会在10秒钟之后自动消失。此外，你还可以用快捷键 <strong>&quot;Shift+A&quot;</strong> 关闭“极简翻译”窗口。当输入焦点在“极简翻译”内的时候，你可以 <strong>回车直接翻译，按下ALt切换中英文结果，按下delete键清空输入，按Esc关闭窗口</strong> 。</li>
+</ul>
+<h2 id="%E8%B7%AF%E5%BE%84%E8%AE%BE%E7%BD%AE">[路径设置]</h2>
+<ul>
+<li>打开<strong>设置窗口-路径设置</strong>后，这里有“标准名称”和“新名称”之分，标准名称就是软件默认使用存放壁纸文件的文件夹的名称，新名称就是你想把它改成的名称。</li>
+<li>壁纸文件夹默认在“用户/图片”里面的“Wallpapers”目录下，你可以点击“壁纸下载目录”后面的“打开”按钮进行查看。当你想要更换壁纸下载路径时，直接输入路径回车即可。</li>
+<li>还有一个就是右键菜单的“打开目录功能”，你可以在这里进行自定义每次点击 <strong>“右键菜单-打开目录“</strong> 时要打开的目录。</li>
+</ul>
+<h2 id="%E9%AB%98%E7%BA%A7%E5%91%BD%E4%BB%A4">[高级命令]</h2>
+<p>这里举个例子，比如我会Python，在<code>D:\hello.py</code>里面写了爬虫代码并且成功下载了一张图片保存在<code>D:\hello.jpg</code>，我们在<code>D:\hello.py</code>里面注释掉所有的print输出，只保留一句</p>
+<pre class="hljs"><code><div>print(<span class="hljs-string">"D:\\hello.jpg"</span>)
+</div></code></pre>
+<p>这时候我们就可以把Speed Box里面的高级命令设置为
+<code>python D:\hello.py</code>
+然后Speed Box就可以自动调用这个脚本了。其它语言的脚本或者程序也一样，只要输出图片路径，Speed Box就能自动识别，并且能定时调用这个脚本，也可以点击在右键菜单里面点击 <em>“下一张图”</em> 调用。</p>
+<h1 id="%E8%BF%90%E8%A1%8C%E6%95%88%E6%9E%9C">运行效果</h1>
+<ol>
+<li>
+<p>悬浮窗界面、壁纸设置界面和翻译界面
+<img src="[img]https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_08.png[/img]" alt=""></p>
+</li>
+<li>
+<p>悬浮窗界面、桌面美化界面和右键菜单界面
+<img src="[img]https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_09.jpg[/img]" alt=""></p>
+</li>
+<li>
+<p>悬浮窗界面、Tooltip、任务栏美化、图标居中
+<img src="[img]https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_06.jpg[/img]" alt=""></p>
+</li>
+<li>
+<p>悬浮窗美化之圆角效果、玻璃效果、透明效果
+<img src="[img]https://gitee.com/yjmthu/Speed-Box/raw/main/img/img_11.jpg[/img]" alt=""></p>
+</li>
+</ol>
+<h1 id="%E7%BC%96%E8%AF%91%E8%A6%81%E6%B1%82">编译要求</h1>
+<ul>
+<li>Qt版本：Qt 6 以上</li>
+<li>编译器：MSVC-2019 64bit 以上</li>
+<li>使用宽字节字符集（所有Windows Api函数都是W版而不是A版）</li>
+<li>其余细节可自行修改pro文件</li>
+</ul>
+<h1 id="%E4%B8%8B%E8%BD%BD%E6%96%B9%E5%BC%8F">下载方式</h1>
+<hr>
+<p><strong>吾爱破解为大版本更新，需要下载zip包；小版本更新只发布在gitee，只需要在软件内部点击更新按钮</strong></p>
+<hr>
+<h3 id="%E7%89%88%E6%9C%ACv21910">版本：v21.9.10</h3>
+<ul>
+<li>更新内容
+<ul>
+<li>修复一些比较影响使用的问题</li>
+<li>将开机自启移动到了软件设置-其他设置下，移除了快捷重启功能。</li>
+<li>增加了壁纸历史记录功能，可以通过右键菜单来切换上一张图。</li>
+<li>增加了壁纸黑名单功能，可以将不喜欢的wallhaven壁纸删除并加入黑名单，将其他类型的壁纸直接删除。</li>
+<li>完善tooltip提示，前面带* 号的表示点击后会保存</li>
+<li>移动控件的位置，改变了部分颜色</li>
+<li>改善了上下壁纸切换逻辑，当列表中的壁纸不存在自动时，将其从列表中移除并跳过。</li>
+<li>必应壁纸更加精彩，弃用了从必应首页爬取壁纸的方法，改用必应官方的api，可以设置循环切换最近八天壁纸，可以使用壁纸信息作为壁纸名称，可以自定义每次启动是否后台保存必应壁纸。</li>
+<li>路径设置-壁纸下载目录增加了选择文件夹按钮。</li>
+<li>增加了刷新功能，可以刷新用了很久的图片集合。</li>
+<li>将首次更换壁纸和定时更换壁纸区别开来，可选择软件启动时更换一次壁纸</li>
+</ul>
+</li>
+<li>下载地址(64位)
+<ul>
+<li>Windows 10、windows 11  <a href="https://wws.lanzoui.com/iDmDOtvsugj">蓝奏云</a> 密码：<code>v910</code></li>
+</ul>
+</li>
+</ul>
+<hr>
+<h3 id="%E7%89%88%E6%9C%ACv21101%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC">版本：v21.10.1（最新版本）</h3>
+<ul>
+<li>更新内容
+<ul>
+<li>改变了官方网站，去除了github和gitee。</li>
+<li>增加了语音朗读功能，翻译速度过快不会提示失败而是等待一秒以内自动重试。</li>
+<li>优化内存占用，修复了几个细节上的bug。</li>
+<li>皮肤颜色增加暗夜黑，悬浮窗效果增加了默认、透明、玻璃、亚克力四种效果。</li>
+<li>支持翻译多行。普通回车直接触发翻译功能，如需换行，请先打一个空格然后按下回车。</li>
+<li>增加了隐藏桌面图标功能，在&quot;右键菜单-&gt;软件设置-&gt;桌面美化-&gt;桌面图标控制&quot;中勾选&quot;开启&quot;，即可在桌面最左边上/下滑动显示桌面图标，在桌面最右边上/下滑动隐藏桌面图标。</li>
+</ul>
+</li>
+<li>下载方式
+<ul>
+<li>21.9.10以上版本直接在&quot;右键菜单-&gt;软件设置-&gt;其他设置-&gt;关于&quot;中点击&quot;下载更新&quot;按钮即可完成更新</li>
+<li>下载地址 Win10、Win11 <a href="https://wws.lanzoui.com/b020l1esh">蓝奏云</a>  密码: <code>52pojie</code></li>
+</ul>
+</li>
+</ul>
+<h1 id="%E8%BD%AF%E4%BB%B6%E9%97%AE%E9%A2%98%E8%AF%B4%E6%98%8E">软件问题说明</h1>
+<ul>
+<li>
+<p>部分电脑右键无法正常添加“复制路径”功能</p>
+<ul>
+<li>右键以管理员身份运行Speed Box即可正常设置</li>
+</ul>
+</li>
+<li>
+<p>其他问题</p>
+<ul>
+<li>解决办法：尝试下载更新或者在评论区把问题说明清楚。</li>
+</ul>
+</li>
+</ul>
+
+</body>
+</html>
