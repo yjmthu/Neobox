@@ -9,6 +9,7 @@ public:
     explicit DesktopMask();
     ~DesktopMask();
 private:
+    friend class VARBOX;
     QWidget *left, *right;
 };
 

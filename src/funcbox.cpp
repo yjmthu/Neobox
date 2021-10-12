@@ -408,18 +408,23 @@ void VARBOX::initChildren()
     abd.hWnd = HWND(form->winId());
     abd.uCallbackMessage = MSG_APPBAR_MSGID;
     SHAppBarMessage(ABM_NEW, &abd);
-    QObject::connect(QGuiApplication::primaryScreen(), &QScreen::geometryChanged, form, [form](const QRect&rect){
+    QObject::connect(QGuiApplication::primaryScreen(), &QScreen::geometryChanged, form, [this](const QRect&rect){
         RECT rt1; int w, h;
-        GetWindowRect((HWND)(form->winId()), &rt1);
+        GetWindowRect((HWND)(this->form->winId()), &rt1);
         w = GetSystemMetrics(SM_CXSCREEN);
         h = GetSystemMetrics(SM_CYSCREEN);
 
         RECT rt2; GetWindowRect(HWND(VarBox->form->winId()), &rt2);
-        SetWindowPos(HWND(form->winId()), HWND_TOPMOST, rt2.left + w - VarBox->SysScreenWidth, rt2.top + h - VarBox->SysScreenHeight, 0, 0, SWP_NOSIZE);
+        SetWindowPos(HWND(this->form->winId()), HWND_TOPMOST, rt2.left + w - VarBox->SysScreenWidth, rt2.top + h - VarBox->SysScreenHeight, 0, 0, SWP_NOSIZE);
         *const_cast<int*>(&(VarBox->SysScreenWidth)) = w;
         *const_cast<int*>(&(VarBox->SysScreenHeight)) = h;
         *const_cast<int*>(&(VarBox->ScreenWidth)) = rect.width();
         *const_cast<int*>(&(VarBox->ScreenHeight)) = rect.height();
+        if (ControlDesktopIcon)
+        {
+            ControlDesktopIcon->left->move(0, VarBox->ScreenHeight/2-5);
+            ControlDesktopIcon->right->move(VarBox->ScreenWidth-1, VarBox->ScreenHeight/2-6);
+        }
         QSettings IniWrite(VarBox->get_ini_path(), QSettings::IniFormat);
         IniWrite.beginGroup("UI");
         IniWrite.setValue("x", (int)rt2.left); IniWrite.setValue("y", (int)rt2.top);
