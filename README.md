@@ -108,13 +108,3 @@ Markdown Preview Enhanced: Customize Css
   * 不建议把Speed Box可执行文件放在读写需要管理员权限的文件夹下。
   * 其它问题
     + 尝试下载更新或[反馈](https://github.com/yjmthu/Speed-Box/issues)。
-
-```python {cmd=true matplotlib=true}
-import matplotlib.pyplot as plt
-plt.plot([1,2,3, 4])
-plt.show() # show figure
-```
-
-|Name|Age|State|
-|--|--|--|
-|1|2||
