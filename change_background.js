@@ -1,5 +1,26 @@
+document.title = "Speed Box";
+var icon = document.createElement("link");
+icon.setAttribute('rel', "icon");
+icon.setAttribute('href', "favicon.ico");
+document.head.appendChild(icon);
+
+function mCopy(content)
+{
+    var aux = document.createElement("input"); 
+    aux.setAttribute("value", content); 
+    document.body.appendChild(aux); 
+    aux.select();
+    document.execCommand("copy"); 
+    document.body.removeChild(aux);
+    alert("复制成功");
+}
+
 window.onload=function(){
     //定义body的margin由默认值8px->0px
+    var imgs = document.body.getElementsByTagName("img");
+    for (let i = 0; i < imgs.length; i++)
+        imgs[i].style.backgroundColor = "rgba(0,0,0,0)";
+    document.body.style.color = "#FFFFFF";
     document.body.style.margin="0";
     document.body.style.background="#30333F";
     //创建canvas画布
