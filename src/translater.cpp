@@ -142,7 +142,7 @@ void Translater::showEvent(QShowEvent* event)
 {
     int x, y;  RECT rt; ui->pBtnPin->setChecked(!VarBox->AutoHide);
     ui->pBtnPin->setIcon(QIcon(VarBox->AutoHide?":/icons/drip_pin.ico": ":/icons/drip_blue_pin.ico"));
-    static const int w = (GetWindowRect(HWND(winId()), &rt), rt.right - rt.left), h = (rt.bottom - rt.top), sw = GetSystemMetrics(SM_CXSCREEN);
+    int w = (GetWindowRect(HWND(winId()), &rt), rt.right - rt.left), h = (rt.bottom - rt.top), sw = GetSystemMetrics(SM_CXSCREEN);
     GetWindowRect(HWND(VarBox->form->winId()), &rt);
     if (rt.top > h)
         y = rt.top - h;

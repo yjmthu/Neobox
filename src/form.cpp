@@ -220,7 +220,7 @@ void Form::enterEvent(QEnterEvent* event)     //鼠标进入事件
             moved = false;
         }
     }
-    event->accept();
+    if (event) event->accept();
 }
 
 void Form::leaveEvent(QEvent* event)
@@ -241,7 +241,7 @@ void Form::leaveEvent(QEvent* event)
         startAnimation(pos.x(), 2 - FORM_HEIGHT);
         moved = true;
     }
-    event->accept();
+    if (event) event->accept();
 }
 
 void Form::startAnimation(int width, int height)
@@ -294,6 +294,8 @@ void Form::get_net_usage()
 {
     static short iGetAddressTime = 10;  //10秒一次获取网卡信息
     static DWORD m_last_in_bytes = 0 /* 总上一秒下载字节 */,  m_last_out_bytes = 0 /* 总上一秒上传字节 */;
+    static const char s = (leaveEvent(nullptr), 0);
+    PX_UNUSED(s);
 
     if (iGetAddressTime == 10)        // 10秒更新
     {
