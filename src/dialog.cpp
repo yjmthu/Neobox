@@ -910,7 +910,7 @@ void Dialog::on_pushButton_10_clicked()
 
     thrd = std::thread([this](){
         std::string str;
-        if (!VARBOX::getWebCode("https://gitee.com/yjmthu/Speed-Box/raw/main/Update.json", str, false) || str.empty())
+        if (!VARBOX::getWebCode("https://gitee.com/yjmthu/Speed-Box/raw/main/update/update.json", str, false) || str.empty())
         {
             emit finished(false, "下载失败！");
             return;
@@ -968,7 +968,7 @@ void Dialog::on_pushButton_12_clicked()
 
     thrd = std::thread([this](){
         std::string str; //jobTip->showTip("请耐心等待几秒...");
-        if (!VARBOX::getWebCode("https://gitee.com/yjmthu/Speed-Box/raw/main/Update.json", str, false) || str.empty())
+        if (!VARBOX::getWebCode("https://gitee.com/yjmthu/Speed-Box/raw/main/update/update.json", str, false) || str.empty())
         {
             emit finished(false, "下载失败！");
             return;
