@@ -37,6 +37,7 @@ public:
 private:
     friend class Menu;  //friend class Translater; //右键菜单可以访问私有数据
     friend class FormSetting;
+    friend void VARBOX::initChildren();
 	Ui::Form* ui;                                //ui指向悬浮窗界面
     //Dialog* dialog;                              //设置对话
 	QPoint _startPos;                            //记录鼠标
