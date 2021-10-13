@@ -1,12 +1,3 @@
-<head>
-<title>Speed Box</title>
-<style>
-	img {
-		background-color: rgba(0,0,0,0);
-	}
-</style>
-</head>
-
 # &nbsp;<img src="https://gitee.com/yjmthu/Speed-Box/raw/main/src/icons/speedbox.ico" width=32 />&nbsp; Speed-Box 简介
 Speed Box 是一款集众多常用功能于一身的网速显示软件，单界面内存占用6-15M，目前支持
 - 实时网速——悬浮窗显示网速和内存占用率。
