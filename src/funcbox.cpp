@@ -409,13 +409,13 @@ void VARBOX::initChildren()
     abd.uCallbackMessage = MSG_APPBAR_MSGID;
     SHAppBarMessage(ABM_NEW, &abd);
     QObject::connect(QGuiApplication::primaryScreen(), &QScreen::geometryChanged, form, [this](const QRect&rect){
-        RECT rt1; double w, h;
+        RECT rt1; int w, h;
         GetWindowRect((HWND)(this->form->winId()), &rt1);
         w = GetSystemMetrics(SM_CXSCREEN);
         h = GetSystemMetrics(SM_CYSCREEN);
 
         RECT rt2; GetWindowRect(HWND(VarBox->form->winId()), &rt2);
-        SetWindowPos(HWND(this->form->winId()), HWND_TOPMOST, rt2.left * w / VarBox->SysScreenWidth, rt2.top * h / VarBox->SysScreenHeight, 0, 0, SWP_NOSIZE);
+        this->form->move(this->form->pos().x() * rect.width() / VarBox->ScreenWidth, this->form->pos().y() * rect.height() / VarBox->ScreenHeight);
         *const_cast<int*>(&(VarBox->SysScreenWidth)) = w;
         *const_cast<int*>(&(VarBox->SysScreenHeight)) = h;
         *const_cast<int*>(&(VarBox->ScreenWidth)) = rect.width();
