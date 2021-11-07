@@ -95,6 +95,7 @@ void Dialog::initUi()
     buttonGroup->addButton(ui->rBtnNative, (int)PAPER_TYPE::Native);
     buttonGroup->addButton(ui->rBtnAdvance, (int)PAPER_TYPE::Advance);
 	buttonGroup->setExclusive(true);                     // 按钮之间相互排斥
+    buttonGroup->button(static_cast<int>(VarBox->PaperType))->setChecked(true);
     ui->lineAppData->setText(VarBox->get_dat_path());
 
     ui->checkBox_2->setChecked(false);
