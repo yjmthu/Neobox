@@ -655,17 +655,19 @@ bool VARBOX::downloadImage(const char* url, const QString path, bool auto_delete
     return OK;
 }
 
-char* VARBOX::runCommand(QString program, QStringList argument, short line)
+char* VARBOX::runCommand(const QString& program, const QStringList& argument, short line)
 {
     QProcess process;
     process.setProgram(program);
     process.setArguments(argument);
     process.start();
     process.waitForStarted(); //等待程序启动
-    process.waitForFinished(5000);
+    process.waitForFinished(15000);
     if (line) {
         for (int c = 1; c < line; c++)
+        {
             process.readLine();
+        }
         return StrJoin<char>((const char*)process.readLine());
     }
     else return nullptr;

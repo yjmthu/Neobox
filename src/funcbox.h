@@ -108,7 +108,7 @@ class VARBOX: public QObject
     Q_OBJECT
 
 public:
-    const char* const Version = "21.11.7", * const Qt = "6.1.3";
+    const char* const Version = "21.11.10", * const Qt = "6.1.3";
     const unsigned char WinVersion; const bool FirstUse[1] = {false};
     std::list<std::pair<bool, wchar_t*>> PicHistory; std::list<std::pair<bool, wchar_t*>>::const_iterator CurPic;
     const char* const StandardNames[10][2] =     //九种壁纸类型
@@ -172,7 +172,7 @@ public:
     static bool get_son_dir(QString str);
     static void sigleSave(QString group, QString key, QString value);
     static bool isOnline(bool);                                               //检查是否有网络连接，布尔值代表是否保持检测 30 秒
-    static char* runCommand(QString program, QStringList argument, short line = 0);
+    static char* runCommand(const QString & program, const QStringList& argument, short line = 0);
     static bool getWebCode(const char*, std::string&, bool auto_delete);
     //static bool getBingCode(std::string& code);
     static bool downloadImage(const char*, const QString, bool auto_delete = true);

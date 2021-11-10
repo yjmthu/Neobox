@@ -440,6 +440,29 @@ bool Wallpaper::set_from_Random() const
     return VARBOX::downloadImage("https://source.unsplash.com/random/2560x1600", img_name, false) && setWallpaper(img_name);
 }
 
+QStringList _parse_arguments(const QString& str)
+{
+    QStringList lst;
+    QChar d(' ');
+    QString::const_iterator iter1 = str.constBegin(), iter=iter1;
+    do {
+        iter1 = std::find_if(iter, str.constEnd(), [](const QChar& c)->bool{ return c != QChar(' ');});
+        if (iter == str.constEnd()) break;
+        if (*iter1 == QChar('\"'))
+        {
+            d = '\"';
+            ++iter1;
+        }
+        else
+        {
+            d = ' ';
+        }
+        iter = std::find(iter1, str.constEnd(), d);
+        lst.emplace_back(iter1, iter-iter1);
+    } while (iter++ != str.constEnd());
+    return lst;
+}
+
 bool Wallpaper::set_from_Advance() const
 {
     if (VarBox->UserCommand.isEmpty())
@@ -448,7 +471,7 @@ bool Wallpaper::set_from_Advance() const
     }
     else
     {
-        QStringList lst = VarBox->UserCommand.split(" ");
+        QStringList&& lst = _parse_arguments(VarBox->UserCommand);
         QString program_file = lst[0]; lst.removeFirst();
         if (initSet)
         {
@@ -466,7 +489,7 @@ bool Wallpaper::set_from_Advance() const
             {
                 if (strchr("\"\\\b\f\n\r\t\'", uchar(program_output[i])))
                 {
-                    program_output[i]=0;
+                    program_output[i] = 0;
                 }
                 else
                 {

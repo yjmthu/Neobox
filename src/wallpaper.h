@@ -29,7 +29,7 @@ public:
     virtual void setNative() = 0;              //从本地更换壁纸
     virtual void setRandom() = 0;              //随机更换壁纸
     virtual void setAdvance() = 0;             //高级命令更换壁纸
-    virtual void startWork() = 0;                          //根据壁纸类型决定执行public里面哪个set函数
+    virtual void startWork() = 0;              //根据壁纸类型决定执行public里面哪个set函数
     static bool initSet; static bool canCreat() { return !thrd; };
     Wallpaper(); ~Wallpaper(); bool isActive() { return thrd; };
     static char bing; static bool update;
