@@ -317,8 +317,8 @@ void Translater::keyPressEvent(QKeyEvent* event)
 void Translater::getReply(const QByteArray& text)
 {
     qout << "开始执行翻译函数";
-    static const char API[] = u8"http://api.fanyi.baidu.com/api/trans/vip/translate";
-    static const char salt[] = u8"1435660288";                           //请求参数之一
+    constexpr char API[] = u8"http://api.fanyi.baidu.com/api/trans/vip/translate";
+    constexpr char salt[] = u8"1435660288";                           //请求参数之一
 
     auto time_now = GetTickCount();
     if (time_now - last_post_time < 1000) Sleep(last_post_time + 1000 - time_now);

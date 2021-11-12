@@ -12,7 +12,6 @@ public:
     void setWallhaven() override;
     void setBing() override;
     void setNative() override;
-    void setRandom() override;
     void setAdvance() override;
     void startWork() override;
 

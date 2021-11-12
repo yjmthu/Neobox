@@ -85,7 +85,7 @@ void MenuWallpaper::startWork()                                                 
     }
     else if (VarBox->RunApp)
     {
-        qout << "壁纸类型：" << VarBox->StandardNames[static_cast<int>(VarBox->PaperType)][1];
+        qout << "壁纸类型：" << static_cast<int>(VarBox->PaperType);
         switch (VarBox->PaperType)
         {
         case PAPER_TYPE::Advance:
@@ -96,9 +96,6 @@ void MenuWallpaper::startWork()                                                 
             break;
         case PAPER_TYPE::Bing:
             setBing();
-            break;
-        case PAPER_TYPE::Random:
-            setRandom();
             break;
         default:
             setWallhaven();
@@ -128,16 +125,6 @@ void MenuWallpaper::setBing()
 void MenuWallpaper::setNative()
 {
     set_from_Native(false);
-}
-
-void MenuWallpaper::setRandom()
-{
-    if (VARBOX::isOnline(false))
-	{
-        if (!set_from_Random()) emit msgBox("设置随机壁纸失败！", "警告");
-	}
-	else
-        emit msgBox("设置壁纸失败，请检查网络连接是否正常！", "警告");
 }
 
 void MenuWallpaper::setAdvance()

@@ -54,7 +54,7 @@ private slots:
 	void on_radioButton_5_clicked();
 	void on_radioButton_6_clicked();
 	void on_radioButton_11_clicked();
-    void cBxstandardNameCurIndex(int index);
+//    void cBxstandardNameCurIndex(int index);
     void sLdPageNumCurNum(int value);
     void sLdUpdateTimeCurNum(int value);
     void sLdTaskAlphCurNum(int value);
@@ -69,9 +69,7 @@ private slots:
     void on_radioButton_9_clicked();
 	void on_pushButton_3_clicked();
     void openPicturePath();
-    void on_pushButton_11_clicked();
     void linePictuerPathReturn();
-    void setCustomName();
     void on_pushButton_14_clicked();
     void on_pushButton_4_clicked();
     void on_checkBox_4_clicked(bool checked);
@@ -82,6 +80,11 @@ private slots:
     void on_pushButton_12_clicked();
     void on_toolButton_2_clicked();
     void on_pushButton_6_clicked();
+    void my_on_rBtnWallhavenApiUser_clicked();
+    void my_on_rBtnBingApi_clicked();
+    void my_on_rBtnOtherApi_clicked();
+    void my_on_cBxApis_currentTextChanged(const QString &arg1);
+    void my_on_rBtnWallhavenApiDefault_clicked();
 };
 
 #endif // DIALOG_H

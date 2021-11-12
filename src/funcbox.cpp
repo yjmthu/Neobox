@@ -11,6 +11,7 @@
 
 #include "funcbox.h"
 #include "YString.h"
+#include "YJson.h"
 #include "form.h"
 #include "desktopmask.h"
 #include "dialogwallpaper.h"
@@ -55,6 +56,30 @@ unsigned char GetNtVersionNumbers()
             return 7;
     }
     return 0;
+}
+
+void VARBOX::chooseUrl()  //选则正确的请求链接组合
+{
+    YJson json((VARBOX::get_dat_path()+"\\WallpaperApi.json").toStdWString(), YJSON_ENCODE::UTF8);
+    qout << "种类: " << (int)VarBox->PaperType;
+    switch (VarBox->PaperType)
+    {
+    case PAPER_TYPE::User:
+        Wallpaper::url = json["MainApis"]["WallhavenApi"].getValueString();
+        Wallpaper::url.append(json["User"]["ApiData"][json["User"]["Curruent"].getValueString()]["Parameter"].urlEncode());
+        Wallpaper::image_path = json["User"]["ApiData"]["Ghostblade"]["Folder"].getValueString();
+        break;
+    case PAPER_TYPE::Bing:
+        Wallpaper::url = json["MainApis"]["BingApi"].getValueString();
+        Wallpaper::url.append(json["BingApi"]["Parameter"].urlEncode());
+        Wallpaper::image_path = json["BingApi"]["Folder"].getValueString();
+        break;
+    default:
+        Wallpaper::url = json["MainApis"]["WallhavenApi"].getValueString();
+        Wallpaper::url.append(json["Default"]["ApiData"][(int)VarBox->PaperType]["Parameter"].urlEncode());
+        Wallpaper::image_path = json["Default"]["ApiData"][(int)VarBox->PaperType]["Folder"].getValueString();
+        break;
+    }
 }
 
 VARBOX* VarBox = nullptr;
@@ -264,9 +289,8 @@ void VARBOX::initFile()
 label_1:
         {
             qout << "创建新的Ini文件。";
-            MajorDir = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
+            NativeDir = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
             PathToOpen = QDir::toNativeSeparators(qApp->applicationDirPath());
-            NativeDir = MajorDir;
             QSettings *IniWrite = new QSettings(get_ini_path(), QSettings::IniFormat);
             IniWrite->beginGroup("SpeedBox");
             IniWrite->setValue("Version", Version);
@@ -277,7 +301,7 @@ label_1:
             IniWrite->setValue("PageNum", PageNum);
             IniWrite->setValue("setNative", false);
             IniWrite->setValue("AutoChange", false);
-            IniWrite->setValue("NativeDir", MajorDir);
+            IniWrite->setValue("NativeDir", NativeDir);
             IniWrite->setValue("UserCommand", UserCommand);
             IniWrite->setValue("UseDateAsBingName", UseDateAsBingName);
             IniWrite->endGroup();
@@ -295,11 +319,8 @@ label_1:
             IniWrite->endGroup();
 
             IniWrite->beginGroup("Dirs");
-            IniWrite->setValue("MajorDir", MajorDir);
             IniWrite->setValue("OpenDir", PathToOpen);
 
-            for (short i = 0; i < 10; i++)
-                IniWrite->setValue(StandardNames[i][0], CustomNames[i]);
             IniWrite->endGroup(); delete IniWrite;
             saveTrayStyle();
             qout << "创建新的ini文件完毕。";
@@ -348,21 +369,6 @@ label_2:
             qout << "读取翻译信息完毕";
             IniRead->beginGroup("Dirs");
             PathToOpen = IniRead->value("OpenDir").toString();
-            if (IniRead->contains("FamilyPath"))
-            {
-                MajorDir = IniRead->value("FamilyPath").toString();
-                IniRead->remove("FamilyPath");
-                IniRead->setValue("MajorDir", MajorDir);
-                CustomNames[7] = IniRead->value("Wallpapers").toString();
-                IniRead->remove("Wallpapers");
-                IniRead->setValue("MajorName", CustomNames[7]);
-            }
-            else
-                MajorDir = IniRead->value("MajorDir").toString();
-            for (short i = 0; i < 10; i++)
-            {
-                CustomNames[i] = IniRead->value(StandardNames[i][0]).toString();
-            }
             IniRead->endGroup();
             qout << "读取路径信息完毕";
             IniRead->beginGroup("UI");
@@ -384,8 +390,6 @@ label_2:
         }
 label_3:
         {
-            for (short i = 0; i < 7; i++)
-                get_pic_path(i);
             if (!get_son_dir(PathToOpen))
             {
                 PathToOpen = QDir::toNativeSeparators(qApp->applicationDirPath());
@@ -443,6 +447,7 @@ void VARBOX::initConnections()
 
 void VARBOX::initBehaviors()
 {
+    chooseUrl();
     VarBox->change_paper_timer->setInterval(VarBox->TimeInterval * 60000);
     if (VarBox->FirstChange) VarBox->dwallpaper->start();                                  // Timer默认第一次不启动，这里要加上。
     if (VarBox->AutoChange) VarBox->change_paper_timer->start();
@@ -464,46 +469,46 @@ void VARBOX::saveTrayStyle()
     IniWrite.endGroup();
 }
 
-QString VARBOX::get_wal_path()
-{
-    QString str;
-    if (MajorDir.isEmpty() || !get_son_dir(MajorDir))
-    {
-        qout << "图片目录为空" << MajorDir;
-        MajorDir = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
-    }
-    str = MajorDir + "\\" + CustomNames[7];
-    if (CustomNames[7].isEmpty() || !get_son_dir(str))
-    {
-        CustomNames[7] = StandardNames[7][1];
-        str = MajorDir + "\\" + CustomNames[7];
-    }
-    QSettings IniWrite(get_ini_path(), QSettings::IniFormat);
-    IniWrite.beginGroup("Dirs");
-    IniWrite.setValue("MajorDir", MajorDir);
-    IniWrite.setValue(StandardNames[7][0], CustomNames[7]);
-    IniWrite.endGroup();
-    return str;
-}
+//QString VARBOX::get_wal_path()
+//{
+//    QString str;
+//    if (MajorDir.isEmpty() || !get_son_dir(MajorDir))
+//    {
+//        qout << "图片目录为空" << MajorDir;
+//        MajorDir = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
+//    }
+//    str = MajorDir + "\\" + CustomNames[7];
+//    if (CustomNames[7].isEmpty() || !get_son_dir(str))
+//    {
+//        CustomNames[7] = StandardNames[7][1];
+//        str = MajorDir + "\\" + CustomNames[7];
+//    }
+//    QSettings IniWrite(get_ini_path(), QSettings::IniFormat);
+//    IniWrite.beginGroup("Dirs");
+//    IniWrite.setValue("MajorDir", MajorDir);
+//    IniWrite.setValue(StandardNames[7][0], CustomNames[7]);
+//    IniWrite.endGroup();
+//    return str;
+//}
 
-QString VARBOX::get_pic_path(short i)
-{
-    //qout << "获取图片路径开始" << i;
-    QString str = get_wal_path() + "\\" + CustomNames[i];
-    if (CustomNames[i].isEmpty() || !get_son_dir(str))
-    {
-        qout << "MajorDir为空或者无法创建！";
-        CustomNames[i] = StandardNames[i][1];
-        str = MajorDir + "\\", CustomNames[7] + "\\" + CustomNames[i];
-        get_son_dir(str);
-    }
-    QSettings IniWrite(get_ini_path(), QSettings::IniFormat);
-    IniWrite.beginGroup("Dirs");
-    IniWrite.setValue(StandardNames[i][0], CustomNames[i]);
-    IniWrite.endGroup();
-    //qout << "最终图片路径结果：" << str;
-    return str;
-}
+//QString VARBOX::get_pic_path(short i)
+//{
+//    //qout << "获取图片路径开始" << i;
+//    QString str = get_wal_path() + "\\" + CustomNames[i];
+//    if (CustomNames[i].isEmpty() || !get_son_dir(str))
+//    {
+//        qout << "MajorDir为空或者无法创建！";
+//        CustomNames[i] = StandardNames[i][1];
+//        str = MajorDir + "\\", CustomNames[7] + "\\" + CustomNames[i];
+//        get_son_dir(str);
+//    }
+//    QSettings IniWrite(get_ini_path(), QSettings::IniFormat);
+//    IniWrite.beginGroup("Dirs");
+//    IniWrite.setValue(StandardNames[i][0], CustomNames[i]);
+//    IniWrite.endGroup();
+//    //qout << "最终图片路径结果：" << str;
+//    return str;
+//}
 
 QString VARBOX::get_ini_path()
 {

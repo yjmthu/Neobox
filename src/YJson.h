@@ -1,6 +1,7 @@
 ﻿#ifndef YJSON_H
 #define YJSON_H
 #include <string>
+#include <iostream>
 
 enum class YJSON{
     ARRAY=5,
@@ -42,6 +43,7 @@ public:
     explicit YJson(const std::string& str);
     explicit YJson(const wchar_t*);
     explicit YJson(const std::wstring&);
+    YJson(const std::initializer_list<const char*>& lst);
     ~YJson();
     static std::pair<bool, std::string> ep;
 
@@ -51,9 +53,11 @@ public:
     inline YJson* getChild() const { return _child; }
     inline YJson* getParent() const { return _parent; }
 
+    inline const char *getKeyString() const { if (this) return _key; else return nullptr;}
     inline const char *getValueString() const { if (this) return _value; else return nullptr;}
     inline int getValueInt() const { if (this && _type == YJSON_TYPE::YJSON_NUMBER) return *reinterpret_cast<double*>(_value); else return 0;}
     inline double getValueDouble() const { if (this && _type == YJSON_TYPE::YJSON_NUMBER) return *reinterpret_cast<double*>(_value); else return 0;}
+    std::string urlEncode() const;
 
     int getChildNum() const;
     const YJson* getTop() const;
@@ -66,6 +70,9 @@ public:
     inline YJson& operator[](int i) const { return *find(i); }
     inline YJson& operator[](const char* key) const { return *find(key); }
     inline operator bool() const { const YJson* s = this; return s; };
+    inline void setText(const char* val) {delete [] _value; auto len = strlen(val)+1; _value = new char[len]; std::copy(val, val+len, _value); _type=YJSON_TYPE::YJSON_STRING;};
+    inline void setValue(double val) {delete [] _value; _value = new char[sizeof (double)]; std::copy((char*)&val, (char*)&val+sizeof (val), _value);};
+    inline void setNull() {delete [] _value; _value = nullptr; _type=YJSON_TYPE::YJSON_NULL;}
 
     bool join(const YJson&);
     static YJson join(const YJson&, const YJson&);
@@ -92,6 +99,38 @@ public:
         if (_type != YJSON_TYPE::YJSON_ARRAY && _type != YJSON_TYPE::YJSON_OBJECT) return false;
         else if (_child) { delete _child; _child = nullptr;}
         return true;
+    }
+    class iterator{
+    private:
+        YJson* _data = nullptr;
+    public:
+        iterator(YJson* data_): _data(data_){};
+        bool operator!=(const iterator& that) {
+            return _data != that._data;
+        }
+        bool operator==(const iterator& that) {
+            return _data == that._data;
+        }
+        iterator& operator++() {
+            _data = _data->_next;
+            return *this;
+        }
+        iterator& operator--() {
+            _data = _data->_prev;
+            return *this;
+        }
+        YJson& operator*() {
+            return *_data;
+        }
+        iterator(const iterator&) = delete;
+        iterator& operator =(const iterator&) = delete;
+        ~iterator() = default;
+    };
+    iterator begin() {
+        return _child;
+    }
+    iterator end() {
+        return nullptr;
     }
 
 private:

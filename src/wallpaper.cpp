@@ -15,33 +15,8 @@ std::thread* Wallpaper::thrd = nullptr;
 bool Wallpaper::initSet = false;
 char Wallpaper::bing = 0;
 bool Wallpaper::update = false;
-
-void chooseUrl(const char* &url_1, const char* &url_2)  //选则正确的请求链接组合
-{
-    switch (VarBox->PaperType)
-	{
-	case PAPER_TYPE::Latest:
-        url_1 = StrJoin<char>("https://wallhaven.cc/latest");
-        url_2 = StrJoin<char>("?page=");
-		break;
-	case PAPER_TYPE::Hot:
-        url_1 = StrJoin<char>("https://wallhaven.cc/hot");
-        url_2 = StrJoin<char>("?page=");
-		break;
-	case PAPER_TYPE::Nature:
-        url_1 = StrJoin<char>("https://wallhaven.cc/search?q=id:37&sorting=random&ref=fp");
-        url_2 = StrJoin<char>("&seed=DMPB3x&page=");
-		break;
-	case PAPER_TYPE::Anime:
-        url_1 = StrJoin<char>("https://wallhaven.cc/search?q=id:1&sorting=random&ref=fp");
-        url_2 = StrJoin<char>("&seed=DMPB3x&page=");
-		break;
-	default:
-        url_1 = StrJoin<char>("https://wallhaven.cc/search?q=id:2278&sorting=random&ref=fp");
-        url_2 = StrJoin<char>("&seed=DMPB3x&page=");
-		break;
-	}
-}
+std::string Wallpaper::url;//nullptr;
+QString Wallpaper::image_path;
 
 inline bool setWallpaper(const QString &img_name)             //根据路径设置壁纸
 {
@@ -55,23 +30,6 @@ inline bool setWallpaper(const QString &img_name)             //根据路径设�
     }
     else
         return false;
-}
-
-bool download_from_Wallheaven(const char* img_url, QString img_name)     //从Wallhaven下载图片，成功后设置壁纸
-{
-	return (
-		(
-            VARBOX::downloadImage(StrJoin<char>(img_url, ".jpg"), img_name+".jpg")
-			&&
-            setWallpaper(img_name + ".jpg")
-			)
-		||
-		(
-            VARBOX::downloadImage(StrJoin<char>(img_url, ".png"), img_name + ".png")
-			&&
-            setWallpaper(img_name + ".png")
-			)
-		);
 }
 
 Wallpaper::Wallpaper()
@@ -119,9 +77,9 @@ bool Wallpaper::set_from_Wallhaven() const  // 从数据库中随机抽取一个
     jsonObject = new YJson(file_name.toStdWString(), YJSON_ENCODE::UTF8);
     if (YJson::ep.first) goto label_1;
     if (jsonObject->getType() == YJSON_TYPE::YJSON_OBJECT &&
-        (find_item = jsonObject->find("PaperType")) &&
+        (find_item = jsonObject->find("Api")) &&
         find_item->getType() == YJSON_TYPE::YJSON_STRING &&
-        !strcmp(find_item->getValueString(), VarBox->StandardNames[(int)VarBox->PaperType][0]) &&
+        !strcmp(find_item->getValueString(), Wallpaper::url.c_str()) &&
         (find_item = jsonObject->find("PageNum")) &&
         find_item->getType() == YJSON_TYPE::YJSON_NUMBER &&
         find_item->getValueInt() == VarBox->PageNum &&
@@ -142,25 +100,28 @@ bool Wallpaper::set_from_Wallhaven() const  // 从数据库中随机抽取一个
 label_1:
     //qout << "Wallhaven 创建新的Json对象";
     jsonObject = new YJson(YJSON::OBJECT);
-    jsonObject->append(VarBox->StandardNames[static_cast<int>(VarBox->PaperType)][0], "PaperType");
+    jsonObject->append(Wallpaper::url.c_str(), "Api");
     jsonObject->append(VarBox->PageNum, "PageNum");
     jsonArray = jsonObject->append(YJSON::ARRAY, "ImgUrls");
     //qout << "Wallhaven 尝试从wallhaven下载源码";
     need_save = get_url_from_Wallhaven(*jsonArray);
     if (!need_save)
     {
-        delete jsonObject; jsonObject = nullptr;
+        delete jsonObject;
         return false;
     }
     //qout << "Wallhaven 源码下载完毕";
 label_2:
-    //qout << "Wallhaven 开始设置";
+   // qout << "Wallhaven 开始设置";
+    {
+    std::string pic_url;
     YJson& img_data = *jsonArray;
     int pic_num = img_data.getChildNum();
     if (pic_num)
     {
         //qout << "Wallhaven 找到随机id";
-        const char* pic = nullptr;
+        srand((unsigned)time(0));           // 防止出现重复
+        char pic[7] {0};
         QString temp = VARBOX::get_dat_path() + "\\Blacklist.json";
         if (QFile::exists(temp))
         {
@@ -169,11 +130,10 @@ label_2:
             if (blacklist.getType() == YJSON_TYPE::YJSON_ARRAY)
                 for (unsigned char x = 0; x < 0xff && pic_num; ++x)
                 {
-                    srand((unsigned)time(0)+x);           // 防止出现重复
                     YJson &item = img_data[rand() % pic_num];
                     if (item.getType() == YJSON_TYPE::YJSON_STRING)
                     {
-                        pic = item.getValueString();
+                        std::copy(item.getValueString() + 41, item.getValueString() + 47, pic);
                         //qout << "随机id" << pic;
                         if (blacklist.findByVal(pic))
                         {
@@ -181,11 +141,12 @@ label_2:
                             img_data.removeByVal(pic);
                             --pic_num;
                             need_save = true;
-                            pic = nullptr;
+                            *pic = 0;
                         }
                         else
                         {
                             //qout << "不在黑名单里面";
+                            pic_url = item.getValueString();
                             break;
                         }
                     }
@@ -193,22 +154,15 @@ label_2:
         }
         else
         {
-            srand((unsigned)time(0));
             YJson& item = img_data[rand() % pic_num];
-            pic = item.getValueString();
+            std::copy(item.getValueString() + 41, item.getValueString() + 47, pic);
         }
-        if (pic && strlen(pic) == 6)
+        if (*pic)
         {
-            //qout << "Wallhaven 开始下载壁纸";
-            srand((unsigned)time(0));
-            char pic_mid[3] = { 0 }; StrCopy<char>(pic_mid, pic, pic + 1);
-            char* pic_url = StrJoin<char>("https://w.wallhaven.cc/full/", pic_mid, "/wallhaven-", pic);
-            //qout << "壁纸网址：" << pic_url;
-            QString pic_path = VarBox->get_pic_path((short)VarBox->PaperType) + "\\wallhaven-" + pic;
-            //qout << "壁纸存储位置：" << pic_path;
-            func_ok = download_from_Wallheaven(pic_url, pic_path);
-            //qout << "壁纸设置完毕";
-            delete[] pic_url;
+            //qout << "壁纸网址：" << pic_url.c_str();
+            const QString&& img_name = Wallpaper::image_path + "\\wallhaven-" + pic_url.substr(41).c_str();
+            func_ok = VARBOX::downloadImage(pic_url.c_str(), img_name, false) && setWallpaper(img_name);
+            //qout << "壁纸设置完毕" << func_ok;
         }
         if (need_save)
         {
@@ -223,43 +177,27 @@ label_2:
         jsonObject = nullptr;
         goto label_1;
     }
+    }
     delete jsonObject; jsonObject = nullptr;
 	return func_ok;
 }
 
 bool Wallpaper::get_url_from_Wallhaven(YJson& jsonArray) const            //从Wallhaven下载图片地址到ImgData.db
 {
-    std::string html; const char *url_1, *url_2, *url;
-	chooseUrl(url_1, url_2); bool func_ok = true;
-    const char str_a[] = "<a class=\"preview\" href=\"https://wallhaven.cc/w/";
-    const char str_b[] = "\"  target=\"_blank\"  ></a><div class=\"thumb-info\">";
+    std::string json_byte;
     for (short k = 5 * (VarBox->PageNum - 1) + 1; VarBox->RunApp && (k <= 5 * VarBox->PageNum); k++)    //获取所给的页面中的所有数据
-	{
-		if (k == 1)
-            url = StrJoin<char>(url_1);
-		else
-		{
-            url = StrJoin<char>(url_1, url_2, std::to_string(k).c_str());
-		}
-        func_ok &= VARBOX::getWebCode(url, html, true);
-        const char* pos = html.c_str(); short stop = 0;
-		while (*pos && (++stop <= 24))          //遍历匹配结果
-		{
-            char math_pos[7] = { 0 };
-			while (*pos)
-			{
-                if (!strncmp<const char*>(pos, str_a, 48) && StrContainCharInRanges<char>(pos + 48, 6, "a-z", "0-9") && !strncmp<const char*>(pos + 54, str_b, 49))
-				{
-                    StrCopy<char>(math_pos, pos + 48, pos + 53);
-                    jsonArray.append(math_pos); pos += 103;
-				}
-				else
-					++pos;
-			}
-		}
-	}
-    delete [] url_1; delete [] url_2;
-	return func_ok;
+        if (VARBOX::getWebCode((url + "&page=" + std::to_string(k)).c_str(), json_byte, false))
+        {
+            YJson js(json_byte);
+            YJson* ptr = &js["data"][0];
+            if (ptr)
+                do {
+                    jsonArray.append(ptr->find("path")->getValueString());
+                } while (ptr = ptr->getNext());
+        }
+        else
+            return false;
+    return true;
 }
 
 void Wallpaper::set_from_Native(bool net)
@@ -268,11 +206,7 @@ void Wallpaper::set_from_Native(bool net)
     if (dir.exists())
     {
         QStringList filters;
-        filters << QString("*.png");
-        filters << QString("*.jpg");
-        filters << QString("*.jpeg");
-        filters << QString("*.bmp");
-        filters << QString("*.wbep");
+        filters << "*.png" << "*.jpg" << "*.jpeg" << "*.bmp" << "*.wbep";
         dir.setFilter(QDir::Files | QDir::NoSymLinks);                                //设置类型过滤器，只为文件格式
         int dir_count = dir.count();
         if (!dir_count)
@@ -345,14 +279,14 @@ label_1:
         {
             //qout << "必应文件不存在或过期";
             std::string img_html;
-            VARBOX::getWebCode("https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8&mkt=zh-CN", img_html, false);
+            VARBOX::getWebCode(url.c_str(), img_html, false);
             YJson bing_data(img_html); YJson *find;
             if (bing_data.getType() != YJSON_TYPE::YJSON_OBJECT || !(find = bing_data.find("images")) || !(find = find->getChild()))
                 return false;
             file_data = new YJson(YJSON::OBJECT);
             file_data->append(today.c_str(), "today");
             YJson* imgs = file_data->append(YJSON::ARRAY, "images");
-            constexpr const char pattern_str[] = u8" (© "; const char* ptr_1, *ptr_2; char *ptr_3;
+            constexpr char pattern_str[] = u8" (© "; const char* ptr_1, *ptr_2; char *ptr_3;
             do {
                 temp = imgs->append(YJSON::OBJECT);
                 ptr_1 = ptr_2 = find->find("copyright")->getValueString();
@@ -369,7 +303,7 @@ label_1:
 label_2:
         {
             const char * const img_url = StrJoin<char>("https://cn.bing.com", temp->find("url")->getValueString());
-            QString img_name = VarBox->get_pic_path((short)PAPER_TYPE::Bing) + "\\";
+            QString img_name = image_path + "\\";
             if (VarBox->UseDateAsBingName)
             {
                 if (bing)
@@ -431,13 +365,6 @@ label_2:
         }
 label_3:
     return false;
-}
-
-bool Wallpaper::set_from_Random() const
-{
-    QString img_name = VarBox->get_pic_path((short)PAPER_TYPE::Random);
-    img_name += "\\" + QDateTime::currentDateTime().toString("yyyy-MM-dd hhmmss") + ".jpg";
-    return VARBOX::downloadImage("https://source.unsplash.com/random/2560x1600", img_name, false) && setWallpaper(img_name);
 }
 
 QStringList _parse_arguments(const QString& str)

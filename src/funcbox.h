@@ -23,12 +23,12 @@
 
 enum class PAPER_TYPE
 {
-    Latest = 0, Hot = 1, Nature = 2, Anime = 3, Simple = 4, Random = 5, Bing = 6, Wallpapers = 7, Native = 8, Advance = 9
+    Hot, Nature, Anime, Simple, Random, User, Bing, Other, Native, Advance
 };
 
 enum class COLOR_THEME
 {
-    White = 0, Gray = 1, Purple = 2, Red = 3, Green = 4, Blue = 5, Brown = 6, Black = 7
+    White, Gray, Purple, Red, Green, Blue, Brown, Black
 };
 
 enum class WINDOWCOMPOSITIONATTRIB
@@ -88,9 +88,9 @@ struct ACCENT_POLICY
 
 enum class TaskBarCenterState
 {
-    TASK_LEFT = 0,
-    TASK_CENTER = 1,
-    TASK_RIGHT = 2
+    TASK_LEFT,
+    TASK_CENTER,
+    TASK_RIGHT
 };
 
 class Form; class Dialog; class DialogWallpaper; class Tray; class MenuWallpaper; struct IAccessible; //void* PMIB_IFTABLE;
@@ -111,19 +111,7 @@ public:
     const char* const Version = "21.11.10", * const Qt = "6.1.3";
     const unsigned char WinVersion; const bool FirstUse[1] = {false};
     std::list<std::pair<bool, wchar_t*>> PicHistory; std::list<std::pair<bool, wchar_t*>>::const_iterator CurPic;
-    const char* const StandardNames[10][2] =     //九种壁纸类型
-    {
-        {"Latest", "最新壁纸"}, {"Hot", "最热壁纸"}, {"Nature", "风景壁纸"},{"Anime", "动漫壁纸"},
-        {"Simple", "极简壁纸"}, {"Random", "随机壁纸"},{"Bing", "必应壁纸"},
-        {"MajorName", "桌面壁纸"}, {"Native", "本地壁纸"},{"Advance", "高级壁纸"}
-    };
-    QString CustomNames[10] =
-    {
-        "最新壁纸","最热壁纸","风景壁纸","动漫壁纸","极简壁纸",
-        "随机壁纸","必应壁纸","桌面壁纸","本地壁纸","高级壁纸"
-    };
-    QString MajorDir;                 //壁纸文件夹的上一级目录
-    PAPER_TYPE PaperType = PAPER_TYPE::Latest;               //当下正在使用的壁纸类型
+    PAPER_TYPE PaperType = PAPER_TYPE::Hot;               //当下正在使用的壁纸类型
     COLOR_THEME CurTheme = COLOR_THEME::White;
     bool RunApp = true;                        //app运行状态
 
@@ -160,8 +148,8 @@ public:
     VARBOX(int, int); ~VARBOX();
     void loadFunctions();
     void saveTrayStyle();
-    QString get_pic_path(short i);
-    QString get_wal_path();
+//    QString get_pic_path(short i);
+//    QString get_wal_path();
     DialogWallpaper* dwallpaper;                          //壁纸处理类
     MenuWallpaper* mwallpaper;                    //用于壁纸更换
     QTimer* change_paper_timer;                          //定时更换壁纸
@@ -184,7 +172,7 @@ public:
     static BOOL OneDriveFile(const char* file);
     static BOOL OneDriveFile(const wchar_t*file);
     static void MSG(const char* text, const char* title="提示", QMessageBox::StandardButtons buttons=QMessageBox::Ok);
-
+    static void chooseUrl();
 private:
      friend class Form;
      bool check_app_right();

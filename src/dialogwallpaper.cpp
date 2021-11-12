@@ -35,9 +35,6 @@ void DialogWallpaper::startWork()                                               
         case PAPER_TYPE::Bing:
             setBing();
             break;
-        case PAPER_TYPE::Random:
-            setRandom();
-            break;
         default:
             setWallhaven();
         }
@@ -53,11 +50,6 @@ void DialogWallpaper::setWallhaven()
 void DialogWallpaper::setBing()
 {
     VARBOX::isOnline(true) && set_from_Bing(true);
-}
-
-void DialogWallpaper::setRandom()
-{
-    VARBOX::isOnline(true) && set_from_Random();
 }
 
 void DialogWallpaper::setNative()

@@ -36,6 +36,7 @@ YJson::YJson(const wchar_t* str)
 
 YJson::YJson(const std::wstring& path, YJSON_ENCODE encode)
 {
+    qout << path;
     std::ifstream file(path, std::ios::in|std::ios::binary);
     std::string json_vector;
     if (!file.is_open())
@@ -52,7 +53,6 @@ YJson::YJson(const std::wstring& path, YJSON_ENCODE encode)
         return ;
     }
     file.seekg(0, std::ios::beg);
-
     switch (encode){
     case YJSON_ENCODE::UTF8BOM:
     {
@@ -136,6 +136,20 @@ YJson::YJson(const std::wstring& path, YJSON_ENCODE encode)
         break;
     default:
         LoadFile(file);
+    }
+}
+
+YJson::YJson(const std::initializer_list<const char*>& lst)
+{
+    YJson* iter, **child = &_child;
+    for (const auto& c: lst)
+    {
+        iter = new YJson();
+        auto len = strlen(c) + 1;
+        iter->_value = new char[len];
+        std::copy(c, c+len, iter->_value);
+        iter->_type = YJSON_TYPE::YJSON_STRING;
+        child = &(*child = iter)->_next;
     }
 }
 
@@ -273,6 +287,37 @@ int YJson::getChildNum() const
     return j;
 }
 
+std::string YJson::urlEncode() const
+{
+    std::string param;
+    char* value = nullptr;
+    if (_type == YJSON_TYPE::YJSON_OBJECT && _child)
+    {
+        YJson* ptr = _child;
+        do {
+            param += ptr->_key;
+            param.push_back('=');
+            switch (ptr->_type) {
+            case YJSON_TYPE::YJSON_NUMBER:
+                value = ptr->print_number();
+                param += value;
+                delete [] value;
+                break;
+            case YJSON_TYPE::YJSON_STRING:
+                param.append(ptr->_value);
+                break;
+            default:
+                param.append("null");
+            }
+            if (ptr = ptr->_next)
+                param.push_back('&');
+            else
+                break;
+        } while (true);
+    }
+    return param;
+}
+
 YJson::~YJson()
 {
     delete [] _value;
@@ -300,7 +345,7 @@ YJson* YJson::find(const char* key) const
 
 YJson* YJson::find(int key) const
 {
-    if (_type == YJSON_TYPE::YJSON_ARRAY)
+    if (_type == YJSON_TYPE::YJSON_ARRAY || _type == YJSON_TYPE::YJSON_OBJECT)
     {
         YJson *child = _child;
         if (child)
@@ -454,7 +499,6 @@ bool YJson::remove(YJson* item)
 
 YJson& YJson::operator=(const YJson& s)
 {
-    qout << "常饮用";
     if (&s == this)
         return *this;
     else if (s.getTop() == this->getTop())

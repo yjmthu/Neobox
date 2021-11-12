@@ -85,13 +85,14 @@ void Dialog::initUi()
     setStyleSheet(QString(qss.readAll()));
     qss.close();
     initSpeedBox(ui->frame, &Dialog::showMinimized, &Dialog::close);
-    buttonGroup->addButton(ui->rBtnNew, (int)PAPER_TYPE::Latest);                //将按钮添加到按钮组合，同时设置按钮 id
-    buttonGroup->addButton(ui->rBtnHot, (int)PAPER_TYPE::Hot);
+    buttonGroup->addButton(ui->rBtnHot, (int)PAPER_TYPE::Hot);         //将按钮添加到按钮组合，同时设置按钮 id
     buttonGroup->addButton(ui->rBtnNature, (int)PAPER_TYPE::Nature);
     buttonGroup->addButton(ui->rBtnAnime, (int)PAPER_TYPE::Anime);
     buttonGroup->addButton(ui->rBtnSimple, (int)PAPER_TYPE::Simple);
+    buttonGroup->addButton(ui->rBtnUser, (int)PAPER_TYPE::User);
     buttonGroup->addButton(ui->rBtnRandom, (int)PAPER_TYPE::Random);
     buttonGroup->addButton(ui->rBtnBing, (int)PAPER_TYPE::Bing);
+    buttonGroup->addButton(ui->rBtnOther, (int)PAPER_TYPE::Other);
     buttonGroup->addButton(ui->rBtnNative, (int)PAPER_TYPE::Native);
     buttonGroup->addButton(ui->rBtnAdvance, (int)PAPER_TYPE::Advance);
 	buttonGroup->setExclusive(true);                     // 按钮之间相互排斥
@@ -108,16 +109,33 @@ void Dialog::initUi()
     ui->labTimeInterval->setText(QString::number(VarBox->TimeInterval));
     ui->chkEnableChangePaper->setChecked(VarBox->AutoChange);
     ui->usrCmd->setText(VarBox->UserCommand);
-    ui->linePictuerPath->setText(VarBox->MajorDir);
+
     ui->rBtnWinTaskMax->setChecked(VarBox->setMax);
     ui->sLdTaskAlph->setValue(VarBox->dAlphaColor[VarBox->setMax] >> 24);
     ui->sLdIconAlph->setValue(VarBox->bAlpha[VarBox->setMax]);
     ui->sLdUpdateRefreshTime->setValue(VarBox->RefreshTime);
     ui->pushButton_3->setStyleSheet(getStyleSheet());
-    ui->lineNewName->setText(VarBox->CustomNames[ui->cBxstandardName->currentIndex()]);
     ui->line_APP_ID->setText(VarBox->AppId);
     ui->line_PASS_WORD->setText(VarBox->PassWord);
     ui->cBxAutoStart->setChecked(!QSettings("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat).value("SpeedBox").toString().compare(qApp->applicationFilePath().replace("/", "\\")));
+
+    switch (VarBox->PaperType) {
+    case PAPER_TYPE::Bing:
+        ui->rBtnBingApi->setChecked(true);
+        my_on_rBtnBingApi_clicked();
+        break;
+    case PAPER_TYPE::User:
+        ui->rBtnWallhavenApiUser->setChecked(true);
+        my_on_rBtnWallhavenApiUser_clicked();
+        break;
+    case PAPER_TYPE::Other:
+        ui->rBtnOtherApi->setChecked(true);
+        my_on_rBtnOtherApi_clicked();
+        break;
+    default:
+        ui->rBtnWallhavenApiDefault->setChecked(true);
+        my_on_rBtnWallhavenApiDefault_clicked();
+    }
     switch (VarBox->aMode[VarBox->setMax])
     {
     case (ACCENT_STATE::ACCENT_DISABLED):                       // 默认
@@ -213,10 +231,7 @@ void Dialog::initConnects()
         x.move(frameGeometry().x()+(width()-x.width())/2, frameGeometry().y()+(height()-x.height())/2);
         x.exec();
     });
-    connect(ui->pBtnCustomName, &QPushButton::clicked, this, &Dialog::setCustomName);
-    connect(ui->lineNewName, &QLineEdit::returnPressed, this, &Dialog::setCustomName);
     connect(ui->pBtnApply, &QPushButton::clicked, this, &Dialog::applyWallpaperSettings);
-    connect(ui->cBxstandardName, &QComboBox::currentIndexChanged, this, &Dialog::cBxstandardNameCurIndex);
     connect(ui->sLdPageNum, &QSlider::valueChanged, this, &Dialog::sLdPageNumCurNum);
     connect(ui->sLdUpdateRefreshTime, &QSlider::valueChanged, this, &Dialog::sLdUpdateTimeCurNum);
     connect(ui->sLdTaskAlph, &QSlider::valueChanged, this, &Dialog::sLdTaskAlphCurNum);
@@ -224,6 +239,11 @@ void Dialog::initConnects()
     connect(ui->sLdTimeInterval, &QSlider::valueChanged, this, [this](int value){ui->labTimeInterval->setText(QString::number(value, 10));});
     connect(ui->rBtnWinTaskNormal, &QRadioButton::clicked, [this](){changeType(false);});
     connect(ui->rBtnWinTaskMax, &QRadioButton::clicked, [this](){changeType(true);});
+    connect(ui->rBtnWallhavenApiDefault, &QRadioButton::clicked, this, &Dialog::my_on_rBtnWallhavenApiDefault_clicked);
+    connect(ui->rBtnWallhavenApiUser, &QRadioButton::clicked, this, &Dialog::my_on_rBtnWallhavenApiUser_clicked);
+    connect(ui->rBtnBingApi, &QRadioButton::clicked, this, &Dialog::my_on_rBtnBingApi_clicked);
+    connect(ui->rBtnOtherApi, &QRadioButton::clicked, this, &Dialog::my_on_rBtnOtherApi_clicked);
+    connect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
 }
 
 void Dialog::initButtonFilter()
@@ -341,6 +361,7 @@ void Dialog::applyWallpaperSettings()
     VarBox->AutoChange = ui->chkEnableChangePaper->isChecked();
     VarBox->UserCommand = ui->usrCmd->text();
     VarBox->FirstChange = ui->checkBox_3->isChecked();
+    VARBOX::chooseUrl();
     for (int type = 0; type < 2; ++type)
     {
         if (type == 0)
@@ -444,17 +465,16 @@ void Dialog::openPicturePath()
 	QString str = ui->linePictuerPath->text();
 	QDir dir;
     if (dir.exists(str) || (!str.isEmpty() && dir.mkdir(str)))
-        VarBox->MajorDir = str.replace("/", "\\");
+        Wallpaper::image_path = str.replace("/", "\\");
 	else
 	{
-        if (dir.exists(VarBox->MajorDir) || dir.mkdir(VarBox->MajorDir))
-            ui->linePictuerPath->setText(VarBox->MajorDir.replace("/", "\\"));
+        if (dir.exists(Wallpaper::image_path) || dir.mkdir(Wallpaper::image_path))
+            ui->linePictuerPath->setText(Wallpaper::image_path.replace("/", "\\"));
 		else
-            VarBox->MajorDir = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
+            Wallpaper::image_path = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
 	}
-    VarBox->get_wal_path();
-    if (dir.exists(VarBox->MajorDir))
-        VARBOX::runCommand("explorer", QStringList(VarBox->MajorDir));
+    if (dir.exists(Wallpaper::image_path))
+        VARBOX::runCommand("explorer", QStringList(Wallpaper::image_path));
 	else
 		QMessageBox::warning(this, "警告", "路径不存在！", QMessageBox::Ok, QMessageBox::Ok);
 }
@@ -465,13 +485,12 @@ void Dialog::linePictuerPathReturn()
 	QDir dir;
 	if (dir.exists(ui->linePictuerPath->text()))
 	{
-        VarBox->MajorDir = ui->linePictuerPath->text();
-        VarBox->get_wal_path();
+        Wallpaper::image_path = ui->linePictuerPath->text();
 	}
 	else
 	{
 		QMessageBox::warning(this, "警告", "路径不存在！", QMessageBox::Ok, QMessageBox::Ok);
-        ui->linePictuerPath->setText(VarBox->MajorDir);
+        ui->linePictuerPath->setText(Wallpaper::image_path);
 	}
 }
 
@@ -631,73 +650,6 @@ void Dialog::on_pushButton_3_clicked()
 	}
 }
 
-void Dialog::cBxstandardNameCurIndex(int index)
-{
-    ui->lineNewName->setText(VarBox->CustomNames[index]);
-}
-
-
-void Dialog::setCustomName()
-{
-	QString str = ui->lineNewName->text();
-    short i = ui->cBxstandardName->currentIndex();
-    if (VarBox->CustomNames[i].compare(str))
-	{
-		if (str.isEmpty())
-        {
-			QMessageBox::warning(this, "警告", "名称不能为空！", QMessageBox::Ok, QMessageBox::Ok);
-            ui->lineNewName->setText(VarBox->CustomNames[i]);
-        }
-		else
-		{
-            const wchar_t patrn[] = L"[`~!@#$%^&-+=\\?:\"|,/;'\\[\\]·~！@#￥%……&*（）+=\\{\\}\\|《》？：“”【】、；‘'，。\\、\\-]";
-            for (wchar_t c: str.toStdWString())
-            {
-                if (wcschr(patrn, c))
-                {
-                    QMessageBox::warning(this, "警告", "名称含有非法字符！", QMessageBox::Ok, QMessageBox::Ok);
-                    return;
-                }
-            }
-            QString new_name = (i == 7) ? VarBox->MajorDir + "\\" + str : VarBox->get_wal_path() + "\\" + str;
-            QDir dir;
-            if (dir.exists(new_name))
-            {
-                if (QMessageBox::question(this, "冲突", "目标路径下有一个同名文件夹，您想直接更换文件夹而不迁移图片吗？",
-                    QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
-                {
-                    VarBox->sigleSave("Dirs", VarBox->StandardNames[i][0], VarBox->CustomNames[i] = str);
-                    jobTip->showTip("更改名称成功！");
-                }
-                else
-                {
-                    jobTip->showTip("放心，我什么也没做！");
-                    ui->lineNewName->setText(VarBox->CustomNames[i]);
-                }
-            }
-            else
-            {
-                QString old_name;
-                if (i == 7)
-                    old_name = VarBox->MajorDir + "\\" + VarBox->CustomNames[7];
-                else
-                    old_name = VarBox->get_wal_path() + "\\" + VarBox->CustomNames[i];
-                if (dir.exists(old_name))
-                    dir.rename(old_name, new_name);
-                else
-                    dir.mkdir(new_name);
-                VarBox->CustomNames[i] = str;
-                VarBox->sigleSave("Dirs", VarBox->StandardNames[i][0], str);
-                jobTip->showTip("更换名称成功！");
-            }
-		}
-	}
-    else
-    {
-        jobTip->showTip("似乎什么也没做。");
-    }
-}
-
 void Dialog::on_radioButton_13_clicked()
 {
     ui->lineEdit->setText(qApp->applicationDirPath().replace("/", "\\"));
@@ -835,25 +787,6 @@ void Dialog::on_pushButton_5_clicked()
     ui->frame->setStyleSheet(QString("QFrame{background-color:rgba(%1);}QLabel{border-radius: 3px;background-color: transparent;}Line{background-color:black};").arg(color_theme[static_cast<int>(VarBox->CurTheme)]));
     jobTip->showTip("设置成功！");
     qDebug() << (int)VarBox->CurTheme;
-}
-
-
-
-void Dialog::on_pushButton_11_clicked()
-{
-    QString str = ui->linePictuerPath->text();
-    QDir dir;
-    if (dir.exists(str) || (!str.isEmpty() && dir.mkdir(str)))
-        VarBox->MajorDir = str.replace("/", "\\");
-    else
-    {
-        if (dir.exists(VarBox->MajorDir) || dir.mkdir(VarBox->MajorDir))
-            ui->linePictuerPath->setText(VarBox->MajorDir.replace("/", "\\"));
-        else
-            VarBox->MajorDir = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
-    }
-    VarBox->get_wal_path();
-    jobTip->showTip("修改成功！");
 }
 
 // 展示版本信息
@@ -1035,10 +968,35 @@ void Dialog::on_pushButton_14_clicked()
 void Dialog::on_toolButton_2_clicked()
 {
     QString titile = "请选择一个文件夹";
-    QString dir = QFileDialog::getExistingDirectory(NULL, titile, VarBox->MajorDir, QFileDialog::ShowDirsOnly);
+    QString dir = QFileDialog::getExistingDirectory(NULL, titile, Wallpaper::image_path.length()? Wallpaper::image_path: qApp->applicationDirPath(), QFileDialog::ShowDirsOnly);
     if (!dir.isEmpty())
     {
-        ui->linePictuerPath->setText(QDir::toNativeSeparators(dir));
+        Wallpaper::image_path = QDir::toNativeSeparators(dir);
+        ui->linePictuerPath->setText(Wallpaper::image_path);
+        std::wstring ph = (VARBOX::get_dat_path()+"\\WallpaperApi.json").toStdWString();
+        YJson json(ph, YJSON_ENCODE::UTF8);
+        if (ui->rBtnWallhavenApiDefault->isChecked())
+        {
+            json["Default"]["ApiData"][ui->cBxApis->currentIndex()]["Folder"].setText(Wallpaper::image_path.toUtf8());
+        }
+        else if (ui->rBtnWallhavenApiUser->isChecked())
+        {
+            json["User"]["ApiData"][ui->cBxApis->currentText().toUtf8()]["Folder"].setText(Wallpaper::image_path.toUtf8());
+        }
+        else if (ui->rBtnBingApi->isChecked())
+        {
+            json["BingApi"]["Folder"].setText(Wallpaper::image_path.toUtf8());
+        }
+        else
+        {
+            json["OtherApi"]["ApiData"][ui->cBxApis->currentText().toUtf8()]["Folder"].setText(Wallpaper::image_path.toUtf8());
+        }
+        json.toFile(ph, YJSON_ENCODE::UTF8, true);
+        jobTip->showTip("修改成功！");
+    }
+    else
+    {
+        jobTip->showTip("更改失败!");
     }
 }
 
@@ -1068,3 +1026,92 @@ void Dialog::on_checkBox_4_clicked(bool checked)
     jobTip->showTip("设置并保存成功！");
 }
 
+void Dialog::my_on_rBtnWallhavenApiDefault_clicked()
+{
+    disconnect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
+    ui->cBxApis->clear();
+    ui->cBxApis->addItems({"最热", "自然", "动漫", "极简"});
+    YJson json((VARBOX::get_dat_path()+"\\WallpaperApi.json").toStdWString(), YJSON_ENCODE::UTF8);
+    ui->linePictuerPath->setText(json["Default"]["ApiData"][ui->cBxApis->currentIndex()]["Folder"].getValueString());
+    connect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
+}
+
+void Dialog::my_on_rBtnWallhavenApiUser_clicked()
+{
+    disconnect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
+    ui->cBxApis->clear();
+    YJson json((VARBOX::get_dat_path()+"\\WallpaperApi.json").toStdWString(), YJSON_ENCODE::UTF8);
+    YJson& temp = json["User"];
+    for (auto& c : temp["ApiData"])
+        ui->cBxApis->addItem(c.getKeyString());
+    ui->cBxApis->setCurrentText(temp["Curruent"].getValueString());
+    ui->linePictuerPath->setText(temp["ApiData"][ui->cBxApis->currentText().toUtf8()]["Folder"].getValueString());
+    connect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
+}
+
+void Dialog::my_on_rBtnBingApi_clicked()
+{
+    disconnect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
+    ui->cBxApis->clear();
+    ui->cBxApis->addItem("Bing");
+    YJson json((VARBOX::get_dat_path()+"\\WallpaperApi.json").toStdWString(), YJSON_ENCODE::UTF8);
+    ui->linePictuerPath->setText(json["BingApi"]["Folder"].getValueString());
+    connect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
+}
+
+void Dialog::my_on_rBtnOtherApi_clicked()
+{
+    disconnect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
+    ui->cBxApis->clear();
+    YJson json((VARBOX::get_dat_path()+"\\WallpaperApi.json").toStdWString(), YJSON_ENCODE::UTF8);
+    YJson& temp = json["OtherApi"];
+    for (auto& c: temp["ApiData"])
+        ui->cBxApis->addItem(c.getKeyString());
+    ui->cBxApis->setCurrentText(temp["Curruent"].getValueString());
+    ui->linePictuerPath->setText(temp["ApiData"][ui->cBxApis->currentText().toStdString().c_str()]["Folder"].getValueString());
+    connect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
+}
+
+void Dialog::my_on_cBxApis_currentTextChanged(const QString &arg1)
+{
+    std::wstring ph = (VARBOX::get_dat_path()+"\\WallpaperApi.json").toStdWString();
+    YJson json(ph, YJSON_ENCODE::UTF8);
+    if (ui->rBtnWallhavenApiDefault->isChecked())
+    {
+        ui->linePictuerPath->setText(json["Default"]["ApiData"][ui->cBxApis->currentIndex()]["Folder"].getValueString());
+        return;
+    }
+    if (ui->rBtnWallhavenApiUser->isChecked())
+    {
+        json["User"]["Curruent"].setText(ui->cBxApis->currentText().toUtf8());
+        if (VarBox->PaperType == PAPER_TYPE::User)
+        {
+            Wallpaper::image_path = json["User"]["ApiData"][arg1.toUtf8()]["Folder"].getValueString();
+            ui->linePictuerPath->setText(Wallpaper::image_path);
+        }
+        else
+        {
+            ui->linePictuerPath->setText(json["User"]["ApiData"][arg1.toUtf8()]["Folder"].getValueString());
+        }
+        json.toFile(ph, YJSON_ENCODE::UTF8, true);
+    }
+    else if (ui->rBtnBingApi->isChecked())
+    {
+        if (VarBox->PaperType == PAPER_TYPE::Other)
+        {
+            Wallpaper::image_path = json["BingApi"]["Folder"].getValueString();
+            ui->linePictuerPath->setText(Wallpaper::image_path);
+        }
+        else
+        {
+            ui->linePictuerPath->setText(json["BingApi"]["Folder"].getValueString());
+        }
+    }
+    else
+    {
+        json["OtherApi"]["Curruent"].setText(arg1.toUtf8());
+        ui->linePictuerPath->setText(json["OtherApi"]["ApiData"][arg1.toUtf8()]["Folder"].getValueString());
+        json.toFile(ph, YJSON_ENCODE::UTF8, true);
+    }
+    jobTip->showTip("应用成功!");
+}
