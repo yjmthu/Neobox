@@ -301,15 +301,6 @@ void Dialog::closeEvent(QCloseEvent *event)
     event->accept();
 }
 
-/**
- * @brief Dialog::on_rBtnNative_toggled
- *
- * @当“本地”按钮被选中时，选择文件夹按钮可用。
- *
- * @param {checked} 按钮选中状态
- *
- */
-
 void Dialog::chooseFolder()
 {
 	QDir d;
@@ -344,13 +335,6 @@ void Dialog::saveWallpaperSettings()
     IniWrite.endGroup();
     jobTip->showTip("保存成功！");
 }
-
-/**
- * @brief Dialog::on_pBtnApply_clicked
- *
- * @“应用”按钮被点击后，将界面上的配置导入到文件中，将文件中的数据加载到静态变量。
- *
- */
 
 void Dialog::applyWallpaperSettings()
 {
