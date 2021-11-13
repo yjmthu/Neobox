@@ -919,7 +919,7 @@ void Dialog::on_pushButton_12_clicked()
             return;
         }
         YJson *qtVersion = json.find("Qt Version");
-        if (qtVersion->getType() != YJSON_TYPE::YJSON_STRING || (strcmp(qtVersion->getValueString(), VarBox->Qt) && strcmp(qtVersion->getValueString(), "6.1.3")))
+        if (qtVersion->getType() != YJSON_TYPE::YJSON_STRING || strcmp(qtVersion->getValueString(), VarBox->Qt))
         {
             jobTip->showTip("更新失败，当前Qt版本过低，请手动打开官网下载更新！", 3000);
             return;
