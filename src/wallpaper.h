@@ -31,7 +31,7 @@ public:
     static bool initSet; static bool canCreat() { return !thrd; };
     Wallpaper(); ~Wallpaper(); bool isActive() { return thrd; };
     static char bing; static bool update;
-    static std::string url;
+    static std::string url; static std::string bing_api; static QString bing_folder;
     static QString image_path;
 };
 

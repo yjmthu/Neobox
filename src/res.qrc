@@ -21,5 +21,6 @@
         <file>icons/empty_en.ico</file>
         <file>icons/empty_zh.ico</file>
         <file>icons/drip_blue_pin.ico</file>
+        <file>json/WallpaperApi.json</file>
     </qresource>
 </RCC>

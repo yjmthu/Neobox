@@ -843,8 +843,8 @@ void Dialog::on_pushButton_10_clicked()
     }, &loop, &thrd, std::placeholders::_1, std::placeholders::_2));
 
     thrd = std::thread([this](){
-        std::string str;
-        if (!VARBOX::getWebCode("https://gitee.com/yjmthu/Speed-Box/raw/main/update/update.json", str, false) || str.empty())
+        QByteArray str;
+        if (!VARBOX::getWebCode("https://gitee.com/yjmthu/Speed-Box/raw/main/update/update.json", str) || str.isEmpty())
         {
             emit finished(false, "下载失败！");
             return;
@@ -901,8 +901,8 @@ void Dialog::on_pushButton_12_clicked()
     }, &loop, &thrd, std::placeholders::_1, std::placeholders::_2));
 
     thrd = std::thread([this](){
-        std::string str; //jobTip->showTip("请耐心等待几秒...");
-        if (!VARBOX::getWebCode("https://gitee.com/yjmthu/Speed-Box/raw/main/update/update.json", str, false) || str.empty())
+        QByteArray str; //jobTip->showTip("请耐心等待几秒...");
+        if (!VARBOX::getWebCode("https://gitee.com/yjmthu/Speed-Box/raw/main/update/update.json", str) || str.isEmpty())
         {
             emit finished(false, "下载失败！");
             return;
@@ -940,9 +940,9 @@ void Dialog::on_pushButton_12_clicked()
             if (QFile::exists(temp_str_1)) QFile::remove(temp_str_1);
             if (QFile::exists(temp_str_2)) QFile::remove(temp_str_2);
 
-            if (VARBOX::downloadImage(url1, temp_str_1, false)
+            if (VARBOX::downloadImage(url1, temp_str_1)
                     &&
-                VARBOX::downloadImage(url2, temp_str_2, false))
+                VARBOX::downloadImage(url2, temp_str_2))
             {
                 emit finished(true);
             }

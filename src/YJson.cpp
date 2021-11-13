@@ -161,9 +161,11 @@ bool YJson::strict_parse(T temp)
     switch (*temp)
     {
         case '{':
+            qout << "object";
             parse_object(temp);
             break;
         case '[':
+        qout << "array";
             parse_array(temp);
             break;
         default:
@@ -570,10 +572,10 @@ char* YJson::toString(bool fmt)
 
 bool YJson::toFile(const std::wstring name, const YJSON_ENCODE& file_encode, bool fmt)
 {
-    //qout << "开始打印";
+    //qout << "开始打印" << name;
     if (ep.first) return false;
     char* buffer = fmt?print_value(0):print_value();
-    //qout << "打印成功";
+    //qout << "打印成功" << buffer;
     if (buffer)
     {
         switch (file_encode) {
@@ -814,12 +816,12 @@ template<typename T>
 T YJson::parse_string(T str)
 {
     TYPE_CHAECK();
-    //cout << "加载字符串：" << str << endl;
+    //qout << "加载字符串";
     T ptr = str + 1;
     char* ptr2; uint32_t uc, uc2;
     size_t len = 0;
     if (*str != '\"') {
-        //cout << "不是字符串！" << endl;
+        //qout << "不是字符串！";
         ep.first = true;
         return T();
     }
@@ -870,7 +872,7 @@ T YJson::parse_string(T str)
     *ptr2 = 0; ++str;
     _type= YJSON_TYPE::YJSON_STRING;
     while (*str != '\"' && *str) if (*str++ == '\\') ++str;
-    //qout << "所得字符串：" << _valuestring;
+    //qout << "所得字符串：" << _value;
     return ++str;
 }
 
@@ -987,7 +989,7 @@ char* YJson::print_array(int depth)
     YJson *child = _child;
     char*buffer = nullptr;
     if (!child)
-        return joinKeyValue("[]", false);
+        return joinKeyValue("[]", depth, false);
     do {
         entries.push_back(child->print_value(depth+1));
     } while (child = child->_next);
@@ -1018,7 +1020,7 @@ T YJson::parse_object(T value)
     if (!*value) return T();
     child->_key = child->_value;
     child->_value = nullptr;
-
+    //qout << "中间断开";
     if (*value != ':')
     {
         ep.first = true;

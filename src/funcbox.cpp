@@ -8,6 +8,9 @@
 #include <QDir>
 #include <QMessageBox>
 #include <QTimer>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QNetworkRequest>
 
 #include "funcbox.h"
 #include "YString.h"
@@ -64,15 +67,14 @@ void VARBOX::chooseUrl()  //选则正确的请求链接组合
     qout << "种类: " << (int)VarBox->PaperType;
     switch (VarBox->PaperType)
     {
+    case PAPER_TYPE::Bing:
     case PAPER_TYPE::User:
         Wallpaper::url = json["MainApis"]["WallhavenApi"].getValueString();
         Wallpaper::url.append(json["User"]["ApiData"][json["User"]["Curruent"].getValueString()]["Parameter"].urlEncode());
         Wallpaper::image_path = json["User"]["ApiData"]["Ghostblade"]["Folder"].getValueString();
-        break;
-    case PAPER_TYPE::Bing:
-        Wallpaper::url = json["MainApis"]["BingApi"].getValueString();
-        Wallpaper::url.append(json["BingApi"]["Parameter"].urlEncode());
-        Wallpaper::image_path = json["BingApi"]["Folder"].getValueString();
+        Wallpaper::bing_api = json["MainApis"]["BingApi"].getValueString();
+        Wallpaper::bing_api.append(json["BingApi"]["Parameter"].urlEncode());
+        Wallpaper::bing_folder = json["BingApi"]["Folder"].getValueString();
         break;
     default:
         Wallpaper::url = json["MainApis"]["WallhavenApi"].getValueString();
@@ -258,6 +260,8 @@ void VARBOX::readTrayStyle()
 void VARBOX::initFile()
 {
     QString file = get_ini_path(); qout << "配置文件目录" << file;
+    QString picfolder = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
+    QDir dir;
     if (!QFile::exists(file) && QFile::exists(get_dat_path() + "\\SpeedBox2.ini"))
     {
         QFile::rename(get_dat_path() + "\\SpeedBox2.ini", file);
@@ -289,7 +293,7 @@ void VARBOX::initFile()
 label_1:
         {
             qout << "创建新的Ini文件。";
-            NativeDir = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
+            NativeDir = picfolder;
             PathToOpen = QDir::toNativeSeparators(qApp->applicationDirPath());
             QSettings *IniWrite = new QSettings(get_ini_path(), QSettings::IniFormat);
             IniWrite->beginGroup("SpeedBox");
@@ -398,6 +402,32 @@ label_3:
             HaveAppRight = check_app_right();
             EnableTranslater = HaveAppRight && EnableTranslater;
         }
+    QString apifile = get_dat_path() + "\\WallpaperApi.json";
+    if (!QFile::exists(apifile))
+    {
+        qout << "文件不存在!";
+        picfolder += "\\桌面壁纸";
+        dir.mkdir(picfolder);
+        dir.cd(picfolder);
+        QFile::copy(":/json/WallpaperApi.json", apifile+".temp");
+        const std::vector<QString> lst {"最热壁纸", "风景壁纸", "动漫壁纸", "极简壁纸", "随机壁纸", "鬼刀壁纸", "必应壁纸"};
+        for (const auto&c: lst)
+            dir.mkdir(c);
+        std::vector<QString>::const_iterator iter = lst.begin();
+        YJson json((apifile+".temp").toStdWString(), YJSON_ENCODE::UTF8);
+        for (auto&c: json["Default"]["ApiData"])
+            c["Folder"].setText((picfolder+"\\"+*iter++).toUtf8());
+        for (auto&c: json["User"]["ApiData"])
+            c["Folder"].setText((picfolder+"\\"+*iter).toUtf8());
+        json["BingApi"]["Folder"].setText((picfolder+"\\"+*++iter).toUtf8());
+        for (auto&c: json["OtherApi"]["ApiData"])
+        {
+            c["Folder"].setText((picfolder+"\\"+c.getKeyString()).toUtf8());
+            dir.mkdir(c["Folder"].getValueString());
+        }
+        json.toFile(apifile.toStdWString(), YJSON_ENCODE::UTF8, true);
+        QFile::remove(apifile+".temp");
+    }
 }
 
 void VARBOX::initChildren()
@@ -536,128 +566,80 @@ void VARBOX::sigleSave(QString group, QString key, QString value)
     IniWrite.endGroup();
 }
 
-bool VARBOX::getWebCode(const char* url, std::string& src, bool auto_delete)
+bool VARBOX::getWebCode(const std::string& url, QByteArray& src)
 {
-    src.clear();
-    HINTERNET hSession = InternetOpenA("Firefox", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
-    if (hSession != NULL)
-    {
-        HINTERNET hURL = InternetOpenUrlA(hSession, url, NULL, 0, INTERNET_FLAG_DONT_CACHE, 0);
-        if (auto_delete) delete[] url;
-        if (hURL)
-        {
-            char temp[1025] = { 0 };
-            DWORD dwRecv = 1;
-            while (dwRecv > 0 && VarBox->RunApp)
-            {
-                memset(temp, 0, 1024);
-                InternetReadFile(hURL, temp, 1024, &dwRecv);
-                src += temp;
-            }
-            InternetCloseHandle(hURL);
-            hURL = NULL;
-        }
-
-        InternetCloseHandle(hSession);
-        hSession = NULL;
-    }
-    else
-    {
-        if (auto_delete) delete[] url;
-    }
-    return VarBox->RunApp && !src.empty();
+    QNetworkAccessManager* mgr = new QNetworkAccessManager();
+    QNetworkRequest res(QUrl(url.c_str()));
+    res.setTransferTimeout(5000);
+    QEventLoop loop;
+    //res.setHeader(QNetworkRequest::UserAgentHeader, "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36");
+    QObject::connect(mgr, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
+    QNetworkReply*rep = mgr->get(res);
+    loop.exec();
+    src = rep->readAll();
+    mgr->deleteLater();
+    return src.length();
 }
 
-// 会删除url
-bool VARBOX::getTransCode(const char* url, std::string& outcome)
-{
-    //qout << "翻译请求：" << url << Qt::endl;
-    HINTERNET hSession = InternetOpenA("Microsoft Edge", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
-    if (hSession)
-    {
-        HINTERNET hURL = InternetOpenUrlA(hSession, url, NULL, 0, INTERNET_FLAG_DONT_CACHE, 0);
-        delete [] url; //qout << "发送翻译请求成功。";
-        if (hURL)
-        {
-            char buffer[1025] = { 0 }; DWORD dwRecv = 0;
-            do {
-                memset(buffer, 0, 1024);
-                InternetReadFile(hURL, buffer, 1024, &dwRecv);
-                if (dwRecv)
-                {
-                    buffer[dwRecv] = 0;
-                    //qout << "读入的字节数量：" << dwRecv;
-                    outcome.append(buffer);
-                }
-                else
-                    break;
-            } while (VarBox->RunApp);
-            InternetCloseHandle(hURL);
-        }
+//bool VARBOX::getTransCode(const char* url, std::string& outcome)
+//{
+//    //qout << "翻译请求：" << url << Qt::endl;
+//    HINTERNET hSession = InternetOpenA("Microsoft Edge", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+//    if (hSession)
+//    {
+//        HINTERNET hURL = InternetOpenUrlA(hSession, url, NULL, 0, INTERNET_FLAG_DONT_CACHE, 0);
+//        delete [] url; //qout << "发送翻译请求成功。";
+//        if (hURL)
+//        {
+//            char buffer[1025] = { 0 }; DWORD dwRecv = 0;
+//            do {
+//                memset(buffer, 0, 1024);
+//                InternetReadFile(hURL, buffer, 1024, &dwRecv);
+//                if (dwRecv)
+//                {
+//                    buffer[dwRecv] = 0;
+//                    //qout << "读入的字节数量：" << dwRecv;
+//                    outcome.append(buffer);
+//                }
+//                else
+//                    break;
+//            } while (VarBox->RunApp);
+//            InternetCloseHandle(hURL);
+//        }
 
-        InternetCloseHandle(hSession);
-        hSession = NULL;
-    }
-    else
-    {
-        delete [] url;
-    }
-    return !outcome.empty();
-}
+//        InternetCloseHandle(hSession);
+//        hSession = NULL;
+//    }
+//    else
+//    {
+//        delete [] url;
+//    }
+//    return !outcome.empty();
+//}
 
-bool VARBOX::downloadImage(const char* url, const QString path, bool auto_delete)
+bool VARBOX::downloadImage(const std::string& url, const QString path)
 {
-    if (QFile::exists(path)) return 1;
-    bool OK = false;
-    DWORD dwRecv = 0;
-    DWORD allWrite = 0;
-    char* szDownLoad = new char[1024 * 40];
-    HINTERNET hSession = InternetOpenA("Chromium", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
-    if (hSession)
+    if (QFile::exists(path))
+        return true;
+    QNetworkAccessManager* mgr = new QNetworkAccessManager();
+    QEventLoop loop;
+    //res.setHeader(QNetworkRequest::UserAgentHeader, "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36");
+    QObject::connect(mgr, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
+    QNetworkReply* rep = mgr->get(QNetworkRequest(QUrl(url.c_str())));
+    loop.exec();
+    QFile file(path);
+    if (file.open(QIODevice::WriteOnly))
     {
-        HINTERNET hOpenUrl = InternetOpenUrlA(hSession, url, NULL, 0, INTERNET_FLAG_RELOAD, 0);
-        if (auto_delete) delete [] url;
-        if (hOpenUrl)
+        file.write(rep->readAll());
+        file.close();
+        if (!file.size())
         {
-            qout << "成功打开网址";
-            QFile file(path);
-            if (file.open(QIODevice::WriteOnly))
-            {
-                qout << "开始写入图片文件";
-                while (VarBox->RunApp)
-                {
-                    //memset(szDownLoad, 0, 1024 * 40 * sizeof(char));
-                    Sleep(10); // qout << "下载循环中";
-                    InternetReadFile(hOpenUrl, szDownLoad, 1024 * 40, &dwRecv);
-                    if (!dwRecv)
-                        break;
-                    file.write(szDownLoad, dwRecv);
-                    allWrite += dwRecv;
-                }
-                qout << "下载结束";
-                file.close();
-                OK = (allWrite >= 16000) && VarBox->RunApp;
-                if (!OK && QFile::exists(path))
-                {
-                    QFile::remove(path);
-                    qout << "删除错误文件";
-                }
-                else
-                {
-                    qout << "下载成功！";
-                }
-            }
-            InternetCloseHandle(hOpenUrl);
+            QFile::remove(path);
+            return false;
         }
-        InternetCloseHandle(hSession);
     }
-    else
-    {
-        if (auto_delete) delete [] url;
-    }
-    delete[] szDownLoad;
-    qout << "退出函数" << OK;
-    return OK;
+    mgr->deleteLater();
+    return true;
 }
 
 char* VARBOX::runCommand(const QString& program, const QStringList& argument, short line)

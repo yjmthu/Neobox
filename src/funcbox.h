@@ -161,10 +161,9 @@ public:
     static void sigleSave(QString group, QString key, QString value);
     static bool isOnline(bool);                                               //检查是否有网络连接，布尔值代表是否保持检测 30 秒
     static char* runCommand(const QString & program, const QStringList& argument, short line = 0);
-    static bool getWebCode(const char*, std::string&, bool auto_delete);
+    static bool getWebCode(const std::string& url, QByteArray& html);
     //static bool getBingCode(std::string& code);
-    static bool downloadImage(const char*, const QString, bool auto_delete = true);
-    static bool getTransCode(const char* url, std::string& outcome);
+    static bool downloadImage(const std::string& url, const QString path);
     static BOOL SetWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD AlphaColor);//设置窗口WIN10风格
     static bool versionBefore(const char* A, const char* B);
     static BOOL PathFileExists(LPCSTR pszPath);

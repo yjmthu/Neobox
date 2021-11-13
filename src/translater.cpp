@@ -1,4 +1,5 @@
 ﻿#include <thread>
+#include <sstream>
 #include <windows.h>
 #include <winuser.h>
 #include <QApplication>
@@ -317,7 +318,7 @@ void Translater::keyPressEvent(QKeyEvent* event)
 void Translater::getReply(const QByteArray& text)
 {
     qout << "开始执行翻译函数";
-    constexpr char API[] = u8"http://api.fanyi.baidu.com/api/trans/vip/translate";
+    constexpr char API[] = u8"http://api.fanyi.baidu.com/api/trans/vip/translate?";
     constexpr char salt[] = u8"1435660288";                           //请求参数之一
 
     auto time_now = GetTickCount();
@@ -329,10 +330,10 @@ void Translater::getReply(const QByteArray& text)
     utf8_q = StrJoin<char>(VarBox->AppId, (const char*)text, salt, VarBox->PassWord);
     QByteArray sign = QCryptographicHash::hash(utf8_q, QCryptographicHash::Md5).toHex();
     delete [] utf8_q;
-    std::string reply_data; QEventLoop loop;
+    QByteArray reply_data; QEventLoop loop;
 
     connect(this, &Translater::finished, &loop,
-        std::bind([this](QEventLoop* loop, std::string* reply_data, bool success)
+        std::bind([this](QEventLoop* loop, QByteArray* reply_data, bool success)
             {
                 if (thrd->joinable()) thrd->join();
                 loop->quit();
@@ -384,7 +385,9 @@ void Translater::getReply(const QByteArray& text)
     }, &loop, &reply_data, std::placeholders::_1));
 
     thrd = new std::thread([&](){
-        if (VARBOX::getTransCode(StrJoin<char>(API, u8"?q=", q.c_str(), u8"&from=", from, u8"&to=", to, u8"&appid=", VarBox->AppId, u8"&salt=", salt, u8"&sign=", sign.data()), reply_data))
+        std::stringstream url;
+        url << API << "q=" << q << "&from=" << from << "&to=" << to << "&appid=" << VarBox->AppId << "&salt=" << salt << "&sign=" << sign.data();
+        if (VARBOX::getWebCode(url.str(), reply_data))
             emit finished(true);
         else
             emit finished(false);

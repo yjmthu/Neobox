@@ -232,24 +232,11 @@ void MenuWallpaper::removePic()
                 check_is_wallhaven(pic_name, id);
                 if (*id)
                 {
-                    QString str = VarBox->get_dat_path() + "\\Blacklist.json";
-                    YJson *blackList = nullptr;
-                    if (QFile::exists(str))
-                    {
-                        blackList = new YJson(str.toStdWString(), YJSON_ENCODE::UTF8BOM);
-                        qout << 123;
-                        if (blackList->getType() != YJSON_TYPE::YJSON_ARRAY)
-                        {
-                            qout << "不是Arry";
-                            delete blackList;
-                            blackList = new YJson(YJSON::ARRAY);
-                        }
-                    }
-                    else
-                        blackList = new YJson(YJSON::ARRAY);
-                    blackList->append(id);
-                    blackList->toFile(str.toStdWString(), YJSON_ENCODE::UTF8, true);
-                    delete  blackList;
+                    QString str = VarBox->get_dat_path() + "\\ImgData.json";
+                    YJson *json = new YJson(str.toStdWString(), YJSON_ENCODE::UTF8), *blacklist = json->find("ImgUrls")->find("Blacklist");
+                    blacklist->append(id);
+                    json->toFile(str.toStdWString(), YJSON_ENCODE::UTF8, true);
+                    delete  json;
                 }
                 DeleteFileW(pic_path);
                 delete [] pic_path;

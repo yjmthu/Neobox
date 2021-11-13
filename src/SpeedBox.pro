@@ -24,7 +24,7 @@ QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2021"
 RC_LANG = 0x0804
 
 
-QT       += core gui
+QT       += core gui network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -101,3 +101,5 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 # 生成的exe文件
 TARGET = "SpeedBox"
+
+DISTFILES +=

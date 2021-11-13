@@ -71,6 +71,7 @@ public:
     inline YJson& operator[](const char* key) const { return *find(key); }
     inline operator bool() const { const YJson* s = this; return s; };
     inline void setText(const char* val) {delete [] _value; auto len = strlen(val)+1; _value = new char[len]; std::copy(val, val+len, _value); _type=YJSON_TYPE::YJSON_STRING;};
+    inline void setText(const std::string& val) {delete [] _value; _value = new char[val.length()+1]; std::copy(val.begin(), val.end(), _value); _type=YJSON_TYPE::YJSON_STRING;};
     inline void setValue(double val) {delete [] _value; _value = new char[sizeof (double)]; std::copy((char*)&val, (char*)&val+sizeof (val), _value);};
     inline void setNull() {delete [] _value; _value = nullptr; _type=YJSON_TYPE::YJSON_NULL;}
 
@@ -91,6 +92,7 @@ public:
 
     inline bool remove(int index) { return remove(find(index)); }
     inline bool remove(const char* key) { return remove(find(key)); }
+    bool remove(YJson *item);
     inline bool removeByVal(int value) { return remove(findByVal(value)); }
     inline bool removeByVal(double value) { return remove(findByVal(value)); }
     inline bool removeByVal(const std::string & str) { return remove(findByVal(str.c_str())); }
@@ -99,6 +101,9 @@ public:
         if (_type != YJSON_TYPE::YJSON_ARRAY && _type != YJSON_TYPE::YJSON_OBJECT) return false;
         else if (_child) { delete _child; _child = nullptr;}
         return true;
+    }
+    inline bool empty(){
+        return !this || !_child;
     }
     class iterator{
     private:
@@ -170,7 +175,6 @@ private:
     void LoadFile(std::ifstream &);
     void CopyJson(const YJson*, YJson*);
 
-    bool remove(YJson*);
     YJson* append(YJSON_TYPE type);
 };
 
