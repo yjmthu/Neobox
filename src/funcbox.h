@@ -108,7 +108,7 @@ class VARBOX: public QObject
     Q_OBJECT
 
 public:
-    const char* const Version = "21.11.10", * const Qt = "6.1.3";
+    const char* const Version = "21.11.14", * const Qt = "6.2.1";
     const unsigned char WinVersion; const bool FirstUse[1] = {false};
     std::list<std::pair<bool, wchar_t*>> PicHistory; std::list<std::pair<bool, wchar_t*>>::const_iterator CurPic;
     PAPER_TYPE PaperType = PAPER_TYPE::Hot;               //当下正在使用的壁纸类型
