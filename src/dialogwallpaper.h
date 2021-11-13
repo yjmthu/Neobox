@@ -12,6 +12,7 @@ public:
     void setBing() override;
     void setNative() override;
     void setAdvance() override;
+    void setOther() override;
     void startWork() override;
     ~DialogWallpaper();
     void iniStart();

@@ -97,6 +97,9 @@ void MenuWallpaper::startWork()                                                 
         case PAPER_TYPE::Bing:
             setBing();
             break;
+        case PAPER_TYPE::Other:
+            setOther();
+            break;
         default:
             setWallhaven();
         }
@@ -119,6 +122,16 @@ void MenuWallpaper::setBing()
         if (!set_from_Bing(true)) emit msgBox("设置必应壁纸失败！", "警告");
 	}
 	else
+        emit msgBox("没有网络！", "提示");
+}
+
+void MenuWallpaper::setOther()
+{
+    if (VARBOX::isOnline(false))
+    {
+        if (!set_from_Other()) emit msgBox("设置其它API壁纸失败！", "警告");
+    }
+    else
         emit msgBox("没有网络！", "提示");
 }
 

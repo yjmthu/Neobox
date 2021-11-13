@@ -35,6 +35,9 @@ void DialogWallpaper::startWork()                                               
         case PAPER_TYPE::Bing:
             setBing();
             break;
+        case PAPER_TYPE::Other:
+            setOther();
+            break;
         default:
             setWallhaven();
         }
@@ -55,6 +58,11 @@ void DialogWallpaper::setBing()
 void DialogWallpaper::setNative()
 {
     set_from_Native(true);
+}
+
+void DialogWallpaper::setOther()
+{
+    set_from_Other();
 }
 
 void DialogWallpaper::setAdvance()

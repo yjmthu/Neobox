@@ -407,6 +407,13 @@ label_3:
     return false;
 }
 
+bool Wallpaper::set_from_Other() const
+{
+    QString path =  Wallpaper::image_path+QDateTime::currentDateTime().toString("\\yyyy-MM-dd hh：mm：ss.jpg");
+    qout << "其它壁纸: " << path << url.c_str();
+    return VARBOX::downloadImage(Wallpaper::url, path) && setWallpaper(path);
+}
+
 QStringList _parse_arguments(const QString& str)
 {
     QStringList lst;

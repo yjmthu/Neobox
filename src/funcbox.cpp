@@ -76,6 +76,10 @@ void VARBOX::chooseUrl()  //选则正确的请求链接组合
         Wallpaper::bing_api.append(json["BingApi"]["Parameter"].urlEncode());
         Wallpaper::bing_folder = json["BingApi"]["Folder"].getValueString();
         break;
+    case PAPER_TYPE::Other:
+        Wallpaper::url = json["OtherApi"]["ApiData"][json["OtherApi"]["Curruent"].getValueString()]["Url"].getValueString();
+        Wallpaper::image_path = json["OtherApi"]["ApiData"][json["OtherApi"]["Curruent"].getValueString()]["Folder"].getValueString();
+        break;
     default:
         Wallpaper::url = json["MainApis"]["WallhavenApi"].getValueString();
         Wallpaper::url.append(json["Default"]["ApiData"][(int)VarBox->PaperType]["Parameter"].urlEncode());
@@ -619,13 +623,17 @@ bool VARBOX::getWebCode(const std::string& url, QByteArray& src)
 
 bool VARBOX::downloadImage(const std::string& url, const QString path)
 {
+    qout << "进入函数";
     if (QFile::exists(path))
         return true;
-    //res.setHeader(QNetworkRequest::UserAgentHeader, "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36");
+    qout << "开始下载";
+    QNetworkRequest res;
+    res.setUrl(QUrl(url.c_str()));
+    res.setHeader(QNetworkRequest::UserAgentHeader, "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36");
     QNetworkAccessManager* const mgr = new QNetworkAccessManager();
     QEventLoop* loop = new QEventLoop(mgr);
     QObject::connect(mgr, &QNetworkAccessManager::finished, loop, &QEventLoop::quit);
-    QNetworkReply* rep = mgr->get(QNetworkRequest(QUrl(url.c_str())));
+    QNetworkReply* rep = mgr->get(res);
     loop->exec();
     QFile file(path);
     if (file.open(QIODevice::WriteOnly))
@@ -634,10 +642,13 @@ bool VARBOX::downloadImage(const std::string& url, const QString path)
         file.close();
         if (!file.size())
         {
+            qout << "文件大小为0";
             QFile::remove(path);
             return false;
         }
+        qout << file.size();
     }
+    qout << "退出函数";
     delete mgr;
     return true;
 }

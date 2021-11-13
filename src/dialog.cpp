@@ -118,7 +118,7 @@ void Dialog::initUi()
     ui->line_APP_ID->setText(VarBox->AppId);
     ui->line_PASS_WORD->setText(VarBox->PassWord);
     ui->cBxAutoStart->setChecked(!QSettings("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat).value("SpeedBox").toString().compare(qApp->applicationFilePath().replace("/", "\\")));
-
+    ui->lineEdit_2->setText(qApp->applicationDirPath().replace("/", "\\"));
     switch (VarBox->PaperType) {
     case PAPER_TYPE::Bing:
         ui->rBtnBingApi->setChecked(true);
@@ -244,6 +244,7 @@ void Dialog::initConnects()
     connect(ui->rBtnBingApi, &QRadioButton::clicked, this, &Dialog::my_on_rBtnBingApi_clicked);
     connect(ui->rBtnOtherApi, &QRadioButton::clicked, this, &Dialog::my_on_rBtnOtherApi_clicked);
     connect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
+    connect(ui->pushButton, &QPushButton::clicked, this, &Dialog::my_on_pushButton_clicked);
 }
 
 void Dialog::initButtonFilter()
@@ -479,6 +480,10 @@ void Dialog::openPicturePath()
 		QMessageBox::warning(this, "警告", "路径不存在！", QMessageBox::Ok, QMessageBox::Ok);
 }
 
+void Dialog::my_on_pushButton_clicked()
+{
+    VARBOX::runCommand("explorer", QStringList(qApp->applicationDirPath().replace("/", "\\")));
+}
 
 void Dialog::linePictuerPathReturn()
 {
@@ -1097,7 +1102,7 @@ void Dialog::my_on_cBxApis_currentTextChanged(const QString &arg1)
     }
     else if (ui->rBtnBingApi->isChecked())
     {
-        if (VarBox->PaperType == PAPER_TYPE::Other)
+        if (VarBox->PaperType == PAPER_TYPE::Bing)
         {
             Wallpaper::image_path = json["BingApi"]["Folder"].getValueString();
             ui->linePictuerPath->setText(Wallpaper::image_path);
@@ -1109,8 +1114,18 @@ void Dialog::my_on_cBxApis_currentTextChanged(const QString &arg1)
     }
     else
     {
-        json["OtherApi"]["Curruent"].setText(arg1.toUtf8());
-        ui->linePictuerPath->setText(json["OtherApi"]["ApiData"][arg1.toUtf8()]["Folder"].getValueString());
+        if (VarBox->PaperType == PAPER_TYPE::Other)
+        {
+            json["OtherApi"]["Curruent"].setText(arg1.toUtf8());
+            Wallpaper::image_path = json["OtherApi"]["ApiData"][arg1.toUtf8()]["Folder"].getValueString();
+            Wallpaper::url = json["OtherApi"]["ApiData"][arg1.toUtf8()]["Url"].getValueString();
+            ui->linePictuerPath->setText(Wallpaper::image_path);
+        }
+        else
+        {
+            json["OtherApi"]["Curruent"].setText(arg1.toUtf8());
+            ui->linePictuerPath->setText(json["OtherApi"]["ApiData"][arg1.toUtf8()]["Folder"].getValueString());
+        }
         json.toFile(ph, YJSON_ENCODE::UTF8, true);
     }
     jobTip->showTip("应用成功!");
