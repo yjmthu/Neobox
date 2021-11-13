@@ -621,12 +621,12 @@ bool VARBOX::downloadImage(const std::string& url, const QString path)
 {
     if (QFile::exists(path))
         return true;
-    QNetworkAccessManager* mgr = new QNetworkAccessManager();
-    QEventLoop loop;
     //res.setHeader(QNetworkRequest::UserAgentHeader, "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36");
-    QObject::connect(mgr, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
+    QNetworkAccessManager* const mgr = new QNetworkAccessManager();
+    QEventLoop* loop = new QEventLoop(mgr);
+    QObject::connect(mgr, &QNetworkAccessManager::finished, loop, &QEventLoop::quit);
     QNetworkReply* rep = mgr->get(QNetworkRequest(QUrl(url.c_str())));
-    loop.exec();
+    loop->exec();
     QFile file(path);
     if (file.open(QIODevice::WriteOnly))
     {
@@ -638,7 +638,7 @@ bool VARBOX::downloadImage(const std::string& url, const QString path)
             return false;
         }
     }
-    mgr->deleteLater();
+    delete mgr;
     return true;
 }
 
