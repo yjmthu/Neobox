@@ -82,6 +82,7 @@ void VARBOX::chooseUrl()  //选则正确的请求链接组合
         Wallpaper::image_name = json["OtherApi"]["ApiData"][json["OtherApi"]["Curruent"].getValueString()]["Name"].getValueString();
         break;
     case PAPER_TYPE::Advance:
+    case PAPER_TYPE::Native:
         break;
     default:
         Wallpaper::url = json["MainApis"]["WallhavenApi"].getValueString();
