@@ -1233,7 +1233,7 @@ background-color: rgb(0, 0, 0);</string>
                <item>
                 <widget class="QRadioButton" name="rBtnOtherApi">
                  <property name="text">
-                  <string>其它</string>
+                  <string>其他</string>
                  </property>
                 </widget>
                </item>
