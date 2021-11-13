@@ -9,7 +9,7 @@ msvc {
 }
 
 # 版本信息
-VERSION = 21.11.10.0
+VERSION = 21.11.13.0
 # 图标
 RC_ICONS += icons/speedbox.ico
 # 公司名称
@@ -35,12 +35,12 @@ CONFIG += release
 #CONFIG += debug
 
 # 禁用qDebug()
-# DEFINES += QT_NO_DEBUG_OUTPUT
+DEFINES += QT_NO_DEBUG_OUTPUT
 
-win32 {
-    LIBS += -luser32
-    LIBS += -loleaut32
-}
+#win32 {
+#    LIBS += -luser32
+#    LIBS += -loleaut32
+#}
 
 # 禁用 Qt 6之前的函数
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000
@@ -101,5 +101,3 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 # 生成的exe文件
 TARGET = "SpeedBox"
-
-DISTFILES +=
