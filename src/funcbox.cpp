@@ -79,6 +79,7 @@ void VARBOX::chooseUrl()  //选则正确的请求链接组合
     case PAPER_TYPE::Other:
         Wallpaper::url = json["OtherApi"]["ApiData"][json["OtherApi"]["Curruent"].getValueString()]["Url"].getValueString();
         Wallpaper::image_path = json["OtherApi"]["ApiData"][json["OtherApi"]["Curruent"].getValueString()]["Folder"].getValueString();
+        Wallpaper::image_name = json["OtherApi"]["ApiData"][json["OtherApi"]["Curruent"].getValueString()]["Name"].getValueString();
         break;
     default:
         Wallpaper::url = json["MainApis"]["WallhavenApi"].getValueString();
@@ -627,6 +628,7 @@ bool VARBOX::downloadImage(const std::string& url, const QString path)
     if (QFile::exists(path))
         return true;
     qout << "开始下载";
+    //std::cout << "提示" << url.c_str();
     QNetworkRequest res;
     res.setUrl(QUrl(url.c_str()));
     res.setHeader(QNetworkRequest::UserAgentHeader, "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36");

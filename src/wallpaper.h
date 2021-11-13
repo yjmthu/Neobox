@@ -34,7 +34,7 @@ public:
     Wallpaper(); ~Wallpaper(); bool isActive() { return thrd; };
     static char bing; static bool update;
     static std::string url; static std::string bing_api; static QString bing_folder;
-    static QString image_path;
+    static QString image_path; static QString image_name;
 };
 
 #endif // WALLPAPER_H

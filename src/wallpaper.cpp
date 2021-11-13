@@ -15,10 +15,8 @@ std::thread* Wallpaper::thrd = nullptr;
 bool Wallpaper::initSet = false;
 char Wallpaper::bing = 0;
 bool Wallpaper::update = false;
-std::string Wallpaper::url;//nullptr;
-QString Wallpaper::image_path;
-QString Wallpaper::bing_folder;
-std::string Wallpaper::bing_api;
+std::string Wallpaper::url, Wallpaper::bing_api;
+QString Wallpaper::image_path, Wallpaper::bing_folder, Wallpaper::image_name;
 
 inline bool setWallpaper(const QString &img_name)             //根据路径设置壁纸
 {
@@ -164,7 +162,7 @@ label_2:
             {
                 if (item->getType() == YJSON_TYPE::YJSON_STRING)
                 {
-                    std::copy(item->getValueString() + 41, item->getValueString() + 47, pic);
+                    std::copy(item->getValueString() + 10, item->getValueString() + 16, pic);
                     //qout << "随机id" << pic;
                     if (blacklist->findByVal(pic))
                     {
@@ -196,8 +194,8 @@ label_2:
         if (*pic)
         {
             //qout << "壁纸网址：" << pic_url.c_str();
-            const QString&& img_name = Wallpaper::image_path + "\\wallhaven-" + pic_url.substr(41).c_str();
-            func_ok = VARBOX::downloadImage(pic_url, img_name) && setWallpaper(img_name);
+            const QString&& img_name = Wallpaper::image_path + "\\" + pic_url.c_str();
+            func_ok = VARBOX::downloadImage("https://w.wallhaven.cc/full/"+pic_url.substr(10, 2)+"/"+pic_url, img_name) && setWallpaper(img_name);
             //qout << "壁纸设置完毕" << func_ok;
         }
         //qout << "保存 json 文件";
@@ -227,7 +225,7 @@ bool Wallpaper::get_url_from_Wallhaven(YJson& jsonArray) const            //从W
             YJson* ptr = js->find("data")->getChild();
             if (ptr)
                 do {
-                    jsonArray.append(ptr->find("path")->getValueString());
+                    jsonArray.append(ptr->find("path")->getValueString() + 31);
                 } while (ptr = ptr->getNext());
             delete js;
             //qout << "mm";
@@ -409,7 +407,7 @@ label_3:
 
 bool Wallpaper::set_from_Other() const
 {
-    QString path =  Wallpaper::image_path+QDateTime::currentDateTime().toString("\\yyyy-MM-dd hh：mm：ss.jpg");
+    QString path =  Wallpaper::image_path+QDateTime::currentDateTime().toString("\\" + image_name);
     qout << "其它壁纸: " << path << url.c_str();
     return VARBOX::downloadImage(Wallpaper::url, path) && setWallpaper(path);
 }
