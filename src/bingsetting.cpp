@@ -26,7 +26,8 @@ BingSetting::BingSetting():
     else
         ui->radioButton_2->setChecked(true);
     ui->checkBox->setChecked(VarBox->AutoSaveBingPicture);
-    ui->checkBox_2->setChecked(VarBox->AutoRotationBingPicture);
+    ui->checkBox_2->setChecked(true);
+    ui->checkBox_2->setEnabled(false);
 }
 
 BingSetting::~BingSetting()
@@ -41,7 +42,7 @@ void BingSetting::closeEvent(QCloseEvent *e)
 
 void BingSetting::on_pushButton_2_clicked()
 {
-    QSettings set(VarBox->get_ini_path(), QSettings::IniFormat);
+    QSettings set("SpeedBox.ini", QSettings::IniFormat);
     set.beginGroup("Wallpaper");
     set.setValue("UseDateAsBingName", ui->radioButton->isChecked());
     set.setValue("AutoSaveBingPicture", ui->checkBox->isChecked());
@@ -55,6 +56,5 @@ void BingSetting::on_pushButton_3_clicked()
 {
     VarBox->UseDateAsBingName = ui->radioButton->isChecked();
     VarBox->AutoSaveBingPicture = ui->checkBox->isChecked();
-    VarBox->AutoRotationBingPicture = ui->checkBox_2->isChecked();
     jobTip->showTip("应用成功，可能需要点击保存！");
 }

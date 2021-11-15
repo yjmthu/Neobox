@@ -11,16 +11,15 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QTextCodec>
 
 #include "funcbox.h"
 #include "YString.h"
 #include "YJson.h"
 #include "form.h"
 #include "desktopmask.h"
-#include "dialogwallpaper.h"
-#include "menuwallpaper.h"
-
-#pragma comment(lib,"wininet.lib")
+#include "wallpaper.h"
+#include "wallpaper.h"
 
 unsigned char GetNtVersionNumbers()
 {
@@ -63,33 +62,49 @@ unsigned char GetNtVersionNumbers()
 
 void VARBOX::chooseUrl()  //选则正确的请求链接组合
 {
-    YJson json((VARBOX::get_dat_path()+"\\WallpaperApi.json").toStdWString(), YJSON_ENCODE::UTF8);
+    YJson json(L"WallpaperApi.json", YJSON_ENCODE::UTF8);
     qout << "种类: " << (int)VarBox->PaperType;
     switch (VarBox->PaperType)
     {
     case PAPER_TYPE::Bing:
     case PAPER_TYPE::User:
-        Wallpaper::url = json["MainApis"]["WallhavenApi"].getValueString();
-        Wallpaper::url.append(json["User"]["ApiData"][json["User"]["Curruent"].getValueString()]["Parameter"].urlEncode());
-        Wallpaper::image_path = json["User"]["ApiData"]["Ghostblade"]["Folder"].getValueString();
-        Wallpaper::bing_api = json["MainApis"]["BingApi"].getValueString();
-        Wallpaper::bing_api.append(json["BingApi"]["Parameter"].urlEncode());
-        Wallpaper::bing_folder = json["BingApi"]["Folder"].getValueString();
+        VarBox->wallpaper->url = json["MainApis"]["WallhavenApi"].getValueString();
+        VarBox->wallpaper->url.append(json["User"]["ApiData"][json["User"]["Curruent"].getValueString()]["Parameter"].urlEncode());
+        VarBox->wallpaper->image_path = json["User"]["ApiData"]["Ghostblade"]["Folder"].getValueString();
+    {
+        std::string u = json["BingApi"]["Parameter"].urlEncode(json["MainApis"]["BingApi"].getValueString());
+        VarBox->wallpaper->bing_api = u.c_str();
+    }
+        VarBox->wallpaper->bing_folder = json["BingApi"]["Folder"].getValueString();
         break;
     case PAPER_TYPE::Other:
-        Wallpaper::url = json["OtherApi"]["ApiData"][json["OtherApi"]["Curruent"].getValueString()]["Url"].getValueString();
-        Wallpaper::image_path = json["OtherApi"]["ApiData"][json["OtherApi"]["Curruent"].getValueString()]["Folder"].getValueString();
-        Wallpaper::image_name = json["OtherApi"]["ApiData"][json["OtherApi"]["Curruent"].getValueString()]["Name"].getValueString();
+        VarBox->wallpaper->url = json["OtherApi"]["ApiData"][json["OtherApi"]["Curruent"].getValueString()]["Url"].getValueString();
+        VarBox->wallpaper->image_path = json["OtherApi"]["ApiData"][json["OtherApi"]["Curruent"].getValueString()]["Folder"].getValueString();
+        VarBox->wallpaper->image_name = json["OtherApi"]["ApiData"][json["OtherApi"]["Curruent"].getValueString()]["Name"].getValueString();
         break;
     case PAPER_TYPE::Advance:
     case PAPER_TYPE::Native:
         break;
     default:
-        Wallpaper::url = json["MainApis"]["WallhavenApi"].getValueString();
-        Wallpaper::url.append(json["Default"]["ApiData"][(int)VarBox->PaperType]["Parameter"].urlEncode());
-        Wallpaper::image_path = json["Default"]["ApiData"][(int)VarBox->PaperType]["Folder"].getValueString();
+        VarBox->wallpaper->url = json["MainApis"]["WallhavenApi"].getValueString();
+        VarBox->wallpaper->url.append(json["Default"]["ApiData"][(int)VarBox->PaperType]["Parameter"].urlEncode());
+        VarBox->wallpaper->image_path = json["Default"]["ApiData"][(int)VarBox->PaperType]["Folder"].getValueString();
         break;
     }
+}
+
+wchar_t* GetCorrectUnicode(const QByteArray &ba)
+{
+    QTextCodec::ConverterState state;
+    QTextCodec *codec = QTextCodec::codecForName("UTF-8");
+    codec->toUnicode(ba.constData(), ba.size(), &state);
+    QString str = (state.invalidChars > 0) ? QTextCodec::codecForName("GBK")->toUnicode(ba): ba;
+    qout << "转换后的字符串: " << str;
+    auto s = reinterpret_cast<const wchar_t*>(str.utf16());
+    auto l = wcslen(s)+1;
+    auto t = new wchar_t[l];
+    std::copy(s, s+l+1, t);
+    return t;
 }
 
 VARBOX* VarBox = nullptr;
@@ -98,16 +113,24 @@ HANDLE VARBOX::HMutex = NULL;
 VARBOX::VARBOX(int w, int h):
     QObject(nullptr),
     WinVersion(GetNtVersionNumbers()), ScreenWidth(w), ScreenHeight(h), SysScreenWidth(GetSystemMetrics(SM_CXSCREEN)), SysScreenHeight(GetSystemMetrics(SM_CYSCREEN)),
-    hOleacc(LoadLibraryA("oleacc.dll")), hIphlpapi(LoadLibraryA("iphlpapi.dll")), hDwmapi(LoadLibraryA("dwmapi.dll"))
+    hOleacc(LoadLibraryA("oleacc.dll")), hIphlpapi(LoadLibraryA("iphlpapi.dll")), hDwmapi(LoadLibraryA("dwmapi.dll")), hWininet(LoadLibraryA("wininet.dll"))
 {
     qout << "VarBox构造函数开始。";
     VarBox = this;
+    QDir::setCurrent(QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::HomeLocation) +  "/AppData/Local/SpeedBox"));
     loadFunctions();
     QSettings set("HKEY_CURRENT_USER\\Control Panel\\Desktop", QSettings::NativeFormat);
     if (set.contains("WallPaper"))
     {
-        std::wstring temp_paper = set.value("WallPaper").toString().toStdWString();
-        if (!temp_paper.empty()) PicHistory.push_back(std::pair<bool, wchar_t*>(true, StrJoin<wchar_t>(temp_paper.c_str())));
+        QString temp_paper = set.value("WallPaper").toString();
+        if (!temp_paper.isEmpty())
+        {
+            auto s = reinterpret_cast<const wchar_t*>(temp_paper.utf16());
+            auto l = wcslen(s) + 1;
+            auto t = new wchar_t[l];
+            std::copy(s, s+l+1, t);
+            PicHistory.push_back(t);
+        }
     }
     CurPic = PicHistory.begin();
     initFile();
@@ -122,21 +145,11 @@ VARBOX::~VARBOX()
     qout << "结构体析构中~";
     delete form;
     delete tray;
-    delete change_paper_timer;
-    delete mwallpaper;
-    delete dwallpaper;
+    delete wallpaper_timer;
+    delete wallpaper;
+    for (auto c: PicHistory)
+        delete [] c;
     delete dialog;
-    for (auto x: PicHistory)
-    {
-        if (x.first)
-        {
-            delete [] x.second;
-        }
-        else
-        {
-            delete [] reinterpret_cast<char*>(x.second);
-        }
-    }
     delete ControlDesktopIcon;
     delete [] AppId;
     delete [] PassWord;
@@ -170,18 +183,72 @@ void VARBOX::loadFunctions()
         pDwmGetWindowAttribute = (pfnDwmGetWindowAttribute)GetProcAddress(hDwmapi, "DwmGetWindowAttribute");
     }
 
+    if (hWininet)
+    {
+        static const auto pInternetGetConnectedState = (pfnInternetGetConnectedState)GetProcAddress(hWininet, "InternetGetConnectedState");
+        InternetGetConnectedState = []()->bool{
+            DWORD flag;
+            return pInternetGetConnectedState(&flag, 0);
+        };
+    }
+
 
     if (!(GetIfTable && GetAdaptersAddresses && AccessibleObjectFromWindow && AccessibleChildren && pDwmGetWindowAttribute))
     {
         qApp->exit(RETCODE_ERROR_EXIT);
     }
+    OneDriveFile = [this](const wchar_t*file)->bool{
+        if (FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS & GetFileAttributesW(file))
+        {
+            if (!InternetGetConnectedState()) return false;
+            for (int i = 0; i < 30; i++)
+            {
+                HANDLE hFileRead = CreateFileW(reinterpret_cast<const wchar_t*>(file), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+                if(hFileRead==INVALID_HANDLE_VALUE)
+                {
+                    qout << "非法路径";
+                    return false;
+                }
+                char lpFileDataBuffer[1] = {0};
+                DWORD dwReadedSize = 0;
+                if(ReadFile(hFileRead,lpFileDataBuffer,1,&dwReadedSize, NULL) && dwReadedSize)  return true;
+                CloseHandle(hFileRead);
+                for (short j = 1; j <= 6; j++)
+                    Sleep(500);
+            }
+        }
+        else
+        {
+            return true;
+        }
+        return false;
+    };
+    SystemParametersInfo = std::bind(SystemParametersInfoW, SPI_SETDESKWALLPAPER, UINT(0), std::placeholders::_1, SPIF_SENDCHANGE | SPIF_UPDATEINIFILE);
+    PathFileExists = [](const wchar_t* pszPath)->bool{
+        typedef BOOL(WINAPI* pfnPathFileExists)(LPWSTR);
+        pfnPathFileExists pPathFileExists = NULL;
+        BOOL ret = FALSE;
+        HMODULE hUser = GetModuleHandleW(L"Shlwapi.dll");
+        if (hUser)
+            pPathFileExists = (pfnPathFileExists)GetProcAddress(hUser, "PathFileExistsW");
+        if (pPathFileExists)
+        {
+            ret = pPathFileExists((wchar_t*)pszPath);
+        }
+        else
+        {
+        }
+        return ret;
+    };
+    GetFileAttributes = [](const wchar_t* ph)->bool{
+        return GetFileAttributesW(ph) & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS;
+    };
 }
 
 bool VARBOX::check_app_right()
 {
-    QString appid_path = get_dat_path() + "\\AppId.txt";
-    if (!QFile::exists(appid_path)) return false;
-    std::ifstream file(appid_path.toStdWString(), std::ios::in | std::ios::binary);
+    if (!QFile::exists("AppId.txt")) return false;
+    std::ifstream file(L"AppId.txt", std::ios::in | std::ios::binary);
     if( file.is_open())
     {
         qout << "成功打开密钥文件";
@@ -236,7 +303,7 @@ bool VARBOX::check_app_right()
 
 void VARBOX::readTrayStyle()
 {
-    QSettings IniRead(get_ini_path(), QSettings::IniFormat);
+    QSettings IniRead("SpeedBox.ini", QSettings::IniFormat);
     IniRead.beginGroup("TaskStyle");
     unsigned long long safeEnum = IniRead.value("aMode_f").toUInt();
     if (safeEnum > 6 && safeEnum != 150) safeEnum = 0;
@@ -267,12 +334,12 @@ void VARBOX::readTrayStyle()
 
 void VARBOX::initFile()
 {
-    QString file = get_ini_path(); qout << "配置文件目录" << file;
+    QString file = "SpeedBox.ini"; qout << "配置文件目录" << file;
     QString picfolder = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
     QDir dir;
-    if (!QFile::exists(file) && QFile::exists(get_dat_path() + "\\SpeedBox2.ini"))
+    if (!QFile::exists(file) && QFile::exists("SpeedBox2.ini"))
     {
-        QFile::rename(get_dat_path() + "\\SpeedBox2.ini", file);
+        QFile::rename("SpeedBox2.ini", file);
     }
     if (!QFile::exists(file))
     {
@@ -303,7 +370,7 @@ label_1:
             qout << "创建新的Ini文件。";
             NativeDir = picfolder;
             PathToOpen = QDir::toNativeSeparators(qApp->applicationDirPath());
-            QSettings *IniWrite = new QSettings(get_ini_path(), QSettings::IniFormat);
+            QSettings *IniWrite = new QSettings("SpeedBox.ini", QSettings::IniFormat);
             IniWrite->beginGroup("SpeedBox");
             IniWrite->setValue("Version", Version);
             IniWrite->endGroup();
@@ -358,13 +425,11 @@ label_2:
             {
                 UseDateAsBingName = IniRead->value("UseDateAsBingName").toBool();
                 AutoSaveBingPicture = IniRead->value("AutoSaveBingPicture").toBool();
-                AutoRotationBingPicture = IniRead->value("AutoRotationBingPicture").toBool();
             }
             else
             {
                 IniRead->setValue("AutoSaveBingPicture", AutoSaveBingPicture);
                 IniRead->setValue("UseDateAsBingName", UseDateAsBingName);
-                IniRead->setValue("AutoRotationBingPicture", AutoRotationBingPicture);
             }
             if (IniRead->contains("FirstChange"))
             {
@@ -402,7 +467,7 @@ label_2:
         }
 label_3:
         {
-            if (!get_son_dir(PathToOpen))
+            if (!dir.exists(PathToOpen) && !dir.mkdir(PathToOpen))
             {
                 PathToOpen = QDir::toNativeSeparators(qApp->applicationDirPath());
                 sigleSave("Dirs", "OpenDir", PathToOpen);
@@ -410,7 +475,7 @@ label_3:
             HaveAppRight = check_app_right();
             EnableTranslater = HaveAppRight && EnableTranslater;
         }
-    QString apifile = get_dat_path() + "\\WallpaperApi.json";
+    QString apifile = "WallpaperApi.json";
     if (!QFile::exists(apifile))
     {
         qout << "文件不存在!";
@@ -440,9 +505,8 @@ label_3:
 
 void VARBOX::initChildren()
 {
-    dwallpaper = new DialogWallpaper;                    // 创建壁纸更换类
-    mwallpaper = new MenuWallpaper;                      // 新建壁纸处理类
-    change_paper_timer = new QTimer;                     // 定时器，定时更换壁纸
+    wallpaper = new Wallpaper;                           // 创建壁纸更换对象
+    wallpaper_timer = new QTimer;                     // 定时器，定时更换壁纸
     tray = new Tray;
     Form* form = new Form;
     static APPBARDATA abd = {0};
@@ -468,7 +532,7 @@ void VARBOX::initChildren()
             ControlDesktopIcon->right->move(VarBox->ScreenWidth-1, VarBox->ScreenHeight/2-6);
         }
         this->form->leaveEvent(nullptr);
-        QSettings IniWrite(VarBox->get_ini_path(), QSettings::IniFormat);
+        QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
         IniWrite.beginGroup("UI");
         IniWrite.setValue("x", (int)rt2.left); IniWrite.setValue("y", (int)rt2.top);
         IniWrite.endGroup();
@@ -477,24 +541,23 @@ void VARBOX::initChildren()
 
 void VARBOX::initConnections()
 {
-    // connect(dwallpaper, &DialogWallpaper::setFailed, VarBox->form, &Form::set_wallpaper_fail);
-    connect(change_paper_timer, &QTimer::timeout, dwallpaper, &DialogWallpaper::start);
-    connect(dwallpaper, &DialogWallpaper::msgBox, this, [](const char*s1, const char*s2){VARBOX::MSG(s1, s2);});
-    connect(mwallpaper, &MenuWallpaper::msgBox, this, [](const char*s1, const char*s2){VARBOX::MSG(s1, s2);});
+    connect(wallpaper, &Wallpaper::setFailed, VarBox->form, &Form::set_wallpaper_fail);
+    connect(wallpaper_timer, &QTimer::timeout, wallpaper, &Wallpaper::timer);
+    connect(wallpaper, &Wallpaper::msgBox, this, [this](const char*s1, const char*s2){MSG(s1, s2);});
 }
 
 void VARBOX::initBehaviors()
 {
     chooseUrl();
-    VarBox->change_paper_timer->setInterval(VarBox->TimeInterval * 60000);
-    if (VarBox->FirstChange) VarBox->dwallpaper->start();                                  // Timer默认第一次不启动，这里要加上。
-    if (VarBox->AutoChange) VarBox->change_paper_timer->start();
+    VarBox->wallpaper_timer->setInterval(VarBox->TimeInterval * 60000);
+    if (VarBox->FirstChange) VarBox->wallpaper->timer();                                  // Timer默认第一次不启动，这里要加上。
+    if (VarBox->AutoChange) VarBox->wallpaper_timer->start();
     form->show();                                                              //显示悬浮窗
 }
 
 void VARBOX::saveTrayStyle()
 {
-    QSettings IniWrite(get_ini_path(), QSettings::IniFormat);
+    QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
     IniWrite.beginGroup("TaskStyle");
     IniWrite.setValue("aMode_f", static_cast<int>(aMode[0]));
     IniWrite.setValue("aMode_s", static_cast<int>(aMode[1]));
@@ -507,68 +570,9 @@ void VARBOX::saveTrayStyle()
     IniWrite.endGroup();
 }
 
-//QString VARBOX::get_wal_path()
-//{
-//    QString str;
-//    if (MajorDir.isEmpty() || !get_son_dir(MajorDir))
-//    {
-//        qout << "图片目录为空" << MajorDir;
-//        MajorDir = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
-//    }
-//    str = MajorDir + "\\" + CustomNames[7];
-//    if (CustomNames[7].isEmpty() || !get_son_dir(str))
-//    {
-//        CustomNames[7] = StandardNames[7][1];
-//        str = MajorDir + "\\" + CustomNames[7];
-//    }
-//    QSettings IniWrite(get_ini_path(), QSettings::IniFormat);
-//    IniWrite.beginGroup("Dirs");
-//    IniWrite.setValue("MajorDir", MajorDir);
-//    IniWrite.setValue(StandardNames[7][0], CustomNames[7]);
-//    IniWrite.endGroup();
-//    return str;
-//}
-
-//QString VARBOX::get_pic_path(short i)
-//{
-//    //qout << "获取图片路径开始" << i;
-//    QString str = get_wal_path() + "\\" + CustomNames[i];
-//    if (CustomNames[i].isEmpty() || !get_son_dir(str))
-//    {
-//        qout << "MajorDir为空或者无法创建！";
-//        CustomNames[i] = StandardNames[i][1];
-//        str = MajorDir + "\\", CustomNames[7] + "\\" + CustomNames[i];
-//        get_son_dir(str);
-//    }
-//    QSettings IniWrite(get_ini_path(), QSettings::IniFormat);
-//    IniWrite.beginGroup("Dirs");
-//    IniWrite.setValue(StandardNames[i][0], CustomNames[i]);
-//    IniWrite.endGroup();
-//    //qout << "最终图片路径结果：" << str;
-//    return str;
-//}
-
-QString VARBOX::get_ini_path()
-{
-    return get_dat_path() + "\\SpeedBox.ini";
-}
-
-QString VARBOX::get_dat_path()
-{
-    QString str = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::HomeLocation) +  "/AppData/Local/SpeedBox");
-    get_son_dir(str);
-    return str;
-}
-
-bool VARBOX::get_son_dir(QString str)
-{
-    QDir dir;
-    return dir.exists(str) || dir.mkdir(str);
-}
-
 void VARBOX::sigleSave(QString group, QString key, QString value)
 {
-    QSettings IniWrite(get_ini_path(), QSettings::IniFormat);
+    QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
     IniWrite.beginGroup(group);
     IniWrite.setValue(key, value);
     IniWrite.endGroup();
@@ -588,42 +592,6 @@ bool VARBOX::getWebCode(const std::string& url, QByteArray& src)
     mgr->deleteLater();
     return src.length();
 }
-
-//bool VARBOX::getTransCode(const char* url, std::string& outcome)
-//{
-//    //qout << "翻译请求：" << url << Qt::endl;
-//    HINTERNET hSession = InternetOpenA("Microsoft Edge", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
-//    if (hSession)
-//    {
-//        HINTERNET hURL = InternetOpenUrlA(hSession, url, NULL, 0, INTERNET_FLAG_DONT_CACHE, 0);
-//        delete [] url; //qout << "发送翻译请求成功。";
-//        if (hURL)
-//        {
-//            char buffer[1025] = { 0 }; DWORD dwRecv = 0;
-//            do {
-//                memset(buffer, 0, 1024);
-//                InternetReadFile(hURL, buffer, 1024, &dwRecv);
-//                if (dwRecv)
-//                {
-//                    buffer[dwRecv] = 0;
-//                    //qout << "读入的字节数量：" << dwRecv;
-//                    outcome.append(buffer);
-//                }
-//                else
-//                    break;
-//            } while (VarBox->RunApp);
-//            InternetCloseHandle(hURL);
-//        }
-
-//        InternetCloseHandle(hSession);
-//        hSession = NULL;
-//    }
-//    else
-//    {
-//        delete [] url;
-//    }
-//    return !outcome.empty();
-//}
 
 bool VARBOX::downloadImage(const std::string& url, const QString path)
 {
@@ -658,11 +626,12 @@ bool VARBOX::downloadImage(const std::string& url, const QString path)
     return true;
 }
 
-char* VARBOX::runCommand(const QString& program, const QStringList& argument, short line)
+wchar_t* VARBOX::runCmd(const QString& program, const QStringList& argument, short line)
 {
     QProcess process;
     process.setProgram(program);
     process.setArguments(argument);
+    connect(&process, &QProcess::errorOccurred, [&](){qout << "运行出错"; line=false;});
     process.start();
     process.waitForStarted(); //等待程序启动
     process.waitForFinished(15000);
@@ -671,29 +640,20 @@ char* VARBOX::runCommand(const QString& program, const QStringList& argument, sh
         {
             process.readLine();
         }
-        return StrJoin<char>((const char*)process.readLine());
+
+        return GetCorrectUnicode(process.readLine());
     }
     else return nullptr;
 }
 
-bool VARBOX::isOnline(bool wait)
+void VARBOX::runCmd(const QString &program, const QStringList &argument)
 {
-    qout << "检测网络连接中。";
-    DWORD flag;
-    for (int c = 1; VarBox->RunApp && (c <= (wait ? 30 : 1)); c++)
-    {
-        if (VarBox->RunApp && InternetGetConnectedState(&flag, 0))
-        {
-            qout << "网络连接正常。";
-            return true;
-        }
-        else if (VarBox->RunApp)
-            for (short j = 1; VarBox->RunApp && (j <= 6); j++)
-                Sleep(500);
-        qout << "再次检测网络连接。";
-    }
-    qout << "没有网络连接。";
-    return false;
+    QProcess process;
+    process.setProgram(program);
+    process.setArguments(argument);
+    process.start();
+    process.waitForStarted(); //等待程序启动
+    process.waitForFinished();
 }
 
 BOOL VARBOX::SetWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD AlphaColor)    //设置窗口WIN10风格
@@ -750,99 +710,6 @@ bool VARBOX::versionBefore(const char* A, const char* B)
     a = b = 0;
     _getINT(A, a); _getINT(B, b);
     if (a<b) return true; else return false;
-}
-
-BOOL VARBOX::PathFileExists(LPCSTR pszPath)
-{
-    typedef BOOL(WINAPI* pfnPathFileExists)(LPCSTR pszPath);
-    pfnPathFileExists pPathFileExists = NULL;
-    BOOL ret = FALSE;
-    HMODULE hUser = GetModuleHandleA("Shlwapi.dll");
-    if (hUser)
-        pPathFileExists = (pfnPathFileExists)GetProcAddress(hUser, "PathFileExistsA");
-    if (pPathFileExists)
-    {
-        qout << "找到函数！";
-        ret = pPathFileExists(pszPath);
-    }
-    else
-    {
-        qout << "找不到函数！";
-    }
-    return ret;
-}
-
-BOOL VARBOX::PathFileExists(LPWSTR pszPath)
-{
-    typedef BOOL(WINAPI* pfnPathFileExists)(LPWSTR pszPath);
-    pfnPathFileExists pPathFileExists = NULL;
-    BOOL ret = FALSE;
-    HMODULE hUser = GetModuleHandleW(L"Shlwapi.dll");
-    if (hUser)
-        pPathFileExists = (pfnPathFileExists)GetProcAddress(hUser, "PathFileExistsW");
-    if (pPathFileExists)
-    {
-        qout << "找到函数！";
-        ret = pPathFileExists(pszPath);
-    }
-    else
-    {
-        qout << "找不到函数！";
-    }
-    return ret;
-}
-
-BOOL VARBOX::OneDriveFile(const char *file)
-{
-    if (FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS & GetFileAttributesA(file))
-    {
-        if (!isOnline(false)) return false;
-        for (int i = 0; i < 30 && VarBox->RunApp; i++)
-        {
-            HANDLE hFileRead = CreateFileA(file, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-            if(hFileRead==INVALID_HANDLE_VALUE)
-             return false;
-            char lpFileDataBuffer[1] = {0};
-            DWORD dwReadedSize = 0;
-            if(ReadFile(hFileRead,lpFileDataBuffer,1,&dwReadedSize, NULL) && dwReadedSize)  return true;
-            CloseHandle(hFileRead);
-            for (short j = 1; VarBox->RunApp && (j <= 6); j++)
-                Sleep(500);
-        }
-    }
-    else
-    {
-        return true;
-    }
-    return false;
-}
-
-BOOL VARBOX::OneDriveFile(const wchar_t *file)
-{
-    if (FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS & GetFileAttributesW(file))
-    {
-        if (!isOnline(false)) return false;
-        for (int i = 0; i < 30 && VarBox->RunApp; i++)
-        {
-            HANDLE hFileRead = CreateFileW(file, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-            if(hFileRead==INVALID_HANDLE_VALUE)
-            {
-                qout << "非法路径";
-                return false;
-            }
-            char lpFileDataBuffer[1] = {0};
-            DWORD dwReadedSize = 0;
-            if(ReadFile(hFileRead,lpFileDataBuffer,1,&dwReadedSize, NULL) && dwReadedSize)  return true;
-            CloseHandle(hFileRead);
-            for (short j = 1; VarBox->RunApp && (j <= 6); j++)
-                Sleep(500);
-        }
-    }
-    else
-    {
-        return true;
-    }
-    return false;
 }
 
 void VARBOX::MSG(const char *text, const char* title, QMessageBox::StandardButtons s)

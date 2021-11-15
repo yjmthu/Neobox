@@ -4,7 +4,7 @@
 #include <speedwidget.h>
 #include "tray.h"
 
-class DialogWallpaper;
+class Wallpaper;
 class Form;
 class QLineEdit;
 class QPushButton;

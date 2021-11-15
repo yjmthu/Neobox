@@ -1,6 +1,7 @@
 ﻿#include <QScreen>
 #include <QProcess>
 #include <QFile>
+#include <QDir>
 
 #include "funcbox.h"
 #include "form.h"

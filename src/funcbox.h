@@ -93,7 +93,7 @@ enum class TaskBarCenterState
     TASK_RIGHT
 };
 
-class Form; class Dialog; class DialogWallpaper; class Tray; class MenuWallpaper; struct IAccessible; //void* PMIB_IFTABLE;
+class Form; class Dialog; class Wallpaper; class Tray; class MenuWallpaper; struct IAccessible; //void* PMIB_IFTABLE;
 class DesktopMask;
 typedef ULONG(WINAPI* pfnGetAdaptersAddresses)(_In_ ULONG Family, _In_ ULONG Flags, _Reserved_ PVOID Reserved, _Out_writes_bytes_opt_(*SizePointer) void* AdapterAddresses, _Inout_ PULONG SizePointer);
 typedef DWORD(WINAPI* pfnGetIfTable)(_Out_writes_bytes_opt_(*pdwSize) PMIB_IFTABLE pIfTable, _Inout_ PULONG pdwSize, _In_ BOOL bOrder);
@@ -101,7 +101,7 @@ typedef DWORD(WINAPI* pfnGetIfTable)(_Out_writes_bytes_opt_(*pdwSize) PMIB_IFTAB
 typedef ULONG(WINAPI* pfnAccessibleObjectFromWindow)(_In_ HWND hwnd, _In_ DWORD dwId, _In_ REFIID riid, _Outptr_ void** ppvObject);
 typedef ULONG(WINAPI* pfnAccessibleChildren)(_In_ IAccessible* paccContainer, _In_ LONG iChildStart, _In_ LONG cChildren, _Out_writes_(cChildren) VARIANT* rgvarChildren, _Out_ LONG* pcObtained);
 typedef BOOL(WINAPI* pfnDwmGetWindowAttribute)(HWND hwnd, DWORD dwAttribute, PVOID pvAttribute, DWORD cbAttribute);
-
+typedef BOOL(WINAPI* pfnInternetGetConnectedState)(LPDWORD, DWORD);
 
 class VARBOX: public QObject
 {
@@ -110,14 +110,13 @@ class VARBOX: public QObject
 public:
     const char* const Version = "21.11.14", * const Qt = "6.2.1";
     const unsigned char WinVersion; const bool FirstUse[1] = {false};
-    std::list<std::pair<bool, wchar_t*>> PicHistory; std::list<std::pair<bool, wchar_t*>>::const_iterator CurPic;
+    std::list<wchar_t*> PicHistory; std::list<wchar_t*>::const_iterator CurPic;
     PAPER_TYPE PaperType = PAPER_TYPE::Hot;               //当下正在使用的壁纸类型
     COLOR_THEME CurTheme = COLOR_THEME::White;
-    bool RunApp = true;                        //app运行状态
 
     bool AutoChange = false;
     unsigned char PageNum = 1, TimeInterval = 15;
-    bool UseDateAsBingName = true, AutoSaveBingPicture = true, AutoRotationBingPicture = true;
+    bool UseDateAsBingName = true, AutoSaveBingPicture = true;
     QString NativeDir;                  //当下正在使用的用户本地壁纸文件夹
     QString UserCommand = "python.exe -u X:\\xxxxx.py";                //当下正在使用的用户高级命令
     QString PathToOpen;                //要打开的文件夹
@@ -134,7 +133,7 @@ public:
 
     const int ScreenWidth, ScreenHeight;                  //屏幕宽高
     const int SysScreenWidth, SysScreenHeight;
-    static HANDLE HMutex; HMODULE hOleacc = NULL, hIphlpapi = NULL, hDwmapi = NULL;
+    static HANDLE HMutex; HMODULE hOleacc = NULL, hIphlpapi = NULL, hDwmapi = NULL, hWininet=NULL;
     Form* const form {0}; Dialog*const dialog {0};
     DesktopMask *ControlDesktopIcon = nullptr;
 
@@ -144,34 +143,35 @@ public:
     pfnAccessibleObjectFromWindow AccessibleObjectFromWindow = nullptr;
     pfnAccessibleChildren AccessibleChildren = nullptr;
     pfnDwmGetWindowAttribute pDwmGetWindowAttribute = nullptr;
-
+    std::function<bool(void)> InternetGetConnectedState = nullptr;
+#ifdef SystemParametersInfo
+#undef SystemParametersInfo
+#endif
+#ifdef GetFileAttributes
+#undef GetFileAttributes
+#endif
+    std::function<bool(void*)> SystemParametersInfo;
+    std::function<bool(const wchar_t*)> PathFileExists = nullptr;
+    std::function<bool(const wchar_t*)> GetFileAttributes = nullptr;
     VARBOX(int, int); ~VARBOX();
     void loadFunctions();
     void saveTrayStyle();
 //    QString get_pic_path(short i);
 //    QString get_wal_path();
-    DialogWallpaper* dwallpaper;                          //壁纸处理类
-    MenuWallpaper* mwallpaper;                    //用于壁纸更换
-    QTimer* change_paper_timer;                          //定时更换壁纸
+    Wallpaper* wallpaper;                          //壁纸处理类
+    QTimer* wallpaper_timer;                       //定时更换壁纸
     Tray* tray;
 
-    static QString get_ini_path();
-    static QString get_dat_path();
-    static bool get_son_dir(QString str);
-    static void sigleSave(QString group, QString key, QString value);
-    static bool isOnline(bool);                                               //检查是否有网络连接，布尔值代表是否保持检测 30 秒
-    static char* runCommand(const QString & program, const QStringList& argument, short line = 0);
-    static bool getWebCode(const std::string& url, QByteArray& html);
-    //static bool getBingCode(std::string& code);
-    static bool downloadImage(const std::string& url, const QString path);
-    static BOOL SetWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD AlphaColor);//设置窗口WIN10风格
-    static bool versionBefore(const char* A, const char* B);
-    static BOOL PathFileExists(LPCSTR pszPath);
-    static BOOL PathFileExists(LPWSTR pszPath);
-    static BOOL OneDriveFile(const char* file);
-    static BOOL OneDriveFile(const wchar_t*file);
-    static void MSG(const char* text, const char* title="提示", QMessageBox::StandardButtons buttons=QMessageBox::Ok);
-    static void chooseUrl();
+    void sigleSave(QString group, QString key, QString value);
+    wchar_t* runCmd(const QString & program, const QStringList& argument, short line);
+    void runCmd(const QString & program, const QStringList& argument);
+    bool getWebCode(const std::string& url, QByteArray& html);
+    bool downloadImage(const std::string& url, const QString path);
+    BOOL SetWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD AlphaColor);//设置窗口WIN10风格
+    bool versionBefore(const char* A, const char* B);
+    std::function<bool(const wchar_t*)> OneDriveFile;
+    void MSG(const char* text, const char* title="提示", QMessageBox::StandardButtons buttons=QMessageBox::Ok);
+    void chooseUrl();
 private:
      friend class Form;
      bool check_app_right();

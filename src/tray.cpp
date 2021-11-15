@@ -59,7 +59,7 @@ bool Find(IAccessible* paccParent, int iRole, IAccessible** paccChild)
 			if ((varState.intVal & STATE_SYSTEM_INVISIBLE) == 0)
 			{
 				VARIANT varRole;
-				pChild->get_accRole(varChild, &varRole); ///////////////////////////////////////////
+                pChild->get_accRole(varChild, &varRole); ///////////// 32位系统会出现错误提示.
 				if (varRole.lVal == iRole)
 				{
 					paccParent->Release();
@@ -292,7 +292,7 @@ void Tray::keepTaskBar()
 	if (hTray)
 	{
         EnumWindows(IsZoomedFunc, (LPARAM)MonitorFromWindow(hTray, MONITOR_DEFAULTTONEAREST));
-        VARBOX::SetWindowCompositionAttribute(hTray, VarBox->aMode[VarBox->isMax], VarBox->dAlphaColor[VarBox->isMax]);
+        VarBox->SetWindowCompositionAttribute(hTray, VarBox->aMode[VarBox->isMax], VarBox->dAlphaColor[VarBox->isMax]);
 		LONG_PTR exStyle = GetWindowLongPtr(hTray, GWL_EXSTYLE);
 		exStyle |= WS_EX_LAYERED;
         SetWindowLongPtrA(hTray, GWL_EXSTYLE, exStyle);
@@ -302,7 +302,7 @@ void Tray::keepTaskBar()
 	while (hSecondaryTray)
 	{
         EnumWindows(IsZoomedFunc, (LPARAM)MonitorFromWindow(hSecondaryTray, MONITOR_DEFAULTTONEAREST));
-        VARBOX::SetWindowCompositionAttribute(hSecondaryTray, VarBox->aMode[VarBox->isMax], VarBox->dAlphaColor[VarBox->isMax]);
+        VarBox->SetWindowCompositionAttribute(hSecondaryTray, VarBox->aMode[VarBox->isMax], VarBox->dAlphaColor[VarBox->isMax]);
 		LONG_PTR exStyle = GetWindowLongPtr(hSecondaryTray, GWL_EXSTYLE);
 		exStyle |= WS_EX_LAYERED;
         SetWindowLongPtrA(hSecondaryTray, GWL_EXSTYLE, exStyle);

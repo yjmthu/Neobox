@@ -10,7 +10,7 @@
 #include "funcbox.h"
 #include "menu.h"
 #include "form.h"
-#include "menuwallpaper.h"
+#include "wallpaper.h"
 
 Menu::Menu(QWidget* parent) :
     QMenu(parent)
@@ -138,14 +138,8 @@ void Menu::initMenuConnect()
     });                                                                                  //打开壁纸设置界面
     connect(translateAct, &QAction::triggered, VarBox->form, &Form::enableTranslater);    //是否启用翻译功能
     translateAct->setChecked(VarBox->EnableTranslater);                                 //设置是否选中“划词翻译”
-    connect(nextPaperAct, &QAction::triggered,
-        [=]() {
-            if (VarBox->mwallpaper->isActive())
-                VARBOX::MSG("频繁点击是没有效的哦！", "提示");
-            else if (Wallpaper::canCreat())
-                VarBox->mwallpaper->start();
-        });
-    connect(prevPaperAct, &QAction::triggered, VarBox->mwallpaper, &MenuWallpaper::previousPic);   //设置受否开机自启
+    connect(nextPaperAct, &QAction::triggered, VarBox->wallpaper, &Wallpaper::next);
+    connect(prevPaperAct, &QAction::triggered, VarBox->wallpaper, &Wallpaper::prev);   //设置受否开机自启
     connect(noSleepAct, &QAction::triggered, VarBox, [=](bool checked){
         if (checked)                                                                      //启用自动移动鼠标
         {
@@ -167,12 +161,9 @@ void Menu::initMenuConnect()
         }
     });                                                                               //是否自动移动鼠标防止息屏
 	connect(openFolderAct, SIGNAL(triggered()), this, SLOT(OpenFolder()));            //打开exe所在文件夹
-    connect(removePicAct, &QAction::triggered, VarBox->mwallpaper, &MenuWallpaper::removePic);          //重启电脑
+    connect(removePicAct, &QAction::triggered, VarBox->wallpaper, &Wallpaper::dislike);          //重启电脑
 	connect(shutdownAct, SIGNAL(triggered()), this, SLOT(ShutdownComputer()));        //关闭电脑
-    connect(quitAct, &QAction::triggered, [](){
-        VarBox->RunApp = false;                                                       //以便其它线程知晓，停止正在进行的工作
-        qApp->quit();                                                                 //退出程序
-    });
+    connect(quitAct, &QAction::triggered, qApp, &QCoreApplication::quit);             // 退出程序
 }
 
 
@@ -181,7 +172,7 @@ void Menu::OpenFolder() const
 	QStringList argument;                                                           //Windows下用 explorer xxx
     argument << VarBox->PathToOpen;
     //qout << "打开目录" << VarBox->PathToOpen;
-    VARBOX::runCommand("explorer.exe", argument);
+    VarBox->runCmd("explorer.exe", argument);
 }
 
 void Menu::ShutdownComputer() const
@@ -205,7 +196,7 @@ void Menu::ShutdownComputer() const
     }
     if (!pOpenProcessToken || !pLookupPrivilegeValue || !pAdjustTokenPrivileges || !pInitiateSystemShutdownEx || !pOpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken))
     {
-        VARBOX::MSG("获取模块失败", "警告", QMessageBox::Ok);
+        VarBox->MSG("获取模块失败", "警告", QMessageBox::Ok);
         return;
     }
     pLookupPrivilegeValue(NULL, SE_SHUTDOWN_NAME, &tkp.Privileges[0].Luid);
@@ -214,7 +205,7 @@ void Menu::ShutdownComputer() const
     pAdjustTokenPrivileges(hToken, FALSE, &tkp, sizeof(TOKEN_PRIVILEGES), (PTOKEN_PRIVILEGES)NULL, NULL);
     if (GetLastError() != ERROR_SUCCESS)
     {
-        VARBOX::MSG("关机失败", "警告", QMessageBox::Ok);
+        VarBox->MSG("关机失败", "警告", QMessageBox::Ok);
         return;
     }
     pInitiateSystemShutdownEx(NULL, NULL, 0, TRUE, FALSE, NULL);

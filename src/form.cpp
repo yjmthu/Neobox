@@ -12,7 +12,7 @@
 #include "wallpaper.h"
 #include "formsetting.h"
 #include "desktopmask.h"
-#include "menuwallpaper.h"
+#include "wallpaper.h"
 
 PIP_ADAPTER_ADDRESSES piaa;//网卡结构
 MIB_IFTABLE *mi;    //网速结构
@@ -85,7 +85,7 @@ void Form::initForm()
 
     FormSetting::load_style_from_file();
 
-    QSettings IniRead(VarBox->get_ini_path(), QSettings::IniFormat);
+    QSettings IniRead("SpeedBox.ini", QSettings::IniFormat);
     IniRead.beginGroup("UI");
     SetWindowPos(HWND(winId()), HWND_TOPMOST, IniRead.value("x").toInt(), IniRead.value("y").toInt(), 0, 0, SWP_NOSIZE);
     IniRead.endGroup();
@@ -101,7 +101,7 @@ void Form::initForm()
 inline void savePos()
 {
     RECT rt; GetWindowRect(HWND(VarBox->form->winId()), &rt);
-    QSettings IniWrite(VarBox->get_ini_path(), QSettings::IniFormat);
+    QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
     IniWrite.beginGroup("UI");
     IniWrite.setValue("x", (int)rt.left); IniWrite.setValue("y", (int)rt.top);
     IniWrite.endGroup();
@@ -122,7 +122,7 @@ void Form::initConnects()
 
 void Form::set_wallpaper_fail(const char* str)
 {
-    VARBOX::MSG(str, "出错");
+    VarBox->MSG(str, "出错");
     // dialog->show();
 }
 
@@ -161,7 +161,6 @@ void Form::mousePressEvent(QMouseEvent* event)
 	}
     else if (event->button() == Qt::MiddleButton)
     {
-        VarBox->RunApp = false;
         qApp->exit(RETCODE_RESTART);
     }
 	event->accept();
@@ -265,7 +264,7 @@ void Form::enableTranslater(bool checked)
         }
         else
         {
-            VARBOX::MSG("未找到APP ID和密钥！请打开设置并确认是否填写正确。", "错误");
+            VarBox->MSG("未找到APP ID和密钥！请打开设置并确认是否填写正确。", "错误");
             VarBox->EnableTranslater = false;
         }
     }
@@ -276,7 +275,7 @@ void Form::enableTranslater(bool checked)
         translater = nullptr;
     }
 
-    QSettings IniWrite(VarBox->get_ini_path(), QSettings::IniFormat);
+    QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
     IniWrite.beginGroup("Translate");
     IniWrite.setValue("EnableTranslater", VarBox->EnableTranslater);
     IniWrite.endGroup();

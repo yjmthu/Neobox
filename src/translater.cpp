@@ -387,7 +387,7 @@ void Translater::getReply(const QByteArray& text)
     thrd = new std::thread([&](){
         std::stringstream url;
         url << API << "q=" << q << "&from=" << from << "&to=" << to << "&appid=" << VarBox->AppId << "&salt=" << salt << "&sign=" << sign.data();
-        if (VARBOX::getWebCode(url.str(), reply_data))
+        if (VarBox->getWebCode(url.str(), reply_data))
             emit finished(true);
         else
             emit finished(false);
@@ -399,7 +399,7 @@ void Translater::setFix(bool checked)
 {
     ui->pBtnPin->setIcon(QIcon(checked?":/icons/drip_blue_pin.ico":":/icons/drip_pin.ico"));
     VarBox->AutoHide = !checked;
-    QSettings IniWrite(VarBox->get_ini_path(), QSettings::IniFormat);
+    QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
     IniWrite.beginGroup("Translate");
     IniWrite.setValue("AutoHide", VarBox->AutoHide);
     IniWrite.endGroup();

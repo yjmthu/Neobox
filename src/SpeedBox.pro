@@ -24,7 +24,7 @@ QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2021"
 RC_LANG = 0x0804
 
 
-QT       += core gui network
+QT       += core gui network core5compat
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -35,7 +35,7 @@ CONFIG += release
 #CONFIG += debug
 
 # 禁用qDebug()
-DEFINES += QT_NO_DEBUG_OUTPUT
+# DEFINES += QT_NO_DEBUG_OUTPUT
 
 #win32 {
 #    LIBS += -luser32
@@ -55,10 +55,8 @@ SOURCES += \
     main.cpp \
     funcbox.cpp \
     dialog.cpp \
-    dialogwallpaper.cpp \
     form.cpp \
     menu.cpp \
-    menuwallpaper.cpp \
     translater.cpp \
     tray.cpp \
     wallpaper.cpp \
@@ -71,13 +69,11 @@ HEADERS += \
     blankform.h \
     desktopmask.h \
     dialog.h \
-    dialogwallpaper.h \
     form.h \
     formsetting.h \
     funcbox.h \
     gmpoperatetip.h \
     menu.h \
-    menuwallpaper.h \
     speedwidget.h \
     translater.h \
     tray.h \

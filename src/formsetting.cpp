@@ -182,7 +182,7 @@ void FormSetting::closeEvent(QCloseEvent *event)
     b = temp[2].getValueInt();
     a = temp[3].getValueInt();
     p = (*old_style)["border-radius"].getValueInt();
-    VARBOX::SetWindowCompositionAttribute(HWND(VarBox->form->winId()), win_style, (a << 24) & RGB(r, g, b));
+    VarBox->SetWindowCompositionAttribute(HWND(VarBox->form->winId()), win_style, (a << 24) & RGB(r, g, b));
     VarBox->form->ui->frame->setStyleSheet((QString(style_style).arg(p).arg(r).arg(g).arg(b).arg(a)));
     event->accept();
 }
@@ -255,7 +255,7 @@ void FormSetting::on_pushButton_5_clicked()
     ui->horizontalSlider->setValue(a);
     ui->radioButton_2->setChecked(true);
     temp_win_style = ACCENT_STATE::ACCENT_NORMAL;
-    VARBOX::SetWindowCompositionAttribute(HWND(VarBox->form->winId()), temp_win_style, (a << 24) & RGB(r, g, b));
+    VarBox->SetWindowCompositionAttribute(HWND(VarBox->form->winId()), temp_win_style, (a << 24) & RGB(r, g, b));
     VarBox->form->ui->frame->setStyleSheet((QString(style_style).arg(p).arg(r).arg(g).arg(b).arg(a)));
 }
 
@@ -298,9 +298,9 @@ void FormSetting::on_pushButton_6_clicked()
     else if (ui->radioButton_7->isChecked())
         temp_win_style = ACCENT_STATE::ACCENT_ENABLE_ACRYLICBLURBEHIND;
     old_style->append(static_cast<int>(win_style = temp_win_style), "win-style");
-    VARBOX::SetWindowCompositionAttribute(HWND(VarBox->form->winId()), win_style, (a << 24) & RGB(r, g, b));
+    VarBox->SetWindowCompositionAttribute(HWND(VarBox->form->winId()), win_style, (a << 24) & RGB(r, g, b));
     VarBox->form->ui->frame->setStyleSheet(style);
-    QString file = VARBOX::get_dat_path() + "\\" + "FormStyle.json";
+    QString file = "FormStyle.json";
     if (QFile::exists(file))
     {
         YJson s(std::ifstream(file.toStdWString(), std::ios::in | std::ios::binary));
@@ -323,7 +323,7 @@ void FormSetting::on_pushButton_6_clicked()
 void FormSetting::load_style_from_file()
 {
     int r = 8, g = 8, b=8, a = 190, p=3;
-    QString file = VARBOX::get_dat_path() + "\\" + "FormStyle.json";
+    QString file = "FormStyle.json";
     if (QFile::exists(file))
     {
         YJson s(std::ifstream(file.toStdWString(), std::ios::in | std::ios::binary));
@@ -340,7 +340,7 @@ void FormSetting::load_style_from_file()
             win_style = static_cast<ACCENT_STATE>(js["win-style"].getValueInt());
         }
     }
-    VARBOX::SetWindowCompositionAttribute(HWND(VarBox->form->winId()), win_style, (a << 24) & RGB(r, g, b));
+    VarBox->SetWindowCompositionAttribute(HWND(VarBox->form->winId()), win_style, (a << 24) & RGB(r, g, b));
     VarBox->form->ui->frame->setStyleSheet(QString(style_style).arg(p).arg(r).arg(g).arg(b).arg(a));
 }
 
@@ -369,7 +369,7 @@ void FormSetting::on_pushButton_4_clicked()
         temp_win_style = ACCENT_STATE::ACCENT_ENABLE_BLURBEHIND;
     else if (ui->radioButton_7->isChecked())
         temp_win_style = ACCENT_STATE::ACCENT_ENABLE_ACRYLICBLURBEHIND;
-    VARBOX::SetWindowCompositionAttribute(HWND(VarBox->form->winId()), temp_win_style, (a << 24) & RGB(r, g, b));
+    VarBox->SetWindowCompositionAttribute(HWND(VarBox->form->winId()), temp_win_style, (a << 24) & RGB(r, g, b));
     jobTip->showTip("预览成功！");
 }
 

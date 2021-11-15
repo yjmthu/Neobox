@@ -317,7 +317,75 @@ std::string YJson::urlEncode() const
                 break;
         } while (true);
     }
-    return param;
+    for (auto iter = std::find(param.begin(), param.end(), ' '); iter!=param.end(); iter = std::find(param.begin(), param.end(), ' '))
+        param.replace(iter, iter+1, "%20");
+    return param;//::urlEncode(param.cbegin(), param.length());
+}
+
+std::string YJson::urlEncode(const char *url) const
+{
+    std::string param(url);
+    char* value = nullptr;
+    if (_type == YJSON_TYPE::YJSON_OBJECT && _child)
+    {
+        YJson* ptr = _child;
+        do {
+            param += ptr->_key;
+            param.push_back('=');
+            switch (ptr->_type) {
+            case YJSON_TYPE::YJSON_NUMBER:
+                value = ptr->print_number();
+                param += value;
+                delete [] value;
+                break;
+            case YJSON_TYPE::YJSON_STRING:
+                param.append(ptr->_value);
+                break;
+            default:
+                param.append("null");
+            }
+            if (ptr = ptr->_next)
+                param.push_back('&');
+            else
+                break;
+        } while (true);
+    }
+    for (auto iter = std::find(param.begin(), param.end(), ' '); iter!=param.end(); iter = std::find(param.begin(), param.end(), ' '))
+        param.replace(iter, iter+1, "%20");
+    return param;//::urlEncode(param.cbegin(), param.length());
+}
+
+std::string YJson::urlEncode(const std::string& url) const
+{
+    std::string param(url);
+    char* value = nullptr;
+    if (_type == YJSON_TYPE::YJSON_OBJECT && _child)
+    {
+        YJson* ptr = _child;
+        do {
+            param += ptr->_key;
+            param.push_back('=');
+            switch (ptr->_type) {
+            case YJSON_TYPE::YJSON_NUMBER:
+                value = ptr->print_number();
+                param += value;
+                delete [] value;
+                break;
+            case YJSON_TYPE::YJSON_STRING:
+                param.append(ptr->_value);
+                break;
+            default:
+                param.append("null");
+            }
+            if (ptr = ptr->_next)
+                param.push_back('&');
+            else
+                break;
+        } while (true);
+    }
+    for (auto iter = std::find(param.begin(), param.end(), ' '); iter!=param.end(); iter = std::find(param.begin(), param.end(), ' '))
+        param.replace(iter, iter+1, "%20");
+    return param;//::urlEncode(param.cbegin(), param.length());
 }
 
 YJson::~YJson()
@@ -402,13 +470,13 @@ YJson* YJson::findByVal(const char* str) const
     return nullptr;
 }
 
-const YJson* YJson::getTop() const
+YJson* YJson::getTop() const
 {
     const YJson* top = this;
     while (true)
     {
         if (top->_parent) top = top->_parent;
-        else return top;
+        else return const_cast<YJson*>(top);
     }
 }
 
@@ -473,6 +541,19 @@ YJson* YJson::append(const char* str, const char* key)
     else if (key || _type != YJSON_TYPE::YJSON_ARRAY) return nullptr;
     YJson* child = append(YJSON_TYPE::YJSON_STRING);
     child->_value = StrJoin<char>(str); if (key) child->_key = StrJoin<char>(key);
+    return child;
+}
+
+YJson *YJson::append(const std::string &str, const char *key)
+{
+    if (_type == YJSON_TYPE::YJSON_OBJECT) {
+        if (!key) return nullptr;
+    }
+    else if (key || _type != YJSON_TYPE::YJSON_ARRAY) return nullptr;
+    YJson* child = append(YJSON_TYPE::YJSON_STRING);
+    child->_value = new char[str.length()+1] { 0 };
+    std::copy(str.begin(), str.end(), child->_value);
+    if (key) child->_key = StrJoin<char>(key);
     return child;
 }
 
@@ -766,10 +847,15 @@ char* YJson::print_number()
 {
     char* buffer = nullptr;
     double valuedouble = *reinterpret_cast<double*>(_value);
+    //qout << "原来的值" << valuedouble;
     if (valuedouble == 0)
+    {
+        //qout << "恰好为0";
         buffer = StrJoin<char>("0");
+    }
     else if (fabs(round(valuedouble) - valuedouble) <= DBL_EPSILON && valuedouble <= INT_MAX && valuedouble >= (double)INT_MIN)
     {
+        //qout << "近似" << valuedouble;
         char temp[21] = { 0 }; sprintf(temp,"%.0lf",valuedouble);
         buffer = StrJoin<char>(temp);
     }
@@ -784,6 +870,7 @@ char* YJson::print_number()
             sprintf(temp,"%f",valuedouble);
         buffer = StrJoin<char>(temp);
     }
+    //qout << "Buffer" << buffer;
     return buffer;
 }
 
@@ -952,6 +1039,10 @@ T YJson::parse_array(T value)
 
     while (*value==',')
     {
+        if (*StrSkip(value+1)==']')
+        {
+            return StrSkip(value+1);
+        }
         YJson *new_ = new YJson;
         child->_next = new_;
         new_->_prev = child;
@@ -971,7 +1062,6 @@ char* YJson::print_array()
     //qout << "打印列表开始";
     std::deque<char*> entries;
     YJson *child = _child;
-
     if (!child)
     {
         return joinKeyValue("[]", false);
@@ -1030,6 +1120,10 @@ T YJson::parse_object(T value)
     value = StrSkip(child->parse_value(StrSkip(value + 1)));
     while (*value==',')
     {
+        if (*StrSkip(value+1)=='}')
+        {
+            return StrSkip(value+1);
+        }
         YJson *new_ = new YJson;
         child->_next = new_; new_->_prev = child; child = new_; child->_parent = this;
         value = StrSkip(child->parse_string(StrSkip(value+1)));

@@ -58,9 +58,11 @@ public:
     inline int getValueInt() const { if (this && _type == YJSON_TYPE::YJSON_NUMBER) return *reinterpret_cast<double*>(_value); else return 0;}
     inline double getValueDouble() const { if (this && _type == YJSON_TYPE::YJSON_NUMBER) return *reinterpret_cast<double*>(_value); else return 0;}
     std::string urlEncode() const;
+    std::string urlEncode(const char* url) const;
+    std::string urlEncode(const std::string& url) const;
 
     int getChildNum() const;
-    const YJson* getTop() const;
+    YJson* getTop() const;
 
     char* toString(bool fmt=false);
     bool toFile(const std::wstring name, const YJSON_ENCODE& encode, bool fmt=false);
@@ -70,10 +72,11 @@ public:
     inline YJson& operator[](int i) const { return *find(i); }
     inline YJson& operator[](const char* key) const { return *find(key); }
     inline operator bool() const { const YJson* s = this; return s; };
-    inline void setText(const char* val) {delete [] _value; auto len = strlen(val)+1; _value = new char[len]; std::copy(val, val+len, _value); _type=YJSON_TYPE::YJSON_STRING;};
-    inline void setText(const std::string& val) {delete [] _value; _value = new char[val.length()+1]; std::copy(val.begin(), val.end(), _value); _type=YJSON_TYPE::YJSON_STRING;};
-    inline void setValue(double val) {delete [] _value; _value = new char[sizeof (double)]; std::copy((char*)&val, (char*)&val+sizeof (val), _value);};
-    inline void setNull() {delete [] _value; _value = nullptr; _type=YJSON_TYPE::YJSON_NULL;}
+    inline void setText(const char* val) {delete _child; _child = nullptr; delete [] _value; auto len = strlen(val)+1; _value = new char[len]; std::copy(val, val+len, _value); _type=YJSON_TYPE::YJSON_STRING;};
+    inline void setText(const std::string& val) {delete _child; _child = nullptr; delete [] _value; _value = new char[val.length()+1]; std::copy(val.begin(), val.end(), _value); _type=YJSON_TYPE::YJSON_STRING;};
+    inline void setValue(double val) {delete _child; _child = nullptr; delete [] _value; _value = new char[sizeof (double)]; std::copy((char*)&val, (char*)&val+sizeof (val), _value); _type=YJSON_TYPE::YJSON_NUMBER;};
+    inline void setValue(int val) {setValue(static_cast<double>(val));};
+    inline void setNull() {delete _child; _child = nullptr; delete [] _value; _value = nullptr; _type=YJSON_TYPE::YJSON_NULL;}
 
     bool join(const YJson&);
     static YJson join(const YJson&, const YJson&);
@@ -89,6 +92,7 @@ public:
     inline YJson* append(int value, const char* key=nullptr) { return append(static_cast<double>(value), key);};
     YJson* append(double, const char* key=nullptr);
     YJson* append(const char*, const char* key=nullptr);
+    YJson* append(const std::string&, const char* key=nullptr);
 
     inline bool remove(int index) { return remove(find(index)); }
     inline bool remove(const char* key) { return remove(find(key)); }

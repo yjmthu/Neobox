@@ -8,7 +8,7 @@
 #include <QMenu>
 class QAction;
 class Form;
-class MenuWallpaper;
+class Wallpaper;
 
 class Menu : public QMenu
 {
