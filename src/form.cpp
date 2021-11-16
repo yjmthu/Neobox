@@ -91,9 +91,13 @@ void Form::initForm()
     IniRead.endGroup();
 
     if (VarBox->EnableTranslater)
+    {
         enableTranslater(true);
+    }
     else
+    {
         translater = nullptr;                     //防止野指针
+    }
 	ui->LabMemory->setMaximumWidth(30);
     qout << "初始化悬浮窗界面完毕";
 }
@@ -117,13 +121,27 @@ void Form::initConnects()
         get_net_usage();
     });   //每秒钟刷新一次界面
     connect(animation, &QPropertyAnimation::finished, &savePos);
+    connect(VarBox->wallpaper, &Wallpaper::setFailed, this, &Form::set_wallpaper_fail);
 }
 
 
 void Form::set_wallpaper_fail(const char* str)
 {
+    if (VarBox->dialog)
+    {
+        if (VarBox->dialog->isVisible())
+            VarBox->dialog->setWindowState(Qt::WindowActive | Qt::WindowNoState);    // 让窗口从最小化恢复正常并激活窗口
+            //d->activateWindow();
+            //d->raise();
+        else
+            VarBox->dialog->show();
+    }
+    else
+    {
+        *const_cast<Dialog**>(&(VarBox->dialog)) = new Dialog;
+        VarBox->dialog->show();
+    }
     VarBox->MSG(str, "出错");
-    // dialog->show();
 }
 
 bool Form::nativeEvent(const QByteArray &, void *message, long long *)

@@ -36,9 +36,9 @@ protected:
 public:
     inline explicit YJson(YJSON type):_type(static_cast<YJSON_TYPE>(type)) { };
     inline explicit YJson(const YJson& js): _type(js._type), _value(js._value) { CopyJson(&js, nullptr); }
-    inline explicit YJson(std::ifstream && file) noexcept { LoadFile(file); };
-    inline explicit YJson(std::ifstream & file) { LoadFile(file); };
-    explicit YJson(const std::wstring& path, YJSON_ENCODE encode);
+    inline explicit YJson(std::ifstream && file) noexcept { loadFile(file); };
+    inline explicit YJson(std::ifstream & file) { loadFile(file); };
+    inline explicit YJson(const std::wstring& path, YJSON_ENCODE encode) {loadFile(path, encode);};
     explicit YJson(const char* str);
     explicit YJson(const std::string& str);
     explicit YJson(const wchar_t*);
@@ -65,7 +65,8 @@ public:
     YJson* getTop() const;
 
     char* toString(bool fmt=false);
-    bool toFile(const std::wstring name, const YJSON_ENCODE& encode, bool fmt=false);
+    bool toFile(const std::wstring name, const YJSON_ENCODE& encode=YJSON_ENCODE::UTF8BOM, bool fmt=false);
+    void loadFile(const std::wstring& path, YJSON_ENCODE encode=YJSON_ENCODE::AUTO);
 
     YJson& operator=(const YJson&);
     YJson& operator=(YJson&&) noexcept;
@@ -176,7 +177,7 @@ private:
     char* joinKeyValue(const char* valuestring, int depth, bool delvalue);
     char* joinKeyValue(const char* valuestring, bool delvalue);
 
-    void LoadFile(std::ifstream &);
+    void loadFile(std::ifstream &);
     void CopyJson(const YJson*, YJson*);
 
     YJson* append(YJSON_TYPE type);
