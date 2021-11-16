@@ -1,10 +1,11 @@
 {
     "Platform": "Winindows 10 | Winindows 11; 64bit",
-    "Latest Version": "21.11.14",
+    "Latest Version": "21.0.0",
     "Qt Version": "6.2.1",
     "Files": {
         "main": "https://gitee.com/yjmthu/Speed-Box/raw/main/update/SpeedBox.exe",
         "update": "https://gitee.com/yjmthu/Speed-Box/raw/main/update/update.exe",
         "zip": "https://gitee.com/yjmthu/Speed-Box/repository/archive/21.9.10?format=zip"
-    }
+    },
+    "UpdateDescription": "本版本慎重更新, 正在开发中..."
 }
