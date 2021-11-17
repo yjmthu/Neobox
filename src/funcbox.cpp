@@ -60,39 +60,6 @@ unsigned char GetNtVersionNumbers()
     return 0;
 }
 
-void VARBOX::chooseUrl()  //选则正确的请求链接组合
-{
-    YJson json(L"WallpaperApi.json", YJSON_ENCODE::UTF8);
-    qout << "种类: " << (int)VarBox->PaperType;
-    switch (VarBox->PaperType)
-    {
-    case PAPER_TYPE::Bing:
-    case PAPER_TYPE::User:
-        VarBox->wallpaper->url = json["MainApis"]["WallhavenApi"].getValueString();
-        VarBox->wallpaper->url.append(json["User"]["ApiData"][json["User"]["Curruent"].getValueString()]["Parameter"].urlEncode());
-        VarBox->wallpaper->image_path = json["User"]["ApiData"]["Ghostblade"]["Folder"].getValueString();
-    {
-        std::string u = json["BingApi"]["Parameter"].urlEncode(json["MainApis"]["BingApi"].getValueString());
-        VarBox->wallpaper->bing_api = u.c_str();
-    }
-        VarBox->wallpaper->bing_folder = json["BingApi"]["Folder"].getValueString();
-        break;
-    case PAPER_TYPE::Other:
-        VarBox->wallpaper->url = json["OtherApi"]["ApiData"][json["OtherApi"]["Curruent"].getValueString()]["Url"].getValueString();
-        VarBox->wallpaper->image_path = json["OtherApi"]["ApiData"][json["OtherApi"]["Curruent"].getValueString()]["Folder"].getValueString();
-        VarBox->wallpaper->image_name = json["OtherApi"]["ApiData"][json["OtherApi"]["Curruent"].getValueString()]["Name"].getValueString();
-        break;
-    case PAPER_TYPE::Advance:
-    case PAPER_TYPE::Native:
-        break;
-    default:
-        VarBox->wallpaper->url = json["MainApis"]["WallhavenApi"].getValueString();
-        VarBox->wallpaper->url.append(json["Default"]["ApiData"][(int)VarBox->PaperType]["Parameter"].urlEncode());
-        VarBox->wallpaper->image_path = json["Default"]["ApiData"][(int)VarBox->PaperType]["Folder"].getValueString();
-        break;
-    }
-}
-
 wchar_t* GetCorrectUnicode(const QByteArray &ba)
 {
     QTextCodec::ConverterState state;
@@ -135,7 +102,6 @@ VARBOX::VARBOX(int w, int h):
     CurPic = PicHistory.begin();
     initFile();
     initChildren();
-    initConnections();
     initBehaviors();
     qout << "VarBox构造函数结束。";
 }
@@ -145,7 +111,6 @@ VARBOX::~VARBOX()
     qout << "结构体析构中~";
     delete form;
     delete tray;
-    delete wallpaper_timer;
     delete wallpaper;
     for (auto c: PicHistory)
         delete [] c;
@@ -506,7 +471,6 @@ label_3:
 void VARBOX::initChildren()
 {
     wallpaper = new Wallpaper;                           // 创建壁纸更换对象
-    wallpaper_timer = new QTimer;                     // 定时器，定时更换壁纸
     tray = new Tray;
     Form* form = new Form;
     static APPBARDATA abd = {0};
@@ -539,19 +503,8 @@ void VARBOX::initChildren()
     });
 }
 
-void VARBOX::initConnections()
-{
-    connect(wallpaper, &Wallpaper::setFailed, VarBox->form, &Form::set_wallpaper_fail);
-    connect(wallpaper_timer, &QTimer::timeout, wallpaper, &Wallpaper::timer);
-    connect(wallpaper, &Wallpaper::msgBox, this, [this](const char*s1, const char*s2){MSG(s1, s2);});
-}
-
 void VARBOX::initBehaviors()
 {
-    chooseUrl();
-    VarBox->wallpaper_timer->setInterval(VarBox->TimeInterval * 60000);
-    if (VarBox->FirstChange) VarBox->wallpaper->timer();                                  // Timer默认第一次不启动，这里要加上。
-    if (VarBox->AutoChange) VarBox->wallpaper_timer->start();
     form->show();                                                              //显示悬浮窗
 }
 
@@ -578,20 +531,20 @@ void VARBOX::sigleSave(QString group, QString key, QString value)
     IniWrite.endGroup();
 }
 
-bool VARBOX::getWebCode(const std::string& url, QByteArray& src)
-{
-    QNetworkAccessManager* mgr = new QNetworkAccessManager();
-    QNetworkRequest res(QUrl(url.c_str()));
-    res.setTransferTimeout(5000);
-    QEventLoop loop;
-    //res.setHeader(QNetworkRequest::UserAgentHeader, "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36");
-    QObject::connect(mgr, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
-    QNetworkReply*rep = mgr->get(res);
-    loop.exec();
-    src = rep->readAll();
-    mgr->deleteLater();
-    return src.length();
-}
+//bool VARBOX::getWebCode(const std::string& url, QByteArray& src)
+//{
+//    QNetworkAccessManager* mgr = new QNetworkAccessManager();
+//    QNetworkRequest res(QUrl(url.c_str()));
+//    res.setTransferTimeout(5000);
+//    QEventLoop loop;
+//    //res.setHeader(QNetworkRequest::UserAgentHeader, "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36");
+//    QObject::connect(mgr, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
+//    QNetworkReply*rep = mgr->get(res);
+//    loop.exec();
+//    src = rep->readAll();
+//    mgr->deleteLater();
+//    return src.length();
+//}
 
 bool VARBOX::downloadImage(const std::string& url, const QString path)
 {

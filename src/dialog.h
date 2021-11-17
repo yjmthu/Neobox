@@ -19,9 +19,6 @@ class Dialog : public SpeedWidget<QWidget>                            //壁纸�
 {
 	Q_OBJECT
 
-signals:
-    void finished(bool, const char* str = nullptr);
-
 protected:
     bool eventFilter(QObject *target, QEvent *event);       //事件过滤器
     void closeEvent(QCloseEvent*event);

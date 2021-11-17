@@ -4,6 +4,7 @@
 #include "ui_translater.h"
 
 class Form;
+class QNetworkAccessManager;
 
 namespace std {
 class thread;
@@ -37,7 +38,7 @@ private:
     const char* from, * to;
     uint64_t last_post_time;
     void requestData(const char*, std::string*);
-    std::thread *thrd = nullptr;
+    QNetworkAccessManager* mgr;
     void initConnects();
 
 private slots:

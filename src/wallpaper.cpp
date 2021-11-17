@@ -7,6 +7,7 @@
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>
+#include <QTimer>
 
 #include "funcbox.h"
 #include "wallpaper.h"
@@ -53,16 +54,27 @@ inline bool setWallpaper(const QString &file_path)             //根据路径设
 
 Wallpaper::Wallpaper():
     thrd(nullptr), mgr(nullptr), applyClicked(false),
-    update(false), url(), bing_api(), bing_folder(), image_path(),  image_name()
+    update(false), url(), bing_api(), bing_folder(), image_path(),  image_name(), timer(new QTimer)
 {
-    //connect(this, SIGNAL(finished()), this, SLOT(clean()));
+    timer->setInterval(VarBox->TimeInterval * 60000);
+    if (VarBox->FirstChange){
+        qout << "自动换";
+        _cho_u();
+       static const char _ = VarBox->AutoSaveBingPicture && (set_from_Bing(), 1);
+       PX_UNUSED(_);
+    }
+    else qout << "不自动换";
+    if (VarBox->AutoChange) timer->start();
     srand((unsigned)time(0));           // 防止出现重复
+    connect(timer, &QTimer::timeout, this, &Wallpaper::_cho_u);
+    connect(this, &Wallpaper::msgBox, VarBox, std::bind(VARBOX::MSG, std::placeholders::_1, std::placeholders::_2, QMessageBox::Ok));
 }
 
 Wallpaper::~Wallpaper()
 {
     delete mgr;
     delete thrd;
+    delete timer;
 }
 
 void Wallpaper::kill()
@@ -160,8 +172,12 @@ void Wallpaper::_set_w(YJson* jsonArray)
 void Wallpaper::_set_b(YJson * file_data)
 {
     qout << "详细处理";
-    qout << "当前索引: " << file_data->find("current")->getValueInt();
-    YJson* temp = file_data->find("images")->find(file_data->find("current")->getValueInt());
+    int curindex = file_data->find("current")->getValueInt();
+    qout << "当前索引: " << curindex;
+    YJson* temp = file_data->find("images");
+    qout << (bool)*temp;
+    temp = temp->find(curindex);
+    qout << "加载必应json文件成功!";
     if (!temp)
     {
         qout << "到达末尾";
@@ -171,7 +187,7 @@ void Wallpaper::_set_b(YJson * file_data)
     else
     {
         qout << "加一";
-        file_data->find("current")->setValue(file_data->find("current")->getValueInt()+1);
+        file_data->find("current")->setValue(curindex+1);
         qout << "当前索引: " << file_data->find("current")->getValueInt();
     }
     qout << "查找到images";
@@ -197,7 +213,9 @@ void Wallpaper::_set_b(YJson * file_data)
     file_data->toFile(L"BingData.json", YJSON_ENCODE::UTF8BOM, true);
     if (!QFile::exists(bing_name))
     {
+        qout << "下载图片";
         mgr = new QNetworkAccessManager;
+        qout << "检查一下";
         connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep)->void{
             QFile file(bing_name);
             if (file.open(QIODevice::WriteOnly))
@@ -224,6 +242,58 @@ void Wallpaper::_set_b(YJson * file_data)
     {
         if (VarBox->PaperType == PAPER_TYPE::Bing) setWallpaper(bing_name);
     }
+}
+
+void Wallpaper::_cho_u()
+{
+    YJson& json = *new YJson(L"WallpaperApi.json", YJSON_ENCODE::UTF8);
+    const char* curApi = nullptr;
+    QDir dir;
+    int index = (int)VarBox->PaperType;
+    qout << "种类: " << index;
+    bing_api = json["BingApi"]["Parameter"].urlEncode(json["MainApis"]["BingApi"].getValueString()).c_str();
+    bing_folder = json["BingApi"]["Folder"].getValueString();
+    qout << "必应Api" << bing_api;
+    switch (VarBox->PaperType)
+    {
+    case PAPER_TYPE::Bing:
+        delete &json;
+        set_from_Bing();
+        return;
+    case PAPER_TYPE::Other:
+        curApi = json["OtherApi"]["Curruent"].getValueString();
+        url = json["OtherApi"]["ApiData"][curApi]["Url"].getValueString();
+        image_path = json["OtherApi"]["ApiData"][curApi]["Folder"].getValueString();
+        image_name = json["OtherApi"]["ApiData"][curApi]["Name"].getValueString();
+        delete &json;
+        if (dir.exists(image_path) || dir.mkdir(image_path))
+            set_from_Other();
+        else
+            emit msgBox("壁纸存放文件夹不存在, 请手动创建!", "出错");
+        return;
+    case PAPER_TYPE::Advance:
+        delete &json;
+        set_from_Advance();
+        return;
+    case PAPER_TYPE::Native:
+        delete &json;
+        set_from_Native();
+        return;
+    case PAPER_TYPE::User:
+        curApi = json["User"]["Curruent"].getValueString();
+        url = json["User"]["ApiData"][curApi]["Parameter"].urlEncode(json["MainApis"]["WallhavenApi"].getValueString());
+        image_path = json["User"]["ApiData"][curApi]["Folder"].getValueString();
+        break;
+    default:
+        url = json["Default"]["ApiData"][index]["Parameter"].urlEncode(json["MainApis"]["WallhavenApi"].getValueString());
+        image_path = json["Default"]["ApiData"][index]["Folder"].getValueString();
+    }
+    delete &json;
+    if (dir.exists(image_path) || dir.mkdir(image_path))
+        set_from_Wallhaven();
+    else
+        return emit msgBox("壁纸存放文件夹不存在, 请手动创建!", "出错");
+    qout << "Api选择" << url.c_str() << image_path;
 }
 
 void Wallpaper::set_from_Wallhaven()  // 从数据库中随机抽取一个链接地址进行设置。
@@ -336,19 +406,19 @@ void Wallpaper::get_url_from_Wallhaven(YJson* jsonArray)
 
 void Wallpaper::get_url_from_Bing()
 {
+    qout << "获取必应链接";
     mgr = new QNetworkAccessManager;
     connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep){
+        qout << "必应请求完成";
         YJson bing_data(rep->readAll());
+        qout << rep->readAll();
         bing_data.append(0, "current");
         bing_data.append(QDateTime::currentDateTime().toString("yyyyMMdd").toStdString(), "today");
         mgr->deleteLater();
         mgr = nullptr;
         _set_b(&bing_data);
     });
-    connect(mgr->get(QNetworkRequest(bing_api)), &QNetworkReply::errorOccurred, this, [=](QNetworkReply::NetworkError){
-        mgr->deleteLater();
-        mgr = nullptr;
-    });
+    mgr->get(QNetworkRequest(bing_api));
 }
 
 void Wallpaper::set_from_Native()
@@ -536,30 +606,6 @@ void Wallpaper::set_from_Advance()
     thrd->start();
 }
 
-void Wallpaper::timer()
-{
-    static const char _ = VarBox->AutoSaveBingPicture && (set_from_Bing(), 1);
-    PX_UNUSED(_);
-    qout << "壁纸类型：" << (int)VarBox->PaperType;
-    switch (VarBox->PaperType)
-    {
-    case PAPER_TYPE::Advance:
-        set_from_Advance();
-        break;
-    case PAPER_TYPE::Native:
-        set_from_Native();
-        break;
-    case PAPER_TYPE::Bing:
-        set_from_Bing();
-        break;
-    case PAPER_TYPE::Other:
-        set_from_Other();
-        break;
-    default:
-        set_from_Wallhaven();
-    }
-}
-
 void Wallpaper::next()
 {
     if (thrd || mgr) return emit msgBox("频繁点击是没有效的哦！", "提示");
@@ -595,23 +641,7 @@ void Wallpaper::next()
         return;
     }
     qout << "壁纸类型：" << static_cast<int>(VarBox->PaperType);
-    switch (VarBox->PaperType)
-    {
-    case PAPER_TYPE::Advance:
-        set_from_Advance();
-        break;
-    case PAPER_TYPE::Native:
-        set_from_Native();
-        break;
-    case PAPER_TYPE::Bing:
-        set_from_Bing();
-        break;
-    case PAPER_TYPE::Other:
-        set_from_Other();
-        break;
-    default:
-        set_from_Wallhaven();
-    }
+    _cho_u();
 }
 
 void Wallpaper::prev()
