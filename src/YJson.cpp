@@ -34,6 +34,111 @@ YJson::YJson(const wchar_t* str)
     strict_parse(dstr.cbegin());
 }
 
+YJson::YJson(const std::wstring& path, YJSON_ENCODE encode)
+{
+    qout << path;
+    std::ifstream file(path, std::ios::in|std::ios::binary);
+    std::string json_vector;
+    if (!file.is_open())
+    {
+        ep.first = true;
+        ep.second = "文件有问题";
+        return;
+    }
+    file.seekg(0, std::ios::end);
+    size_t size = file.tellg();
+    if (size < 6)
+    {
+        file.close();
+        return ;
+    }
+    file.seekg(0, std::ios::beg);
+    switch (encode){
+    case YJSON_ENCODE::UTF8BOM:
+    {
+        qout << "UTF8BOM";
+        file.seekg(3, std::ios::beg);
+        json_vector.resize(size - 2);
+        file.read(reinterpret_cast<char*>(&json_vector[0]), size - 3);
+        json_vector.back() = '\0';
+        file.close();
+        strict_parse(json_vector.cbegin());
+        break;
+    }
+    case YJSON_ENCODE::UTF8:
+    {
+        qout << "UTF8";
+        byte bom[3] {0};
+        if (!(file.read(reinterpret_cast<char*>(bom), 3)))
+        {
+            file.close();
+            ep.first = true;
+            ep.second = "文件不可读";
+            return;
+        }
+        if (std::equal(bom, bom + 3, utf8bom, utf8bom+3))
+        {
+            json_vector.resize(size - 2);
+            file.read(reinterpret_cast<char*>(&json_vector[0]), size - 3);
+        }
+        else
+        {
+            json_vector.resize(size + 1);
+            std::copy(bom, bom + 3, json_vector.begin());
+            file.read(reinterpret_cast<char*>(&json_vector[3]), size - 3);
+        }
+        json_vector.back() = '\0';
+        file.close();
+        strict_parse(json_vector.cbegin());
+        break;
+    }
+    case YJSON_ENCODE::UTF16BOM:
+    {
+        qout << "UTF16BOM";
+        file.seekg(2, std::ios::beg);
+        std::wstring json_wstr(size / sizeof(wchar_t), 0);
+        file.read(reinterpret_cast<char*>(&json_wstr[0]), size - 2);
+        utf16_to_utf8<std::string&, std::wstring::const_iterator>(json_vector, json_wstr.cbegin());
+        file.close();
+        strict_parse(json_vector.cbegin());
+        break;
+    }
+    case YJSON_ENCODE::UTF16:
+    {
+        byte bom[2] {0};
+        if (!(file.read(reinterpret_cast<char*>(bom), 2)))
+        {
+            file.close();
+            ep.first = true;
+            ep.second = "文件不可读";
+            return;
+        }
+        std::wstring json_wstr;
+        if (std::equal(bom, bom+2, utf16le, utf16le+2))
+        {
+            json_wstr.resize(size / sizeof(wchar_t));
+            file.read(reinterpret_cast<char*>(&(json_wstr.front())), size - 2);
+        }
+        else
+        {
+            json_wstr.resize(size / sizeof(wchar_t) + 1);
+            char *ptr = reinterpret_cast<char*>(&(json_wstr.front()));
+            std::copy(bom, bom+2, ptr);
+            file.read(ptr+2, size - 2);
+        }
+        json_wstr.back() = '\0';
+        utf16_to_utf8<std::string&, std::wstring::const_iterator>(json_vector, json_wstr.cbegin());
+        file.close();
+        strict_parse(json_vector.cbegin());
+        break;
+    }
+    case YJSON_ENCODE::ANSI:
+        break;
+    default:
+        LoadFile(file);
+    }
+}
+
 YJson::YJson(const std::initializer_list<const char*>& lst)
 {
     YJson* iter, **child = &_child;
@@ -56,11 +161,11 @@ bool YJson::strict_parse(T temp)
     switch (*temp)
     {
         case '{':
-            // qout << "object";
+            qout << "object";
             parse_object(temp);
             break;
         case '[':
-            // qout << "array";
+        qout << "array";
             parse_array(temp);
             break;
         default:
@@ -71,9 +176,9 @@ bool YJson::strict_parse(T temp)
     return ep.first;
 }
 
-void YJson::loadFile(std::ifstream& file)
+void YJson::LoadFile(std::ifstream& file)
 {
-    // qout << "从文件加载";
+    qout << "从文件加载";
     //std::ifstream file(str, std::ios::in | std::ios::binary);
     if (file.is_open())
     {
@@ -95,7 +200,7 @@ void YJson::loadFile(std::ifstream& file)
         size -= sizeof(char) * 3;
         if (std::equal(c, c+3, utf8bom, utf8bom+3))
         {
-            // qout << "utf8编码格式";
+            qout << "utf8编码格式";
             std::vector<char> json_vector;
             json_vector.resize(size + 1);
             json_vector[size] = 0;
@@ -105,7 +210,7 @@ void YJson::loadFile(std::ifstream& file)
         }
         else if (std::equal(c, c+2, utf16le, utf16le+2))
         {
-            // qout << "utf16编码格式";
+            qout << "utf16编码格式";
             if ((size + sizeof (char)) % sizeof (wchar_t))
             {
                 ep.first = true;
@@ -587,111 +692,6 @@ bool YJson::toFile(const std::wstring name, const YJSON_ENCODE& file_encode, boo
         delete [] buffer;
     }
     return false;
-}
-
-void YJson::loadFile(const std::wstring &path, YJSON_ENCODE encode)
-{
-    std::ifstream file(path, std::ios::in|std::ios::binary);
-    std::string json_vector;
-    if (!file.is_open())
-    {
-        ep.first = true;
-        ep.second = "文件有问题";
-        return;
-    }
-    file.seekg(0, std::ios::end);
-    size_t size = file.tellg();
-    if (size < 6)
-    {
-        file.close();
-        return ;
-    }
-    file.seekg(0, std::ios::beg);
-    switch (encode){
-    case YJSON_ENCODE::UTF8BOM:
-    {
-        qout << "UTF8BOM";
-        file.seekg(3, std::ios::beg);
-        json_vector.resize(size - 2);
-        file.read(reinterpret_cast<char*>(&json_vector[0]), size - 3);
-        json_vector.back() = '\0';
-        file.close();
-        strict_parse(json_vector.cbegin());
-        break;
-    }
-    case YJSON_ENCODE::UTF8:
-    {
-        qout << "UTF8";
-        byte bom[3] {0};
-        if (!(file.read(reinterpret_cast<char*>(bom), 3)))
-        {
-            file.close();
-            ep.first = true;
-            ep.second = "文件不可读";
-            return;
-        }
-        if (std::equal(bom, bom + 3, utf8bom, utf8bom+3))
-        {
-            json_vector.resize(size - 2);
-            file.read(reinterpret_cast<char*>(&json_vector[0]), size - 3);
-        }
-        else
-        {
-            json_vector.resize(size + 1);
-            std::copy(bom, bom + 3, json_vector.begin());
-            file.read(reinterpret_cast<char*>(&json_vector[3]), size - 3);
-        }
-        json_vector.back() = '\0';
-        file.close();
-        strict_parse(json_vector.cbegin());
-        break;
-    }
-    case YJSON_ENCODE::UTF16BOM:
-    {
-        qout << "UTF16BOM";
-        file.seekg(2, std::ios::beg);
-        std::wstring json_wstr(size / sizeof(wchar_t), 0);
-        file.read(reinterpret_cast<char*>(&json_wstr[0]), size - 2);
-        utf16_to_utf8<std::string&, std::wstring::const_iterator>(json_vector, json_wstr.cbegin());
-        file.close();
-        strict_parse(json_vector.cbegin());
-        break;
-    }
-    case YJSON_ENCODE::UTF16:
-    {
-        byte bom[2] {0};
-        if (!(file.read(reinterpret_cast<char*>(bom), 2)))
-        {
-            file.close();
-            ep.first = true;
-            ep.second = "文件不可读";
-            return;
-        }
-        std::wstring json_wstr;
-        if (std::equal(bom, bom+2, utf16le, utf16le+2))
-        {
-            json_wstr.resize(size / sizeof(wchar_t));
-            file.read(reinterpret_cast<char*>(&(json_wstr.front())), size - 2);
-        }
-        else
-        {
-            json_wstr.resize(size / sizeof(wchar_t) + 1);
-            char *ptr = reinterpret_cast<char*>(&(json_wstr.front()));
-            std::copy(bom, bom+2, ptr);
-            file.read(ptr+2, size - 2);
-        }
-        json_wstr.back() = '\0';
-        utf16_to_utf8<std::string&, std::wstring::const_iterator>(json_vector, json_wstr.cbegin());
-        file.close();
-        strict_parse(json_vector.cbegin());
-        break;
-    }
-    case YJSON_ENCODE::ANSI:
-        break;
-    default:
-        loadFile(file);
-    }
-
 }
 
 char* YJson::joinKeyValue(const char* valuestring, int depth, bool delvalue)

@@ -1,0 +1,29 @@
+QWidget {
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 3px;
+    background-color: #ffffff;
+    color: black;
+    font: 9pt "宋体";
+}
+
+QFrame {
+    border: 1px solid rgb(0,255,255);
+}
+
+QPushButton {
+        background-color: transparent;
+}
+
+QPushButton:hover {
+        background-color: rgb(229, 242, 250);
+}
+
+QPushButton:checked:hover {
+        background-color: rgb(229, 242, 250);
+}
+
+QPushButton:checked {
+        background-color: transparent;
+}

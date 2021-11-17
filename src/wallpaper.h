@@ -31,7 +31,6 @@ private:
     QNetworkAccessManager* mgr;
 
 public:
-    void _cho_u();
     void next(); void prev(); void apply(); void dislike();
     bool applyClicked;
     Wallpaper(); ~Wallpaper();
@@ -40,7 +39,8 @@ public:
     bool set_bing = false; bool update;
     std::string url; QUrl bing_api; QString bing_folder;
     QString image_path; QString image_name;
-    QTimer* timer;                       //定时更换壁纸
+public slots:
+    void timer();
 };
 
 #endif // WALLPAPER_H

@@ -11,8 +11,6 @@
 #include <QFileDialog>
 #include <QTimer>
 #include <QFile>
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
 
 #include "YString.h"
 #include "YJson.h"
@@ -348,6 +346,7 @@ void Dialog::applyWallpaperSettings()
     VarBox->AutoChange = ui->chkEnableChangePaper->isChecked();
     VarBox->UserCommand = ui->usrCmd->text();
     VarBox->FirstChange = ui->checkBox_3->isChecked();
+    VarBox->chooseUrl();
     for (int type = 0; type < 2; ++type)
     {
         if (type == 0)
@@ -367,19 +366,17 @@ void Dialog::applyWallpaperSettings()
         {
             if (VarBox->FirstChange)
             {
-                qout << "首更1";
                 VarBox->wallpaper->applyClicked = true;
-                VarBox->wallpaper->_cho_u();
-                qout << "首更";
+                VarBox->wallpaper->timer();
             }
             if (VarBox->AutoChange)
             {
-                VarBox->wallpaper->timer->setInterval(VarBox->TimeInterval * 60000);  // 设置时间间隔,Timer的单位是毫秒
-                VarBox->wallpaper->timer->start();
+                VarBox->wallpaper_timer->setInterval(VarBox->TimeInterval * 60000);  // 设置时间间隔,Timer的单位是毫秒
+                VarBox->wallpaper_timer->start();
                 qout << "开始更换壁纸";
             }
             else
-                VarBox->wallpaper->timer->stop();
+                VarBox->wallpaper_timer->stop();
             if (QMessageBox::question(this, "提示", "应用成功！是否保存设置？", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
                 saveWallpaperSettings();
         }
@@ -787,43 +784,52 @@ void Dialog::on_pushButton_10_clicked()
     else
         wait = true;
 
-    QNetworkAccessManager* mgr = new QNetworkAccessManager;
+    std::thread thrd; QEventLoop loop;
 
-    connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep){
-        if (rep->error() != QNetworkReply::NoError)
+    connect(this, &Dialog::finished, &loop, std::bind([this](QEventLoop* loop, std::thread* thrd, bool success, const char* str){
+        if (thrd->joinable()) thrd->join(); loop->quit();
+        if (!success)
         {
-            jobTip->showTip("下载失败！");
-            mgr->deleteLater();
-            return;
+            jobTip->showTip(str);
+            return ;
         }
-        const YJson json(rep->readAll());
-        if (json.getType() != YJSON_TYPE::YJSON_OBJECT)
-        {
-            jobTip->showTip("Gitee源出现问题！");
-            mgr->deleteLater();
-            return;
-        }
-        const char * version = json.find("Latest Version")->getValueString();
-        if (!strcmp(VarBox->Version, version))
+        if (!strcmp(VarBox->Version, str))
         {
             jobTip->showTip("当前已经是最新版本, 不过你仍可尝试下载更新！", 1000);
+            ui->pushButton_12->setEnabled(true);
         }
         else
         {
-            if (VarBox->versionBefore(VarBox->Version, version))
+            if (VarBox->versionBefore(VarBox->Version, str))
             {
-                jobTip->showTip(QString("\t有新版本已经出现！\n当前版本：%1%2%3").arg(VarBox->Version, "; 最新版本：", version), 2000);
+                jobTip->showTip(((QString("\t有新版本已经出现！\n当前版本：")+=VarBox->Version)+="; 最新版本：")+=str, 2000);
+                ui->pushButton_12->setEnabled(true);
             }
             else
             {
-                jobTip->showTip(version, 800);
+                jobTip->showTip(str, 800);
                 jobTip->showTip("更新失败，当前版本过高，请手动打开官网更新。", 3000);
             }
         }
-        mgr->deleteLater();
-    });
+        delete [] str;
+    }, &loop, &thrd, std::placeholders::_1, std::placeholders::_2));
 
-    mgr->get(QNetworkRequest(QUrl("https://gitee.com/yjmthu/Speed-Box/raw/main/update/update.json")));
+    thrd = std::thread([this](){
+        QByteArray str;
+        if (!VarBox->getWebCode("https://gitee.com/yjmthu/Speed-Box/raw/main/update/update.json", str) || str.isEmpty())
+        {
+            emit finished(false, "下载失败！");
+            return;
+        }
+        const YJson json(str);
+        if (json.getType() != YJSON_TYPE::YJSON_OBJECT)
+        {
+            emit finished(false, "Gitee源出现问题！");
+            return;
+        }
+        emit finished(true, StrJoin<char>(json.find("Latest Version")->getValueString()));
+    });
+    loop.exec();
     wait = false;
 }
 
@@ -847,26 +853,40 @@ void Dialog::on_pushButton_12_clicked()
         QMessageBox::information(this, "提示", "没有网络！");
         return;
     }
-    QNetworkAccessManager* mgr = new QNetworkAccessManager;
-    connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep){
-        YJson json(rep->readAll());
-        if (json.ep.first)
+    std::thread thrd; QEventLoop loop;
+
+    connect(this, &Dialog::finished, &loop, std::bind([this](QEventLoop* loop, std::thread* thrd, bool success, const char* str){
+        if (thrd->joinable()) thrd->join(); loop->quit();
+        if (!success)
         {
-            VarBox->MSG("下载失败!");
-            mgr->deleteLater();
+            jobTip->showTip(str, 800);
+            return ;
+        }
+        if (QMessageBox::information(this, "提示", "更新已经下载完成，点击确认重启软件后完成更新！", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
+        {
+            qApp->exit(RETCODE_UPDATE);
+        }
+        else
+            jobTip->showTip("成功取消更新。", 700);
+    }, &loop, &thrd, std::placeholders::_1, std::placeholders::_2));
+
+    thrd = std::thread([this](){
+        QByteArray str; //jobTip->showTip("请耐心等待几秒...");
+        if (!VarBox->getWebCode("https://gitee.com/yjmthu/Speed-Box/raw/main/update/update.json", str) || str.isEmpty())
+        {
+            emit finished(false, "下载失败！");
             return;
         }
+        YJson json(str);
         if (json.getType() != YJSON_TYPE::YJSON_OBJECT)
         {
-            jobTip->showTip("Gitee源出现问题！");
-            mgr->deleteLater();
+            emit finished(false, "Gitee源出现问题！");
             return;
         }
-        YJson &qtVersion = json["Qt Version"];
-        if (qtVersion.getType() != YJSON_TYPE::YJSON_STRING || strcmp(qtVersion.getValueString(), VarBox->Qt))
+        YJson *qtVersion = json.find("Qt Version");
+        if (qtVersion->getType() != YJSON_TYPE::YJSON_STRING || strcmp(qtVersion->getValueString(), VarBox->Qt))
         {
             jobTip->showTip("更新失败，当前Qt版本过低，请手动打开官网下载更新！", 3000);
-            mgr->deleteLater();
             return;
         }
         YJson *urls = json.find("Files"); YJson *child = nullptr;
@@ -874,75 +894,37 @@ void Dialog::on_pushButton_12_clicked()
         {
             if (!(child = urls->find("main")))
             {
-                jobTip->showTip("下载失败！");
-                mgr->deleteLater();
+                emit finished(false, "下载失败！");
                 return;
             }
             const char* url1 = child->getValueString();
             if (!(child = urls->find("update")))
             {
-                jobTip->showTip("下载失败！");
-                mgr->deleteLater();
+                emit finished(false, "下载失败！");
                 return;
             }
             const char* url2 = child->getValueString();
             qout << "文件地址：" << url1 << url2;
-            connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep){
-                if (QFile::exists("SpeedBox.exe")) QFile::remove("SpeedBox.exe");
-                QFile file("SpeedBox.exe");
-                if (file.open(QIODevice::WriteOnly))
-                {
-                    file.write(rep->readAll());
-                    file.close();
-                    if (!file.size())
-                    {
-                        qout << "文件大小为0";
-                        QFile::remove("SpeedBox.exe");
-                        mgr->deleteLater();
-                    }
-                    else
-                    {
-                        connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep){
-                            QString temp_str_2 = qApp->applicationDirPath().replace("/", "\\")+"\\update.exe";
-                            if (QFile::exists(temp_str_2)) QFile::remove(temp_str_2);
-                            QFile file(temp_str_2);
-                            if (file.open(QIODevice::WriteOnly))
-                            {
-                                file.write(rep->readAll());
-                                file.close();
-                                if (!file.size())
-                                {
-                                    qout << "文件大小为0";
-                                    QFile::remove(temp_str_2);
-                                }
-                                else
-                                {
-                                    if (QMessageBox::information(this, "提示", "更新已经下载完成，点击确认重启软件后完成更新！", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
-                                    {
-                                        qApp->exit(RETCODE_UPDATE);
-                                    }
-                                    else
-                                        jobTip->showTip("成功取消更新。", 700);
-                                }
-                                mgr->deleteLater();
-                            }
-                        });
-                        mgr->get(QNetworkRequest(QUrl(url2)));
-                    }
-                    qout << file.size();
-                }
-                mgr->deleteLater();
-            });
-            mgr->get(QNetworkRequest(QUrl(url1)));
+            QString temp_str_1 = "SpeedBox.exe";
+            QString temp_str_2 = qApp->applicationDirPath().replace("/", "\\")+"\\update.exe";
+            if (QFile::exists(temp_str_1)) QFile::remove(temp_str_1);
+            if (QFile::exists(temp_str_2)) QFile::remove(temp_str_2);
+
+            if (VarBox->downloadImage(url1, temp_str_1)
+                    &&
+                VarBox->downloadImage(url2, temp_str_2))
+            {
+                emit finished(true);
+            }
+            else
+                emit finished(false, "下载失败！");
         }
         else
         {
-            jobTip->showTip("未知原因，下载失败！");
+            emit finished(false, "未知原因，下载失败！");
         }
-        mgr->deleteLater();
-
     });
-    mgr->get(QNetworkRequest(QUrl("https://gitee.com/yjmthu/Speed-Box/raw/main/update/update.json")));
+    loop.exec();
     wait = false;
 }
 

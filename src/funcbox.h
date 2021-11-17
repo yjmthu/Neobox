@@ -115,8 +115,7 @@ public:
     COLOR_THEME CurTheme = COLOR_THEME::White;
 
     bool AutoChange = false;
-    unsigned char PageNum = 1;
-    unsigned char TimeInterval = 15;
+    unsigned char PageNum = 1, TimeInterval = 15;
     bool UseDateAsBingName = true, AutoSaveBingPicture = true;
     QString NativeDir;                  //当下正在使用的用户本地壁纸文件夹
     QString UserCommand = "python.exe -u X:\\xxxxx.py";                //当下正在使用的用户高级命令
@@ -160,23 +159,26 @@ public:
 //    QString get_pic_path(short i);
 //    QString get_wal_path();
     Wallpaper* wallpaper;                          //壁纸处理类
+    QTimer* wallpaper_timer;                       //定时更换壁纸
     Tray* tray;
 
     void sigleSave(QString group, QString key, QString value);
     wchar_t* runCmd(const QString & program, const QStringList& argument, short line);
     void runCmd(const QString & program, const QStringList& argument);
+    bool getWebCode(const std::string& url, QByteArray& html);
     bool downloadImage(const std::string& url, const QString path);
     BOOL SetWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD AlphaColor);//设置窗口WIN10风格
     bool versionBefore(const char* A, const char* B);
     std::function<bool(const wchar_t*)> OneDriveFile;
-public slots:
-    static void MSG(const char* text, const char* title="提示", QMessageBox::StandardButtons buttons=QMessageBox::Ok);
+    void MSG(const char* text, const char* title="提示", QMessageBox::StandardButtons buttons=QMessageBox::Ok);
+    void chooseUrl();
 private:
      friend class Form;
      bool check_app_right();
      void readTrayStyle();
      void initFile();
      void initChildren();
+     void initConnections();
      void initBehaviors();
 };
 
