@@ -1,0 +1,122 @@
+﻿{
+    "About": "https://wallhaven.cc/help/api",
+    "Description": "本文件必须是无bom头的utf-8格式; 更多wallhaven api的用法请打开上面About的链接.",
+    "MainApis": {
+        "WallhavenApi": "https://wallhaven.cc/api/v1/search?",
+        "BingApi": "https://cn.bing.com/HPImageArchive.aspx?",
+        "Pixabay": "https://pixabay.com/api/?"
+    },
+    "Default": {
+        "ApiData": {
+            "Hot": {
+                "Description": "Default 区域的 Hot, Nature, Anime 等的顺序不能随意更改, 也不能随意删除, 如果要增加或更改, 请在 User 区域内进行.",
+                "Parameter": {
+                    "sorting": "toplist",
+                    "categories": "111"
+                },
+                "Folder": "C:\\Users\\yjmthu\\OneDrive\\PersonalFiles\\图片\\桌面壁纸\\最热壁纸"
+            },
+            "Nature": {
+                "Description": "categories三位均为布尔值(0或1), 分别代表general/anime/people.",
+                "Parameter": {
+                    "categories": "100",
+                    "q": "nature",
+                    "sorting": "toplist"
+                },
+                "Folder": "C:\\Users\\yjmthu\\OneDrive\\PersonalFiles\\图片\\桌面壁纸\\风景壁纸"
+            },
+            "Anime": {
+                "Description": "Folder 代表存放该类壁纸的绝对路径, 路径中请统一使用转义反斜杠.",
+                "Parameter": {
+                    "categories": "010",
+                    "sorting": "toplist"
+                },
+                "Folder": "C:\\Users\\yjmthu\\OneDrive\\PersonalFiles\\图片\\桌面壁纸\\动漫壁纸"
+            },
+            "Simple": {
+                "Parameter": {
+                    "q": "minimalism"
+                },
+                "Folder": "C:\\Users\\yjmthu\\OneDrive\\PersonalFiles\\图片\\桌面壁纸\\极简壁纸"
+            },
+            "Random": {
+                "Parameter": {
+                    "sorting": "random"
+                },
+                "Folder": "C:\\Users\\yjmthu\\OneDrive\\PersonalFiles\\图片\\桌面壁纸\\随机壁纸"
+            }
+        }
+    },
+    "User": {
+        "Curruent": "Ghostblade",
+        "ApiData": {
+            "Example": {
+                "Description": "作者为 WLOP 的壁纸",
+                "Parameter": {
+                    "q": "WLOP"
+                },
+                "Folder": "C:\\Users\\yjmthu\\OneDrive\\PersonalFiles\\图片\\桌面壁纸\\鬼刀壁纸"
+            },
+            "Ghostblade": {
+                "Description": "鬼刀壁纸",
+                "Parameter": {
+                    "sorting": "random",
+                    "q": "Ghostblade"
+                },
+                "Folder": "C:\\Users\\yjmthu\\OneDrive\\PersonalFiles\\图片\\桌面壁纸\\鬼刀壁纸"
+            },
+            "One Piece": {
+                "Description": "海贼王壁纸",
+                "Parameter": {
+                    "q": "one piece"
+                },
+                "Folder": "C:\\Users\\yjmthu\\OneDrive\\PersonalFiles\\图片\\桌面壁纸\\海贼王壁纸"
+            },
+            "JYANME": {
+                "Description": "集原美壁纸",
+                "Parameter": {
+                    "q": "JYANME"
+                },
+                "Folder": "C:\\Users\\yjmthu\\OneDrive\\PersonalFiles\\图片\\桌面壁纸\\集原美壁纸"
+            },
+            "PLACEBO": {
+                "Description": "PLACEBO上传壁纸",
+                "Parameter": {
+                    "q": "@PLACEBO"
+                },
+                "Folder": "C:\\Users\\yjmthu\\OneDrive\\PersonalFiles\\图片\\桌面壁纸\\PLACEBO壁纸"
+            }
+        }
+    },
+    "BingApi": {
+        "Parameter": {
+            "format": "js",
+            "idx": 0,
+            "n": 8,
+            "mkt": "zh-CN"
+        },
+        "Folder": "C:\\Users\\yjmthu\\OneDrive\\PersonalFiles\\图片\\桌面壁纸\\必应壁纸",
+        "Description": "BingApi 处止只可更改Folder."
+    },
+    "OtherApi": {
+        "Curruent": "Dmoe",
+        "ApiData": {
+            "Unsplash": {
+                "Url": "https://source.unsplash.com/random/2560x1600",
+                "Folder": "C:\\Users\\yjmthu\\OneDrive\\PersonalFiles\\图片\\桌面壁纸\\Unsplash",
+                "Name": "yyyy-MM-dd hhssmm.jpg"
+            },
+            "Dmoe": {
+                "Url": "https://www.dmoe.cc/random.php?233335556958",
+                "Folder": "C:\\Users\\yjmthu\\OneDrive\\PersonalFiles\\图片\\桌面壁纸\\Dmoe",
+                "Name": "yyyy-MM-dd hhssmm.jpg"
+            },
+            "Yurikoto": {
+                "Url": "https://v1.yurikoto.com/wallpaper",
+                "Folder": "C:\\Users\\yjmthu\\OneDrive\\PersonalFiles\\图片\\桌面壁纸\\Yurikoto",
+                "Name": "yyyy-MM-dd hhssmm.jpg"
+            }
+        },
+        "Description": "这些链接点开就是一张图片, 只能增加, 不能删除或更改. Name格式百度'QString QDateTime::toString()'即可."
+    }
+}
