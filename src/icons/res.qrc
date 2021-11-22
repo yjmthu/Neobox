@@ -1,0 +1,28 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qss/dialog_style.qss</file>
+        <file>qss/menu_style.qss</file>
+        <file>icons/blue_purple_arrow.png</file>
+        <file>icons/close.png</file>
+        <file>icons/minimize.png</file>
+        <file>fonts/qitijian.otf</file>
+        <file>icons/ya.ico</file>
+        <file>icons/speedbox.ico</file>
+        <file>qss/translater_style.qss</file>
+        <file>icons/copy.ico</file>
+        <file>fonts/netspeed.ttf</file>
+        <file>fonts/smallkaiti.ttf</file>
+        <file>qss/bing_style.qss</file>
+        <file>icons/drip_copy.ico</file>
+        <file>icons/drip_pin.ico</file>
+        <file>icons/drip_trash.ico</file>
+        <file>icons/black_en.ico</file>
+        <file>icons/black_zh.ico</file>
+        <file>icons/empty_en.ico</file>
+        <file>icons/empty_zh.ico</file>
+        <file>icons/drip_blue_pin.ico</file>
+        <file>json/WallpaperApi.json</file>
+        <file>qss/calculater.qss</file>
+        <file>icons/Poison_Spider.ico</file>
+    </qresource>
+</RCC>
