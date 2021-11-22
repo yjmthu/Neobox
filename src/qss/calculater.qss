@@ -1,0 +1,33 @@
+QWidget {
+    border-radius: 2px;
+    background-color: #333333;
+    color: black;
+    font: 9pt "宋体";
+}
+
+QPlainTextEdit {
+    margin: 0px 3px 0px 3px;
+    background-color: white;
+}
+
+QLineEdit {
+    margin-left: 3px;
+    margin-right: 3px;
+    border: gray;
+    background-color: #dddddd;
+}
+
+QPushButton {
+    margin: 0px;
+    background-color: #303030;
+    color: white;
+    font: 9pt "微软雅黑";
+}
+
+QPushButton:hover {
+    margin: 0px;
+    background-color: #505050;
+    color: white;
+    font: 9pt "微软雅黑";
+}
+

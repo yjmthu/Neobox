@@ -278,3 +278,11 @@ QSlider::handle:Horizontal {
     background-color: yellow;
     margin: -3px 0px;
 }
+
+QProgressBar {
+    background-color: gray;
+}
+
+QProgressBar::chunk{
+    background:qlineargradient(spread:pad,x1:0,y1:0,x2:1,y2:0,stop:0 red,stop:1 blue);
+}
