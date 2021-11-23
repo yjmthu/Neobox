@@ -11,10 +11,12 @@
 #include <QDebug>
 #include <QMessageBox>
 
-#define RETCODE_ERROR_EXIT            1071       //异常退出常数
-#define RETCODE_UPDATE                1072       //更新常数，更新软件
-#define RETCODE_RESTART               1073       //重启常数，双击时界面会返回这个常数实现整个程序重新启动。
-#define MSG_APPBAR_MSGID              2731
+constexpr int RETCODE_ERROR_EXIT =           1071;       //异常退出常数
+constexpr int RETCODE_UPDATE     =           1072;       //更新常数，更新软件
+constexpr int RETCODE_RESTART    =           1073;       //重启常数，双击时界面会返回这个常数实现整个程序重新启动。
+constexpr int MSG_APPBAR_MSGID   =           2731;
+
+inline constexpr int _PX_UNUSED(int a=RETCODE_ERROR_EXIT, int b=RETCODE_UPDATE, int c=RETCODE_RESTART, int d=MSG_APPBAR_MSGID){return a+b+c+d;};
 
 #define SHOW_SECONDS_IN_SYSTEM_CLOCK "ShowSecondsInSystemClock"
 #define TASKBAR_ACRYLIC_OPACITY      "TaskbarAcrylicOpacity"
@@ -108,9 +110,8 @@ class VARBOX: public QObject
     Q_OBJECT
 
 public:
-    const char* const Version = "21.11.14", * const Qt = "6.2.1";
-    const unsigned char WinVersion; const bool FirstUse[1] = {false};
-    std::list<wchar_t*> PicHistory; std::list<wchar_t*>::const_iterator CurPic;
+    const char* const Version = "21.11.23", *const Qt = "6.2.1";
+    const unsigned char WinVersion; const bool FirstUse[1] = { false };
     PAPER_TYPE PaperType = PAPER_TYPE::Hot;               //当下正在使用的壁纸类型
     COLOR_THEME CurTheme = COLOR_THEME::White;
 
@@ -124,6 +125,7 @@ public:
 
     bool HaveAppRight = false,  EnableTranslater = false, AutoHide = false;;
     char* AppId = nullptr, * PassWord = nullptr;
+    bool enableUSBhelper = true;  // enableUSBhelper
 
     bool isMax = false, setMax = false;
     ACCENT_STATE aMode[2] = { ACCENT_STATE::ACCENT_DISABLED, ACCENT_STATE::ACCENT_DISABLED };
@@ -151,21 +153,17 @@ public:
 #ifdef GetFileAttributes
 #undef GetFileAttributes
 #endif
-    std::function<bool(void*)> SystemParametersInfo;
     std::function<bool(const wchar_t*)> PathFileExists = nullptr;
     std::function<bool(const wchar_t*)> GetFileAttributes = nullptr;
     VARBOX(int, int); ~VARBOX();
     void loadFunctions();
     void saveTrayStyle();
-//    QString get_pic_path(short i);
-//    QString get_wal_path();
     Wallpaper* wallpaper;                          //壁纸处理类
     Tray* tray;
 
     void sigleSave(QString group, QString key, QString value);
-    wchar_t* runCmd(const QString & program, const QStringList& argument, short line);
-    void runCmd(const QString & program, const QStringList& argument);
-    bool downloadImage(const std::string& url, const QString path);
+    static wchar_t* runCmd(const QString & program, const QStringList& argument, short line);
+    static void runCmd(const QString & program, const QStringList& argument);
     BOOL SetWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD AlphaColor);//设置窗口WIN10风格
     bool versionBefore(const char* A, const char* B);
     std::function<bool(const wchar_t*)> OneDriveFile;

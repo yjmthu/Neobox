@@ -20,20 +20,24 @@ protected:
     void mouseReleaseEvent(QMouseEvent* event);
     void mouseMoveEvent(QMouseEvent* event);
     template<typename A, typename B, typename C>
-    void initSpeedBox(A frame, B left, C right)
+    void initSpeedBox(A frame, B left, C right, bool d=true)
     {
-        QGraphicsDropShadowEffect* effect = new QGraphicsDropShadowEffect(this);
-        effect->setOffset(0, 0);          //具体阴影
-        effect->setBlurRadius(15);        //阴影半径
-        effect->setColor(Qt::black);      //阴影颜色
-        frame->setGraphicsEffect(effect);
-        jobTip = new GMPOperateTip(this);
-        BlankFrom *blank = new BlankFrom(static_cast<QWidget*>(this));
+        if (d)
+        {
+            QGraphicsDropShadowEffect* effect = new QGraphicsDropShadowEffect(this);
+            effect->setOffset(0, 0);          //具体阴影
+            effect->setBlurRadius(15);        //阴影半径
+            effect->setColor(Qt::black);      //阴影颜色
+            frame->setGraphicsEffect(effect);
+            jobTip = new GMPOperateTip(this);
+        }
+        blank = new BlankFrom(static_cast<QWidget*>(this));
         QObject::connect(blank->closeButton, &QPushButton::clicked, this, right);
         QObject::connect(blank->minButton, &QPushButton::clicked, this, left);
         blank->move(static_cast<Parent*>(this)->width()-100, 0);
     }
-    GMPOperateTip* jobTip;
+    GMPOperateTip* jobTip = nullptr;
+    BlankFrom *blank = nullptr;
 
 public:
     explicit SpeedWidget(QWidget *parent = nullptr);

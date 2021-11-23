@@ -1,10 +1,6 @@
 ﻿#ifndef MENU_H
 #define MENU_H
 
-
-#define MENU_WIDTH 92
-#define MENU_HEIGHT 270
-
 #include <QMenu>
 class QAction;
 class Form;
@@ -28,6 +24,7 @@ private:
 	void initUi();
 
 	/*九个不同功能的Action*/
+    QAction* calculateAct;               //科学计算
     QAction* translateAct;               //是否启用翻译，可选Action
     QAction* prevPaperAct;               //上一张壁纸
     QAction* nextPaperAct;               //下一张壁纸
@@ -35,6 +32,7 @@ private:
     QAction* settingDialogAct;           //打开设置对话框
     QAction* noSleepAct;                 //防止电脑休眠，可选Action
     QAction* openFolderAct;              //打开exe文件所在文件夹
+    QAction* restartAct;                 //重启
     QAction* shutdownAct;                //关机
     QAction* quitAct;                    //关闭程序
 

@@ -9,7 +9,7 @@ msvc {
 }
 
 # 版本信息
-VERSION = 21.11.13.0
+VERSION = 21.11.23.0
 # 图标
 RC_ICONS += icons/speedbox.ico
 # 公司名称
@@ -32,15 +32,10 @@ CONFIG += c++11
 
 # release模式生成的文件更小，运行速度更快
 CONFIG += release
-#CONFIG += debug
+# CONFIG += debug
 
 # 禁用qDebug()
-# DEFINES += QT_NO_DEBUG_OUTPUT
-
-#win32 {
-#    LIBS += -luser32
-#    LIBS += -loleaut32
-#}
+DEFINES += QT_NO_DEBUG_OUTPUT
 
 # 禁用 Qt 6之前的函数
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000
@@ -49,7 +44,9 @@ SOURCES += \
     YJson.cpp \
     bingsetting.cpp \
     blankform.cpp \
+    calculator.cpp \
     desktopmask.cpp \
+    downloadprogress.cpp \
     formsetting.cpp \
     gmpoperatetip.cpp \
     main.cpp \
@@ -59,16 +56,20 @@ SOURCES += \
     menu.cpp \
     translater.cpp \
     tray.cpp \
+    usbdrivehelper.cpp \
     wallpaper.cpp \
 
 HEADERS += \
+    FormulaPaser.h \
     YEncode.h \
     YJson.h \
     YString.h \
     bingsetting.h \
     blankform.h \
+    calculator.h \
     desktopmask.h \
     dialog.h \
+    downloadprogress.h \
     form.h \
     formsetting.h \
     funcbox.h \
@@ -77,14 +78,18 @@ HEADERS += \
     speedwidget.h \
     translater.h \
     tray.h \
+    usbdrivehelper.h \
     wallpaper.h
 
 FORMS += \
     bingsetting.ui \
+    calculator.ui \
     dialog.ui \
+    downloadprogress.ui \
     form.ui \
     formsetting.ui \
-    translater.ui
+    translater.ui \
+    usbdrivehelper.ui
 
 
 RESOURCES += \

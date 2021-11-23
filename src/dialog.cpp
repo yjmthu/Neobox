@@ -21,6 +21,7 @@
 #include "form.h"
 #include "blankform.h"
 #include "gmpoperatetip.h"
+#include "downloadprogress.h"
 #include "wallpaper.h"
 #include "bingsetting.h"
 #include "formsetting.h"
@@ -81,7 +82,7 @@ void Dialog::initUi()
         ui->radioButton_8->setEnabled(false);
         ui->radioButton_9->setEnabled(false);
     }
-
+    ui->pushButton_12->setEnabled(false);
     QFile qss(":/qss/dialog_style.qss");
     qss.open(QFile::ReadOnly);
     setStyleSheet(QString(qss.readAll()));
@@ -197,6 +198,7 @@ void Dialog::initUi()
     ui->checkBox_3->setChecked(VarBox->FirstChange);
     ui->BtnChooseFolder->setEnabled(ui->rBtnNative->isChecked());
     ui->checkBox_4->setChecked(VarBox->ControlDesktopIcon);
+    ui->checkBox->setChecked(VarBox->enableUSBhelper);
     ui->frame->setStyleSheet(QString("QFrame{background-color:rgba(%1);}QLabel{border-radius: 3px;background-color: transparent;}Line{background-color:black};").arg(color_theme[static_cast<int>(VarBox->CurTheme)]));
     checkSettings();
     move((VarBox->ScreenWidth - width()) / 2, (VarBox->ScreenHeight - height()) / 2);
@@ -369,7 +371,7 @@ void Dialog::applyWallpaperSettings()
             {
                 qout << "首更1";
                 VarBox->wallpaper->applyClicked = true;
-                VarBox->wallpaper->_cho_u();
+                VarBox->wallpaper->push_back();
                 qout << "首更";
             }
             if (VarBox->AutoChange)
@@ -417,7 +419,7 @@ void Dialog::on_pBtnApply_2_clicked()
             if (!settings.contains("."))
             {
                 settings.setValue(".", QString("复制路径"));
-                settings.setValue("Icon", icon_path);
+                settings.setValue("Icon", QDir().absoluteFilePath(icon_path).replace("/", "\\"));
                 settings.beginGroup("command");
                 settings.setValue(".", QString(reg_keys[3]).arg(type==2?'V':'1'));
                 settings.endGroup();
@@ -728,28 +730,12 @@ inline void del_file(Dialog *di ,QString str)
 
 void Dialog::on_pushButton_7_clicked()
 {
-    if (QFile::exists("SpeedBox.ini"))
-    {
-        if (QMessageBox::question(this, "提示", "将要清除所有设置并退出软件，是否继续？", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)==QMessageBox::Yes)
-        {
-            if (QFile::remove("SpeedBox.ini"))
-            {
-                jobTip->showTip("删除成功!");
-                setEnabled(false);
-                VarBox->form->setEnabled(false);
-                if (QMessageBox::question(this, "提示", "您想退出后重启软件吗？", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)==QMessageBox::Yes)
-                    qApp->exit(RETCODE_RESTART);
-                else
-                    qApp->quit();
-            }
-            else
-                QMessageBox::critical(this, "出错", "无法删除，可能是权限不够！");
-        }
-    }
-    else
-    {
-        jobTip->showTip("文件本就不存在！");
-    }
+    VarBox->CurTheme = static_cast<COLOR_THEME>(ui->comboBox_3->currentIndex());
+    VarBox->enableUSBhelper = ui->checkBox->isChecked();
+    QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
+    IniWrite.beginGroup("USBhelper");
+    IniWrite.setValue("enableUSBhelper",  VarBox->enableUSBhelper);
+    jobTip->showTip("应用并保存成功！");
 }
 
 void Dialog::on_pushButton_2_clicked()
@@ -797,7 +783,7 @@ void Dialog::on_pushButton_10_clicked()
             return;
         }
         const YJson json(rep->readAll());
-        if (json.getType() != YJSON_TYPE::YJSON_OBJECT)
+        if (json.getType() != YJson::Object)
         {
             jobTip->showTip("Gitee源出现问题！");
             mgr->deleteLater();
@@ -806,13 +792,14 @@ void Dialog::on_pushButton_10_clicked()
         const char * version = json.find("Latest Version")->getValueString();
         if (!strcmp(VarBox->Version, version))
         {
-            jobTip->showTip("当前已经是最新版本, 不过你仍可尝试下载更新！", 1000);
+            jobTip->showTip("当前已经是最新版本！", 1000);
         }
         else
         {
             if (VarBox->versionBefore(VarBox->Version, version))
             {
                 jobTip->showTip(QString("\t有新版本已经出现！\n当前版本：%1%2%3").arg(VarBox->Version, "; 最新版本：", version), 2000);
+                ui->pushButton_12->setEnabled(true);
             }
             else
             {
@@ -830,120 +817,65 @@ void Dialog::on_pushButton_10_clicked()
 // 下载更新  https://gitee.com/yjmthu/Speed-Box/raw/main/Update.json
 void Dialog::on_pushButton_12_clicked()
 {
-    static bool wait = false;
-    if (wait)
-    {
-        QMessageBox::warning(this, "提示", "已经在下载更新中，请勿重复点击！");
-        return;
-    }
-    else
-        wait = true;
     if (VarBox->InternetGetConnectedState())
     {
-        QMessageBox::information(this, "提示", "点击确认开始下载，下载时间一般不会很长，请耐心等待。");
+        QMessageBox::information(this, "提示", "点击确认开始下载,下载时间一般不会很长,请耐心等待,\n不要关闭设置窗口.");
     }
     else
     {
         QMessageBox::information(this, "提示", "没有网络！");
         return;
     }
-    QNetworkAccessManager* mgr = new QNetworkAccessManager;
-    connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep){
+    QNetworkAccessManager* mgr0 = new QNetworkAccessManager;
+    connect(mgr0, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep){
         YJson json(rep->readAll());
+        mgr0->deleteLater();
         if (json.ep.first)
         {
-            VarBox->MSG("下载失败!");
-            mgr->deleteLater();
+            VarBox->MSG("Json文件出错, 下载失败!");
             return;
         }
-        if (json.getType() != YJSON_TYPE::YJSON_OBJECT)
+        if (json.getType() != YJson::Object)
         {
             jobTip->showTip("Gitee源出现问题！");
-            mgr->deleteLater();
-            return;
-        }
-        YJson &qtVersion = json["Qt Version"];
-        if (qtVersion.getType() != YJSON_TYPE::YJSON_STRING || strcmp(qtVersion.getValueString(), VarBox->Qt))
-        {
-            jobTip->showTip("更新失败，当前Qt版本过低，请手动打开官网下载更新！", 3000);
-            mgr->deleteLater();
             return;
         }
         YJson *urls = json.find("Files"); YJson *child = nullptr;
-        if (urls && urls->getType() == YJSON_TYPE::YJSON_OBJECT)
+        //VarBox->MSG(json.toString());
+        if (urls && urls->getType() == YJson::Object)
         {
-            if (!(child = urls->find("main")))
+            if (!(child = urls->find("zip")))
             {
-                jobTip->showTip("下载失败！");
-                mgr->deleteLater();
+                jobTip->showTip("Json 文件不含zip, 下载失败！");
                 return;
             }
-            const char* url1 = child->getValueString();
+            const QUrl url1(child->getValueString());
             if (!(child = urls->find("update")))
             {
-                jobTip->showTip("下载失败！");
-                mgr->deleteLater();
+                jobTip->showTip("Json 文件不含zip, 下载失败!");
                 return;
             }
-            const char* url2 = child->getValueString();
-            qout << "文件地址：" << url1 << url2;
-            connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep){
-                if (QFile::exists("SpeedBox.exe")) QFile::remove("SpeedBox.exe");
-                QFile file("SpeedBox.exe");
-                if (file.open(QIODevice::WriteOnly))
-                {
-                    file.write(rep->readAll());
-                    file.close();
-                    if (!file.size())
-                    {
-                        qout << "文件大小为0";
-                        QFile::remove("SpeedBox.exe");
-                        mgr->deleteLater();
-                    }
-                    else
-                    {
-                        connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep){
-                            QString temp_str_2 = qApp->applicationDirPath().replace("/", "\\")+"\\update.exe";
-                            if (QFile::exists(temp_str_2)) QFile::remove(temp_str_2);
-                            QFile file(temp_str_2);
-                            if (file.open(QIODevice::WriteOnly))
-                            {
-                                file.write(rep->readAll());
-                                file.close();
-                                if (!file.size())
-                                {
-                                    qout << "文件大小为0";
-                                    QFile::remove(temp_str_2);
-                                }
-                                else
-                                {
-                                    if (QMessageBox::information(this, "提示", "更新已经下载完成，点击确认重启软件后完成更新！", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
-                                    {
-                                        qApp->exit(RETCODE_UPDATE);
-                                    }
-                                    else
-                                        jobTip->showTip("成功取消更新。", 700);
-                                }
-                                mgr->deleteLater();
-                            }
-                        });
-                        mgr->get(QNetworkRequest(QUrl(url2)));
-                    }
-                    qout << file.size();
-                }
-                mgr->deleteLater();
-            });
-            mgr->get(QNetworkRequest(QUrl(url1)));
+            if (!json["File Name"])
+            {
+                jobTip->showTip("Json 文件不含File Name, 下载失败！");
+                return;
+            }
+            const QUrl url2(child->getValueString());
+            const QString zipfile = json["File Name"].getValueString();
+            qout << "文件地址：" << url1 << url2 << zipfile;
+
+            DownloadProgress pro(zipfile, url1, url2,this);
+
+            pro.exec();
+            qout << "下载第一个文件";
         }
         else
         {
             jobTip->showTip("未知原因，下载失败！");
         }
-        mgr->deleteLater();
 
     });
-    mgr->get(QNetworkRequest(QUrl("https://gitee.com/yjmthu/Speed-Box/raw/main/update/update.json")));
-    wait = false;
+    mgr0->get(QNetworkRequest(QUrl("https://gitee.com/yjmthu/Speed-Box/raw/main/update/update.json")));
 }
 
 
@@ -962,7 +894,7 @@ void Dialog::on_toolButton_2_clicked()
         VarBox->wallpaper->image_path = QDir::toNativeSeparators(dir);
         ui->linePictuerPath->setText(VarBox->wallpaper->image_path);
         std::wstring ph = L"WallpaperApi.json";
-        YJson json(ph, YJSON_ENCODE::AUTO);
+        YJson json(ph, YJson::AUTO);
         if (ui->rBtnWallhavenApiDefault->isChecked())
         {
             json["Default"]["ApiData"][ui->cBxApis->currentIndex()]["Folder"].setText(VarBox->wallpaper->image_path.toUtf8());
@@ -979,7 +911,7 @@ void Dialog::on_toolButton_2_clicked()
         {
             json["OtherApi"]["ApiData"][ui->cBxApis->currentText().toUtf8()]["Folder"].setText(VarBox->wallpaper->image_path.toUtf8());
         }
-        json.toFile(ph, YJSON_ENCODE::UTF8BOM, true);
+        json.toFile(ph, YJson::UTF8BOM, true);
         jobTip->showTip("修改成功！");
     }
     else
@@ -1019,7 +951,7 @@ void Dialog::my_on_rBtnWallhavenApiDefault_clicked()
     disconnect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
     ui->cBxApis->clear();
     ui->cBxApis->addItems({"最热", "自然", "动漫", "极简"});
-    YJson json(L"WallpaperApi.json", YJSON_ENCODE::AUTO);
+    YJson json(L"WallpaperApi.json", YJson::AUTO);
     ui->linePictuerPath->setText(json["Default"]["ApiData"][ui->cBxApis->currentIndex()]["Folder"].getValueString());
     connect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
 }
@@ -1028,7 +960,7 @@ void Dialog::my_on_rBtnWallhavenApiUser_clicked()
 {
     disconnect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
     ui->cBxApis->clear();
-    YJson json(L"WallpaperApi.json", YJSON_ENCODE::AUTO);
+    YJson json(L"WallpaperApi.json", YJson::AUTO);
     YJson& temp = json["User"];
     for (auto& c : temp["ApiData"])
         ui->cBxApis->addItem(c.getKeyString());
@@ -1042,7 +974,7 @@ void Dialog::my_on_rBtnBingApi_clicked()
     disconnect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
     ui->cBxApis->clear();
     ui->cBxApis->addItem("Bing");
-    YJson json(L"WallpaperApi.json", YJSON_ENCODE::AUTO);
+    YJson json(L"WallpaperApi.json", YJson::AUTO);
     ui->linePictuerPath->setText(json["BingApi"]["Folder"].getValueString());
     connect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
 }
@@ -1051,7 +983,7 @@ void Dialog::my_on_rBtnOtherApi_clicked()
 {
     disconnect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
     ui->cBxApis->clear();
-    YJson json(L"WallpaperApi.json", YJSON_ENCODE::AUTO);
+    YJson json(L"WallpaperApi.json", YJson::AUTO);
     YJson& temp = json["OtherApi"];
     for (auto& c: temp["ApiData"])
         ui->cBxApis->addItem(c.getKeyString());
@@ -1063,7 +995,7 @@ void Dialog::my_on_rBtnOtherApi_clicked()
 void Dialog::my_on_cBxApis_currentTextChanged(const QString &arg1)
 {
     std::wstring ph = L"WallpaperApi.json";
-    YJson json(ph, YJSON_ENCODE::AUTO);
+    YJson json(ph, YJson::AUTO);
     if (ui->rBtnWallhavenApiDefault->isChecked())
     {
         ui->linePictuerPath->setText(json["Default"]["ApiData"][ui->cBxApis->currentIndex()]["Folder"].getValueString());
@@ -1081,7 +1013,7 @@ void Dialog::my_on_cBxApis_currentTextChanged(const QString &arg1)
         {
             ui->linePictuerPath->setText(json["User"]["ApiData"][arg1.toUtf8()]["Folder"].getValueString());
         }
-        json.toFile(ph, YJSON_ENCODE::UTF8BOM, true);
+        json.toFile(ph, YJson::UTF8BOM, true);
     }
     else if (ui->rBtnBingApi->isChecked())
     {
@@ -1109,7 +1041,7 @@ void Dialog::my_on_cBxApis_currentTextChanged(const QString &arg1)
             json["OtherApi"]["Curruent"].setText(arg1.toUtf8());
             ui->linePictuerPath->setText(json["OtherApi"]["ApiData"][arg1.toUtf8()]["Folder"].getValueString());
         }
-        json.toFile(ph, YJSON_ENCODE::UTF8BOM, true);
+        json.toFile(ph, YJson::UTF8BOM, true);
     }
     jobTip->showTip("应用成功!");
 }

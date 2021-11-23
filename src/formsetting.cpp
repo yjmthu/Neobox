@@ -31,7 +31,7 @@ YJson* load_style(const std::string style)
         return nullptr;
     }
     if (*++ptr == '}') return nullptr;
-    YJson* js(new YJson(YJSON::OBJECT));
+    YJson* js(new YJson(YJson::Object));
     std::string::const_iterator ptr1;
     while (true)
     {
@@ -57,7 +57,7 @@ YJson* load_style(const std::string style)
             ptr = StrSkip(++ptr);
             if (strncmp(ptr, "rgba(", 5)) break ;
             ptr1 = ptr + 5;
-            YJson* temp = js->append(YJSON::ARRAY, "background-color");
+            YJson* temp = js->append(YJson::Array, "background-color");
             while (true) {
                 color = 0;
                 while ('0' <= *ptr1 && *ptr1 <= '9') (color *= 10) += *ptr1++- '0';
@@ -191,7 +191,7 @@ void FormSetting::pushButton_clicked()
 {
     YJson& temp = (*old_style)["background-color"];
     int r = 8, g = 8, b=8;
-    if ((temp && temp.getType() == YJSON_TYPE::YJSON_ARRAY))
+    if ((temp && temp.getType() == YJson::Array))
     {
         r = temp[0].getValueInt();
         g = temp[1].getValueInt();
@@ -228,7 +228,7 @@ void FormSetting::on_pushButton_7_clicked()
     //恢复颜色
     int r = 8, g = 8, b=8, a = 190, p=3;
     YJson &temp = (*old_style)["background-color"];
-    if (temp && temp.getType() == YJSON_TYPE::YJSON_ARRAY)
+    if (temp && temp.getType() == YJson::Array)
     {
         r = temp[0].getValueInt();
         g = temp[1].getValueInt();
@@ -266,7 +266,7 @@ void FormSetting::on_pushButton_3_clicked()
     int r = 8, g = 8, b=8, a = 190, p;
     YJson *js = load_style(VarBox->form->ui->frame->styleSheet().toStdString());
     YJson &temp = *(js->find("background-color"));
-    if (temp && temp.getType() == YJSON_TYPE::YJSON_ARRAY)
+    if (temp && temp.getType() == YJson::Array)
     {
         r = temp[0].getValueInt();
         g = temp[1].getValueInt();
@@ -309,13 +309,13 @@ void FormSetting::on_pushButton_6_clicked()
             js = *old_style;
         else
             s.append(*const_cast<const YJson*>(old_style), "form-frame");
-        s.toFile(file.toStdWString(), YJSON_ENCODE::UTF8, true);
+        s.toFile(file.toStdWString(), YJson::UTF8, true);
     }
     else
     {
-        YJson s(YJSON::OBJECT);
+        YJson s(YJson::Object);
         s.append(*old_style, "form-frame");
-        s.toFile(file.toStdWString(), YJSON_ENCODE::UTF8, true);
+        s.toFile(file.toStdWString(), YJson::UTF8, true);
     }
     jobTip->showTip("保存成功！");
 }
@@ -352,7 +352,7 @@ void FormSetting::on_pushButton_4_clicked()
     YJson *js = load_style(VarBox->form->ui->frame->styleSheet().toStdString());
     p = js->find("border-radius")->getValueInt();
     YJson &temp = *(js->find("background-color"));
-    if (temp && temp.getType() == YJSON_TYPE::YJSON_ARRAY)
+    if (temp && temp.getType() == YJson::Array)
     {
         r = temp[0].getValueInt();
         g = temp[1].getValueInt();

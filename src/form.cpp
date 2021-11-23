@@ -6,6 +6,8 @@
 #include <QSettings>
 #include <QPropertyAnimation>
 
+#include <dbt.h>
+
 #include "YString.h"
 #include "form.h"
 #include "ui_form.h"
@@ -13,6 +15,7 @@
 #include "formsetting.h"
 #include "desktopmask.h"
 #include "wallpaper.h"
+#include "usbdrivehelper.h"
 
 PIP_ADAPTER_ADDRESSES piaa;//网卡结构
 MIB_IFTABLE *mi;    //网速结构
@@ -40,10 +43,15 @@ Form::Form(QWidget* parent) :
     QWidget(parent),
     ui(new Ui::Form)
 {
+    qout << "悬浮窗指针";
     *const_cast<Form**>(&(VarBox->form)) = this;
+    qout << "悬浮窗UI";
     ui->setupUi(this);                                                     //创建界面
+    qout << "悬浮窗数据";
 	initForm();                                                            //初始化大小、位置、翻译功能
+    qout << "悬浮窗连接";
 	initConnects();
+    qout << "悬浮窗定时器";
 	monitor_timer->start(1000);                                            //开始检测网速和内存
 }
 
@@ -52,6 +60,7 @@ Form::~Form()
     qout << "析构Form开始";
     delete MouseMoveTimer;
     delete translater;
+    qout << "析构定时器";
     delete monitor_timer;
     delete ui;
     delete animation;
@@ -63,6 +72,8 @@ Form::~Form()
 void Form::initForm()
 {
     qout << "初始化悬浮窗界面";
+    setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
+    setAttribute(Qt::WA_TranslucentBackground);
     int font_use = QFontDatabase::addApplicationFont(":/fonts/qitijian.otf");
     QStringList fontFamilies = QFontDatabase::applicationFontFamilies(font_use);
     QFont font;
@@ -77,19 +88,15 @@ void Form::initForm()
     font.setBold(true);
     ui->Labdown->setFont(font);
     ui->Labup->setFont(font);
-    setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
-    setAttribute(Qt::WA_TranslucentBackground);
     //setStyleSheet("background:transparent");
 	setMinimumSize(FORM_WIDTH, FORM_HEIGHT);
 	setMaximumSize(FORM_WIDTH, FORM_HEIGHT);
-
     FormSetting::load_style_from_file();
 
     QSettings IniRead("SpeedBox.ini", QSettings::IniFormat);
     IniRead.beginGroup("UI");
     SetWindowPos(HWND(winId()), HWND_TOPMOST, IniRead.value("x").toInt(), IniRead.value("y").toInt(), 0, 0, SWP_NOSIZE);
     IniRead.endGroup();
-
     if (VarBox->EnableTranslater)
     {
         enableTranslater(true);
@@ -144,9 +151,23 @@ void Form::set_wallpaper_fail(const char* str)
     VarBox->MSG(str, "出错");
 }
 
+char FirstDriveFromMask (ULONG unitmask)
+{
+    char i;
+
+    for (i = 0; i < 26; ++i)
+    {
+        if (unitmask & 0x1)
+            break;
+        unitmask = unitmask >> 1;
+    }
+    return (i + 'A');
+}
+
 bool Form::nativeEvent(const QByteArray &, void *message, long long *)
 {
     MSG *msg = static_cast<MSG*>(message);
+    static USBdriveHelper* helper = nullptr;
 
     if (MSG_APPBAR_MSGID == msg->message)
     {
@@ -159,6 +180,28 @@ bool Form::nativeEvent(const QByteArray &, void *message, long long *)
                 show();
             return true;
         default:
+            break;
+        }
+    }
+    else if (WM_DEVICECHANGE == msg->message)
+    {
+        PDEV_BROADCAST_HDR lpdb = (PDEV_BROADCAST_HDR)msg->lParam;
+        switch (msg->wParam)
+        {
+        case DBT_DEVICEARRIVAL:        //插入
+            qout << "设备插入";
+            if (lpdb->dbch_devicetype == DBT_DEVTYP_VOLUME && !helper && VarBox->enableUSBhelper)
+            {
+                PDEV_BROADCAST_VOLUME lpdbv = (PDEV_BROADCAST_VOLUME)lpdb;
+                helper = new USBdriveHelper(FirstDriveFromMask(lpdbv->dbcv_unitmask));
+                connect(this, &Form::appQuit, this, [](){delete helper; helper = nullptr;});
+                helper->show();
+            }
+            break;
+        case DBT_DEVICEREMOVECOMPLETE: //设备删除
+            qout << "设备删除";
+            delete helper;
+            helper = nullptr;
             break;
         }
     }

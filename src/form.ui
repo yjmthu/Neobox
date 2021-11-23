@@ -29,8 +29,8 @@
    <string>Speed Box</string>
   </property>
   <property name="windowIcon">
-   <iconset>
-    <normaloff>:/icons/icons/exe.ico</normaloff>:/icons/icons/exe.ico</iconset>
+   <iconset resource="res.qrc">
+    <normaloff>:/icons/speedbox.ico</normaloff>:/icons/speedbox.ico</iconset>
   </property>
   <property name="toolTip">
    <string>行動是治癒恐懼的良藥，而猶豫、拖延將不斷滋養恐懼</string>
@@ -200,6 +200,8 @@ border-top-right-radius: 5px;
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="res.qrc"/>
+ </resources>
  <connections/>
 </ui>

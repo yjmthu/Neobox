@@ -16,22 +16,30 @@ typedef unsigned char byte;
 constexpr byte utf8bom[] = {0xEF, 0xBB, 0xBF};
 constexpr byte utf16le[] = {0xFF, 0xFE};
 
+inline const char* goEnd(const char* begin)
+{
+    while (*begin) ++begin;
+    return begin;
+}
+
 std::pair<bool, std::string> YJson::ep = std::pair<bool, std::string>(false, std::string());
-YJson::YJson(const char* str) { strict_parse<const char*>(str); }
-YJson::YJson(const std::string& str) { strict_parse<std::string::const_iterator>(str.cbegin()); }
+
+YJson::YJson(const char* str) { strict_parse<const char*>(str, goEnd(str)); }
+
+YJson::YJson(const std::string& str) { strict_parse<std::string::const_iterator>(str.cbegin(), str.cend()); }
 
 YJson::YJson(const std::wstring& str)
 {
     std::deque<char> dstr;
     utf16_to_utf8<std::deque<char>&, std::wstring::const_iterator>(dstr, str.cbegin());
-    strict_parse(dstr.cbegin());
+    strict_parse(dstr.cbegin(), dstr.cend());
 }
 
 YJson::YJson(const wchar_t* str)
 {
     std::deque<char> dstr;
     utf16_to_utf8<std::deque<char>&, const wchar_t*>(dstr, str);
-    strict_parse(dstr.cbegin());
+    strict_parse(dstr.cbegin(), dstr.cend());
 }
 
 YJson::YJson(const std::initializer_list<const char*>& lst)
@@ -43,13 +51,13 @@ YJson::YJson(const std::initializer_list<const char*>& lst)
         auto len = strlen(c) + 1;
         iter->_value = new char[len];
         std::copy(c, c+len, iter->_value);
-        iter->_type = YJSON_TYPE::YJSON_STRING;
+        iter->_type = YJson::String;
         child = &(*child = iter)->_next;
     }
 }
 
 template<typename T>
-bool YJson::strict_parse(T temp)
+bool YJson::strict_parse(T temp, T end)
 {
     TYPE_CHAECK();
     temp = StrSkip(temp);
@@ -57,11 +65,11 @@ bool YJson::strict_parse(T temp)
     {
         case '{':
             // qout << "object";
-            parse_object(temp);
+            parse_object(temp, end);
             break;
         case '[':
             // qout << "array";
-            parse_array(temp);
+            parse_array(temp, end);
             break;
         default:
             break;
@@ -74,7 +82,6 @@ bool YJson::strict_parse(T temp)
 void YJson::loadFile(std::ifstream& file)
 {
     // qout << "从文件加载";
-    //std::ifstream file(str, std::ios::in | std::ios::binary);
     if (file.is_open())
     {
         file.seekg(0, std::ios::end);
@@ -101,7 +108,7 @@ void YJson::loadFile(std::ifstream& file)
             json_vector[size] = 0;
             file.read(reinterpret_cast<char*>(&json_vector[0]), size);
             file.close();
-            strict_parse(json_vector.cbegin());
+            strict_parse(json_vector.cbegin(), json_vector.cend());
         }
         else if (std::equal(c, c+2, utf16le, utf16le+2))
         {
@@ -120,7 +127,7 @@ void YJson::loadFile(std::ifstream& file)
                 file.read(++ptr, size);
                 utf16_to_utf8<std::deque<char>&, const wchar_t*>(json_str, json_wstr);
                 delete [] json_wstr; file.close();
-                strict_parse(json_str.cbegin());
+                strict_parse(json_str.cbegin(), json_str.cend());
             }
         }
         else
@@ -142,7 +149,7 @@ void YJson::CopyJson(const YJson* json, YJson* parent)
 {
     if (ep.first) return;
 
-    if (!(_parent = parent) || parent->_type != YJSON_TYPE::YJSON_OBJECT)
+    if (!(_parent = parent) || parent->_type != YJson::Object)
     {
         delete[] _key; _key = nullptr;
     }
@@ -151,12 +158,12 @@ void YJson::CopyJson(const YJson* json, YJson* parent)
         _key = StrJoin<char>(json->_key);
     }
 
-    if (_type == YJSON_TYPE::YJSON_ARRAY || _type == YJSON_TYPE::YJSON_OBJECT)
+    if (_type == YJson::Array || _type == YJson::Object)
     {
         YJson *child = nullptr, *childx = nullptr;
         if (child = json->_child)
         {
-            childx = _child = new YJson(static_cast<YJSON>(_type));
+            childx = _child = new YJson(static_cast<YJson>(_type));
             _child->_type = child->_type;
             _child->CopyJson(child, this);
             while (child = child->_next)
@@ -168,9 +175,9 @@ void YJson::CopyJson(const YJson* json, YJson* parent)
             }
         }
     }
-    else if (_type == YJSON_TYPE::YJSON_STRING)
+    else if (_type == YJson::String)
         _value = StrJoin<char>(reinterpret_cast<char*>(json->_value));
-    else if (_type == YJSON_TYPE::YJSON_NUMBER)
+    else if (_type == YJson::Number)
     {
         _value = new char[sizeof (double)];
         memcpy(_value, json->_value, sizeof (double));
@@ -188,19 +195,19 @@ std::string YJson::urlEncode() const
 {
     std::string param;
     char* value = nullptr;
-    if (_type == YJSON_TYPE::YJSON_OBJECT && _child)
+    if (_type == YJson::Object && _child)
     {
         YJson* ptr = _child;
         do {
             param += ptr->_key;
             param.push_back('=');
             switch (ptr->_type) {
-            case YJSON_TYPE::YJSON_NUMBER:
+            case YJson::Number:
                 value = ptr->print_number();
                 param += value;
                 delete [] value;
                 break;
-            case YJSON_TYPE::YJSON_STRING:
+            case YJson::String:
                 param.append(ptr->_value);
                 break;
             default:
@@ -221,19 +228,19 @@ std::string YJson::urlEncode(const char *url) const
 {
     std::string param(url);
     char* value = nullptr;
-    if (_type == YJSON_TYPE::YJSON_OBJECT && _child)
+    if (_type == YJson::Object && _child)
     {
         YJson* ptr = _child;
         do {
             param += ptr->_key;
             param.push_back('=');
             switch (ptr->_type) {
-            case YJSON_TYPE::YJSON_NUMBER:
+            case YJson::Number:
                 value = ptr->print_number();
                 param += value;
                 delete [] value;
                 break;
-            case YJSON_TYPE::YJSON_STRING:
+            case YJson::String:
                 param.append(ptr->_value);
                 break;
             default:
@@ -254,19 +261,19 @@ std::string YJson::urlEncode(const std::string& url) const
 {
     std::string param(url);
     char* value = nullptr;
-    if (_type == YJSON_TYPE::YJSON_OBJECT && _child)
+    if (_type == YJson::Object && _child)
     {
         YJson* ptr = _child;
         do {
             param += ptr->_key;
             param.push_back('=');
             switch (ptr->_type) {
-            case YJSON_TYPE::YJSON_NUMBER:
+            case YJson::Number:
                 value = ptr->print_number();
                 param += value;
                 delete [] value;
                 break;
-            case YJSON_TYPE::YJSON_STRING:
+            case YJson::String:
                 param.append(ptr->_value);
                 break;
             default:
@@ -294,7 +301,7 @@ YJson::~YJson()
 
 YJson* YJson::find(const char* key) const
 {
-    if (_type == YJSON_TYPE::YJSON_OBJECT)
+    if (_type == YJson::Object)
     {
         YJson *child = _child;
         if (child && child->_key)
@@ -310,7 +317,7 @@ YJson* YJson::find(const char* key) const
 
 YJson* YJson::find(int key) const
 {
-    if (_type == YJSON_TYPE::YJSON_ARRAY || _type == YJSON_TYPE::YJSON_OBJECT)
+    if (_type == YJson::Array || _type == YJson::Object)
     {
         YJson *child = _child;
         if (child)
@@ -339,11 +346,11 @@ YJson* YJson::find(int key) const
 
 YJson* YJson::findByVal(double value) const
 {
-    if (_type == YJSON_TYPE::YJSON_ARRAY || _type == YJSON_TYPE::YJSON_OBJECT)
+    if (_type == YJson::Array || _type == YJson::Object)
     {
         YJson *child = _child;
         if (child) do
-            if (child->_type == YJSON_TYPE::YJSON_NUMBER && fabs(value-*reinterpret_cast<double*>(child->_value)) <= DBL_EPSILON)
+            if (child->_type == YJson::Number && fabs(value-*reinterpret_cast<double*>(child->_value)) <= DBL_EPSILON)
                 return child;
         while (child = child->_next);
         
@@ -353,11 +360,11 @@ YJson* YJson::findByVal(double value) const
 
 YJson* YJson::findByVal(const char* str) const
 {
-    if (_type == YJSON_TYPE::YJSON_ARRAY || _type == YJSON_TYPE::YJSON_OBJECT)
+    if (_type == YJson::Array || _type == YJson::Object)
     {
         YJson *child = _child;
         if (child) do
-            if (child->_type == YJSON_TYPE::YJSON_STRING && !strcmp<const char*>(reinterpret_cast<char*>(child->_value), str))
+            if (child->_type == YJson::String && !strcmp<const char*>(reinterpret_cast<char*>(child->_value), str))
                 return child;
         while (child = child->_next);
         
@@ -375,7 +382,23 @@ YJson* YJson::getTop() const
     }
 }
 
-YJson* YJson::append(YJSON_TYPE type)
+YJson* YJson::append(const YJson& js, const char* key)
+{
+    if (_type == YJson::Object)
+        {if (!key && !js._key) return nullptr;}
+    else
+        {if (key || js._key) return nullptr;}
+
+    YJson* child = append(js._type); *child = js;
+    if (key)
+    {
+        delete[] child->_key;
+        child->_key = StrJoin<char>(key);
+    }
+    return child;
+}
+
+YJson* YJson::append(YJson::Type type, const char* key)
 {
     YJson* child = _child;
     if (child)
@@ -390,38 +413,26 @@ YJson* YJson::append(YJSON_TYPE type)
     }
     child->_parent = this;
     child->_type = type;
-    return child;
-}
-
-YJson* YJson::append(const YJson& js, const char* key)
-{
-    if (_type == YJSON_TYPE::YJSON_OBJECT)
-        {if (!key && !js._key) return nullptr;}
-    else
-        {if (key || js._key) return nullptr;}
-    YJson* child = append(js._type); *child = js;
-    if (key)
-    {
-        delete[] child->_key;
-        child->_key = StrJoin<char>(key);
+    switch (type) {
+    case YJson::String:
+        child->_value = new char[1] {0};
+        break;
+    case YJson::Number:
+        child->_value = new char[sizeof (double)] {0};
+    default:
+        break;
     }
-    return child;
-}
-
-YJson* YJson::append(YJSON type, const char* key)
-{
-    YJson* child = append(static_cast<YJSON_TYPE>(type));
     if (key) child->_key = StrJoin<char>(key);
     return child;
 }
 
 YJson* YJson::append(double value, const char* key)
 {
-    if (_type == YJSON_TYPE::YJSON_OBJECT)
+    if (_type == YJson::Object)
         {if (!key) return nullptr;}
     else
         {if (key) return nullptr;}
-    YJson* child = append(YJSON_TYPE::YJSON_NUMBER);
+    YJson* child = append(YJson::Number);
     child->_value = new char[sizeof (double)];
     memcpy(child->_value, &value, sizeof (double));
     if (key) child->_key = StrJoin<char>(key);
@@ -430,22 +441,22 @@ YJson* YJson::append(double value, const char* key)
 
 YJson* YJson::append(const char* str, const char* key)
 {
-    if (_type == YJSON_TYPE::YJSON_OBJECT) {
+    if (_type == YJson::Object) {
         if (!key) return nullptr;
     }
-    else if (key || _type != YJSON_TYPE::YJSON_ARRAY) return nullptr;
-    YJson* child = append(YJSON_TYPE::YJSON_STRING);
+    else if (key || _type != YJson::Array) return nullptr;
+    YJson* child = append(YJson::String);
     child->_value = StrJoin<char>(str); if (key) child->_key = StrJoin<char>(key);
     return child;
 }
 
 YJson *YJson::append(const std::string &str, const char *key)
 {
-    if (_type == YJSON_TYPE::YJSON_OBJECT) {
+    if (_type == YJson::Object) {
         if (!key) return nullptr;
     }
-    else if (key || _type != YJSON_TYPE::YJSON_ARRAY) return nullptr;
-    YJson* child = append(YJSON_TYPE::YJSON_STRING);
+    else if (key || _type != YJson::Array) return nullptr;
+    YJson* child = append(YJson::String);
     child->_value = new char[str.length()+1] { 0 };
     std::copy(str.begin(), str.end(), child->_value);
     if (key) child->_key = StrJoin<char>(key);
@@ -462,13 +473,13 @@ bool YJson::remove(YJson* item)
         }
         else
         {
-            if (_child = item->_next)
+            if (item->_parent && (item->_parent->_child = item->_next))
             {
-                _child->_parent = this;
-                _child->_prev = nullptr;
+                item->_parent->_child->_prev = nullptr;
             }
         }
-        item->_prev = nullptr; item->_next = nullptr; delete item;
+        item->_prev = nullptr; item->_next = nullptr;
+        delete item;
         return true;
     }
     else
@@ -503,7 +514,7 @@ bool YJson::join(const YJson & js)
 {
     if (&js == this)
         return join(YJson(*this));
-    if (ep.first || _type != js._type || (_type != YJSON_TYPE::YJSON_ARRAY && _type != YJSON_TYPE::YJSON_OBJECT))
+    if (ep.first || _type != js._type || (_type != YJson::Array && _type != YJson::Object))
         return false;
     YJson *child = _child;
     YJson *childx = js._child;
@@ -529,7 +540,7 @@ bool YJson::join(const YJson & js)
 
 YJson YJson::join(const YJson & j1, const YJson & j2)
 {
-    if (ep.first || j1._type != YJSON_TYPE::YJSON_ARRAY || j1._type != YJSON_TYPE::YJSON_OBJECT || j2._type != j1._type)
+    if (ep.first || j1._type != YJson::Array || j1._type != YJson::Object || j2._type != j1._type)
     {
         return YJson();
     }
@@ -546,7 +557,7 @@ char* YJson::toString(bool fmt)
     return fmt?print_value(0):print_value();
 }
 
-bool YJson::toFile(const std::wstring name, const YJSON_ENCODE& file_encode, bool fmt)
+bool YJson::toFile(const std::wstring name, const YJson::Encode& file_encode, bool fmt)
 {
     //qout << "开始打印" << name;
     if (ep.first) return false;
@@ -555,7 +566,7 @@ bool YJson::toFile(const std::wstring name, const YJSON_ENCODE& file_encode, boo
     if (buffer)
     {
         switch (file_encode) {
-        case (YJSON_ENCODE::UTF16):
+        case (YJson::UTF16):
         {
             std::cout << "UTF-16" << u8"保存开始。";
             std::wstring data;
@@ -589,7 +600,7 @@ bool YJson::toFile(const std::wstring name, const YJSON_ENCODE& file_encode, boo
     return false;
 }
 
-void YJson::loadFile(const std::wstring &path, YJSON_ENCODE encode)
+void YJson::loadFile(const std::wstring &path, YJson::Encode encode)
 {
     std::ifstream file(path, std::ios::in|std::ios::binary);
     std::string json_vector;
@@ -608,7 +619,7 @@ void YJson::loadFile(const std::wstring &path, YJSON_ENCODE encode)
     }
     file.seekg(0, std::ios::beg);
     switch (encode){
-    case YJSON_ENCODE::UTF8BOM:
+    case YJson::UTF8BOM:
     {
         qout << "UTF8BOM";
         file.seekg(3, std::ios::beg);
@@ -616,10 +627,10 @@ void YJson::loadFile(const std::wstring &path, YJSON_ENCODE encode)
         file.read(reinterpret_cast<char*>(&json_vector[0]), size - 3);
         json_vector.back() = '\0';
         file.close();
-        strict_parse(json_vector.cbegin());
+        strict_parse(json_vector.cbegin(), json_vector.cend());
         break;
     }
-    case YJSON_ENCODE::UTF8:
+    case YJson::UTF8:
     {
         qout << "UTF8";
         byte bom[3] {0};
@@ -643,10 +654,10 @@ void YJson::loadFile(const std::wstring &path, YJSON_ENCODE encode)
         }
         json_vector.back() = '\0';
         file.close();
-        strict_parse(json_vector.cbegin());
+        strict_parse(json_vector.cbegin(), json_vector.cend());
         break;
     }
-    case YJSON_ENCODE::UTF16BOM:
+    case YJson::UTF16BOM:
     {
         qout << "UTF16BOM";
         file.seekg(2, std::ios::beg);
@@ -654,10 +665,10 @@ void YJson::loadFile(const std::wstring &path, YJSON_ENCODE encode)
         file.read(reinterpret_cast<char*>(&json_wstr[0]), size - 2);
         utf16_to_utf8<std::string&, std::wstring::const_iterator>(json_vector, json_wstr.cbegin());
         file.close();
-        strict_parse(json_vector.cbegin());
+        strict_parse(json_vector.cbegin(), json_vector.cend());
         break;
     }
-    case YJSON_ENCODE::UTF16:
+    case YJson::UTF16:
     {
         byte bom[2] {0};
         if (!(file.read(reinterpret_cast<char*>(bom), 2)))
@@ -683,11 +694,9 @@ void YJson::loadFile(const std::wstring &path, YJSON_ENCODE encode)
         json_wstr.back() = '\0';
         utf16_to_utf8<std::string&, std::wstring::const_iterator>(json_vector, json_wstr.cbegin());
         file.close();
-        strict_parse(json_vector.cbegin());
+        strict_parse(json_vector.cbegin(), json_vector.cend());
         break;
     }
-    case YJSON_ENCODE::ANSI:
-        break;
     default:
         loadFile(file);
     }
@@ -731,41 +740,41 @@ char* YJson::joinKeyValue(const char* valuestring,  bool delvalue)
 }
 
 template <typename T>
-T YJson::parse_value(T value)
+T YJson::parse_value(T value, T end)
 {
     TYPE_CHAECK();
     //qout << "加载数据";
-    if (!*value || ep.first || T() == value) return T();
+    if (end <= value|| ep.first) return end;
     //qout << "剩余字符串开头：" << *value;
-    if (!strncmp(value, "null", 4))     { _type= YJSON_TYPE::YJSON_NULL;  return value+4; }
-    if (!strncmp(value, "false", 5))    { _type= YJSON_TYPE::YJSON_FALSE; return value+5; }
-    if (!strncmp(value, "true", 4))     { _type= YJSON_TYPE::YJSON_TRUE;  return value+4; }
-    if (*value=='\"')                   { return parse_string(value); }
-    if (*value=='-' || (*value>='0' && *value<='9'))    { return parse_number(value); }
-    if (*value=='[')                    { return parse_array(value); }
-    if (*value=='{')                    { return parse_object(value); }
+    if (!strncmp(value, "null", 4))     { _type= YJson::Null;  return value+4; }
+    if (!strncmp(value, "false", 5))    { _type= YJson::False; return value+5; }
+    if (!strncmp(value, "true", 4))     { _type= YJson::True;  return value+4; }
+    if (*value=='\"')                   { return parse_string(value, end); }
+    if (*value=='-' || (*value>='0' && *value<='9'))    { return parse_number(value, end); }
+    if (*value=='[')                    { return parse_array(value, end); }
+    if (*value=='{')                    { return parse_object(value, end); }
 
     //qout << "加载数据出错";
-    return T();                              /* failure. */
+    return end;                              /* failure. */
 }
 
 char* YJson::print_value()
 {
     switch (_type)
     {
-    case YJSON_TYPE::YJSON_NULL:
+    case YJson::Null:
         return  joinKeyValue("null", false);
-    case YJSON_TYPE::YJSON_FALSE:
+    case YJson::False:
         return joinKeyValue("false", false);
-    case YJSON_TYPE::YJSON_TRUE:
+    case YJson::True:
         return joinKeyValue("true", false);
-    case YJSON_TYPE::YJSON_NUMBER:
+    case YJson::Number:
         return joinKeyValue(print_number(), true);
-    case YJSON_TYPE::YJSON_STRING:
+    case YJson::String:
         return joinKeyValue(print_string(_value), true);;
-    case YJSON_TYPE::YJSON_ARRAY:
+    case YJson::Array:
         return print_array();
-    case YJSON_TYPE::YJSON_OBJECT:
+    case YJson::Object:
         return print_object();
     default:
         return nullptr;
@@ -776,19 +785,19 @@ char* YJson::print_value(int depth)
 {
     switch (_type)
     {
-    case YJSON_TYPE::YJSON_NULL:
+    case YJson::Null:
         return  joinKeyValue("null", depth, false);
-    case YJSON_TYPE::YJSON_FALSE:
+    case YJson::False:
         return joinKeyValue("false", depth, false);
-    case YJSON_TYPE::YJSON_TRUE:
+    case YJson::True:
         return joinKeyValue("true", depth, false);
-    case YJSON_TYPE::YJSON_NUMBER:
+    case YJson::Number:
         return joinKeyValue(print_number(), depth, true);
-    case YJSON_TYPE::YJSON_STRING:
+    case YJson::String:
         return joinKeyValue(print_string(_value), depth, true);
-    case YJSON_TYPE::YJSON_ARRAY:
+    case YJson::Array:
         return print_array(depth);
-    case YJSON_TYPE::YJSON_OBJECT:
+    case YJson::Object:
         return print_object(depth);
     default:
         return nullptr;
@@ -796,10 +805,10 @@ char* YJson::print_value(int depth)
 }
 
 template<typename T>
-T YJson::parse_number(T num)
+T YJson::parse_number(T num, T)
 {
     TYPE_CHAECK();
-    _type = YJSON_TYPE::YJSON_NUMBER;
+    _type = YJson::Number;
     _value = new char[sizeof (double)] {0};
     double *value_ptr = reinterpret_cast<double*>(_value);
     short sign = 1;
@@ -815,12 +824,12 @@ T YJson::parse_number(T num)
     }
     if ('1' <= *num && *num <= '9')
         do *value_ptr += (*value_ptr *= 10.0, *num++ - '0');
-        while ('0' <= *num && *num <= '9');
-    if ('.' == *num && '0' <= num[1] && num[1] <= '9')
+        while (isdigit(*num));
+    if ('.' == *num && isdigit(num[1]))
     {
         ++num;
         do  *value_ptr += (*value_ptr *= 10.0, *num++ - '0'), scale--;
-        while ('0' <= *num && *num <= '9');
+        while (isdigit(*num));
     }
     if ('e' == *num || 'E' == *num)
     {
@@ -833,7 +842,7 @@ T YJson::parse_number(T num)
         {
             ++num;
         }
-        while ('0' <= *num && *num <= '9')
+        while (isdigit(*num))
         {
             subscale *= 10;
             subscale += *num++ - '0';
@@ -900,7 +909,7 @@ uint16_t parse_hex4(T str)
 }
 
 template<typename T>
-T YJson::parse_string(T str)
+T YJson::parse_string(T str, T end)
 {
     TYPE_CHAECK();
     //qout << "加载字符串";
@@ -910,7 +919,7 @@ T YJson::parse_string(T str)
     if (*str != '\"') {
         //qout << "不是字符串！";
         ep.first = true;
-        return T();
+        return end;
     }
     while (*ptr!='\"' && *ptr && ++len) if (*ptr++ == '\\') ptr++;    /* Skip escaped quotes. */
     _value = new char[len + 1];
@@ -957,7 +966,7 @@ T YJson::parse_string(T str)
         }
     }
     *ptr2 = 0; ++str;
-    _type= YJSON_TYPE::YJSON_STRING;
+    _type= YJson::String;
     while (*str != '\"' && *str) if (*str++ == '\\') ++str;
     //qout << "所得字符串：" << _value;
     return ++str;
@@ -1021,12 +1030,12 @@ char* YJson::print_string(const char* const str)
 }
 
 template<typename T>
-T YJson::parse_array(T value)
+T YJson::parse_array(T value, T end)
 {
     TYPE_CHAECK();
     //qout << "加载列表";
     YJson *child = nullptr;
-    _type = YJSON_TYPE::YJSON_ARRAY;
+    _type = YJson::Array;
     value=StrSkip(++value);
     if (*value==']')
     {
@@ -1034,8 +1043,8 @@ T YJson::parse_array(T value)
     }
     _child = child = new YJson;
     _child->_parent = this;
-    value = StrSkip(child->parse_value(StrSkip(value)));    /* skip any spacing, get the value. */
-    if (!*value) return T();
+    value = StrSkip(child->parse_value(StrSkip(value), end));    /* skip any spacing, get the value. */
+    if (value >= end) return end;
 
     while (*value==',')
     {
@@ -1047,14 +1056,14 @@ T YJson::parse_array(T value)
         child->_next = new_;
         new_->_prev = child;
         child = new_; child->_parent = this;
-        value = StrSkip(child->parse_value(StrSkip(value + 1)));
-        if (!*value) return T();
+        value = StrSkip(child->parse_value(StrSkip(value + 1), end));
+        if (value >= end) return end;
     }
 
     if (*value == ']') return value + 1;
     ep.first = true;
     ep.second = "未匹配到列表结尾‘]’。";
-    return T();
+    return end;
 }
 
 char* YJson::print_array()
@@ -1096,18 +1105,18 @@ char* YJson::print_array(int depth)
 }
 
 template<typename T>
-T YJson::parse_object(T value)
+T YJson::parse_object(T value, T end)
 {
     TYPE_CHAECK();
     //qout << "加载字典：";
     YJson *child = nullptr;
-    _type = YJSON_TYPE::YJSON_OBJECT;
+    _type = YJson::Object;
     value = StrSkip(++value);
     if (*value == '}') return value + 1;
     _child = child = new YJson;
     _child->_parent = this;
-    value = StrSkip(child->parse_string(StrSkip(value)));
-    if (!*value) return T();
+    value = StrSkip(child->parse_string(StrSkip(value), end));
+    if (value >= end) return end;
     child->_key = child->_value;
     child->_value = nullptr;
     //qout << "中间断开";
@@ -1115,9 +1124,9 @@ T YJson::parse_object(T value)
     {
         ep.first = true;
         ep.second = "错误：加载字典时，没有找到冒号。";
-        return T();
+        return end;
     }
-    value = StrSkip(child->parse_value(StrSkip(value + 1)));
+    value = StrSkip(child->parse_value(StrSkip(value + 1), end));
     while (*value==',')
     {
         if (*StrSkip(value+1)=='}')
@@ -1126,16 +1135,16 @@ T YJson::parse_object(T value)
         }
         YJson *new_ = new YJson;
         child->_next = new_; new_->_prev = child; child = new_; child->_parent = this;
-        value = StrSkip(child->parse_string(StrSkip(value+1)));
+        value = StrSkip(child->parse_string(StrSkip(value+1), end));
         child->_key = child->_value; child->_value = nullptr;
         if (*value!=':')
         {
             ep.first = true;
             ep.second = "错误：加载字典时，没有匹配到‘:’。";
-            return T();
+            return end;
         }
-        value = StrSkip(child->parse_value(StrSkip(value+1)));    /* skip any spacing, get the value. */
-        if (!(*value)) return T();
+        value = StrSkip(child->parse_value(StrSkip(value+1), end));    /* skip any spacing, get the value. */
+        if (!(*value)) return end;
     }
     
     if (*value=='}')
@@ -1145,7 +1154,7 @@ T YJson::parse_object(T value)
     }
     ep.first = true;
     ep.second = "错误：加载字典时，没有匹配到结尾‘}’。";
-    return T();
+    return end;
 }
 
 char* YJson::print_object()

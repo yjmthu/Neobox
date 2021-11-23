@@ -11,6 +11,10 @@
 #include "menu.h"
 #include "form.h"
 #include "wallpaper.h"
+#include "calculator.h"
+
+constexpr int MENU_WIDTH = 92;
+constexpr int MENU_HEIGHT = 330;
 
 Menu::Menu(QWidget* parent) :
     QMenu(parent)
@@ -24,6 +28,7 @@ Menu::~Menu()
 {
     qout << "析构menu开始";
     delete quitAct;
+    delete restartAct;
     delete shutdownAct;
     delete removePicAct;
     delete openFolderAct;
@@ -31,6 +36,7 @@ Menu::~Menu()
     delete settingDialogAct;
     delete nextPaperAct;
     delete prevPaperAct;
+    delete calculateAct;
     delete translateAct;
     qout << "析构menu结束";
 }
@@ -60,6 +66,10 @@ void Menu::initActions()
     settingDialogAct->setText("软件设置");
     addAction(settingDialogAct);
 
+    calculateAct = new QAction;
+    calculateAct->setText("科学计算");
+    addAction(calculateAct);
+
     translateAct = new QAction;
     translateAct->setText("划词翻译");
     translateAct->setCheckable(true);
@@ -84,6 +94,10 @@ void Menu::initActions()
     shutdownAct = new QAction;
     shutdownAct->setText("快速关机");
 	addAction(shutdownAct);
+
+    restartAct = new QAction;
+    restartAct->setText("快捷重启");
+    addAction(restartAct);
 
     quitAct = new QAction;
     quitAct->setText("本次退出");
@@ -137,6 +151,10 @@ void Menu::initMenuConnect()
         }
     });                                                                                  //打开壁纸设置界面
     connect(translateAct, &QAction::triggered, VarBox->form, &Form::enableTranslater);    //是否启用翻译功能
+    connect(calculateAct, &QAction::triggered, VarBox, [](){
+        Calculator lator;
+        lator.exec();
+    });
     translateAct->setChecked(VarBox->EnableTranslater);                                 //设置是否选中“划词翻译”
     connect(nextPaperAct, &QAction::triggered, VarBox->wallpaper, &Wallpaper::next);
     connect(prevPaperAct, &QAction::triggered, VarBox->wallpaper, &Wallpaper::prev);   //设置受否开机自启
@@ -162,7 +180,14 @@ void Menu::initMenuConnect()
     });                                                                               //是否自动移动鼠标防止息屏
 	connect(openFolderAct, SIGNAL(triggered()), this, SLOT(OpenFolder()));            //打开exe所在文件夹
     connect(removePicAct, &QAction::triggered, VarBox->wallpaper, &Wallpaper::dislike);          //重启电脑
-	connect(shutdownAct, SIGNAL(triggered()), this, SLOT(ShutdownComputer()));        //关闭电脑
+    connect(shutdownAct, &QAction::triggered, this, &Menu::ShutdownComputer);        //关闭电脑
+    connect(restartAct, &QAction::triggered, this,
+            std::bind((void (*)(const QString &, const QStringList&))VARBOX::runCmd, QString("shutdown"), QStringList({"-r", "-t", "0"})));
+//    connect(restartAct, &QAction::triggered, this, [](){
+//        VARBOX::runCmd("shutdown", QStringList({"-s", "-t", "30"}));
+//        //ShellExecuteA(NULL, "open", "shutdown -r -t 30", NULL, NULL, SW_DENORMAL);
+//    });
+
     connect(quitAct, &QAction::triggered, qApp, &QCoreApplication::quit);             // 退出程序
 }
 

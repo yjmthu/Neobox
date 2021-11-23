@@ -97,9 +97,12 @@ Translater::Translater() :
 Translater::~Translater()
 {
     qout << "析构Translater开始";
+    qout << "取消注册热键";
     UnregisterHotKey(HWND(winId()), M_WIN_HOT_KEY_SHIFT_Z);
     UnregisterHotKey(HWND(winId()), M_WIN_HOT_KEY_SHIFT_A);
+    qout << "删除mgr";
     delete mgr;
+    qout << "删除ui";
     delete ui;
     qout << "析构Translater结束";
 }
@@ -371,7 +374,7 @@ void Translater::getReply(const QByteArray& q)
         }
     });
     QString url = "http://api.fanyi.baidu.com/api/trans/vip/translate?q=%1&from=%2&to=%3&appid=%4&salt=%5&sign=%6";
-    mgr->get(QNetworkRequest(QUrl(url.arg(q, from, to, VarBox->AppId, salt, sign.data()))));
+    mgr->get(QNetworkRequest(QUrl(url.arg(q, from, to, VarBox->AppId, salt, sign))));
 }
 
 void Translater::setFix(bool checked)

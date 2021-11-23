@@ -29,8 +29,8 @@ public:
 
 private:
     friend void del_file(Dialog *di ,QString str);
-    Ui::Dialog* ui;
-	QButtonGroup* buttonGroup;                           //单选按钮组合，互斥，添加按钮id
+    Ui::Dialog* ui = nullptr;
+    QButtonGroup* buttonGroup = nullptr;                           //单选按钮组合，互斥，添加按钮id
 	void checkSettings();                                //读取注册表
 	void initChildren();
 	void initUi();

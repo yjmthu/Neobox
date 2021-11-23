@@ -84,22 +84,10 @@ VARBOX::VARBOX(int w, int h):
 {
     qout << "VarBox构造函数开始。";
     VarBox = this;
-    QDir::setCurrent(QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::HomeLocation) +  "/AppData/Local/SpeedBox"));
+    QString data_path = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::HomeLocation) +  "/AppData/Local/SpeedBox");
+    QDir().mkdir(data_path);
+    QDir::setCurrent(data_path);
     loadFunctions();
-    QSettings set("HKEY_CURRENT_USER\\Control Panel\\Desktop", QSettings::NativeFormat);
-    if (set.contains("WallPaper"))
-    {
-        QString temp_paper = set.value("WallPaper").toString();
-        if (!temp_paper.isEmpty())
-        {
-            auto s = reinterpret_cast<const wchar_t*>(temp_paper.utf16());
-            auto l = wcslen(s) + 1;
-            auto t = new wchar_t[l];
-            std::copy(s, s+l+1, t);
-            PicHistory.push_back(t);
-        }
-    }
-    CurPic = PicHistory.begin();
     initFile();
     initChildren();
     initBehaviors();
@@ -110,11 +98,13 @@ VARBOX::~VARBOX()
 {
     qout << "结构体析构中~";
     delete form;
+    qout << "析构任务栏类";
     delete tray;
+    qout << "析构壁纸类";
     delete wallpaper;
-    for (auto c: PicHistory)
-        delete [] c;
+    qout << "析构设置对话框";
     delete dialog;
+    qout << "析构桌面图标控制类";
     delete ControlDesktopIcon;
     delete [] AppId;
     delete [] PassWord;
@@ -188,7 +178,6 @@ void VARBOX::loadFunctions()
         }
         return false;
     };
-    SystemParametersInfo = std::bind(SystemParametersInfoW, SPI_SETDESKWALLPAPER, UINT(0), std::placeholders::_1, SPIF_SENDCHANGE | SPIF_UPDATEINIFILE);
     PathFileExists = [](const wchar_t* pszPath)->bool{
         typedef BOOL(WINAPI* pfnPathFileExists)(LPWSTR);
         pfnPathFileExists pPathFileExists = NULL;
@@ -420,10 +409,14 @@ label_2:
                     ControlDesktopIcon = new DesktopMask;
             }
             else
-                IniRead->setValue("ControlDesktopIcon", false);
+                IniRead->setValue("ControlDesktopIcon", false);  //enableUSBhelper
+
             safeEnum = IniRead->value("ColorTheme").toInt();
             if (safeEnum > 7) safeEnum = 0;
             CurTheme = static_cast<COLOR_THEME>(safeEnum);
+            IniRead->endGroup();
+            IniRead->beginGroup("USBhelper");
+            enableUSBhelper = IniRead->value("enableUSBhelper", enableUSBhelper).toBool();
             IniRead->endGroup();
             delete IniRead;
             qout << "开始读取风格";
@@ -452,7 +445,7 @@ label_3:
         for (const auto&c: lst)
             dir.mkdir(c);
         std::vector<QString>::const_iterator iter = lst.begin();
-        YJson json((apifile+".temp").toStdWString(), YJSON_ENCODE::UTF8);
+        YJson json((apifile+".temp").toStdWString(), YJson::UTF8);
         for (auto&c: json["Default"]["ApiData"])
             c["Folder"].setText((picfolder+"\\"+*iter++).toUtf8());
         for (auto&c: json["User"]["ApiData"])
@@ -463,16 +456,20 @@ label_3:
             c["Folder"].setText((picfolder+"\\"+c.getKeyString()).toUtf8());
             dir.mkdir(c["Folder"].getValueString());
         }
-        json.toFile(apifile.toStdWString(), YJSON_ENCODE::UTF8, true);
+        json.toFile(apifile.toStdWString(), YJson::UTF8, true);
         QFile::remove(apifile+".temp");
     }
 }
 
 void VARBOX::initChildren()
 {
+    qout << "开始创建基本成员";
     wallpaper = new Wallpaper;                           // 创建壁纸更换对象
+    qout << "任务栏";
     tray = new Tray;
+    qout << "悬浮窗";
     Form* form = new Form;
+    qout << "基本成员创建完毕!";
     static APPBARDATA abd = {0};
     abd.cbSize = sizeof(APPBARDATA);
     abd.hWnd = HWND(form->winId());
@@ -529,54 +526,6 @@ void VARBOX::sigleSave(QString group, QString key, QString value)
     IniWrite.beginGroup(group);
     IniWrite.setValue(key, value);
     IniWrite.endGroup();
-}
-
-//bool VARBOX::getWebCode(const std::string& url, QByteArray& src)
-//{
-//    QNetworkAccessManager* mgr = new QNetworkAccessManager();
-//    QNetworkRequest res(QUrl(url.c_str()));
-//    res.setTransferTimeout(5000);
-//    QEventLoop loop;
-//    //res.setHeader(QNetworkRequest::UserAgentHeader, "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36");
-//    QObject::connect(mgr, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
-//    QNetworkReply*rep = mgr->get(res);
-//    loop.exec();
-//    src = rep->readAll();
-//    mgr->deleteLater();
-//    return src.length();
-//}
-
-bool VARBOX::downloadImage(const std::string& url, const QString path)
-{
-    qout << "进入函数";
-    if (QFile::exists(path))
-        return true;
-    qout << "开始下载";
-    //std::cout << "提示" << url.c_str();
-    QNetworkRequest res;
-    res.setUrl(QUrl(url.c_str()));
-    res.setHeader(QNetworkRequest::UserAgentHeader, "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36");
-    QNetworkAccessManager* const mgr = new QNetworkAccessManager();
-    QEventLoop* loop = new QEventLoop(mgr);
-    QObject::connect(mgr, &QNetworkAccessManager::finished, loop, &QEventLoop::quit);
-    QNetworkReply* rep = mgr->get(res);
-    loop->exec();
-    QFile file(path);
-    if (file.open(QIODevice::WriteOnly))
-    {
-        file.write(rep->readAll());
-        file.close();
-        if (!file.size())
-        {
-            qout << "文件大小为0";
-            QFile::remove(path);
-            return false;
-        }
-        qout << file.size();
-    }
-    qout << "退出函数";
-    delete mgr;
-    return true;
 }
 
 wchar_t* VARBOX::runCmd(const QString& program, const QStringList& argument, short line)

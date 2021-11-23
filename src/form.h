@@ -12,6 +12,7 @@
 
 class QPropertyAnimation;
 class DesktopMask;
+class USBdriveHelper;
 namespace Ui {
 	class Form;
 }
@@ -28,7 +29,8 @@ protected:
     void enterEvent(QEnterEvent* event);
 	void leaveEvent(QEvent* event);
     bool nativeEvent(const QByteArray &eventType, void *message, long long *result);
-
+signals:
+    void appQuit();
 public:
 	explicit Form(QWidget* parent = nullptr);
     ~Form();
@@ -42,7 +44,7 @@ private:
     //Dialog* dialog;                              //设置对话
 	QPoint _startPos;                            //记录鼠标
     QPoint _endPos;                              //鼠标移动向
-	QTimer* monitor_timer;                       //每隔一秒钟刷新一次数据
+    QTimer* monitor_timer = nullptr;                       //每隔一秒钟刷新一次数据
     Translater* translater = nullptr;                      //翻译类，自带ui
 	bool moved = false;
 	void initForm();                             //根据设置文件初始化悬浮窗
@@ -51,7 +53,7 @@ private:
 	void get_net_usage();                        //读取网速
     QTimer* MouseMoveTimer = nullptr;              //用于定时移动鼠标，防止息屏
 
-	QPropertyAnimation* animation;               //贴边隐藏动画效果
+    QPropertyAnimation* animation = nullptr;               //贴边隐藏动画效果
 	void startAnimation(int width, int height);  // 隐藏/显示动画效果
 
 public slots:

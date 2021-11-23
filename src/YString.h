@@ -5,14 +5,14 @@
 #include <string>
 #include <deque>
 
-template <class T> void PX_UNUSED(T const&) {}
-typedef size_t(*PF1)(const wchar_t*);
-typedef size_t(*PF2)(const char*);
+template <typename ..._Ty> inline constexpr void PX_UNUSED(_Ty...) {}
 
 template <typename T=char, typename... Types>
 typename std::enable_if<std::is_same<T, wchar_t>::value || std::is_same<T, char>::value, size_t>::type
 strlen(const T* head, Types...args)
 {
+    typedef size_t(*PF1)(const wchar_t*);
+    typedef size_t(*PF2)(const char*);
     static const void* const str_cpoy_funcs[] = {(void*)((PF1)(wcslen)), (void*)((PF2)(strlen))};
     size_t len = ((typename std::conditional<std::is_same<T, wchar_t>::value,PF1,PF2>::type)(str_cpoy_funcs[std::is_same<T, char>::value]))(head);
     char array[] = {'\0', (len += strlen(args), '\0')...};

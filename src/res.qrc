@@ -22,5 +22,8 @@
         <file>icons/empty_zh.ico</file>
         <file>icons/drip_blue_pin.ico</file>
         <file>json/WallpaperApi.json</file>
+        <file>qss/calculater.qss</file>
+        <file>icons/Poison_Spider.ico</file>
+        <file>icons/Upan.ico</file>
     </qresource>
 </RCC>
