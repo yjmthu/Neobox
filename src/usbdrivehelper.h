@@ -14,6 +14,8 @@ class USBdriveHelper;
 class USBdriveHelper : public SpeedWidget<QDialog>
 {
     Q_OBJECT
+signals:
+    void appQuit();
 protected:
     void enterEvent(QEnterEvent* event);
     void leaveEvent(QEvent* event);

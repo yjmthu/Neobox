@@ -13,6 +13,7 @@ class Calculator : public SpeedWidget<QDialog>
     Q_OBJECT
 protected:
     void showEvent(QShowEvent* event);
+    bool eventFilter(QObject* target, QEvent* event);
 
 public:
     explicit Calculator(QWidget *parent = nullptr);

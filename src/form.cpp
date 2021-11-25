@@ -194,7 +194,8 @@ bool Form::nativeEvent(const QByteArray &, void *message, long long *)
             {
                 PDEV_BROADCAST_VOLUME lpdbv = (PDEV_BROADCAST_VOLUME)lpdb;
                 helper = new USBdriveHelper(FirstDriveFromMask(lpdbv->dbcv_unitmask));
-                connect(this, &Form::appQuit, this, [](){delete helper; helper = nullptr;});
+                connect(this, &Form::appQuit, this, [](){ delete helper; helper = nullptr; });
+                connect(helper, &USBdriveHelper::appQuit, this, [&](){ helper = nullptr;});
                 helper->show();
             }
             break;

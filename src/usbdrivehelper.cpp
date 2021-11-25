@@ -240,6 +240,7 @@ void USBdriveHelper::closeEvent(QCloseEvent *event)
     qout << "退出U盘管理";
     event->accept();
     deleteLater();
+    emit appQuit();
 }
 
 

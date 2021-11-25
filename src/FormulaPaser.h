@@ -22,6 +22,7 @@
 * 针对 wchar_t 和 char 做的区分.
 * 在本类中, 是替代 wcsncmp 和 strncmp 的更好的选择.
 */
+
 template <typename _Ty>
 bool m_strncmp(const _Ty* ptr1, const char* ptr2, size_t n)
 {
@@ -76,7 +77,7 @@ double _Base_FormulaPaser<_Ty, _String, _Istream, _Ostream>::_ans = 0;
 typedef double(*_Func_Type)(double);
 
 template <typename _Ty, typename _String, typename _Istream, typename _Ostream>
-const _Func_Type _Base_FormulaPaser<_Ty, _String, _Istream, _Ostream>::Function[21] {
+const _Func_Type _Base_FormulaPaser<_Ty, _String, _Istream, _Ostream>::Function[21]{
     [](double q)->double {return q; },
     (_Func_Type)sin, (_Func_Type)cos, (_Func_Type)tan,
     (_Func_Type)asin, (_Func_Type)acos, (_Func_Type)atan,
@@ -113,7 +114,6 @@ _Base_FormulaPaser<_Ty, _String, _Istream, _Ostream>::_Base_FormulaPaser(const _
     {
         if (!isascii(*end) || isspace(*end) || !(strchr("+-*/^().", *end) || isalnum(*end)))
         {
-            // std::cout << "e1";
             _error_state = _Error_State::Invalid;
             return;
         }
@@ -191,10 +191,15 @@ template <typename _Ty, typename _String, typename _Istream, typename _Ostream>
 const _Ty* _Base_FormulaPaser<_Ty, _String, _Istream, _Ostream>::_parse_pw(const _Ty* begin, const _Ty* end)
 {
     if (begin >= end) return nullptr;
-    // std::cout << "parse_pw is here. \\" << begin << "\\" << end << "\\\n";
+    // std::cout << "parse_md is here. \\" << begin << "\\" << end << "\\\n";
     const _Ty* ptr = _parse_si(begin, end);
-    if (*ptr != '^') return ptr;
-    return _parse_si(++ptr, end);
+    while (ptr && ptr < end && '^' == *ptr)
+    {
+        ptr = _parse_si(++ptr, end);
+        if (!ptr) return nullptr;
+    }
+    return ptr;
+
 }
 
 template <typename _Ty, typename _String, typename _Istream, typename _Ostream>
@@ -407,7 +412,7 @@ void _Base_FormulaPaser<_Ty, _String, _Istream, _Ostream>::_parse_all(const _Ty*
         return;
     }
     // std::cout << " =================== begin all ==================== \n";
-    const _Ty* ptr1 = strchr("+-*/", *begin) ? begin + 1 : begin;
+    const _Ty* ptr1 = strchr("+-", *begin) ? begin + 1 : begin;
     const _Ty* ptr2 = _parse_si(ptr1, end);
 
     if (ptr2 && ptr2 != end && !strchr("+-*/^", ptr2[1]))
@@ -430,8 +435,6 @@ void _Base_FormulaPaser<_Ty, _String, _Istream, _Ostream>::_parse_all(const _Ty*
                     _error_state = _Error_State::Wait;
                     return;
                 }
-                // std::cout << "-------------> ptr1: " << ptr1 << '\n';
-                // std::cout << "-------------> ptr2: " << ptr2 << '\n';
                 if (*ptr1 == '+')
                     _son.emplace_back(Sign::A, ++ptr1, ptr2);
                 else
@@ -506,7 +509,17 @@ void _Base_FormulaPaser<_Ty, _String, _Istream, _Ostream>::_parse_all(const _Ty*
                     _son.emplace_back();
                     if (*begin == '-') _son.back()._negative *= -1;
                     _son.back()._son.emplace_back(Sign::N, ptr1, ptr2);
-                    _son.back()._son.emplace_back(Sign::P, ++ptr2, end);
+                    while (ptr2 < end)
+                    {
+                        ptr1 = ++ptr2;
+                        ptr2 = _parse_si(ptr1, end);
+                        if (!ptr2)
+                        {
+                            _error_state = _Error_State::Invalid;
+                            return;
+                        }
+                        _son.back()._son.emplace_back(Sign::P, ptr1, ptr2);
+                    }
                     return;
                 }
                 if (*begin == '-') _negative *= -1;
@@ -620,7 +633,7 @@ _String _Base_FormulaPaser<_Ty, _String, _Istream, _Ostream>::outstr(bool rememb
 template <typename _Ty, typename _String, typename _Istream, typename _Ostream>
 void _Base_FormulaPaser<_Ty, _String, _Istream, _Ostream>::print(bool re)
 {
-    // std::cout << "value: " << _value << " child: " << _son.size() << " Operator: " << (int)_operation << (re ? " ||| \n" : " ||| ");
+    std::cout << "value: " << _value << " child: " << _son.size() << " Operator: " << (int)_operation << (re ? " ||| \n" : " ||| ");
     for (size_t i = 0; i < _son.size(); ++i)
     {
         _son[i].print(i == _son.size() - 1);
@@ -629,8 +642,8 @@ void _Base_FormulaPaser<_Ty, _String, _Istream, _Ostream>::print(bool re)
 
 template <typename _Ty>
 class FormulaPaser : private std::conditional_t<std::is_same<_Ty, char>::value,
-        _Base_FormulaPaser<_Ty, std::string, std::istringstream, std::ostringstream>,
-        _Base_FormulaPaser<_Ty,std::wstring, std::wistringstream, std::wostringstream>>
+    _Base_FormulaPaser<_Ty, std::string, std::istringstream, std::ostringstream>,
+    _Base_FormulaPaser<_Ty, std::wstring, std::wistringstream, std::wostringstream>>
 {
 private:
     typedef std::conditional_t<std::is_same<_Ty, char>::value, _Base_FormulaPaser<_Ty, std::string, std::istringstream, std::ostringstream>, _Base_FormulaPaser<_Ty, std::wstring, std::wistringstream, std::wostringstream>> _parent;
@@ -638,6 +651,7 @@ private:
     typedef std::conditional_t<std::is_same<_Ty, char>::value, std::ostringstream, std::wostringstream> _Ostream;
 public:
     using _parent::calculate;
-    FormulaPaser(const _Ty* text): _parent(text){};
+    using _parent::print;
+    FormulaPaser(const _Ty* text) : _parent(text) {};
     using _parent::outstr;
 };

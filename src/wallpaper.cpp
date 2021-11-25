@@ -89,7 +89,12 @@ Wallpaper::Wallpaper():
 Wallpaper::~Wallpaper()
 {
     delete mgr;
-    delete thrd;
+    if (thrd)
+    {
+        thrd->deleteLater();
+        qout << "等待线程析构中";
+        thrd->wait();
+    }
     delete timer;
     for (auto c: PicHistory)
         delete [] c;

@@ -20,6 +20,7 @@ Calculator::Calculator(QWidget *parent) :
     initSpeedBox(ui->frame, &Calculator::showMinimized, &Calculator::close, false);
     blank->minButton->setGeometry(ui->frame->width()-65,12,14,14);
     blank->closeButton->setGeometry(ui->frame->width()-30,12,14,14);
+    ui->plainTextEdit->installEventFilter(this);
 }
 
 Calculator::~Calculator()
@@ -50,6 +51,33 @@ void Calculator::showEvent(QShowEvent* event)
     ui->plainTextEdit->setFocusPolicy(Qt::FocusPolicy::StrongFocus);
     ui->plainTextEdit->setFocus();
     event->accept();
+}
+
+bool Calculator::eventFilter(QObject* target, QEvent* event)
+{
+    if (target == ui->plainTextEdit)
+    {
+        if (event->type() == QEvent::KeyPress)               //
+        {
+            QKeyEvent* k = static_cast<QKeyEvent*>(event);
+
+            if (k->key() == Qt::Key_Return || k->key() == Qt::Key_Equal)       //回车键
+            {
+                FormulaPaser<char> paser(ui->plainTextEdit->toPlainText().toStdString().c_str());
+                ui->lineEdit->setText(paser.outstr(true).c_str());
+                ui->plainTextEdit->setFocus();
+                event->accept();
+                return true;
+            }
+            else if (k->key() == Qt::Key_Delete)  //删除键
+            {
+                ui->plainTextEdit->clear();
+                event->accept();
+                return true;
+            }
+        }
+    }
+    return QWidget::eventFilter(target, event);
 }
 
 void Calculator::on_plainTextEdit_textChanged()
