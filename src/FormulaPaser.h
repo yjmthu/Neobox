@@ -50,7 +50,7 @@ protected:
 private:
     explicit _Base_FormulaPaser(const _Ty* begin, const _Ty* end);
     enum class Sign { A, S, D, M, P, N };
-    enum class Func { Def, Sin, Cos, Tan, Asin, Acos, Atan, Sinh, Cosh, Tanh, Asinh, Acosh, Atanh, Sqrt, Abs, Exp, Ln, Lg, Rad, Deg, Factorial };
+    enum class Func { Def, Sin, Cos, Tan, Asin, Acos, Atan, Sinh, Cosh, Tanh, Asinh, Acosh, Atanh, Sqrt, Abs, Exp, Ln, Lg, Rad, Deg, Fact };
     static constexpr double _PI_ = 3.141592653589793, _E_ = 2.718281828459045;
     Sign _operation = Sign::N;
     int _negative = 1;                   // 标记负号, 负负得正, 每次负号累积乘以-1
@@ -354,10 +354,10 @@ void _Base_FormulaPaser<_Ty, _String, _Istream, _Ostream>::_parse_val(const _Ty*
         _func = Func::Deg;
         --right;
     }
-    else if (m_strncmp<_Ty>(left, "factorial(", 10))
+    else if (m_strncmp<_Ty>(left, "fact(", 5))
     {
-        left += 10;
-        _func = Func::Factorial;
+        left += 5;
+        _func = Func::Fact;
         --right;
     }
     else if (m_strncmp<_Ty>(left, "abs(", 4))

@@ -475,7 +475,7 @@ void VARBOX::initChildren()
     abd.hWnd = HWND(form->winId());
     abd.uCallbackMessage = MSG_APPBAR_MSGID;
     SHAppBarMessage(ABM_NEW, &abd);
-    QObject::connect(QGuiApplication::primaryScreen(), &QScreen::geometryChanged, form, [this](const QRect&rect){
+    QObject::connect(QGuiApplication::primaryScreen(), &QScreen::geometryChanged, form, [this, form](const QRect&rect){
         RECT rt1; int w, h;
         GetWindowRect((HWND)(this->form->winId()), &rt1);
         w = GetSystemMetrics(SM_CXSCREEN);
@@ -492,17 +492,14 @@ void VARBOX::initChildren()
             ControlDesktopIcon->left->move(0, VarBox->ScreenHeight/2-5);
             ControlDesktopIcon->right->move(VarBox->ScreenWidth-1, VarBox->ScreenHeight/2-6);
         }
-        this->form->leaveEvent(nullptr);
-        QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
-        IniWrite.beginGroup("UI");
-        IniWrite.setValue("x", (int)rt2.left); IniWrite.setValue("y", (int)rt2.top);
-        IniWrite.endGroup();
+        form->keepInScreen();
     });
 }
 
 void VARBOX::initBehaviors()
 {
     form->show();                                                              //显示悬浮窗
+    form->keepInScreen();
 }
 
 void VARBOX::saveTrayStyle()

@@ -38,6 +38,14 @@ inline QString formatSpped(long long dw, bool up_down)
     return  QString("%1  %2 %3B").arg(units[up_down], QString::number(DW, 'f', 1), units[the_unit]);
 }
 
+inline void savePos()
+{
+    RECT rt; GetWindowRect(HWND(VarBox->form->winId()), &rt);
+    QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
+    IniWrite.beginGroup("UI");
+    IniWrite.setValue("x", (int)rt.left); IniWrite.setValue("y", (int)rt.top);
+    IniWrite.endGroup();
+}
 
 Form::Form(QWidget* parent) :
     QWidget(parent),
@@ -69,6 +77,26 @@ Form::~Form()
     qout << "析构Form结束";
 }
 
+void Form::keepInScreen()
+{
+    RECT rt;
+    GetWindowRect(HWND(winId()), &rt);
+    const auto w = (rt.right - rt.left), h = (rt.bottom - rt.top);
+    const auto sw = GetSystemMetrics(SM_CXSCREEN), sh = GetSystemMetrics(SM_CYSCREEN);
+    //qout << "当前宽度: " << rt.left << rt.right << rt.top << rt.bottom << sw << sh;
+    auto x = rt.left, y = rt.top;
+    if (x + 1 > sw)
+        x = sw - 2;
+    else if (rt.right < 1)
+        x = 2 - w;
+    if (y + 100 > sh)
+        y = sh - 100;
+    else if (rt.bottom < 1)
+        y = 2 - h;
+    SetWindowPos(HWND(winId()), HWND_TOPMOST, x, y, 0, 0, SWP_NOSIZE);
+    savePos();
+}
+
 void Form::initForm()
 {
     qout << "初始化悬浮窗界面";
@@ -97,6 +125,7 @@ void Form::initForm()
     IniRead.beginGroup("UI");
     SetWindowPos(HWND(winId()), HWND_TOPMOST, IniRead.value("x").toInt(), IniRead.value("y").toInt(), 0, 0, SWP_NOSIZE);
     IniRead.endGroup();
+
     if (VarBox->EnableTranslater)
     {
         enableTranslater(true);
@@ -107,15 +136,6 @@ void Form::initForm()
     }
 	ui->LabMemory->setMaximumWidth(30);
     qout << "初始化悬浮窗界面完毕";
-}
-
-inline void savePos()
-{
-    RECT rt; GetWindowRect(HWND(VarBox->form->winId()), &rt);
-    QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
-    IniWrite.beginGroup("UI");
-    IniWrite.setValue("x", (int)rt.left); IniWrite.setValue("y", (int)rt.top);
-    IniWrite.endGroup();
 }
 
 void Form::initConnects()

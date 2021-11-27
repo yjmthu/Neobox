@@ -271,7 +271,7 @@ void Calculator::on_pushButton_18_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("factorial(");
+    cursor.insertText("fact(");
     ui->plainTextEdit->setTextCursor(cursor);
 }
 

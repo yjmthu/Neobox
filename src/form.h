@@ -34,7 +34,7 @@ signals:
 public:
 	explicit Form(QWidget* parent = nullptr);
     ~Form();
-    //inline Dialog* getDialog() const { return dialog; };                              //设置对话
+    void keepInScreen();
 
 private:
     friend class Menu;  //friend class Translater; //右键菜单可以访问私有数据

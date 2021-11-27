@@ -6,13 +6,13 @@ QWidget {
 }
 
 QPlainTextEdit {
-    margin: 0px 3px 0px 3px;
+    margin: 0px 5px 0px 5px;
     background-color: white;
 }
 
 QLineEdit {
-    margin-left: 3px;
-    margin-right: 3px;
+    margin-left: 5px;
+    margin-right: 5px;
     border: gray;
     background-color: #dddddd;
 }
