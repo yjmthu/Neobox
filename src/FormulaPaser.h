@@ -95,6 +95,11 @@ protected:
         }
         std::stable_sort(text.begin(), text.end(), [](const _Ty& val1, const _Ty& val2)->bool { return val2 == ' ' && val1 != ' '; });
         typename _String::size_type pos = text.find(' ');
+        if (!pos)
+        {
+            _error_state = _Error_State::Null;
+            return;
+        }
         if (pos != _String::npos)
         {
             text.erase(text.begin() + pos, text.end());
