@@ -63,7 +63,7 @@ bool Calculator::eventFilter(QObject* target, QEvent* event)
 
             if (k->key() == Qt::Key_Return || k->key() == Qt::Key_Equal)       //回车键
             {
-                FormulaPaser<char> paser(ui->plainTextEdit->toPlainText().toStdString().c_str());
+                FormulaPaser<char> paser(ui->plainTextEdit->toPlainText().toStdString());
                 ui->lineEdit->setText(paser.outstr(true).c_str());
                 ui->plainTextEdit->setFocus();
                 event->accept();
@@ -82,7 +82,7 @@ bool Calculator::eventFilter(QObject* target, QEvent* event)
 
 void Calculator::on_plainTextEdit_textChanged()
 {
-    FormulaPaser<char> paser(ui->plainTextEdit->toPlainText().toStdString().c_str());
+    FormulaPaser<char> paser(ui->plainTextEdit->toPlainText().toStdString());
     ui->lineEdit->setText(paser.outstr(false).c_str());
     ui->plainTextEdit->setFocus();
 }
@@ -482,7 +482,7 @@ void Calculator::on_pushButton_41_clicked()
 
 void Calculator::on_pushButton_42_clicked()
 {
-    FormulaPaser<char> paser(ui->plainTextEdit->toPlainText().toStdString().c_str());
+    FormulaPaser<char> paser(ui->plainTextEdit->toPlainText().toStdString());
     ui->lineEdit->setText(paser.outstr(true).c_str());
     ui->plainTextEdit->setFocus();
 }
