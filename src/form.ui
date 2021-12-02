@@ -6,19 +6,19 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>92</width>
+    <width>100</width>
     <height>40</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>0</width>
-    <height>0</height>
+    <width>100</width>
+    <height>40</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>92</width>
+    <width>100</width>
     <height>40</height>
    </size>
   </property>
@@ -55,13 +55,13 @@
     <widget class="QFrame" name="frame">
      <property name="minimumSize">
       <size>
-       <width>72</width>
+       <width>100</width>
        <height>40</height>
       </size>
      </property>
      <property name="maximumSize">
       <size>
-       <width>92</width>
+       <width>100</width>
        <height>40</height>
       </size>
      </property>
@@ -98,36 +98,41 @@
        <number>0</number>
       </property>
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout_2">
-        <property name="spacing">
-         <number>0</number>
+       <widget class="QLabel" name="LabMemory">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
-        <item>
-         <widget class="QLabel" name="LabMemory">
-          <property name="font">
-           <font>
-            <family>Carattere</family>
-            <pointsize>18</pointsize>
-            <weight>75</weight>
-            <italic>false</italic>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="styleSheet">
-           <string notr="true">QLabel{
+        <property name="maximumSize">
+         <size>
+          <width>25</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLabel{
 	background-color: rgba(0, 0, 0, 0);
 	color: rgb(0, 255, 255);
 }</string>
-          </property>
-          <property name="text">
-           <string>0</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-       </layout>
+        </property>
+        <property name="text">
+         <string>0</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+        <property name="margin">
+         <number>0</number>
+        </property>
+        <property name="indent">
+         <number>0</number>
+        </property>
+        <property name="textInteractionFlags">
+         <set>Qt::LinksAccessibleByMouse</set>
+        </property>
+       </widget>
       </item>
       <item>
        <layout class="QVBoxLayout" name="verticalLayout">
@@ -147,14 +152,6 @@
             <width>16777215</width>
             <height>16777215</height>
            </size>
-          </property>
-          <property name="font">
-           <font>
-            <family>Nickainley</family>
-            <pointsize>9</pointsize>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
           </property>
           <property name="cursor">
            <cursorShape>PointingHandCursor</cursorShape>
@@ -188,14 +185,6 @@ border-top-right-radius: 5px;
             <width>16777215</width>
             <height>16777215</height>
            </size>
-          </property>
-          <property name="font">
-           <font>
-            <family>Nickainley</family>
-            <pointsize>9</pointsize>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
           </property>
           <property name="cursor">
            <cursorShape>PointingHandCursor</cursorShape>

@@ -1159,7 +1159,7 @@ background-color: rgb(0, 0, 0);</string>
                 <cursorShape>PointingHandCursor</cursorShape>
                </property>
                <property name="toolTip">
-                <string>打开目录</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;在 Explorer 中打开&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="text">
                 <string>打开</string>
@@ -1178,6 +1178,12 @@ background-color: rgb(0, 0, 0);</string>
              </item>
              <item row="1" column="2">
               <widget class="QPushButton" name="pushButton">
+               <property name="cursor">
+                <cursorShape>PointingHandCursor</cursorShape>
+               </property>
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;在 Explorer 中打开&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
                <property name="text">
                 <string>打开</string>
                </property>
@@ -1238,7 +1244,11 @@ background-color: rgb(0, 0, 0);</string>
                 </widget>
                </item>
                <item>
-                <widget class="QComboBox" name="cBxApis"/>
+                <widget class="QComboBox" name="cBxApis">
+                 <property name="cursor">
+                  <cursorShape>OpenHandCursor</cursorShape>
+                 </property>
+                </widget>
                </item>
               </layout>
              </item>
@@ -1260,6 +1270,9 @@ background-color: rgb(0, 0, 0);</string>
                </item>
                <item>
                 <widget class="QToolButton" name="toolButton_2">
+                 <property name="cursor">
+                  <cursorShape>PointingHandCursor</cursorShape>
+                 </property>
                  <property name="toolTip">
                   <string>*选择文件夹</string>
                  </property>
@@ -1547,7 +1560,7 @@ background-color: rgb(0, 0, 0);</string>
                   <cursorShape>PointingHandCursor</cursorShape>
                  </property>
                  <property name="toolTip">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;*清除用户的Speed Box设置,不清除已经下载图片和注册表，也不清除程序&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;*保存U盘小助手设置&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="text">
                   <string>保存</string>
@@ -1565,6 +1578,9 @@ background-color: rgb(0, 0, 0);</string>
               <layout class="QHBoxLayout" name="horizontalLayout_30">
                <item>
                 <widget class="QPushButton" name="pushButton_6">
+                 <property name="cursor">
+                  <cursorShape>PointingHandCursor</cursorShape>
+                 </property>
                  <property name="text">
                   <string>设置</string>
                  </property>
@@ -1721,6 +1737,9 @@ background-color: rgb(0, 0, 0);</string>
             <layout class="QHBoxLayout" name="horizontalLayout_25">
              <item>
               <widget class="QPushButton" name="pushButton_14">
+               <property name="cursor">
+                <cursorShape>PointingHandCursor</cursorShape>
+               </property>
                <property name="toolTip">
                 <string>https://yjmthu.github.io/Speed-Box</string>
                </property>
@@ -1731,6 +1750,9 @@ background-color: rgb(0, 0, 0);</string>
              </item>
              <item>
               <widget class="QPushButton" name="pushButton_13">
+               <property name="cursor">
+                <cursorShape>PointingHandCursor</cursorShape>
+               </property>
                <property name="text">
                 <string>版本信息</string>
                </property>
@@ -1738,6 +1760,12 @@ background-color: rgb(0, 0, 0);</string>
              </item>
              <item>
               <widget class="QPushButton" name="pushButton_10">
+               <property name="cursor">
+                <cursorShape>PointingHandCursor</cursorShape>
+               </property>
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;检查是否有可用更新&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
                <property name="text">
                 <string>检查更新</string>
                </property>
@@ -1747,6 +1775,9 @@ background-color: rgb(0, 0, 0);</string>
               <widget class="QPushButton" name="pushButton_12">
                <property name="enabled">
                 <bool>true</bool>
+               </property>
+               <property name="cursor">
+                <cursorShape>PointingHandCursor</cursorShape>
                </property>
                <property name="text">
                 <string>下载更新</string>

@@ -22,5 +22,7 @@
         <file>qss/calculater.qss</file>
         <file>icons/Poison_Spider.ico</file>
         <file>icons/Upan.ico</file>
+        <file>fonts/Carattere-Regular-small.ttf</file>
+        <file>fonts/Nickainley-Normal-small.ttf</file>
     </qresource>
 </RCC>
