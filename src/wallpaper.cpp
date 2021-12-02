@@ -21,7 +21,7 @@ const wchar_t* get_file_name(const wchar_t* file_path)
     const wchar_t* ptr = file_path;
     while (*++ptr);
     while (*--ptr != '\\');
-    return StrJoin<wchar_t>(++ptr);
+    return ++ptr;
 }
 
 void check_is_wallhaven(const wchar_t* pic, char* id)
@@ -103,7 +103,7 @@ Wallpaper::Wallpaper():
     }
     else qout << "不自动换";
     if (VarBox->AutoChange) timer->start();
-    connect(timer, &QTimer::timeout, this, &Wallpaper::push_back);
+    connect(timer, &QTimer::timeout, this, &Wallpaper::next);
 }
 
 Wallpaper::~Wallpaper()
@@ -728,39 +728,62 @@ void Wallpaper::prev()
 
 void Wallpaper::dislike()
 {
-    if (thrd)
-       return emit msgBox("和后台壁纸切换冲突，请稍后再试。", "提示");
-    thrd = QThread::create([this](){
-        qout << "不喜欢该壁纸。";
-        const wchar_t* pic_path = *CurPic;
-        const wchar_t* pic_name = get_file_name(pic_path);
-        char id[21] = { 0 };
-        check_is_wallhaven(pic_name, id);
-        if (*id)
+    qout << "不喜欢该壁纸。";
+    const wchar_t* pic_path = *CurPic;
+    const wchar_t* pic_name = get_file_name(pic_path);
+    char id[21] = { 0 };
+    check_is_wallhaven(pic_name, id);
+    if (*id)
+    {
+        YJson *json = new YJson(L"ImgData.json", YJson::AUTO);
+        YJson *blacklist = json->find("ImgUrls")->find("Blacklist");
+        blacklist->append(id);
+        YJson *black_id;
+        if (black_id = json->find("ImgUrls")->find("Used")->findByVal(id))
+            YJson::remove(black_id);
+        if (black_id = json->find("ImgUrls")->find("Unused")->findByVal(id))
+            YJson::remove(black_id);
+        json->toFile(L"ImgData.json", YJson::UTF8BOM, true);
+        delete  json;
+    }
+    DeleteFileW(pic_path);
+    delete [] pic_path;
+    CurPic = PicHistory.erase(CurPic);
+    if (CurPic != PicHistory.end())
+    {
+        if (thrd) return emit msgBox("和后台壁纸切换冲突，请稍后再试。", "提示");
+        if (!VarBox->PathFileExists(*CurPic))
         {
-            YJson *json = new YJson(L"ImgData.json", YJson::AUTO);
-            YJson *blacklist = json->find("ImgUrls")->find("Blacklist");
-            blacklist->append(id);
-            YJson *black_id;
-            if (black_id = json->find("ImgUrls")->find("Used")->findByVal(id)) YJson::remove(black_id);
-            if (black_id = json->find("ImgUrls")->find("Unused")->findByVal(id))
-                YJson::remove(black_id);
-            json->toFile(L"ImgData.json", YJson::UTF8BOM, true);
-            delete  json;
+            delete [] *CurPic;
+            CurPic = PicHistory.erase(CurPic);
+            return push_back();
         }
-        DeleteFileW(pic_path);
-        delete [] pic_path;
-        delete [] pic_name;
-        CurPic = PicHistory.erase(CurPic);
-        if (CurPic != PicHistory.begin())
-            --CurPic;
-    });
-    connect(thrd, &QThread::finished, this, [this](){
-        thrd->deleteLater(); thrd = nullptr;
-        qout << "设置壁纸!" ;
-        next();
-    });
-    thrd->start();
+        thrd = QThread::create([this](){
+            if (VarBox->GetFileAttributes(*CurPic))
+            {
+                if (VarBox->InternetGetConnectedState())
+                {
+                    if (!VarBox->OneDriveFile(*CurPic))
+                    {
+                        return;
+                    }
+                }
+                else
+                {
+                    emit msgBox("没有网络！", "提示");
+                    return;
+                }
+            }
+            SystemParametersInfo(*CurPic);
+        });
+        connect(thrd, &QThread::finished, this, [this](){
+            thrd->deleteLater();
+            thrd = nullptr;
+        });
+        thrd->start();
+        return;
+    }
+    push_back();
 }
 
 void Wallpaper::kill()
