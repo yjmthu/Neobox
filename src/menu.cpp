@@ -13,11 +13,12 @@
 #include "wallpaper.h"
 #include "calculator.h"
 
-constexpr int MENU_WIDTH = 92;
-constexpr int MENU_HEIGHT = 330;
+constexpr int MENU_WIDTH = 88;
+constexpr int MENU_HEIGHT = 319;
 
 Menu::Menu(QWidget* parent) :
-    QMenu(parent)
+    QMenu(parent),
+    actions(new QAction[11])
 {
     initActions();
 	initUi();
@@ -27,34 +28,19 @@ Menu::Menu(QWidget* parent) :
 Menu::~Menu()
 {
     qout << "析构menu开始";
-    delete quitAct;
-    delete restartAct;
-    delete shutdownAct;
-    delete removePicAct;
-    delete openFolderAct;
-    delete noSleepAct;
-    delete settingDialogAct;
-    delete nextPaperAct;
-    delete prevPaperAct;
-    delete calculateAct;
-    delete translateAct;
+    delete [] actions;
     qout << "析构menu结束";
 }
 
 void Menu::initUi()
 {
     setWindowFlag(Qt::FramelessWindowHint);                       //没有任务栏图标
-    setAttribute(Qt::WA_TranslucentBackground, true);                   //背景透明
+    setAttribute(Qt::WA_TranslucentBackground, true);             //背景透明
     setAttribute(Qt::WA_DeleteOnClose, true);
     QFile qss(":/qss/menu_style.qss");                            //读取样式表
 	qss.open(QFile::ReadOnly);
 	setStyleSheet(qss.readAll());
     qss.close();
-
-    QFont font;
-    font.setFamily(QFontDatabase::applicationFontFamilies(QFontDatabase::addApplicationFont(":/fonts/smallkaiti.ttf")).at(0));
-    font.setPointSize(10);
-    setFont(font);
 
     setMaximumSize(MENU_WIDTH, MENU_HEIGHT);                      //限定大小
 	setMinimumSize(MENU_WIDTH, MENU_HEIGHT);
@@ -62,63 +48,29 @@ void Menu::initUi()
 
 void Menu::initActions()
 {
-    settingDialogAct = new QAction;
-    settingDialogAct->setText("软件设置");
-    addAction(settingDialogAct);
-
-    calculateAct = new QAction;
-    calculateAct->setText("科学计算");
-    addAction(calculateAct);
-
-    translateAct = new QAction;
-    translateAct->setText("划词翻译");
-    translateAct->setCheckable(true);
-    addAction(translateAct);
-
-    prevPaperAct = new QAction;
-    prevPaperAct->setText("上一张图");
-    addAction(prevPaperAct);
-
-    nextPaperAct = new QAction;
-    nextPaperAct->setText("下一张图");
-    addAction(nextPaperAct);
-
-    removePicAct = new QAction;
-    removePicAct->setText("不看此图");
-    addAction(removePicAct);
-
-    openFolderAct = new QAction;
-    openFolderAct->setText("打开目录");
-	addAction(openFolderAct);
-
-    shutdownAct = new QAction;
-    shutdownAct->setText("快速关机");
-	addAction(shutdownAct);
-
-    restartAct = new QAction;
-    restartAct->setText("快捷重启");
-    addAction(restartAct);
-
-    quitAct = new QAction;
-    quitAct->setText("本次退出");
-	addAction(quitAct);
-
-    noSleepAct = new QAction;
-    noSleepAct->setText("防止息屏");
-    noSleepAct->setCheckable(true);
-    addAction(noSleepAct);
+    constexpr char lst[11][13] = {
+        "软件设置", "科学计算", "划词翻译", "上一张图", "下一张图",
+        "不看此图", "打开目录", "快速关机", "快捷重启", "本次退出",
+        "防止息屏"
+    };
+    for (int i = 0; i < 11; ++i)
+    {
+        actions[i].setText(lst[i]);
+        addAction(actions+i);
+    }
+    actions[2].setCheckable(true);
+    actions[10].setCheckable(true);
 }
-
 
 void Menu::showEvent(QShowEvent *event)
 {
-    translateAct->setChecked(VarBox->EnableTranslater);
+    actions[2].setChecked(VarBox->EnableTranslater);
     event->accept();
 }
 
-void Menu::Show(int x, int y)           //自动把右键菜单移动到合适位置
+void Menu::Show(int x, int y)                   //自动把右键菜单移动到合适位置
 {
-    noSleepAct->setChecked(VarBox->form->MouseMoveTimer);
+    actions[10].setChecked(VarBox->form->MouseMoveTimer);
 	int px, py;
     if (x + MENU_WIDTH < VarBox->ScreenWidth)   //菜单右边界不超出屏幕时
 		px = x;
@@ -134,7 +86,7 @@ void Menu::Show(int x, int y)           //自动把右键菜单移动到合适�
 
 void Menu::initMenuConnect()
 {
-    connect(settingDialogAct, &QAction::triggered, [](){
+    connect(actions, &QAction::triggered, [](){
         if (VarBox->dialog)
         {
             if (VarBox->dialog->isVisible())
@@ -149,46 +101,41 @@ void Menu::initMenuConnect()
             *const_cast<Dialog**>(&(VarBox->dialog)) = new Dialog;
             VarBox->dialog->show();
         }
-    });                                                                                  //打开壁纸设置界面
-    connect(translateAct, &QAction::triggered, VarBox->form, &Form::enableTranslater);    //是否启用翻译功能
-    connect(calculateAct, &QAction::triggered, VarBox, [](){
+    });                                         //打开壁纸设置界面
+    connect(actions+1, &QAction::triggered, VarBox, [](){
         Calculator lator;
         lator.exec();
     });
-    translateAct->setChecked(VarBox->EnableTranslater);                                 //设置是否选中“划词翻译”
-    connect(nextPaperAct, &QAction::triggered, VarBox->wallpaper, &Wallpaper::next);
-    connect(prevPaperAct, &QAction::triggered, VarBox->wallpaper, &Wallpaper::prev);   //设置受否开机自启
-    connect(noSleepAct, &QAction::triggered, VarBox, [=](bool checked){
-        if (checked)                                                                      //启用自动移动鼠标
+    connect(actions+2, &QAction::triggered, VarBox->form, &Form::enableTranslater);    //是否启用翻译功能
+    actions[2].setChecked(VarBox->EnableTranslater);                                   //设置是否选中“划词翻译”
+    connect(actions+4, &QAction::triggered, VarBox->wallpaper, &Wallpaper::next);
+    connect(actions+3, &QAction::triggered, VarBox->wallpaper, &Wallpaper::prev);      //设置受否开机自启                                                                              //是否自动移动鼠标防止息屏
+    connect(actions+5, &QAction::triggered, VarBox->wallpaper, &Wallpaper::dislike);
+    connect(actions+6, SIGNAL(triggered()), this, SLOT(OpenFolder()));                 //打开exe所在文件夹
+    connect(actions+7, &QAction::triggered, this, &Menu::ShutdownComputer);            //关闭电脑
+    connect(actions+8, &QAction::triggered, this,
+            std::bind((void (*)(const QString &, const QStringList&))VARBOX::runCmd, QString("shutdown"), QStringList({"-r", "-t", "0"})));
+    connect(actions+9, &QAction::triggered, qApp, &QCoreApplication::quit);            // 退出程序
+    connect(actions+10, &QAction::triggered, VarBox, [=](bool checked){
+        if (checked)                                                                   //启用自动移动鼠标
         {
             VarBox->form->MouseMoveTimer = new QTimer;
             VarBox->form->MouseMoveTimer->setInterval(45000);
             connect(VarBox->form->MouseMoveTimer, &QTimer::timeout, [](){
                 int X = 1;
                 if (QCursor::pos().x() == VarBox->ScreenWidth) X = -1;
-                mouse_event(MOUSEEVENTF_MOVE, X, 0, 0, 0);                                        //移动一个像素
-                mouse_event(MOUSEEVENTF_MOVE, -X, 0, 0, 0);                                       //移回原来的位置
+                mouse_event(MOUSEEVENTF_MOVE, X, 0, 0, 0);                            //移动一个像素
+                mouse_event(MOUSEEVENTF_MOVE, -X, 0, 0, 0);                           //移回原来的位置
             });
             VarBox->form->MouseMoveTimer->start();
         }
-        else                                                                              //禁用自动移动鼠标
+        else                                                                          //禁用自动移动鼠标
         {
             VarBox->form->MouseMoveTimer->stop();
             delete VarBox->form->MouseMoveTimer;
             VarBox->form->MouseMoveTimer = nullptr;
         }
-    });                                                                               //是否自动移动鼠标防止息屏
-	connect(openFolderAct, SIGNAL(triggered()), this, SLOT(OpenFolder()));            //打开exe所在文件夹
-    connect(removePicAct, &QAction::triggered, VarBox->wallpaper, &Wallpaper::dislike);          //重启电脑
-    connect(shutdownAct, &QAction::triggered, this, &Menu::ShutdownComputer);        //关闭电脑
-    connect(restartAct, &QAction::triggered, this,
-            std::bind((void (*)(const QString &, const QStringList&))VARBOX::runCmd, QString("shutdown"), QStringList({"-r", "-t", "0"})));
-//    connect(restartAct, &QAction::triggered, this, [](){
-//        VARBOX::runCmd("shutdown", QStringList({"-s", "-t", "30"}));
-//        //ShellExecuteA(NULL, "open", "shutdown -r -t 30", NULL, NULL, SW_DENORMAL);
-//    });
-
-    connect(quitAct, &QAction::triggered, qApp, &QCoreApplication::quit);             // 退出程序
+    });
 }
 
 

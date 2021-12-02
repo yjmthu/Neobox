@@ -95,7 +95,7 @@ enum class TaskBarCenterState
     TASK_RIGHT
 };
 
-class Form; class Dialog; class Wallpaper; class Tray; class MenuWallpaper; struct IAccessible; //void* PMIB_IFTABLE;
+class Form; class Dialog; class Wallpaper; class Tray; struct IAccessible; //void* PMIB_IFTABLE;
 class DesktopMask;
 typedef ULONG(WINAPI* pfnGetAdaptersAddresses)(_In_ ULONG Family, _In_ ULONG Flags, _Reserved_ PVOID Reserved, _Out_writes_bytes_opt_(*SizePointer) void* AdapterAddresses, _Inout_ PULONG SizePointer);
 typedef DWORD(WINAPI* pfnGetIfTable)(_Out_writes_bytes_opt_(*pdwSize) PMIB_IFTABLE pIfTable, _Inout_ PULONG pdwSize, _In_ BOOL bOrder);

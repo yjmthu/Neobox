@@ -35,7 +35,7 @@ inline QString formatSpped(long long dw, bool up_down)
 			the_unit++;
 		}
 	}
-    return  QString("%1  %2 %3B").arg(units[up_down], QString::number(DW, 'f', 1), units[the_unit]);
+    return  QString("%1 %2 %3B").arg(units[up_down], QString::number(DW, 'f', 1), units[the_unit]);
 }
 
 inline void savePos()
@@ -102,20 +102,20 @@ void Form::initForm()
     qout << "初始化悬浮窗界面";
     setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
     setAttribute(Qt::WA_TranslucentBackground);
-    int font_use = QFontDatabase::addApplicationFont(":/fonts/qitijian.otf");
-    QStringList fontFamilies = QFontDatabase::applicationFontFamilies(font_use);
-    QFont font;
-    font.setFamily(fontFamilies.at(0));
-    font.setPointSize(18);
-    font.setBold(true);
-    ui->LabMemory->setFont(font);
-    font_use = QFontDatabase::addApplicationFont(":/fonts/netspeed.ttf");
-    fontFamilies = QFontDatabase::applicationFontFamilies(font_use);
-    font.setFamily(fontFamilies.at(0));
-    font.setPointSize(8);
-    font.setBold(true);
-    ui->Labdown->setFont(font);
-    ui->Labup->setFont(font);
+//    int font_use = QFontDatabase::addApplicationFont(":/fonts/qitijian.otf");
+//    QStringList fontFamilies = QFontDatabase::applicationFontFamilies(font_use);
+//    QFont font;
+//    font.setFamily(fontFamilies.at(0));
+//    font.setFamily("微软雅黑");
+//    font.setPointSize(8);
+//    font.setBold(false);
+//    ui->Labdown->setFont(font);
+//    ui->Labup->setFont(font);
+//    font.setFamily("方正启体简体");
+//    font.setPointSize(17);
+//    font.setLetterSpacing(QFont::AbsoluteSpacing, -1);
+//    font.setBold(true);
+//    ui->LabMemory->setFont(font);
     //setStyleSheet("background:transparent");
 	setMinimumSize(FORM_WIDTH, FORM_HEIGHT);
 	setMaximumSize(FORM_WIDTH, FORM_HEIGHT);
@@ -140,7 +140,6 @@ void Form::initForm()
 
 void Form::initConnects()
 {
-    // dialog = new Dialog;                                             //dialog要比menu先定义，它是menu的依赖。
 	monitor_timer = new QTimer;
 	animation = new QPropertyAnimation(this, "geometry");                  //用于贴边隐藏的动画
     connect(monitor_timer, &QTimer::timeout, [this](){

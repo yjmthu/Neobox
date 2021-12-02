@@ -2,15 +2,16 @@
     border-radius:4px;
     background-color: rgba(192,192,192,150);
     color: black;
+    font: 10pt "楷体";
 }
 
 QMenu::item{
     background-color: transparent;
-    padding: 8px 5px;
+    padding: 8px 4px;
 }
 
 QMenu::item:selected{
     background-color: white;
     border-radius: 4px;
-    padding: 8px 5px;
+    padding: 8px 4px;
 }

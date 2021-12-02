@@ -35,7 +35,7 @@
   <property name="toolTip">
    <string>行動是治癒恐懼的良藥，而猶豫、拖延將不斷滋養恐懼</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_2">
+  <layout class="QHBoxLayout" name="horizontalLayout_2">
    <property name="spacing">
     <number>0</number>
    </property>
@@ -98,33 +98,36 @@
        <number>0</number>
       </property>
       <item>
-       <widget class="QLabel" name="LabMemory">
-        <property name="maximumSize">
-         <size>
-          <width>45</width>
-          <height>30</height>
-         </size>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <property name="spacing">
+         <number>0</number>
         </property>
-        <property name="font">
-         <font>
-          <family>黑体</family>
-          <pointsize>18</pointsize>
-         </font>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">QLabel{
+        <item>
+         <widget class="QLabel" name="LabMemory">
+          <property name="font">
+           <font>
+            <family>Carattere</family>
+            <pointsize>18</pointsize>
+            <weight>75</weight>
+            <italic>false</italic>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">QLabel{
 	background-color: rgba(0, 0, 0, 0);
 	color: rgb(0, 255, 255);
-	margin-bottom: 4px;
 }</string>
-        </property>
-        <property name="text">
-         <string>0</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
+          </property>
+          <property name="text">
+           <string>0</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item>
        <layout class="QVBoxLayout" name="verticalLayout">
@@ -145,6 +148,14 @@
             <height>16777215</height>
            </size>
           </property>
+          <property name="font">
+           <font>
+            <family>Nickainley</family>
+            <pointsize>9</pointsize>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
           <property name="cursor">
            <cursorShape>PointingHandCursor</cursorShape>
           </property>
@@ -160,7 +171,7 @@ border-top-right-radius: 5px;
 }</string>
           </property>
           <property name="text">
-           <string>↑  0.0 B</string>
+           <string>↑ 0.0 B</string>
           </property>
          </widget>
         </item>
@@ -178,6 +189,14 @@ border-top-right-radius: 5px;
             <height>16777215</height>
            </size>
           </property>
+          <property name="font">
+           <font>
+            <family>Nickainley</family>
+            <pointsize>9</pointsize>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
           <property name="cursor">
            <cursorShape>PointingHandCursor</cursorShape>
           </property>
@@ -189,7 +208,7 @@ border-top-right-radius: 5px;
 }</string>
           </property>
           <property name="text">
-           <string>↓  0.0 B</string>
+           <string>↓ 0.0 B</string>
           </property>
          </widget>
         </item>

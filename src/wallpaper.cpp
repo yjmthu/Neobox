@@ -58,6 +58,7 @@ Wallpaper::Wallpaper():
     thrd(nullptr), mgr(nullptr), applyClicked(false),
     update(false), url(), bing_api(), bing_folder(), image_path(),  image_name(), timer(new QTimer)
 {
+    connect(this, &Wallpaper::msgBox, VarBox, std::bind(VARBOX::MSG, std::placeholders::_1, std::placeholders::_2, QMessageBox::Ok));
     QSettings set("HKEY_CURRENT_USER\\Control Panel\\Desktop", QSettings::NativeFormat);
     if (set.contains("WallPaper"))
     {
@@ -76,14 +77,33 @@ Wallpaper::Wallpaper():
     timer->setInterval(VarBox->TimeInterval * 60000);
     if (VarBox->FirstChange){
         qout << "自动换";
-        push_back();
+        if (!VarBox->InternetGetConnectedState())
+        {
+            thrd = QThread::create([=](){
+                for (int i = 0; i < 300; ++i)
+                {
+                    Sleep(200);
+                    if (VarBox->InternetGetConnectedState())
+                    {
+                        push_back();
+                        break;
+                    }
+                }
+            });
+            connect(thrd, &QThread::finished, this, [this](){
+                thrd->deleteLater();
+                thrd = nullptr;
+            });
+            thrd->start();
+        }
+        else
+            push_back();
        static const char _ = VarBox->AutoSaveBingPicture && (set_from_Bing(), 1);
        PX_UNUSED(_);
     }
     else qout << "不自动换";
     if (VarBox->AutoChange) timer->start();
     connect(timer, &QTimer::timeout, this, &Wallpaper::push_back);
-    connect(this, &Wallpaper::msgBox, VarBox, std::bind(VARBOX::MSG, std::placeholders::_1, std::placeholders::_2, QMessageBox::Ok));
 }
 
 Wallpaper::~Wallpaper()
