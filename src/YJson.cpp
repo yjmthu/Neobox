@@ -459,6 +459,7 @@ YJson *YJson::append(const std::string &str, const char *key)
     YJson* child = append(YJson::String);
     child->_value = new char[str.length()+1] { 0 };
     std::copy(str.begin(), str.end(), child->_value);
+    child->_value[str.length()] = 0;
     if (key) child->_key = StrJoin<char>(key);
     return child;
 }

@@ -393,6 +393,10 @@ void Wallpaper::get_url_from_Wallhaven(YJson* jsonArray)
             if (js->find("error"))  //{"error":"Not Found"}
             {
                 delete js;
+                delete k;
+                mgr->deleteLater();
+                mgr = nullptr;
+                emit msgBox("该页面范围下没有壁纸, 请更换壁纸类型或者页面位置!", "出错");
                 return ;
             }
             YJson* ptr = js->find("data")->getChild();
@@ -409,7 +413,21 @@ void Wallpaper::get_url_from_Wallhaven(YJson* jsonArray)
                     }
                     urllist->append(wn);
                 } while (ptr = ptr->getNext());
+                qout << "发送请求";
                 mgr->get(QNetworkRequest(QUrl((url + "&page=" + std::to_string(++*k)).c_str())));
+            }
+            else
+            {
+                delete k;
+                mgr->deleteLater();
+                mgr = nullptr;
+                if (urllist->getChild())
+                    _set_w(urllist);
+                else
+                {
+                    delete jsonArray->getTop();
+                    emit msgBox("该页面范围下没有壁纸, 请更换壁纸类型或者页面位置!", "出错");
+                }
             }
             delete js;
         }

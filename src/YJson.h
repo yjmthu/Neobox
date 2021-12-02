@@ -52,7 +52,7 @@ public:
     inline YJson& operator[](const char* key) const { return *find(key); }
     inline operator bool() const { const YJson* s = this; return s; };
     inline void setText(const char* val) {delete _child; _child = nullptr; delete [] _value; auto len = strlen(val)+1; _value = new char[len]; std::copy(val, val+len, _value); _type=YJson::String;};
-    inline void setText(const std::string& val) {delete _child; _child = nullptr; delete [] _value; _value = new char[val.length()+1]; std::copy(val.begin(), val.end(), _value); _type=YJson::String;};
+    inline void setText(const std::string& val) {delete _child; _child = nullptr; delete [] _value; _value = new char[val.length()+1]; std::copy(val.begin(), val.end(), _value); _value[val.length()] = 0; _type=YJson::String;};
     inline void setValue(double val) {delete _child; _child = nullptr; delete [] _value; _value = new char[sizeof (double)]; std::copy((char*)&val, (char*)&val+sizeof (val), _value); _type=YJson::Number;};
     inline void setValue(int val) {setValue(static_cast<double>(val));};
     inline void setNull() {delete _child; _child = nullptr; delete [] _value; _value = nullptr; _type=YJson::Null;}
