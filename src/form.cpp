@@ -22,7 +22,7 @@ MIB_IFTABLE *mi;    //网速结构
 
 inline QString formatSpped(long long dw, bool up_down)
 {
-    static const char* units[] = { "\342\206\221", "\342\206\223", "", "K", "M" };
+    static const char* units[] = { u8"↑", u8"↓", "", "K", "M" };
 	long double DW = dw;
 	ushort the_unit = 2;
 	if (DW >= 1024)
