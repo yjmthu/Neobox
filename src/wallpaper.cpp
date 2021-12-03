@@ -140,7 +140,14 @@ void Wallpaper::_set_w(YJson* jsonArray)
             {
                 qout << "本地找不到文件, 直接开始下载";
                 mgr = new QNetworkAccessManager;
+                mgr->setTransferTimeout(30000);
                 connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep)->void{
+                    if (rep->error() != QNetworkReply::NoError)
+                    {
+                        mgr->deleteLater();
+                        mgr = nullptr;
+                        return;
+                    }
                     QFile file(img);
                     qout << "下载图片成功!";
                     if (file.open(QIODevice::WriteOnly))
@@ -222,6 +229,12 @@ void Wallpaper::_set_b(YJson * file_data)
         mgr = new QNetworkAccessManager;
         qout << "检查一下";
         connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep)->void{
+            if (rep->error() != QNetworkReply::NoError)
+            {
+                mgr->deleteLater();
+                mgr = nullptr;
+                return;
+            }
             QFile file(bing_name);
             if (file.open(QIODevice::WriteOnly))
             {
@@ -238,6 +251,7 @@ void Wallpaper::_set_b(YJson * file_data)
             mgr = nullptr;
             if (VarBox->PaperType == PAPER_TYPE::Bing) set_wallpaper(bing_name);
         });
+        mgr->setTransferTimeout(30000);
         connect(mgr->get(QNetworkRequest(QUrl(img_url.c_str()))), &QNetworkReply::errorOccurred, this, [this](){
             mgr->deleteLater();
             mgr = nullptr;
@@ -386,6 +400,14 @@ void Wallpaper::get_url_from_Wallhaven(YJson* jsonArray)
     mgr = new QNetworkAccessManager;
     int *k = new int(5 * (VarBox->PageNum - 1) + 1);
     connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep){
+        if (rep->error() != QNetworkReply::NoError)
+        {
+            delete k;
+            delete jsonArray->getTop();
+            mgr->deleteLater();
+            mgr = nullptr;
+            return;
+        }
         qout << "一轮壁纸链接请求结束";
         if (*k <= 5 * VarBox->PageNum)
         {
@@ -448,6 +470,7 @@ void Wallpaper::get_url_from_Wallhaven(YJson* jsonArray)
             }
         }
     });
+    mgr->setTransferTimeout(30000);
     mgr->get(QNetworkRequest(QUrl((url + "&page=" + std::to_string(*k)).c_str())));
 }
 
@@ -456,6 +479,12 @@ void Wallpaper::get_url_from_Bing()
     qout << "获取必应链接";
     mgr = new QNetworkAccessManager;
     connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep){
+        if (rep->error() != QNetworkReply::NoError)
+        {
+            mgr->deleteLater();
+            mgr = nullptr;
+            return;
+        }
         qout << "必应请求完成";
         YJson bing_data(rep->readAll());
         qout << rep->readAll();
@@ -465,6 +494,7 @@ void Wallpaper::get_url_from_Bing()
         mgr = nullptr;
         _set_b(&bing_data);
     });
+    mgr->setTransferTimeout(30000);
     mgr->get(QNetworkRequest(bing_api));
 }
 
@@ -537,6 +567,12 @@ void Wallpaper::set_from_Other()
 {
     mgr = new QNetworkAccessManager;
     connect(mgr, &QNetworkAccessManager::finished, this, [this](QNetworkReply* rep){
+        if (rep->error() != QNetworkReply::NoError)
+        {
+            mgr->deleteLater();
+            mgr = nullptr;
+            return;
+        }
         QString path =  image_path + QDateTime::currentDateTime().toString("\\" + image_name);
         qout << "其它壁纸: " << path << url.c_str();
         QFile file(path);
@@ -556,6 +592,7 @@ void Wallpaper::set_from_Other()
         mgr->deleteLater();
         mgr = nullptr;
     });
+    mgr->setTransferTimeout(30000);
     mgr->get(QNetworkRequest(QUrl(url.c_str())));
 }
 
