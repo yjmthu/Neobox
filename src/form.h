@@ -7,7 +7,7 @@
 #include "menu.h"
 
 
-#define FORM_WIDTH  100
+#define FORM_WIDTH  92
 #define FORM_HEIGHT 40
 
 class QPropertyAnimation;
