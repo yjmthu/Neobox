@@ -1,6 +1,6 @@
 {
     "Platform": "Winindows 10 | Winindows 11; 64bit",
-    "Latest Version": "21.12.4",
+    "Latest Version": "21.12.3",
     "Qt Version": "6.2.1",
     "Files": {
         "main": "https://gitee.com/yjmthu/Speed-Box/raw/main/update/SpeedBox.exe",
