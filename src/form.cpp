@@ -103,13 +103,14 @@ void Form::initForm()
     setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
     setAttribute(Qt::WA_TranslucentBackground);
     QFont font;
-    font.setFamily(QFontDatabase::applicationFontFamilies(QFontDatabase::addApplicationFont(":/fonts/Nickainley-Normal-small.ttf")).at(0));
-    font.setPointSize(9);
+    QFontDatabase::addApplicationFont(":/fonts/Nickainley-Normal-small.ttf");
+    QFontDatabase::addApplicationFont(":/fonts/Carattere-Regular-small.ttf");
+    font.setFamily("Nickainley Normal");
+    font.setPointSize(8);
     font.setBold(true);
     ui->Labdown->setFont(font);
     ui->Labup->setFont(font);
-
-    font.setFamily(QFontDatabase::applicationFontFamilies(QFontDatabase::addApplicationFont(":/fonts/Carattere-Regular-small.ttf")).at(0));
+    font.setFamily("Carattere");
     font.setPointSize(17);
     font.setBold(true);
     ui->LabMemory->setFont(font);
