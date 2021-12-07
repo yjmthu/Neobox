@@ -9,6 +9,7 @@ class QNetworkConfigurationManager;
 #include <QString>
 #include <QUrl>
 #include <QNetworkAccessManager>
+#include <random>
 
 class Wallpaper: public QObject
 {
@@ -18,17 +19,18 @@ signals:
     void msgBox(const char* str, const char* title);
     void setFailed(const char*);
 private:
+    std::random_device _rd; std::mt19937 _gen;
     const std::function<bool(void*)> SystemParametersInfo;
     void _set_w(YJson*);
     void _set_b(YJson*);
     bool set_wallpaper(const QString& pic);
-    void set_from_Wallhaven();           //从ImgData.db中选取链接下载图片设置壁纸，返回成功状态
-    void set_from_Bing();            //从必应下载壁纸，根据传入的布尔值决定是否设置为壁纸
-    void set_from_Native();                //从本地文件夹选取图片设为壁纸
-    void set_from_Advance();             //根据高级命令设置壁纸
-    void set_from_Other();                //从Wallhaven获取120个壁纸链接
+    void set_from_Wallhaven();            //从ImgData.json中选取链接下载图片设置壁纸，返回成功状态
+    void set_from_Bing();                 //从必应下载壁纸，根据传入的布尔值决定是否设置为壁纸
+    void set_from_Native();               //从本地文件夹选取图片设为壁纸
+    void set_from_Advance();              //根据高级命令设置壁纸
+    void set_from_Other();                //使用其它Api
     void get_url_from_Wallhaven(YJson* urlObject);   //从Wallhaven获取120个壁纸链接
-    void get_url_from_Bing();   //从Wallhaven获取120个壁纸链接
+    void get_url_from_Bing();             //从Wallhaven获取120个壁纸链接
     QThread* thrd = nullptr;
     QNetworkAccessManager* mgr = nullptr;
 

@@ -1,6 +1,5 @@
 ﻿#include <fstream>
 #include <QDateTime>
-#include <QRandomGenerator>
 #include <QSettings>
 #include <QDir>
 #include <QFile>
@@ -54,7 +53,7 @@ bool Wallpaper::set_wallpaper(const QString &file_path)             //根据路�
 }
 
 Wallpaper::Wallpaper():
-    SystemParametersInfo(std::bind(SystemParametersInfoW, SPI_SETDESKWALLPAPER, UINT(0), std::placeholders::_1, SPIF_SENDCHANGE | SPIF_UPDATEINIFILE)),
+    _rd(), _gen(_rd()), SystemParametersInfo(std::bind(SystemParametersInfoW, SPI_SETDESKWALLPAPER, UINT(0), std::placeholders::_1, SPIF_SENDCHANGE | SPIF_UPDATEINIFILE)),
     thrd(nullptr), mgr(nullptr), applyClicked(false),
     update(false), url(), bing_api(), bing_folder(), image_path(),  image_name(), timer(new QTimer)
 {
@@ -123,12 +122,13 @@ Wallpaper::~Wallpaper()
 void Wallpaper::_set_w(YJson* jsonArray)
 {
     qout << "智能设置壁纸开始.";
-    srand((unsigned)time(0));                                       // 防止出现重复
+
     if (jsonArray->getChild())
     {
         int pic_num = jsonArray->getChildNum();
         qout << "Wallhaven 找到随机id";
-        YJson* item = jsonArray->find(rand() % pic_num);
+        std::uniform_int_distribution<int> dis(0, pic_num);
+        YJson* item = jsonArray->find(dis(_gen));
         std::string pic_url = item->getValueString();
         jsonArray->getParent()->find("Used")->append(*item);
         jsonArray->remove(item);
@@ -507,7 +507,8 @@ void Wallpaper::set_from_Native()
     dir.setFilter(QDir::Files | QDir::NoSymLinks);                                //设置类型过滤器，只为文件格式
     int dir_count = dir.count();
     if (!dir_count) return;
-    QString file_name = dir[QRandomGenerator::global()->bounded(dir_count)];       //随机生成文件名称。
+    std::uniform_int_distribution<int> dis(0, dir_count);
+    QString file_name = dir[dis(_gen)];       //随机生成文件名称。
     file_name = VarBox->NativeDir + "/" + file_name;
 
     if (VarBox->GetFileAttributes(reinterpret_cast<const wchar_t*>(file_name.utf16())))
