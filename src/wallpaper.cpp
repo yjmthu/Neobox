@@ -775,7 +775,8 @@ void Wallpaper::dislike()
     {
         YJson *json = new YJson(L"ImgData.json", YJson::AUTO);
         YJson *blacklist = json->find("ImgUrls")->find("Blacklist");
-        blacklist->append(id);
+        if (!blacklist->findByVal(id))
+            blacklist->append(id);
         YJson *black_id;
         if (black_id = json->find("ImgUrls")->find("Used")->findByVal(id))
             YJson::remove(black_id);
@@ -784,7 +785,8 @@ void Wallpaper::dislike()
         json->toFile(L"ImgData.json", YJson::UTF8BOM, true);
         delete  json;
     }
-    DeleteFileW(pic_path);
+    if (!DeleteFileW(pic_path))
+        emit msgBox("删除文件失败!", "出错");
     delete [] pic_path;
     CurPic = PicHistory.erase(CurPic);
     if (CurPic != PicHistory.end())

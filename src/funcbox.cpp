@@ -166,10 +166,13 @@ void VARBOX::loadFunctions()
                 }
                 char lpFileDataBuffer[1] = {0};
                 DWORD dwReadedSize = 0;
-                if(ReadFile(hFileRead,lpFileDataBuffer,1,&dwReadedSize, NULL) && dwReadedSize)  return true;
+                if(ReadFile(hFileRead,lpFileDataBuffer,1,&dwReadedSize, NULL) && dwReadedSize)
+                {
+                    CloseHandle(hFileRead);
+                    return true;
+                }
                 CloseHandle(hFileRead);
-                for (short j = 1; j <= 6; j++)
-                    Sleep(500);
+                Sleep(1000);
             }
         }
         else

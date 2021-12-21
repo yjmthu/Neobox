@@ -24,8 +24,10 @@ QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2021"
 RC_LANG = 0x0804
 
 
-QT       += core gui network core5compat
-
+QT       += core gui
+QT += network
+QT += core5compat
+# QT += texttospeech
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++11
