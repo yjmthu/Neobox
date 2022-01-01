@@ -33,11 +33,11 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++11
 
 # release模式生成的文件更小，运行速度更快
-CONFIG += release
-# CONFIG += debug
+#CONFIG += release
+CONFIG += debug
 
 # 禁用qDebug()
-DEFINES += QT_NO_DEBUG_OUTPUT
+# DEFINES += QT_NO_DEBUG_OUTPUT
 
 # 禁用 Qt 6之前的函数
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000
@@ -56,8 +56,8 @@ SOURCES += \
     dialog.cpp \
     form.cpp \
     menu.cpp \
+    netspeedhelper.cpp \
     translater.cpp \
-    tray.cpp \
     usbdrivehelper.cpp \
     wallpaper.cpp \
 
@@ -77,9 +77,9 @@ HEADERS += \
     funcbox.h \
     gmpoperatetip.h \
     menu.h \
+    netspeedhelper.h \
     speedwidget.h \
     translater.h \
-    tray.h \
     usbdrivehelper.h \
     wallpaper.h
 

@@ -80,7 +80,7 @@ HANDLE VARBOX::HMutex = NULL;
 VARBOX::VARBOX(int w, int h):
     QObject(nullptr),
     WinVersion(GetNtVersionNumbers()), ScreenWidth(w), ScreenHeight(h), SysScreenWidth(GetSystemMetrics(SM_CXSCREEN)), SysScreenHeight(GetSystemMetrics(SM_CYSCREEN)),
-    hOleacc(LoadLibraryA("oleacc.dll")), hIphlpapi(LoadLibraryA("iphlpapi.dll")), hDwmapi(LoadLibraryA("dwmapi.dll")), hWininet(LoadLibraryA("wininet.dll"))
+    hOleacc(LoadLibraryA("oleacc.dll")), hDwmapi(LoadLibraryA("dwmapi.dll")), hWininet(LoadLibraryA("wininet.dll"))
 {
     qout << "VarBox构造函数开始。";
     VarBox = this;
@@ -99,7 +99,6 @@ VARBOX::~VARBOX()
     qout << "结构体析构中~";
     delete form;
     qout << "析构任务栏类";
-    delete tray;
     qout << "析构壁纸类";
     delete wallpaper;
     qout << "析构设置对话框";
@@ -108,7 +107,6 @@ VARBOX::~VARBOX()
     delete ControlDesktopIcon;
     delete [] AppId;
     delete [] PassWord;
-    if (hIphlpapi) FreeLibrary(hIphlpapi);
     if (hOleacc) FreeLibrary(hOleacc);
     if (hDwmapi) FreeLibrary(hDwmapi);
     qout << "结构体析构成功。";
@@ -127,12 +125,6 @@ void VARBOX::loadFunctions()
         AccessibleChildren = (pfnAccessibleChildren)GetProcAddress(hOleacc, "AccessibleChildren");
     }
 
-    if (hIphlpapi)           //获取两个函数指针
-    {
-        GetAdaptersAddresses = (pfnGetAdaptersAddresses)GetProcAddress(hIphlpapi, "GetAdaptersAddresses");
-        GetIfTable = (pfnGetIfTable)GetProcAddress(hIphlpapi, "GetIfTable");
-    }
-
     if (hDwmapi)
     {
         pDwmGetWindowAttribute = (pfnDwmGetWindowAttribute)GetProcAddress(hDwmapi, "DwmGetWindowAttribute");
@@ -148,7 +140,7 @@ void VARBOX::loadFunctions()
     }
 
 
-    if (!(GetIfTable && GetAdaptersAddresses && AccessibleObjectFromWindow && AccessibleChildren && pDwmGetWindowAttribute))
+    if (!(AccessibleObjectFromWindow && AccessibleChildren && pDwmGetWindowAttribute))
     {
         qApp->exit(RETCODE_ERROR_EXIT);
     }
@@ -258,36 +250,6 @@ bool VARBOX::check_app_right()
     return false;
 }
 
-void VARBOX::readTrayStyle()
-{
-    QSettings IniRead("SpeedBox.ini", QSettings::IniFormat);
-    IniRead.beginGroup("TaskStyle");
-    unsigned long long safeEnum = IniRead.value("aMode_f").toUInt();
-    if (safeEnum > 6 && safeEnum != 150) safeEnum = 0;
-    aMode[0] = static_cast<ACCENT_STATE>(safeEnum);
-    safeEnum = IniRead.value("aMode_s").toUInt();
-    if (safeEnum > 6 && safeEnum != 150) safeEnum = 0;
-    aMode[1] = static_cast<ACCENT_STATE>(safeEnum);
-    safeEnum = IniRead.value("dAlphaColor_f").toULongLong();
-    if (safeEnum > 0xffffffff) safeEnum = 0x11111111;
-    dAlphaColor[0] = safeEnum;
-    safeEnum = IniRead.value("dAlphaColor_s").toULongLong();
-    if (safeEnum > 0xffffffff) safeEnum = 0x11111111;
-    dAlphaColor[1] = safeEnum;
-    safeEnum = IniRead.value("bAlpha_f").toUInt();
-    if (safeEnum > 0xff) safeEnum = 0xff;
-    bAlpha[0] = safeEnum;
-    safeEnum = IniRead.value("bAlpha_s").toUInt();
-    if (safeEnum > 0xff) safeEnum = 0xff;
-    bAlpha[1] = safeEnum;
-    safeEnum = IniRead.value("RefreshTime").toInt();
-    if (safeEnum<33||safeEnum>198) safeEnum = 33;
-    RefreshTime = safeEnum;
-    safeEnum = IniRead.value("iPos").toInt();
-    if (safeEnum > 2) safeEnum = 0;
-    iPos = static_cast<TaskBarCenterState>(safeEnum);
-    IniRead.endGroup();
-}
 
 void VARBOX::initFile()
 {
@@ -358,7 +320,6 @@ label_1:
             IniWrite->setValue("OpenDir", PathToOpen);
 
             IniWrite->endGroup(); delete IniWrite;
-            saveTrayStyle();
             qout << "创建新的ini文件完毕。";
             goto label_3;
         }
@@ -422,8 +383,6 @@ label_2:
             enableUSBhelper = IniRead->value("enableUSBhelper", enableUSBhelper).toBool();
             IniRead->endGroup();
             delete IniRead;
-            qout << "开始读取风格";
-            readTrayStyle();
             qout << "读取设置完毕。";
         }
 label_3:
@@ -468,8 +427,6 @@ void VARBOX::initChildren()
 {
     qout << "开始创建基本成员";
     wallpaper = new Wallpaper;                           // 创建壁纸更换对象
-    qout << "任务栏";
-    tray = new Tray;
     qout << "悬浮窗";
     Form* form = new Form;
     qout << "基本成员创建完毕!";
@@ -503,21 +460,6 @@ void VARBOX::initBehaviors()
 {
     form->show();                                                              //显示悬浮窗
     form->keepInScreen();
-}
-
-void VARBOX::saveTrayStyle()
-{
-    QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
-    IniWrite.beginGroup("TaskStyle");
-    IniWrite.setValue("aMode_f", static_cast<int>(aMode[0]));
-    IniWrite.setValue("aMode_s", static_cast<int>(aMode[1]));
-    IniWrite.setValue("dAlphaColor_f", static_cast<unsigned long long>(dAlphaColor[0]));
-    IniWrite.setValue("dAlphaColor_s", static_cast<unsigned long long>(dAlphaColor[1]));
-    IniWrite.setValue("bAlpha_f", static_cast<int>(bAlpha[0]));
-    IniWrite.setValue("bAlpha_s", static_cast<int>(bAlpha[1]));
-    IniWrite.setValue("RefreshTime", RefreshTime);
-    IniWrite.setValue("iPos",  static_cast<int>(iPos));
-    IniWrite.endGroup();
 }
 
 void VARBOX::sigleSave(QString group, QString key, QString value)

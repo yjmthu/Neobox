@@ -46,13 +46,6 @@ constexpr const char *reg_keys[4] = {
     "mshta vbscript:clipboarddata.setdata(\"text\",\"%%1\")(close)"
 };
 
-inline QString getStyleSheet()
-{
-    QColor col(VarBox->dAlphaColor[VarBox->setMax] & 0xffffff);
-    return QString("QPushButton{background-color: rgb(%1, %2, %3);border-radius: 3px; border: 1px solid black;}").arg(QString::number(col.blue()), QString::number(col.green()), QString::number(col.red()));
-}
-
-
 Dialog::Dialog():
     SpeedWidget<QWidget>(nullptr),
     ui(new Ui::Dialog)
@@ -76,12 +69,6 @@ void Dialog::initUi()
 {
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window | Qt::WindowSystemMenuHint | Qt::WindowMinimizeButtonHint);  //| Qt::WindowStaysOnTopHint
     setAttribute(Qt::WA_DeleteOnClose, true);
-    if (VarBox->WinVersion != 0xA)
-    {
-        ui->radioButton_7->setEnabled(false);
-        ui->radioButton_8->setEnabled(false);
-        ui->radioButton_9->setEnabled(false);
-    }
     ui->pushButton_12->setEnabled(false);
     QFile qss(":/qss/dialog_style.qss");
     qss.open(QFile::ReadOnly);
@@ -104,20 +91,12 @@ void Dialog::initUi()
 
     ui->checkBox_2->setChecked(false);
     ui->LinePath->setText(VarBox->NativeDir);
-    ui->label_17->setText(QString::number(VarBox->RefreshTime));
-    ui->label_4->setText(QString::number(VarBox->dAlphaColor[0] >> 24));
-    ui->label_6->setText(QString::number(VarBox->bAlpha[0]));
     ui->sLdPageNum->setValue(VarBox->PageNum);
     ui->sLdTimeInterval->setValue(VarBox->TimeInterval);
     ui->labTimeInterval->setText(QString::number(VarBox->TimeInterval));
     ui->chkEnableChangePaper->setChecked(VarBox->AutoChange);
     ui->usrCmd->setText(VarBox->UserCommand);
 
-    ui->rBtnWinTaskMax->setChecked(VarBox->setMax);
-    ui->sLdTaskAlph->setValue(VarBox->dAlphaColor[VarBox->setMax] >> 24);
-    ui->sLdIconAlph->setValue(VarBox->bAlpha[VarBox->setMax]);
-    ui->sLdUpdateRefreshTime->setValue(VarBox->RefreshTime);
-    ui->pushButton_3->setStyleSheet(getStyleSheet());
     ui->line_APP_ID->setText(VarBox->AppId);
     ui->line_PASS_WORD->setText(VarBox->PassWord);
     ui->cBxAutoStart->setChecked(!QSettings("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat).value("SpeedBox").toString().compare(qApp->applicationFilePath().replace("/", "\\")));
@@ -139,23 +118,6 @@ void Dialog::initUi()
         ui->rBtnWallhavenApiDefault->setChecked(true);
         my_on_rBtnWallhavenApiDefault_clicked();
     }
-    switch (VarBox->aMode[VarBox->setMax])
-    {
-    case (ACCENT_STATE::ACCENT_DISABLED):                       // 默认
-        ui->radioButton_3->setChecked(true);
-        break;
-    case (ACCENT_STATE::ACCENT_ENABLE_TRANSPARENTGRADIENT):     // 透明
-        ui->radioButton_4->setChecked(true);
-        break;
-    case (ACCENT_STATE::ACCENT_ENABLE_BLURBEHIND):              // 玻璃
-        ui->radioButton_5->setChecked(true);
-        break;
-    case (ACCENT_STATE::ACCENT_ENABLE_ACRYLICBLURBEHIND):       // 亚克力
-        ui->radioButton_6->setChecked(true);
-        break;
-    default:
-        break;
-    }
     if (QSettings(TASK_DESK_SUB, QSettings::NativeFormat).contains(TASKBAR_ACRYLIC_OPACITY))
         switch (QSettings(TASK_DESK_SUB, QSettings::NativeFormat).value(TASKBAR_ACRYLIC_OPACITY).toInt())
         {
@@ -174,20 +136,6 @@ void Dialog::initUi()
         }
     else
         ui->radioButton_11->setChecked(true);                 // 默认不透明
-    switch (VarBox->iPos)
-    {
-    case TaskBarCenterState::TASK_LEFT:
-        ui->radioButton_7->setChecked(true);
-        break;
-    case TaskBarCenterState::TASK_CENTER:
-        ui->radioButton_8->setChecked(true);
-        break;
-    case TaskBarCenterState::TASK_RIGHT:
-        ui->radioButton_9->setChecked(true);
-        break;
-    default:
-        break;
-    }
     if (VarBox->PathToOpen.compare(qApp->applicationDirPath().replace("/", "\\")))
         ui->radioButton_14->setChecked(true);
     else
@@ -218,7 +166,6 @@ void Dialog::initConnects()
     connect(ui->pBtnOpenAppData, &QPushButton::clicked, [](){VarBox->runCmd("explorer", QStringList(QDir::currentPath().replace("/", "\\")));});
     connect(ui->pBtnOpenPicturePath, &QPushButton::clicked, this, &Dialog::openPicturePath);
     connect(ui->linePictuerPath, &QLineEdit::returnPressed, this, &Dialog::linePictuerPathReturn);
-    connect(ui->pBtnSaveTaskSettings, &QPushButton::clicked, [this](){VarBox->saveTrayStyle(); jobTip->showTip("保存成功！");});
     connect(ui->cBxAutoStart, &QPushButton::clicked, [this](bool checked){
         QSettings* reg = new QSettings(
             "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
@@ -237,12 +184,7 @@ void Dialog::initConnects()
     });
     connect(ui->pBtnApply, &QPushButton::clicked, this, &Dialog::applyWallpaperSettings);
     connect(ui->sLdPageNum, &QSlider::valueChanged, this, &Dialog::sLdPageNumCurNum);
-    connect(ui->sLdUpdateRefreshTime, &QSlider::valueChanged, this, &Dialog::sLdUpdateTimeCurNum);
-    connect(ui->sLdTaskAlph, &QSlider::valueChanged, this, &Dialog::sLdTaskAlphCurNum);
-    connect(ui->sLdIconAlph, &QSlider::valueChanged, this, &Dialog::sLdIconAlphCurNum);
     connect(ui->sLdTimeInterval, &QSlider::valueChanged, this, [this](int value){ui->labTimeInterval->setText(QString::number(value, 10));});
-    connect(ui->rBtnWinTaskNormal, &QRadioButton::clicked, [this](){changeType(false);});
-    connect(ui->rBtnWinTaskMax, &QRadioButton::clicked, [this](){changeType(true);});
     connect(ui->rBtnWallhavenApiDefault, &QRadioButton::clicked, this, &Dialog::my_on_rBtnWallhavenApiDefault_clicked);
     connect(ui->rBtnWallhavenApiUser, &QRadioButton::clicked, this, &Dialog::my_on_rBtnWallhavenApiUser_clicked);
     connect(ui->rBtnBingApi, &QRadioButton::clicked, this, &Dialog::my_on_rBtnBingApi_clicked);
@@ -478,32 +420,6 @@ void Dialog::linePictuerPathReturn()
 	}
 }
 
-void Dialog::sLdTaskAlphCurNum(int value)
-{
-    DWORD bAlphaB = (DWORD)value << 24;
-    ui->label_4->setText(QString::number(value, 10));
-    VarBox->dAlphaColor[VarBox->setMax] = bAlphaB + (VarBox->dAlphaColor[VarBox->setMax] & 0xffffff);
-    if (!VarBox->tray->beautifyTask->isActive())
-        VarBox->tray->beautifyTask->start();
-}
-
-void Dialog::sLdIconAlphCurNum(int value)
-{
-    ui->label_6->setText(QString::number(value, 10));
-    VarBox->bAlpha[VarBox->setMax] = value;
-    if (!VarBox->tray->beautifyTask->isActive())
-        VarBox->tray->beautifyTask->start();
-}
-
-void Dialog::sLdUpdateTimeCurNum(int value)
-{
-    ui->label_17->setText(QString::number(value, 10));
-    VarBox->tray->beautifyTask->setInterval(value);
-    VarBox->RefreshTime = value;
-    if (!VarBox->tray->beautifyTask->isActive())
-        VarBox->tray->beautifyTask->start();
-}
-
 void Dialog::on_chkTimeUnit_min_clicked()
 {
     QSettings settings(TASK_DESK_SUB, QSettings::NativeFormat);
@@ -520,39 +436,6 @@ void Dialog::on_chkTimeUnit_sec_clicked()
         settings.setValue(SHOW_SECONDS_IN_SYSTEM_CLOCK, 1);
     }
     jobTip->showTip("更改成功！");
-}
-
-void Dialog::on_radioButton_3_clicked()
-{
-    VarBox->aMode[VarBox->setMax] = ACCENT_STATE::ACCENT_DISABLED;
-}
-
-void Dialog::on_radioButton_4_clicked()
-{
-    if ((VarBox->aMode[0] == ACCENT_STATE::ACCENT_DISABLED)&&(VarBox->aMode[1] == ACCENT_STATE::ACCENT_DISABLED))
-    {
-        VarBox->tray->beautifyTask->start(VarBox->RefreshTime);
-    }
-    VarBox->aMode[VarBox->setMax] = ACCENT_STATE::ACCENT_ENABLE_TRANSPARENTGRADIENT;
-}
-
-
-void Dialog::on_radioButton_5_clicked()
-{
-    if ((VarBox->aMode[0] == ACCENT_STATE::ACCENT_DISABLED)&&(VarBox->aMode[1] == ACCENT_STATE::ACCENT_DISABLED))
-    {
-        VarBox->tray->beautifyTask->start(VarBox->RefreshTime);
-    }
-    VarBox->aMode[VarBox->setMax] = ACCENT_STATE::ACCENT_ENABLE_BLURBEHIND;
-}
-
-void Dialog::on_radioButton_6_clicked()
-{
-    if ((VarBox->aMode[0] == ACCENT_STATE::ACCENT_DISABLED)&&(VarBox->aMode[1] == ACCENT_STATE::ACCENT_DISABLED))
-    {
-        VarBox->tray->beautifyTask->start(VarBox->RefreshTime);
-    }
-    VarBox->aMode[VarBox->setMax] = ACCENT_STATE::ACCENT_ENABLE_ACRYLICBLURBEHIND;
 }
 
 void Dialog::on_radioButton_11_clicked()
@@ -574,64 +457,6 @@ void Dialog::on_radioButton_12_clicked()
     QSettings settings(TASK_DESK_SUB, QSettings::NativeFormat);
     settings.setValue(TASKBAR_ACRYLIC_OPACITY, 0);
     jobTip->showTip("更改成功！");
-}
-
-void Dialog::on_radioButton_7_clicked()
-{
-    VarBox->iPos = TaskBarCenterState::TASK_LEFT;
-}
-
-void Dialog::on_radioButton_8_clicked()
-{
-    if (VarBox->iPos == TaskBarCenterState::TASK_LEFT)
-        VarBox->tray->centerTask->start();
-    qout << "居中点击";
-    VarBox->iPos = TaskBarCenterState::TASK_CENTER;
-}
-
-void Dialog::on_radioButton_9_clicked()
-{
-    if (VarBox->iPos == TaskBarCenterState::TASK_LEFT)
-        VarBox->tray->centerTask->start();
-    VarBox->iPos = TaskBarCenterState::TASK_RIGHT;
-}
-
-void Dialog::changeType(BOOL ok)
-{
-    VarBox->setMax = ok;
-    ui->sLdTaskAlph->setValue(VarBox->dAlphaColor[ok] >> 24);
-    ui->sLdIconAlph->setValue(VarBox->bAlpha[ok]);
-	ui->pushButton_3->setStyleSheet(getStyleSheet());
-    switch (VarBox->aMode[ok])
-	{
-    case (ACCENT_STATE::ACCENT_DISABLED):
-		ui->radioButton_3->setChecked(true);
-		break;
-    case (ACCENT_STATE::ACCENT_ENABLE_TRANSPARENTGRADIENT):
-		ui->radioButton_4->setChecked(true);
-		break;
-    case (ACCENT_STATE::ACCENT_ENABLE_BLURBEHIND):
-		ui->radioButton_5->setChecked(true);
-		break;
-    case (ACCENT_STATE::ACCENT_ENABLE_ACRYLICBLURBEHIND):
-		ui->radioButton_6->setChecked(true);
-		break;
-	default:
-		break;
-	}
-}
-
-void Dialog::on_pushButton_3_clicked()
-{
-    uint32_t col = VarBox->dAlphaColor[VarBox->setMax] & 0xffffff;
-    QColor color = QColorDialog::getColor(QColor(col & 0xff, (col >> 8) & 0xff, col >> 16), ui->frame, "颜色");
-	if (color.isValid())
-	{
-		short r = color.red(), g = color.green(), b = color.blue();
-        QString str = QString("QPushButton{background-color: rgb(%1, %2, %3);border-radius: 3px; border: 1px solid black;}").arg(QString::number(r), QString::number(g), QString::number(b));
-		ui->pushButton_3->setStyleSheet(str);
-        VarBox->dAlphaColor[VarBox->setMax] = (ui->sLdTaskAlph->value() << 24) + RGB(r, g, b);
-	}
 }
 
 void Dialog::on_radioButton_13_clicked()

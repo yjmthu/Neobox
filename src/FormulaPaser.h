@@ -224,6 +224,7 @@ private:
 
     void _parse_val(citerator begin, citerator end)
     {
+        if (begin >= end) return;
         if (*begin == '-')
         {
             _negative = -1;

@@ -53,7 +53,16 @@ bool Wallpaper::set_wallpaper(const QString &file_path)             //根据路�
 }
 
 Wallpaper::Wallpaper():
-    _rd(), _gen(_rd()), SystemParametersInfo(std::bind(SystemParametersInfoW, SPI_SETDESKWALLPAPER, UINT(0), std::placeholders::_1, SPIF_SENDCHANGE | SPIF_UPDATEINIFILE)),
+    _rd(), _gen(_rd()),
+    SystemParametersInfo(
+        std::bind(
+            SystemParametersInfoW,
+            SPI_SETDESKWALLPAPER,
+            UINT(0),
+            std::placeholders::_1,
+            SPIF_SENDCHANGE | SPIF_UPDATEINIFILE
+            )
+        ),
     thrd(nullptr), mgr(nullptr), applyClicked(false),
     update(false), url(), bing_api(), bing_folder(), image_path(),  image_name(), timer(new QTimer)
 {
@@ -509,7 +518,7 @@ void Wallpaper::set_from_Native()
     if (!dir_count) return;
     std::uniform_int_distribution<int> dis(0, dir_count);
     QString file_name = dir[dis(_gen)];       //随机生成文件名称。
-    file_name = VarBox->NativeDir + "/" + file_name;
+    file_name = VarBox->NativeDir + "\\" + file_name;
 
     if (VarBox->GetFileAttributes(reinterpret_cast<const wchar_t*>(file_name.utf16())))
     {

@@ -6,7 +6,7 @@
 #endif
 
 #include <windows.h>
-#include <iphlpapi.h>
+
 #include <QString>
 #include <QDebug>
 #include <QMessageBox>
@@ -95,11 +95,8 @@ enum class TaskBarCenterState
     TASK_RIGHT
 };
 
-class Form; class Dialog; class Wallpaper; class Tray; struct IAccessible; //void* PMIB_IFTABLE;
+class Form; class Dialog; class Wallpaper; struct IAccessible; //void* PMIB_IFTABLE;
 class DesktopMask;
-typedef ULONG(WINAPI* pfnGetAdaptersAddresses)(_In_ ULONG Family, _In_ ULONG Flags, _Reserved_ PVOID Reserved, _Out_writes_bytes_opt_(*SizePointer) void* AdapterAddresses, _Inout_ PULONG SizePointer);
-typedef DWORD(WINAPI* pfnGetIfTable)(_Out_writes_bytes_opt_(*pdwSize) PMIB_IFTABLE pIfTable, _Inout_ PULONG pdwSize, _In_ BOOL bOrder);
-
 typedef ULONG(WINAPI* pfnAccessibleObjectFromWindow)(_In_ HWND hwnd, _In_ DWORD dwId, _In_ REFIID riid, _Outptr_ void** ppvObject);
 typedef ULONG(WINAPI* pfnAccessibleChildren)(_In_ IAccessible* paccContainer, _In_ LONG iChildStart, _In_ LONG cChildren, _Out_writes_(cChildren) VARIANT* rgvarChildren, _Out_ LONG* pcObtained);
 typedef BOOL(WINAPI* pfnDwmGetWindowAttribute)(HWND hwnd, DWORD dwAttribute, PVOID pvAttribute, DWORD cbAttribute);
@@ -127,21 +124,13 @@ public:
     char* AppId = nullptr, * PassWord = nullptr;
     bool enableUSBhelper = true;  // enableUSBhelper
 
-    bool isMax = false, setMax = false;
-    ACCENT_STATE aMode[2] = { ACCENT_STATE::ACCENT_DISABLED, ACCENT_STATE::ACCENT_DISABLED };
-    DWORD dAlphaColor[2] = { 0x11111111, 0x11111111 }; /* 背景 */
-    DWORD bAlpha[2] = {0xff, 0xff};                    /* 图标 */
-    TaskBarCenterState iPos = TaskBarCenterState::TASK_LEFT;
-    unsigned short RefreshTime = 33; bool FirstChange = true;
+    bool FirstChange = true;
 
     const int ScreenWidth, ScreenHeight;                  //屏幕宽高
     const int SysScreenWidth, SysScreenHeight;
-    static HANDLE HMutex; HMODULE hOleacc = NULL, hIphlpapi = NULL, hDwmapi = NULL, hWininet=NULL;
+    static HANDLE HMutex; HMODULE hOleacc = NULL, hDwmapi = NULL, hWininet=NULL;
     Form* const form {0}; Dialog*const dialog {0};
     DesktopMask *ControlDesktopIcon = nullptr;
-
-    pfnGetIfTable GetIfTable = nullptr;
-    pfnGetAdaptersAddresses GetAdaptersAddresses = nullptr;
 
     pfnAccessibleObjectFromWindow AccessibleObjectFromWindow = nullptr;
     pfnAccessibleChildren AccessibleChildren = nullptr;
@@ -157,9 +146,7 @@ public:
     std::function<bool(const wchar_t*)> GetFileAttributes = nullptr;
     VARBOX(int, int); ~VARBOX();
     void loadFunctions();
-    void saveTrayStyle();
     Wallpaper* wallpaper;                          //壁纸处理类
-    Tray* tray;
 
     void sigleSave(QString group, QString key, QString value);
     static wchar_t* runCmd(const QString & program, const QStringList& argument, short line);
@@ -172,7 +159,6 @@ public slots:
 private:
      friend class Form;
      bool check_app_right();
-     void readTrayStyle();
      void initFile();
      void initChildren();
      void initBehaviors();

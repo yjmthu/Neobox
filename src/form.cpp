@@ -1,12 +1,17 @@
-﻿#include <winsock2.h>
-
-#include <QRect>
+﻿#include <QRect>
 #include <QMessageBox>
 #include <QTimer>
 #include <QSettings>
 #include <QPropertyAnimation>
 
+#include "netspeedhelper.h"
+
+#ifdef Q_OS_WIN
+#include <Windows.h>
 #include <dbt.h>
+#elif def Q_OS_LINUX
+#include <winddi.h>
+#endif
 
 #include "YString.h"
 #include "form.h"
@@ -17,26 +22,7 @@
 #include "wallpaper.h"
 #include "usbdrivehelper.h"
 
-PIP_ADAPTER_ADDRESSES piaa;//网卡结构
-MIB_IFTABLE *mi;    //网速结构
 
-inline QString formatSpped(long long dw, bool up_down)
-{
-    static const char* units[] = { u8"↑", u8"↓", "", "K", "M" };
-	long double DW = dw;
-	ushort the_unit = 2;
-	if (DW >= 1024)
-	{
-		DW /= 1024;
-		the_unit++;
-		if (DW >= 1024)
-		{
-			DW /= 1024;
-			the_unit++;
-		}
-	}
-    return  QString("%1 %2 %3B").arg(units[up_down], QString::number(DW, 'f', 1), units[the_unit]);
-}
 
 inline void savePos()
 {
@@ -49,7 +35,8 @@ inline void savePos()
 
 Form::Form(QWidget* parent) :
     QWidget(parent),
-    ui(new Ui::Form)
+    ui(new Ui::Form),
+    netHelper(new NetSpeedHelper)
 {
     qout << "悬浮窗指针";
     *const_cast<Form**>(&(VarBox->form)) = this;
@@ -60,7 +47,6 @@ Form::Form(QWidget* parent) :
     qout << "悬浮窗连接";
 	initConnects();
     qout << "悬浮窗定时器";
-	monitor_timer->start(1000);                                            //开始检测网速和内存
 }
 
 Form::~Form()
@@ -69,11 +55,8 @@ Form::~Form()
     delete MouseMoveTimer;
     delete translater;
     qout << "析构定时器";
-    delete monitor_timer;
     delete ui;
     delete animation;
-    HeapFree(GetProcessHeap(), 0, piaa);
-    HeapFree(GetProcessHeap(), 0, mi);
     qout << "析构Form结束";
 }
 
@@ -138,12 +121,12 @@ void Form::initForm()
 
 void Form::initConnects()
 {
-	monitor_timer = new QTimer;
 	animation = new QPropertyAnimation(this, "geometry");                  //用于贴边隐藏的动画
-    connect(monitor_timer, &QTimer::timeout, [this](){
-        get_mem_usage();
-        get_net_usage();
-    });   //每秒钟刷新一次界面
+    connect(netHelper, &NetSpeedHelper::netInfo, this, [this](QString up, QString dw){
+        ui->Labup->setText(up);        //将上传速度显示出来
+        ui->Labdown->setText(dw);        //将下载速度显示出来
+    });
+    connect(netHelper, &NetSpeedHelper::memInfo, ui->LabMemory, &QLabel::setText);
     connect(animation, &QPropertyAnimation::finished, &savePos);
     connect(VarBox->wallpaper, &Wallpaper::setFailed, this, &Form::set_wallpaper_fail);
 }
@@ -358,68 +341,4 @@ void Form::enableTranslater(bool checked)
     IniWrite.beginGroup("Translate");
     IniWrite.setValue("EnableTranslater", VarBox->EnableTranslater);
     IniWrite.endGroup();
-}
-
-void Form::get_mem_usage()
-{
-	MEMORYSTATUS ms;
-	GlobalMemoryStatus(&ms);
-	ui->LabMemory->setText(QString::number(ms.dwMemoryLoad));
-	//ui->LabMemory->setText("100");
-}
-
-void Form::get_net_usage()
-{
-    static short iGetAddressTime = 10;  //10秒一次获取网卡信息
-    static DWORD m_last_in_bytes = 0 /* 总上一秒下载字节 */,  m_last_out_bytes = 0 /* 总上一秒上传字节 */;
-    static const char s = (leaveEvent(nullptr), 0);
-    PX_UNUSED(s);
-
-    if (iGetAddressTime == 10)        // 10秒更新
-    {
-        DWORD dwIPSize = 0;
-        if (VarBox->GetAdaptersAddresses(AF_INET, 0, 0, piaa, &dwIPSize) == ERROR_BUFFER_OVERFLOW)
-        {
-            HeapFree(GetProcessHeap(), 0, piaa);
-            piaa = (PIP_ADAPTER_ADDRESSES)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dwIPSize);
-            VarBox->GetAdaptersAddresses(AF_INET, 0, 0, piaa, &dwIPSize);
-        }
-        iGetAddressTime = 0;
-    }
-    else
-        iGetAddressTime++;
-
-    DWORD dwMISize = 0;
-    if (VarBox->GetIfTable(mi, &dwMISize, FALSE) == ERROR_INSUFFICIENT_BUFFER)
-    {
-        dwMISize += sizeof(MIB_IFROW) * 2;
-        HeapFree(GetProcessHeap(), 0, mi);
-        mi = (MIB_IFTABLE*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dwMISize);
-        VarBox->GetIfTable(mi, &dwMISize, FALSE);
-    }
-    DWORD m_in_bytes = 0, m_out_bytes = 0; //PIP_ADAPTER_ADDRESSES paa = nullptr;
-    for (DWORD i = 0; i < mi->dwNumEntries; i++)
-    {
-        auto paa = &piaa[0];
-        while (paa)
-        {
-            if (paa->IfType != IF_TYPE_SOFTWARE_LOOPBACK && paa->IfType != IF_TYPE_TUNNEL)
-            {
-                if (paa->IfIndex == mi->table[i].dwIndex)
-                {
-                    m_in_bytes += mi->table[i].dwInOctets;
-                    m_out_bytes += mi->table[i].dwOutOctets;
-                }
-            }
-            paa = paa->Next;
-        }
-    }
-
-    if ( m_last_in_bytes != 0 && isVisible())
-    {
-        ui->Labup->setText(formatSpped(m_out_bytes - m_last_out_bytes, false));        //将上传速度显示出来
-        ui->Labdown->setText(formatSpped(m_in_bytes - m_last_in_bytes, true));        //将下载速度显示出来
-    }
-    m_last_out_bytes = m_out_bytes;
-    m_last_in_bytes = m_in_bytes;
 }

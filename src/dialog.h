@@ -2,7 +2,6 @@
 #define DIALOG_H
 
 #include <speedwidget.h>
-#include "tray.h"
 
 class Wallpaper;
 class Form;
@@ -36,35 +35,22 @@ private:
 	void initUi();
 	void initConnects();
     void initButtonFilter();
-	void changeType(BOOL);
 
 private slots:
     void chooseFolder();                                 //当选择文件夹按钮被点击时，弹出选择文件夹的对话框。
     void saveWallpaperSettings();                            //确定被按钮点击时，保存设置数据，退出对话框。
     void applyWallpaperSettings();                         //应用按钮点击时，保存设置数据，应用设置，最后退出对话框。
 	void on_pBtnApply_2_clicked();
-	void on_radioButton_7_clicked();
 	void on_chkTimeUnit_min_clicked();
 	void on_chkTimeUnit_sec_clicked();
-	void on_radioButton_3_clicked();
-	void on_radioButton_4_clicked();
-	void on_radioButton_5_clicked();
-	void on_radioButton_6_clicked();
 	void on_radioButton_11_clicked();
-//    void cBxstandardNameCurIndex(int index);
     void sLdPageNumCurNum(int value);
-    void sLdUpdateTimeCurNum(int value);
-    void sLdTaskAlphCurNum(int value);
-    void sLdIconAlphCurNum(int value);
 	void on_radioButton_10_clicked();
-	void on_radioButton_12_clicked();
-	void on_radioButton_8_clicked();
+    void on_radioButton_12_clicked();
     void on_pBtn_Save_Tran_Info_clicked();
     void on_pushButton_2_clicked();
     void on_pushButton_5_clicked();
     void on_pushButton_7_clicked();
-    void on_radioButton_9_clicked();
-	void on_pushButton_3_clicked();
     void openPicturePath();
     void linePictuerPathReturn();
     void on_pushButton_14_clicked();
