@@ -26,10 +26,15 @@ protected:
 	void mousePressEvent(QMouseEvent* event);
 	void mouseReleaseEvent(QMouseEvent* event);
 	void mouseDoubleClickEvent(QMouseEvent* event);
-	void mouseMoveEvent(QMouseEvent* event);
-    void enterEvent(QEnterEvent* event);
-	void leaveEvent(QEvent* event);
+    void mouseMoveEvent(QMouseEvent* event);
+#if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
+    bool nativeEvent(const QByteArray &eventType, void *message, long *result);
+    void enterEvent(QEvent* event);
+#else
     bool nativeEvent(const QByteArray &eventType, void *message, long long *result);
+    void enterEvent(QEnterEvent* event);
+#endif
+      void leaveEvent(QEvent* event);
 signals:
     void appQuit();
 public:

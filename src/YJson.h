@@ -6,14 +6,14 @@
 class YJson
 {
 protected:
-    inline explicit YJson() { };
+    inline explicit YJson() { }
 
 public:
     enum Type { False, True, Null, Number, String, Array, Object };
     enum Encode { AUTO, UTF8, UTF8BOM, UTF16, UTF16BOM, OTHER };
 
     inline explicit YJson(YJson::Type type):_type(static_cast<YJson::Type>(type)) { };
-    inline explicit YJson(const YJson& js): _type(js._type), _value(js._value) { CopyJson(&js, nullptr); }
+    inline YJson(const YJson& js): _type(js._type), _value(js._value) { CopyJson(&js, nullptr); }
     inline explicit YJson(std::ifstream && file) noexcept { loadFile(file); };
     inline explicit YJson(std::ifstream & file) { loadFile(file); };
     inline explicit YJson(const std::wstring& path, YJson::Encode encode) {loadFile(path, encode);};
@@ -110,9 +110,6 @@ public:
         YJson& operator*() {
             return *_data;
         }
-        iterator(const iterator&) = delete;
-        iterator& operator =(const iterator&) = delete;
-        ~iterator() = default;
     };
     iterator begin() {
         return _child;

@@ -1,9 +1,9 @@
 ﻿#include <QTimer>
 #include <QMessageBox>
 #include <QFile>
-#include <QSettings>
 #include <QAction>
 #include <QLabel>
+#include <QDesktopServices>
 
 #include "YString.h"
 #include "YJson.h"
@@ -48,11 +48,19 @@ void Menu::initUi()
 
 void Menu::initActions()
 {
+#if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
+    constexpr char lst[11][15] = {
+        "  软件设置", "  科学计算", "划词翻译", "  上一张图", "  下一张图",
+        "  不看此图", "  打开目录", "  快速关机", "  快捷重启", "  本次退出",
+        "防止息屏"
+    };
+#else
     constexpr char lst[11][13] = {
         "软件设置", "科学计算", "划词翻译", "上一张图", "下一张图",
         "不看此图", "打开目录", "快速关机", "快捷重启", "本次退出",
         "防止息屏"
     };
+#endif
     for (int i = 0; i < 11; ++i)
     {
         actions[i].setText(lst[i]);
@@ -86,7 +94,7 @@ void Menu::Show(int x, int y)                   //自动把右键菜单移动到
 
 void Menu::initMenuConnect()
 {
-    connect(actions, &QAction::triggered, [](){
+    connect(actions, &QAction::triggered, VarBox, [](){
         if (VarBox->dialog)
         {
             if (VarBox->dialog->isVisible())
@@ -111,17 +119,26 @@ void Menu::initMenuConnect()
     connect(actions+4, &QAction::triggered, VarBox->wallpaper, &Wallpaper::next);
     connect(actions+3, &QAction::triggered, VarBox->wallpaper, &Wallpaper::prev);      //设置受否开机自启                                                                              //是否自动移动鼠标防止息屏
     connect(actions+5, &QAction::triggered, VarBox->wallpaper, &Wallpaper::dislike);
-    connect(actions+6, SIGNAL(triggered()), this, SLOT(OpenFolder()));                 //打开exe所在文件夹
-    connect(actions+7, &QAction::triggered, this, &Menu::ShutdownComputer);            //关闭电脑
-    connect(actions+8, &QAction::triggered, this,
-            std::bind((void (*)(const QString &, const QStringList&))VARBOX::runCmd, QString("shutdown"), QStringList({"-r", "-t", "0"})));
+    connect(actions+6, &QAction::triggered, VarBox, [](){
+        VarBox->openDirectory(VarBox->PathToOpen);
+    });                 //打开exe所在文件夹
+    connect(actions+7, &QAction::triggered, VarBox,
+            std::bind(
+                (wchar_t* (*)(const QString &, const QStringList&, short))
+                VARBOX::runCmd, QString("shutdown"), QStringList({"-s", "-t", "0"}), 0)
+            );            //关闭电脑
+    connect(actions+8, &QAction::triggered, VarBox,
+            std::bind(
+                (wchar_t* (*)(const QString &, const QStringList&, short))
+                VARBOX::runCmd, QString("shutdown"), QStringList({"-r", "-t", "0"}), 0)
+            );
     connect(actions+9, &QAction::triggered, qApp, &QCoreApplication::quit);            // 退出程序
     connect(actions+10, &QAction::triggered, VarBox, [=](bool checked){
         if (checked)                                                                   //启用自动移动鼠标
         {
             VarBox->form->MouseMoveTimer = new QTimer;
             VarBox->form->MouseMoveTimer->setInterval(45000);
-            connect(VarBox->form->MouseMoveTimer, &QTimer::timeout, [](){
+            connect(VarBox->form->MouseMoveTimer, &QTimer::timeout, VarBox, [](){
                 int X = 1;
                 if (QCursor::pos().x() == VarBox->ScreenWidth) X = -1;
                 mouse_event(MOUSEEVENTF_MOVE, X, 0, 0, 0);                            //移动一个像素
@@ -136,50 +153,4 @@ void Menu::initMenuConnect()
             VarBox->form->MouseMoveTimer = nullptr;
         }
     });
-}
-
-
-void Menu::OpenFolder() const
-{
-	QStringList argument;                                                           //Windows下用 explorer xxx
-    argument << VarBox->PathToOpen;
-    //qout << "打开目录" << VarBox->PathToOpen;
-    VarBox->runCmd("explorer.exe", argument);
-}
-
-void Menu::ShutdownComputer() const
-{
-    HANDLE hToken; TOKEN_PRIVILEGES tkp;
-    typedef BOOL (*pfnOpenProcessToken)(HANDLE  ProcessHandle,DWORD DesiredAccess,PHANDLE TokenHandle);
-    typedef BOOL (*pfnLookupPrivilegeValue)(LPCWSTR lpSystemName,LPCWSTR lpName,PLUID  lpLuid);
-    typedef BOOL (*pfnAdjustTokenPrivileges)(HANDLE TokenHandle,BOOL DisableAllPrivileges,PTOKEN_PRIVILEGES NewState, DWORD BufferLength,PTOKEN_PRIVILEGES PreviousState,PDWORD ReturnLength);
-    typedef BOOL (*pfnInitiateSystemShutdownEx)(LPSTR lpMachineName,LPSTR lpMessage,DWORD dwTimeout,BOOL  bForceAppsClosed,BOOL  bRebootAfterShutdown,DWORD dwReason);
-    HMODULE hAdvapi32 = LoadLibraryA("Advapi32.dll");
-    pfnOpenProcessToken pOpenProcessToken = NULL;
-    pfnLookupPrivilegeValue pLookupPrivilegeValue = NULL;
-    pfnAdjustTokenPrivileges pAdjustTokenPrivileges = NULL;
-    pfnInitiateSystemShutdownEx pInitiateSystemShutdownEx = NULL;
-    if (hAdvapi32)
-    {
-        pOpenProcessToken = (pfnOpenProcessToken)GetProcAddress(hAdvapi32, "OpenProcessToken");
-        pLookupPrivilegeValue = (pfnLookupPrivilegeValue)GetProcAddress(hAdvapi32, "LookupPrivilegeValueW");
-        pAdjustTokenPrivileges = (pfnAdjustTokenPrivileges)GetProcAddress(hAdvapi32, "AdjustTokenPrivileges");
-        pInitiateSystemShutdownEx = (pfnInitiateSystemShutdownEx)GetProcAddress(hAdvapi32, "InitiateSystemShutdownExW");
-    }
-    if (!pOpenProcessToken || !pLookupPrivilegeValue || !pAdjustTokenPrivileges || !pInitiateSystemShutdownEx || !pOpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken))
-    {
-        VarBox->MSG("获取模块失败", "警告", QMessageBox::Ok);
-        return;
-    }
-    pLookupPrivilegeValue(NULL, SE_SHUTDOWN_NAME, &tkp.Privileges[0].Luid);
-    tkp.PrivilegeCount = 1;
-    tkp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-    pAdjustTokenPrivileges(hToken, FALSE, &tkp, sizeof(TOKEN_PRIVILEGES), (PTOKEN_PRIVILEGES)NULL, NULL);
-    if (GetLastError() != ERROR_SUCCESS)
-    {
-        VarBox->MSG("关机失败", "警告", QMessageBox::Ok);
-        return;
-    }
-    pInitiateSystemShutdownEx(NULL, NULL, 0, TRUE, FALSE, NULL);
-    FreeLibrary(hAdvapi32);
 }

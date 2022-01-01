@@ -9,7 +9,7 @@ msvc {
 }
 
 # 版本信息
-VERSION = 22.1.1.0
+VERSION = 22.1.2.0
 # 图标
 RC_ICONS += icons/speedbox.ico
 # 公司名称
@@ -26,9 +26,10 @@ RC_LANG = 0x0804
 
 QT       += core gui
 QT       += network
-# QT += texttospeech
+QT += texttospeech
 greaterThan(QT_MAJOR_VERSION, 5): QT += core5compat
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+#greaterThan(5, QT_MAJOR_VERSION): QT += texttospeech
 
 CONFIG += c++11
 

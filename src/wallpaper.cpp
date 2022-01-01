@@ -3,7 +3,11 @@
 #include <QSettings>
 #include <QDir>
 #include <QFile>
+#if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
+#include <QNetworkConfigurationManager>
+#else
 #include <QNetworkInformation>
+#endif
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>
@@ -107,7 +111,7 @@ Wallpaper::Wallpaper():
         else
             push_back();
        static const char _ = VarBox->AutoSaveBingPicture && (set_from_Bing(), 1);
-       PX_UNUSED(_);
+       (void)_;
     }
     else qout << "不自动换";
     if (VarBox->AutoChange) timer->start();
@@ -624,7 +628,11 @@ QStringList _parse_arguments(const QString& str)
             d = ' ';
         }
         iter = std::find(iter1, str.constEnd(), d);
+#if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
+        lst.push_back(QString(iter1, iter-iter1));
+#else
         lst.emplace_back(iter1, iter-iter1);
+#endif
     } while (iter++ != str.constEnd());
     return lst;
 }

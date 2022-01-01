@@ -60,7 +60,11 @@ int SnapToGridEx(bool bAlign)
 class DesktopWidget:public QWidget
 {
 protected:
+#if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
+    void enterEvent(QEvent *event);    // 鼠标进入后改变图标
+#else
     void enterEvent(QEnterEvent *event);    // 鼠标进入后改变图标
+#endif
 public:
     explicit DesktopWidget(bool flag);
     //~DesktopWidget();
@@ -80,7 +84,11 @@ DesktopWidget::DesktopWidget(bool flag):
     setMaximumSize(size);
 }
 
+#if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
+void DesktopWidget::enterEvent(QEvent *event)
+#else
 void DesktopWidget::enterEvent(QEnterEvent *event)
+#endif
 {
     SnapToGridEx(_flag);
     event->accept();

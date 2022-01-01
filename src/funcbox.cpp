@@ -4,6 +4,7 @@
 #include <QApplication>
 #include <QStandardPaths>
 #include <QSettings>
+#include <QScreen>
 #include <QProcess>
 #include <QDir>
 #include <QMessageBox>
@@ -225,6 +226,7 @@ void VARBOX::initFile()
     else
     {
         QSettings set(file, QSettings::IniFormat);
+        set.setIniCodec(QTextCodec::codecForName("UTF-8"));
         set.beginGroup("SpeedBox");
         QByteArray x = set.value("Version").toByteArray();
         set.endGroup();
@@ -247,6 +249,7 @@ label_1:
             NativeDir = picfolder;
             PathToOpen = QDir::toNativeSeparators(qApp->applicationDirPath());
             QSettings *IniWrite = new QSettings("SpeedBox.ini", QSettings::IniFormat);
+            IniWrite->setIniCodec(QTextCodec::codecForName("UTF-8"));
             IniWrite->beginGroup("SpeedBox");
             IniWrite->setValue("Version", Version);
             IniWrite->endGroup();
@@ -284,6 +287,7 @@ label_2:
         {
             qout << "开始读取设置。";
             QSettings *IniRead = new QSettings(file, QSettings::IniFormat);
+            IniRead->setIniCodec(QTextCodec::codecForName("UTF-8"));
             IniRead->beginGroup("SpeedBox");
             IniRead->setValue("Version", Version);
             IniRead->endGroup();
@@ -422,6 +426,7 @@ void VARBOX::initBehaviors()
 void VARBOX::sigleSave(QString group, QString key, QString value)
 {
     QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
+    IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
     IniWrite.beginGroup(group);
     IniWrite.setValue(key, value);
     IniWrite.endGroup();
@@ -432,7 +437,7 @@ wchar_t* VARBOX::runCmd(const QString& program, const QStringList& argument, sho
     QProcess process;
     process.setProgram(program);
     process.setArguments(argument);
-    connect(&process, &QProcess::errorOccurred, [&](){qout << "运行出错"; line=false;});
+    connect(&process, &QProcess::errorOccurred, [&](){qout << "运行出错"; line=0;});
     process.start();
     process.waitForStarted(); //等待程序启动
     process.waitForFinished(15000);
@@ -447,14 +452,12 @@ wchar_t* VARBOX::runCmd(const QString& program, const QStringList& argument, sho
     else return nullptr;
 }
 
-void VARBOX::runCmd(const QString &program, const QStringList &argument)
+void VARBOX::openDirectory(const QString& dir)
 {
-    QProcess process;
-    process.setProgram(program);
-    process.setArguments(argument);
-    process.start();
-    process.waitForStarted(); //等待程序启动
-    process.waitForFinished();
+#ifdef Q_OS_WIN
+    ShellExecuteW(NULL, L"open", L"explorer.exe", QDir::toNativeSeparators(dir).toStdWString().c_str(), NULL, SW_SHOWNORMAL);
+#elif def Q_OS_LINUX
+#endif
 }
 
 BOOL VARBOX::SetWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD AlphaColor)    //设置窗口WIN10风格

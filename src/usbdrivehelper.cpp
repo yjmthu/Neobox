@@ -10,6 +10,7 @@
 #include <QHBoxLayout>
 #include <stdio.h>
 #include <math.h>
+#include <QDesktopServices>
 
 #include "YString.h"
 
@@ -281,8 +282,8 @@ USBdriveHelper::USBdriveHelper(char U, QWidget *parent) :
     horizontalLayout->setSpacing(0);
     btn1->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding));
     btn2->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding));
-    connect(btn1, &QPushButton::clicked, this, [this](){
-        VARBOX::runCmd("explorer", QStringList(QString::fromWCharArray(pans.front())));
+    connect(btn1, &QPushButton::clicked, VarBox, [this](){
+        VarBox->openDirectory(QString::fromWCharArray(pans.front()));
     });
     connect(btn2, &QPushButton::clicked, this, [this](){
         EjectUSBDisk(pans.front()[0]);

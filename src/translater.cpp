@@ -14,7 +14,13 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+
+#if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
+#include <QTextCodec>
+#include <QTextToSpeech> //导入语音头文件
+#else
 #include <sapi.h> //导入语音头文件
+#endif
 
 #include "YEncode.h"
 #include "YString.h"
@@ -30,6 +36,7 @@
 #define TRAN_HEIGHT 300
 #define TRAN_WIDTH 240
 
+#if (QT_VERSION_CHECK(6,0,0) <= QT_VERSION)
 bool  MSSpeak(LPCTSTR speakContent) // 文字转为语音
 {
     ISpVoice *pVoice = NULL;  //初始化COM接口
@@ -47,12 +54,16 @@ bool  MSSpeak(LPCTSTR speakContent) // 文字转为语音
     CoUninitialize();                      //释放com资源
     return true;
 }
+#endif
 
 Translater::Translater() :
     QWidget(nullptr),
     ui(new Ui::Translater),
     _en("en"), _zh("zh"), from(_zh), to(_en),
     mgr(new QNetworkAccessManager)
+    #if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
+        , speaker(new QTextToSpeech)
+    #endif
 {
     mgr->setTransferTimeout(1000);
     setWindowFlags(Qt::Tool | Qt::FramelessWindowHint);
@@ -64,7 +75,7 @@ Translater::Translater() :
 
 	ui->setupUi(this);
     BlankFrom *blank = new BlankFrom(this); GMPOperateTip* jobTip = new GMPOperateTip(this);
-    connect(blank->closeButton, &QPushButton::clicked, [](){VarBox->form->enableTranslater(false);});
+    connect(blank->closeButton, &QPushButton::clicked, VarBox, [](){VarBox->form->enableTranslater(false);});
     connect(blank->minButton, &QPushButton::clicked, this, &Translater::hide);
     blank->closeButton->setToolTip("退出"); blank->minButton->setToolTip("隐藏");
     blank->move(width()-100, 0);
@@ -86,7 +97,7 @@ Translater::Translater() :
     setMinimumSize(TRAN_WIDTH, TRAN_HEIGHT);
     setMaximumSize(TRAN_WIDTH, TRAN_HEIGHT);
 
-    connect(this, &Translater::msgBox, [=](const char* str){
+    connect(this, &Translater::msgBox, this, [=](const char* str){
         jobTip->showTip(str);
     });
     RegisterHotKey(HWND(winId()), M_WIN_HOT_KEY_SHIFT_Z, MOD_SHIFT, 'Z');
@@ -96,6 +107,9 @@ Translater::Translater() :
 
 Translater::~Translater()
 {
+#if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
+    delete speaker;
+#endif
     qout << "析构Translater开始";
     qout << "取消注册热键";
     UnregisterHotKey(HWND(winId()), M_WIN_HOT_KEY_SHIFT_Z);
@@ -105,6 +119,7 @@ Translater::~Translater()
     qout << "删除ui";
     delete ui;
     qout << "析构Translater结束";
+
 }
 
 void Translater::initConnects()
@@ -135,14 +150,27 @@ void Translater::initConnects()
     connect(ui->TextFrom, &QPlainTextEdit::customContextMenuRequested, ui->TextFrom, [=](const QPoint &pos){
         QMenu* menu = ui->TextFrom->createStandardContextMenu();
         menu->setStyleSheet(menu_style);
-        menu->connect(menu->addAction("Read All"), &QAction::triggered, [this](){MSSpeak(ui->TextFrom->toPlainText().toStdWString().c_str());});
+        menu->connect(menu->addAction("Read All"), &QAction::triggered, this, [this](){
+
+#if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
+        speaker->say(ui->TextFrom->toPlainText());
+#else
+        MSSpeak(ui->TextFrom->toPlainText().toStdWString().c_str());
+#endif
+        });
         menu->exec((pos + ui->TextFrom->pos()) + this->pos());
         delete menu;
     });
     connect(ui->TextTo, &QPlainTextEdit::customContextMenuRequested, ui->TextFrom, [=](const QPoint &pos){
         QMenu* menu = ui->TextTo->createStandardContextMenu();
         menu->setStyleSheet(menu_style);
-        menu->connect(menu->addAction("Read All"), &QAction::triggered, [this](){MSSpeak(ui->TextTo->toPlainText().toStdWString().c_str());});
+        menu->connect(menu->addAction("Read All"), &QAction::triggered, this, [this](){
+#if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
+        speaker->say(ui->TextTo->toPlainText());
+#else
+        MSSpeak(ui->TextTo->toPlainText().toStdWString().c_str());
+#endif
+        });
         menu->exec((pos + ui->TextTo->pos()) + this->pos());
         delete menu;
     });
@@ -175,7 +203,11 @@ void Translater::showEvent(QShowEvent* event)
     event->accept();
 }
 
+#if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
+bool Translater::nativeEvent(const QByteArray &eventType, void *message, long *result)
+#else
 bool Translater::nativeEvent(const QByteArray &eventType, void *message, long long *result)
+#endif
 {
     static HWND hCurrentCursor = NULL;
     Q_UNUSED(eventType);
@@ -323,6 +355,7 @@ void Translater::getReply(const QByteArray& q)
 {
     qout << "开始执行翻译函数";
     constexpr char salt[] = u8"1435660288";                           //请求参数之一
+    constexpr char baidu_api[] = "http://api.fanyi.baidu.com/api/trans/vip/translate?q=%1&from=%2&to=%3&appid=%4&salt=%5&sign=%6";
 
     auto time_now = GetTickCount();
     if (time_now - last_post_time < 1000) Sleep(last_post_time + 1000 - time_now);
@@ -373,8 +406,7 @@ void Translater::getReply(const QByteArray& q)
                 emit msgBox("翻译失败，未知原因。");
         }
     });
-    QString url = "http://api.fanyi.baidu.com/api/trans/vip/translate?q=%1&from=%2&to=%3&appid=%4&salt=%5&sign=%6";
-    mgr->get(QNetworkRequest(QUrl(url.arg(q, from, to, VarBox->AppId, salt, sign))));
+    mgr->get(QNetworkRequest(QUrl(QString(baidu_api).arg(q, from, to, VarBox->AppId, salt, sign))));
 }
 
 void Translater::setFix(bool checked)
@@ -382,6 +414,7 @@ void Translater::setFix(bool checked)
     ui->pBtnPin->setIcon(QIcon(checked?":/icons/drip_blue_pin.ico":":/icons/drip_pin.ico"));
     VarBox->AutoHide = !checked;
     QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
+    IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
     IniWrite.beginGroup("Translate");
     IniWrite.setValue("AutoHide", VarBox->AutoHide);
     IniWrite.endGroup();

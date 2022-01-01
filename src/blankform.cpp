@@ -26,7 +26,11 @@ BlankFrom::~BlankFrom()
     qDebug("析构BlankForm");
 }
 
+#if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
+void BlankFrom::enterEvent(QEvent *)
+#else
 void BlankFrom::enterEvent(QEnterEvent *)
+#endif
 {
     closeButton->setStyleSheet("QPushButton{border-image: url(:/icons/close.png);border-radius:7px;}");
     minButton->setStyleSheet("QPushButton{border-image: url(:/icons/minimize.png);border-radius:7px;}");

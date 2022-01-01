@@ -23,10 +23,6 @@ private:
 	void initActions();
 	void initUi();
     QAction* const actions;
-
-private slots:
-	void OpenFolder() const;             //打开程序所在文件夹
-	void ShutdownComputer() const;       //关闭电脑
 };
 
 #endif // MENU_H

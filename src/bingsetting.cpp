@@ -1,6 +1,7 @@
 #include <QSettings>
 #include <QGraphicsDropShadowEffect>
 #include <QFile>
+#include <QTextCodec>
 
 #include "funcbox.h"
 #include "form.h"
@@ -43,6 +44,7 @@ void BingSetting::closeEvent(QCloseEvent *e)
 void BingSetting::on_pushButton_2_clicked()
 {
     QSettings set("SpeedBox.ini", QSettings::IniFormat);
+    set.setIniCodec(QTextCodec::codecForName("UTF-8"));
     set.beginGroup("Wallpaper");
     set.setValue("UseDateAsBingName", ui->radioButton->isChecked());
     set.setValue("AutoSaveBingPicture", ui->checkBox->isChecked());

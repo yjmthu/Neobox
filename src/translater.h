@@ -23,7 +23,11 @@ signals:
     void finished(bool);
 
 protected:
+#if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
+    bool nativeEvent(const QByteArray &eventType, void *message, long *result);
+#else
     bool nativeEvent(const QByteArray &eventType, void *message, long long *result);
+#endif
     bool eventFilter(QObject *target, QEvent *event);       //事件过滤器
     void keyPressEvent(QKeyEvent *event);                   //键盘点击时间
     void showEvent(QShowEvent* event);
@@ -40,6 +44,9 @@ private:
     void requestData(const char*, std::string*);
     QNetworkAccessManager* mgr;
     void initConnects();
+#if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
+    class QTextToSpeech *speaker;
+#endif
 
 private slots:
     void setFix(bool checked);

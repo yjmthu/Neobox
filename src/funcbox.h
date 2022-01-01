@@ -150,12 +150,12 @@ public:
 
     void sigleSave(QString group, QString key, QString value);
     static wchar_t* runCmd(const QString & program, const QStringList& argument, short line);
-    static void runCmd(const QString & program, const QStringList& argument);
     BOOL SetWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD AlphaColor);//设置窗口WIN10风格
     bool versionBefore(const char* A, const char* B);
     std::function<bool(const wchar_t*)> OneDriveFile;
 public slots:
     static void MSG(const char* text, const char* title="提示", QMessageBox::StandardButtons buttons=QMessageBox::Ok);
+    void openDirectory(const QString& dir);
 private:
      friend class Form;
      bool check_app_right();

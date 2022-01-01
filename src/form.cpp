@@ -3,6 +3,7 @@
 #include <QTimer>
 #include <QSettings>
 #include <QPropertyAnimation>
+#include <QTextCodec>
 
 #include "netspeedhelper.h"
 
@@ -28,6 +29,7 @@ inline void savePos()
 {
     RECT rt; GetWindowRect(HWND(VarBox->form->winId()), &rt);
     QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
+    IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
     IniWrite.beginGroup("UI");
     IniWrite.setValue("x", (int)rt.left); IniWrite.setValue("y", (int)rt.top);
     IniWrite.endGroup();
@@ -103,6 +105,7 @@ void Form::initForm()
     FormSetting::load_style_from_file();
 
     QSettings IniRead("SpeedBox.ini", QSettings::IniFormat);
+    IniRead.setIniCodec(QTextCodec::codecForName("UTF-8"));
     IniRead.beginGroup("UI");
     SetWindowPos(HWND(winId()), HWND_TOPMOST, IniRead.value("x").toInt(), IniRead.value("y").toInt(), 0, 0, SWP_NOSIZE);
     IniRead.endGroup();
@@ -121,6 +124,7 @@ void Form::initForm()
 
 void Form::initConnects()
 {
+    qout << "FORM链接A";
 	animation = new QPropertyAnimation(this, "geometry");                  //用于贴边隐藏的动画
     connect(netHelper, &NetSpeedHelper::netInfo, this, [this](QString up, QString dw){
         ui->Labup->setText(up);        //将上传速度显示出来
@@ -129,6 +133,7 @@ void Form::initConnects()
     connect(netHelper, &NetSpeedHelper::memInfo, ui->LabMemory, &QLabel::setText);
     connect(animation, &QPropertyAnimation::finished, &savePos);
     connect(VarBox->wallpaper, &Wallpaper::setFailed, this, &Form::set_wallpaper_fail);
+    qout << "FORM链接B";
 }
 
 
@@ -164,7 +169,11 @@ char FirstDriveFromMask (ULONG unitmask)
     return (i + 'A');
 }
 
-bool Form::nativeEvent(const QByteArray &, void *message, long long *)
+#if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
+    bool Form::nativeEvent(const QByteArray &, void *message, long *)
+#else
+    bool Form::nativeEvent(const QByteArray &, void *message, long long *)
+#endif
 {
     MSG *msg = static_cast<MSG*>(message);
     static USBdriveHelper* helper = nullptr;
@@ -218,7 +227,12 @@ void Form::mousePressEvent(QMouseEvent* event)
 	}
 	else if (event->button() == Qt::RightButton)             // 鼠标右键点击悬浮窗
     {
+
+#if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
+        QPoint pt = event->globalPos();
+#else
         QPointF pt = event->globalPosition();
+#endif
         (new Menu(this))->Show(pt.x(), pt.y());
 	}
     else if (event->button() == Qt::MiddleButton)
@@ -261,7 +275,11 @@ void Form::mouseMoveEvent(QMouseEvent* event)
 	event->accept();
 }
 
-void Form::enterEvent(QEnterEvent* event)     //鼠标进入事件
+#if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
+    void Form::enterEvent(QEvent* event)
+#else
+    void Form::enterEvent(QEnterEvent* event)
+#endif
 {
     QPoint pos = frameGeometry().topLeft();
     if (moved) {
@@ -338,6 +356,7 @@ void Form::enableTranslater(bool checked)
     }
 
     QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
+    IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
     IniWrite.beginGroup("Translate");
     IniWrite.setValue("EnableTranslater", VarBox->EnableTranslater);
     IniWrite.endGroup();

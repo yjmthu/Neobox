@@ -2,12 +2,19 @@
 #include <QProcess>
 #include <QFile>
 #include <QDir>
+#include <QTextCodec>
 
 #include "funcbox.h"
 #include "form.h"
 
 int main(int argc, char* argv[])
 {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+    QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QGuiApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+
+    QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
+#endif
     VARBOX::HMutex = CreateMutexW(NULL, FALSE, L"__SpeedBox__");
     if (GetLastError() == ERROR_ALREADY_EXISTS)
         return 0;
@@ -21,11 +28,11 @@ int main(int argc, char* argv[])
     switch (a.exec()) {
     case RETCODE_RESTART:                                   //如果收到重启常数
         CloseHandle(VARBOX::HMutex);
-        QProcess::startDetached(a.applicationFilePath());   //重启程序
+        QProcess::startDetached(a.applicationFilePath(), QStringList());   //重启程序
         break;
     case RETCODE_UPDATE:
         CloseHandle(VARBOX::HMutex);
-        QProcess::startDetached(QDir(a.applicationDirPath()).absoluteFilePath("Speed_Box_Updater.exe"));   //重启程序
+        QProcess::startDetached(QDir(a.applicationDirPath()).absoluteFilePath("Speed_Box_Updater.exe"), QStringList());   //重启程序
         break;
     case RETCODE_ERROR_EXIT:
         CloseHandle(VARBOX::HMutex);

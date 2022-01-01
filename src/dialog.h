@@ -52,7 +52,6 @@ private slots:
     void on_pushButton_7_clicked();
     void openPicturePath();
     void linePictuerPathReturn();
-    void on_pushButton_14_clicked();
     void on_pushButton_4_clicked();
     void on_checkBox_4_clicked(bool checked);
     void on_radioButton_13_clicked();
@@ -67,7 +66,6 @@ private slots:
     void my_on_rBtnOtherApi_clicked();
     void my_on_cBxApis_currentTextChanged(const QString &arg1);
     void my_on_rBtnWallhavenApiDefault_clicked();
-    void my_on_pushButton_clicked();
     void on_pushButton_3_clicked();
 };
 

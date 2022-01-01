@@ -13,6 +13,8 @@
 #include <QFile>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
+#include <QDesktopServices>
+#include <QTextCodec>
 
 #include "YString.h"
 #include "YJson.h"
@@ -161,14 +163,21 @@ void Dialog::initChildren()
 
 void Dialog::initConnects()
 {
+    qout << "对话框链接A";
+    connect(ui->pushButton_14, &QPushButton::clicked, this, [](){
+        QDesktopServices::openUrl(QUrl("https://yjmthu.github.io/Speed-Box"));
+    });
     connect(ui->rBtnNative, &QRadioButton::toggled, this, [this](bool checked){ui->BtnChooseFolder->setEnabled(checked);});
     connect(ui->BtnChooseFolder, &QToolButton::clicked, this, &Dialog::chooseFolder);
     connect(ui->pBtnCancel, &QPushButton::clicked, this, &Dialog::close);
     connect(ui->pBtnOk, &QPushButton::clicked, this, &Dialog::saveWallpaperSettings);
-    connect(ui->pBtnOpenAppData, &QPushButton::clicked, [](){VarBox->runCmd("explorer", QStringList(QDir::currentPath().replace("/", "\\")));});
+    connect(ui->pBtnOpenAppData, &QPushButton::clicked, VarBox, [](){
+        qout << QDir::currentPath();
+        VarBox->openDirectory(QDir::currentPath());
+    });
     connect(ui->pBtnOpenPicturePath, &QPushButton::clicked, this, &Dialog::openPicturePath);
     connect(ui->linePictuerPath, &QLineEdit::returnPressed, this, &Dialog::linePictuerPathReturn);
-    connect(ui->cBxAutoStart, &QPushButton::clicked, [this](bool checked){
+    connect(ui->cBxAutoStart, &QPushButton::clicked, this, [this](bool checked){
         QSettings* reg = new QSettings(
             "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
             QSettings::NativeFormat);
@@ -192,7 +201,10 @@ void Dialog::initConnects()
     connect(ui->rBtnBingApi, &QRadioButton::clicked, this, &Dialog::my_on_rBtnBingApi_clicked);
     connect(ui->rBtnOtherApi, &QRadioButton::clicked, this, &Dialog::my_on_rBtnOtherApi_clicked);
     connect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
-    connect(ui->pushButton, &QPushButton::clicked, this, &Dialog::my_on_pushButton_clicked);
+    connect(ui->pushButton, &QPushButton::clicked, VarBox, [](){
+        VarBox->openDirectory(qApp->applicationDirPath());
+    });
+    qout << "对话框链接B";
 }
 
 void Dialog::initButtonFilter()
@@ -272,6 +284,7 @@ void Dialog::sLdPageNumCurNum(int value)
 void Dialog::saveWallpaperSettings()
 {
     QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
+    IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
     IniWrite.beginGroup("Wallpaper");
     IniWrite.setValue("PaperType", buttonGroup->checkedId());
     IniWrite.setValue("NativeDir", ui->LinePath->text());
@@ -398,14 +411,9 @@ void Dialog::openPicturePath()
             VarBox->wallpaper->image_path = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
 	}
     if (dir.exists(VarBox->wallpaper->image_path))
-        VarBox->runCmd("explorer", QStringList(VarBox->wallpaper->image_path));
+        VarBox->openDirectory(VarBox->wallpaper->image_path);
 	else
 		QMessageBox::warning(this, "警告", "路径不存在！", QMessageBox::Ok, QMessageBox::Ok);
-}
-
-void Dialog::my_on_pushButton_clicked()
-{
-    VarBox->runCmd("explorer", QStringList(qApp->applicationDirPath().replace("/", "\\")));
 }
 
 void Dialog::linePictuerPathReturn()
@@ -560,6 +568,7 @@ void Dialog::on_pushButton_7_clicked()
     VarBox->CurTheme = static_cast<COLOR_THEME>(ui->comboBox_3->currentIndex());
     VarBox->enableUSBhelper = ui->checkBox->isChecked();
     QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
+    IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
     IniWrite.beginGroup("USBhelper");
     IniWrite.setValue("enableUSBhelper",  VarBox->enableUSBhelper);
     jobTip->showTip("应用并保存成功！");
@@ -570,6 +579,7 @@ void Dialog::on_pushButton_5_clicked()
 {
     VarBox->CurTheme = static_cast<COLOR_THEME>(ui->comboBox_3->currentIndex());
     QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
+    IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
     IniWrite.beginGroup("UI");
     IniWrite.setValue("ColorTheme", (int)VarBox->CurTheme);
     ui->frame->setStyleSheet(QString("QFrame{background-color:rgba(%1);}QLabel{border-radius: 3px;background-color: transparent;}Line{background-color:black};").arg(color_theme[static_cast<int>(VarBox->CurTheme)]));
@@ -700,13 +710,6 @@ void Dialog::on_pushButton_12_clicked()
     mgr0->get(QNetworkRequest(QUrl("https://gitee.com/yjmthu/Speed-Box/raw/main/update/update.json")));
 }
 
-
-void Dialog::on_pushButton_14_clicked()
-{
-    ShellExecuteA(NULL, "open", "https://yjmthu.github.io/Speed-Box", NULL, NULL, SW_SHOW);
-}
-
-
 void Dialog::on_toolButton_2_clicked()
 {
     QString titile = "请选择一个文件夹";
@@ -723,7 +726,7 @@ void Dialog::on_toolButton_2_clicked()
         }
         else if (ui->rBtnWallhavenApiUser->isChecked())
         {
-            json["User"]["ApiData"][ui->cBxApis->currentText().toUtf8()]["Folder"].setText(VarBox->wallpaper->image_path.toUtf8());
+            json["User"]["ApiData"][(const char*)ui->cBxApis->currentText().toUtf8()]["Folder"].setText(VarBox->wallpaper->image_path.toUtf8());
         }
         else if (ui->rBtnBingApi->isChecked())
         {
@@ -731,7 +734,7 @@ void Dialog::on_toolButton_2_clicked()
         }
         else
         {
-            json["OtherApi"]["ApiData"][ui->cBxApis->currentText().toUtf8()]["Folder"].setText(VarBox->wallpaper->image_path.toUtf8());
+            json["OtherApi"]["ApiData"][(const char*)ui->cBxApis->currentText().toUtf8()]["Folder"].setText(VarBox->wallpaper->image_path.toUtf8());
         }
         json.toFile(ph, YJson::UTF8BOM, true);
         jobTip->showTip("修改成功！");
@@ -754,6 +757,7 @@ void Dialog::on_pushButton_6_clicked()
 void Dialog::on_checkBox_4_clicked(bool checked)
 {
     QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
+    IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
     IniWrite.beginGroup("UI");
     IniWrite.setValue("ControlDesktopIcon", checked);
     if (checked)
@@ -784,10 +788,10 @@ void Dialog::my_on_rBtnWallhavenApiUser_clicked()
     ui->cBxApis->clear();
     YJson json(L"WallpaperApi.json", YJson::AUTO);
     YJson& temp = json["User"];
-    for (auto& c : temp["ApiData"])
+    for (auto& c: temp["ApiData"])
         ui->cBxApis->addItem(c.getKeyString());
     ui->cBxApis->setCurrentText(temp["Curruent"].getValueString());
-    ui->linePictuerPath->setText(temp["ApiData"][ui->cBxApis->currentText().toUtf8()]["Folder"].getValueString());
+    ui->linePictuerPath->setText(temp["ApiData"][(const char*)ui->cBxApis->currentText().toUtf8()]["Folder"].getValueString());
     connect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
 }
 
@@ -828,12 +832,12 @@ void Dialog::my_on_cBxApis_currentTextChanged(const QString &arg1)
         json["User"]["Curruent"].setText(ui->cBxApis->currentText().toUtf8());
         if (VarBox->PaperType == PAPER_TYPE::User)
         {
-            VarBox->wallpaper->image_path = json["User"]["ApiData"][arg1.toUtf8()]["Folder"].getValueString();
+            VarBox->wallpaper->image_path = json["User"]["ApiData"][(const char*)arg1.toUtf8()]["Folder"].getValueString();
             ui->linePictuerPath->setText(VarBox->wallpaper->image_path);
         }
         else
         {
-            ui->linePictuerPath->setText(json["User"]["ApiData"][arg1.toUtf8()]["Folder"].getValueString());
+            ui->linePictuerPath->setText(json["User"]["ApiData"][(const char*)arg1.toUtf8()]["Folder"].getValueString());
         }
         json.toFile(ph, YJson::UTF8BOM, true);
     }
@@ -854,14 +858,14 @@ void Dialog::my_on_cBxApis_currentTextChanged(const QString &arg1)
         if (VarBox->PaperType == PAPER_TYPE::Other)
         {
             json["OtherApi"]["Curruent"].setText(arg1.toUtf8());
-            VarBox->wallpaper->image_path = json["OtherApi"]["ApiData"][arg1.toUtf8()]["Folder"].getValueString();
-            VarBox->wallpaper->url = json["OtherApi"]["ApiData"][arg1.toUtf8()]["Url"].getValueString();
+            VarBox->wallpaper->image_path = json["OtherApi"]["ApiData"][(const char*)arg1.toUtf8()]["Folder"].getValueString();
+            VarBox->wallpaper->url = json["OtherApi"]["ApiData"][(const char*)arg1.toUtf8()]["Url"].getValueString();
             ui->linePictuerPath->setText(VarBox->wallpaper->image_path);
         }
         else
         {
             json["OtherApi"]["Curruent"].setText(arg1.toUtf8());
-            ui->linePictuerPath->setText(json["OtherApi"]["ApiData"][arg1.toUtf8()]["Folder"].getValueString());
+            ui->linePictuerPath->setText(json["OtherApi"]["ApiData"][(const char*)arg1.toUtf8()]["Folder"].getValueString());
         }
         json.toFile(ph, YJson::UTF8BOM, true);
     }
