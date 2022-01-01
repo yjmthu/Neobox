@@ -107,8 +107,8 @@ class VARBOX: public QObject
     Q_OBJECT
 
 public:
-    const char* const Version = "21.12.3", *const Qt = "6.2.1";
-    const unsigned char WinVersion; const bool FirstUse[1] = { false };
+    const char* const Version = "22.1.1";
+    const bool FirstUse[1] = { false };
     PAPER_TYPE PaperType = PAPER_TYPE::Hot;               //当下正在使用的壁纸类型
     COLOR_THEME CurTheme = COLOR_THEME::White;
 

@@ -48,7 +48,7 @@ void NetSpeedHelper::get_mem_usage()
 {
     MEMORYSTATUS ms;
     GlobalMemoryStatus(&ms);
-    emit (QString::number(ms.dwMemoryLoad));
+    emit memInfo(QString::number(ms.dwMemoryLoad));
 }
 
 void NetSpeedHelper::get_net_usage()

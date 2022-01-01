@@ -9,7 +9,7 @@ msvc {
 }
 
 # 版本信息
-VERSION = 21.12.3.0
+VERSION = 22.1.1.0
 # 图标
 RC_ICONS += icons/speedbox.ico
 # 公司名称
@@ -25,19 +25,19 @@ RC_LANG = 0x0804
 
 
 QT       += core gui
-QT += network
-QT += core5compat
+QT       += network
 # QT += texttospeech
+greaterThan(QT_MAJOR_VERSION, 5): QT += core5compat
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++11
 
 # release模式生成的文件更小，运行速度更快
-#CONFIG += release
-CONFIG += debug
+CONFIG += release
+#CONFIG += debug
 
 # 禁用qDebug()
-# DEFINES += QT_NO_DEBUG_OUTPUT
+DEFINES += QT_NO_DEBUG_OUTPUT
 
 # 禁用 Qt 6之前的函数
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000
@@ -49,6 +49,7 @@ SOURCES += \
     calculator.cpp \
     desktopmask.cpp \
     downloadprogress.cpp \
+    explaindialog.cpp \
     formsetting.cpp \
     gmpoperatetip.cpp \
     main.cpp \
@@ -72,6 +73,7 @@ HEADERS += \
     desktopmask.h \
     dialog.h \
     downloadprogress.h \
+    explaindialog.h \
     form.h \
     formsetting.h \
     funcbox.h \
@@ -88,6 +90,7 @@ FORMS += \
     calculator.ui \
     dialog.ui \
     downloadprogress.ui \
+    explaindialog.ui \
     form.ui \
     formsetting.ui \
     translater.ui \

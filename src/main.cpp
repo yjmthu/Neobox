@@ -25,11 +25,11 @@ int main(int argc, char* argv[])
         break;
     case RETCODE_UPDATE:
         CloseHandle(VARBOX::HMutex);
-        QProcess::startDetached(a.applicationDirPath().replace("/", "\\") + "\\Speed_Box_Updater.exe");   //重启程序
+        QProcess::startDetached(QDir(a.applicationDirPath()).absoluteFilePath("Speed_Box_Updater.exe"));   //重启程序
         break;
     case RETCODE_ERROR_EXIT:
         CloseHandle(VARBOX::HMutex);
-        MessageBoxW(NULL, L"运行程序遇到不能处理的错误，必须立即退出！", L"出错", 0);
+        QMessageBox::critical(nullptr, "出错", "程序遇到不能处理的错误，必须立即退出！");
     default:
         CloseHandle(VARBOX::HMutex);
         break;

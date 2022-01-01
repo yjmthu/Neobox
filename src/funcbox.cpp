@@ -21,44 +21,6 @@
 #include "wallpaper.h"
 #include "wallpaper.h"
 
-unsigned char GetNtVersionNumbers()
-{
-    HMODULE hModNtdll= NULL;
-    DWORD dwMajorVer = 0, dwMinorVer = 0, dwBuildNumber = 0;
-    if (hModNtdll= LoadLibraryA("ntdll.dll"))
-    {
-        typedef void (WINAPI *pfRTLGETNTVERSIONNUMBERS)(DWORD*,DWORD*, DWORD*);
-        pfRTLGETNTVERSIONNUMBERS pfRtlGetNtVersionNumbers;
-        pfRtlGetNtVersionNumbers = (pfRTLGETNTVERSIONNUMBERS)GetProcAddress(hModNtdll, "RtlGetNtVersionNumbers");
-        if (pfRtlGetNtVersionNumbers)
-        {
-           pfRtlGetNtVersionNumbers(&dwMajorVer, &dwMinorVer,&dwBuildNumber);
-           dwBuildNumber&= 0x0ffff;
-        }
-
-        FreeLibrary(hModNtdll);
-    }
-    if (dwMajorVer>10)
-        return 11;
-    else if (dwMajorVer==10)
-    {
-        if (dwMinorVer==0)
-        {
-            if (dwBuildNumber >= 21996)
-                return 11;
-            else
-                return 10;
-        }
-        else if (dwMinorVer > 0)
-            return 11;
-    }
-    else if (dwMajorVer==7)
-    {
-        if (dwMinorVer == 1)
-            return 7;
-    }
-    return 0;
-}
 
 wchar_t* GetCorrectUnicode(const QByteArray &ba)
 {
@@ -79,7 +41,7 @@ HANDLE VARBOX::HMutex = NULL;
 
 VARBOX::VARBOX(int w, int h):
     QObject(nullptr),
-    WinVersion(GetNtVersionNumbers()), ScreenWidth(w), ScreenHeight(h), SysScreenWidth(GetSystemMetrics(SM_CXSCREEN)), SysScreenHeight(GetSystemMetrics(SM_CYSCREEN)),
+    ScreenWidth(w), ScreenHeight(h), SysScreenWidth(GetSystemMetrics(SM_CXSCREEN)), SysScreenHeight(GetSystemMetrics(SM_CYSCREEN)),
     hOleacc(LoadLibraryA("oleacc.dll")), hDwmapi(LoadLibraryA("dwmapi.dll")), hWininet(LoadLibraryA("wininet.dll"))
 {
     qout << "VarBox构造函数开始。";
@@ -114,11 +76,6 @@ VARBOX::~VARBOX()
 
 void VARBOX::loadFunctions()
 {
-    if (!WinVersion)
-    {
-        qApp->exit(RETCODE_ERROR_EXIT);
-        return;
-    }
     if (hOleacc)
     {
         AccessibleObjectFromWindow = (pfnAccessibleObjectFromWindow)GetProcAddress(hOleacc, "AccessibleObjectFromWindow");

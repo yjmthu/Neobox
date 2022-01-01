@@ -48,7 +48,6 @@ private slots:
 	void on_radioButton_10_clicked();
     void on_radioButton_12_clicked();
     void on_pBtn_Save_Tran_Info_clicked();
-    void on_pushButton_2_clicked();
     void on_pushButton_5_clicked();
     void on_pushButton_7_clicked();
     void openPicturePath();
@@ -69,6 +68,7 @@ private slots:
     void my_on_cBxApis_currentTextChanged(const QString &arg1);
     void my_on_rBtnWallhavenApiDefault_clicked();
     void my_on_pushButton_clicked();
+    void on_pushButton_3_clicked();
 };
 
 #endif // DIALOG_H

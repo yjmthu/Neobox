@@ -27,6 +27,8 @@
 #include "formsetting.h"
 #include "desktopmask.h"
 
+#include "explaindialog.h"
+
 constexpr const char *color_theme[8] =
 {
     "255,255,255,255",
@@ -563,11 +565,6 @@ void Dialog::on_pushButton_7_clicked()
     jobTip->showTip("应用并保存成功！");
 }
 
-void Dialog::on_pushButton_2_clicked()
-{
-    close();
-}
-
 
 void Dialog::on_pushButton_5_clicked()
 {
@@ -870,3 +867,10 @@ void Dialog::my_on_cBxApis_currentTextChanged(const QString &arg1)
     }
     jobTip->showTip("应用成功!");
 }
+
+void Dialog::on_pushButton_3_clicked()
+{
+    ExplainDialog dialog(this);
+    dialog.exec();
+}
+
