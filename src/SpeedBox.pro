@@ -9,9 +9,6 @@ msvc {
 }
 
 mingw {
-INCLUDEPATH += $$PWD/'../../../../../../Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.29.30133/atlmfc/include'
-DEPENDPATH += $$PWD/'../../../../../../Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.29.30133/atlmfc/include'
-
 }
 
 win32 {
@@ -118,7 +115,3 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 # 生成的exe文件
 TARGET = "SpeedBox"
-
-win32:CONFIG(release, debug|release): LIBS += -L$$PWD/'../../../../../../Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.29.30133/atlmfc/lib/x64/' -latls
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/'../../../../../../Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.29.30133/atlmfc/lib/x64/' -latlsd
-

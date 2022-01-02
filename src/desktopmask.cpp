@@ -8,11 +8,7 @@
 #include <Shlobj.h>
 #include <shobjidl_core.h>
 #else
-#include <ShlObj.h>     // Shell API
-#include <atlcomcli.h>  // CComPtr & Co.
-#include <string>
-#include <iostream>
-#include <system_error>
+
 #endif
 #include <QEnterEvent>
 #include <QEvent>
