@@ -300,22 +300,22 @@ void FormSetting::on_pushButton_6_clicked()
     old_style->append(static_cast<int>(win_style = temp_win_style), "win-style");
     VarBox->SetWindowCompositionAttribute(HWND(VarBox->form->winId()), win_style, (a << 24) & RGB(r, g, b));
     VarBox->form->ui->frame->setStyleSheet(style);
-    QString file = "FormStyle.json";
+    constexpr char file[] = "FormStyle.json";
     if (QFile::exists(file))
     {
-        YJson s(std::ifstream(file.toStdWString(), std::ios::in | std::ios::binary));
+        YJson s(std::ifstream(file, std::ios::in | std::ios::binary));
         YJson &js = s["form-frame"];
         if (js)
             js = *old_style;
         else
             s.append(*const_cast<const YJson*>(old_style), "form-frame");
-        s.toFile(file.toStdWString(), YJson::UTF8, true);
+        s.toFile(file, YJson::UTF8, true);  //UTF-8FILE
     }
     else
     {
         YJson s(YJson::Object);
         s.append(*old_style, "form-frame");
-        s.toFile(file.toStdWString(), YJson::UTF8, true);
+        s.toFile(file, YJson::UTF8, true);  //UTF-8FILE
     }
     jobTip->showTip("保存成功！");
 }
@@ -323,10 +323,10 @@ void FormSetting::on_pushButton_6_clicked()
 void FormSetting::load_style_from_file()
 {
     int r = 8, g = 8, b=8, a = 190, p=3;
-    QString file = "FormStyle.json";
+    constexpr char file[] = "FormStyle.json";
     if (QFile::exists(file))
     {
-        YJson s(std::ifstream(file.toStdWString(), std::ios::in | std::ios::binary));
+        YJson s(std::ifstream(file, std::ios::in | std::ios::binary));
         YJson &js = s["form-frame"];
         if (js)
         {

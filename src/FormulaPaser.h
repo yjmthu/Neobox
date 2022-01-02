@@ -120,9 +120,17 @@ protected:
         case _Error_State::Wait:
             return { 'W', 'a', 'i', 't', '\0' };
         case _Error_State::NoError:
-            return (_Ostream() << std::setprecision(16) << (remember ? (_ans = calculate()) : calculate())).str();
+        {
+            _Ostream ostr;
+            ostr << std::setprecision(16) << (remember ? (_ans = calculate()) : calculate());
+            return ostr.str();
+        }
         default:
-            return (_Ostream() << std::setprecision(16) << _value).str();
+        {
+            _Ostream ostr;
+            ostr << std::setprecision(16) << _value;
+            return ostr.str();
+        }
         }
     }
 
@@ -635,14 +643,16 @@ const _Func_Type _Base_FormulaPaser<_Ty, _String, _Istream, _Ostream>::Function[
 };
 
 template <typename _Ty>
-class FormulaPaser : private std::conditional_t<std::is_same<_Ty, char>::value,
-    _Base_FormulaPaser<_Ty, std::string, std::istringstream, std::ostringstream>,
-    _Base_FormulaPaser<_Ty, std::wstring, std::wistringstream, std::wostringstream>>
+class FormulaPaser : private std::conditional<
+        std::is_same<_Ty, char>::value,
+        _Base_FormulaPaser<_Ty, std::string, std::istringstream, std::ostringstream>,
+        _Base_FormulaPaser<_Ty, std::wstring, std::wistringstream, std::wostringstream>
+    >::type
 {
 private:
-    typedef std::conditional_t<std::is_same<_Ty, char>::value, _Base_FormulaPaser<_Ty, std::string, std::istringstream, std::ostringstream>, _Base_FormulaPaser<_Ty, std::wstring, std::wistringstream, std::wostringstream>> _parent;
-    typedef std::conditional_t<std::is_same<_Ty, char>::value, std::string, std::wstring> _String;
-    typedef std::conditional_t<std::is_same<_Ty, char>::value, std::ostringstream, std::wostringstream> _Ostream;
+    typedef typename std::conditional<std::is_same<_Ty, char>::value, _Base_FormulaPaser<_Ty, std::string, std::istringstream, std::ostringstream>, _Base_FormulaPaser<_Ty, std::wstring, std::wistringstream, std::wostringstream>>::type _parent;
+    typedef typename std::conditional<std::is_same<_Ty, char>::value, std::string, std::wstring>::type _String;
+    typedef typename std::conditional<std::is_same<_Ty, char>::value, std::ostringstream, std::wostringstream>::type _Ostream;
 public:
     using _parent::calculate;
     using _parent::print;

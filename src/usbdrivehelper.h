@@ -2,7 +2,6 @@
 #define USBDRIVEHELPER_H
 
 #include <QDialog>
-#include <Windows.h>
 
 #include <vector>
 #include "speedwidget.h"
@@ -17,7 +16,11 @@ class USBdriveHelper : public SpeedWidget<QDialog>
 signals:
     void appQuit();
 protected:
-    void enterEvent(QEnterEvent* event);
+#if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
+          void enterEvent(QEvent* event);
+#else
+          void enterEvent(QEnterEvent* event);
+#endif
     void leaveEvent(QEvent* event);
     void showEvent(QShowEvent* event);
     void closeEvent(QCloseEvent *event);
@@ -28,7 +31,7 @@ public:
 
 private:
     Ui::USBdriveHelper *ui;
-    std::vector<TCHAR*> pans;
+    std::vector<char*> pans;
     QWidget* widget;
 };
 

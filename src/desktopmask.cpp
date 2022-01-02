@@ -1,15 +1,26 @@
+#include <QtGlobal>
+
+#ifdef _MSC_VER
 #include <windows.h>
 #include <atlbase.h>
 #include <commctrl.h>
 #include <exdisp.h>
 #include <Shlobj.h>
 #include <shobjidl_core.h>
+#else
+#include <ShlObj.h>     // Shell API
+#include <atlcomcli.h>  // CComPtr & Co.
+#include <string>
+#include <iostream>
+#include <system_error>
+#endif
 #include <QEnterEvent>
 #include <QEvent>
 
 #include "desktopmask.h"
 #include "funcbox.h"
 
+#ifdef _MSC_VER
 class CCoInitialize {
 public:
     CCoInitialize() : m_hr(CoInitialize(NULL)) { }
@@ -56,6 +67,8 @@ int SnapToGridEx(bool bAlign)
     }
     return errorNum;
 }
+#else
+#endif
 
 class DesktopWidget:public QWidget
 {
@@ -90,7 +103,10 @@ void DesktopWidget::enterEvent(QEvent *event)
 void DesktopWidget::enterEvent(QEnterEvent *event)
 #endif
 {
+#ifdef _MSC_VER
     SnapToGridEx(_flag);
+#else
+#endif
     event->accept();
 }
 

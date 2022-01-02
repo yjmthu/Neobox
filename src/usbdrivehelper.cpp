@@ -2,11 +2,8 @@
 #include "usbdrivehelper.h"
 #include "ui_usbdrivehelper.h"
 
-#include <Dbt.h>
-#include <winioctl.h>
-#include "setupapi.h"
-#include "cfgmgr32.h"
-#pragma comment(lib,"setupapi.lib")
+#include <QThread>
+
 #include <QHBoxLayout>
 #include <stdio.h>
 #include <math.h>
@@ -32,189 +29,12 @@ inline QString bytes_to_string(DWORD64 size)
     return "Error";
 }
 
-DEVINST GetDrivesDevInstByDiskNumber(long DiskNumber)
-{
-    GUID* guid = (GUID*)(void*)&GUID_DEVINTERFACE_DISK;
 
-    // Get device interface info set handle for all devices attached to system
-    HDEVINFO hDevInfo = SetupDiGetClassDevs(guid, NULL, NULL,
-        DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
-
-    if (hDevInfo == INVALID_HANDLE_VALUE)
-    {
-        return 0;
-    }
-
-    // Retrieve a context structure for a device interface of a device
-    // information set.
-    DWORD dwIndex = 0;
-    SP_DEVICE_INTERFACE_DATA devInterfaceData = {0};
-    devInterfaceData.cbSize = sizeof(SP_DEVICE_INTERFACE_DATA);
-    BOOL bRet = FALSE;
-
-
-    PSP_DEVICE_INTERFACE_DETAIL_DATA pspdidd;
-    SP_DEVICE_INTERFACE_DATA spdid;
-    SP_DEVINFO_DATA spdd;
-    DWORD dwSize;
-
-    spdid.cbSize = sizeof(spdid);
-
-    while ( true )
-    {
-        bRet = SetupDiEnumDeviceInterfaces(hDevInfo, NULL, guid, dwIndex,
-            &devInterfaceData);
-        if (!bRet)
-        {
-            break;
-        }
-
-        SetupDiEnumInterfaceDevice(hDevInfo, NULL, guid, dwIndex, &spdid);
-
-        dwSize = 0;
-        SetupDiGetDeviceInterfaceDetail(hDevInfo, &spdid, NULL, 0, &dwSize,NULL);
-
-        if ( dwSize )
-        {
-            pspdidd = (PSP_DEVICE_INTERFACE_DETAIL_DATA)HeapAlloc(GetProcessHeap(),HEAP_ZERO_MEMORY, dwSize);
-            if ( pspdidd == NULL )
-            {
-                continue; // autsch
-            }
-            pspdidd->cbSize = sizeof(*pspdidd);
-            ZeroMemory((PVOID)&spdd, sizeof(spdd));
-            spdd.cbSize = sizeof(spdd);
-
-
-            long res = SetupDiGetDeviceInterfaceDetail(hDevInfo, &spdid,pspdidd, dwSize, &dwSize, &spdd);
-            if ( res )
-            {
-                HANDLE hDrive = CreateFile(pspdidd->DevicePath, 0,
-                    FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, NULL, NULL);
-                if ( hDrive != INVALID_HANDLE_VALUE )
-                {
-                    STORAGE_DEVICE_NUMBER sdn;
-                    DWORD dwBytesReturned = 0;
-                    res = DeviceIoControl(hDrive, IOCTL_STORAGE_GET_DEVICE_NUMBER,NULL, 0, &sdn, sizeof(sdn), &dwBytesReturned, NULL);
-                    if ( res )
-                    {
-                        if ( DiskNumber == (long)sdn.DeviceNumber )
-                        {
-                            CloseHandle(hDrive);
-                            SetupDiDestroyDeviceInfoList(hDevInfo);
-                            return spdd.DevInst;
-                        }
-                    }
-                    CloseHandle(hDrive);
-                }
-            }
-            HeapFree(GetProcessHeap(), 0, pspdidd);
-        }
-        dwIndex++;
-    }
-
-    SetupDiDestroyDeviceInfoList(hDevInfo);
-
-    return 0;
-}
-
-static int EjectUSBDisk(TCHAR discId)
-{
-    DWORD accessMode = GENERIC_WRITE | GENERIC_READ;
-    DWORD shareMode = FILE_SHARE_READ | FILE_SHARE_WRITE;
-    HANDLE hDevice;
-    //long bResult = 0;
-    //DWORD retu = 0;
-    //DWORD dwError;
-    DWORD dwBytesReturned;
-    //int nTryCount;
-    TCHAR szDriv[10];
-
-    if(discId == NULL)
-    {
-        return 0;
-    }
-
-    wsprintf(szDriv, TEXT("\\\\.\\%c:"), discId);
-    hDevice = CreateFile(szDriv, accessMode, shareMode, NULL, OPEN_EXISTING, 0, NULL);
-    if(hDevice == INVALID_HANDLE_VALUE)
-    {
-        //printf("uninstallusb createfile failed error:%d\n",GetLastError());
-        return -1;
-    }
-
-    //使用CM_Request_Device_Eject弹出USB设备
-    STORAGE_DEVICE_NUMBER sdn;
-    long DiskNumber = -1;
-    long res = DeviceIoControl(hDevice,IOCTL_STORAGE_GET_DEVICE_NUMBER,NULL,0,&sdn,sizeof(sdn),&dwBytesReturned,NULL);
-    if(!res)
-    {
-        //printf("DeviceIoControl IOCTL_STORAGE_GET_DEVICE_NUMBER failed:%d\n",GetLastError());
-        CloseHandle(hDevice);
-        return -1;
-    }
-
-    CloseHandle(hDevice);
-    DiskNumber = sdn.DeviceNumber;
-    if(DiskNumber == -1)
-    {
-        //printf("DiskNumber == -1\n");
-        return -1;
-    }
-
-    DEVINST DevInst = GetDrivesDevInstByDiskNumber(DiskNumber);
-    if(DevInst == 0)
-    {
-        //printf("GetDrivesDevInstDiskNumber failed\n");
-        return -1;
-    }
-
-    ULONG Status = 0;
-    ULONG ProblemNumber = 0;
-    PNP_VETO_TYPE VetoType = PNP_VetoTypeUnknown;
-    TCHAR VetoName[MAX_PATH];
-    bool bSuccess = false;
-
-    res = CM_Get_Parent(&DevInst, DevInst, 0);         //disk's parent, e.g. the USB bridge, the SATA controller....
-    PX_UNUSED(res);
-    res = CM_Get_DevNode_Status(&Status, &ProblemNumber, DevInst, 0);
-    PX_UNUSED(res);
-    bool IsRemovable = ((Status & DN_REMOVABLE) != 0);
-
-    //printf("isremovable:%d\n",IsRemovable);
-    long i;
-    // try 3 times
-    for(i = 0;i < 3;i++)
-    {
-        VetoName[0] = '\0';
-        if(IsRemovable)
-        {
-            res = CM_Request_Device_Eject(DevInst,&VetoType,VetoName,MAX_PATH,0);
-        }
-        else
-        {
-            res = CM_Query_And_Remove_SubTree(DevInst,&VetoType,VetoName,MAX_PATH,0);
-        }
-        bSuccess = (res == CR_SUCCESS && VetoName[0] == '\0');
-        if(bSuccess)
-        {
-            break;
-        }
-        else
-        {
-            Sleep(200);
-        }
-    }
-    if(bSuccess){
-        //printf("Success\n\n");
-    }else{
-        //printf("failed\n");
-
-    }
-    return 0;
-}
-
+#if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
+void USBdriveHelper::enterEvent(QEvent *event)
+#else
 void USBdriveHelper::enterEvent(QEnterEvent *event)
+#endif
 {
     widget->show();
     event->accept();
@@ -260,8 +80,8 @@ USBdriveHelper::USBdriveHelper(char U, QWidget *parent) :
     DWORD dwFreeClusters;    //可用的簇
     DWORD dwSectPerClust;    //每个簇有多少个扇区
     DWORD dwBytesPerSect;    //每个扇区有多少个字节
-    pans.push_back(new TCHAR[4] {TCHAR(U), ':','\\', '\0'});
-    BOOL bResult = GetDiskFreeSpace(pans.back(), &dwSectPerClust, &dwBytesPerSect, &dwFreeClusters, &dwTotalClusters);
+    pans.push_back(new char[4] {char(U), ':','\\', '\0'});
+    BOOL bResult = GetDiskFreeSpaceA(pans.back(), &dwSectPerClust, &dwBytesPerSect, &dwFreeClusters, &dwTotalClusters);
     if (bResult)
     {
         DWORD64 total = dwTotalClusters * (DWORD64)dwSectPerClust * (DWORD64)dwBytesPerSect;
@@ -283,10 +103,67 @@ USBdriveHelper::USBdriveHelper(char U, QWidget *parent) :
     btn1->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding));
     btn2->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding));
     connect(btn1, &QPushButton::clicked, VarBox, [this](){
-        VarBox->openDirectory(QString::fromWCharArray(pans.front()));
+        VarBox->openDirectory(pans.front());
     });
-    connect(btn2, &QPushButton::clicked, this, [this](){
-        EjectUSBDisk(pans.front()[0]);
+    connect(btn2, &QPushButton::clicked, this, [this]()->bool{
+
+        QString device_path = pans.back();
+        QString error_string;
+        const char* temp = "\\\\.\\";
+        char device_path1[10] = { 0 };
+        memcpy(device_path1, temp, strlen(temp));
+        QByteArray dp = device_path.toLocal8Bit();
+        device_path1[4] = dp.at(0);
+        device_path1[5] = dp.at(1);
+        HANDLE handleDevice = CreateFileA(device_path1, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+        bool is_handle_invalid = (handleDevice == INVALID_HANDLE_VALUE);
+        if (is_handle_invalid)
+        {
+            error_string = "Device is not connection to system!";
+            qDebug() << GetLastError();
+            return false;
+        }
+        // Do this in a loop until a timeout period has expired
+        const int try_lock_volume_count = 3;
+        int try_count = 0;
+        for (; try_count < try_lock_volume_count; ++try_count)
+        {
+            DWORD dwBytesReturned;
+            if (!DeviceIoControl(handleDevice, FSCTL_LOCK_VOLUME, NULL, 0, NULL, 0, &dwBytesReturned, NULL))
+            {
+                qDebug() << "Device is using....." << try_count;
+                break;
+            }
+            QThread::sleep(1);
+        }
+        if (try_count == try_lock_volume_count)
+        {
+            error_string = "Device is using, try again later";
+            CloseHandle(handleDevice);
+            return false;
+        }
+        DWORD  dwBytesReturned = 0;
+        PREVENT_MEDIA_REMOVAL PMRBuffer;
+        PMRBuffer.PreventMediaRemoval = FALSE;
+        if (!DeviceIoControl(handleDevice, IOCTL_STORAGE_MEDIA_REMOVAL, &PMRBuffer, sizeof(PREVENT_MEDIA_REMOVAL), NULL, 0, &dwBytesReturned, NULL))
+        {
+            error_string = QStringLiteral("Unmount failed! error code:%1").arg(GetLastError());
+            qDebug() << "DeviceIoControl IOCTL_STORAGE_MEDIA_REMOVAL failed:" << GetLastError();
+            CloseHandle(handleDevice);
+            return false;
+        }
+        long   bResult = 0;
+        DWORD retu = 0;
+        bResult = DeviceIoControl(handleDevice, IOCTL_STORAGE_EJECT_MEDIA, NULL, 0, NULL, 0, &retu, NULL);
+        if (!bResult)
+        {
+            error_string = QStringLiteral("Disconnect IGU failed! error code:%1").arg(GetLastError());
+            CloseHandle(handleDevice);
+            qDebug() << "Disconnect IGU IoControl failed error:" << GetLastError();
+            return false;
+        }
+        CloseHandle(handleDevice);
+        return true;
     });
     widget->setStyleSheet("QWidget{background-color:rgba(90, 90, 90, 190);}");
     btn1->setStyleSheet("QPushButton{color:yellow;background-color:rgba(70,70,70,90);}"

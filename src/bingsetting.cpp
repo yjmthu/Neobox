@@ -9,7 +9,7 @@
 #include "blankform.h"
 #include "gmpoperatetip.h"
 #include "ui_bingsetting.h"
-
+#include <sstream>
 BingSetting::BingSetting():
     SpeedWidget<QDialog>(),
     ui(new Ui::BingSetting)

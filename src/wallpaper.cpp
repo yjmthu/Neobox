@@ -184,7 +184,7 @@ void Wallpaper::_set_w(YJson* jsonArray)
             qout << "壁纸设置完毕";
         }
         qout << "保存 json 文件";
-        jsonArray->getTop()->toFile(L"ImgData.json", YJson::UTF8BOM, true);
+        jsonArray->getTop()->toFile("ImgData.json", YJson::UTF8BOM, true);
         qout << "json 文件保存完毕";
     }
     else
@@ -235,7 +235,7 @@ void Wallpaper::_set_b(YJson * file_data)
         bing_name = bing_folder + "\\" + bing_name + ".jpg";
     }
     qout << "当前索引: " << file_data->find("current")->getValueInt();
-    file_data->toFile(L"BingData.json", YJson::UTF8BOM, true);
+    file_data->toFile("BingData.json", YJson::UTF8BOM, true);
     if (!QFile::exists(bing_name))
     {
         qout << "下载图片";
@@ -278,7 +278,7 @@ void Wallpaper::_set_b(YJson * file_data)
 
 void Wallpaper::push_back()
 {
-    YJson& json = *new YJson(L"WallpaperApi.json", YJson::UTF8);
+    YJson& json = *new YJson("WallpaperApi.json", YJson::UTF8);
     const char* curApi = nullptr;
     QDir dir;
     int index = (int)VarBox->PaperType;
@@ -331,13 +331,13 @@ void Wallpaper::push_back()
 void Wallpaper::set_from_Wallhaven()  // 从数据库中随机抽取一个链接地址进行设置。
 {
     qout << "Wallhaven 开始检查json文件";
-    QString file_name = "ImgData.json";
+    constexpr char file_name[] = "ImgData.json";
     qout << "文件路径" << file_name;
     std::string pic_url;
     YJson* jsonObject = nullptr, *jsonArray = nullptr, * find_item = nullptr;
     if (!QFile::exists(file_name)) goto label_1;
     qout << "读取ImageData.json文件";
-    jsonObject = new YJson(file_name.toStdWString(), YJson::AUTO);
+    jsonObject = new YJson(file_name, YJson::AUTO);
     if (YJson::ep.first){
         qout << "ImageData文件出现错误!";
         goto label_1;
@@ -561,7 +561,7 @@ void Wallpaper::set_from_Bing()
     if (!QFile::exists("BingData.json"))
         return get_url_from_Bing();
     qout << "必应文件存在";
-    file_data = new YJson(L"BingData.json", YJson::AUTO);
+    file_data = new YJson("BingData.json", YJson::AUTO);
     qout << "加载文件完成";
     if (QDateTime::currentDateTime().toString("yyyyMMdd") != file_data->find("today")->getValueString())
     {
@@ -790,7 +790,7 @@ void Wallpaper::dislike()
     check_is_wallhaven(pic_name, id);
     if (*id)
     {
-        YJson *json = new YJson(L"ImgData.json", YJson::AUTO);
+        YJson *json = new YJson("ImgData.json", YJson::AUTO);
         YJson *blacklist = json->find("ImgUrls")->find("Blacklist");
         if (!blacklist->findByVal(id))
             blacklist->append(id);
@@ -799,7 +799,7 @@ void Wallpaper::dislike()
             YJson::remove(black_id);
         if (black_id = json->find("ImgUrls")->find("Unused")->findByVal(id))
             YJson::remove(black_id);
-        json->toFile(L"ImgData.json", YJson::UTF8BOM, true);
+        json->toFile("ImgData.json", YJson::UTF8BOM, true);
         delete  json;
     }
     if (!DeleteFileW(pic_path))

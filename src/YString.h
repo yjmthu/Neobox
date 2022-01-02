@@ -5,7 +5,7 @@
 #include <string>
 #include <deque>
 
-template <typename ..._Ty> inline constexpr void PX_UNUSED(_Ty...) {}
+template <typename ..._Ty> inline void PX_UNUSED(_Ty...) {}
 
 template <typename T=char, typename... Types>
 typename std::enable_if<std::is_same<T, wchar_t>::value || std::is_same<T, char>::value, size_t>::type
@@ -30,7 +30,7 @@ boxlen(const std::deque<T*>& str_box)
 }
 
 template <typename T=char>
-typename std::enable_if<std::is_same_v<T, wchar_t> || std::is_same_v<T, char>,void>::type
+typename std::enable_if<std::is_same<T, wchar_t>::value || std::is_same<T, char>::value,void>::type
 StrCopy(T* str_old, const T* str_new_start, const T* str_new_end)
 {
     while (str_new_start != str_new_end) *str_old++ = *str_new_start++;
@@ -39,7 +39,7 @@ StrCopy(T* str_old, const T* str_new_start, const T* str_new_end)
 }
 
 template <typename T=char>
-typename std::enable_if<std::is_same_v<T, wchar_t> || std::is_same_v<T, char>,T*>::type
+typename std::enable_if<std::is_same<T, wchar_t>::value || std::is_same<T, char>::value,T*>::type
 StrRepeat(const T c, size_t count)
 {
     if (count < 0)
@@ -128,7 +128,7 @@ int strncmp(T s1, const char* s2, size_t n)
 }
 
 template <typename T=char>
-typename std::enable_if<std::is_same_v<T, wchar_t> || std::is_same_v<T, char>,T*>::type
+typename std::enable_if<std::is_same<T, wchar_t>::value || std::is_same<T, char>::value,T*>::type
 ByteCpy(T* s1, const T* s2)
 {
     if (s1)
@@ -142,7 +142,7 @@ ByteCpy(T* s1, const T* s2)
 
 
 template <typename T=char, typename... Types>
-typename std::enable_if<std::is_same_v<T, wchar_t> || std::is_same_v<T, char>,T*>::type
+typename std::enable_if<std::is_same<T, wchar_t>::value || std::is_same<T, char>::value,T*>::type
 ByteCpy(T* head, const T* first, Types...args)
 {
     static_assert (std::is_same<T, char>::value || std::is_same<T, wchar_t>::value, "error in type");
@@ -150,11 +150,13 @@ ByteCpy(T* head, const T* first, Types...args)
 }
 
 template <typename T=char, typename... Types>
-typename std::enable_if<std::is_same_v<T, wchar_t> || std::is_same_v<T, char>,T>::type
+typename std::enable_if<std::is_same<T, wchar_t>::value || std::is_same<T, char>::value, T>::type
 StrAppend(T* head, Types...args)
 {
     static_assert (std::is_same<T, char>::value || std::is_same<T, wchar_t>::value, "error in type");
-    while (*head) ++head; --head;
+    while (*head)
+        ++head;
+    --head;
     return ByteCpy<T>(head, args...);
 }
 
@@ -177,7 +179,7 @@ char* StrJoin(const char* start, const char* end, const char* dist, const std::d
 }
 
 template <typename T=char, typename... Types>
-typename std::enable_if<std::is_same_v<T, wchar_t> || std::is_same_v<T, char>, T*>::type
+typename std::enable_if<std::is_same<T, wchar_t>::value || std::is_same<T, char>::value, T*>::type
 StrJoin(const T* head, Types...args)
 {
     if (!head)
@@ -228,7 +230,9 @@ typename std::enable_if<
                      , T>::type
 StrSkip(T content)
 {
-    while (*content && static_cast<const unsigned char>(*content) <= 32) content++; return content;
+    while (*content && static_cast<const unsigned char>(*content) <= 32)
+        content++;
+    return content;
 }
 
 #endif // !YSTRING_H

@@ -52,7 +52,7 @@ public:
     QString bing_folder;
     QString image_path;
     QString image_name;
-    QTimer* timer = nullptr;                       //定时更换壁纸
+    class QTimer *timer = nullptr;                       //定时更换壁纸
 };
 
 #endif // WALLPAPER_H

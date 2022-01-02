@@ -1,5 +1,6 @@
 ﻿#ifndef YJSON_H
 #define YJSON_H
+#include <cstring>
 #include <string>
 #include <iostream>
 
@@ -16,7 +17,7 @@ public:
     inline YJson(const YJson& js): _type(js._type), _value(js._value) { CopyJson(&js, nullptr); }
     inline explicit YJson(std::ifstream && file) noexcept { loadFile(file); };
     inline explicit YJson(std::ifstream & file) { loadFile(file); };
-    inline explicit YJson(const std::wstring& path, YJson::Encode encode) {loadFile(path, encode);};
+    inline explicit YJson(const std::string& path, YJson::Encode encode) {loadFile(path, encode);};
     explicit YJson(const char* str);
     explicit YJson(const std::string& str);
     explicit YJson(const wchar_t*);
@@ -43,8 +44,8 @@ public:
     YJson* getTop() const;
 
     char* toString(bool fmt=false);
-    bool toFile(const std::wstring name, const YJson::Encode& encode=YJson::UTF8BOM, bool fmt=false);
-    void loadFile(const std::wstring& path, YJson::Encode encode=YJson::Encode::AUTO);
+    bool toFile(const std::string name, const YJson::Encode& encode=YJson::UTF8BOM, bool fmt=false);
+    void loadFile(const std::string& path, YJson::Encode encode=YJson::Encode::AUTO);
 
     YJson& operator=(const YJson&);
     YJson& operator=(YJson&&) noexcept;

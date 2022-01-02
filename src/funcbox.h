@@ -5,11 +5,16 @@
 #define qout qDebug()
 #endif
 
-#include <windows.h>
 
 #include <QString>
 #include <QDebug>
 #include <QMessageBox>
+
+#ifdef Q_OS_WIN
+#include <Windows.h>
+#elif def Q_OS_LINUX
+#include <Windows.h>
+#endif
 
 constexpr int RETCODE_ERROR_EXIT =           1071;       //异常退出常数
 constexpr int RETCODE_UPDATE     =           1072;       //更新常数，更新软件

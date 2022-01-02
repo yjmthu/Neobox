@@ -24,8 +24,8 @@ private:
     void get_mem_usage();                        //读取内存占用率
     void get_net_usage();                        //读取网速
     HMODULE hIphlpapi = NULL;
-    typedef ULONG(WINAPI* pfnGetAdaptersAddresses)(_In_ ULONG Family, _In_ ULONG Flags, _Reserved_ PVOID Reserved, _Out_writes_bytes_opt_(*SizePointer) void* AdapterAddresses, _Inout_ PULONG SizePointer);
-    typedef DWORD(WINAPI* pfnGetIfTable)(_Out_writes_bytes_opt_(*pdwSize) PMIB_IFTABLE pIfTable, _Inout_ PULONG pdwSize, _In_ BOOL bOrder);
+    typedef ULONG (WINAPI* pfnGetAdaptersAddresses) (ULONG Family, ULONG Flags, PVOID Reserved, PIP_ADAPTER_ADDRESSES AdapterAddresses, PULONG SizePointer);
+    typedef DWORD (WINAPI *pfnGetIfTable) (PMIB_IFTABLE pIfTable, PULONG pdwSize, BOOL bOrder);
     pfnGetIfTable GetIfTable = nullptr;
     pfnGetAdaptersAddresses GetAdaptersAddresses = nullptr;
     PIP_ADAPTER_ADDRESSES piaa = nullptr;   //网卡结构

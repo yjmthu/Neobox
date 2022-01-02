@@ -77,6 +77,9 @@ VARBOX::~VARBOX()
 
 void VARBOX::loadFunctions()
 {
+#ifndef FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS
+    constexpr DWORD FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS = 0x00400000;
+#endif
     if (hOleacc)
     {
         AccessibleObjectFromWindow = (pfnAccessibleObjectFromWindow)GetProcAddress(hOleacc, "AccessibleObjectFromWindow");
@@ -155,18 +158,17 @@ void VARBOX::loadFunctions()
 bool VARBOX::check_app_right()
 {
     if (!QFile::exists("AppId.txt")) return false;
-    std::ifstream file(L"AppId.txt", std::ios::in | std::ios::binary);
-    if( file.is_open())
+    QFile file("AppId.txt");
+    if( file.open(QIODevice::ReadOnly))
     {
         qout << "成功打开密钥文件";
-        file.seekg(0, std::ios::end );
-        int size = file.tellg();
+        auto size = file.size();
         if (size < 20)
         {
             file.close();
             return false;
         }
-        unsigned char c[3]  = { 0 }; file.seekg(0,std::ios::beg);
+        unsigned char c[3]  = { 0 };
         if (!file.read((char*)c, sizeof(char)*3))
         {
             qout << "文件读取失败1";
@@ -356,19 +358,19 @@ label_3:
             HaveAppRight = check_app_right();
             EnableTranslater = HaveAppRight && EnableTranslater;
         }
-    QString apifile = "WallpaperApi.json";
-    if (!QFile::exists(apifile))
+    const std::string apifile = "WallpaperApi.json";
+    if (!QFile::exists(apifile.c_str()))
     {
         qout << "文件不存在!";
         picfolder += "\\桌面壁纸";
         dir.mkdir(picfolder);
         dir.cd(picfolder);
-        QFile::copy(":/json/WallpaperApi.json", apifile+".temp");
+        QFile::copy(":/json/WallpaperApi.json", (apifile+".temp").c_str());
         const std::vector<QString> lst {"最热壁纸", "风景壁纸", "动漫壁纸", "极简壁纸", "随机壁纸", "鬼刀壁纸", "必应壁纸"};
         for (const auto&c: lst)
             dir.mkdir(c);
         std::vector<QString>::const_iterator iter = lst.begin();
-        YJson json((apifile+".temp").toStdWString(), YJson::UTF8);
+        YJson json(apifile+".temp", YJson::UTF8);
         for (auto&c: json["Default"]["ApiData"])
             c["Folder"].setText((picfolder+"\\"+*iter++).toUtf8());
         for (auto&c: json["User"]["ApiData"])
@@ -379,8 +381,8 @@ label_3:
             c["Folder"].setText((picfolder+"\\"+c.getKeyString()).toUtf8());
             dir.mkdir(c["Folder"].getValueString());
         }
-        json.toFile(apifile.toStdWString(), YJson::UTF8, true);
-        QFile::remove(apifile+".temp");
+        json.toFile(apifile, YJson::UTF8, true);
+        QFile::remove((apifile+".temp").c_str());
     }
 }
 
@@ -391,7 +393,7 @@ void VARBOX::initChildren()
     qout << "悬浮窗";
     Form* form = new Form;
     qout << "基本成员创建完毕!";
-    static APPBARDATA abd = {0};
+    static APPBARDATA abd { 0,0,0,0,{0,0,0,0},0 };
     abd.cbSize = sizeof(APPBARDATA);
     abd.hWnd = HWND(form->winId());
     abd.uCallbackMessage = MSG_APPBAR_MSGID;

@@ -1,7 +1,12 @@
-﻿#include <iostream>
-#include <ostream>
+﻿//#include <iostream>
+//#include <ostream>
 #include <fstream>
 #include <deque>
+#include <limits>
+#include <iomanip>
+#include <utility>
+#include <cmath>
+
 #include "funcbox.h"
 #include "YJson.h"
 #include "YString.h"
@@ -11,6 +16,14 @@
                                         std::is_same<T, std::vector<char>::const_iterator>::value ||\
                                         std::is_same<T, std::deque<char>::const_iterator>::value ||\
                                         std::is_same<T, const char*>::value, "error in type")
+#ifdef max
+#undef max
+#endif // max
+
+#ifdef min
+#undef min
+#endif // min
+
 typedef unsigned char byte;
 
 constexpr byte utf8bom[] = {0xEF, 0xBB, 0xBF};
@@ -74,8 +87,8 @@ bool YJson::strict_parse(T temp, T end)
         default:
             break;
     }
-    if (ep.first)
-        std::cout << "error:\t" << ep.second << std::endl;
+//    if (ep.first)
+//        std::cout << "error:\t" << ep.second << std::endl;
     return ep.first;
 }
 
@@ -85,7 +98,7 @@ void YJson::loadFile(std::ifstream& file)
     if (file.is_open())
     {
         file.seekg(0, std::ios::end);
-        int size = file.tellg();
+        long long size = file.tellg();
         if (size < 6)
         {
             file.close();
@@ -100,7 +113,7 @@ void YJson::loadFile(std::ifstream& file)
             return;
         }
         size -= sizeof(char) * 3;
-        if (std::equal(c, c+3, utf8bom, utf8bom+3))
+        if (std::equal(c, c+3, utf8bom))
         {
             // qout << "utf8编码格式";
             std::vector<char> json_vector;
@@ -110,7 +123,7 @@ void YJson::loadFile(std::ifstream& file)
             file.close();
             strict_parse(json_vector.cbegin(), json_vector.cend());
         }
-        else if (std::equal(c, c+2, utf16le, utf16le+2))
+        else if (std::equal(c, c+2, utf16le))
         {
             // qout << "utf16编码格式";
             if ((size + sizeof (char)) % sizeof (wchar_t))
@@ -187,7 +200,11 @@ void YJson::CopyJson(const YJson* json, YJson* parent)
 int YJson::getChildNum() const
 {
     int j = 0; YJson* child = _child;
-    if (_child) { ++j; while (child = child->_next) ++j; }
+    if (_child) {
+        ++j;
+        while (child = child->_next)
+            ++j;
+    }
     return j;
 }
 
@@ -350,7 +367,7 @@ YJson* YJson::findByVal(double value) const
     {
         YJson *child = _child;
         if (child) do
-            if (child->_type == YJson::Number && fabs(value-*reinterpret_cast<double*>(child->_value)) <= DBL_EPSILON)
+            if (child->_type == YJson::Number && fabs(value-*reinterpret_cast<double*>(child->_value)) <= std::numeric_limits<double>::epsilon())
                 return child;
         while (child = child->_next);
         
@@ -558,7 +575,7 @@ char* YJson::toString(bool fmt)
     return fmt?print_value(0):print_value();
 }
 
-bool YJson::toFile(const std::wstring name, const YJson::Encode& file_encode, bool fmt)
+bool YJson::toFile(const std::string name, const YJson::Encode& file_encode, bool fmt)
 {
     //qout << "开始打印" << name;
     if (ep.first) return false;
@@ -569,7 +586,7 @@ bool YJson::toFile(const std::wstring name, const YJson::Encode& file_encode, bo
         switch (file_encode) {
         case (YJson::UTF16):
         {
-            std::cout << "UTF-16" << u8"保存开始。";
+            //std::cout << "UTF-16" << u8"保存开始。";
             std::wstring data;
             data.push_back(*reinterpret_cast<const wchar_t*>(utf16le));
             utf8_to_utf16<std::wstring&, const char*>(data, buffer);
@@ -601,9 +618,9 @@ bool YJson::toFile(const std::wstring name, const YJson::Encode& file_encode, bo
     return false;
 }
 
-void YJson::loadFile(const std::wstring &path, YJson::Encode encode)
+void YJson::loadFile(const std::string &path, YJson::Encode encode)
 {
-    std::ifstream file(path, std::ios::in|std::ios::binary);
+    std::ifstream file(path, std::ios::in | std::ios::binary);
     std::string json_vector;
     if (!file.is_open())
     {
@@ -642,7 +659,7 @@ void YJson::loadFile(const std::wstring &path, YJson::Encode encode)
             ep.second = "文件不可读";
             return;
         }
-        if (std::equal(bom, bom + 3, utf8bom, utf8bom+3))
+        if (std::equal(bom, bom + 3, utf8bom))
         {
             json_vector.resize(size - 2);
             file.read(reinterpret_cast<char*>(&json_vector[0]), size - 3);
@@ -680,7 +697,7 @@ void YJson::loadFile(const std::wstring &path, YJson::Encode encode)
             return;
         }
         std::wstring json_wstr;
-        if (std::equal(bom, bom+2, utf16le, utf16le+2))
+        if (std::equal(bom, bom+2, utf16le))
         {
             json_wstr.resize(size / sizeof(wchar_t));
             file.read(reinterpret_cast<char*>(&(json_wstr.front())), size - 2);
@@ -863,7 +880,7 @@ char* YJson::print_number()
         //qout << "恰好为0";
         buffer = StrJoin<char>("0");
     }
-    else if (fabs(round(valuedouble) - valuedouble) <= DBL_EPSILON && valuedouble <= INT_MAX && valuedouble >= (double)INT_MIN)
+    else if (fabs(round(valuedouble) - valuedouble) <= std::numeric_limits<double>::epsilon() && valuedouble <= (double)std::numeric_limits<int>::max() && valuedouble >= (double)std::numeric_limits<int>::min())
     {
         //qout << "近似" << valuedouble;
         char temp[21] = { 0 }; sprintf(temp,"%.0lf",valuedouble);
@@ -872,7 +889,7 @@ char* YJson::print_number()
     else
     {
         char temp[64] = {0};
-        if (fabs(floor(valuedouble)-valuedouble)<=DBL_EPSILON && fabs(valuedouble)<1.0e60)
+        if (fabs(floor(valuedouble)-valuedouble)<=std::numeric_limits<double>::epsilon() && fabs(valuedouble)<1.0e60)
             sprintf(temp,"%.0f",valuedouble);
         else if (fabs(valuedouble)<1.0e-6 || fabs(valuedouble)>1.0e9)
             sprintf(temp,"%e",valuedouble);
@@ -999,8 +1016,11 @@ char* YJson::print_string(const char* const str)
     ptr = str;
     while ((token = (unsigned char)*ptr) && ++len)
     {
-        if (strchr("\"\\\b\f\n\r\t", token)) len++;
-        else if (token < 32) len += 5; ptr++;
+        if (strchr("\"\\\b\f\n\r\t", token))
+            len++;
+        else if (token < 32)
+            len += 5;
+        ptr++;
     }
     
     memset(buffer = new char[len + 3], 0, (len + 3) * sizeof(char));

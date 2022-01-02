@@ -8,8 +8,18 @@ msvc {
     QMAKE_CXXFLAGS += /utf-8
 }
 
+mingw {
+INCLUDEPATH += $$PWD/'../../../../../../Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.29.30133/atlmfc/include'
+DEPENDPATH += $$PWD/'../../../../../../Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.29.30133/atlmfc/include'
+
+}
+
+win32 {
+    LIBS += -luser32
+}
+
 # 版本信息
-VERSION = 22.1.2.0
+VERSION = 22.1.1.0
 # 图标
 RC_ICONS += icons/speedbox.ico
 # 公司名称
@@ -34,11 +44,11 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++11
 
 # release模式生成的文件更小，运行速度更快
-CONFIG += release
-#CONFIG += debug
+# CONFIG += release
+CONFIG += debug
 
 # 禁用qDebug()
-DEFINES += QT_NO_DEBUG_OUTPUT
+# DEFINES += QT_NO_DEBUG_OUTPUT
 
 # 禁用 Qt 6之前的函数
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000
@@ -108,3 +118,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 # 生成的exe文件
 TARGET = "SpeedBox"
+
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/'../../../../../../Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.29.30133/atlmfc/lib/x64/' -latls
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/'../../../../../../Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.29.30133/atlmfc/lib/x64/' -latlsd
+
