@@ -27,7 +27,6 @@
 #include "wallpaper.h"
 #include "bingsetting.h"
 #include "formsetting.h"
-#include "desktopmask.h"
 
 #include "explaindialog.h"
 
@@ -149,7 +148,6 @@ void Dialog::initUi()
     ui->lineEdit->setText(VarBox->PathToOpen);
     ui->checkBox_3->setChecked(VarBox->FirstChange);
     ui->BtnChooseFolder->setEnabled(ui->rBtnNative->isChecked());
-    ui->checkBox_4->setChecked(VarBox->ControlDesktopIcon);
     ui->checkBox->setChecked(VarBox->enableUSBhelper);
     ui->frame->setStyleSheet(QString("QFrame{background-color:rgba(%1);}QLabel{border-radius: 3px;background-color: transparent;}Line{background-color:black};").arg(color_theme[static_cast<int>(VarBox->CurTheme)]));
     checkSettings();
@@ -751,25 +749,6 @@ void Dialog::on_pushButton_6_clicked()
     FormSetting d;
     d.move(frameGeometry().x()+(width()-d.width())/2, frameGeometry().y()+(height()-d.height())/2);
     d.exec();
-}
-
-
-void Dialog::on_checkBox_4_clicked(bool checked)
-{
-    QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
-    IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    IniWrite.beginGroup("UI");
-    IniWrite.setValue("ControlDesktopIcon", checked);
-    if (checked)
-    {
-        VarBox->ControlDesktopIcon = new DesktopMask;
-    }
-    else
-    {
-        delete VarBox->ControlDesktopIcon;
-        VarBox->ControlDesktopIcon = nullptr;
-    }
-    jobTip->showTip("设置并保存成功！");
 }
 
 void Dialog::my_on_rBtnWallhavenApiDefault_clicked()

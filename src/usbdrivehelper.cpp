@@ -11,6 +11,7 @@
 
 #include "YString.h"
 
+
 inline QString bytes_to_string(DWORD64 size)
 {
     DWORD64 r = 1;
@@ -106,64 +107,59 @@ USBdriveHelper::USBdriveHelper(char U, QWidget *parent) :
         VarBox->openDirectory(pans.front());
     });
     connect(btn2, &QPushButton::clicked, this, [this]()->bool{
+        const QString paths = QString(R"(\\.\%1:)").arg(pans.back()[0]);
+        DWORD dw_ret;
+        DWORD dw_error;
+        TCHAR cs_volume[256] { 0 };
+        paths.toWCharArray(cs_volume);
+        //打开设备
+        const auto h_device = CreateFile(cs_volume,
+                                         GENERIC_READ | GENERIC_WRITE,
+                                         FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                         NULL,
+                                         OPEN_EXISTING,
+                                         0,
+                                         NULL);
 
-        QString device_path = pans.back();
-        QString error_string;
-        const char* temp = "\\\\.\\";
-        char device_path1[10] = { 0 };
-        memcpy(device_path1, temp, strlen(temp));
-        QByteArray dp = device_path.toLocal8Bit();
-        device_path1[4] = dp.at(0);
-        device_path1[5] = dp.at(1);
-        HANDLE handleDevice = CreateFileA(device_path1, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
-        bool is_handle_invalid = (handleDevice == INVALID_HANDLE_VALUE);
-        if (is_handle_invalid)
-        {
-            error_string = "Device is not connection to system!";
-            qDebug() << GetLastError();
-            return false;
+        if (h_device == INVALID_HANDLE_VALUE) {
+            // can't open the drive
+            dw_error = GetLastError();
+            return FALSE;
         }
-        // Do this in a loop until a timeout period has expired
-        const int try_lock_volume_count = 3;
-        int try_count = 0;
-        for (; try_count < try_lock_volume_count; ++try_count)
-        {
-            DWORD dwBytesReturned;
-            if (!DeviceIoControl(handleDevice, FSCTL_LOCK_VOLUME, NULL, 0, NULL, 0, &dwBytesReturned, NULL))
-            {
-                qDebug() << "Device is using....." << try_count;
-                break;
-            }
-            QThread::sleep(1);
+
+        if (!DeviceIoControl(h_device, FSCTL_LOCK_VOLUME, 0, 0, 0, 0, &dw_ret, 0))
+            return FALSE;
+
+        if (!DeviceIoControl(h_device, FSCTL_DISMOUNT_VOLUME, 0, 0, 0, 0, &dw_ret, 0))
+            return FALSE;
+
+        PREVENT_MEDIA_REMOVAL pmr_buffer;
+        pmr_buffer.PreventMediaRemoval = FALSE;
+
+        if (!DeviceIoControl(h_device, IOCTL_STORAGE_MEDIA_REMOVAL, &pmr_buffer, sizeof(PREVENT_MEDIA_REMOVAL), NULL, 0, &dw_ret, NULL))
+            qDebug("DeviceIoControl IOCTL_STORAGE_MEDIA_REMOVAL failed:%ld\n", GetLastError());
+
+        auto b_result = DeviceIoControl(
+                            h_device,
+                            IOCTL_STORAGE_EJECT_MEDIA, //eject USB
+                            NULL,
+                            0,
+                            NULL,
+                            0,
+                            &dw_ret,
+                            static_cast<LPOVERLAPPED>(NULL));
+        if (!b_result) {
+            dw_error = GetLastError();
+            return FALSE;
         }
-        if (try_count == try_lock_volume_count)
-        {
-            error_string = "Device is using, try again later";
-            CloseHandle(handleDevice);
-            return false;
+
+        b_result = CloseHandle(h_device);
+        if (!b_result) {
+            dw_error = GetLastError();
+            return FALSE;
         }
-        DWORD  dwBytesReturned = 0;
-        PREVENT_MEDIA_REMOVAL PMRBuffer;
-        PMRBuffer.PreventMediaRemoval = FALSE;
-        if (!DeviceIoControl(handleDevice, IOCTL_STORAGE_MEDIA_REMOVAL, &PMRBuffer, sizeof(PREVENT_MEDIA_REMOVAL), NULL, 0, &dwBytesReturned, NULL))
-        {
-            error_string = QStringLiteral("Unmount failed! error code:%1").arg(GetLastError());
-            qDebug() << "DeviceIoControl IOCTL_STORAGE_MEDIA_REMOVAL failed:" << GetLastError();
-            CloseHandle(handleDevice);
-            return false;
-        }
-        long   bResult = 0;
-        DWORD retu = 0;
-        bResult = DeviceIoControl(handleDevice, IOCTL_STORAGE_EJECT_MEDIA, NULL, 0, NULL, 0, &retu, NULL);
-        if (!bResult)
-        {
-            error_string = QStringLiteral("Disconnect IGU failed! error code:%1").arg(GetLastError());
-            CloseHandle(handleDevice);
-            qDebug() << "Disconnect IGU IoControl failed error:" << GetLastError();
-            return false;
-        }
-        CloseHandle(handleDevice);
-        return true;
+
+        return TRUE;
     });
     widget->setStyleSheet("QWidget{background-color:rgba(90, 90, 90, 190);}");
     btn1->setStyleSheet("QPushButton{color:yellow;background-color:rgba(70,70,70,90);}"

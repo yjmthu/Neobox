@@ -16,7 +16,7 @@ win32 {
 }
 
 # 版本信息
-VERSION = 22.1.1.0
+VERSION = 22.1.3.0
 # 图标
 RC_ICONS += icons/speedbox.ico
 # 公司名称
@@ -42,10 +42,10 @@ CONFIG += c++11
 
 # release模式生成的文件更小，运行速度更快
 # CONFIG += release
-CONFIG += debug
+# CONFIG += debug
 
 # 禁用qDebug()
-# DEFINES += QT_NO_DEBUG_OUTPUT
+DEFINES += QT_NO_DEBUG_OUTPUT
 
 # 禁用 Qt 6之前的函数
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000
@@ -55,7 +55,6 @@ SOURCES += \
     bingsetting.cpp \
     blankform.cpp \
     calculator.cpp \
-    desktopmask.cpp \
     downloadprogress.cpp \
     explaindialog.cpp \
     formsetting.cpp \
@@ -66,6 +65,7 @@ SOURCES += \
     form.cpp \
     menu.cpp \
     netspeedhelper.cpp \
+    systemfunctions.cpp \
     translater.cpp \
     usbdrivehelper.cpp \
     wallpaper.cpp \
@@ -78,7 +78,6 @@ HEADERS += \
     bingsetting.h \
     blankform.h \
     calculator.h \
-    desktopmask.h \
     dialog.h \
     downloadprogress.h \
     explaindialog.h \
@@ -89,6 +88,7 @@ HEADERS += \
     menu.h \
     netspeedhelper.h \
     speedwidget.h \
+    systemfunctions.h \
     translater.h \
     usbdrivehelper.h \
     wallpaper.h

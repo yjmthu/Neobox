@@ -101,7 +101,6 @@ enum class TaskBarCenterState
 };
 
 class Form; class Dialog; class Wallpaper; struct IAccessible; //void* PMIB_IFTABLE;
-class DesktopMask;
 typedef ULONG(WINAPI* pfnAccessibleObjectFromWindow)(_In_ HWND hwnd, _In_ DWORD dwId, _In_ REFIID riid, _Outptr_ void** ppvObject);
 typedef ULONG(WINAPI* pfnAccessibleChildren)(_In_ IAccessible* paccContainer, _In_ LONG iChildStart, _In_ LONG cChildren, _Out_writes_(cChildren) VARIANT* rgvarChildren, _Out_ LONG* pcObtained);
 typedef BOOL(WINAPI* pfnDwmGetWindowAttribute)(HWND hwnd, DWORD dwAttribute, PVOID pvAttribute, DWORD cbAttribute);
@@ -112,7 +111,7 @@ class VARBOX: public QObject
     Q_OBJECT
 
 public:
-    const char* const Version = "22.1.1";
+    const char* const Version = "22.1.3";
     const bool FirstUse[1] = { false };
     PAPER_TYPE PaperType = PAPER_TYPE::Hot;               //当下正在使用的壁纸类型
     COLOR_THEME CurTheme = COLOR_THEME::White;
@@ -135,7 +134,6 @@ public:
     const int SysScreenWidth, SysScreenHeight;
     static HANDLE HMutex; HMODULE hOleacc = NULL, hDwmapi = NULL, hWininet=NULL;
     Form* const form {0}; Dialog*const dialog {0};
-    DesktopMask *ControlDesktopIcon = nullptr;
 
     pfnAccessibleObjectFromWindow AccessibleObjectFromWindow = nullptr;
     pfnAccessibleChildren AccessibleChildren = nullptr;
@@ -157,7 +155,6 @@ public:
     static wchar_t* runCmd(const QString & program, const QStringList& argument, short line);
     BOOL SetWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD AlphaColor);//设置窗口WIN10风格
     bool versionBefore(const char* A, const char* B);
-    std::function<bool(const wchar_t*)> OneDriveFile;
 public slots:
     static void MSG(const char* text, const char* title="提示", QMessageBox::StandardButtons buttons=QMessageBox::Ok);
     void openDirectory(const QString& dir);
@@ -170,7 +167,4 @@ private:
 };
 
 extern VARBOX* VarBox;
-
-wchar_t* get_reg_paper();
-
 #endif // FUNCBOX_H

@@ -140,7 +140,7 @@ void Wallpaper::_set_w(YJson* jsonArray)
     {
         int pic_num = jsonArray->getChildNum();
         qout << "Wallhaven 找到随机id";
-        std::uniform_int_distribution<int> dis(0, pic_num);
+        std::uniform_int_distribution<int> dis(0, pic_num-1);
         YJson* item = jsonArray->find(dis(_gen));
         std::string pic_url = item->getValueString();
         jsonArray->getParent()->find("Used")->append(*item);
@@ -447,7 +447,7 @@ void Wallpaper::get_url_from_Wallhaven(YJson* jsonArray)
                         continue;
                     }
                     urllist->append(wn);
-                } while (ptr = ptr->getNext());
+                } while (ptr = ptr->getNext(), ptr);
                 qout << "发送请求";
                 mgr->get(QNetworkRequest(QUrl((url + "&page=" + std::to_string(++*k)).c_str())));
             }
@@ -520,38 +520,44 @@ void Wallpaper::set_from_Native()
     dir.setFilter(QDir::Files | QDir::NoSymLinks);                                //设置类型过滤器，只为文件格式
     int dir_count = dir.count();
     if (!dir_count) return;
-    std::uniform_int_distribution<int> dis(0, dir_count);
+    std::uniform_int_distribution<int> dis(0, dir_count - 1);
     QString file_name = dir[dis(_gen)];       //随机生成文件名称。
     file_name = VarBox->NativeDir + "\\" + file_name;
 
-    if (VarBox->GetFileAttributes(reinterpret_cast<const wchar_t*>(file_name.utf16())))
+    if (VarBox->GetFileAttributes(reinterpret_cast<const wchar_t*>(file_name.utf16())))  // 如果是Onedrive网盘文件
     {
         if (VarBox->InternetGetConnectedState())
         {
             if (thrd) return emit msgBox("当前正忙, 请稍后再试.", "提示");
             thrd = QThread::create([=](){
-                if (!VarBox->OneDriveFile(file_name.toStdWString().c_str()))
+                QFile f(file_name);
+                char buffer;
+                if (f.open(QIODevice::ReadOnly) && f.size() && f.read(&buffer, 1))
                 {
-                    emit setFailed("本地文件无效，请更换本地文件夹、改变壁纸类型或取消自动更换壁纸！");
-                    return;
+                    set_wallpaper(file_name);
                 }
                 else
-                    set_wallpaper(file_name);
+                {
+                    emit setFailed("本地文件无效，请更换本地文件夹、改变壁纸类型或取消自动更换壁纸！");
+                }
+                return;
             });
             connect(thrd, &QThread::finished, this, [this](){
                 thrd->deleteLater();
                 thrd = nullptr;
             });
             thrd->start();
-            return;
         }
         else
         {
             emit msgBox("没有网络！", "提示");
-            return;
         }
+        return;
     }
-    set_wallpaper(file_name);
+    else
+    {
+        set_wallpaper(file_name);
+    }
 };
 
 
@@ -706,32 +712,43 @@ void Wallpaper::next()
     qout << "下一张图片";
     if (CurPic != PicHistory.end() && ++CurPic != PicHistory.end())
     {
-        thrd = QThread::create([this](){
-            if (VarBox->PathFileExists(*CurPic))
+        if (!VarBox->PathFileExists(*CurPic))
+        {
+            return;
+        }
+        if (VarBox->GetFileAttributes(*CurPic))
+        {
+            if (VarBox->InternetGetConnectedState())
             {
-                if (VarBox->GetFileAttributes(*CurPic))
-                {
-                    if (VarBox->InternetGetConnectedState())
+                thrd = QThread::create([=](){
+                    //*CurPic
+                    FILE * f = _wfopen(*CurPic, L"rb");
+                    char buffer;
+                    if (f && fread(&buffer, sizeof(char), 1, f) != 0)
                     {
-                        if (!VarBox->OneDriveFile(*CurPic))
-                        {
-                            return;
-                        }
+                        SystemParametersInfo(*CurPic);
                     }
                     else
                     {
                         emit msgBox("没有网络！", "提示");
-                        return;
                     }
-                }
-                SystemParametersInfo(*CurPic);
+                    return;
+                });
+                connect(thrd, &QThread::finished, this, [this](){
+                    thrd->deleteLater();
+                    thrd = nullptr;
+                });
+                thrd->start();
             }
-        });
-        connect(thrd, &QThread::finished, this, [this](){
-            thrd->deleteLater();
-            thrd = nullptr;
-        });
-        thrd->start();
+            else
+            {
+                emit msgBox("没有网络！", "提示");
+            }
+        }
+        else if (VarBox->PathFileExists(*CurPic))
+        {
+            SystemParametersInfo(*CurPic);
+        }
         return;
     }
     qout << "壁纸类型：" << static_cast<int>(VarBox->PaperType);
@@ -755,9 +772,11 @@ void Wallpaper::prev()
                 {
                     if (VarBox->InternetGetConnectedState())
                     {
-                        if (!VarBox->OneDriveFile(*CurPic))
+                        FILE * f = _wfopen(*CurPic, L"rb");
+                        char buffer;
+                        if (!f || !fread(&buffer, sizeof(char), 1, f) != 0)
                         {
-                            return;
+                            return ;
                         }
                     }
                     else
@@ -795,9 +814,9 @@ void Wallpaper::dislike()
         if (!blacklist->findByVal(id))
             blacklist->append(id);
         YJson *black_id;
-        if (black_id = json->find("ImgUrls")->find("Used")->findByVal(id))
+        if (black_id = json->find("ImgUrls")->find("Used")->findByVal(id), black_id)
             YJson::remove(black_id);
-        if (black_id = json->find("ImgUrls")->find("Unused")->findByVal(id))
+        if (black_id = json->find("ImgUrls")->find("Unused")->findByVal(id), black_id)
             YJson::remove(black_id);
         json->toFile("ImgData.json", YJson::UTF8BOM, true);
         delete  json;
@@ -808,7 +827,8 @@ void Wallpaper::dislike()
     CurPic = PicHistory.erase(CurPic);
     if (CurPic != PicHistory.end())
     {
-        if (thrd) return emit msgBox("和后台壁纸切换冲突，请稍后再试。", "提示");
+        if (thrd)
+            return emit msgBox("和后台壁纸切换冲突，请稍后再试。", "提示");
         if (!VarBox->PathFileExists(*CurPic))
         {
             delete [] *CurPic;
@@ -820,9 +840,11 @@ void Wallpaper::dislike()
             {
                 if (VarBox->InternetGetConnectedState())
                 {
-                    if (!VarBox->OneDriveFile(*CurPic))
+                    FILE * f = _wfopen(*CurPic, L"rb");
+                    char buffer;
+                    if (!f || !fread(&buffer, sizeof(char), 1, f) != 0)
                     {
-                        return;
+                        return ;
                     }
                 }
                 else

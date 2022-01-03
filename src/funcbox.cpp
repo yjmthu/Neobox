@@ -18,7 +18,6 @@
 #include "YString.h"
 #include "YJson.h"
 #include "form.h"
-#include "desktopmask.h"
 #include "wallpaper.h"
 #include "wallpaper.h"
 
@@ -66,8 +65,6 @@ VARBOX::~VARBOX()
     delete wallpaper;
     qout << "析构设置对话框";
     delete dialog;
-    qout << "析构桌面图标控制类";
-    delete ControlDesktopIcon;
     delete [] AppId;
     delete [] PassWord;
     if (hOleacc) FreeLibrary(hOleacc);
@@ -105,35 +102,6 @@ void VARBOX::loadFunctions()
     {
         qApp->exit(RETCODE_ERROR_EXIT);
     }
-    OneDriveFile = [this](const wchar_t*file)->bool{
-        if (FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS & GetFileAttributesW(file))
-        {
-            if (!InternetGetConnectedState()) return false;
-            for (int i = 0; i < 30; i++)
-            {
-                HANDLE hFileRead = CreateFileW(reinterpret_cast<const wchar_t*>(file), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-                if(hFileRead==INVALID_HANDLE_VALUE)
-                {
-                    qout << "非法路径";
-                    return false;
-                }
-                char lpFileDataBuffer[1] = {0};
-                DWORD dwReadedSize = 0;
-                if(ReadFile(hFileRead,lpFileDataBuffer,1,&dwReadedSize, NULL) && dwReadedSize)
-                {
-                    CloseHandle(hFileRead);
-                    return true;
-                }
-                CloseHandle(hFileRead);
-                Sleep(1000);
-            }
-        }
-        else
-        {
-            return true;
-        }
-        return false;
-    };
     PathFileExists = [](const wchar_t* pszPath)->bool{
         typedef BOOL(WINAPI* pfnPathFileExists)(LPWSTR);
         pfnPathFileExists pPathFileExists = NULL;
@@ -275,7 +243,6 @@ label_1:
             IniWrite->setValue("ColorTheme", static_cast<int>(CurTheme));
             IniWrite->setValue("x", 100);
             IniWrite->setValue("y", 100);
-            IniWrite->setValue("ControlDesktopIcon", (bool)ControlDesktopIcon);
             IniWrite->endGroup();
 
             IniWrite->beginGroup("Dirs");
@@ -330,13 +297,6 @@ label_2:
             IniRead->endGroup();
             qout << "读取路径信息完毕";
             IniRead->beginGroup("UI");
-            if (IniRead->contains("ControlDesktopIcon"))
-            {
-                if (IniRead->value("ControlDesktopIcon").toBool())
-                    ControlDesktopIcon = new DesktopMask;
-            }
-            else
-                IniRead->setValue("ControlDesktopIcon", false);  //enableUSBhelper
 
             safeEnum = IniRead->value("ColorTheme").toInt();
             if (safeEnum > 7) safeEnum = 0;
@@ -410,11 +370,6 @@ void VARBOX::initChildren()
         *const_cast<int*>(&(VarBox->SysScreenHeight)) = h;
         *const_cast<int*>(&(VarBox->ScreenWidth)) = rect.width();
         *const_cast<int*>(&(VarBox->ScreenHeight)) = rect.height();
-        if (ControlDesktopIcon)
-        {
-            ControlDesktopIcon->left->move(0, VarBox->ScreenHeight/2-5);
-            ControlDesktopIcon->right->move(VarBox->ScreenWidth-1, VarBox->ScreenHeight/2-6);
-        }
         form->keepInScreen();
     });
 }

@@ -19,7 +19,6 @@
 #include "ui_form.h"
 #include "wallpaper.h"
 #include "formsetting.h"
-#include "desktopmask.h"
 #include "wallpaper.h"
 #include "usbdrivehelper.h"
 
@@ -59,6 +58,7 @@ Form::~Form()
     qout << "析构定时器";
     delete ui;
     delete animation;
+    delete netHelper;
     qout << "析构Form结束";
 }
 
