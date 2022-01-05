@@ -28,6 +28,8 @@ protected:
 #else
     bool nativeEvent(const QByteArray &eventType, void *message, long long *result);
 #endif
+    void hideEvent(QHideEvent *event);
+    void closeEvent(QCloseEvent *event);
     bool eventFilter(QObject *target, QEvent *event);       //事件过滤器
     void keyPressEvent(QKeyEvent *event);                   //键盘点击时间
     void showEvent(QShowEvent* event);
@@ -43,7 +45,9 @@ private:
     uint64_t last_post_time;
     void requestData(const char*, std::string*);
     QNetworkAccessManager* mgr;
+    class QTimer *timer;
     void initConnects();
+    char time_left = 10;
 #if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
     class QTextToSpeech *speaker;
 #endif

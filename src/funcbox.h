@@ -28,11 +28,6 @@ inline constexpr int _PX_UNUSED(int a=RETCODE_ERROR_EXIT, int b=RETCODE_UPDATE, 
 #define TASK_DESK_SUB                "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced"
 
 
-enum class PAPER_TYPE
-{
-    Hot, Nature, Anime, Simple, Random, User, Bing, Other, Native, Advance
-};
-
 enum class COLOR_THEME
 {
     White, Gray, Purple, Red, Green, Blue, Brown, Black
@@ -111,24 +106,14 @@ class VARBOX: public QObject
     Q_OBJECT
 
 public:
-    const char* const Version = "22.1.3";
+    const char* const Version = "22.1.5";
     const bool FirstUse[1] = { false };
-    PAPER_TYPE PaperType = PAPER_TYPE::Hot;               //当下正在使用的壁纸类型
     COLOR_THEME CurTheme = COLOR_THEME::White;
-
-    bool AutoChange = false;
-    unsigned char PageNum = 1;
-    unsigned char TimeInterval = 15;
-    bool UseDateAsBingName = true, AutoSaveBingPicture = true;
-    QString NativeDir;                  //当下正在使用的用户本地壁纸文件夹
-    QString UserCommand = "python.exe -u X:\\xxxxx.py";                //当下正在使用的用户高级命令
-    QString PathToOpen;                //要打开的文件夹
 
     bool HaveAppRight = false,  EnableTranslater = false, AutoHide = false;;
     char* AppId = nullptr, * PassWord = nullptr;
     bool enableUSBhelper = true;  // enableUSBhelper
-
-    bool FirstChange = true;
+    QString PathToOpen;                //右键要打开的文件夹
 
     const int ScreenWidth, ScreenHeight;                  //屏幕宽高
     const int SysScreenWidth, SysScreenHeight;
@@ -154,7 +139,7 @@ public:
     void sigleSave(QString group, QString key, QString value);
     static wchar_t* runCmd(const QString & program, const QStringList& argument, short line);
     BOOL SetWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD AlphaColor);//设置窗口WIN10风格
-    bool versionBefore(const char* A, const char* B);
+    uint32_t getVersion(const char* A);
 public slots:
     static void MSG(const char* text, const char* title="提示", QMessageBox::StandardButtons buttons=QMessageBox::Ok);
     void openDirectory(const QString& dir);

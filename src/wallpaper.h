@@ -31,19 +31,13 @@ private:
     void set_from_Other();                //使用其它Api
     void get_url_from_Wallhaven(YJson* urlObject);   //从Wallhaven获取120个壁纸链接
     void get_url_from_Bing();             //从Wallhaven获取120个壁纸链接
-    QThread* thrd = nullptr;
-    QNetworkAccessManager* mgr = nullptr;
+    bool m_doing = false;
 
 public:
-    Wallpaper(); ~Wallpaper();
-    void push_back();
-    void next();
-    void prev();
-    void apply();
-    void dislike();
-    bool applyClicked;
-    inline bool isActive() const { return mgr || thrd; };
-    void kill();
+    enum class Type
+    {
+        Hot, Nature, Anime, Simple, Random, User, Bing, Other, Native, Advance
+    };
     std::list<wchar_t*> PicHistory;
     std::list<wchar_t*>::const_iterator CurPic;
     bool update;
@@ -53,6 +47,26 @@ public:
     QString image_path;
     QString image_name;
     class QTimer *timer = nullptr;                       //定时更换壁纸
+
+    Type PaperType = Type::Hot;                                        //当下正在使用的壁纸类型
+    bool AutoChange = false;
+    unsigned char PageNum = 1;
+    unsigned char TimeInterval;
+    bool UseDateAsBingName;
+    bool AutoSaveBingPicture;
+    QString NativeDir;                                                 //当下正在使用的用户本地壁纸文件夹
+    QString UserCommand;                //当下正在使用的用户高级命令
+    bool FirstChange = true;
+
+    Wallpaper(); ~Wallpaper();
+    void push_back();
+    void next();
+    void prev();
+    void apply();
+    void dislike();
+    bool applyClicked = false;
+    inline bool isActive() const { return m_doing; };
+    inline void kill() { m_doing = false; };
 };
 
 #endif // WALLPAPER_H

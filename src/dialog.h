@@ -3,7 +3,6 @@
 
 #include <speedwidget.h>
 
-class Wallpaper;
 class Form;
 class QLineEdit;
 class QPushButton;
@@ -29,7 +28,8 @@ public:
 private:
     friend void del_file(Dialog *di ,QString str);
     Ui::Dialog* ui = nullptr;
-    QButtonGroup* buttonGroup = nullptr;                           //单选按钮组合，互斥，添加按钮id
+    QButtonGroup* buttonGroup = nullptr;                 //单选按钮组合，互斥，添加按钮id
+    class Wallpaper *wallpaper;
 	void checkSettings();                                //读取注册表
 	void initChildren();
 	void initUi();

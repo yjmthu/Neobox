@@ -12,6 +12,7 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <QTimer>
+#include <QEventLoop>
 
 #include "funcbox.h"
 #include "wallpaper.h"
@@ -23,7 +24,7 @@ const wchar_t* get_file_name(const wchar_t* file_path)
 {
     const wchar_t* ptr = file_path;
     while (*++ptr);
-    while (*--ptr != '\\');
+    while (!strchr("\\/", *--ptr));
     return ++ptr;
 }
 
@@ -67,9 +68,38 @@ Wallpaper::Wallpaper():
             SPIF_SENDCHANGE | SPIF_UPDATEINIFILE
             )
         ),
-    thrd(nullptr), mgr(nullptr), applyClicked(false),
-    update(false), url(), bing_api(), bing_folder(), image_path(),  image_name(), timer(new QTimer)
+    m_doing(false), update(false), url(), bing_api(), bing_folder(), image_path(),  image_name(), timer(new QTimer)
 {
+    QSettings *IniRead = new QSettings("SpeedBox.ini", QSettings::IniFormat);
+    IniRead->beginGroup("Wallpaper");
+    NativeDir = IniRead->value("NativeDir").toString();
+    unsigned safeEnum = IniRead->value("PaperType").toInt();
+    if (safeEnum > 9) safeEnum = 0;
+    PaperType = static_cast<Type>(safeEnum);
+    TimeInterval = IniRead->value("TimeInerval").toInt();
+    PageNum = IniRead->value("PageNum").toInt();
+    UserCommand = IniRead->value("UserCommand").toString();
+    AutoChange = IniRead->value("AutoChange").toBool();
+    if (IniRead->contains("AutoRotationBingPicture"))
+    {
+        UseDateAsBingName = IniRead->value("UseDateAsBingName").toBool();
+        AutoSaveBingPicture = IniRead->value("AutoSaveBingPicture").toBool();
+    }
+    else
+    {
+        IniRead->setValue("AutoSaveBingPicture", AutoSaveBingPicture);
+        IniRead->setValue("UseDateAsBingName", UseDateAsBingName);
+    }
+    if (IniRead->contains("FirstChange"))
+    {
+        FirstChange = IniRead->value("FirstChange").toBool();
+    }
+    else
+        IniRead->setValue("FirstChange", FirstChange);
+    IniRead->endGroup();
+    delete IniRead;
+    qout << "读取壁纸信息完毕";
+
     connect(this, &Wallpaper::msgBox, VarBox, std::bind(VARBOX::MSG, std::placeholders::_1, std::placeholders::_2, QMessageBox::Ok));
     QSettings set("HKEY_CURRENT_USER\\Control Panel\\Desktop", QSettings::NativeFormat);
     if (set.contains("WallPaper"))
@@ -82,16 +112,19 @@ Wallpaper::Wallpaper():
             auto l = wcslen(s) + 1;
             PicHistory.emplace_back(new wchar_t[l]);
             std::copy(s, s+l, PicHistory.back());
-            std::wcout << L"注册表壁纸记录: " << PicHistory.back();
         }
     }
     CurPic = PicHistory.begin();
-    timer->setInterval(VarBox->TimeInterval * 60000);
-    if (VarBox->FirstChange){
+//    if (VarBox->AutoSaveBingPicture)
+//        set_from_Bing();
+    timer->setInterval(TimeInterval * 60000);
+    if (FirstChange)
+    {
         qout << "自动换";
         if (!VarBox->InternetGetConnectedState())
         {
-            thrd = QThread::create([=](){
+            m_doing = true;
+            auto thrd = QThread::create([=](){
                 for (int i = 0; i < 300; ++i)
                 {
                     Sleep(200);
@@ -102,31 +135,27 @@ Wallpaper::Wallpaper():
                     }
                 }
             });
-            connect(thrd, &QThread::finished, this, [this](){
+            connect(thrd, &QThread::finished, this, [=](){
                 thrd->deleteLater();
-                thrd = nullptr;
+                m_doing = false;
             });
             thrd->start();
         }
         else
             push_back();
-       static const char _ = VarBox->AutoSaveBingPicture && (set_from_Bing(), 1);
-       (void)_;
+        if (AutoSaveBingPicture && PaperType != Type::Bing)
+        {
+            set_from_Bing();
+        }
     }
     else qout << "不自动换";
-    if (VarBox->AutoChange) timer->start();
+    if (AutoChange)
+        timer->start();
     connect(timer, &QTimer::timeout, this, &Wallpaper::next);
 }
 
 Wallpaper::~Wallpaper()
 {
-    delete mgr;
-    if (thrd)
-    {
-        thrd->deleteLater();
-        qout << "等待线程析构中";
-        thrd->wait();
-    }
     delete timer;
     for (auto c: PicHistory)
         delete [] c;
@@ -152,13 +181,14 @@ void Wallpaper::_set_w(YJson* jsonArray)
             if (!QFile::exists(img))
             {
                 qout << "本地找不到文件, 直接开始下载";
-                mgr = new QNetworkAccessManager;
+                m_doing = true;
+                auto mgr = new QNetworkAccessManager;
                 mgr->setTransferTimeout(30000);
                 connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep)->void{
                     if (rep->error() != QNetworkReply::NoError)
                     {
                         mgr->deleteLater();
-                        mgr = nullptr;
+                        m_doing = false;
                         return;
                     }
                     QFile file(img);
@@ -171,7 +201,7 @@ void Wallpaper::_set_w(YJson* jsonArray)
                         qout << file.size();
                     }
                     mgr->deleteLater();
-                    mgr = nullptr;
+                    m_doing = false;
                     set_wallpaper(img);
                 });
                 mgr->get(QNetworkRequest(QUrl(("https://w.wallhaven.cc/full/"+pic_url.substr(10, 2)+"/"+pic_url).c_str())));
@@ -219,7 +249,7 @@ void Wallpaper::_set_b(YJson * file_data)
     std::string img_url("https://cn.bing.com");
     img_url += temp->find("url")->getValueString();
     QString bing_name;
-    if (VarBox->UseDateAsBingName)
+    if (UseDateAsBingName)
     {
         qout << "使用日期名称";
         bing_name = temp->find("enddate")->getValueString();
@@ -239,15 +269,17 @@ void Wallpaper::_set_b(YJson * file_data)
     if (!QFile::exists(bing_name))
     {
         qout << "下载图片";
-        mgr = new QNetworkAccessManager;
+        m_doing = true;
+        auto mgr = new QNetworkAccessManager;
         qout << "检查一下";
         connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep)->void{
             if (rep->error() != QNetworkReply::NoError)
             {
                 mgr->deleteLater();
-                mgr = nullptr;
+                m_doing = false;
                 return;
             }
+            qout << "没有错误!";
             QFile file(bing_name);
             if (file.open(QIODevice::WriteOnly))
             {
@@ -261,18 +293,19 @@ void Wallpaper::_set_b(YJson * file_data)
                 qout << file.size();
             }
             mgr->deleteLater();
-            mgr = nullptr;
-            if (VarBox->PaperType == PAPER_TYPE::Bing) set_wallpaper(bing_name);
+            m_doing = false;
+            if (PaperType == Type::Bing)
+                set_wallpaper(bing_name);
         });
         mgr->setTransferTimeout(30000);
-        connect(mgr->get(QNetworkRequest(QUrl(img_url.c_str()))), &QNetworkReply::errorOccurred, this, [this](){
+        connect(mgr->get(QNetworkRequest(QUrl(img_url.c_str()))), &QNetworkReply::errorOccurred, this, [=](){
             mgr->deleteLater();
-            mgr = nullptr;
+            m_doing = false;
         });
     }
     else
     {
-        if (VarBox->PaperType == PAPER_TYPE::Bing) set_wallpaper(bing_name);
+        if (PaperType == Type::Bing) set_wallpaper(bing_name);
     }
 }
 
@@ -281,18 +314,18 @@ void Wallpaper::push_back()
     YJson& json = *new YJson("WallpaperApi.json", YJson::UTF8);
     const char* curApi = nullptr;
     QDir dir;
-    int index = (int)VarBox->PaperType;
+    int index = static_cast<int>(PaperType);
     qout << "种类: " << index;
     bing_api = json["BingApi"]["Parameter"].urlEncode(json["MainApis"]["BingApi"].getValueString()).c_str();
     bing_folder = json["BingApi"]["Folder"].getValueString();
     qout << "必应Api" << bing_api;
-    switch (VarBox->PaperType)
+    switch (PaperType)
     {
-    case PAPER_TYPE::Bing:
+    case Type::Bing:
         delete &json;
         set_from_Bing();
         return;
-    case PAPER_TYPE::Other:
+    case Type::Other:
         curApi = json["OtherApi"]["Curruent"].getValueString();
         url = json["OtherApi"]["ApiData"][curApi]["Url"].getValueString();
         image_path = json["OtherApi"]["ApiData"][curApi]["Folder"].getValueString();
@@ -303,15 +336,15 @@ void Wallpaper::push_back()
         else
             emit msgBox("壁纸存放文件夹不存在, 请手动创建!", "出错");
         return;
-    case PAPER_TYPE::Advance:
+    case Type::Advance:
         delete &json;
         set_from_Advance();
         return;
-    case PAPER_TYPE::Native:
+    case Type::Native:
         delete &json;
         set_from_Native();
         return;
-    case PAPER_TYPE::User:
+    case Type::User:
         curApi = json["User"]["Curruent"].getValueString();
         url = json["User"]["ApiData"][curApi]["Parameter"].urlEncode(json["MainApis"]["WallhavenApi"].getValueString());
         image_path = json["User"]["ApiData"][curApi]["Folder"].getValueString();
@@ -346,7 +379,7 @@ void Wallpaper::set_from_Wallhaven()  // 从数据库中随机抽取一个链接
         jsonObject->find("Api") &&
         (find_item = jsonObject->find("PageNum")) &&
         find_item->getType() == YJson::Number &&
-        find_item->getValueInt() == VarBox->PageNum &&
+        find_item->getValueInt() == PageNum &&
         (jsonArray = jsonObject->find("ImgUrls")) &&
         jsonArray->getType() == YJson::Object)
     {
@@ -397,7 +430,7 @@ label_1:
     delete jsonObject;
     jsonObject = new YJson(YJson::Object);
     jsonObject->append(Wallpaper::url.c_str(), "Api");
-    jsonObject->append(VarBox->PageNum, "PageNum");
+    jsonObject->append(PageNum, "PageNum");
     jsonArray = jsonObject->append(YJson::Object, "ImgUrls");
     jsonArray->append(YJson::Array, "Used");
     jsonArray->append(YJson::Array, "Blacklist");
@@ -408,29 +441,29 @@ label_1:
 
 void Wallpaper::get_url_from_Wallhaven(YJson* jsonArray)
 {
+    static int k;
     qout << "开始从wallhaven获取链接.";
     YJson* urllist =  jsonArray->find("Unused"), *blacklist = jsonArray->find("Blacklist");
-    mgr = new QNetworkAccessManager;
-    int *k = new int(5 * (VarBox->PageNum - 1) + 1);
+    m_doing = true;
+    auto mgr = new QNetworkAccessManager;
+    k = int(5 * (PageNum - 1) + 1);
     connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep){
         if (rep->error() != QNetworkReply::NoError)
         {
-            delete k;
             delete jsonArray->getTop();
             mgr->deleteLater();
-            mgr = nullptr;
+            m_doing = false;
             return;
         }
         qout << "一轮壁纸链接请求结束";
-        if (*k <= 5 * VarBox->PageNum)
+        if (k <= 5 * PageNum)
         {
             YJson *js = new YJson(rep->readAll());
             if (js->find("error"))  //{"error":"Not Found"}
             {
                 delete js;
-                delete k;
                 mgr->deleteLater();
-                mgr = nullptr;
+                m_doing = false;
                 emit msgBox("该页面范围下没有壁纸, 请更换壁纸类型或者页面位置!", "出错");
                 return ;
             }
@@ -447,15 +480,15 @@ void Wallpaper::get_url_from_Wallhaven(YJson* jsonArray)
                         continue;
                     }
                     urllist->append(wn);
-                } while (ptr = ptr->getNext(), ptr);
-                qout << "发送请求";
-                mgr->get(QNetworkRequest(QUrl((url + "&page=" + std::to_string(++*k)).c_str())));
+                } while (ptr = ptr->getNext());
+                QString str = (url + "&page=" + std::to_string(++k)).c_str();
+                qout << "post request" << str << bool(mgr);
+                mgr->get(QNetworkRequest(QUrl(str)));
             }
             else
             {
-                delete k;
                 mgr->deleteLater();
-                mgr = nullptr;
+                m_doing = false;
                 if (urllist->getChild())
                     _set_w(urllist);
                 else
@@ -467,35 +500,36 @@ void Wallpaper::get_url_from_Wallhaven(YJson* jsonArray)
             delete js;
         }
         else {
-            delete k;
             if (urllist->getChild())
             {
                 mgr->deleteLater();
-                mgr = nullptr;
+                m_doing = false;
                 _set_w(urllist);
             }
             else
             {
                 delete jsonArray->getTop();
                 mgr->deleteLater();
-                mgr = nullptr;
+                m_doing = false;
                 emit msgBox("该页面范围下没有壁纸, 请更换壁纸类型或者页面位置!", "出错");
             }
         }
     });
     mgr->setTransferTimeout(30000);
-    mgr->get(QNetworkRequest(QUrl((url + "&page=" + std::to_string(*k)).c_str())));
+    mgr->get(QNetworkRequest(QUrl((url + "&page=" + std::to_string(k)).c_str())));
 }
 
 void Wallpaper::get_url_from_Bing()
 {
     qout << "获取必应链接";
-    mgr = new QNetworkAccessManager;
+    m_doing = true;
+    auto mgr = new QNetworkAccessManager;
+    QEventLoop* loop = new QEventLoop;
     connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep){
         if (rep->error() != QNetworkReply::NoError)
         {
             mgr->deleteLater();
-            mgr = nullptr;
+            m_doing = false;
             return;
         }
         qout << "必应请求完成";
@@ -504,16 +538,19 @@ void Wallpaper::get_url_from_Bing()
         bing_data.append(0, "current");
         bing_data.append(QDateTime::currentDateTime().toString("yyyyMMdd").toStdString(), "today");
         mgr->deleteLater();
-        mgr = nullptr;
+        m_doing = false;
         _set_b(&bing_data);
+        loop->quit();
+        loop->deleteLater();
     });
     mgr->setTransferTimeout(30000);
     mgr->get(QNetworkRequest(bing_api));
+    loop->exec();
 }
 
 void Wallpaper::set_from_Native()
 {
-    QDir dir(VarBox->NativeDir);
+    QDir dir(NativeDir);
     if (!dir.exists()) return;
     QStringList filters;
     filters << "*.png" << "*.jpg" << "*.jpeg" << "*.bmp" << "*.wbep";
@@ -522,14 +559,15 @@ void Wallpaper::set_from_Native()
     if (!dir_count) return;
     std::uniform_int_distribution<int> dis(0, dir_count - 1);
     QString file_name = dir[dis(_gen)];       //随机生成文件名称。
-    file_name = VarBox->NativeDir + "\\" + file_name;
+    file_name = NativeDir + "\\" + file_name;
 
     if (VarBox->GetFileAttributes(reinterpret_cast<const wchar_t*>(file_name.utf16())))  // 如果是Onedrive网盘文件
     {
         if (VarBox->InternetGetConnectedState())
         {
-            if (thrd) return emit msgBox("当前正忙, 请稍后再试.", "提示");
-            thrd = QThread::create([=](){
+            if (m_doing) return emit msgBox("当前正忙, 请稍后再试.", "提示");
+            m_doing = true;
+            auto thrd = QThread::create([=](){
                 QFile f(file_name);
                 char buffer;
                 if (f.open(QIODevice::ReadOnly) && f.size() && f.read(&buffer, 1))
@@ -542,9 +580,9 @@ void Wallpaper::set_from_Native()
                 }
                 return;
             });
-            connect(thrd, &QThread::finished, this, [this](){
+            connect(thrd, &QThread::finished, this, [=](){
                 thrd->deleteLater();
-                thrd = nullptr;
+                m_doing = false;
             });
             thrd->start();
         }
@@ -580,17 +618,17 @@ void Wallpaper::set_from_Bing()
     qout << "必应文件为最新";
     _set_b(file_data);
     delete file_data;
-    return void();
 }
 
 void Wallpaper::set_from_Other()
 {
-    mgr = new QNetworkAccessManager;
-    connect(mgr, &QNetworkAccessManager::finished, this, [this](QNetworkReply* rep){
+    m_doing = true;
+    auto mgr = new QNetworkAccessManager;
+    connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep){
         if (rep->error() != QNetworkReply::NoError)
         {
             mgr->deleteLater();
-            mgr = nullptr;
+            m_doing = false;
             return;
         }
         QString path =  image_path + QDateTime::currentDateTime().toString("\\" + image_name);
@@ -610,7 +648,7 @@ void Wallpaper::set_from_Other()
         }
         set_wallpaper(path);
         mgr->deleteLater();
-        mgr = nullptr;
+        m_doing = false;
     });
     mgr->setTransferTimeout(30000);
     mgr->get(QNetworkRequest(QUrl(url.c_str())));
@@ -645,11 +683,12 @@ QStringList _parse_arguments(const QString& str)
 
 void Wallpaper::set_from_Advance()
 {
-    if (VarBox->UserCommand.isEmpty()) return;
-    qout << "高级命令开始" << VarBox->UserCommand;
+    if (UserCommand.isEmpty()) return;
+    qout << "高级命令开始" << UserCommand;
     wchar_t** program_output = new wchar_t*(nullptr);
-    thrd = QThread::create([=](){
-        QStringList&& lst = _parse_arguments(VarBox->UserCommand);
+    m_doing = true;
+    auto thrd = QThread::create([=](){
+        QStringList&& lst = _parse_arguments(UserCommand);
         QString program_file = lst[0]; lst.removeFirst();
         if (applyClicked)
         {
@@ -689,7 +728,7 @@ void Wallpaper::set_from_Advance()
                         delete program_output;
                                 qout  << "清理现场";
                         thrd->deleteLater();
-                        thrd = nullptr;
+                        m_doing = false;
                         return ;
                     }
                     break;
@@ -701,14 +740,14 @@ void Wallpaper::set_from_Advance()
         qout << "清除一级指针内存";
         delete program_output;
         thrd->deleteLater();
-        thrd = nullptr;
+        m_doing = false;
     });
     thrd->start();
 }
 
 void Wallpaper::next()
 {
-    if (thrd || mgr) return emit msgBox("频繁点击是没有效的哦！", "提示");
+    if (m_doing) return emit msgBox("频繁点击是没有效的哦！", "提示");
     qout << "下一张图片";
     if (CurPic != PicHistory.end() && ++CurPic != PicHistory.end())
     {
@@ -720,7 +759,8 @@ void Wallpaper::next()
         {
             if (VarBox->InternetGetConnectedState())
             {
-                thrd = QThread::create([=](){
+                m_doing = true;
+                auto thrd = QThread::create([=](){
                     //*CurPic
                     FILE * f = _wfopen(*CurPic, L"rb");
                     char buffer;
@@ -734,9 +774,9 @@ void Wallpaper::next()
                     }
                     return;
                 });
-                connect(thrd, &QThread::finished, this, [this](){
+                connect(thrd, &QThread::finished, this, [=](){
                     thrd->deleteLater();
-                    thrd = nullptr;
+                    m_doing = false;
                 });
                 thrd->start();
             }
@@ -751,14 +791,15 @@ void Wallpaper::next()
         }
         return;
     }
-    qout << "壁纸类型：" << static_cast<int>(VarBox->PaperType);
+    qout << "壁纸类型：" << static_cast<int>(PaperType);
     push_back();
 }
 
 void Wallpaper::prev()
 {
-    if (thrd) return emit msgBox("和后台壁纸切换冲突，请稍后再试。", "提示");
-    thrd = QThread::create([this](){
+    if (m_doing) return emit msgBox("和后台壁纸切换冲突，请稍后再试。", "提示");
+    m_doing = true;
+    auto thrd = QThread::create([this](){
         for (int i=0; i<100; ++i)
         {
             if (CurPic == PicHistory.begin())
@@ -794,8 +835,9 @@ void Wallpaper::prev()
                 --CurPic;
         }
     });
-    connect(thrd, &QThread::finished, this, [this](){
-        thrd->deleteLater(); thrd = nullptr;
+    connect(thrd, &QThread::finished, this, [=](){
+        thrd->deleteLater();
+        m_doing = false;
     });
     thrd->start();
 }
@@ -827,7 +869,7 @@ void Wallpaper::dislike()
     CurPic = PicHistory.erase(CurPic);
     if (CurPic != PicHistory.end())
     {
-        if (thrd)
+        if (m_doing)
             return emit msgBox("和后台壁纸切换冲突，请稍后再试。", "提示");
         if (!VarBox->PathFileExists(*CurPic))
         {
@@ -835,7 +877,8 @@ void Wallpaper::dislike()
             CurPic = PicHistory.erase(CurPic);
             return push_back();
         }
-        thrd = QThread::create([this](){
+        m_doing = true;
+        auto thrd = QThread::create([this](){
             if (VarBox->GetFileAttributes(*CurPic))
             {
                 if (VarBox->InternetGetConnectedState())
@@ -855,24 +898,12 @@ void Wallpaper::dislike()
             }
             SystemParametersInfo(*CurPic);
         });
-        connect(thrd, &QThread::finished, this, [this](){
+        connect(thrd, &QThread::finished, this, [=](){
             thrd->deleteLater();
-            thrd = nullptr;
+            m_doing = false;
         });
         thrd->start();
         return;
     }
     push_back();
-}
-
-void Wallpaper::kill()
-{
-    if (mgr) {
-        mgr->deleteLater();
-        mgr = nullptr;
-    }
-    if (thrd) {
-        thrd->deleteLater();
-        thrd = nullptr;
-    }
 }

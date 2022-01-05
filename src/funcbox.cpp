@@ -13,6 +13,7 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QTextCodec>
+#include <QDesktopServices>
 
 #include "funcbox.h"
 #include "YString.h"
@@ -181,7 +182,7 @@ bool VARBOX::check_app_right()
 
 void VARBOX::initFile()
 {
-    QString file = "SpeedBox.ini"; qout << "配置文件目录" << file;
+    constexpr char file[] = "SpeedBox.ini"; qout << "配置文件目录" << file;
     QString picfolder = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
     QDir dir;
     if (!QFile::exists(file) && QFile::exists("SpeedBox2.ini"))
@@ -201,7 +202,7 @@ void VARBOX::initFile()
         QByteArray x = set.value("Version").toByteArray();
         set.endGroup();
         qout << "文件存在，版本信息为" << x;
-        if (VARBOX::versionBefore(x, "21.8.1"))
+        if (getVersion(x)<getVersion("21.8.1"))
         {
             qout << "ini文件过期，将其删除。";
             QFile::remove(file);
@@ -216,22 +217,20 @@ void VARBOX::initFile()
 label_1:
         {
             qout << "创建新的Ini文件。";
-            NativeDir = picfolder;
-            PathToOpen = QDir::toNativeSeparators(qApp->applicationDirPath());
             QSettings *IniWrite = new QSettings("SpeedBox.ini", QSettings::IniFormat);
             IniWrite->setIniCodec(QTextCodec::codecForName("UTF-8"));
             IniWrite->beginGroup("SpeedBox");
             IniWrite->setValue("Version", Version);
             IniWrite->endGroup();
             IniWrite->beginGroup("Wallpaper");
-            IniWrite->setValue("PaperType", static_cast<int>(PaperType));
-            IniWrite->setValue("TimeInerval", TimeInterval);
-            IniWrite->setValue("PageNum", PageNum);
+            IniWrite->setValue("PaperType", 0);
+            IniWrite->setValue("TimeInerval", 15);
+            IniWrite->setValue("PageNum", 1);
             IniWrite->setValue("setNative", false);
             IniWrite->setValue("AutoChange", false);
-            IniWrite->setValue("NativeDir", NativeDir);
-            IniWrite->setValue("UserCommand", UserCommand);
-            IniWrite->setValue("UseDateAsBingName", UseDateAsBingName);
+            IniWrite->setValue("NativeDir", picfolder);
+            IniWrite->setValue("UserCommand", "python.exe -u X:\\xxxxx.py");
+            IniWrite->setValue("UseDateAsBingName", true);
             IniWrite->endGroup();
 
             IniWrite->beginGroup("Translate");
@@ -246,7 +245,7 @@ label_1:
             IniWrite->endGroup();
 
             IniWrite->beginGroup("Dirs");
-            IniWrite->setValue("OpenDir", PathToOpen);
+            IniWrite->setValue("OpenDir", QDir::toNativeSeparators(qApp->applicationDirPath()));
 
             IniWrite->endGroup(); delete IniWrite;
             qout << "创建新的ini文件完毕。";
@@ -260,33 +259,7 @@ label_2:
             IniRead->beginGroup("SpeedBox");
             IniRead->setValue("Version", Version);
             IniRead->endGroup();
-            IniRead->beginGroup("Wallpaper");
-            NativeDir = IniRead->value("NativeDir").toString();
-            unsigned safeEnum = IniRead->value("PaperType").toInt();
-            if (safeEnum>9) safeEnum = 0;
-            PaperType = static_cast<PAPER_TYPE>(safeEnum);
-            TimeInterval = IniRead->value("TimeInerval").toInt();
-            PageNum = IniRead->value("PageNum").toInt();
-            UserCommand = IniRead->value("UserCommand").toString();
-            AutoChange = IniRead->value("AutoChange").toBool();
-            if (IniRead->contains("AutoRotationBingPicture"))
-            {
-                UseDateAsBingName = IniRead->value("UseDateAsBingName").toBool();
-                AutoSaveBingPicture = IniRead->value("AutoSaveBingPicture").toBool();
-            }
-            else
-            {
-                IniRead->setValue("AutoSaveBingPicture", AutoSaveBingPicture);
-                IniRead->setValue("UseDateAsBingName", UseDateAsBingName);
-            }
-            if (IniRead->contains("FirstChange"))
-            {
-                FirstChange = IniRead->value("FirstChange").toBool();
-            }
-            else
-                IniRead->setValue("FirstChange", FirstChange);
-            IniRead->endGroup();
-            qout << "读取壁纸信息完毕";
+
             IniRead->beginGroup("Translate");
             AutoHide = IniRead->value("AutoHide").toBool();
             EnableTranslater = IniRead->value("EnableTranslater").toBool();
@@ -298,7 +271,7 @@ label_2:
             qout << "读取路径信息完毕";
             IniRead->beginGroup("UI");
 
-            safeEnum = IniRead->value("ColorTheme").toInt();
+            unsigned safeEnum = IniRead->value("ColorTheme").toInt();
             if (safeEnum > 7) safeEnum = 0;
             CurTheme = static_cast<COLOR_THEME>(safeEnum);
             IniRead->endGroup();
@@ -447,30 +420,24 @@ BOOL VARBOX::SetWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD A
     return ret;
 }
 
-inline void _getINT(const char* &X, int &x)
+char _getINT(const char* &X)
 {
+    unsigned char x = 0;
     while (true)
     {
-        x += *X - '0';
-        ++X;
+        x += *X++ - '0';
         if (*X == '.' || *X == '\0')
-            return;
+            return x;
         x *= 10;
     }
+    return x;
 }
-bool VARBOX::versionBefore(const char* A, const char* B)
+uint32_t VARBOX::getVersion(const char* A)
 {
-    int a=0, b=0;
-    _getINT(A, a); _getINT(B, b);
-    ++A; ++B;
-    if (a<b) return true; else if (a>b) return false;
-    a = b = 0;
-    _getINT(A, a); _getINT(B, b);
-    ++A; ++B;
-    if (a<b) return true; else if (a>b) return false;
-    a = b = 0;
-    _getINT(A, a); _getINT(B, b);
-    if (a<b) return true; else return false;
+    uint32_t buffer = _getINT(A);
+    (buffer <<= 8) |= _getINT(++A);
+    (buffer <<= 8) |= _getINT(++A);
+    return buffer;
 }
 
 void VARBOX::MSG(const char *text, const char* title, QMessageBox::StandardButtons s)

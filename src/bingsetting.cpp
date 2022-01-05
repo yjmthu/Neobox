@@ -9,7 +9,8 @@
 #include "blankform.h"
 #include "gmpoperatetip.h"
 #include "ui_bingsetting.h"
-#include <sstream>
+#include "wallpaper.h"
+
 BingSetting::BingSetting():
     SpeedWidget<QDialog>(),
     ui(new Ui::BingSetting)
@@ -22,11 +23,11 @@ BingSetting::BingSetting():
     ui->setupUi(this);
     initSpeedBox(ui->frame, &BingSetting::showMinimized, &BingSetting::close);
 
-    if (VarBox->UseDateAsBingName)
+    if (VarBox->wallpaper->UseDateAsBingName)
         ui->radioButton->setChecked(true);
     else
         ui->radioButton_2->setChecked(true);
-    ui->checkBox->setChecked(VarBox->AutoSaveBingPicture);
+    ui->checkBox->setChecked(VarBox->wallpaper->AutoSaveBingPicture);
     ui->checkBox_2->setChecked(true);
     ui->checkBox_2->setEnabled(false);
 }
@@ -56,7 +57,7 @@ void BingSetting::on_pushButton_2_clicked()
 
 void BingSetting::on_pushButton_3_clicked()
 {
-    VarBox->UseDateAsBingName = ui->radioButton->isChecked();
-    VarBox->AutoSaveBingPicture = ui->checkBox->isChecked();
+    VarBox->wallpaper->UseDateAsBingName = ui->radioButton->isChecked();
+    VarBox->wallpaper->AutoSaveBingPicture = ui->checkBox->isChecked();
     jobTip->showTip("应用成功，可能需要点击保存！");
 }

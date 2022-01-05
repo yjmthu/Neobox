@@ -60,7 +60,7 @@ Translater::Translater() :
     QWidget(nullptr),
     ui(new Ui::Translater),
     _en("en"), _zh("zh"), from(_zh), to(_en),
-    mgr(new QNetworkAccessManager)
+    mgr(new QNetworkAccessManager), timer(new QTimer)
     #if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
         , speaker(new QTextToSpeech)
     #endif
@@ -82,6 +82,10 @@ Translater::Translater() :
 	ui->TextFrom->installEventFilter(this);
     ui->TextFrom->setContextMenuPolicy(Qt::CustomContextMenu);
     ui->TextTo->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(timer, &QTimer::timeout, this, [=](){
+        if (isVisible() && --time_left <= 0 && VarBox->AutoHide)
+            hide();
+    });
 
     if (*VarBox->FirstUse)
     {
@@ -115,6 +119,7 @@ Translater::~Translater()
     UnregisterHotKey(HWND(winId()), M_WIN_HOT_KEY_SHIFT_Z);
     UnregisterHotKey(HWND(winId()), M_WIN_HOT_KEY_SHIFT_A);
     qout << "删除mgr";
+    delete timer;
     delete mgr;
     qout << "删除ui";
     delete ui;
@@ -130,6 +135,7 @@ void Translater::initConnects()
     connect(ui->pBtnCopyTranlate, &QPushButton::clicked, this, &Translater::copyTranlate);
     connect(ui->bBtnClean, &QPushButton::clicked, this, [this](){
         ui->TextFrom->clear();ui->TextTo->clear();
+        ui->TextTo->setFocus();
     });
     QString menu_style("QMenu{"
                     "border-radius:3px;"
@@ -198,8 +204,7 @@ void Translater::showEvent(QShowEvent* event)
     cursor.movePosition(QTextCursor::End);
     ui->TextFrom->setTextCursor(cursor);
     ui->TextFrom->setFocus();
-    if (VarBox->AutoHide)
-        QTimer::singleShot(10000, this, [=](void){ if (isVisible() && VarBox->AutoHide) hide();});
+    if (VarBox->AutoHide) timer->start(1000);
     event->accept();
 }
 
@@ -265,8 +270,16 @@ bool Translater::nativeEvent(const QByteArray &eventType, void *message, long lo
         }
         return true;
     }
+    case WM_SETFOCUS:
+    case WM_MBUTTONUP:
+    case WM_MBUTTONDOWN:
+    case WM_MBUTTONDBLCLK:
+    case WM_KEYUP:
+        time_left = 10;
+        break;
     case WM_KEYDOWN:
     {
+        time_left = 10;
         if (msg->wParam == VK_ESCAPE)
         {
             if (isVisible() && hCurrentCursor && IsWindow(hCurrentCursor) && IsWindowVisible(hCurrentCursor))
@@ -275,12 +288,6 @@ bool Translater::nativeEvent(const QByteArray &eventType, void *message, long lo
             return true;
         }
         break;
-    }
-    case WM_CLOSE:
-    {
-        qout << "关闭translater窗口";
-        hide();
-        return true;
     }
     case WM_SHOWWINDOW:
     {
@@ -296,6 +303,19 @@ bool Translater::nativeEvent(const QByteArray &eventType, void *message, long lo
     return false;
 }
 
+void Translater::hideEvent(QHideEvent *event)
+{
+    timer->stop();
+    event->accept();
+}
+
+void Translater::closeEvent(QCloseEvent *event)
+{
+    qout << "关闭translater窗口";
+    hide();
+    event->accept();
+}
+
 bool Translater::eventFilter(QObject* target, QEvent* event)
 {
 	if (target == ui->TextFrom)
@@ -308,7 +328,8 @@ bool Translater::eventFilter(QObject* target, QEvent* event)
 			{
                 QString text = ui->TextFrom->toPlainText();
                 auto cur = ui->TextFrom->textCursor();
-                if (!text.length()) goto label_end;
+                if (!text.length())
+                    goto label_end;
                 else if (cur.position() >= QTextCursor::Start && text.at(cur.position()-1) == ' ')
                 {
                     cur.deletePreviousChar();

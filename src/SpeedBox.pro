@@ -16,7 +16,7 @@ win32 {
 }
 
 # 版本信息
-VERSION = 22.1.3.0
+VERSION = 22.1.5.0
 # 图标
 RC_ICONS += icons/speedbox.ico
 # 公司名称
@@ -41,7 +41,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++11
 
 # release模式生成的文件更小，运行速度更快
-# CONFIG += release
+CONFIG += release
 # CONFIG += debug
 
 # 禁用qDebug()
