@@ -134,8 +134,9 @@ void Translater::initConnects()
     connect(ui->pBtnZhToEn, &QPushButton::clicked, this, [=](bool checked){startEnToZh(!checked);});
     connect(ui->pBtnCopyTranlate, &QPushButton::clicked, this, &Translater::copyTranlate);
     connect(ui->bBtnClean, &QPushButton::clicked, this, [this](){
+        time_left = 10;
         ui->TextFrom->clear();ui->TextTo->clear();
-        ui->TextTo->setFocus();
+        ui->TextFrom->setFocus();
     });
     QString menu_style("QMenu{"
                     "border-radius:3px;"
@@ -270,16 +271,8 @@ bool Translater::nativeEvent(const QByteArray &eventType, void *message, long lo
         }
         return true;
     }
-    case WM_SETFOCUS:
-    case WM_MBUTTONUP:
-    case WM_MBUTTONDOWN:
-    case WM_MBUTTONDBLCLK:
-    case WM_KEYUP:
-        time_left = 10;
-        break;
     case WM_KEYDOWN:
     {
-        time_left = 10;
         if (msg->wParam == VK_ESCAPE)
         {
             if (isVisible() && hCurrentCursor && IsWindow(hCurrentCursor) && IsWindowVisible(hCurrentCursor))
@@ -303,6 +296,18 @@ bool Translater::nativeEvent(const QByteArray &eventType, void *message, long lo
     return false;
 }
 
+void Translater::mouseReleaseEvent(QMouseEvent *event)
+{
+    time_left = 10;
+    event->accept();
+}
+
+void Translater::mousePressEvent(QMouseEvent *event)
+{
+    time_left = 10;
+    event->accept();
+}
+
 void Translater::hideEvent(QHideEvent *event)
 {
     timer->stop();
@@ -320,6 +325,7 @@ bool Translater::eventFilter(QObject* target, QEvent* event)
 {
 	if (target == ui->TextFrom)
 	{
+        time_left = 10;
         if (event->type() == QEvent::KeyPress)               //
 		{
 			QKeyEvent* k = static_cast<QKeyEvent*>(event);
@@ -350,6 +356,10 @@ label_end:
 			}
 		}
 	}
+    else if (target == ui->TextTo)
+    {
+        time_left = 10;
+    }
 	return QWidget::eventFilter(target, event);
 }
 
@@ -440,11 +450,12 @@ void Translater::setFix(bool checked)
     IniWrite.setValue("AutoHide", VarBox->AutoHide);
     IniWrite.endGroup();
     if (VarBox->AutoHide)
-        QTimer::singleShot(10000, this, [=](void){ if (isVisible() && VarBox->AutoHide) hide();});
+        timer->start(1000);
 }
 
 void Translater::startEnToZh(bool checked)
 {
+    time_left = 10;
     ui->pBtnEnToZh->setIcon(QIcon(checked?":/icons/black_zh.ico": ":/icons/empty_zh.ico"));
     ui->pBtnZhToEn->setIcon(QIcon(checked?":/icons/empty_en.ico":":/icons/black_en.ico"));
 	if (checked)
@@ -463,6 +474,7 @@ void Translater::startEnToZh(bool checked)
 
 void Translater::copyTranlate()
 {
+    time_left = 10;
 	QApplication::clipboard()->setText(ui->TextTo->toPlainText());
     emit msgBox("复制成功！");
 }

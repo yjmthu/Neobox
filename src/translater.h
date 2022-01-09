@@ -28,6 +28,8 @@ protected:
 #else
     bool nativeEvent(const QByteArray &eventType, void *message, long long *result);
 #endif
+    void mouseReleaseEvent(QMouseEvent *event);
+    void mousePressEvent(QMouseEvent *event);
     void hideEvent(QHideEvent *event);
     void closeEvent(QCloseEvent *event);
     bool eventFilter(QObject *target, QEvent *event);       //事件过滤器
