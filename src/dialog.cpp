@@ -102,8 +102,6 @@ void Dialog::initUi()
     ui->chkEnableChangePaper->setChecked(wallpaper->AutoChange);
     ui->usrCmd->setText(wallpaper->UserCommand);
 
-    ui->line_APP_ID->setText(VarBox->AppId);
-    ui->line_PASS_WORD->setText(VarBox->PassWord);
     ui->cBxAutoStart->setChecked(!QSettings("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat).value("SpeedBox").toString().compare(qApp->applicationFilePath().replace("/", "\\")));
     ui->lineEdit_2->setText(qApp->applicationDirPath().replace("/", "\\"));
     switch (wallpaper->PaperType) {
@@ -499,48 +497,6 @@ void Dialog::on_pushButton_4_clicked()
     QDir().mkdir(VarBox->PathToOpen);
     VarBox->sigleSave("Dirs", "OpenDir", VarBox->PathToOpen);
     jobTip->showTip("更换路径成功！");
-}
-
-void Dialog::on_pBtn_Save_Tran_Info_clicked()
-{
-    QString str_1 = ui->line_APP_ID->text().trimmed();
-    QString str_2 = ui->line_PASS_WORD->text().trimmed();
-    if (str_1.isEmpty() || str_2.isEmpty())
-        QMessageBox::information(ui->frame, "提示", "APP ID或密钥不能为空！");
-    else
-    {
-        QFile file("AppId.txt");
-        if (file.open(QIODevice::WriteOnly))
-        {
-            if (VarBox->AppId) delete [] VarBox->AppId;
-            if (VarBox->PassWord) delete [] VarBox->PassWord;
-            VarBox->HaveAppRight = true;
-            qout << 1;
-            unsigned char c[3] = {0xEF, 0xBB, 0xBF}; size_t len = 0;
-            file.write((char*)c, 3 * sizeof (char));
-            file.write("APP ID\t", 7 * sizeof (char));
-            QByteArray s1 = str_1.toUtf8(); len = s1.length();
-            qout << 2;
-            VarBox->AppId = new char[len+1]; memcpy_s(VarBox->AppId, len, s1, len);
-            VarBox->AppId[len] = 0;
-            file.write(VarBox->AppId, len*sizeof (char));
-            file.write("\nPASSWORD\t", 10 * sizeof(char));
-            QByteArray s2 = str_2.toUtf8(); len = s2.length();
-            qout << 3;
-            VarBox->PassWord = new char[len+1]; memcpy_s(VarBox->PassWord, len, s2, len);
-            VarBox->PassWord[len] = 0;
-            file.write(VarBox->PassWord, len*sizeof (char));
-            file.write("\n", sizeof (char));
-            file.close();
-            jobTip->showTip("记录成功！");
-            *const_cast<bool*>(VarBox->FirstUse) = true;
-        }
-        else
-        {
-            qout << QDir::currentPath(); QDir::current();
-            QMessageBox::warning(ui->frame, "错误", "文件写入失败。");
-        }
-    }
 }
 
 inline void del_file(Dialog *di ,QString str)

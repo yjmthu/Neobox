@@ -16,7 +16,7 @@ win32 {
 }
 
 # 版本信息
-VERSION = 22.1.5.0
+VERSION = 22.0.0.0
 # 图标
 RC_ICONS += icons/speedbox.ico
 # 公司名称
@@ -45,10 +45,12 @@ CONFIG += release
 # CONFIG += debug
 
 # 禁用qDebug()
-DEFINES += QT_NO_DEBUG_OUTPUT
+# DEFINES += QT_NO_DEBUG_OUTPUT
 
 # 禁用 Qt 6之前的函数
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000
+
+include(3rd_qxtglobalshortcut/3rd_qxtglobalshortcut.pri)
 
 SOURCES += \
     YJson.cpp \

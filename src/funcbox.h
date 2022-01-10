@@ -106,12 +106,11 @@ class VARBOX: public QObject
     Q_OBJECT
 
 public:
-    const char* const Version = "22.1.5";
+    const char* const Version = "22.1.11";
     const bool FirstUse[1] = { false };
     COLOR_THEME CurTheme = COLOR_THEME::White;
 
-    bool HaveAppRight = false,  EnableTranslater = false, AutoHide = false;;
-    char* AppId = nullptr, * PassWord = nullptr;
+    bool EnableTranslater = false, AutoHide = false;
     bool enableUSBhelper = true;  // enableUSBhelper
     QString PathToOpen;                //右键要打开的文件夹
 

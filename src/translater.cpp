@@ -18,6 +18,8 @@
 #if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
 #include <QTextCodec>
 #include <QTextToSpeech> //导入语音头文件
+
+#include <3rd_qxtglobalshortcut/qxtglobalshortcut.h>
 #else
 #include <sapi.h> //导入语音头文件
 #endif
@@ -29,9 +31,6 @@
 #include "blankform.h"
 #include "gmpoperatetip.h"
 #include "translater.h"
-
-#define M_WIN_HOT_KEY_SHIFT_Z 1001
-#define M_WIN_HOT_KEY_SHIFT_A 1002
 
 #define TRAN_HEIGHT 300
 #define TRAN_WIDTH 240
@@ -58,8 +57,9 @@ bool  MSSpeak(LPCTSTR speakContent) // 文字转为语音
 
 Translater::Translater() :
     QWidget(nullptr),
-    ui(new Ui::Translater),
-    _en("en"), _zh("zh"), from(_zh), to(_en),
+    ui(new Ui::Translater), type(Type::ZH_CN2EN),
+    shortcut_show(new QxtGlobalShortcut(QKeySequence("Shift+Z"))),
+    shortcut_hide(new QxtGlobalShortcut(QKeySequence("Shift+A"))),
     mgr(new QNetworkAccessManager), timer(new QTimer)
     #if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
         , speaker(new QTextToSpeech)
@@ -104,8 +104,44 @@ Translater::Translater() :
     connect(this, &Translater::msgBox, this, [=](const char* str){
         jobTip->showTip(str);
     });
-    RegisterHotKey(HWND(winId()), M_WIN_HOT_KEY_SHIFT_Z, MOD_SHIFT, 'Z');
-    RegisterHotKey(HWND(winId()), M_WIN_HOT_KEY_SHIFT_A, MOD_SHIFT, 'A');
+    connect(shortcut_show, &QxtGlobalShortcut::activated, this, [=](){
+        qout << "按下显示热键";
+        hCurrentCursor = GetForegroundWindow();
+        if (!isVisible()) show();
+        activateWindow();  //SwitchToThisWindow(HWND(winId()), TRUE);
+        QClipboard* cl = QApplication::clipboard();              //读取剪切板
+        QString content = cl->text();
+        if (content.isEmpty()) return ;
+        ui->TextFrom->setPlainText(content);
+        qout << "剪贴板内容" << content;
+        ushort uNum = content.at(0).unicode();
+        if(uNum >= 0x4E00 && uNum <= 0x9FA5)
+        {
+            if (type == Type::EN2ZH_CN)
+            {
+                ui->pBtnZhToEn->click();
+                return ;
+            }
+        }
+        else
+        {
+            if (type == Type::ZH_CN2EN)
+            {
+                ui->pBtnEnToZh->click();
+                return ;
+            }
+        }
+        getReply(content.toUtf8());
+    });
+    connect(shortcut_hide, &QxtGlobalShortcut::activated, this, [=](){
+        qout << "按下隐藏热键";
+        if (isVisible())
+        {
+            if (hCurrentCursor && IsWindow(hCurrentCursor) && IsWindowVisible(hCurrentCursor))
+                SetForegroundWindow(hCurrentCursor);
+            hide();
+        }
+    });
     initConnects();
 }
 
@@ -115,13 +151,12 @@ Translater::~Translater()
     delete speaker;
 #endif
     qout << "析构Translater开始";
-    qout << "取消注册热键";
-    UnregisterHotKey(HWND(winId()), M_WIN_HOT_KEY_SHIFT_Z);
-    UnregisterHotKey(HWND(winId()), M_WIN_HOT_KEY_SHIFT_A);
     qout << "删除mgr";
     delete timer;
     delete mgr;
     qout << "删除ui";
+    delete shortcut_hide;
+    delete shortcut_show;
     delete ui;
     qout << "析构Translater结束";
 
@@ -210,67 +245,13 @@ void Translater::showEvent(QShowEvent* event)
 }
 
 #if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
-bool Translater::nativeEvent(const QByteArray &eventType, void *message, long *result)
+bool Translater::nativeEvent(const QByteArray &, void *message, long *)
 #else
-bool Translater::nativeEvent(const QByteArray &eventType, void *message, long long *result)
+bool Translater::nativeEvent(const QByteArray &, void *message, long long *)
 #endif
 {
-    static HWND hCurrentCursor = NULL;
-    Q_UNUSED(eventType);
-    Q_UNUSED(result);
     MSG* msg = static_cast<MSG*>(message);
     switch (msg->message) {
-    case WM_HOTKEY:
-    {
-        switch (msg->wParam) {
-        case M_WIN_HOT_KEY_SHIFT_Z:
-        {
-            qout << "按下显示热键";
-            hCurrentCursor = GetForegroundWindow();
-            if (!isVisible()) show();
-            activateWindow();  //SwitchToThisWindow(HWND(winId()), TRUE);
-            QClipboard* cl = QApplication::clipboard();              //读取剪切板
-            QString content = cl->text();
-            if (content.isEmpty()) break;
-            ui->TextFrom->setPlainText(content);
-            qout << "剪贴板内容" << content;
-            ushort uNum = content.at(0).unicode();
-            if(uNum >= 0x4E00 && uNum <= 0x9FA5)
-            {
-                if (from == _en)
-                {
-                    ui->pBtnZhToEn->click();
-                    break;
-                }
-            }
-            else
-            {
-                if (from == _zh)
-                {
-                    ui->pBtnEnToZh->click();
-                    break;
-                }
-            }
-            getReply(content.toUtf8());
-            break;
-        }
-        case M_WIN_HOT_KEY_SHIFT_A:
-        {
-            qout << "按下隐藏热键";
-            if (isVisible())
-            {
-                if (hCurrentCursor && IsWindow(hCurrentCursor) && IsWindowVisible(hCurrentCursor))
-                    SetForegroundWindow(hCurrentCursor);
-                hide();
-            }
-            break;
-        }
-        default:
-            qout << "被注入了其他热键.";
-            break;
-        }
-        return true;
-    }
     case WM_KEYDOWN:
     {
         if (msg->wParam == VK_ESCAPE)
@@ -384,18 +365,11 @@ void Translater::keyPressEvent(QKeyEvent* event)
 
 void Translater::getReply(const QByteArray& q)
 {
+    constexpr char youdao_api[] = "http://fanyi.youdao.com/translate?&doctype=json&type=%1&i=%2";
     qout << "开始执行翻译函数";
-    constexpr char salt[] = u8"1435660288";                           //请求参数之一
-    constexpr char baidu_api[] = "http://api.fanyi.baidu.com/api/trans/vip/translate?q=%1&from=%2&to=%3&appid=%4&salt=%5&sign=%6";
 
     auto time_now = GetTickCount();
     if (time_now - last_post_time < 1000) Sleep(last_post_time + 1000 - time_now);
-
-    //std::string &&q = urlEncode(utf8_q, strlen(utf8_q));
-
-    const char* utf8_q = StrJoin<char, const char*>(VarBox->AppId, q, salt, VarBox->PassWord);
-    QByteArray sign = QCryptographicHash::hash(utf8_q, QCryptographicHash::Md5).toHex();
-    delete [] utf8_q;
 
     connect(mgr, &QNetworkAccessManager::finished, this, [this](QNetworkReply* rep) {
         if (rep->error() != QNetworkReply::NoError)
@@ -405,21 +379,21 @@ void Translater::getReply(const QByteArray& q)
         }
         YJson json_data(rep->readAll());
         YJson* have_item = nullptr;
-        if ((have_item = json_data.find("trans_result")) &&
+        if ((have_item = json_data.find("translateResult")) &&
             (have_item = have_item->getChild()))
         {
             YJson * temp = nullptr;
             ui->TextTo->clear();
             do {
-                temp = have_item->find("dst");
+                temp = have_item->getChild()->find("tgt");
                 ui->TextTo->appendPlainText(temp->getValueString());
             } while (have_item = have_item->getNext());
             QTextCursor cursor = ui->TextFrom->textCursor();
             cursor.movePosition(QTextCursor::End);
             ui->TextFrom->setTextCursor(cursor);
             last_post_time = GetTickCount();
-        }
-        else if (json_data.find("error_code"))
+        }//"errorCode":0
+        else if (json_data.find("errorCode"))
         {
             if (have_item = json_data.find("error_msg"))
             {
@@ -437,7 +411,7 @@ void Translater::getReply(const QByteArray& q)
                 emit msgBox("翻译失败，未知原因。");
         }
     });
-    mgr->get(QNetworkRequest(QUrl(QString(baidu_api).arg(q, from, to, VarBox->AppId, salt, sign))));
+    mgr->get(QNetworkRequest(QUrl(QString(youdao_api).arg(types[type], (const char*)q))));
 }
 
 void Translater::setFix(bool checked)
@@ -458,16 +432,7 @@ void Translater::startEnToZh(bool checked)
     time_left = 10;
     ui->pBtnEnToZh->setIcon(QIcon(checked?":/icons/black_zh.ico": ":/icons/empty_zh.ico"));
     ui->pBtnZhToEn->setIcon(QIcon(checked?":/icons/empty_en.ico":":/icons/black_en.ico"));
-	if (checked)
-	{
-        from = _en;
-        to = _zh;
-	}
-	else
-	{
-        from = _zh;
-        to = _en;
-	}
+    type = checked ? Type::EN2ZH_CN : Type::ZH_CN2EN;
     QString str = ui->TextFrom->toPlainText();
     if (!str.isEmpty()) getReply(str.toUtf8());
 }

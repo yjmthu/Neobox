@@ -337,16 +337,8 @@ void Form::enableTranslater(bool checked)
 {
     if (checked)
     {
-        if (VarBox->HaveAppRight)
-        {
-            VarBox->EnableTranslater = true;
-            translater = new Translater;
-        }
-        else
-        {
-            VarBox->MSG("未找到APP ID和密钥！请打开设置并确认是否填写正确。", "错误");
-            VarBox->EnableTranslater = false;
-        }
+        VarBox->EnableTranslater = true;
+        translater = new Translater;
     }
     else
     {

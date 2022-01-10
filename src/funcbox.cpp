@@ -66,8 +66,6 @@ VARBOX::~VARBOX()
     delete wallpaper;
     qout << "析构设置对话框";
     delete dialog;
-    delete [] AppId;
-    delete [] PassWord;
     if (hOleacc) FreeLibrary(hOleacc);
     if (hDwmapi) FreeLibrary(hDwmapi);
     qout << "结构体析构成功。";
@@ -122,61 +120,6 @@ void VARBOX::loadFunctions()
     GetFileAttributes = [](const wchar_t* ph)->bool{
         return GetFileAttributesW(ph) & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS;
     };
-}
-
-bool VARBOX::check_app_right()
-{
-    if (!QFile::exists("AppId.txt")) return false;
-    QFile file("AppId.txt");
-    if( file.open(QIODevice::ReadOnly))
-    {
-        qout << "成功打开密钥文件";
-        auto size = file.size();
-        if (size < 20)
-        {
-            file.close();
-            return false;
-        }
-        unsigned char c[3]  = { 0 };
-        if (!file.read((char*)c, sizeof(char)*3))
-        {
-            qout << "文件读取失败1";
-            file.close();
-            return false;
-        }
-        size -= sizeof(char) * 3;
-        if (c[0] == 0xef && c[1] == 0xbb && c[2] == 0xbf)
-        {
-            char *str = new char[(size_t)size + 1]; str[size] = 0;
-            if (!file.read(str, size))
-            {
-                qout << "文件读取失败2";
-                file.close();
-                delete[] str; return false;
-            }
-            else
-            {
-                char* ptr0 = str + 7; char* ptr = ptr0; while (*++ptr && *ptr != '\n');
-                if (*ptr) {
-                    *ptr = 0; AppId = StrJoin<char>(ptr0);
-                    ptr += 10; ptr0 = ptr;
-                    while (*++ptr && *ptr != '\n');
-                    if (*ptr) {
-                        *ptr = 0;
-                        PassWord = StrJoin<char>(ptr0); file.close();
-                        delete[] str; return true;
-                    }
-                }
-            }
-            delete[] str;
-        }
-        else
-        {
-            qout << "文件没有utf-8 bom头";
-        }
-        file.close();
-    }
-    return false;
 }
 
 
@@ -288,8 +231,6 @@ label_3:
                 PathToOpen = QDir::toNativeSeparators(qApp->applicationDirPath());
                 sigleSave("Dirs", "OpenDir", PathToOpen);
             }
-            HaveAppRight = check_app_right();
-            EnableTranslater = HaveAppRight && EnableTranslater;
         }
     const std::string apifile = "WallpaperApi.json";
     if (!QFile::exists(apifile.c_str()))
