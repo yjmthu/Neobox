@@ -20,7 +20,8 @@ signals:
     void setFailed(const char*);
 private:
     std::random_device _rd; std::mt19937 _gen;
-    const std::function<bool(void*)> SystemParametersInfo;
+    bool systemParametersInfo(const std::string & path);
+    bool systemParametersInfo(const std::wstring & path);
     void _set_w(YJson*);
     void _set_b(YJson*);
     bool set_wallpaper(const QString& pic);
@@ -38,8 +39,8 @@ public:
     {
         Hot, Nature, Anime, Simple, Random, User, Bing, Other, Native, Advance
     };
-    std::list<wchar_t*> PicHistory;
-    std::list<wchar_t*>::const_iterator CurPic;
+    std::list<std::string> PicHistory;
+    std::list<std::string>::const_iterator CurPic;
     bool update;
     std::string url;
     QUrl bing_api;
@@ -67,6 +68,8 @@ public:
     bool applyClicked = false;
     inline bool isActive() const { return m_doing; };
     inline void kill() { m_doing = false; };
+
+    static bool isOnline(bool wait=false);
 };
 
 #endif // WALLPAPER_H

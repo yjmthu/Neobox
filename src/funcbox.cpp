@@ -1,6 +1,5 @@
 ﻿#include <fstream>
-#include <oaidl.h>
-#include <WinInet.h>
+#include <cstdlib>
 #include <QApplication>
 #include <QStandardPaths>
 #include <QSettings>
@@ -9,48 +8,61 @@
 #include <QDir>
 #include <QMessageBox>
 #include <QTimer>
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
-#include <QNetworkRequest>
 #include <QTextCodec>
 #include <QDesktopServices>
+
+#if defined (Q_OS_WIN32)
+#include <oaidl.h>
+#include <WinInet.h>
+#include <QFontDatabase>
+#include <QSystemTrayIcon>
+#include <QMenu>
+#elif defined (Q_OS_LINUX)
+//#include <sys/time.h>
+#include <dialog.h>
+#include <unistd.h>
+#endif
 
 #include "funcbox.h"
 #include "YString.h"
 #include "YJson.h"
 #include "form.h"
 #include "wallpaper.h"
-#include "wallpaper.h"
+#include "dialog.h"
 
 
-wchar_t* GetCorrectUnicode(const QByteArray &ba)
-{
-    QTextCodec::ConverterState state;
-    QTextCodec *codec = QTextCodec::codecForName("UTF-8");
-    codec->toUnicode(ba.constData(), ba.size(), &state);
-    QString str = (state.invalidChars > 0) ? QTextCodec::codecForName("GBK")->toUnicode(ba): ba;
-    qout << "转换后的字符串: " << str;
-    auto s = reinterpret_cast<const wchar_t*>(str.utf16());
-    auto l = wcslen(s)+1;
-    auto t = new wchar_t[l];
-    std::copy(s, s+l+1, t);
-    return t;
-}
+//wchar_t* GetCorrectUnicode(const QByteArray &ba)
+//{
+//    QTextCodec::ConverterState state;
+//    QTextCodec *codec = QTextCodec::codecForName("UTF-8");
+//    codec->toUnicode(ba.constData(), ba.size(), &state);
+//    QString str = (state.invalidChars > 0) ? QTextCodec::codecForName("GBK")->toUnicode(ba): ba;
+//    qout << "转换后的字符串: " << str;
+//    auto s = reinterpret_cast<const wchar_t*>(str.utf16());
+//    auto l = wcslen(s)+1;
+//    auto t = new wchar_t[l];
+//    std::copy(s, s+l+1, t);
+//    return t;
+//}
 
 VARBOX* VarBox = nullptr;
-HANDLE VARBOX::HMutex = NULL;
+
 
 VARBOX::VARBOX(int w, int h):
     QObject(nullptr),
-    ScreenWidth(w), ScreenHeight(h), SysScreenWidth(GetSystemMetrics(SM_CXSCREEN)), SysScreenHeight(GetSystemMetrics(SM_CYSCREEN)),
-    hOleacc(LoadLibraryA("oleacc.dll")), hDwmapi(LoadLibraryA("dwmapi.dll")), hWininet(LoadLibraryA("wininet.dll"))
+    ScreenWidth(w), ScreenHeight(h)
 {
     qout << "VarBox构造函数开始。";
     VarBox = this;
+#if defined (Q_OS_WIN32)
     QString data_path = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::HomeLocation) +  "/AppData/Local/SpeedBox");
+#elif defined(Q_OS_LINUX)
+    QString data_path = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) +  "/.config/SpeedBox";
+#endif
     QDir().mkdir(data_path);
     QDir::setCurrent(data_path);
-    loadFunctions();
+    QFontDatabase::addApplicationFont(":/fonts/Nickainley-Normal-small.ttf");
+    QFontDatabase::addApplicationFont(":/fonts/Carattere-Regular-small.ttf");
     initFile();
     initChildren();
     initBehaviors();
@@ -60,99 +72,44 @@ VARBOX::VARBOX(int w, int h):
 VARBOX::~VARBOX()
 {
     qout << "结构体析构中~";
+    delete systemTrayIcon;
     delete form;
     qout << "析构任务栏类";
     qout << "析构壁纸类";
     delete wallpaper;
     qout << "析构设置对话框";
     delete dialog;
-    if (hOleacc) FreeLibrary(hOleacc);
-    if (hDwmapi) FreeLibrary(hDwmapi);
     qout << "结构体析构成功。";
 }
 
-void VARBOX::loadFunctions()
-{
-#ifndef FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS
-    constexpr DWORD FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS = 0x00400000;
-#endif
-    if (hOleacc)
-    {
-        AccessibleObjectFromWindow = (pfnAccessibleObjectFromWindow)GetProcAddress(hOleacc, "AccessibleObjectFromWindow");
-        AccessibleChildren = (pfnAccessibleChildren)GetProcAddress(hOleacc, "AccessibleChildren");
-    }
-
-    if (hDwmapi)
-    {
-        pDwmGetWindowAttribute = (pfnDwmGetWindowAttribute)GetProcAddress(hDwmapi, "DwmGetWindowAttribute");
-    }
-
-    if (hWininet)
-    {
-        static const auto pInternetGetConnectedState = (pfnInternetGetConnectedState)GetProcAddress(hWininet, "InternetGetConnectedState");
-        InternetGetConnectedState = []()->bool{
-            DWORD flag;
-            return pInternetGetConnectedState(&flag, 0);
-        };
-    }
-
-
-    if (!(AccessibleObjectFromWindow && AccessibleChildren && pDwmGetWindowAttribute))
-    {
-        qApp->exit(RETCODE_ERROR_EXIT);
-    }
-    PathFileExists = [](const wchar_t* pszPath)->bool{
-        typedef BOOL(WINAPI* pfnPathFileExists)(LPWSTR);
-        pfnPathFileExists pPathFileExists = NULL;
-        BOOL ret = FALSE;
-        HMODULE hUser = GetModuleHandleW(L"Shlwapi.dll");
-        if (hUser)
-            pPathFileExists = (pfnPathFileExists)GetProcAddress(hUser, "PathFileExistsW");
-        if (pPathFileExists)
-        {
-            ret = pPathFileExists((wchar_t*)pszPath);
-        }
-        else
-        {
-        }
-        return ret;
-    };
-    GetFileAttributes = [](const wchar_t* ph)->bool{
-        return GetFileAttributesW(ph) & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS;
-    };
-}
-
-
 void VARBOX::initFile()
 {
-    constexpr char file[] = "SpeedBox.ini"; qout << "配置文件目录" << file;
-    QString picfolder = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
+    QDir().exists("./Scripts") || QDir().mkdir("./Scripts");
+    FILE* shell_file = fopen("./Scripts/SetWallPaper.sh", "rb");
+    if (!shell_file)
+        QFile::copy("://scripts/SetWallpaper.sh", "./Scripts/SetWallPaper.sh");
+    else
+        fclose(shell_file);
+    constexpr char file[] = "SpeedBox.ini";
+    qout << "配置文件目录" << file;
+    QString picfolder { QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)) };
     QDir dir;
-    if (!QFile::exists(file) && QFile::exists("SpeedBox2.ini"))
-    {
-        QFile::rename("SpeedBox2.ini", file);
-    }
-    if (!QFile::exists(file))
-    {
+    if (!QFile::exists(file)) {
         qout << "SpeedBox.ini 文件不存在";
         goto label_1;
-    }
-    else
-    {
+    } else {
         QSettings set(file, QSettings::IniFormat);
         set.setIniCodec(QTextCodec::codecForName("UTF-8"));
         set.beginGroup("SpeedBox");
         QByteArray x = set.value("Version").toByteArray();
         set.endGroup();
         qout << "文件存在，版本信息为" << x;
-        if (getVersion(x)<getVersion("21.8.1"))
+        if (getVersion(x) < getVersion("21.8.1"))
         {
             qout << "ini文件过期，将其删除。";
             QFile::remove(file);
             goto label_1;
-        }
-        else
-        {
+        } else {
             qout << "版本支持，继续读取";
             goto label_2;
         }
@@ -172,7 +129,11 @@ label_1:
             IniWrite->setValue("setNative", false);
             IniWrite->setValue("AutoChange", false);
             IniWrite->setValue("NativeDir", picfolder);
-            IniWrite->setValue("UserCommand", "python.exe -u X:\\xxxxx.py");
+#if defined (Q_OS_WIN32)
+            IniWrite->setValue("UserCommand", "python.exe -u \"X:\\xxxxx.py\"");
+#elif defined (Q_OS_LINUX)
+            IniWrite->setValue("UserCommand", "python.exe -u \"~/xxxxx.py\"");
+#endif
             IniWrite->setValue("UseDateAsBingName", true);
             IniWrite->endGroup();
 
@@ -182,15 +143,20 @@ label_1:
             IniWrite->endGroup();
 
             IniWrite->beginGroup("UI");
-            IniWrite->setValue("ColorTheme", static_cast<int>(CurTheme));
-            IniWrite->setValue("x", 100);
-            IniWrite->setValue("y", 100);
+            IniWrite->setValue("ColorTheme", static_cast<int>(Dialog::curTheme));
+            IniWrite->setValue("TuoPanIcon", false);
+            IniWrite->setValue("TieBianHide", true);
             IniWrite->endGroup();
 
             IniWrite->beginGroup("Dirs");
             IniWrite->setValue("OpenDir", QDir::toNativeSeparators(qApp->applicationDirPath()));
+            IniWrite->endGroup();
 
-            IniWrite->endGroup(); delete IniWrite;
+            IniWrite->beginGroup("Apps");
+            IniWrite->setValue("MarkdownNote", false);
+            IniWrite->setValue("DesktopClock", false);
+            IniWrite->endGroup();
+            delete IniWrite;
             qout << "创建新的ini文件完毕。";
             goto label_3;
         }
@@ -213,13 +179,17 @@ label_2:
             IniRead->endGroup();
             qout << "读取路径信息完毕";
             IniRead->beginGroup("UI");
-
             unsigned safeEnum = IniRead->value("ColorTheme").toInt();
             if (safeEnum > 7) safeEnum = 0;
-            CurTheme = static_cast<COLOR_THEME>(safeEnum);
+            Dialog::curTheme = static_cast<Dialog::Theme>(safeEnum);
+            TuoPanIcon = IniRead->value("TuoPanIcon", false).toBool();
             IniRead->endGroup();
             IniRead->beginGroup("USBhelper");
             enableUSBhelper = IniRead->value("enableUSBhelper", enableUSBhelper).toBool();
+            IniRead->endGroup();
+            IniRead->beginGroup("Apps");
+            MarkdownNote = IniRead->value("MarkdownNote", false).toBool();
+            DesktopClock = IniRead->value("DesktopClock", false).toBool();
             IniRead->endGroup();
             delete IniRead;
             qout << "读取设置完毕。";
@@ -236,7 +206,7 @@ label_3:
     if (!QFile::exists(apifile.c_str()))
     {
         qout << "文件不存在!";
-        picfolder += "\\桌面壁纸";
+        picfolder += "/桌面壁纸";
         dir.mkdir(picfolder);
         dir.cd(picfolder);
         QFile::copy(":/json/WallpaperApi.json", (apifile+".temp").c_str());
@@ -246,13 +216,13 @@ label_3:
         std::vector<QString>::const_iterator iter = lst.begin();
         YJson json(apifile+".temp", YJson::UTF8);
         for (auto&c: json["Default"]["ApiData"])
-            c["Folder"].setText((picfolder+"\\"+*iter++).toUtf8());
+            c["Folder"].setText(QDir::toNativeSeparators((picfolder+"/"+*iter++)).toUtf8());
         for (auto&c: json["User"]["ApiData"])
-            c["Folder"].setText((picfolder+"\\"+*iter).toUtf8());
-        json["BingApi"]["Folder"].setText((picfolder+"\\"+*++iter).toUtf8());
+            c["Folder"].setText(QDir::toNativeSeparators(picfolder+"/"+*iter).toUtf8());
+        json["BingApi"]["Folder"].setText(QDir::toNativeSeparators(picfolder+"/"+*++iter).toUtf8());
         for (auto&c: json["OtherApi"]["ApiData"])
         {
-            c["Folder"].setText((picfolder+"\\"+c.getKeyString()).toUtf8());
+            c["Folder"].setText(QDir::toNativeSeparators(picfolder+"/"+c.getKeyString()).toUtf8());
             dir.mkdir(c["Folder"].getValueString());
         }
         json.toFile(apifile, YJson::UTF8, true);
@@ -267,31 +237,50 @@ void VARBOX::initChildren()
     qout << "悬浮窗";
     Form* form = new Form;
     qout << "基本成员创建完毕!";
+#ifdef Q_OS_WIN
     static APPBARDATA abd { 0,0,0,0,{0,0,0,0},0 };
     abd.cbSize = sizeof(APPBARDATA);
     abd.hWnd = HWND(form->winId());
     abd.uCallbackMessage = MSG_APPBAR_MSGID;
     SHAppBarMessage(ABM_NEW, &abd);
+#endif
     QObject::connect(QGuiApplication::primaryScreen(), &QScreen::geometryChanged, form, [this, form](const QRect&rect){
-        RECT rt1; int w, h;
-        GetWindowRect((HWND)(this->form->winId()), &rt1);
-        w = GetSystemMetrics(SM_CXSCREEN);
-        h = GetSystemMetrics(SM_CYSCREEN);
-
-        RECT rt2; GetWindowRect(HWND(VarBox->form->winId()), &rt2);
         this->form->move(this->form->pos().x() * rect.width() / VarBox->ScreenWidth, this->form->pos().y() * rect.height() / VarBox->ScreenHeight);
-        *const_cast<int*>(&(VarBox->SysScreenWidth)) = w;
-        *const_cast<int*>(&(VarBox->SysScreenHeight)) = h;
-        *const_cast<int*>(&(VarBox->ScreenWidth)) = rect.width();
-        *const_cast<int*>(&(VarBox->ScreenHeight)) = rect.height();
+        *const_cast<int *>(&ScreenWidth) = rect.width();
+        *const_cast<int *>(&ScreenHeight) = rect.height();
         form->keepInScreen();
     });
+    creatTrayIcon(TuoPanIcon);
 }
 
 void VARBOX::initBehaviors()
 {
     form->show();                                                              //显示悬浮窗
     form->keepInScreen();
+}
+
+void VARBOX::creatTrayIcon(bool create)
+{
+    if ((TuoPanIcon = create))
+    {
+        systemTrayIcon = new QSystemTrayIcon;
+        systemTrayIcon->setIcon(QIcon(":/icons/speedbox.ico"));
+        QMenu *m_trayMenu = new QMenu;
+        QAction *initAct = m_trayMenu->addAction(QStringLiteral("复原"));
+        QAction *quitAct = m_trayMenu->addAction(QStringLiteral("退出"));
+        connect(quitAct, &QAction::triggered, qApp, &QApplication::quit);
+        connect(initAct, &QAction::triggered, form, [=](){form->move(100, 100);form->saveBoxPos();});
+        systemTrayIcon->setContextMenu(m_trayMenu);
+        systemTrayIcon->show();
+    } else {
+        delete systemTrayIcon;
+        systemTrayIcon = nullptr;
+    }
+    QSettings *IniRead = new QSettings("SpeedBox.ini", QSettings::IniFormat);
+    IniRead->setIniCodec(QTextCodec::codecForName("UTF-8"));
+    IniRead->beginGroup("UI");
+    IniRead->setValue("TuoPanIcon", create);
+    IniRead->endGroup();
 }
 
 void VARBOX::sigleSave(QString group, QString key, QString value)
@@ -303,7 +292,7 @@ void VARBOX::sigleSave(QString group, QString key, QString value)
     IniWrite.endGroup();
 }
 
-wchar_t* VARBOX::runCmd(const QString& program, const QStringList& argument, short line)
+QByteArray VARBOX::runCmd(const QString& program, const QStringList& argument, short line)
 {
     QProcess process;
     process.setProgram(program);
@@ -317,8 +306,7 @@ wchar_t* VARBOX::runCmd(const QString& program, const QStringList& argument, sho
         {
             process.readLine();
         }
-
-        return GetCorrectUnicode(process.readLine());
+        return process.readLine();
     }
     else return nullptr;
 }
@@ -327,38 +315,9 @@ void VARBOX::openDirectory(const QString& dir)
 {
 #ifdef Q_OS_WIN
     ShellExecuteW(NULL, L"open", L"explorer.exe", QDir::toNativeSeparators(dir).toStdWString().c_str(), NULL, SW_SHOWNORMAL);
-#elif def Q_OS_LINUX
+#elif defined Q_OS_LINUX
+    system(("xdg-open \"" + dir + "\"").toStdString().c_str());
 #endif
-}
-
-BOOL VARBOX::SetWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD AlphaColor)    //设置窗口WIN10风格
-{
-    typedef BOOL(WINAPI* pfnSetWindowCompositionAttribute)(HWND, struct WINDOWCOMPOSITIONATTRIBDATA*);
-    pfnSetWindowCompositionAttribute pSetWindowCompositionAttribute = NULL;
-    if (mode == ACCENT_STATE::ACCENT_DISABLED)
-    {
-        //		if (bAccentNormal == FALSE)
-        {
-            SendMessageA(hWnd, WM_THEMECHANGED, 0, 0);
-            //			bAccentNormal = TRUE;
-        }
-        return TRUE;
-    }
-    //	bAccentNormal = FALSE;
-    BOOL ret = FALSE;
-    HMODULE hUser = GetModuleHandleA("user32.dll");
-    if (hUser)
-        pSetWindowCompositionAttribute = (pfnSetWindowCompositionAttribute)GetProcAddress(hUser, "SetWindowCompositionAttribute");
-    if (pSetWindowCompositionAttribute)
-    {
-        ACCENT_POLICY accent = { mode, 2, AlphaColor, 0 };
-        WINDOWCOMPOSITIONATTRIBDATA data;
-        data.Attrib = WINDOWCOMPOSITIONATTRIB::WCA_ACCENT_POLICY;
-        data.pvData = &accent;
-        data.cbData = sizeof(accent);
-        ret = pSetWindowCompositionAttribute(hWnd, &data);
-    }
-    return ret;
 }
 
 char _getINT(const char* &X)

@@ -3,7 +3,6 @@
 #include "ui_usbdrivehelper.h"
 
 #include <QThread>
-
 #include <QHBoxLayout>
 #include <stdio.h>
 #include <math.h>
@@ -12,9 +11,9 @@
 #include "YString.h"
 
 
-inline QString bytes_to_string(DWORD64 size)
+inline QString bytes_to_string(int64_t size)
 {
-    DWORD64 r = 1;
+    int64_t r = 1;
     if (size < (r <<= 10))
         return QString("%1 B").arg(size);
     if (size < (r <<= 10))
@@ -76,6 +75,7 @@ USBdriveHelper::USBdriveHelper(char U, QWidget *parent) :
     initSpeedBox(this, &USBdriveHelper::showMinimized, &USBdriveHelper::close, false);
     ui->label_6->setText(QChar(U));
 
+#ifdef Q_OS_WIN32
     //得出磁盘的可用空间
     DWORD dwTotalClusters;   //总的簇
     DWORD dwFreeClusters;    //可用的簇
@@ -92,6 +92,7 @@ USBdriveHelper::USBdriveHelper(char U, QWidget *parent) :
         ui->label_7->setText(bytes_to_string(total));
         ui->label_8->setText(bytes_to_string(used));
     }
+#endif
     widget = new QWidget(this);
     QHBoxLayout *horizontalLayout = new QHBoxLayout(widget);
     QPushButton *btn1(new QPushButton), *btn2(new QPushButton);
@@ -106,6 +107,7 @@ USBdriveHelper::USBdriveHelper(char U, QWidget *parent) :
     connect(btn1, &QPushButton::clicked, VarBox, [this](){
         VarBox->openDirectory(pans.front());
     });
+#ifdef Q_OS_WIN32
     connect(btn2, &QPushButton::clicked, this, [this]()->bool{
         const QString paths = QString(R"(\\.\%1:)").arg(pans.back()[0]);
         DWORD dw_ret;
@@ -161,6 +163,7 @@ USBdriveHelper::USBdriveHelper(char U, QWidget *parent) :
 
         return TRUE;
     });
+#endif
     widget->setStyleSheet("QWidget{background-color:rgba(90, 90, 90, 190);}");
     btn1->setStyleSheet("QPushButton{color:yellow;background-color:rgba(70,70,70,90);}"
                         "QPushButton:hover{background-color:rgba(50, 50, 50, 90);}");

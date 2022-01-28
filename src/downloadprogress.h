@@ -7,7 +7,6 @@
 namespace Ui {
 class DownloadProgress;
 }
-class QNetworkAccessManager;
 
 class DownloadProgress : public QDialog
 {
@@ -24,7 +23,7 @@ public:
 private:
     Ui::DownloadProgress *ui = nullptr;
     const QUrl url1, url2;
-    QNetworkAccessManager *mgr1 = nullptr, *mgr2 = nullptr;
+    class QNetworkAccessManager *mgr1 = nullptr, *mgr2 = nullptr;
     bool succeed = true;
 public slots:
     void setZip(qint64, qint64);

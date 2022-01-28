@@ -7,6 +7,7 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QDir>
 
 void DownloadProgress::closeEvent(QCloseEvent *event)
 {
@@ -28,7 +29,7 @@ DownloadProgress::DownloadProgress(const QString& zipfile, const QUrl& url1, con
     ui->setupUi(this);
     connect(mgr2, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep2){
         succeed = true;
-        QString temp_str_2 = qApp->applicationDirPath().replace("/", "\\")+"\\Speed_Box_Updater.exe";
+        QString temp_str_2 = QDir::toNativeSeparators(qApp->applicationDirPath()+"/Speed_Box_Updater.exe");
         if (QFile::exists(temp_str_2)) QFile::remove(temp_str_2);
         QFile file(temp_str_2);
         if (file.open(QIODevice::WriteOnly))
@@ -39,15 +40,11 @@ DownloadProgress::DownloadProgress(const QString& zipfile, const QUrl& url1, con
             {
                 qout << "文件大小为0";
                 QFile::remove(temp_str_2);
-            }
-            else
-            {
+            } else {
                 if (QMessageBox::information(this, "提示", "更新已经下载完成，点击确认重启软件后完成更新！", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
                 {
                     qApp->exit(RETCODE_UPDATE);
-                }
-                else
-                {
+                } else {
                     emit message("成功取消更新。", 700);
                 }
             }
@@ -74,9 +71,7 @@ DownloadProgress::DownloadProgress(const QString& zipfile, const QUrl& url1, con
                 QFile::remove(zipfile);
                 QMessageBox::information(this, "提示", "更新已经下载完成，点击确认重启软件后完成更新！", QMessageBox::Yes);
                 close();
-            }
-            else
-            {
+            } else {
                 succeed = false;
                 connect(mgr2->get(QNetworkRequest(url2)), &QNetworkReply::downloadProgress, this, &DownloadProgress::setExe);
                 qout << "下载第二个文件";
@@ -97,10 +92,10 @@ DownloadProgress::~DownloadProgress()
 
 void DownloadProgress::setZip(qint64 a, qint64 b)
 {
-    ui->progressBar->setValue(100*a/b);
+    ui->progressBar->setValue(100 * a / b);
 }
 
 void DownloadProgress::setExe(qint64 a, qint64 b)
 {
-    ui->progressBar_2->setValue(100*a/b);
+    ui->progressBar_2->setValue(100 * a / b);
 }

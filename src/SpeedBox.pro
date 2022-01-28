@@ -15,6 +15,12 @@ win32 {
     LIBS += -luser32
 }
 
+
+unix {
+    QT += x11extras
+    LIBS += -lX11
+}
+
 # 版本信息
 VERSION = 22.0.0.0
 # 图标
@@ -58,8 +64,6 @@ SOURCES += \
     blankform.cpp \
     calculator.cpp \
     downloadprogress.cpp \
-    explaindialog.cpp \
-    formsetting.cpp \
     gmpoperatetip.cpp \
     main.cpp \
     funcbox.cpp \
@@ -82,29 +86,17 @@ HEADERS += \
     calculator.h \
     dialog.h \
     downloadprogress.h \
-    explaindialog.h \
     form.h \
-    formsetting.h \
     funcbox.h \
     gmpoperatetip.h \
     menu.h \
     netspeedhelper.h \
+    qstylesheet.h \
     speedwidget.h \
     systemfunctions.h \
     translater.h \
     usbdrivehelper.h \
     wallpaper.h
-
-FORMS += \
-    bingsetting.ui \
-    calculator.ui \
-    dialog.ui \
-    downloadprogress.ui \
-    explaindialog.ui \
-    form.ui \
-    formsetting.ui \
-    translater.ui \
-    usbdrivehelper.ui
 
 
 RESOURCES += \
@@ -117,3 +109,11 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 # 生成的exe文件
 TARGET = "SpeedBox"
+
+FORMS += \
+    ui/bingsetting.ui \
+    ui/calculator.ui \
+    ui/dialog.ui \
+    ui/downloadprogress.ui \
+    ui/translater.ui \
+    ui/usbdrivehelper.ui

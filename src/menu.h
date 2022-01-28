@@ -2,9 +2,6 @@
 #define MENU_H
 
 #include <QMenu>
-class QAction;
-class Form;
-class Wallpaper;
 
 class Menu : public QMenu
 {
@@ -19,10 +16,11 @@ public:
     void Show(int, int);          // 自动移动menu到合适位置，防止menu出现在屏幕之外。
 
 private:
+    static bool keepScreenOn;
     void initMenuConnect();        //初始化信号和槽的连接
 	void initActions();
 	void initUi();
-    QAction* const actions;
+    class QAction* const actions;
 };
 
 #endif // MENU_H

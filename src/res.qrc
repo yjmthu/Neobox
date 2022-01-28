@@ -24,5 +24,10 @@
         <file>icons/Upan.ico</file>
         <file>fonts/Carattere-Regular-small.ttf</file>
         <file>fonts/Nickainley-Normal-small.ttf</file>
+        <file>scripts/SetWallpaper.sh</file>
+        <file>fonts/FangZhengKaiTiJianTi-1.ttf</file>
+        <file>scripts/SpeedBox.desktop</file>
+        <file>json/BoxFont.json</file>
+        <file>icons/checklist.ico</file>
     </qresource>
 </RCC>

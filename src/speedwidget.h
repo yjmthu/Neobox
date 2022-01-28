@@ -10,7 +10,6 @@
 
 #include "blankform.h"
 #include "gmpoperatetip.h"
-#include "blankform.h"
 
 template <class Parent = QWidget>
 class SpeedWidget : public Parent

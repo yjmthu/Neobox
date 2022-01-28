@@ -14,25 +14,8 @@ constexpr uint32_t get_0x1s(const int i)
 }
 
 template <class C1, class C2>
-bool utf8_to_utf16(C1 utf16, C2 utf8)
+bool utf8_to_utf16LE(C1 utf16, C2 utf8)
 {
-    static_assert( (
-        (            std::is_same<C1, std::deque<wchar_t>&>::value
-                 ||
-                     std::is_same<C1, std::vector<wchar_t>&>::value
-                 ||
-                     std::is_same<C1, std::wstring&>::value)
-                 &&
-        (            std::is_same<C2, const char*>::value
-                 ||
-                     std::is_same<C2, std::string::const_iterator>::value
-                 ||
-                     std::is_same<C2, std::vector<char>::const_iterator>::value
-                 ||
-                     std::is_same<C2, std::deque<char>::const_iterator>::value
-        )
-                   )
-            , "error in type");
     uint32_t unicode;
     uint8_t len;// bool double_wchar = false;
     do {
@@ -52,8 +35,7 @@ bool utf8_to_utf16(C1 utf16, C2 utf8)
         case 3: unicode <<= 6; unicode |= *(++utf8) & 0x3F;
         case 2: unicode <<= 6; unicode |= *(++utf8) & 0x3F;
         default:
-            if (len <= 3)
-            {
+            if (len <= 3) {
                 utf16.push_back(unicode);
                 break;
             }
@@ -67,26 +49,8 @@ bool utf8_to_utf16(C1 utf16, C2 utf8)
 }
 
 template <typename  C1, typename C2>
-bool utf16_to_utf8(C1 utf8, C2 utf16)
+bool utf16LE_to_utf8(C1 utf8, C2 utf16)
 {
-    static_assert(  (
-            (         std::is_same<C1, std::deque<char>&>::value
-                  ||
-                      std::is_same<C1, std::vector<char>&>::value
-                  ||
-                      std::is_same<C1, std::string&>::value
-            )
-                  &&
-            (         std::is_same<C2, const wchar_t*>::value
-                  ||
-                      std::is_same<C2, std::wstring::const_iterator>::value
-                  ||
-                      std::is_same<C2, std::vector<wchar_t>::const_iterator>::value
-                  ||
-                      std::is_same<C2, std::deque<wchar_t>::const_iterator>::value
-            )
-                    )
-            , "error in type");
     uint32_t unicode;
     uint8_t len;
     do {

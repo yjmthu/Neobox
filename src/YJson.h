@@ -13,11 +13,12 @@ public:
     enum Type { False, True, Null, Number, String, Array, Object };
     enum Encode { AUTO, UTF8, UTF8BOM, UTF16, UTF16BOM, OTHER };
 
-    inline explicit YJson(YJson::Type type):_type(static_cast<YJson::Type>(type)) { };
+    inline explicit YJson(Type type):_type(static_cast<Type>(type)) { };
     inline YJson(const YJson& js): _type(js._type), _value(js._value) { CopyJson(&js, nullptr); }
     inline explicit YJson(std::ifstream && file) noexcept { loadFile(file); };
     inline explicit YJson(std::ifstream & file) { loadFile(file); };
-    inline explicit YJson(const std::string& path, YJson::Encode encode) {loadFile(path, encode);};
+    inline explicit YJson(const std::string& path, Encode encode) { loadFile(path, encode); };
+    inline explicit YJson(const char* path, Encode encode) { loadFile(std::string(path), encode); };
     explicit YJson(const char* str);
     explicit YJson(const std::string& str);
     explicit YJson(const wchar_t*);
@@ -32,10 +33,10 @@ public:
     inline YJson* getChild() const { return _child; }
     inline YJson* getParent() const { return _parent; }
 
-    inline const char *getKeyString() const { if (this) return _key; else return nullptr;}
-    inline const char *getValueString() const { if (this) return _value; else return nullptr;}
-    inline int getValueInt() const { if (this && _type == YJson::Number) return *reinterpret_cast<double*>(_value); else return 0;}
-    inline double getValueDouble() const { if (this && _type == YJson::Number) return *reinterpret_cast<double*>(_value); else return 0;}
+    inline const char *getKeyString() const {return _key;}
+    inline const char *getValueString() const {return _value;}
+    inline int getValueInt() const { if (_type == YJson::Number) return *reinterpret_cast<double*>(_value); else return 0;}
+    inline double getValueDouble() const { if (_type == YJson::Number) return *reinterpret_cast<double*>(_value); else return 0;}
     std::string urlEncode() const;
     std::string urlEncode(const char* url) const;
     std::string urlEncode(const std::string& url) const;
@@ -81,43 +82,22 @@ public:
     inline bool removeByVal(double value) { return remove(findByVal(value)); }
     inline bool removeByVal(const std::string & str) { return remove(findByVal(str.c_str())); }
 
-    inline bool clear(){
-        if (_type != YJson::Array && _type != YJson::Object) return false;
-        else if (_child) { delete _child; _child = nullptr;}
-        return true;
-    }
-    inline bool empty(){
-        return !this || !_child;
-    }
-    class iterator{
+    inline bool clear()
+    { if (_type != YJson::Array && _type != YJson::Object) return false; else if (_child) { delete _child; _child = nullptr;} return true; }
+    inline bool empty(){ return !_child; }
+    class iterator {
     private:
         YJson* _data = nullptr;
     public:
         iterator(YJson* data_): _data(data_){};
-        bool operator!=(const iterator& that) {
-            return _data != that._data;
-        }
-        bool operator==(const iterator& that) {
-            return _data == that._data;
-        }
-        iterator& operator++() {
-            _data = _data->_next;
-            return *this;
-        }
-        iterator& operator--() {
-            _data = _data->_prev;
-            return *this;
-        }
-        YJson& operator*() {
-            return *_data;
-        }
+        bool operator!=(const iterator& that) { return _data != that._data; }
+        bool operator==(const iterator& that) { return _data == that._data; }
+        iterator& operator++() { _data = _data->_next; return *this; }
+        iterator& operator--() { _data = _data->_prev; return *this; }
+        YJson& operator*() { return *_data; }
     };
-    iterator begin() {
-        return _child;
-    }
-    iterator end() {
-        return nullptr;
-    }
+    iterator begin() { return _child; }
+    iterator end() { return nullptr; }
 
 private:
     YJson::Type _type = YJson::Null;

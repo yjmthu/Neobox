@@ -1,7 +1,5 @@
 ﻿#include <thread>
 #include <sstream>
-#include <windows.h>
-#include <winuser.h>
 #include <QApplication>
 #include <QClipboard>
 #include <QButtonGroup>
@@ -15,9 +13,19 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 
+#if defined (Q_OS_WIN32)
+#include <QThread>
+#include <windows.h>
+#include <winuser.h>
+#elif defined (Q_OS_LINUX)
+#include <sys/time.h>
+#include <unistd.h>
+#endif
+
 #if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
 #include <QTextCodec>
 #include <QTextToSpeech> //导入语音头文件
+#include <menu.h>
 
 #include <3rd_qxtglobalshortcut/qxtglobalshortcut.h>
 #else
@@ -32,8 +40,6 @@
 #include "gmpoperatetip.h"
 #include "translater.h"
 
-#define TRAN_HEIGHT 300
-#define TRAN_WIDTH 240
 
 #if (QT_VERSION_CHECK(6,0,0) <= QT_VERSION)
 bool  MSSpeak(LPCTSTR speakContent) // 文字转为语音
@@ -65,7 +71,6 @@ Translater::Translater() :
         , speaker(new QTextToSpeech)
     #endif
 {
-    mgr->setTransferTimeout(1000);
     setWindowFlags(Qt::Tool | Qt::FramelessWindowHint);
     setAttribute(Qt::WA_TranslucentBackground);
     QFile qss(":/qss/translater_style.qss");
@@ -98,15 +103,23 @@ Translater::Translater() :
     btngrp->addButton(ui->pBtnZhToEn, 1);
     btngrp->setExclusive(true);
 
-    setMinimumSize(TRAN_WIDTH, TRAN_HEIGHT);
-    setMaximumSize(TRAN_WIDTH, TRAN_HEIGHT);
+
+    constexpr int TRAN_HEIGHT = 300;
+    constexpr int TRAN_WIDTH = 240;
+
+    const QSize size(TRAN_WIDTH, TRAN_HEIGHT);
+
+    setMinimumSize(size);
+    setMaximumSize(size);
 
     connect(this, &Translater::msgBox, this, [=](const char* str){
         jobTip->showTip(str);
     });
     connect(shortcut_show, &QxtGlobalShortcut::activated, this, [=](){
         qout << "按下显示热键";
+#ifdef Q_OS_WIN
         hCurrentCursor = GetForegroundWindow();
+#endif
         if (!isVisible()) show();
         activateWindow();  //SwitchToThisWindow(HWND(winId()), TRUE);
         QClipboard* cl = QApplication::clipboard();              //读取剪切板
@@ -137,8 +150,10 @@ Translater::Translater() :
         qout << "按下隐藏热键";
         if (isVisible())
         {
+#ifdef Q_OS_WIN
             if (hCurrentCursor && IsWindow(hCurrentCursor) && IsWindowVisible(hCurrentCursor))
                 SetForegroundWindow(hCurrentCursor);
+#endif
             hide();
         }
     });
@@ -174,21 +189,21 @@ void Translater::initConnects()
         ui->TextFrom->setFocus();
     });
     QString menu_style("QMenu{"
-                    "border-radius:3px;"
-                    "background-color: white;"
-                    "color: black;"
-                    "border: 1px solid rgb(0,255,255);"
-                "}"
-                "QMenu::item {"
-                    "background-color: transparent;"
-                    "padding: 6px 3px;"
-                    "border-radius: 3px;"
-                "}"
-                "QMenu::item:selected {"
-                    "background-color: yellow;"
-                    "border-radius: 3px;"
-                    "padding: 6px 3px;"
-                "}");
+            "border-radius:3px;"
+            "background-color: white;"
+            "color: black;"
+            "border: 1px solid rgb(0,255,255);"
+        "}"
+        "QMenu::item {"
+            "background-color: transparent;"
+            "padding: 6px 3px;"
+            "border-radius: 3px;"
+        "}"
+        "QMenu::item:selected {"
+            "background-color: yellow;"
+            "border-radius: 3px;"
+            "padding: 6px 3px;"
+        "}");
     connect(ui->TextFrom, &QPlainTextEdit::customContextMenuRequested, ui->TextFrom, [=](const QPoint &pos){
         QMenu* menu = ui->TextFrom->createStandardContextMenu();
         menu->setStyleSheet(menu_style);
@@ -220,21 +235,21 @@ void Translater::initConnects()
 
 void Translater::showEvent(QShowEvent* event)
 {
-    int x, y;  RECT rt; ui->pBtnPin->setChecked(!VarBox->AutoHide);
+    int x, y;
+    ui->pBtnPin->setChecked(!VarBox->AutoHide);
     ui->pBtnPin->setIcon(QIcon(VarBox->AutoHide?":/icons/drip_pin.ico": ":/icons/drip_blue_pin.ico"));
-    int w = (GetWindowRect(HWND(winId()), &rt), rt.right - rt.left), h = (rt.bottom - rt.top), sw = GetSystemMetrics(SM_CXSCREEN);
-    GetWindowRect(HWND(VarBox->form->winId()), &rt);
-    if (rt.top > h)
-        y = rt.top - h;
+    QRect rt = VarBox->form->geometry();
+    if (rt.top() > height())
+        y = rt.top() - height();
     else
-        y = rt.bottom;
-    if (rt.left + rt.right + w > sw * 2)
-        x = sw - w;
-    else if (rt.right + rt.left < w)
+        y = rt.bottom();
+    if (rt.left() + rt.right() + width() > VarBox->ScreenWidth * 2)
+        x = VarBox->ScreenWidth - width();
+    else if (rt.right() + rt.left() < width())
         x = 0;
     else
-        x = (rt.left + rt.right - w) / 2;
-    SetWindowPos(HWND(winId()), HWND_TOPMOST, x, y, 0, 0, SWP_NOSIZE);
+        x = (rt.left() + rt.right() - width()) / 2;
+    move(x, y);
 
     QTextCursor cursor = ui->TextFrom->textCursor();
     cursor.movePosition(QTextCursor::End);
@@ -244,6 +259,7 @@ void Translater::showEvent(QShowEvent* event)
     event->accept();
 }
 
+#ifdef Q_OS_WIN
 #if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
 bool Translater::nativeEvent(const QByteArray &, void *message, long *)
 #else
@@ -276,6 +292,7 @@ bool Translater::nativeEvent(const QByteArray &, void *message, long long *)
     }
     return false;
 }
+#endif
 
 void Translater::mouseReleaseEvent(QMouseEvent *event)
 {
@@ -368,8 +385,15 @@ void Translater::getReply(const QByteArray& q)
     constexpr char youdao_api[] = "http://fanyi.youdao.com/translate?&doctype=json&type=%1&i=%2";
     qout << "开始执行翻译函数";
 
-    auto time_now = GetTickCount();
-    if (time_now - last_post_time < 1000) Sleep(last_post_time + 1000 - time_now);
+#if defined (Q_OS_WIN32)
+    unsigned long long time_now = GetTickCount();  // haomiao
+#elif defined (Q_OS_LINUX)
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    unsigned long long time_now = tv.tv_sec * 1000000 + tv.tv_usec;  //weimiao
+#endif
+    if (time_now - last_post_time < 1000)
+        QThread::msleep(last_post_time + 1000 - time_now);
 
     connect(mgr, &QNetworkAccessManager::finished, this, [this](QNetworkReply* rep) {
         if (rep->error() != QNetworkReply::NoError)
@@ -387,15 +411,21 @@ void Translater::getReply(const QByteArray& q)
             do {
                 temp = have_item->getChild()->find("tgt");
                 ui->TextTo->appendPlainText(temp->getValueString());
-            } while (have_item = have_item->getNext());
+            } while ((have_item = have_item->getNext()));
             QTextCursor cursor = ui->TextFrom->textCursor();
             cursor.movePosition(QTextCursor::End);
             ui->TextFrom->setTextCursor(cursor);
+#if defined (Q_OS_WIN32)
             last_post_time = GetTickCount();
+#elif defined (Q_OS_LINUX)
+            struct timeval tv;
+            gettimeofday(&tv, NULL);
+            last_post_time = tv.tv_sec * 1000000 + tv.tv_usec;
+#endif
         }//"errorCode":0
         else if (json_data.find("errorCode"))
         {
-            if (have_item = json_data.find("error_msg"))
+            if ((have_item = json_data.find("error_msg")))
             {
                 qout << "错误消息：" << have_item->getValueString();
                 if (!strcmp(have_item->getValueString(), "Invalid Access Limit"))
@@ -405,7 +435,7 @@ void Translater::getReply(const QByteArray& q)
                 else if (!strcmp(have_item->getValueString(), "Invalid Sign"))
                     emit msgBox("翻译失败，密钥错误！");
                 else
-                    emit msgBox("翻译失败， 其它错误。");
+                    emit msgBox("翻译失败，其它错误。");
             }
             else
                 emit msgBox("翻译失败，未知原因。");

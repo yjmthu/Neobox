@@ -5,7 +5,7 @@
     border-bottom-right-radius: 3px;
     background-color: #ffffff;
     color: black;
-    font: 9pt "宋体";
+    font: 9pt "%1";
 }
 
 QTabWidget::pane {
@@ -149,6 +149,13 @@ QPushButton {
     padding: 6px 14px 6px 14px;
     border-radius: 4px;
     background-color: rgba(229, 242, 250, 255);
+    color: #3498db;
+}
+
+QPushButton:checked {
+    padding: 6px 14px 6px 14px;
+    border-radius: 4px;
+    background-color: #cceeee;
     color: #3498db;
 }
 

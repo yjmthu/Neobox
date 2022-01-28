@@ -1,0 +1,15 @@
+[Desktop Entry]
+Comment[en_US]=Change Desktop Wallpaper In Your Own Way.
+Comment[zh_CN]=用自己的方式改变桌面壁纸。
+Exec=%1
+GenericName[en_US]=Speed-Box
+GenericName=Speed-Box
+GenericName[zh_CN]=怪物壁纸
+Icon=%2
+MimeType=text/html;image/webp;application/xml;
+Name[en_US]=Speed-Box
+Name=Speed-Box
+Name[zh_CN]=怪物壁纸
+Terminal=false
+Type=Application
+Version=%3

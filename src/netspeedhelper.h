@@ -23,6 +23,7 @@ private:
     QTimer *timer;
     void get_mem_usage();                        //读取内存占用率
     void get_net_usage();                        //读取网速
+#ifdef Q_OS_WIN
     HMODULE hIphlpapi = NULL;
     typedef ULONG (WINAPI* pfnGetAdaptersAddresses) (ULONG Family, ULONG Flags, PVOID Reserved, PIP_ADAPTER_ADDRESSES AdapterAddresses, PULONG SizePointer);
     typedef DWORD (WINAPI *pfnGetIfTable) (PMIB_IFTABLE pIfTable, PULONG pdwSize, BOOL bOrder);
@@ -30,7 +31,7 @@ private:
     pfnGetAdaptersAddresses GetAdaptersAddresses = nullptr;
     PIP_ADAPTER_ADDRESSES piaa = nullptr;   //网卡结构
     MIB_IFTABLE *mi = nullptr;              //网速结构
-
+#endif
 signals:
     void netInfo(QString net_up, QString net_dw);
     void memInfo(QString mem);

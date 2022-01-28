@@ -133,7 +133,7 @@ ByteCpy(T* s1, const T* s2)
 {
     if (s1)
     {
-        while (*s1++ = *s2++);
+        while ((*s1++ = *s2++));
         return --s1;
     }
     else

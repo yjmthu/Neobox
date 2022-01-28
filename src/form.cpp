@@ -1,125 +1,208 @@
-﻿#include <QRect>
+﻿#include <fstream>
+
+#include <QRect>
 #include <QMessageBox>
 #include <QTimer>
 #include <QSettings>
 #include <QPropertyAnimation>
 #include <QTextCodec>
+#include <QHBoxLayout>
+#include <QVBoxLayout>
 
+#include "translater.h"
+#include "dialog.h"
+#include "menu.h"
 #include "netspeedhelper.h"
-
-#ifdef Q_OS_WIN
-#include <Windows.h>
-#include <dbt.h>
-#elif def Q_OS_LINUX
-#include <winddi.h>
-#endif
-
 #include "YString.h"
 #include "form.h"
-#include "ui_form.h"
-#include "wallpaper.h"
-#include "formsetting.h"
 #include "wallpaper.h"
 #include "usbdrivehelper.h"
+#include "systemfunctions.h"
+#include "qstylesheet.h"
+#include "YJson.h"
 
+#ifdef Q_OS_WIN32
+#include <Windows.h>
+#include <dbt.h>
+#elif defined Q_OS_LINUX
+#include <QScreen>
+#include <X11/Xlib.h>
+#include <QX11Info>
+#endif
 
-
-inline void savePos()
-{
-    RECT rt; GetWindowRect(HWND(VarBox->form->winId()), &rt);
-    QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
-    IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    IniWrite.beginGroup("UI");
-    IniWrite.setValue("x", (int)rt.left); IniWrite.setValue("y", (int)rt.top);
-    IniWrite.endGroup();
-}
 
 Form::Form(QWidget* parent) :
     QWidget(parent),
-    ui(new Ui::Form),
     netHelper(new NetSpeedHelper)
 {
-    qout << "悬浮窗指针";
     *const_cast<Form**>(&(VarBox->form)) = this;
     qout << "悬浮窗UI";
-    ui->setupUi(this);                                                     //创建界面
-    qout << "悬浮窗数据";
-	initForm();                                                            //初始化大小、位置、翻译功能
+    initSettings();
+    setupUi();                         //创建界面
     qout << "悬浮窗连接";
 	initConnects();
-    qout << "悬浮窗定时器";
 }
 
 Form::~Form()
 {
     qout << "析构Form开始";
-    delete MouseMoveTimer;
     delete translater;
-    qout << "析构定时器";
-    delete ui;
     delete animation;
     delete netHelper;
     qout << "析构Form结束";
 }
 
-void Form::keepInScreen()
+void Form::saveBoxPos()
 {
-    RECT rt;
-    GetWindowRect(HWND(winId()), &rt);
-    const auto w = (rt.right - rt.left), h = (rt.bottom - rt.top);
-    const auto sw = GetSystemMetrics(SM_CXSCREEN), sh = GetSystemMetrics(SM_CYSCREEN);
-    //qout << "当前宽度: " << rt.left << rt.right << rt.top << rt.bottom << sw << sh;
-    auto x = rt.left, y = rt.top;
-    if (x + 1 > sw)
-        x = sw - 2;
-    else if (rt.right < 1)
-        x = 2 - w;
-    if (y + 100 > sh)
-        y = sh - 100;
-    else if (rt.bottom < 1)
-        y = 2 - h;
-    SetWindowPos(HWND(winId()), HWND_TOPMOST, x, y, 0, 0, SWP_NOSIZE);
-    savePos();
+    const QPoint pos = this->pos();
+    std::ofstream file(".speed-box", std::ios::out | std::ios::binary);
+    if (file.is_open()) {
+        file.write(reinterpret_cast<const char*>(&pos), sizeof (QPoint));
+        file.close();
+    }
 }
 
-void Form::initForm()
+void Form::keepInScreen()
 {
-    qout << "初始化悬浮窗界面";
+    QRect rt = geometry();
+    int x = rt.left(), y = rt.top();
+    if (x + 1 > VarBox->ScreenWidth)
+        x = VarBox->ScreenWidth - 2;
+    else if (rt.right() < 1)
+        x = 2 - width();
+    if (y + height() > VarBox->ScreenHeight)
+        y = VarBox->ScreenHeight - height();
+    else if (rt.bottom() < 1)
+        y = 2 - height();
+    move(x, y);
+    saveBoxPos();
+}
+
+void Form::setupUi()
+{
+    QSize size(FORM_WIDTH, FORM_HEIGHT);
+    setMinimumSize(size);
+    setMaximumSize(size);
+    setCursor(QCursor(Qt::PointingHandCursor));
+    QHBoxLayout *horizontalLayout = new QHBoxLayout(this);
+    frame = new QFrame(this), labUp = new QLabel(frame), labDown = new QLabel(frame), labMemory = new QLabel(frame);
+    QHBoxLayout *hboxlayout = new QHBoxLayout(frame);
+    QVBoxLayout *vboxlayout = new QVBoxLayout();
+    horizontalLayout->setContentsMargins(0, 0, 0, 0);
+    vboxlayout->setContentsMargins(0, 0, 0, 0);
+    vboxlayout->addWidget(labUp);
+    vboxlayout->addWidget(labDown);
+    hboxlayout->setContentsMargins(0, 0, 0, 0);
+    hboxlayout->setSpacing(0);
+    hboxlayout->addWidget(labMemory);
+    hboxlayout->addLayout(vboxlayout);
+    horizontalLayout->addWidget(frame);
+    labMemory->setAlignment(Qt::AlignCenter);
+    labMemory->setText("0");
+    labUp->setText("↑ 0.0 B");
+    labDown->setText("↓ 0.0 B");
+    labMemory->setMaximumWidth(30);
+
     setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
     setAttribute(Qt::WA_TranslucentBackground);
-    QFont font;
-    QFontDatabase::addApplicationFont(":/fonts/Nickainley-Normal-small.ttf");
-    QFontDatabase::addApplicationFont(":/fonts/Carattere-Regular-small.ttf");
-    font.setFamily("Nickainley Normal");
-    font.setPointSize(8);
-    font.setBold(true);
-    ui->Labdown->setFont(font);
-    ui->Labup->setFont(font);
-    font.setFamily("Carattere");
-    font.setPointSize(17);
-    font.setBold(true);
-    ui->LabMemory->setFont(font);
-    //setStyleSheet("background:transparent");
-	setMinimumSize(FORM_WIDTH, FORM_HEIGHT);
-	setMaximumSize(FORM_WIDTH, FORM_HEIGHT);
-    FormSetting::load_style_from_file();
 
+    QFont font;
+    bool changed = false;
+    YJson* js = nullptr;
+    if (!QFile::exists("BoxFont.json"))
+    {
+        QFile qfile(":/json/BoxFont.json");
+        if (qfile.open(QFile::ReadOnly))
+        {
+            js = new YJson(static_cast<const char*>(qfile.readAll()) + 3); // 偏移3个代表utf-8 bom的字节
+            changed = true;
+            js->append((*js)["default"], "user");
+        } else {
+            return qApp->exit(RETCODE_ERROR_EXIT);
+        }
+    } else {
+        js = new YJson("BoxFont.json", YJson::UTF8BOM);
+    }
+    YJson *ptr = js->find("user");
+    YJson *js_ui[4] { ptr->find("frame"), ptr->find("labUp"), ptr->find("labDown"), ptr->find("labMemory")};
+    QWidget* _ui[4] { frame, labUp, labDown, labMemory};
+    for (int i = 0; i < 4; i++)
+    {
+        YJson* familyinfo = js_ui[i]->find("family");
+        if (familyinfo->getType() == YJson::Null || !strcmp(familyinfo->getValueString(), "none") || !strcmp(familyinfo->getValueString(), "null") )
+            continue;
+        font.setFamily(familyinfo->getValueString());
+        font.setBold(js_ui[i]->find("bold")->getType() == YJson::True);
+        font.setItalic(js_ui[i]->find("italic")->getType() == YJson::True);
+        _ui[i]->setFont(font);
+    }
+    frame->setToolTip(js->find("tip")->getValueString());
+    if (changed) js->toFile("BoxFont.json", YJson::UTF8BOM, true);
+    delete js;
+
+    std::ifstream file(".speed-box", std::ios::in | std::ios::binary);
+    if (file.is_open())
+    {
+        QPoint pt;
+        file.read(reinterpret_cast<char*>(&pt), sizeof (QPoint));
+        file.close();
+        move(pt);
+    } else {
+        move(100, 100);
+    }
+
+    if (VarBox->EnableTranslater) {
+        enableTranslater(true);
+    } else {
+        translater = nullptr;                     // 防止野指针
+    }
+    loadStyle();
+}
+
+
+void Form::loadStyle()
+{
+    QStyleSheet *sheet;
+    std::ifstream file_in(".boxstyle", std::ios::in | std::ios::binary);
+    if (file_in.is_open()) {
+        sheet = new QStyleSheet[4];
+        file_in.read(reinterpret_cast<char *>(sheet), sizeof (QStyleSheet) * 4);
+        file_in.close();
+        /*  qout << sheet[0].getString("QFrame");
+            qout << sheet[1].getString("QLabel");
+            qout << sheet[2].getString("QLabel");
+            qout << sheet[3].getString("QLabel");  */
+    } else {
+        std::ofstream file_out(".boxstyle", std::ios::out | std::ios::binary);
+        sheet = new QStyleSheet[4]
+        { /*{bk r    g    b   a    ft   r    g    b    a   bd  r  g  b  a   b   w  r fuz si win 0  0  0 }*/
+            { 255, 255, 255, 80, /**/   0,   0,   0,   0, /**/ 0, 0, 0, 0, /**/ 0, 3, 0,  1, 0, 0, 0, 0 },
+            {   0,   0,   0,  0, /**/   0, 255, 255, 255, /**/ 0, 0, 0, 0, /**/ 0, 0, 0, 17, 0, 0, 0, 0 },
+            {   0,   0,   0,  0, /**/ 250, 170,  35, 255, /**/ 0, 0, 0, 0, /**/ 0, 0, 0,  8, 0, 0, 0, 0 },
+            {   0,   0,   0,  0, /**/ 140, 240,  30, 255, /**/ 0, 0, 0, 0, /**/ 0, 0, 0,  8, 0, 0, 0, 0 }
+        };
+        if (file_out.is_open()) {
+            file_out.write(reinterpret_cast<const char *>(sheet), sizeof (QStyleSheet) * 4);
+            file_out.close();
+        }
+    }
+    frame->setStyleSheet(sheet[0].getString("QFrame"));
+    labMemory->setStyleSheet(sheet[1].getString("QLabel"));
+    labUp->setStyleSheet(sheet[2].getString("QLabel"));
+    labDown->setStyleSheet(sheet[3].getString("QLabel"));
+
+    if (sheet->bk_fuzzy >= 0)
+        SystemFunctions::SetWindowCompositionAttribute(HWND(winId()), ACCENT_STATE::ACCENT_ENABLE_BLURBEHIND, (sheet->bk_fuzzy << 24) & RGB(sheet->bk_red,sheet->bk_green,sheet->bk_blue));
+    delete [] sheet;
+}
+
+void Form::initSettings()
+{
     QSettings IniRead("SpeedBox.ini", QSettings::IniFormat);
     IniRead.setIniCodec(QTextCodec::codecForName("UTF-8"));
     IniRead.beginGroup("UI");
-    SetWindowPos(HWND(winId()), HWND_TOPMOST, IniRead.value("x").toInt(), IniRead.value("y").toInt(), 0, 0, SWP_NOSIZE);
+    tieBianHide = IniRead.value("TieBianHide", true).toBool();
     IniRead.endGroup();
-
-    if (VarBox->EnableTranslater)
-    {
-        enableTranslater(true);
-    }
-    else
-    {
-        translater = nullptr;                     //防止野指针
-    }
-	ui->LabMemory->setMaximumWidth(30);
-    qout << "初始化悬浮窗界面完毕";
 }
 
 void Form::initConnects()
@@ -127,11 +210,11 @@ void Form::initConnects()
     qout << "FORM链接A";
 	animation = new QPropertyAnimation(this, "geometry");                  //用于贴边隐藏的动画
     connect(netHelper, &NetSpeedHelper::netInfo, this, [this](QString up, QString dw){
-        ui->Labup->setText(up);        //将上传速度显示出来
-        ui->Labdown->setText(dw);        //将下载速度显示出来
+        labUp->setText(up);          //将上传速度显示出来
+        labDown->setText(dw);        //将下载速度显示出来
     });
-    connect(netHelper, &NetSpeedHelper::memInfo, ui->LabMemory, &QLabel::setText);
-    connect(animation, &QPropertyAnimation::finished, &savePos);
+    connect(netHelper, &NetSpeedHelper::memInfo, labMemory, &QLabel::setText);
+    connect(animation, &QPropertyAnimation::finished, this, &Form::saveBoxPos);
     connect(VarBox->wallpaper, &Wallpaper::setFailed, this, &Form::set_wallpaper_fail);
     qout << "FORM链接B";
 }
@@ -155,6 +238,8 @@ void Form::set_wallpaper_fail(const char* str)
     }
     VarBox->MSG(str, "出错");
 }
+
+#ifdef Q_OS_WIN32
 
 char FirstDriveFromMask (ULONG unitmask)
 {
@@ -217,6 +302,7 @@ char FirstDriveFromMask (ULONG unitmask)
     }
     return false;
 }
+#endif
 
 void Form::mousePressEvent(QMouseEvent* event)
 {
@@ -246,7 +332,7 @@ void Form::mouseReleaseEvent(QMouseEvent* event)
 {
 	if (event->button() == Qt::LeftButton)  // 鼠标左键释放
 	{
-        savePos();
+        saveBoxPos();
 		setMouseTracking(false);           // 停止跟踪鼠标。
 		_endPos = event->pos() - _startPos;
 	}
@@ -257,21 +343,47 @@ void Form::mouseDoubleClickEvent(QMouseEvent*)
 {
     if (VarBox->EnableTranslater)
     {
-        if (!translater->isVisible())
+        if (!translater->isVisible()) {
             translater->show();
-        else
+            translater->activateWindow();
+        } else {
             translater->hide();
+        }
     }
 }
 
 void Form::mouseMoveEvent(QMouseEvent* event)
 {
-    if (VarBox->EnableTranslater && !translater->isHidden())
-    {
-        translater->hide();
-    }
-	_endPos = event->pos() - _startPos;  //计算位置变化情况。
+#ifdef Q_OS_WIN32
+    QPoint _curPos =  event->pos();
+    _endPos = _curPos - _startPos;  //计算位置变化情况。
 	move(pos() + _endPos);               //当前位置加上位置变化情况，从而实现悬浮窗和鼠标同时移动。
+#elif defined Q_OS_LINUX
+    QPoint _curPos = event->globalPos() * 2;
+    XEvent xe;
+    memset(&xe, 0, sizeof(XEvent));
+
+    Display *display = QX11Info::display();
+    xe.xclient.type = ClientMessage;
+    xe.xclient.message_type = XInternAtom(display, "_NET_WM_MOVERESIZE", False);
+    xe.xclient.display = display;
+    //wid 是当前程序的 window id，可以通过 QWidget->wId()获得，QWidget 必须实例化
+    xe.xclient.window = (XID)(winId());
+    xe.xclient.format = 32;
+    xe.xclient.data.l[0] = _curPos.x();
+    xe.xclient.data.l[1] = _curPos.y();
+    xe.xclient.data.l[2] = 8;
+    xe.xclient.data.l[3] = Button1;
+    xe.xclient.data.l[4] = 1;
+
+    XUngrabPointer(display, CurrentTime);
+    XSendEvent(display,
+               QX11Info::appRootWindow(QX11Info::appScreen()),
+               False,
+               SubstructureNotifyMask | SubstructureRedirectMask,
+               &xe);
+    XFlush(display);
+#endif
 	event->accept();
 }
 
@@ -281,22 +393,25 @@ void Form::mouseMoveEvent(QMouseEvent* event)
     void Form::enterEvent(QEnterEvent* event)
 #endif
 {
-    QPoint pos = frameGeometry().topLeft();
-    if (moved) {
-        if (pos.x() + FORM_WIDTH >= VarBox->ScreenWidth)   // 右侧显示
-        {
-            startAnimation(VarBox->ScreenWidth - FORM_WIDTH + 2, pos.y());
-            moved = false;
-        }
-        else if (pos.x() <= 0)                    // 左侧显示
-        {
-            startAnimation(0, pos.y());
-            moved = false;
-        }
-        else if (pos.y() <= 0)                    // 顶层显示
-        {
-            startAnimation(pos.x(), 0);
-            moved = false;
+    if (tieBianHide)
+    {
+        const QPoint pos = this->pos();
+        if (moved) {
+            if (pos.x() + FORM_WIDTH >= VarBox->ScreenWidth)   // 右侧显示
+            {
+                startAnimation(VarBox->ScreenWidth - FORM_WIDTH + 2, pos.y());
+                moved = false;
+            }
+            else if (pos.x() <= 0)                    // 左侧显示
+            {
+                startAnimation(0, pos.y());
+                moved = false;
+            }
+            else if (pos.y() <= 0)                    // 顶层显示
+            {
+                startAnimation(pos.x(), 0);
+                moved = false;
+            }
         }
     }
     if (event) event->accept();
@@ -304,21 +419,24 @@ void Form::mouseMoveEvent(QMouseEvent* event)
 
 void Form::leaveEvent(QEvent* event)
 {
-    QPoint pos = frameGeometry().topLeft();
-    if (pos.x() + FORM_WIDTH >= VarBox->ScreenWidth)  // 右侧隐藏
+    if (tieBianHide)
     {
-        startAnimation(VarBox->ScreenWidth - 2, pos.y());
-        moved = true;
-    }
-    else if (pos.x() <= 2)                    // 左侧隐藏
-    {
-        startAnimation(2 - FORM_WIDTH, pos.y());
-        moved = true;
-    }
-    else if (pos.y() <= 2)                    // 顶层隐藏
-    {
-        startAnimation(pos.x(), 2 - FORM_HEIGHT);
-        moved = true;
+        QPoint pos = this->pos();
+        if (pos.x() + FORM_WIDTH >= VarBox->ScreenWidth)  // 右侧隐藏
+        {
+            startAnimation(VarBox->ScreenWidth - 2, pos.y());
+            moved = true;
+        }
+        else if (pos.x() <= 2)                    // 左侧隐藏
+        {
+            startAnimation(2 - FORM_WIDTH, pos.y());
+            moved = true;
+        }
+        else if (pos.y() <= 2)                    // 顶层隐藏
+        {
+            startAnimation(pos.x(), 2 - FORM_HEIGHT);
+            moved = true;
+        }
     }
     if (event) event->accept();
 }
@@ -335,13 +453,10 @@ void Form::startAnimation(int width, int height)
 
 void Form::enableTranslater(bool checked)
 {
-    if (checked)
-    {
+    if (checked) {
         VarBox->EnableTranslater = true;
         translater = new Translater;
-    }
-    else
-    {
+    } else {
         VarBox->EnableTranslater = false;
         delete translater;
         translater = nullptr;

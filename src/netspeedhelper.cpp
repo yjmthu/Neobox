@@ -1,6 +1,8 @@
 #include "netspeedhelper.h"
 
+#include <QProcess>
 #include <QTimer>
+#include <funcbox.h>
 
 
 inline QString formatSpped(long long dw, bool up_down)
@@ -20,6 +22,8 @@ inline QString formatSpped(long long dw, bool up_down)
     }
     return  QString("%1 %2 %3B").arg(units[up_down], QString::number(DW, 'f', 1), units[the_unit]);
 }
+
+#if defined (Q_OS_WIN32)
 
 NetSpeedHelper::NetSpeedHelper(QObject *parent) :
     QObject(parent), timer(new QTimer), hIphlpapi(LoadLibraryA("iphlpapi.dll"))
@@ -106,3 +110,61 @@ void NetSpeedHelper::get_net_usage()
     m_last_out_bytes = m_out_bytes;
     m_last_in_bytes = m_in_bytes;
 }
+
+#elif defined(Q_OS_LINUX)
+NetSpeedHelper::NetSpeedHelper(QObject *parent) :
+    QObject(parent), timer(new QTimer)
+{
+    connect(timer, &QTimer::timeout, this, [this](){
+        get_mem_usage();
+        get_net_usage();
+    });
+    timer->start(1000);                                    //开始检测网速和内存
+}
+
+NetSpeedHelper::~NetSpeedHelper()
+{
+    delete timer;
+}
+void NetSpeedHelper::get_mem_usage()
+{
+    QStringList arguments;
+    arguments.append("-m");
+    QString str = VarBox->runCmd("free", arguments, 2);
+    str.replace("\n","");
+    str.replace(QRegExp("( ){1,}")," ");  // 将连续空格替换为单个空格 用于分割
+    QStringList lst = str.split(" ");
+    emit memInfo(QString::number(int((lst[2].toFloat()/lst[1].toFloat())*100)));
+}
+
+void NetSpeedHelper::get_net_usage()
+{
+    static unsigned long long recv_bytes = 0, send_bytes = 0;
+    QProcess process;
+    QStringList arguments;
+    unsigned long int recv=0, send=0;
+    arguments.append("/proc/net/dev");
+    process.start("cat", arguments); //读取文件/proc/net/dev获取流量
+    process.waitForFinished();
+    process.readLine();
+    process.readLine();
+    while(!process.atEnd())  //这样可以获取所有网卡的数据。
+    {
+        QString str = process.readLine();
+        str.replace("\n","");
+        str.replace(QRegExp("( ){1,}")," ");
+        QStringList lst = str.split(" ");
+        recv += lst[2].toLongLong();
+        send += lst[10].toLongLong();
+    }
+    if (recv_bytes)
+    {
+        emit netInfo(
+            formatSpped(send - send_bytes, false),
+            formatSpped(recv - recv_bytes, true)
+        );
+    }
+    recv_bytes = recv;
+    send_bytes = send;
+}
+#endif

@@ -2,7 +2,7 @@
 #define BINGSETTING_H
 
 #include <QDialog>
-#include <speedwidget.h>
+#include "speedwidget.h"
 
 class GMPOperateTip;
 

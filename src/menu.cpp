@@ -4,7 +4,9 @@
 #include <QAction>
 #include <QLabel>
 #include <QDesktopServices>
-
+#include <QFontDatabase>
+#include <QApplication>
+#include "dialog.h"
 #include "YString.h"
 #include "YJson.h"
 #include "funcbox.h"
@@ -13,8 +15,10 @@
 #include "wallpaper.h"
 #include "calculator.h"
 
-constexpr int MENU_WIDTH = 88;
-constexpr int MENU_HEIGHT = 319;
+constexpr int MENU_WIDTH = 90;
+constexpr int MENU_HEIGHT = 330;
+
+bool Menu::keepScreenOn = false;
 
 Menu::Menu(QWidget* parent) :
     QMenu(parent),
@@ -37,9 +41,16 @@ void Menu::initUi()
     setWindowFlag(Qt::FramelessWindowHint);                       //没有任务栏图标
     setAttribute(Qt::WA_TranslucentBackground, true);             //背景透明
     setAttribute(Qt::WA_DeleteOnClose, true);
+
     QFile qss(":/qss/menu_style.qss");                            //读取样式表
 	qss.open(QFile::ReadOnly);
-	setStyleSheet(qss.readAll());
+    int fontId = QFontDatabase::addApplicationFont("://fonts/FangZhengKaiTiJianTi-1.ttf");
+    QStringList fontIDs = QFontDatabase::applicationFontFamilies(fontId);
+    if (! fontIDs.isEmpty()) {
+        setStyleSheet(QString(qss.readAll()).arg(fontIDs.first()));
+    } else {
+        qDebug()<<"Failed to load font.";
+    }
     qss.close();
 
     setMaximumSize(MENU_WIDTH, MENU_HEIGHT);                      //限定大小
@@ -49,9 +60,9 @@ void Menu::initUi()
 void Menu::initActions()
 {
 #if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
-    constexpr char lst[11][15] = {
-        "  软件设置", "  科学计算", "划词翻译", "  上一张图", "  下一张图",
-        "  不看此图", "  打开目录", "  快速关机", "  快捷重启", "  本次退出",
+    constexpr char lst[11][17] = {
+        "    软件设置", "    科学计算", "划词翻译", "    上一张图", "    下一张图",
+        "    不看此图", "    打开目录", "    快速关机", "    快捷重启", "    本次退出",
         "防止息屏"
     };
 #else
@@ -78,7 +89,7 @@ void Menu::showEvent(QShowEvent *event)
 
 void Menu::Show(int x, int y)                   //自动把右键菜单移动到合适位置
 {
-    actions[10].setChecked(VarBox->form->MouseMoveTimer);
+    actions[10].setChecked(keepScreenOn);
 	int px, py;
     if (x + MENU_WIDTH < VarBox->ScreenWidth)   //菜单右边界不超出屏幕时
 		px = x;
@@ -120,37 +131,31 @@ void Menu::initMenuConnect()
     connect(actions+3, &QAction::triggered, VarBox->wallpaper, &Wallpaper::prev);      //设置受否开机自启                                                                              //是否自动移动鼠标防止息屏
     connect(actions+5, &QAction::triggered, VarBox->wallpaper, &Wallpaper::dislike);
     connect(actions+6, &QAction::triggered, VarBox, [](){
+        qout << VarBox->PathToOpen;
         VarBox->openDirectory(VarBox->PathToOpen);
     });                 //打开exe所在文件夹
+#ifdef Q_OS_WIN32
     connect(actions+7, &QAction::triggered, VarBox,
             std::bind(
-                (wchar_t* (*)(const QString &, const QStringList&, short))
+                (QByteArray (*)(const QString &, const QStringList&, short))
                 VARBOX::runCmd, QString("shutdown"), QStringList({"-s", "-t", "0"}), 0)
             );            //关闭电脑
     connect(actions+8, &QAction::triggered, VarBox,
             std::bind(
-                (wchar_t* (*)(const QString &, const QStringList&, short))
+                (QByteArray (*)(const QString &, const QStringList&, short))
                 VARBOX::runCmd, QString("shutdown"), QStringList({"-r", "-t", "0"}), 0)
             );
+#elif defined Q_OS_LINUX
+    connect(actions+7, &QAction::triggered, VarBox, [](){system("shutdown -h now");});            //关闭电脑
+    connect(actions+8, &QAction::triggered, VarBox, [](){system("reboot");});
+#endif
     connect(actions+9, &QAction::triggered, qApp, &QCoreApplication::quit);            // 退出程序
     connect(actions+10, &QAction::triggered, VarBox, [=](bool checked){
-        if (checked)                                                                   //启用自动移动鼠标
+        if ((keepScreenOn = checked))                                                                   //启用自动移动鼠标
         {
-            VarBox->form->MouseMoveTimer = new QTimer;
-            VarBox->form->MouseMoveTimer->setInterval(45000);
-            connect(VarBox->form->MouseMoveTimer, &QTimer::timeout, VarBox, [](){
-                int X = 1;
-                if (QCursor::pos().x() == VarBox->ScreenWidth) X = -1;
-                mouse_event(MOUSEEVENTF_MOVE, X, 0, 0, 0);                            //移动一个像素
-                mouse_event(MOUSEEVENTF_MOVE, -X, 0, 0, 0);                           //移回原来的位置
-            });
-            VarBox->form->MouseMoveTimer->start();
-        }
-        else                                                                          //禁用自动移动鼠标
-        {
-            VarBox->form->MouseMoveTimer->stop();
-            delete VarBox->form->MouseMoveTimer;
-            VarBox->form->MouseMoveTimer = nullptr;
+            SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED);
+        } else {
+            SetThreadExecutionState(ES_CONTINUOUS);
         }
     });
 }

@@ -23,10 +23,12 @@ signals:
     void finished(bool);
 
 protected:
+#ifdef Q_OS_WIN
 #if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
     bool nativeEvent(const QByteArray &eventType, void *message, long *result);
 #else
     bool nativeEvent(const QByteArray &eventType, void *message, long long *result);
+#endif
 #endif
     void mouseReleaseEvent(QMouseEvent *event);
     void mousePressEvent(QMouseEvent *event);
@@ -66,13 +68,17 @@ private:
     Type type;
     class QxtGlobalShortcut * const shortcut_show, * const shortcut_hide;
     // = new QxtGlobalShortcut(QKeySequence("Ctrl+Shift+F12"), w)
-    uint64_t last_post_time;
+    unsigned long long last_post_time;
     void requestData(const char*, std::string*);
     QNetworkAccessManager * const mgr;
     class QTimer * const timer;
     void initConnects();
     char time_left = 10;
+#if defined (Q_OS_WIN32)
     HWND hCurrentCursor = NULL;
+#elif defined (Q_OS_LINUX)
+
+#endif
 #if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
     class QTextToSpeech *speaker;
 #endif

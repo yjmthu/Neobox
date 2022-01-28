@@ -1,4 +1,5 @@
 ﻿#include <string.h>
+#include <fstream>
 
 #include <QPropertyAnimation>
 #include <QGraphicsOpacityEffect>
@@ -15,6 +16,9 @@
 #include <QNetworkReply>
 #include <QDesktopServices>
 #include <QTextCodec>
+#include <QFontDatabase>
+#include <QComboBox>
+#include <QSystemTrayIcon>
 
 #include "YString.h"
 #include "YJson.h"
@@ -26,9 +30,7 @@
 #include "downloadprogress.h"
 #include "wallpaper.h"
 #include "bingsetting.h"
-#include "formsetting.h"
-
-#include "explaindialog.h"
+#include "qstylesheet.h"
 
 constexpr const char *color_theme[8] =
 {
@@ -49,10 +51,14 @@ constexpr const char *reg_keys[4] = {
     "mshta vbscript:clipboarddata.setdata(\"text\",\"%%1\")(close)"
 };
 
+Dialog::Theme Dialog::curTheme { Dialog::Theme::White };
+
 Dialog::Dialog():
     SpeedWidget<QWidget>(nullptr),
     ui(new Ui::Dialog),
-    wallpaper(VarBox->wallpaper)
+    wallpaper(VarBox->wallpaper),
+    formFontJson(new YJson("BoxFont.json", YJson::UTF8BOM)),
+    formPart({VarBox->form->frame, VarBox->form->labMemory, VarBox->form->labUp, VarBox->form->labDown})
 {
     ui->setupUi(this);                                   // 一定要在下面这句之前，否则会出现问题。
     initChildren();
@@ -64,6 +70,8 @@ Dialog::Dialog():
 Dialog::~Dialog()
 {
     qout << "析构dialog开始";
+    delete formFontJson;
+    delete [] sheet;
     delete buttonGroup;
     delete ui;
     qout << "析构dialog结束";
@@ -75,9 +83,10 @@ void Dialog::initUi()
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window | Qt::WindowSystemMenuHint | Qt::WindowMinimizeButtonHint);  //| Qt::WindowStaysOnTopHint
     setAttribute(Qt::WA_DeleteOnClose, true);
     ui->pushButton_12->setEnabled(false);
+
     QFile qss(":/qss/dialog_style.qss");
     qss.open(QFile::ReadOnly);
-    setStyleSheet(QString(qss.readAll()));
+    setStyleSheet(QString(qss.readAll()).arg("宋体"));
     qss.close();
     initSpeedBox(ui->frame, &Dialog::showMinimized, &Dialog::close);
     buttonGroup->addButton(ui->rBtnHot, (int)Type::Hot);         //将按钮添加到按钮组合，同时设置按钮 id
@@ -92,7 +101,7 @@ void Dialog::initUi()
     buttonGroup->addButton(ui->rBtnAdvance, (int)Type::Advance);
 	buttonGroup->setExclusive(true);                     // 按钮之间相互排斥
     buttonGroup->button(static_cast<int>(wallpaper->PaperType))->setChecked(true);
-    ui->lineAppData->setText(QDir::currentPath().replace("/", "\\"));
+    ui->lineAppData->setText(QDir::toNativeSeparators(QDir::currentPath()));
 
     ui->checkBox_2->setChecked(false);
     ui->LinePath->setText(wallpaper->NativeDir);
@@ -101,9 +110,12 @@ void Dialog::initUi()
     ui->labTimeInterval->setText(QString::number(wallpaper->TimeInterval));
     ui->chkEnableChangePaper->setChecked(wallpaper->AutoChange);
     ui->usrCmd->setText(wallpaper->UserCommand);
-
-    ui->cBxAutoStart->setChecked(!QSettings("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat).value("SpeedBox").toString().compare(qApp->applicationFilePath().replace("/", "\\")));
-    ui->lineEdit_2->setText(qApp->applicationDirPath().replace("/", "\\"));
+#ifdef Q_OS_WIN32
+    ui->cBxAutoStart->setChecked(!QSettings("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat).value("SpeedBox").toString().compare(QDir::toNativeSeparators(qApp->applicationFilePath())));
+#elif defined (Q_OS_LINUX)
+    ui->cBxAutoStart->setChecked(QFile::exists(QDir::homePath()+"/.config/autostart/SpeedBox.desktop"));
+#endif
+    ui->lineEdit_2->setText(QDir::toNativeSeparators(qApp->applicationDirPath()));
     switch (wallpaper->PaperType) {
     case Type::Bing:
         ui->rBtnBingApi->setChecked(true);
@@ -121,37 +133,49 @@ void Dialog::initUi()
         ui->rBtnWallhavenApiDefault->setChecked(true);
         my_on_rBtnWallhavenApiDefault_clicked();
     }
-    if (QSettings(TASK_DESK_SUB, QSettings::NativeFormat).contains(TASKBAR_ACRYLIC_OPACITY))
-        switch (QSettings(TASK_DESK_SUB, QSettings::NativeFormat).value(TASKBAR_ACRYLIC_OPACITY).toInt())
-        {
-        case 10:                                              // 不透明
-            ui->radioButton_11->setChecked(true);
-            break;
-        case 5:                                               // 半透明
-            ui->radioButton_10->setChecked(true);
-            break;
-        case 0:                                               // 全透明
-            ui->radioButton_12->setChecked(true);
-            break;
-        default:                                              // 默认不透明
-            ui->radioButton_11->setChecked(true);
-            break;
-        }
-    else
-        ui->radioButton_11->setChecked(true);                 // 默认不透明
-    if (VarBox->PathToOpen.compare(qApp->applicationDirPath().replace("/", "\\")))
+#if defined (Q_OS_WIN32)
+    if (VarBox->PathToOpen.compare(QDir::toNativeSeparators(qApp->applicationDirPath())))
         ui->radioButton_14->setChecked(true);
     else
         ui->radioButton_13->setChecked(true);
+#elif defined (Q_OS_LINUX)
+    if (VarBox->PathToOpen.compare(qApp->applicationDirPath()))
+        ui->radioButton_14->setChecked(true);
+    else
+        ui->radioButton_13->setChecked(true);
+#endif
+    ui->cBxTuoPanIcon->setChecked(VarBox->TuoPanIcon);
+    ui->cBxTieBianHide->setChecked(VarBox->form->tieBianHide);
     ui->pushButton_4->setText("确定");
-    ui->comboBox_3->setCurrentIndex((int)VarBox->CurTheme);
+    ui->comboBox_3->setCurrentIndex((int)curTheme);
     ui->lineEdit->setText(VarBox->PathToOpen);
     ui->checkBox_3->setChecked(wallpaper->FirstChange);
     ui->BtnChooseFolder->setEnabled(ui->rBtnNative->isChecked());
-    ui->checkBox->setChecked(VarBox->enableUSBhelper);
-    ui->frame->setStyleSheet(QString("QFrame{background-color:rgba(%1);}QLabel{border-radius: 3px;background-color: transparent;}Line{background-color:black};").arg(color_theme[static_cast<int>(VarBox->CurTheme)]));
+    ui->cBxEnableUSBhelper->setChecked(VarBox->enableUSBhelper);
+    ui->frame->setStyleSheet(QString("QFrame{background-color:rgba(%1);}QLabel{border-radius: 3px;background-color: transparent;}Line{background-color:black};").arg(color_theme[static_cast<int>(curTheme)]));
     checkSettings();
+    loadFormStyle();
     move((VarBox->ScreenWidth - width()) / 2, (VarBox->ScreenHeight - height()) / 2);
+}
+
+void Dialog::loadFormStyle()
+{
+    std::ifstream file_in(".boxstyle", std::ios::in | std::ios::binary);
+    if (file_in.is_open()) {
+        sheet = new QStyleSheet[4];
+        file_in.read(reinterpret_cast<char *>(sheet), sizeof (QStyleSheet) * 4);
+        file_in.close();
+    } else {
+        QMessageBox::critical(this, "出错", "悬浮窗风格文件不存在，请尝试重新启动软件解决！");
+        return;
+    }
+    QString str(QString("QPushButton{background-color:rgb(%1,%2,%3);border:1px solid black;border-radius:4px;}").arg(QString::number(sheet->bk_red), QString::number(sheet->bk_green), QString::number(sheet->bk_blue)));
+    ui->pBtnFormColor->setStyleSheet(str);
+    ui->sLdTranparent->setValue(sheet->bk_alpha);
+    ui->sLdBorderRadius->setValue(sheet->bd_radius);
+    ui->sLdFuzzy->setValue(sheet->bk_fuzzy);
+    YJson* temp = formFontJson->find("image");
+    ui->lineMultyPath->setText(temp->getType() == YJson::Null ? "null" : temp->getValueString());
 }
 
 void Dialog::initChildren()
@@ -176,15 +200,51 @@ void Dialog::initConnects()
     connect(ui->pBtnOpenPicturePath, &QPushButton::clicked, this, &Dialog::openPicturePath);
     connect(ui->linePictuerPath, &QLineEdit::returnPressed, this, &Dialog::linePictuerPathReturn);
     connect(ui->cBxAutoStart, &QPushButton::clicked, this, [this](bool checked){
+#ifdef Q_OS_WIN32
         QSettings* reg = new QSettings(
             "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
             QSettings::NativeFormat);
         if (checked)
-            reg->setValue("SpeedBox", qApp->applicationFilePath().replace("/", "\\"));
+            reg->setValue("SpeedBox", QDir::toNativeSeparators(qApp->applicationFilePath()));
         else
             reg->remove("SpeedBox");
         delete reg;
         jobTip->showTip("修改成功！");
+#elif defined Q_OS_LINUX
+        QString linkpath = QDir::homePath()+"/.config/autostart/SpeedBox.desktop";
+        QFile file(":/scripts/SpeedBox.desktop");
+        if (checked && !QFile::exists(linkpath))
+        {
+            if (!file.open(QFile::ReadOnly))
+            {
+                jobTip->showTip("修改失败！");
+                return ;
+            }
+            QString str = file.readAll();
+            file.close();
+            QFile newFile(linkpath);
+            if (!newFile.open(QFile::WriteOnly))
+            {
+                jobTip->showTip("修改失败！");
+                return ;
+            }
+            newFile.write(str.arg(qApp->applicationFilePath(), "/home/yjmthu/OneDrive/PersonalFiles/UserFiles/GitHub/Speed-Box/src/icons/speedbox.ico", VarBox->Version).toUtf8());
+            newFile.close();
+            //赋予快捷方式可执行权限。
+            QStringList lst;
+            lst.append("+x");
+            lst.append(linkpath);
+            VarBox->runCmd("chmod", lst, 0);
+            jobTip->showTip("修改成功！");
+        }
+        else
+        {
+            if (QFile::remove(linkpath))
+                jobTip->showTip("修改成功！");
+            else
+                jobTip->showTip("修改失败！");
+        }
+#endif
     });
     connect(ui->tBtnSetBing, &QToolButton::clicked, this, [this](){
         BingSetting x;
@@ -199,9 +259,176 @@ void Dialog::initConnects()
     connect(ui->rBtnBingApi, &QRadioButton::clicked, this, &Dialog::my_on_rBtnBingApi_clicked);
     connect(ui->rBtnOtherApi, &QRadioButton::clicked, this, &Dialog::my_on_rBtnOtherApi_clicked);
     connect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
-    connect(ui->pushButton, &QPushButton::clicked, VarBox, [](){
-        VarBox->openDirectory(qApp->applicationDirPath());
+    connect(ui->pushButton, &QPushButton::clicked, VarBox, std::bind(VARBOX::openDirectory, qApp->applicationDirPath()));
+    connect(ui->cBxEnableUSBhelper, &QCheckBox::clicked, this, [this](bool checked){
+        curTheme = static_cast<Theme>(ui->comboBox_3->currentIndex());
+        VarBox->enableUSBhelper = checked;
+        QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
+        IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
+        IniWrite.beginGroup("USBhelper");
+        IniWrite.setValue("enableUSBhelper",  VarBox->enableUSBhelper);
+        jobTip->showTip("应用并保存成功！");
     });
+    connect(ui->sLdTranparent, &QSlider::valueChanged, this, [=](int value){
+        int index = ui->cBxFormPart->currentIndex();
+        switch (ui->cBxSetBorder->checkState()) {
+        case Qt::Unchecked:
+            sheet[index].bk_alpha = value;
+            break;
+        case Qt::PartiallyChecked:
+            sheet[index].ft_alpha = value;
+            break;
+        case Qt::Checked:
+            sheet[index].bd_alpha = value;
+            break;
+        default:
+            break;
+        }
+        formPart[index]->setStyleSheet(sheet[index].getString(index?"QLabel":"QFrame"));
+    });
+    connect(ui->pBtnFormColor, &QPushButton::clicked, this, [=](){
+        int index = ui->cBxFormPart->currentIndex();
+        QString str("QPushButton{background-color:rgb(%1,%2,%3);border:1px solid black;border-radius:4px;}");
+        QColor color = QColorDialog::getColor(ui->cBxSetBorder->isChecked()?QColor(sheet[index].bd_red, sheet[index].bd_green, sheet[index].bd_blue):QColor(sheet[index].bk_red, sheet[index].bk_green, sheet[index].bk_blue));
+        if (color.isValid()) {
+            switch (ui->cBxSetBorder->checkState()) {
+            case Qt::Unchecked:
+                sheet[index].bk_red = color.red();
+                sheet[index].bk_green = color.green();
+                sheet[index].bk_blue = color.blue();
+                break;
+            case Qt::PartiallyChecked:
+                sheet[index].ft_red = color.red();
+                sheet[index].ft_green = color.green();
+                sheet[index].ft_blue = color.blue();
+                break;
+            case Qt::Checked:
+                sheet[index].bd_red = color.red();
+                sheet[index].bd_green = color.green();
+                sheet[index].bd_blue = color.blue();
+                break;
+            default:
+                break;
+            }
+            ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(color.red()), QString::number(color.green()), QString::number(color.blue())));
+            formPart[index]->setStyleSheet(sheet[index].getString(index?"QLabel":"QFrame"));
+        }
+    });
+    connect(ui->cBxSetBorder, &QCheckBox::stateChanged, this, [=](int state){
+        int index = ui->cBxFormPart->currentIndex();
+        YJson * temp;
+        QString str("QPushButton{background-color:rgb(%1,%2,%3);border:1px solid black;border-radius:4px;}");
+        switch (state) {
+        case Qt::Unchecked:
+            temp = formFontJson->find("image");
+            ui->lineMultyPath->setText(temp->getType() == YJson::Null ? "null" : temp->getValueString());
+            ui->cBxSetBorder->setText("背景");
+            ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(sheet[index].bk_red), QString::number(sheet[index].bk_green), QString::number(sheet[index].bk_blue)));
+            ui->sLdTranparent->setValue(sheet[index].bk_alpha);
+            ui->sLdBorderRadius->setValue(sheet[index].bk_win);
+            ui->label_5->setText("模糊");
+            ui->label_6->setText("背景");
+            ui->label_12->setText("Win");
+            ui->sLdFuzzy->setMaximum(99);
+            ui->sLdFuzzy->setValue(sheet[index].bk_fuzzy);
+            break;
+        case Qt::PartiallyChecked:
+            temp = formFontJson->find("user")->find((*formFontJson)["index"][index].getValueString())->find("family");
+            ui->lineMultyPath->setText(temp->getType() == YJson::Null ? "null" : temp->getValueString());
+            ui->cBxSetBorder->setText("字体");
+            ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(sheet[index].ft_red), QString::number(sheet[index].ft_green), QString::number(sheet[index].ft_blue)));
+            ui->sLdTranparent->setValue(sheet[index].ft_alpha);
+            ui->sLdBorderRadius->setValue(sheet[index].bd_radius);
+            ui->label_5->setText("大小");
+            ui->label_6->setText("字体");
+            ui->sLdFuzzy->setMaximum(30);
+            ui->sLdFuzzy->setValue(sheet[index].ft_size);
+            break;
+        case Qt::Checked:
+            temp = formFontJson->find("image");
+            ui->lineMultyPath->setText(temp->getType() == YJson::Null ? "null" : temp->getValueString());
+            ui->cBxSetBorder->setText("边线");
+            ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(sheet[index].bd_red), QString::number(sheet[index].bd_green), QString::number(sheet[index].bd_blue)));
+            ui->sLdTranparent->setValue(sheet[index].bd_alpha);
+            ui->sLdBorderRadius->setValue(sheet[index].bd_radius);
+            ui->label_5->setText("宽度");
+            ui->label_6->setText("背景");
+            ui->sLdFuzzy->setMaximum(10);
+            ui->sLdFuzzy->setValue(sheet[index].bd_width);
+            break;
+        default:
+            break;
+        }
+    });
+    connect(ui->sLdBorderRadius, &QSlider::valueChanged, this, [=](int value){
+        int index = ui->cBxFormPart->currentIndex();
+        sheet[index].bd_radius = value;
+        formPart[index]->setStyleSheet(sheet[index].getString(index?"QLabel":"QFrame"));
+    });
+    connect(ui->sLdFuzzy, &QSlider::valueChanged, this, [=](int value){
+        int index = ui->cBxFormPart->currentIndex();
+        switch (ui->cBxSetBorder->checkState()) {
+        case Qt::Unchecked:
+            sheet[index].bk_fuzzy = value;
+            formPart[index]->setStyleSheet(sheet[index].getString(index?"QLabel":"QFrame"));
+            break;
+        case Qt::PartiallyChecked:
+            sheet[index].ft_size = value;
+            formPart[index]->setStyleSheet(sheet[index].getString(index?"QLabel":"QFrame"));
+            break;
+        case Qt::Checked:
+            sheet[index].bd_width = value;
+            formPart[index]->setStyleSheet(sheet[index].getString(index?"QLabel":"QFrame"));
+            break;
+        default:
+            break;
+        }
+    });
+    connect(ui->pBtnSaveFormStyle, &QPushButton::clicked, this, [=](){
+        std::ofstream file(".boxstyle", std::ios::out | std::ios::binary);
+        if (file.is_open()) {
+            file.write(reinterpret_cast<const char*>(sheet), sizeof (QStyleSheet) * 4);
+            file.close();
+            jobTip->showTip("保存成功!");
+        } else {
+            jobTip->showTip("保持失败！");
+        }
+    });
+    // Qt5才有 QOverload
+    connect(ui->cBxFormPart, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [=](int index){
+        YJson* temp;
+        QString str("QPushButton{background-color:rgb(%1,%2,%3);border:1px solid black;border-radius:4px;}");
+        switch (ui->cBxSetBorder->checkState()) {
+        case Qt::Unchecked:
+            temp = formFontJson->find("image");
+            ui->lineMultyPath->setText(temp->getType() == YJson::Null ? "null" : temp->getValueString());
+            ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(sheet[index].bk_red), QString::number(sheet[index].bk_green), QString::number(sheet[index].bk_blue)));
+            ui->sLdTranparent->setValue(sheet[index].bk_alpha);
+            ui->sLdBorderRadius->setValue(sheet[index].bd_radius);
+            ui->sLdFuzzy->setValue(sheet[index].bk_fuzzy);
+            break;
+        case Qt::PartiallyChecked:
+            temp = formFontJson->find("user")->find((*formFontJson)["index"][index].getValueString())->find("family");
+            ui->lineMultyPath->setText(temp->getType() == YJson::Null ? "null" : temp->getValueString());
+            ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(sheet[index].ft_red), QString::number(sheet[index].ft_green), QString::number(sheet[index].ft_blue)));
+            ui->sLdTranparent->setValue(sheet[index].ft_alpha);
+            ui->sLdBorderRadius->setValue(sheet[index].bd_radius);
+            ui->sLdFuzzy->setValue(sheet[index].ft_size);
+            break;
+        case Qt::Checked:
+            temp = formFontJson->find("image");
+            ui->lineMultyPath->setText(temp->getType() == YJson::Null ? "null" : temp->getValueString());
+            ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(sheet[index].bd_red), QString::number(sheet[index].bd_green), QString::number(sheet[index].bd_blue)));
+            ui->sLdTranparent->setValue(sheet[index].bd_alpha);
+            ui->sLdBorderRadius->setValue(sheet[index].bd_radius);
+            ui->sLdFuzzy->setValue(sheet[index].bd_width);
+            break;
+        default:
+            break;
+        }
+    });
+    connect(ui->cBxTuoPanIcon, &QCheckBox::clicked, VarBox, &VARBOX::creatTrayIcon);
+    connect(ui->cBxTieBianHide, &QCheckBox::clicked, VarBox, [](bool checked){VarBox->form->tieBianHide = checked;});
     qout << "对话框链接B";
 }
 
@@ -307,10 +534,8 @@ void Dialog::applyWallpaperSettings()
     wallpaper->FirstChange = ui->checkBox_3->isChecked();
     for (int type = 0; type < 2; ++type)
     {
-        if (type == 0)
-        {
-            if (wallpaper->isActive())
-            {
+        if (type == 0) {
+            if (wallpaper->isActive()) {
                 if (QMessageBox::question(this, "警告", "您之前的壁纸类型更换正在生效中，是否终止？", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
                 {
                     wallpaper->kill();
@@ -319,23 +544,18 @@ void Dialog::applyWallpaperSettings()
                 }
                 break;
             }
-        }
-        else if (type == 1)
-        {
-            if (wallpaper->FirstChange)
-            {
+        } else if (type == 1) {
+            if (wallpaper->FirstChange) {
                 qout << "首更1";
                 wallpaper->applyClicked = true;
                 wallpaper->push_back();
-                qout << "首更";
             }
             if (wallpaper->AutoChange)
             {
                 wallpaper->timer->setInterval(wallpaper->TimeInterval * 60000);  // 设置时间间隔,Timer的单位是毫秒
                 wallpaper->timer->start();
                 qout << "开始更换壁纸";
-            }
-            else
+            } else
                 wallpaper->timer->stop();
             if (QMessageBox::question(this, "提示", "应用成功！是否保存设置？", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
                 saveWallpaperSettings();
@@ -343,13 +563,29 @@ void Dialog::applyWallpaperSettings()
     }
 }
 
+void Dialog::setFormStyleSheet()
+{
+    int index = ui->cBxFormPart->currentIndex();
+    QStyleSheet& i = sheet[index];
+    if (ui->cBxSetBorder->isChecked()) {
+        i.bd_alpha = ui->sLdTranparent->value();
+        i.bd_radius = ui->sLdBorderRadius->value();
+        i.bd_width = ui->sLdFuzzy->value();
+    } else {
+        i.bk_alpha = ui->sLdTranparent->value();
+        i.bd_radius = ui->sLdBorderRadius->value();
+        i.bd_width = ui->sLdFuzzy->value();
+    }
+
+
+    formPart[index]->setStyleSheet(sheet[index].getString(index?"QLabel":"QFrame"));
+}
+
 void Dialog::checkSettings()
 {
     ui->chkFile->setChecked(QSettings(reg_keys[0], QSettings::NativeFormat).contains("."));
     ui->chkFolder->setChecked(QSettings(reg_keys[1], QSettings::NativeFormat).contains("."));
     ui->chkFolderBack->setChecked(QSettings(reg_keys[2], QSettings::NativeFormat).contains("."));
-    ui->chkTimeUnit_sec->setChecked(QSettings(TASK_DESK_SUB, QSettings::NativeFormat).contains(SHOW_SECONDS_IN_SYSTEM_CLOCK));
-
 }
 
 void Dialog::on_pBtnApply_2_clicked()
@@ -374,7 +610,7 @@ void Dialog::on_pBtnApply_2_clicked()
             if (!settings.contains("."))
             {
                 settings.setValue(".", QString("复制路径"));
-                settings.setValue("Icon", QDir().absoluteFilePath(icon_path).replace("/", "\\"));
+                settings.setValue("Icon", QDir::toNativeSeparators(QDir().absoluteFilePath(icon_path)));
                 settings.beginGroup("command");
                 settings.setValue(".", QString(reg_keys[3]).arg(type==2?'V':'1'));
                 settings.endGroup();
@@ -400,11 +636,11 @@ void Dialog::openPicturePath()
 	QString str = ui->linePictuerPath->text();
 	QDir dir;
     if (dir.exists(str) || (!str.isEmpty() && dir.mkdir(str)))
-        wallpaper->image_path = str.replace("/", "\\");
+        wallpaper->image_path = QDir::toNativeSeparators(str);
 	else
 	{
         if (dir.exists(wallpaper->image_path) || dir.mkdir(wallpaper->image_path))
-            ui->linePictuerPath->setText(wallpaper->image_path.replace("/", "\\"));
+            ui->linePictuerPath->setText(QDir::toNativeSeparators(wallpaper->image_path));
 		else
             wallpaper->image_path = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
 	}
@@ -428,48 +664,10 @@ void Dialog::linePictuerPathReturn()
 	}
 }
 
-void Dialog::on_chkTimeUnit_min_clicked()
-{
-    QSettings settings(TASK_DESK_SUB, QSettings::NativeFormat);
-    if (settings.contains(SHOW_SECONDS_IN_SYSTEM_CLOCK))
-        settings.remove(SHOW_SECONDS_IN_SYSTEM_CLOCK);
-    jobTip->showTip("更改成功！");
-}
-
-void Dialog::on_chkTimeUnit_sec_clicked()
-{
-    QSettings settings(TASK_DESK_SUB, QSettings::NativeFormat);
-    if (!settings.contains(SHOW_SECONDS_IN_SYSTEM_CLOCK))
-    {
-        settings.setValue(SHOW_SECONDS_IN_SYSTEM_CLOCK, 1);
-    }
-    jobTip->showTip("更改成功！");
-}
-
-void Dialog::on_radioButton_11_clicked()
-{
-    QSettings settings(TASK_DESK_SUB, QSettings::NativeFormat);
-    settings.setValue(TASKBAR_ACRYLIC_OPACITY, 10);
-    jobTip->showTip("更改成功！");
-}
-
-void Dialog::on_radioButton_10_clicked()
-{
-    QSettings settings(TASK_DESK_SUB, QSettings::NativeFormat);
-    settings.setValue(TASKBAR_ACRYLIC_OPACITY, 5);
-    jobTip->showTip("更改成功！");
-}
-
-void Dialog::on_radioButton_12_clicked()
-{
-    QSettings settings(TASK_DESK_SUB, QSettings::NativeFormat);
-    settings.setValue(TASKBAR_ACRYLIC_OPACITY, 0);
-    jobTip->showTip("更改成功！");
-}
 
 void Dialog::on_radioButton_13_clicked()
 {
-    ui->lineEdit->setText(qApp->applicationDirPath().replace("/", "\\"));
+    ui->lineEdit->setText(QDir::toNativeSeparators(qApp->applicationDirPath()));
     ui->pushButton_4->setText("确定");
 }
 
@@ -489,7 +687,7 @@ void Dialog::on_pushButton_4_clicked()
         ui->pushButton_4->setText("确定");
         if (!dir.isEmpty())
 		{
-            ui->lineEdit->setText(dir.replace("/", "\\"));
+            ui->lineEdit->setText(QDir::toNativeSeparators(dir));
 		}
         return;
 	}
@@ -519,28 +717,15 @@ inline void del_file(Dialog *di ,QString str)
     }
 }
 
-void Dialog::on_pushButton_7_clicked()
-{
-    VarBox->CurTheme = static_cast<COLOR_THEME>(ui->comboBox_3->currentIndex());
-    VarBox->enableUSBhelper = ui->checkBox->isChecked();
-    QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
-    IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    IniWrite.beginGroup("USBhelper");
-    IniWrite.setValue("enableUSBhelper",  VarBox->enableUSBhelper);
-    jobTip->showTip("应用并保存成功！");
-}
-
-
 void Dialog::on_pushButton_5_clicked()
 {
-    VarBox->CurTheme = static_cast<COLOR_THEME>(ui->comboBox_3->currentIndex());
+    curTheme = static_cast<Theme>(ui->comboBox_3->currentIndex());
     QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
     IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
     IniWrite.beginGroup("UI");
-    IniWrite.setValue("ColorTheme", (int)VarBox->CurTheme);
-    ui->frame->setStyleSheet(QString("QFrame{background-color:rgba(%1);}QLabel{border-radius: 3px;background-color: transparent;}Line{background-color:black};").arg(color_theme[static_cast<int>(VarBox->CurTheme)]));
+    IniWrite.setValue("ColorTheme", (int)curTheme);
+    ui->frame->setStyleSheet(QString("QFrame{background-color:rgba(%1);}QLabel{border-radius: 3px;background-color: transparent;}Line{background-color:black};").arg(color_theme[static_cast<int>(curTheme)]));
     jobTip->showTip("设置成功！");
-    qDebug() << (int)VarBox->CurTheme;
 }
 
 // 展示版本信息
@@ -605,7 +790,7 @@ void Dialog::on_pushButton_10_clicked()
 // 下载更新  https://gitee.com/yjmthu/Speed-Box/raw/main/Update.json
 void Dialog::on_pushButton_12_clicked()
 {
-    if (VarBox->InternetGetConnectedState())
+    if (Wallpaper::isOnline())
     {
         QMessageBox::information(this, "提示", "点击确认开始下载,下载时间一般不会很长,请耐心等待,\n不要关闭设置窗口.");
     }
@@ -670,43 +855,25 @@ void Dialog::on_toolButton_2_clicked()
 {
     QString titile = "请选择一个文件夹";
     QString dir = QFileDialog::getExistingDirectory(NULL, titile, wallpaper->image_path.length()? wallpaper->image_path: qApp->applicationDirPath(), QFileDialog::ShowDirsOnly);
-    if (!dir.isEmpty())
-    {
+    if (!dir.isEmpty()) {
         wallpaper->image_path = QDir::toNativeSeparators(dir);
         ui->linePictuerPath->setText(wallpaper->image_path);
         std::string ph = "WallpaperApi.json";
         YJson json(ph, YJson::AUTO);
-        if (ui->rBtnWallhavenApiDefault->isChecked())
-        {
+        if (ui->rBtnWallhavenApiDefault->isChecked()) {
             json["Default"]["ApiData"][ui->cBxApis->currentIndex()]["Folder"].setText(wallpaper->image_path.toUtf8());
-        }
-        else if (ui->rBtnWallhavenApiUser->isChecked())
-        {
+        } else if (ui->rBtnWallhavenApiUser->isChecked()) {
             json["User"]["ApiData"][(const char*)ui->cBxApis->currentText().toUtf8()]["Folder"].setText(wallpaper->image_path.toUtf8());
-        }
-        else if (ui->rBtnBingApi->isChecked())
-        {
+        } else if (ui->rBtnBingApi->isChecked()) {
             json["BingApi"]["Folder"].setText(wallpaper->image_path.toUtf8());
-        }
-        else
-        {
+        } else {
             json["OtherApi"]["ApiData"][(const char*)ui->cBxApis->currentText().toUtf8()]["Folder"].setText(wallpaper->image_path.toUtf8());
         }
         json.toFile(ph, YJson::UTF8BOM, true);
         jobTip->showTip("修改成功！");
+    } else {
+        jobTip->showTip("更改失败！");
     }
-    else
-    {
-        jobTip->showTip("更改失败!");
-    }
-}
-
-
-void Dialog::on_pushButton_6_clicked()
-{
-    FormSetting d;
-    d.move(frameGeometry().x()+(width()-d.width())/2, frameGeometry().y()+(height()-d.height())/2);
-    d.exec();
 }
 
 void Dialog::my_on_rBtnWallhavenApiDefault_clicked()
@@ -810,9 +977,4 @@ void Dialog::my_on_cBxApis_currentTextChanged(const QString &arg1)
     jobTip->showTip("应用成功!");
 }
 
-void Dialog::on_pushButton_3_clicked()
-{
-    ExplainDialog dialog(this);
-    dialog.exec();
-}
 

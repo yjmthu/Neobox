@@ -78,7 +78,6 @@ protected:
     }
 
     explicit _Base_FormulaPaser(_String& text) {
-        citerator end = text.cbegin();
         if (text.empty())
         {
             _error_state = _Error_State::Null;
@@ -161,10 +160,8 @@ private:
 
     citerator _parse_si(citerator begin, citerator end) {
         citerator ptr = begin;
-        // std::cout << "parse_one is here.\n";
         if (ptr >= end)
         {
-            // std::cout << "empty str!\n";
             return begin;
         }
         if (strchr("+-*/^", *ptr))
@@ -188,7 +185,6 @@ private:
                 while (++ptr < end && isdigit(*ptr));
                 return ptr;
             }
-            // std::cout << "parse one is digit \\" << begin << "\\" << end << "\\" << "\n";
             return ptr;
         }
         while (ptr < end && islower(*ptr)) ++ptr;
@@ -205,7 +201,6 @@ private:
     citerator _parse_md(citerator begin, citerator end)
     {
         if (begin >= end) return begin;
-        // std::cout << "parse_md is here. \\" << begin << "\\" << end << "\\\n";
         citerator ptr = _parse_si(begin, end), ptr1;
         while (ptr != begin && ptr != end && strchr("*/^", *ptr))
         {
@@ -219,7 +214,6 @@ private:
     citerator _parse_pw(citerator begin, citerator end)
     {
         if (begin >= end) return begin;
-        // std::cout << "parse_md is here. \\" << begin << "\\" << end << "\\\n";
         citerator ptr = _parse_si(begin, end), ptr1;
         while (ptr != begin && ptr < end && '^' == *ptr)
         {
@@ -242,9 +236,7 @@ private:
             ++begin;
         if (isdigit(*begin))
         {
-            // std::cout << "this is a digit.  \\" << begin << '\\' << end << "\\\n";
             _Istream(_String(begin, end)) >> _value;
-            // std::cout << "digit value is " << _value << std::endl;
             return;
         }
         if (*begin == '(')
@@ -406,7 +398,6 @@ private:
             _error_state = _Error_State::Invalid;
             return;
         }
-        // std::cout << "re parse all begin: " << begin << " end " << end << "\n";
         _son.emplace_back(Sign::N, begin, end);
     }
 
@@ -414,20 +405,16 @@ private:
     {
         if (begin >= end)
         {
-            // std::cout << "empty str\n";
             return;
         }
-        // std::cout << " =================== begin all ==================== \n";
         citerator ptr1 = strchr("+-", *begin) ? begin + 1 : begin, ptr2 = _parse_si(ptr1, end);
 
         if (ptr2 < end - 1 && ptr2 != ptr1 && !strchr("+-*/^", ptr2[1]))
         {
-            // std::cout << "-------------------1--------------------\n";
             switch (*ptr2)
             {
             case '+':
             case '-':
-                // std::cout << "case +-: \n";
                 _son.emplace_back(Sign::N, ptr1, ptr2);
                 if (*begin == '-') _son.back()._negative *= -1;
                 while (ptr2 < end)
@@ -436,7 +423,6 @@ private:
                     ptr2 = _parse_md(++ptr2, end);
                     if (ptr2 == ptr1 + 1)
                     {
-                        // std::cout << "out md.\n";
                         _error_state = _Error_State::Wait;
                         return;
                     }
@@ -445,7 +431,6 @@ private:
                     else
                         _son.emplace_back(Sign::S, ++ptr1, ptr2);
                 }
-                // std::cout << "son number is " << _son.size() << '\n';
                 break;
             case '*':
             case '/':
