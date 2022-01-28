@@ -25,7 +25,7 @@ GMPOperateTip::GMPOperateTip(QWidget* parent):
 
     m_pAnimation->setDuration(150);
     connect(m_pAnimation, &QPropertyAnimation::finished, [this](){setVisible(false); m_pOpacity->setOpacity(1);});
-    setStyleSheet("QWidget{background-color:transparent;}QLabel{background-color:#4cd05c;border-radius:3px;padding:6px;}");
+    setStyleSheet(QStringLiteral("QWidget{background-color:transparent;}QLabel{background-color:#4cd05c;border-radius:3px;padding:6px;}"));
     setVisible(false);
 }
 

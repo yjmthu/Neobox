@@ -18,13 +18,13 @@ int main(int argc, char* argv[])
     QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
 #endif
     QSharedMemory shared_memory;
-    shared_memory.setKey(QString("__SpeedBox__"));
+    shared_memory.setKey(QStringLiteral("__SpeedBox__"));
     if(shared_memory.attach() || !shared_memory.create(1))                                                 //防止多次打开
         return 0;
     QApplication a(argc, argv);                                            //创建app
     a.setQuitOnLastWindowClosed(false);                                    //防止QFileDialog被当成最主窗口导致程序结束
     QDir::setCurrent(a.applicationDirPath());
-    QFile::remove("Speed_Box_Updater.exe");
+    QFile::remove(QStringLiteral("Speed_Box_Updater.exe"));
     QScreen* screen = QGuiApplication::primaryScreen();                    //获取屏幕分辨率
     QRect geo = screen->geometry();
     VarBox = new VARBOX(geo.width(), geo.height());

@@ -3,13 +3,6 @@
 
 #include "ui_translater.h"
 
-class Form;
-class QNetworkAccessManager;
-
-namespace std {
-class thread;
-}
-
 namespace Ui {
 class Translater;
 }
@@ -67,10 +60,9 @@ private:
     Ui::Translater *ui;                                     //界面
     Type type;
     class QxtGlobalShortcut * const shortcut_show, * const shortcut_hide;
-    // = new QxtGlobalShortcut(QKeySequence("Ctrl+Shift+F12"), w)
     unsigned long long last_post_time;
     void requestData(const char*, std::string*);
-    QNetworkAccessManager * const mgr;
+    class QNetworkAccessManager * const mgr;
     class QTimer * const timer;
     void initConnects();
     char time_left = 10;

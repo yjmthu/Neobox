@@ -73,7 +73,7 @@ Translater::Translater() :
 {
     setWindowFlags(Qt::Tool | Qt::FramelessWindowHint);
     setAttribute(Qt::WA_TranslucentBackground);
-    QFile qss(":/qss/translater_style.qss");
+    QFile qss(QStringLiteral(":/qss/translater_style.qss"));
     qss.open(QFile::ReadOnly);
     setStyleSheet(QString(qss.readAll()));
     qss.close();
@@ -82,7 +82,8 @@ Translater::Translater() :
     BlankFrom *blank = new BlankFrom(this); GMPOperateTip* jobTip = new GMPOperateTip(this);
     connect(blank->closeButton, &QPushButton::clicked, VarBox, [](){VarBox->form->enableTranslater(false);});
     connect(blank->minButton, &QPushButton::clicked, this, &Translater::hide);
-    blank->closeButton->setToolTip("退出"); blank->minButton->setToolTip("隐藏");
+    blank->closeButton->setToolTip(QStringLiteral("退出"));
+    blank->minButton->setToolTip(QStringLiteral("隐藏"));
     blank->move(width()-100, 0);
 	ui->TextFrom->installEventFilter(this);
     ui->TextFrom->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -94,8 +95,8 @@ Translater::Translater() :
 
     if (*VarBox->FirstUse)
     {
-        ui->TextFrom->setPlainText("在这输入你想翻译的文本,一秒钟只能翻译一次。");
-        ui->TextTo->setPlainText("Enter the text you want to translate here. You can only translate it once a second.");
+        ui->TextFrom->setPlainText(QStringLiteral("在这输入你想翻译的文本,一秒钟只能翻译一次。"));
+        ui->TextTo->setPlainText(QStringLiteral("Enter the text you want to translate here. You can only translate it once a second."));
         *const_cast<bool*>(VarBox->FirstUse) = false;
     }
     auto btngrp = new QButtonGroup(this);
@@ -126,7 +127,6 @@ Translater::Translater() :
         QString content = cl->text();
         if (content.isEmpty()) return ;
         ui->TextFrom->setPlainText(content);
-        qout << "剪贴板内容" << content;
         ushort uNum = content.at(0).unicode();
         if(uNum >= 0x4E00 && uNum <= 0x9FA5)
         {
@@ -188,7 +188,7 @@ void Translater::initConnects()
         ui->TextFrom->clear();ui->TextTo->clear();
         ui->TextFrom->setFocus();
     });
-    QString menu_style("QMenu{"
+    QString menu_style(QStringLiteral("QMenu{"
             "border-radius:3px;"
             "background-color: white;"
             "color: black;"
@@ -203,11 +203,11 @@ void Translater::initConnects()
             "background-color: yellow;"
             "border-radius: 3px;"
             "padding: 6px 3px;"
-        "}");
+        "}"));
     connect(ui->TextFrom, &QPlainTextEdit::customContextMenuRequested, ui->TextFrom, [=](const QPoint &pos){
         QMenu* menu = ui->TextFrom->createStandardContextMenu();
         menu->setStyleSheet(menu_style);
-        menu->connect(menu->addAction("Read All"), &QAction::triggered, this, [this](){
+        menu->connect(menu->addAction(QStringLiteral("Read All")), &QAction::triggered, this, [this](){
 
 #if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
         speaker->say(ui->TextFrom->toPlainText());
@@ -446,9 +446,9 @@ void Translater::getReply(const QByteArray& q)
 
 void Translater::setFix(bool checked)
 {
-    ui->pBtnPin->setIcon(QIcon(checked?":/icons/drip_blue_pin.ico":":/icons/drip_pin.ico"));
+    ui->pBtnPin->setIcon(QIcon(checked?QStringLiteral(":/icons/drip_blue_pin.ico"):QStringLiteral(":/icons/drip_pin.ico")));
     VarBox->AutoHide = !checked;
-    QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
+    QSettings IniWrite(QStringLiteral("SpeedBox.ini"), QSettings::IniFormat);
     IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
     IniWrite.beginGroup("Translate");
     IniWrite.setValue("AutoHide", VarBox->AutoHide);

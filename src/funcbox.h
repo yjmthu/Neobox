@@ -39,6 +39,7 @@ public:
     const int ScreenWidth, ScreenHeight;                  //屏幕宽高
 
     class Form* const form {nullptr}; class Dialog* const dialog {nullptr};
+    class MarkdownNote *m_note {nullptr};
 
     std::function<bool(const wchar_t*)> PathFileExists = nullptr;
     VARBOX(int, int);
@@ -54,6 +55,7 @@ public slots:
     static void MSG(const char* text, const char* title="提示", QMessageBox::StandardButtons buttons=QMessageBox::Ok);
     static void openDirectory(const QString& dir);
     void creatTrayIcon(bool create);
+    void creatMarkdown(bool create);
 private:
      friend class Form;
      void initFile();

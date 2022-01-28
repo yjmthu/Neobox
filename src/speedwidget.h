@@ -43,8 +43,7 @@ public:
     ~SpeedWidget();
 
 private:
-    QPoint _startPos;                                    //记录鼠标
-    QPoint _endPos;                                      //鼠标移动向量
+    QPoint m_ptPress;
 };
 
 template <class Parent>
@@ -65,7 +64,7 @@ void SpeedWidget<Parent>::mousePressEvent(QMouseEvent* event)
     if (event->button() == Qt::LeftButton)                   // 鼠标左键点击悬浮窗
     {
         static_cast<Parent*>(this)->setMouseTracking(true);                              // 开始跟踪鼠标位置，从而使悬浮窗跟着鼠标一起移动。
-        _startPos = event->pos();                            // 记录开始位置
+        m_ptPress = event->pos();                            // 记录开始位置
     }
     event->accept();
 }
@@ -76,7 +75,6 @@ void SpeedWidget<Parent>::mouseReleaseEvent(QMouseEvent* event)
     if (event->button() == Qt::LeftButton)  // 鼠标左键释放
     {
         static_cast<Parent*>(this)->setMouseTracking(false);           // 停止跟踪鼠标。
-        _endPos = event->pos() - _startPos;
     }
     event->accept();
 }
@@ -84,8 +82,7 @@ void SpeedWidget<Parent>::mouseReleaseEvent(QMouseEvent* event)
 template <class Parent>
 void SpeedWidget<Parent>::mouseMoveEvent(QMouseEvent* event)
 {
-    _endPos = event->pos() - _startPos;  //计算位置变化情况。
-    static_cast<Parent*>(this)->move(static_cast<Parent*>(this)->pos() + _endPos);               //当前位置加上位置变化情况，从而实现悬浮窗和鼠标同时移动。
+    static_cast<Parent*>(this)->move(event->globalPos() - m_ptPress);               //当前位置加上位置变化情况，从而实现悬浮窗和鼠标同时移动。
     event->accept();
 }
 

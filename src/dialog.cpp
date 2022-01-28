@@ -32,19 +32,8 @@
 #include "bingsetting.h"
 #include "qstylesheet.h"
 
-constexpr const char *color_theme[8] =
-{
-    "255,255,255,255",
-    "255,255,255,150",
-    "155,89,182,150",
-    "255,10,10,150",
-    "50,200,50,150",
-    "135,160,250,150",
-    "200,100,100,150",
-    "0,0,0,100"
-};
 
-constexpr const char *reg_keys[4] = {
+const std::array<std::string, 4> reg_keys {
     "HKEY_CURRENT_USER\\SOFTWARE\\Classes\\*\\shell\\QCoper",
     "HKEY_CURRENT_USER\\SOFTWARE\\Classes\\Directory\\shell\\QCoper",
     "HKEY_CURRENT_USER\\SOFTWARE\\Classes\\Directory\\Background\\shell\\QCoper",
@@ -111,7 +100,7 @@ void Dialog::initUi()
     ui->chkEnableChangePaper->setChecked(wallpaper->AutoChange);
     ui->usrCmd->setText(wallpaper->UserCommand);
 #ifdef Q_OS_WIN32
-    ui->cBxAutoStart->setChecked(!QSettings("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat).value("SpeedBox").toString().compare(QDir::toNativeSeparators(qApp->applicationFilePath())));
+    ui->cBxAutoStart->setChecked(!QSettings(QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"), QSettings::NativeFormat).value("SpeedBox").toString().compare(QDir::toNativeSeparators(qApp->applicationFilePath())));
 #elif defined (Q_OS_LINUX)
     ui->cBxAutoStart->setChecked(QFile::exists(QDir::homePath()+"/.config/autostart/SpeedBox.desktop"));
 #endif
@@ -146,13 +135,13 @@ void Dialog::initUi()
 #endif
     ui->cBxTuoPanIcon->setChecked(VarBox->TuoPanIcon);
     ui->cBxTieBianHide->setChecked(VarBox->form->tieBianHide);
-    ui->pushButton_4->setText("确定");
+    ui->pushButton_4->setText(QStringLiteral("确定"));
     ui->comboBox_3->setCurrentIndex((int)curTheme);
     ui->lineEdit->setText(VarBox->PathToOpen);
     ui->checkBox_3->setChecked(wallpaper->FirstChange);
     ui->BtnChooseFolder->setEnabled(ui->rBtnNative->isChecked());
     ui->cBxEnableUSBhelper->setChecked(VarBox->enableUSBhelper);
-    ui->frame->setStyleSheet(QString("QFrame{background-color:rgba(%1);}QLabel{border-radius: 3px;background-color: transparent;}Line{background-color:black};").arg(color_theme[static_cast<int>(curTheme)]));
+    setFrameStyle(static_cast<int>(curTheme));
     checkSettings();
     loadFormStyle();
     move((VarBox->ScreenWidth - width()) / 2, (VarBox->ScreenHeight - height()) / 2);
@@ -169,7 +158,7 @@ void Dialog::loadFormStyle()
         QMessageBox::critical(this, "出错", "悬浮窗风格文件不存在，请尝试重新启动软件解决！");
         return;
     }
-    QString str(QString("QPushButton{background-color:rgb(%1,%2,%3);border:1px solid black;border-radius:4px;}").arg(QString::number(sheet->bk_red), QString::number(sheet->bk_green), QString::number(sheet->bk_blue)));
+    QString str(QStringLiteral("QPushButton{background-color:rgb(%1,%2,%3);border:1px solid black;border-radius:4px;}").arg(QString::number(sheet->bk_red), QString::number(sheet->bk_green), QString::number(sheet->bk_blue)));
     ui->pBtnFormColor->setStyleSheet(str);
     ui->sLdTranparent->setValue(sheet->bk_alpha);
     ui->sLdBorderRadius->setValue(sheet->bd_radius);
@@ -187,7 +176,7 @@ void Dialog::initConnects()
 {
     qout << "对话框链接A";
     connect(ui->pushButton_14, &QPushButton::clicked, this, [](){
-        QDesktopServices::openUrl(QUrl("https://yjmthu.github.io/Speed-Box"));
+        QDesktopServices::openUrl(QUrl(QStringLiteral("https://yjmthu.github.io/Speed-Box")));
     });
     connect(ui->rBtnNative, &QRadioButton::toggled, this, [this](bool checked){ui->BtnChooseFolder->setEnabled(checked);});
     connect(ui->BtnChooseFolder, &QToolButton::clicked, this, &Dialog::chooseFolder);
@@ -202,7 +191,7 @@ void Dialog::initConnects()
     connect(ui->cBxAutoStart, &QPushButton::clicked, this, [this](bool checked){
 #ifdef Q_OS_WIN32
         QSettings* reg = new QSettings(
-            "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
+            QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"),
             QSettings::NativeFormat);
         if (checked)
             reg->setValue("SpeedBox", QDir::toNativeSeparators(qApp->applicationFilePath()));
@@ -263,7 +252,7 @@ void Dialog::initConnects()
     connect(ui->cBxEnableUSBhelper, &QCheckBox::clicked, this, [this](bool checked){
         curTheme = static_cast<Theme>(ui->comboBox_3->currentIndex());
         VarBox->enableUSBhelper = checked;
-        QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
+        QSettings IniWrite(QStringLiteral("SpeedBox.ini"), QSettings::IniFormat);
         IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
         IniWrite.beginGroup("USBhelper");
         IniWrite.setValue("enableUSBhelper",  VarBox->enableUSBhelper);
@@ -284,7 +273,7 @@ void Dialog::initConnects()
         default:
             break;
         }
-        formPart[index]->setStyleSheet(sheet[index].getString(index?"QLabel":"QFrame"));
+        formPart[index]->setStyleSheet(sheet[index].getString(index?QStringLiteral("QLabel"):QStringLiteral("QFrame")));
     });
     connect(ui->pBtnFormColor, &QPushButton::clicked, this, [=](){
         int index = ui->cBxFormPart->currentIndex();
@@ -322,37 +311,37 @@ void Dialog::initConnects()
         case Qt::Unchecked:
             temp = formFontJson->find("image");
             ui->lineMultyPath->setText(temp->getType() == YJson::Null ? "null" : temp->getValueString());
-            ui->cBxSetBorder->setText("背景");
+            ui->cBxSetBorder->setText(QStringLiteral("背景"));
             ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(sheet[index].bk_red), QString::number(sheet[index].bk_green), QString::number(sheet[index].bk_blue)));
             ui->sLdTranparent->setValue(sheet[index].bk_alpha);
             ui->sLdBorderRadius->setValue(sheet[index].bk_win);
-            ui->label_5->setText("模糊");
-            ui->label_6->setText("背景");
-            ui->label_12->setText("Win");
+            ui->label_5->setText(QStringLiteral("模糊"));
+            ui->label_6->setText(QStringLiteral("背景"));
+            ui->label_12->setText(QStringLiteral("Win"));
             ui->sLdFuzzy->setMaximum(99);
             ui->sLdFuzzy->setValue(sheet[index].bk_fuzzy);
             break;
         case Qt::PartiallyChecked:
             temp = formFontJson->find("user")->find((*formFontJson)["index"][index].getValueString())->find("family");
             ui->lineMultyPath->setText(temp->getType() == YJson::Null ? "null" : temp->getValueString());
-            ui->cBxSetBorder->setText("字体");
+            ui->cBxSetBorder->setText(QStringLiteral("字体"));
             ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(sheet[index].ft_red), QString::number(sheet[index].ft_green), QString::number(sheet[index].ft_blue)));
             ui->sLdTranparent->setValue(sheet[index].ft_alpha);
             ui->sLdBorderRadius->setValue(sheet[index].bd_radius);
-            ui->label_5->setText("大小");
-            ui->label_6->setText("字体");
+            ui->label_5->setText(QStringLiteral("大小"));
+            ui->label_6->setText(QStringLiteral("字体"));
             ui->sLdFuzzy->setMaximum(30);
             ui->sLdFuzzy->setValue(sheet[index].ft_size);
             break;
         case Qt::Checked:
             temp = formFontJson->find("image");
             ui->lineMultyPath->setText(temp->getType() == YJson::Null ? "null" : temp->getValueString());
-            ui->cBxSetBorder->setText("边线");
+            ui->cBxSetBorder->setText(QStringLiteral("边线"));
             ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(sheet[index].bd_red), QString::number(sheet[index].bd_green), QString::number(sheet[index].bd_blue)));
             ui->sLdTranparent->setValue(sheet[index].bd_alpha);
             ui->sLdBorderRadius->setValue(sheet[index].bd_radius);
-            ui->label_5->setText("宽度");
-            ui->label_6->setText("背景");
+            ui->label_5->setText(QStringLiteral("宽度"));
+            ui->label_6->setText(QStringLiteral("背景"));
             ui->sLdFuzzy->setMaximum(10);
             ui->sLdFuzzy->setValue(sheet[index].bd_width);
             break;
@@ -389,9 +378,9 @@ void Dialog::initConnects()
         if (file.is_open()) {
             file.write(reinterpret_cast<const char*>(sheet), sizeof (QStyleSheet) * 4);
             file.close();
-            jobTip->showTip("保存成功!");
+            jobTip->showTip(QStringLiteral("保存成功!"));
         } else {
-            jobTip->showTip("保持失败！");
+            jobTip->showTip(QStringLiteral("保持失败！"));
         }
     });
     // Qt5才有 QOverload
@@ -449,6 +438,27 @@ void Dialog::initButtonFilter()
     }
 }
 
+void Dialog::setFrameStyle(int index)
+{
+    QString frameSheet("QFrame{background-color:rgba(%1,%2,%3,%4);}QLabel{border-radius:3px;background-color:transparent;}Line{background-color:black};");
+    const int m_themes[8][4]
+    {
+        { 255, 255, 255, 255 },
+        { 255, 255, 255, 150 },
+        { 155,  89, 182, 150 },
+        { 255,  10,  10, 150 },
+        {  50, 200,  50, 150 },
+        { 135, 160, 250, 150 },
+        { 200, 100, 100, 150 },
+        {   0,   0,   0, 100 }
+    };
+    for (int i=0; i<4; i++)
+    {
+        frameSheet = frameSheet.arg(QString::number(m_themes[index][i]));
+    }
+    ui->frame->setStyleSheet(frameSheet);
+}
+
 bool Dialog::eventFilter(QObject* target, QEvent* event)
 {
     if (/*typeid (*target) == typeid (QPushButton) || */typeid (*target) == typeid (QComboBox))
@@ -495,7 +505,7 @@ void Dialog::chooseFolder()
         VarBox->sigleSave("Wallpaper", "NativeDir", wallpaper->NativeDir);
         ui->LinePath->setText(wallpaper->NativeDir);
 	}
-	QString titile = "请选择一个文件夹";
+    QString titile = QStringLiteral("请选择一个文件夹");
     QString dir = QFileDialog::getExistingDirectory(NULL, titile, wallpaper->NativeDir, QFileDialog::ShowDirsOnly);
     if (!dir.isEmpty())
         ui->LinePath->setText(QDir::toNativeSeparators(dir));
@@ -583,9 +593,11 @@ void Dialog::setFormStyleSheet()
 
 void Dialog::checkSettings()
 {
-    ui->chkFile->setChecked(QSettings(reg_keys[0], QSettings::NativeFormat).contains("."));
-    ui->chkFolder->setChecked(QSettings(reg_keys[1], QSettings::NativeFormat).contains("."));
-    ui->chkFolderBack->setChecked(QSettings(reg_keys[2], QSettings::NativeFormat).contains("."));
+    QCheckBox *boxs[3] {ui->chkFile, ui->chkFolder, ui->chkFolderBack};
+    for (int i=0; i<3; i++)
+    {
+        boxs[i]->setChecked(QSettings(QString::fromStdString(reg_keys[i]), QSettings::NativeFormat).contains("."));
+    }
 }
 
 void Dialog::on_pBtnApply_2_clicked()
@@ -594,7 +606,7 @@ void Dialog::on_pBtnApply_2_clicked()
 	QFile file(icon_path);
 	if (!file.exists() && file.open(QIODevice::WriteOnly))
 	{
-        QFile qss(":/icons/copy.ico");
+        QFile qss(QStringLiteral(":/icons/copy.ico"));
 		qss.open(QFile::ReadOnly);
 		file.write(qss.readAll());
 		qss.close();
@@ -606,20 +618,20 @@ void Dialog::on_pBtnApply_2_clicked()
         if (box[type]->isChecked())
         {
             qout << "创建键:" << type;
-            QSettings settings(reg_keys[type], QSettings::NativeFormat);
+            QSettings settings(QString::fromStdString(reg_keys[type]), QSettings::NativeFormat);
             if (!settings.contains("."))
             {
                 settings.setValue(".", QString("复制路径"));
                 settings.setValue("Icon", QDir::toNativeSeparators(QDir().absoluteFilePath(icon_path)));
                 settings.beginGroup("command");
-                settings.setValue(".", QString(reg_keys[3]).arg(type==2?'V':'1'));
+                settings.setValue(".", QString::fromStdString(reg_keys[3]).arg(type==2?'V':'1'));
                 settings.endGroup();
             }
         }
         else
         {
             qout << "删除键:" << type;
-            QSettings settings(reg_keys[type], QSettings::NativeFormat);
+            QSettings settings(QString::fromStdString(reg_keys[type]), QSettings::NativeFormat);
             if (settings.contains("."))
             {
 //                if (settings.contains("command"))
@@ -628,7 +640,7 @@ void Dialog::on_pBtnApply_2_clicked()
             }
         }
     }
-    jobTip->showTip("设置成功！");
+    jobTip->showTip(QStringLiteral("设置成功！"));
 }
 
 void Dialog::openPicturePath()
@@ -674,15 +686,15 @@ void Dialog::on_radioButton_13_clicked()
 
 void Dialog::on_radioButton_14_clicked()
 {
-    ui->lineEdit->setText("点击右侧按钮选择文件");
-    ui->pushButton_4->setText("选择");
+    ui->lineEdit->setText(QStringLiteral("点击右侧按钮选择文件"));
+    ui->pushButton_4->setText(QStringLiteral("选择"));
 }
 
 void Dialog::on_pushButton_4_clicked()
 {
-    if (ui->pushButton_4->text().compare("确定"))
+    if (ui->pushButton_4->text().compare(QStringLiteral("确定")))
 	{
-		QString titile = "请选择一个文件夹";
+        QString titile = QStringLiteral("请选择一个文件夹");
         QString dir = QFileDialog::getExistingDirectory(ui->frame, titile, QStandardPaths::writableLocation(QStandardPaths::HomeLocation), QFileDialog::ShowDirsOnly);
         ui->pushButton_4->setText("确定");
         if (!dir.isEmpty())
@@ -694,7 +706,7 @@ void Dialog::on_pushButton_4_clicked()
     VarBox->PathToOpen = ui->lineEdit->text();
     QDir().mkdir(VarBox->PathToOpen);
     VarBox->sigleSave("Dirs", "OpenDir", VarBox->PathToOpen);
-    jobTip->showTip("更换路径成功！");
+    jobTip->showTip(QStringLiteral("更换路径成功！"));
 }
 
 inline void del_file(Dialog *di ,QString str)
@@ -724,8 +736,8 @@ void Dialog::on_pushButton_5_clicked()
     IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
     IniWrite.beginGroup("UI");
     IniWrite.setValue("ColorTheme", (int)curTheme);
-    ui->frame->setStyleSheet(QString("QFrame{background-color:rgba(%1);}QLabel{border-radius: 3px;background-color: transparent;}Line{background-color:black};").arg(color_theme[static_cast<int>(curTheme)]));
-    jobTip->showTip("设置成功！");
+    setFrameStyle(static_cast<int>(curTheme));
+    jobTip->showTip(QStringLiteral("设置成功！"));
 }
 
 // 展示版本信息
@@ -751,14 +763,14 @@ void Dialog::on_pushButton_10_clicked()
     connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep){
         if (rep->error() != QNetworkReply::NoError)
         {
-            jobTip->showTip("下载失败！");
+            jobTip->showTip(QStringLiteral("下载失败！"));
             mgr->deleteLater();
             return;
         }
         const YJson json(rep->readAll());
         if (json.getType() != YJson::Object)
         {
-            jobTip->showTip("Gitee源出现问题！");
+            jobTip->showTip(QStringLiteral("Gitee源出现问题！"));
             mgr->deleteLater();
             return;
         }
@@ -810,7 +822,7 @@ void Dialog::on_pushButton_12_clicked()
         }
         if (json.getType() != YJson::Object)
         {
-            jobTip->showTip("Gitee源出现问题！");
+            jobTip->showTip(QStringLiteral("Gitee源出现问题！"));
             return;
         }
         YJson *urls = json.find("Files"); YJson *child = nullptr;
@@ -819,13 +831,13 @@ void Dialog::on_pushButton_12_clicked()
         {
             if (!(child = urls->find("zip")))
             {
-                jobTip->showTip("Json 文件不含zip, 下载失败！");
+                jobTip->showTip(QStringLiteral("Json 文件不含zip, 下载失败！"));
                 return;
             }
             const QUrl url1(child->getValueString());
             if (!(child = urls->find("update")))
             {
-                jobTip->showTip("Json 文件不含zip, 下载失败!");
+                jobTip->showTip(QStringLiteral("Json 文件不含zip, 下载失败!"));
                 return;
             }
             if (!json["File Name"])
@@ -903,7 +915,7 @@ void Dialog::my_on_rBtnBingApi_clicked()
 {
     disconnect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
     ui->cBxApis->clear();
-    ui->cBxApis->addItem("Bing");
+    ui->cBxApis->addItem(QStringLiteral("Bing"));
     YJson json("WallpaperApi.json", YJson::AUTO);
     ui->linePictuerPath->setText(json["BingApi"]["Folder"].getValueString());
     connect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
@@ -918,7 +930,7 @@ void Dialog::my_on_rBtnOtherApi_clicked()
     for (auto& c: temp["ApiData"])
         ui->cBxApis->addItem(c.getKeyString());
     ui->cBxApis->setCurrentText(temp["Curruent"].getValueString());
-    ui->linePictuerPath->setText(temp["ApiData"][ui->cBxApis->currentText().toStdString().c_str()]["Folder"].getValueString());
+    ui->linePictuerPath->setText(temp["ApiData"][ui->cBxApis->currentText().toStdString()]["Folder"].getValueString());
     connect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
 }
 

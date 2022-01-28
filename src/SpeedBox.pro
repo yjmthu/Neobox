@@ -69,6 +69,7 @@ SOURCES += \
     funcbox.cpp \
     dialog.cpp \
     form.cpp \
+    markdownnote.cpp \
     menu.cpp \
     netspeedhelper.cpp \
     systemfunctions.cpp \
@@ -89,6 +90,7 @@ HEADERS += \
     form.h \
     funcbox.h \
     gmpoperatetip.h \
+    markdownnote.h \
     menu.h \
     netspeedhelper.h \
     qstylesheet.h \

@@ -16,7 +16,7 @@ BingSetting::BingSetting():
     ui(new Ui::BingSetting)
 {
     setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
-    QFile qss(":/qss/bing_style.qss");
+    QFile qss(QStringLiteral(":/qss/bing_style.qss"));
     qss.open(QFile::ReadOnly);
     setStyleSheet(QString(qss.readAll()));
     qss.close();
@@ -47,9 +47,9 @@ void BingSetting::on_pushButton_2_clicked()
     QSettings set("SpeedBox.ini", QSettings::IniFormat);
     set.setIniCodec(QTextCodec::codecForName("UTF-8"));
     set.beginGroup("Wallpaper");
-    set.setValue("UseDateAsBingName", ui->radioButton->isChecked());
-    set.setValue("AutoSaveBingPicture", ui->checkBox->isChecked());
-    set.setValue("AutoRotationBingPicture", ui->checkBox_2->isChecked());
+    set.setValue(QStringLiteral("UseDateAsBingName"), ui->radioButton->isChecked());
+    set.setValue(QStringLiteral("AutoSaveBingPicture"), ui->checkBox->isChecked());
+    set.setValue(QStringLiteral("AutoRotationBingPicture"), ui->checkBox_2->isChecked());
     set.endGroup();
     jobTip->showTip("保存成功！");
 }
@@ -59,5 +59,5 @@ void BingSetting::on_pushButton_3_clicked()
 {
     VarBox->wallpaper->UseDateAsBingName = ui->radioButton->isChecked();
     VarBox->wallpaper->AutoSaveBingPicture = ui->checkBox->isChecked();
-    jobTip->showTip("应用成功，可能需要点击保存！");
+    jobTip->showTip(QStringLiteral("应用成功，可能需要点击保存！"));
 }

@@ -327,6 +327,22 @@ YJson* YJson::find(const char* key) const
     return nullptr;
 }
 
+YJson *YJson::find(const std::string &key) const
+{
+    if (_type == YJson::Object)
+    {
+        YJson *child = _child;
+        if (child && child->_key)
+        {
+            do {
+                if (child->_key == key)
+                    return child;
+            } while ((child = child->_next));
+        }
+    }
+    return nullptr;
+}
+
 YJson* YJson::find(int key) const
 {
     if (_type == YJson::Array || _type == YJson::Object)

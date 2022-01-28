@@ -309,7 +309,7 @@ void Form::mousePressEvent(QMouseEvent* event)
 	if (event->button() == Qt::LeftButton)                   // 鼠标左键点击悬浮窗
 	{
 		setMouseTracking(true);                              // 开始跟踪鼠标位置，从而使悬浮窗跟着鼠标一起移动。
-		_startPos = event->pos();                            // 记录开始位置
+        m_ptPress = event->pos();                            // 记录开始位置
 	}
 	else if (event->button() == Qt::RightButton)             // 鼠标右键点击悬浮窗
     {
@@ -334,7 +334,6 @@ void Form::mouseReleaseEvent(QMouseEvent* event)
 	{
         saveBoxPos();
 		setMouseTracking(false);           // 停止跟踪鼠标。
-		_endPos = event->pos() - _startPos;
 	}
 	event->accept();
 }
@@ -355,9 +354,7 @@ void Form::mouseDoubleClickEvent(QMouseEvent*)
 void Form::mouseMoveEvent(QMouseEvent* event)
 {
 #ifdef Q_OS_WIN32
-    QPoint _curPos =  event->pos();
-    _endPos = _curPos - _startPos;  //计算位置变化情况。
-	move(pos() + _endPos);               //当前位置加上位置变化情况，从而实现悬浮窗和鼠标同时移动。
+    move(event->globalPos() - m_ptPress);               //当前位置加上位置变化情况，从而实现悬浮窗和鼠标同时移动。
 #elif defined Q_OS_LINUX
     QPoint _curPos = event->globalPos() * 2;
     XEvent xe;

@@ -42,9 +42,9 @@ void Menu::initUi()
     setAttribute(Qt::WA_TranslucentBackground, true);             //背景透明
     setAttribute(Qt::WA_DeleteOnClose, true);
 
-    QFile qss(":/qss/menu_style.qss");                            //读取样式表
+    QFile qss(QStringLiteral(":/qss/menu_style.qss"));                            //读取样式表
 	qss.open(QFile::ReadOnly);
-    int fontId = QFontDatabase::addApplicationFont("://fonts/FangZhengKaiTiJianTi-1.ttf");
+    int fontId = QFontDatabase::addApplicationFont(QStringLiteral("://fonts/FangZhengKaiTiJianTi-1.ttf"));
     QStringList fontIDs = QFontDatabase::applicationFontFamilies(fontId);
     if (! fontIDs.isEmpty()) {
         setStyleSheet(QString(qss.readAll()).arg(fontIDs.first()));
@@ -138,12 +138,12 @@ void Menu::initMenuConnect()
     connect(actions+7, &QAction::triggered, VarBox,
             std::bind(
                 (QByteArray (*)(const QString &, const QStringList&, short))
-                VARBOX::runCmd, QString("shutdown"), QStringList({"-s", "-t", "0"}), 0)
+                VARBOX::runCmd, QStringLiteral("shutdown"), QStringList({"-s", "-t", "0"}), 0)
             );            //关闭电脑
     connect(actions+8, &QAction::triggered, VarBox,
             std::bind(
                 (QByteArray (*)(const QString &, const QStringList&, short))
-                VARBOX::runCmd, QString("shutdown"), QStringList({"-r", "-t", "0"}), 0)
+                VARBOX::runCmd, QStringLiteral("shutdown"), QStringList({"-r", "-t", "0"}), 0)
             );
 #elif defined Q_OS_LINUX
     connect(actions+7, &QAction::triggered, VarBox, [](){system("shutdown -h now");});            //关闭电脑

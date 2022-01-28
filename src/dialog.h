@@ -35,6 +35,7 @@ private:
     void loadFormStyle();
 	void initConnects();
     void initButtonFilter();
+    void setFrameStyle(int index);
 
 private slots:
     void chooseFolder();                                 //当选择文件夹按钮被点击时，弹出选择文件夹的对话框。

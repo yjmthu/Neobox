@@ -29,6 +29,7 @@
 #include "form.h"
 #include "wallpaper.h"
 #include "dialog.h"
+#include "markdownnote.h"
 
 
 //wchar_t* GetCorrectUnicode(const QByteArray &ba)
@@ -61,8 +62,8 @@ VARBOX::VARBOX(int w, int h):
 #endif
     QDir().mkdir(data_path);
     QDir::setCurrent(data_path);
-    QFontDatabase::addApplicationFont(":/fonts/Nickainley-Normal-small.ttf");
-    QFontDatabase::addApplicationFont(":/fonts/Carattere-Regular-small.ttf");
+    QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/Nickainley-Normal-small.ttf"));
+    QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/Carattere-Regular-small.ttf"));
     initFile();
     initChildren();
     initBehaviors();
@@ -73,6 +74,7 @@ VARBOX::~VARBOX()
 {
     qout << "结构体析构中~";
     delete systemTrayIcon;
+    delete m_note;
     delete form;
     qout << "析构任务栏类";
     qout << "析构壁纸类";
@@ -84,10 +86,10 @@ VARBOX::~VARBOX()
 
 void VARBOX::initFile()
 {
-    QDir().exists("./Scripts") || QDir().mkdir("./Scripts");
+    QDir().exists(QStringLiteral("./Scripts")) || QDir().mkdir(QStringLiteral("./Scripts"));
     FILE* shell_file = fopen("./Scripts/SetWallPaper.sh", "rb");
     if (!shell_file)
-        QFile::copy("://scripts/SetWallpaper.sh", "./Scripts/SetWallPaper.sh");
+        QFile::copy(QStringLiteral("://scripts/SetWallpaper.sh"), QStringLiteral("./Scripts/SetWallPaper.sh"));
     else
         fclose(shell_file);
     constexpr char file[] = "SpeedBox.ini";
@@ -100,8 +102,8 @@ void VARBOX::initFile()
     } else {
         QSettings set(file, QSettings::IniFormat);
         set.setIniCodec(QTextCodec::codecForName("UTF-8"));
-        set.beginGroup("SpeedBox");
-        QByteArray x = set.value("Version").toByteArray();
+        set.beginGroup(QStringLiteral("SpeedBox"));
+        QByteArray x = set.value(QStringLiteral("Version")).toByteArray();
         set.endGroup();
         qout << "文件存在，版本信息为" << x;
         if (getVersion(x) < getVersion("21.8.1"))
@@ -117,44 +119,44 @@ void VARBOX::initFile()
 label_1:
         {
             qout << "创建新的Ini文件。";
-            QSettings *IniWrite = new QSettings("SpeedBox.ini", QSettings::IniFormat);
+            QSettings *IniWrite = new QSettings(QStringLiteral("SpeedBox.ini"), QSettings::IniFormat);
             IniWrite->setIniCodec(QTextCodec::codecForName("UTF-8"));
-            IniWrite->beginGroup("SpeedBox");
-            IniWrite->setValue("Version", Version);
+            IniWrite->beginGroup(QStringLiteral("SpeedBox"));
+            IniWrite->setValue(QStringLiteral("Version"), Version);
             IniWrite->endGroup();
-            IniWrite->beginGroup("Wallpaper");
-            IniWrite->setValue("PaperType", 0);
-            IniWrite->setValue("TimeInerval", 15);
-            IniWrite->setValue("PageNum", 1);
-            IniWrite->setValue("setNative", false);
-            IniWrite->setValue("AutoChange", false);
-            IniWrite->setValue("NativeDir", picfolder);
+            IniWrite->beginGroup(QStringLiteral("Wallpaper"));
+            IniWrite->setValue(QStringLiteral("PaperType"), 0);
+            IniWrite->setValue(QStringLiteral("TimeInerval"), 15);
+            IniWrite->setValue(QStringLiteral("PageNum"), 1);
+            IniWrite->setValue(QStringLiteral("setNative"), false);
+            IniWrite->setValue(QStringLiteral("AutoChange"), false);
+            IniWrite->setValue(QStringLiteral("NativeDir"), picfolder);
 #if defined (Q_OS_WIN32)
-            IniWrite->setValue("UserCommand", "python.exe -u \"X:\\xxxxx.py\"");
+            IniWrite->setValue(QStringLiteral("UserCommand"), QStringLiteral("python.exe -u \"X:\\xxxxx.py\""));
 #elif defined (Q_OS_LINUX)
             IniWrite->setValue("UserCommand", "python.exe -u \"~/xxxxx.py\"");
 #endif
-            IniWrite->setValue("UseDateAsBingName", true);
+            IniWrite->setValue(QStringLiteral("UseDateAsBingName"), true);
             IniWrite->endGroup();
 
-            IniWrite->beginGroup("Translate");
-            IniWrite->setValue("EnableTranslater", false);
-            IniWrite->setValue("AutoHide", true);
+            IniWrite->beginGroup(QStringLiteral("Translate"));
+            IniWrite->setValue(QStringLiteral("EnableTranslater"), false);
+            IniWrite->setValue(QStringLiteral("AutoHide"), true);
             IniWrite->endGroup();
 
-            IniWrite->beginGroup("UI");
-            IniWrite->setValue("ColorTheme", static_cast<int>(Dialog::curTheme));
-            IniWrite->setValue("TuoPanIcon", false);
-            IniWrite->setValue("TieBianHide", true);
+            IniWrite->beginGroup(QStringLiteral("UI"));
+            IniWrite->setValue(QStringLiteral("ColorTheme"), static_cast<int>(Dialog::curTheme));
+            IniWrite->setValue(QStringLiteral("TuoPanIcon"), false);
+            IniWrite->setValue(QStringLiteral("TieBianHide"), true);
             IniWrite->endGroup();
 
-            IniWrite->beginGroup("Dirs");
-            IniWrite->setValue("OpenDir", QDir::toNativeSeparators(qApp->applicationDirPath()));
+            IniWrite->beginGroup(QStringLiteral("Dirs"));
+            IniWrite->setValue(QStringLiteral("OpenDir"), QDir::toNativeSeparators(qApp->applicationDirPath()));
             IniWrite->endGroup();
 
-            IniWrite->beginGroup("Apps");
-            IniWrite->setValue("MarkdownNote", false);
-            IniWrite->setValue("DesktopClock", false);
+            IniWrite->beginGroup(QStringLiteral("Apps"));
+            IniWrite->setValue(QStringLiteral("MarkdownNote"), false);
+            IniWrite->setValue(QStringLiteral("DesktopClock"), false);
             IniWrite->endGroup();
             delete IniWrite;
             qout << "创建新的ini文件完毕。";
@@ -165,31 +167,31 @@ label_2:
             qout << "开始读取设置。";
             QSettings *IniRead = new QSettings(file, QSettings::IniFormat);
             IniRead->setIniCodec(QTextCodec::codecForName("UTF-8"));
-            IniRead->beginGroup("SpeedBox");
-            IniRead->setValue("Version", Version);
+            IniRead->beginGroup(QStringLiteral("SpeedBox"));
+            IniRead->setValue(QStringLiteral("Version"), Version);
             IniRead->endGroup();
 
-            IniRead->beginGroup("Translate");
-            AutoHide = IniRead->value("AutoHide").toBool();
-            EnableTranslater = IniRead->value("EnableTranslater").toBool();
+            IniRead->beginGroup(QStringLiteral("Translate"));
+            AutoHide = IniRead->value(QStringLiteral("AutoHide")).toBool();
+            EnableTranslater = IniRead->value(QStringLiteral("EnableTranslater")).toBool();
             IniRead->endGroup();
             qout << "读取翻译信息完毕";
-            IniRead->beginGroup("Dirs");
-            PathToOpen = IniRead->value("OpenDir").toString();
+            IniRead->beginGroup(QStringLiteral("Dirs"));
+            PathToOpen = IniRead->value(QStringLiteral("OpenDir")).toString();
             IniRead->endGroup();
             qout << "读取路径信息完毕";
-            IniRead->beginGroup("UI");
-            unsigned safeEnum = IniRead->value("ColorTheme").toInt();
+            IniRead->beginGroup(QStringLiteral("UI"));
+            unsigned safeEnum = IniRead->value(QStringLiteral("ColorTheme")).toInt();
             if (safeEnum > 7) safeEnum = 0;
             Dialog::curTheme = static_cast<Dialog::Theme>(safeEnum);
-            TuoPanIcon = IniRead->value("TuoPanIcon", false).toBool();
+            TuoPanIcon = IniRead->value(QStringLiteral("TuoPanIcon"), false).toBool();
             IniRead->endGroup();
-            IniRead->beginGroup("USBhelper");
-            enableUSBhelper = IniRead->value("enableUSBhelper", enableUSBhelper).toBool();
+            IniRead->beginGroup(QStringLiteral("USBhelper"));
+            enableUSBhelper = IniRead->value(QStringLiteral("enableUSBhelper"), enableUSBhelper).toBool();
             IniRead->endGroup();
             IniRead->beginGroup("Apps");
-            MarkdownNote = IniRead->value("MarkdownNote", false).toBool();
-            DesktopClock = IniRead->value("DesktopClock", false).toBool();
+            MarkdownNote = IniRead->value(QStringLiteral("MarkdownNote"), false).toBool();
+            DesktopClock = IniRead->value(QStringLiteral("DesktopClock"), false).toBool();
             IniRead->endGroup();
             delete IniRead;
             qout << "读取设置完毕。";
@@ -209,7 +211,7 @@ label_3:
         picfolder += "/桌面壁纸";
         dir.mkdir(picfolder);
         dir.cd(picfolder);
-        QFile::copy(":/json/WallpaperApi.json", (apifile+".temp").c_str());
+        QFile::copy(QStringLiteral(":/json/WallpaperApi.json"), (apifile+".temp").c_str());
         const std::vector<QString> lst {"最热壁纸", "风景壁纸", "动漫壁纸", "极简壁纸", "随机壁纸", "鬼刀壁纸", "必应壁纸"};
         for (const auto&c: lst)
             dir.mkdir(c);
@@ -250,6 +252,7 @@ void VARBOX::initChildren()
         *const_cast<int *>(&ScreenHeight) = rect.height();
         form->keepInScreen();
     });
+    creatMarkdown(true);
     creatTrayIcon(TuoPanIcon);
 }
 
@@ -276,16 +279,23 @@ void VARBOX::creatTrayIcon(bool create)
         delete systemTrayIcon;
         systemTrayIcon = nullptr;
     }
-    QSettings *IniRead = new QSettings("SpeedBox.ini", QSettings::IniFormat);
+    QSettings *IniRead = new QSettings(QStringLiteral("SpeedBox.ini"), QSettings::IniFormat);
     IniRead->setIniCodec(QTextCodec::codecForName("UTF-8"));
-    IniRead->beginGroup("UI");
-    IniRead->setValue("TuoPanIcon", create);
+    IniRead->beginGroup(QStringLiteral("UI"));
+    IniRead->setValue(QStringLiteral("TuoPanIcon"), create);
     IniRead->endGroup();
+}
+
+void VARBOX::creatMarkdown(bool create)
+{
+    if ((MarkdownNote = create)) {
+        m_note = new class MarkdownNote();
+    }
 }
 
 void VARBOX::sigleSave(QString group, QString key, QString value)
 {
-    QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
+    QSettings IniWrite(QStringLiteral("SpeedBox.ini"), QSettings::IniFormat);
     IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
     IniWrite.beginGroup(group);
     IniWrite.setValue(key, value);
@@ -297,7 +307,7 @@ QByteArray VARBOX::runCmd(const QString& program, const QStringList& argument, s
     QProcess process;
     process.setProgram(program);
     process.setArguments(argument);
-    connect(&process, &QProcess::errorOccurred, [&](){qout << "运行出错"; line=0;});
+    connect(&process, &QProcess::errorOccurred, [&](){ qout << "运行出错"; line=0; });
     process.start();
     process.waitForStarted(); //等待程序启动
     process.waitForFinished(15000);
@@ -343,7 +353,7 @@ uint32_t VARBOX::getVersion(const char* A)
 void VARBOX::MSG(const char *text, const char* title, QMessageBox::StandardButtons s)
 {
     QMessageBox message(QMessageBox::Information, title, text, s, NULL);
-    QFile qss(":/qss/dialog_style.qss");
+    QFile qss(QStringLiteral(":/qss/dialog_style.qss"));
     qss.open(QFile::ReadOnly);
     message.setStyleSheet(QString(qss.readAll()));
     qss.close();

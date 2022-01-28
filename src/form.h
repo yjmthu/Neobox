@@ -48,8 +48,7 @@ private:
     void setupUi();
     void loadStyle();
     class NetSpeedHelper* netHelper;                   //设置对话
-	QPoint _startPos;                            //记录鼠标
-    QPoint _endPos;                              //鼠标移动向
+    QPoint m_ptPress;
     class Translater* translater = nullptr;            //翻译类，自带ui
 	bool moved = false;
     void initSettings();

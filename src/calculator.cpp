@@ -13,7 +13,7 @@ Calculator::Calculator(QWidget *parent) :
     ui(new Ui::Calculator)
 {
     setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
-    QFile qss(":/qss/calculater.qss");
+    QFile qss(QStringLiteral(":/qss/calculater.qss"));
     qss.open(QFile::ReadOnly);
     setStyleSheet(QString(qss.readAll()));
     qss.close();
@@ -111,7 +111,7 @@ void Calculator::on_pushButton_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("deg(");
+    cursor.insertText(QStringLiteral("deg("));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -121,7 +121,7 @@ void Calculator::on_pushButton_2_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("rad(");
+    cursor.insertText(QStringLiteral("rad("));
 }
 
 void Calculator::on_pushButton_3_clicked()
@@ -159,7 +159,7 @@ void Calculator::on_pushButton_5_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("(");
+    cursor.insertText(QStringLiteral("("));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -168,7 +168,7 @@ void Calculator::on_pushButton_6_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText(")");
+    cursor.insertText(QStringLiteral(")"));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -178,7 +178,7 @@ void Calculator::on_pushButton_7_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("tanh(");
+    cursor.insertText(QStringLiteral("tanh("));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -188,7 +188,7 @@ void Calculator::on_pushButton_8_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("cosh(");
+    cursor.insertText(QStringLiteral("cosh("));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -198,7 +198,7 @@ void Calculator::on_pushButton_9_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("sinh(");
+    cursor.insertText(QStringLiteral("sinh("));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -208,7 +208,7 @@ void Calculator::on_pushButton_10_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("tan(");
+    cursor.insertText(QStringLiteral("tan("));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -218,7 +218,7 @@ void Calculator::on_pushButton_11_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("cos(");
+    cursor.insertText(QStringLiteral("cos("));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -228,7 +228,7 @@ void Calculator::on_pushButton_12_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("sin(");
+    cursor.insertText(QStringLiteral("sin("));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -238,7 +238,7 @@ void Calculator::on_pushButton_13_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("lg(");
+    cursor.insertText(QStringLiteral("lg("));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -248,7 +248,7 @@ void Calculator::on_pushButton_14_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("arc");
+    cursor.insertText(QStringLiteral("arc"));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -258,7 +258,7 @@ void Calculator::on_pushButton_15_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("abs(");
+    cursor.insertText(QStringLiteral("abs("));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -268,7 +268,7 @@ void Calculator::on_pushButton_16_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("sqrt(");
+    cursor.insertText(QStringLiteral("sqrt("));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -278,7 +278,7 @@ void Calculator::on_pushButton_17_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("^");
+    cursor.insertText(QStringLiteral("^"));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -289,7 +289,7 @@ void Calculator::on_pushButton_18_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("fact(");
+    cursor.insertText(QStringLiteral("fact("));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -299,7 +299,7 @@ void Calculator::on_pushButton_19_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("ln(");
+    cursor.insertText(QStringLiteral("ln("));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -308,7 +308,7 @@ void Calculator::on_pushButton_20_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("7");
+    cursor.insertText(QStringLiteral("7"));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -317,7 +317,7 @@ void Calculator::on_pushButton_21_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("8");
+    cursor.insertText(QStringLiteral("8"));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -326,7 +326,7 @@ void Calculator::on_pushButton_22_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("9");
+    cursor.insertText(QStringLiteral("9"));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -350,7 +350,7 @@ void Calculator::on_pushButton_25_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("e()");
+    cursor.insertText(QStringLiteral("e()"));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -359,7 +359,7 @@ void Calculator::on_pushButton_26_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("4");
+    cursor.insertText(QStringLiteral("4"));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -368,7 +368,7 @@ void Calculator::on_pushButton_27_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("5");
+    cursor.insertText(QStringLiteral("5"));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -377,7 +377,7 @@ void Calculator::on_pushButton_28_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("6");
+    cursor.insertText(QStringLiteral("6"));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -386,7 +386,7 @@ void Calculator::on_pushButton_29_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("*");
+    cursor.insertText(QStringLiteral("*"));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -395,7 +395,7 @@ void Calculator::on_pushButton_30_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("/");
+    cursor.insertText(QStringLiteral("/"));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -404,7 +404,7 @@ void Calculator::on_pushButton_31_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("pi()");
+    cursor.insertText(QStringLiteral("pi()"));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -413,7 +413,7 @@ void Calculator::on_pushButton_32_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("1");
+    cursor.insertText(QStringLiteral("1"));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -422,7 +422,7 @@ void Calculator::on_pushButton_33_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("2");
+    cursor.insertText(QStringLiteral("2"));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -431,7 +431,7 @@ void Calculator::on_pushButton_34_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("3");
+    cursor.insertText(QStringLiteral("3"));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -440,7 +440,7 @@ void Calculator::on_pushButton_35_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("+");
+    cursor.insertText(QStringLiteral("+"));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -449,7 +449,7 @@ void Calculator::on_pushButton_36_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("-");
+    cursor.insertText(QStringLiteral("-"));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -458,7 +458,7 @@ void Calculator::on_pushButton_37_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("rand()");
+    cursor.insertText(QStringLiteral("rand()"));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -467,7 +467,7 @@ void Calculator::on_pushButton_38_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("0");
+    cursor.insertText(QStringLiteral("0"));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -476,7 +476,7 @@ void Calculator::on_pushButton_39_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText(".");
+    cursor.insertText(QStringLiteral("."));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -485,7 +485,7 @@ void Calculator::on_pushButton_40_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("exp(");
+    cursor.insertText(QStringLiteral("exp("));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 
@@ -494,7 +494,7 @@ void Calculator::on_pushButton_41_clicked()
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     if (cursor.hasSelection())
         cursor.removeSelectedText();
-    cursor.insertText("ans()");
+    cursor.insertText(QStringLiteral("ans()"));
     ui->plainTextEdit->setTextCursor(cursor);
 }
 

@@ -263,7 +263,7 @@ void Wallpaper::_set_w(YJson* jsonArray)
         if (pic_url.length())
         {
             qout << "壁纸网址：" << pic_url.c_str();
-            const QString img = QDir::toNativeSeparators(image_path + "/" + pic_url.c_str());
+            const QString img = QDir::toNativeSeparators(image_path + "/" + QString::fromStdString(pic_url));
             if (!QFile::exists(img))
             {
                 qout << "本地找不到文件, 直接开始下载";
@@ -290,7 +290,7 @@ void Wallpaper::_set_w(YJson* jsonArray)
                     m_doing = false;
                     set_wallpaper(img);
                 });
-                mgr->get(QNetworkRequest(QUrl(("https://w.wallhaven.cc/full/"+pic_url.substr(10, 2)+"/"+pic_url).c_str())));
+                mgr->get(QNetworkRequest(QString::fromStdString("https://w.wallhaven.cc/full/"+pic_url.substr(10, 2)+"/"+pic_url)));
             }
             else
             {
@@ -397,7 +397,7 @@ void Wallpaper::push_back()
     QDir dir;
     int index = static_cast<int>(PaperType);
     qout << "种类: " << index;
-    bing_api = json["BingApi"]["Parameter"].urlEncode(json["MainApis"]["BingApi"].getValueString()).c_str();
+    bing_api = QString::fromStdString(json["BingApi"]["Parameter"].urlEncode(json["MainApis"]["BingApi"].getValueString()));
     bing_folder = json["BingApi"]["Folder"].getValueString();
     qout << "必应Api" << bing_api;
     switch (PaperType)
@@ -510,7 +510,7 @@ void Wallpaper::set_from_Wallhaven()  // 从数据库中随机抽取一个链接
 label_1:
     delete jsonObject;
     jsonObject = new YJson(YJson::Object);
-    jsonObject->append(Wallpaper::url.c_str(), "Api");
+    jsonObject->append(Wallpaper::url, "Api");
     jsonObject->append(PageNum, "PageNum");
     jsonArray = jsonObject->append(YJson::Object, "ImgUrls");
     jsonArray->append(YJson::Array, "Used");
@@ -562,7 +562,7 @@ void Wallpaper::get_url_from_Wallhaven(YJson* jsonArray)
                     }
                     urllist->append(wn);
                 } while ((ptr = ptr->getNext()));
-                QString str = (url + "&page=" + std::to_string(++k)).c_str();
+                QString str = QString::fromStdString(url + "&page=" + std::to_string(++k));
                 qout << "post request" << str << bool(mgr);
                 mgr->get(QNetworkRequest(QUrl(str)));
             }
