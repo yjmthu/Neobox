@@ -173,35 +173,30 @@ void Form::loadStyle()
             qout << sheet[2].getString("QLabel");
             qout << sheet[3].getString("QLabel");  */
     } else {
-        std::ofstream file_out(".boxstyle", std::ios::out | std::ios::binary);
         sheet = new QStyleSheet[4]
         { /*{bk r    g    b   a    ft   r    g    b    a   bd  r  g  b  a   b   w  r fuz si win 0  0  0 }*/
-            { 255, 255, 255, 80, /**/   0,   0,   0,   0, /**/ 0, 0, 0, 0, /**/ 0, 3, 0,  1, 0, 0, 0, 0 },
-            {   0,   0,   0,  0, /**/   0, 255, 255, 255, /**/ 0, 0, 0, 0, /**/ 0, 0, 0, 17, 0, 0, 0, 0 },
-            {   0,   0,   0,  0, /**/ 250, 170,  35, 255, /**/ 0, 0, 0, 0, /**/ 0, 0, 0,  8, 0, 0, 0, 0 },
-            {   0,   0,   0,  0, /**/ 140, 240,  30, 255, /**/ 0, 0, 0, 0, /**/ 0, 0, 0,  8, 0, 0, 0, 0 }
+            { 255, 255, 255, 80, /**/   0,   0,   0,   0, /**/ 0, 0, 0, 0, /**/ 0, 3, 0,  1, 0, QStyleSheet::TheAround, 0, 0 },
+            {   0,   0,   0,  0, /**/   0, 255, 255, 255, /**/ 0, 0, 0, 0, /**/ 0, 3, 0, 17, 0, QStyleSheet::TheLeft, 0, 0 },
+            {   0,   0,   0,  0, /**/ 250, 170,  35, 255, /**/ 0, 0, 0, 0, /**/ 0, 3, 0,  8, 0, QStyleSheet::TheTopRight, 0, 0 },
+            {   0,   0,   0,  0, /**/ 140, 240,  30, 255, /**/ 0, 0, 0, 0, /**/ 0, 3, 0,  8, 0, QStyleSheet::TheBottomRight, 0, 0 }
         };
-        if (file_out.is_open()) {
-            file_out.write(reinterpret_cast<const char *>(sheet), sizeof (QStyleSheet) * 4);
-            file_out.close();
-        }
+        QStyleSheet::toFile(sheet);
     }
-    frame->setStyleSheet(sheet[0].getString("QFrame"));
-    labMemory->setStyleSheet(sheet[1].getString("QLabel"));
-    labUp->setStyleSheet(sheet[2].getString("QLabel"));
-    labDown->setStyleSheet(sheet[3].getString("QLabel"));
+    frame->setStyleSheet(sheet[0].getString(false));
+    labMemory->setStyleSheet(sheet[1].getString(true));
+    labUp->setStyleSheet(sheet[2].getString(true));
+    labDown->setStyleSheet(sheet[3].getString(true));
 
-    if (sheet->bk_fuzzy >= 0)
-        SystemFunctions::SetWindowCompositionAttribute(HWND(winId()), ACCENT_STATE::ACCENT_ENABLE_BLURBEHIND, (sheet->bk_fuzzy << 24) & RGB(sheet->bk_red,sheet->bk_green,sheet->bk_blue));
+    SystemFunctions::SetWindowCompositionAttribute(HWND(winId()), ACCENT_STATE::ACCENT_ENABLE_BLURBEHIND, (sheet->bk_fuzzy << 24) & RGB(sheet->bk_red,sheet->bk_green,sheet->bk_blue));
     delete [] sheet;
 }
 
 void Form::initSettings()
 {
-    QSettings IniRead("SpeedBox.ini", QSettings::IniFormat);
+    QSettings IniRead(QStringLiteral("SpeedBox.ini"), QSettings::IniFormat);
     IniRead.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    IniRead.beginGroup("UI");
-    tieBianHide = IniRead.value("TieBianHide", true).toBool();
+    IniRead.beginGroup(QStringLiteral("UI"));
+    tieBianHide = IniRead.value(QStringLiteral("TieBianHide"), true).toBool();
     IniRead.endGroup();
 }
 
@@ -459,9 +454,9 @@ void Form::enableTranslater(bool checked)
         translater = nullptr;
     }
 
-    QSettings IniWrite("SpeedBox.ini", QSettings::IniFormat);
+    QSettings IniWrite(QStringLiteral("SpeedBox.ini"), QSettings::IniFormat);
     IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    IniWrite.beginGroup("Translate");
-    IniWrite.setValue("EnableTranslater", VarBox->EnableTranslater);
+    IniWrite.beginGroup(QStringLiteral("Translate"));
+    IniWrite.setValue(QStringLiteral("EnableTranslater"), VarBox->EnableTranslater);
     IniWrite.endGroup();
 }

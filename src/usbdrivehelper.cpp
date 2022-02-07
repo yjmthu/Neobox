@@ -165,10 +165,20 @@ USBdriveHelper::USBdriveHelper(char U, QWidget *parent) :
     });
 #endif
     widget->setStyleSheet("QWidget{background-color:rgba(90, 90, 90, 190);}");
-    btn1->setStyleSheet("QPushButton{color:yellow;background-color:rgba(70,70,70,90);}"
-                        "QPushButton:hover{background-color:rgba(50, 50, 50, 90);}");
-    btn2->setStyleSheet("QPushButton{color:green;background-color:rgba(70,70,70,90);}"
-                        "QPushButton:hover{background-color:rgba(50, 50, 50, 90);}");
+    btn1->setStyleSheet("QPushButton{"
+                        "color:yellow;"
+                        "background-color:rgba(70,70,70,90);"
+                        "}"
+                        "QPushButton:hover{"
+                        "background-color:rgba(50, 50, 50, 90);"
+                        "}");
+    btn2->setStyleSheet("QPushButton{"
+                        "color:green;"
+                        "background-color:rgba(70,70,70,90);"
+                        "}"
+                        "QPushButton:hover{"
+                        "background-color:rgba(50, 50, 50, 90);"
+                        "}");
     widget->hide();
 }
 

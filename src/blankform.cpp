@@ -12,12 +12,12 @@ BlankFrom::BlankFrom(QWidget* p):
     minButton = new QPushButton(this);
     minButton->setGeometry(width()-75,12,14,14);
     closeButton->setGeometry(width()-40,12,14,14);
-    minButton->setToolTip(tr("最小化"));
-    closeButton->setToolTip(tr("关闭"));
+    minButton->setToolTip(QStringLiteral("最小化"));
+    closeButton->setToolTip(QStringLiteral("关闭"));
     minButton->setCursor(Qt::PointingHandCursor);
     closeButton->setCursor(Qt::PointingHandCursor);
-    minButton->setStyleSheet("QPushButton{background-color:#85c43b;border-radius:7px;}");
-    closeButton->setStyleSheet("QPushButton{background-color:#ea6e4d;border-radius:7px;}");
+    minButton->setStyleSheet(QStringLiteral("QPushButton{background-color:#85c43b;border-radius:7px;}"));
+    closeButton->setStyleSheet(QStringLiteral("QPushButton{background-color:#ea6e4d;border-radius:7px;}"));
     //setStyleSheet("QToolTip{border:1px solid rgb(118, 118, 118); background-color: #ffffff; color:#484848; font-size:12px;}");
 }
 
@@ -32,12 +32,12 @@ void BlankFrom::enterEvent(QEvent *)
 void BlankFrom::enterEvent(QEnterEvent *)
 #endif
 {
-    closeButton->setStyleSheet("QPushButton{border-image: url(:/icons/close.png);border-radius:7px;}");
-    minButton->setStyleSheet("QPushButton{border-image: url(:/icons/minimize.png);border-radius:7px;}");
+    closeButton->setStyleSheet(QStringLiteral("QPushButton{border-image: url(:/icons/close.png);border-radius:7px;}"));
+    minButton->setStyleSheet(QStringLiteral("QPushButton{border-image: url(:/icons/minimize.png);border-radius:7px;}"));
 }
 
 void BlankFrom::leaveEvent(QEvent *)
 {
-    minButton->setStyleSheet("QPushButton{background-color:#85c43b;border-radius:7px;}");
-    closeButton->setStyleSheet("QPushButton{background-color:#ea6e4d;border-radius:7px;}");
+    minButton->setStyleSheet(QStringLiteral("QPushButton{background-color:#85c43b;border-radius:7px;}"));
+    closeButton->setStyleSheet(QStringLiteral("QPushButton{background-color:#ea6e4d;border-radius:7px;}"));
 }

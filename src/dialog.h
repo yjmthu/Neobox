@@ -22,6 +22,7 @@ public:
     static Theme curTheme;
 
 private:
+    static const QStringList reg_keys;
     friend void del_file(Dialog *di ,QString str);
     Ui::Dialog* ui = nullptr;
     class QButtonGroup* buttonGroup { nullptr };                 //单选按钮组合，互斥，添加按钮id

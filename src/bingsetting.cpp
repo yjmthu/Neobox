@@ -44,14 +44,14 @@ void BingSetting::closeEvent(QCloseEvent *e)
 
 void BingSetting::on_pushButton_2_clicked()
 {
-    QSettings set("SpeedBox.ini", QSettings::IniFormat);
+    QSettings set(QStringLiteral("SpeedBox.ini"), QSettings::IniFormat);
     set.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    set.beginGroup("Wallpaper");
+    set.beginGroup(QStringLiteral("Wallpaper"));
     set.setValue(QStringLiteral("UseDateAsBingName"), ui->radioButton->isChecked());
     set.setValue(QStringLiteral("AutoSaveBingPicture"), ui->checkBox->isChecked());
     set.setValue(QStringLiteral("AutoRotationBingPicture"), ui->checkBox_2->isChecked());
     set.endGroup();
-    jobTip->showTip("保存成功！");
+    jobTip->showTip(QStringLiteral("保存成功！"));
 }
 
 

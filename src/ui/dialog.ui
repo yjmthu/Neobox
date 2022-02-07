@@ -523,13 +523,6 @@
               </widget>
              </item>
              <item>
-              <widget class="QCheckBox" name="cBxOutScreenCheck">
-               <property name="text">
-                <string>超出屏幕检测</string>
-               </property>
-              </widget>
-             </item>
-             <item>
               <widget class="QCheckBox" name="cBxTuoPanIcon">
                <property name="text">
                 <string>托盘图标</string>
@@ -732,62 +725,83 @@
                 </widget>
                </item>
                <item>
-                <widget class="QPushButton" name="pushButton_3">
-                 <property name="minimumSize">
-                  <size>
-                   <width>20</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                 <property name="maximumSize">
-                  <size>
-                   <width>20</width>
-                   <height>20</height>
-                  </size>
-                 </property>
+                <widget class="QCheckBox" name="cBxEnableWin10Style">
                  <property name="text">
-                  <string>☯</string>
+                  <string>Win10风格</string>
                  </property>
                 </widget>
                </item>
                <item>
-                <widget class="QPushButton" name="pushButton_6">
-                 <property name="minimumSize">
-                  <size>
-                   <width>20</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                 <property name="maximumSize">
-                  <size>
-                   <width>20</width>
-                   <height>20</height>
-                  </size>
-                 </property>
+                <widget class="QPushButton" name="pBtnInitFormStyle">
                  <property name="text">
-                  <string>❖</string>
+                  <string>还原最初设置</string>
                  </property>
-                 <property name="checkable">
-                  <bool>true</bool>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_15">
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_14">
+                 <item>
+                  <widget class="QRadioButton" name="rBtnBorder">
+                   <property name="text">
+                    <string>边线</string>
+                   </property>
+                   <property name="checked">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QRadioButton" name="rBtnRadius">
+                   <property name="text">
+                    <string>圆角</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="cBxEnableBorderRadius">
+                 <property name="text">
+                  <string>启用</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="cBxLeftBorderRadius">
+                 <property name="text">
+                  <string>左</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="cBxTopBorderRadius">
+                 <property name="text">
+                  <string>上</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="cBxRightBorderRadius">
+                 <property name="text">
+                  <string>右</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="cBxBottomBorderRadius">
+                 <property name="text">
+                  <string>下</string>
                  </property>
                 </widget>
                </item>
                <item>
                 <widget class="QPushButton" name="pBtnSaveFormStyle">
-                 <property name="minimumSize">
-                  <size>
-                   <width>20</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                 <property name="maximumSize">
-                  <size>
-                   <width>20</width>
-                   <height>20</height>
-                  </size>
-                 </property>
                  <property name="text">
-                  <string/>
+                  <string>保存</string>
                  </property>
                 </widget>
                </item>
@@ -820,13 +834,6 @@
               <widget class="QCheckBox" name="checkBox_6">
                <property name="text">
                 <string>桌面时钟</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QCheckBox" name="checkBox_7">
-               <property name="text">
-                <string>CheckBox</string>
                </property>
               </widget>
              </item>
@@ -1358,6 +1365,13 @@
                </property>
                <property name="text">
                 <string>下载更新</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="pushButton_3">
+               <property name="text">
+                <string>帮助❤</string>
                </property>
               </widget>
              </item>

@@ -33,11 +33,11 @@
 #include "qstylesheet.h"
 
 
-const std::array<std::string, 4> reg_keys {
-    "HKEY_CURRENT_USER\\SOFTWARE\\Classes\\*\\shell\\QCoper",
-    "HKEY_CURRENT_USER\\SOFTWARE\\Classes\\Directory\\shell\\QCoper",
-    "HKEY_CURRENT_USER\\SOFTWARE\\Classes\\Directory\\Background\\shell\\QCoper",
-    "mshta vbscript:clipboarddata.setdata(\"text\",\"%%1\")(close)"
+const QStringList Dialog::reg_keys {
+    QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Classes\\*\\shell\\QCoper"),
+    QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Classes\\Directory\\shell\\QCoper"),
+    QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Classes\\Directory\\Background\\shell\\QCoper"),
+    QStringLiteral("mshta vbscript:clipboarddata.setdata(\"text\",\"%%1\")(close)")
 };
 
 Dialog::Theme Dialog::curTheme { Dialog::Theme::White };
@@ -149,12 +149,7 @@ void Dialog::initUi()
 
 void Dialog::loadFormStyle()
 {
-    std::ifstream file_in(".boxstyle", std::ios::in | std::ios::binary);
-    if (file_in.is_open()) {
-        sheet = new QStyleSheet[4];
-        file_in.read(reinterpret_cast<char *>(sheet), sizeof (QStyleSheet) * 4);
-        file_in.close();
-    } else {
+    if (!QStyleSheet::fromFile(sheet)) {
         QMessageBox::critical(this, "出错", "悬浮窗风格文件不存在，请尝试重新启动软件解决！");
         return;
     }
@@ -163,6 +158,11 @@ void Dialog::loadFormStyle()
     ui->sLdTranparent->setValue(sheet->bk_alpha);
     ui->sLdBorderRadius->setValue(sheet->bd_radius);
     ui->sLdFuzzy->setValue(sheet->bk_fuzzy);
+    ui->cBxEnableBorderRadius->setChecked(sheet->bd_have & QStyleSheet::Border);
+    ui->cBxLeftBorderRadius->setChecked(sheet->bd_have & QStyleSheet::Left);
+    ui->cBxRightBorderRadius->setChecked(sheet->bd_have & QStyleSheet::Right);
+    ui->cBxTopBorderRadius->setChecked(sheet->bd_have & QStyleSheet::Top);
+    ui->cBxBottomBorderRadius->setChecked(sheet->bd_have & QStyleSheet::Bottom);
     YJson* temp = formFontJson->find("image");
     ui->lineMultyPath->setText(temp->getType() == YJson::Null ? "null" : temp->getValueString());
 }
@@ -273,7 +273,7 @@ void Dialog::initConnects()
         default:
             break;
         }
-        formPart[index]->setStyleSheet(sheet[index].getString(index?QStringLiteral("QLabel"):QStringLiteral("QFrame")));
+        formPart[index]->setStyleSheet(sheet[index].getString(index));
     });
     connect(ui->pBtnFormColor, &QPushButton::clicked, this, [=](){
         int index = ui->cBxFormPart->currentIndex();
@@ -300,7 +300,7 @@ void Dialog::initConnects()
                 break;
             }
             ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(color.red()), QString::number(color.green()), QString::number(color.blue())));
-            formPart[index]->setStyleSheet(sheet[index].getString(index?"QLabel":"QFrame"));
+            formPart[index]->setStyleSheet(sheet[index].getString(index));
         }
     });
     connect(ui->cBxSetBorder, &QCheckBox::stateChanged, this, [=](int state){
@@ -320,6 +320,7 @@ void Dialog::initConnects()
             ui->label_12->setText(QStringLiteral("Win"));
             ui->sLdFuzzy->setMaximum(99);
             ui->sLdFuzzy->setValue(sheet[index].bk_fuzzy);
+            ui->rBtnBorder->click();
             break;
         case Qt::PartiallyChecked:
             temp = formFontJson->find("user")->find((*formFontJson)["index"][index].getValueString())->find("family");
@@ -332,6 +333,7 @@ void Dialog::initConnects()
             ui->label_6->setText(QStringLiteral("字体"));
             ui->sLdFuzzy->setMaximum(30);
             ui->sLdFuzzy->setValue(sheet[index].ft_size);
+            ui->rBtnBorder->click();
             break;
         case Qt::Checked:
             temp = formFontJson->find("image");
@@ -344,6 +346,7 @@ void Dialog::initConnects()
             ui->label_6->setText(QStringLiteral("背景"));
             ui->sLdFuzzy->setMaximum(10);
             ui->sLdFuzzy->setValue(sheet[index].bd_width);
+            ui->rBtnBorder->click();
             break;
         default:
             break;
@@ -352,32 +355,29 @@ void Dialog::initConnects()
     connect(ui->sLdBorderRadius, &QSlider::valueChanged, this, [=](int value){
         int index = ui->cBxFormPart->currentIndex();
         sheet[index].bd_radius = value;
-        formPart[index]->setStyleSheet(sheet[index].getString(index?"QLabel":"QFrame"));
+        formPart[index]->setStyleSheet(sheet[index].getString(index));
     });
     connect(ui->sLdFuzzy, &QSlider::valueChanged, this, [=](int value){
         int index = ui->cBxFormPart->currentIndex();
         switch (ui->cBxSetBorder->checkState()) {
         case Qt::Unchecked:
             sheet[index].bk_fuzzy = value;
-            formPart[index]->setStyleSheet(sheet[index].getString(index?"QLabel":"QFrame"));
+            formPart[index]->setStyleSheet(sheet[index].getString(index));
             break;
         case Qt::PartiallyChecked:
             sheet[index].ft_size = value;
-            formPart[index]->setStyleSheet(sheet[index].getString(index?"QLabel":"QFrame"));
+            formPart[index]->setStyleSheet(sheet[index].getString(index));
             break;
         case Qt::Checked:
             sheet[index].bd_width = value;
-            formPart[index]->setStyleSheet(sheet[index].getString(index?"QLabel":"QFrame"));
+            formPart[index]->setStyleSheet(sheet[index].getString(index));
             break;
         default:
             break;
         }
     });
     connect(ui->pBtnSaveFormStyle, &QPushButton::clicked, this, [=](){
-        std::ofstream file(".boxstyle", std::ios::out | std::ios::binary);
-        if (file.is_open()) {
-            file.write(reinterpret_cast<const char*>(sheet), sizeof (QStyleSheet) * 4);
-            file.close();
+        if (QStyleSheet::toFile(sheet)) {
             jobTip->showTip(QStringLiteral("保存成功!"));
         } else {
             jobTip->showTip(QStringLiteral("保持失败！"));
@@ -395,6 +395,7 @@ void Dialog::initConnects()
             ui->sLdTranparent->setValue(sheet[index].bk_alpha);
             ui->sLdBorderRadius->setValue(sheet[index].bd_radius);
             ui->sLdFuzzy->setValue(sheet[index].bk_fuzzy);
+            ui->rBtnBorder->click();
             break;
         case Qt::PartiallyChecked:
             temp = formFontJson->find("user")->find((*formFontJson)["index"][index].getValueString())->find("family");
@@ -403,6 +404,7 @@ void Dialog::initConnects()
             ui->sLdTranparent->setValue(sheet[index].ft_alpha);
             ui->sLdBorderRadius->setValue(sheet[index].bd_radius);
             ui->sLdFuzzy->setValue(sheet[index].ft_size);
+            ui->rBtnBorder->click();
             break;
         case Qt::Checked:
             temp = formFontJson->find("image");
@@ -411,6 +413,7 @@ void Dialog::initConnects()
             ui->sLdTranparent->setValue(sheet[index].bd_alpha);
             ui->sLdBorderRadius->setValue(sheet[index].bd_radius);
             ui->sLdFuzzy->setValue(sheet[index].bd_width);
+            ui->rBtnBorder->click();
             break;
         default:
             break;
@@ -418,6 +421,108 @@ void Dialog::initConnects()
     });
     connect(ui->cBxTuoPanIcon, &QCheckBox::clicked, VarBox, &VARBOX::creatTrayIcon);
     connect(ui->cBxTieBianHide, &QCheckBox::clicked, VarBox, [](bool checked){VarBox->form->tieBianHide = checked;});
+    connect(ui->cBxLeftBorderRadius, &QCheckBox::clicked, VarBox, [=](bool checked){
+        int index = ui->cBxFormPart->currentIndex();
+        if (ui->rBtnBorder->isChecked()) {
+            if (checked)
+                sheet[index].bd_have |= QStyleSheet::Left;
+            else
+                sheet[index].bd_have &= ~QStyleSheet::Left;
+        } else {
+            if (checked)
+                sheet[index].bd_have |= QStyleSheet::TopLeft;
+            else
+                sheet[index].bd_have &= ~QStyleSheet::TopLeft;
+        }
+        formPart[index]->setStyleSheet(sheet[index].getString(index));
+    });
+    connect(ui->cBxRightBorderRadius, &QCheckBox::clicked, VarBox, [=](bool checked){
+        int index = ui->cBxFormPart->currentIndex();
+        if (ui->rBtnBorder->isChecked()) {
+
+            if (checked)
+                sheet[index].bd_have |= QStyleSheet::Right;
+            else
+                sheet[index].bd_have &= ~QStyleSheet::Right;
+        } else {
+            if (checked)
+                sheet[index].bd_have |= QStyleSheet::BottomLeft;
+            else
+                sheet[index].bd_have &= ~QStyleSheet::BottomLeft;
+        }
+        formPart[index]->setStyleSheet(sheet[index].getString(index));
+    });
+    connect(ui->cBxTopBorderRadius, &QCheckBox::clicked, VarBox, [=](bool checked){
+        int index = ui->cBxFormPart->currentIndex();
+        if (ui->rBtnBorder->isChecked()) {
+            if (checked)
+                sheet[index].bd_have |= QStyleSheet::Top;
+            else
+                sheet[index].bd_have &= ~QStyleSheet::Top;
+        } else {
+            if (checked)
+                sheet[index].bd_have |= QStyleSheet::TopRight;
+            else
+                sheet[index].bd_have &= ~QStyleSheet::TopRight;
+        }
+        formPart[index]->setStyleSheet(sheet[index].getString(index));
+    });
+    connect(ui->cBxBottomBorderRadius, &QCheckBox::clicked, VarBox, [=](bool checked){
+        int index = ui->cBxFormPart->currentIndex();
+        if (ui->rBtnBorder->isChecked()) {
+            if (checked)
+                sheet[index].bd_have |= QStyleSheet::Bottom;
+            else
+                sheet[index].bd_have &= ~QStyleSheet::Bottom;
+        } else {
+            if (checked)
+                sheet[index].bd_have |= QStyleSheet::BottomRight;
+            else
+                sheet[index].bd_have &= ~QStyleSheet::BottomRight;
+        }
+        formPart[index]->setStyleSheet(sheet[index].getString(index));
+    });
+    connect(ui->rBtnBorder, &QRadioButton::toggled, VarBox, [=](bool checked){
+        int index = ui->cBxFormPart->currentIndex();
+        const auto x = sheet[index].bd_have;
+        if (checked) {
+            ui->cBxEnableBorderRadius->setChecked(x & QStyleSheet::Border);
+            ui->cBxLeftBorderRadius->setChecked(x & QStyleSheet::Left);
+            ui->cBxRightBorderRadius->setChecked(x & QStyleSheet::Right);
+            ui->cBxTopBorderRadius->setChecked(x & QStyleSheet::Top);
+            ui->cBxBottomBorderRadius->setChecked(x & QStyleSheet::Bottom);
+            ui->cBxLeftBorderRadius->setText(QStringLiteral("左"));
+            ui->cBxRightBorderRadius->setText(QStringLiteral("右"));
+            ui->cBxTopBorderRadius->setText(QStringLiteral("上"));
+            ui->cBxBottomBorderRadius->setText(QStringLiteral("下"));
+        } else {
+            ui->cBxEnableBorderRadius->setChecked(x & QStyleSheet::BorderRadius);
+            ui->cBxLeftBorderRadius->setChecked(x & QStyleSheet::TopLeft);
+            ui->cBxRightBorderRadius->setChecked(x & QStyleSheet::BottomLeft);
+            ui->cBxTopBorderRadius->setChecked(x & QStyleSheet::TopRight);
+            ui->cBxBottomBorderRadius->setChecked(x & QStyleSheet::BottomRight);
+            ui->cBxLeftBorderRadius->setText(QStringLiteral("左上"));
+            ui->cBxRightBorderRadius->setText(QStringLiteral("左下"));
+            ui->cBxTopBorderRadius->setText(QStringLiteral("右上"));
+            ui->cBxBottomBorderRadius->setText(QStringLiteral("右下"));
+        }
+    });
+    connect(ui->cBxEnableBorderRadius, &QCheckBox::clicked, VarBox, [=](bool checked){
+        int index = ui->cBxFormPart->currentIndex();
+        if (checked) {
+            if (ui->rBtnBorder->isChecked())
+                sheet[index].bd_have |= QStyleSheet::Border;
+            else
+                sheet[index].bd_have |= QStyleSheet::BorderRadius;
+        } else {
+            if (ui->rBtnBorder->isChecked())
+                sheet[index].bd_have &= ~QStyleSheet::Border;
+            else
+                sheet[index].bd_have &= ~QStyleSheet::BorderRadius;
+        }
+        formPart[index]->setStyleSheet(sheet[index].getString(index));
+        qout << formPart[index]->styleSheet();
+    });
     qout << "对话框链接B";
 }
 
@@ -588,7 +693,7 @@ void Dialog::setFormStyleSheet()
     }
 
 
-    formPart[index]->setStyleSheet(sheet[index].getString(index?"QLabel":"QFrame"));
+    formPart[index]->setStyleSheet(sheet[index].getString(index));
 }
 
 void Dialog::checkSettings()
@@ -596,7 +701,7 @@ void Dialog::checkSettings()
     QCheckBox *boxs[3] {ui->chkFile, ui->chkFolder, ui->chkFolderBack};
     for (int i=0; i<3; i++)
     {
-        boxs[i]->setChecked(QSettings(QString::fromStdString(reg_keys[i]), QSettings::NativeFormat).contains("."));
+        boxs[i]->setChecked(QSettings(reg_keys[i], QSettings::NativeFormat).contains("."));
     }
 }
 
@@ -618,20 +723,20 @@ void Dialog::on_pBtnApply_2_clicked()
         if (box[type]->isChecked())
         {
             qout << "创建键:" << type;
-            QSettings settings(QString::fromStdString(reg_keys[type]), QSettings::NativeFormat);
+            QSettings settings(reg_keys[type], QSettings::NativeFormat);
             if (!settings.contains("."))
             {
                 settings.setValue(".", QString("复制路径"));
                 settings.setValue("Icon", QDir::toNativeSeparators(QDir().absoluteFilePath(icon_path)));
                 settings.beginGroup("command");
-                settings.setValue(".", QString::fromStdString(reg_keys[3]).arg(type==2?'V':'1'));
+                settings.setValue(".", reg_keys[3].arg(type==2?'V':'1'));
                 settings.endGroup();
             }
         }
         else
         {
             qout << "删除键:" << type;
-            QSettings settings(QString::fromStdString(reg_keys[type]), QSettings::NativeFormat);
+            QSettings settings(reg_keys[type], QSettings::NativeFormat);
             if (settings.contains("."))
             {
 //                if (settings.contains("command"))

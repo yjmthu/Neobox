@@ -92,7 +92,7 @@ void VARBOX::initFile()
         QFile::copy(QStringLiteral("://scripts/SetWallpaper.sh"), QStringLiteral("./Scripts/SetWallPaper.sh"));
     else
         fclose(shell_file);
-    constexpr char file[] = "SpeedBox.ini";
+    const QString file = QStringLiteral("SpeedBox.ini");
     qout << "配置文件目录" << file;
     QString picfolder { QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)) };
     QDir dir;
@@ -252,7 +252,7 @@ void VARBOX::initChildren()
         *const_cast<int *>(&ScreenHeight) = rect.height();
         form->keepInScreen();
     });
-    creatMarkdown(true);
+    creatMarkdown(MarkdownNote);
     creatTrayIcon(TuoPanIcon);
 }
 
@@ -267,7 +267,7 @@ void VARBOX::creatTrayIcon(bool create)
     if ((TuoPanIcon = create))
     {
         systemTrayIcon = new QSystemTrayIcon;
-        systemTrayIcon->setIcon(QIcon(":/icons/speedbox.ico"));
+        systemTrayIcon->setIcon(QIcon(QStringLiteral(":/icons/speedbox.ico")));
         QMenu *m_trayMenu = new QMenu;
         QAction *initAct = m_trayMenu->addAction(QStringLiteral("复原"));
         QAction *quitAct = m_trayMenu->addAction(QStringLiteral("退出"));
