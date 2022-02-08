@@ -275,6 +275,8 @@ void Dialog::initConnects()
         }
         formPart[index]->setStyleSheet(sheet[index].getString(index));
     });
+    connect(ui->cBxEnableMarkdown, &QCheckBox::clicked, VarBox, &VARBOX::creatMarkdown);
+    connect(ui->cBxEnableDesktopClock, &QCheckBox::clicked, VarBox, [](bool /*checked*/){});
     connect(ui->pBtnFormColor, &QPushButton::clicked, this, [=](){
         int index = ui->cBxFormPart->currentIndex();
         QString str("QPushButton{background-color:rgb(%1,%2,%3);border:1px solid black;border-radius:4px;}");
@@ -308,7 +310,7 @@ void Dialog::initConnects()
         YJson * temp;
         QString str("QPushButton{background-color:rgb(%1,%2,%3);border:1px solid black;border-radius:4px;}");
         switch (state) {
-        case Qt::Unchecked:
+        case Qt::Unchecked: // 背景
             temp = formFontJson->find("image");
             ui->lineMultyPath->setText(temp->getType() == YJson::Null ? "null" : temp->getValueString());
             ui->cBxSetBorder->setText(QStringLiteral("背景"));
@@ -317,12 +319,12 @@ void Dialog::initConnects()
             ui->sLdBorderRadius->setValue(sheet[index].bk_win);
             ui->label_5->setText(QStringLiteral("模糊"));
             ui->label_6->setText(QStringLiteral("背景"));
-            ui->label_12->setText(QStringLiteral("Win"));
+            ui->label_12->setText(QStringLiteral("玻璃"));
             ui->sLdFuzzy->setMaximum(99);
             ui->sLdFuzzy->setValue(sheet[index].bk_fuzzy);
-            ui->rBtnBorder->click();
+            my_on_border_radius(ui->rBtnBorder->isChecked());
             break;
-        case Qt::PartiallyChecked:
+        case Qt::PartiallyChecked:  //
             temp = formFontJson->find("user")->find((*formFontJson)["index"][index].getValueString())->find("family");
             ui->lineMultyPath->setText(temp->getType() == YJson::Null ? "null" : temp->getValueString());
             ui->cBxSetBorder->setText(QStringLiteral("字体"));
@@ -331,9 +333,10 @@ void Dialog::initConnects()
             ui->sLdBorderRadius->setValue(sheet[index].bd_radius);
             ui->label_5->setText(QStringLiteral("大小"));
             ui->label_6->setText(QStringLiteral("字体"));
+            ui->label_12->setText(QStringLiteral("圆角"));
             ui->sLdFuzzy->setMaximum(30);
             ui->sLdFuzzy->setValue(sheet[index].ft_size);
-            ui->rBtnBorder->click();
+            my_on_border_radius(ui->rBtnBorder->isChecked());
             break;
         case Qt::Checked:
             temp = formFontJson->find("image");
@@ -342,11 +345,12 @@ void Dialog::initConnects()
             ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(sheet[index].bd_red), QString::number(sheet[index].bd_green), QString::number(sheet[index].bd_blue)));
             ui->sLdTranparent->setValue(sheet[index].bd_alpha);
             ui->sLdBorderRadius->setValue(sheet[index].bd_radius);
-            ui->label_5->setText(QStringLiteral("宽度"));
+            ui->label_5->setText(QStringLiteral("粗细"));
             ui->label_6->setText(QStringLiteral("背景"));
+            ui->label_12->setText(QStringLiteral("圆角"));
             ui->sLdFuzzy->setMaximum(10);
             ui->sLdFuzzy->setValue(sheet[index].bd_width);
-            ui->rBtnBorder->click();
+            my_on_border_radius(ui->rBtnBorder->isChecked());
             break;
         default:
             break;
@@ -393,9 +397,9 @@ void Dialog::initConnects()
             ui->lineMultyPath->setText(temp->getType() == YJson::Null ? "null" : temp->getValueString());
             ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(sheet[index].bk_red), QString::number(sheet[index].bk_green), QString::number(sheet[index].bk_blue)));
             ui->sLdTranparent->setValue(sheet[index].bk_alpha);
-            ui->sLdBorderRadius->setValue(sheet[index].bd_radius);
+            ui->sLdBorderRadius->setValue(sheet[index].bk_win);
             ui->sLdFuzzy->setValue(sheet[index].bk_fuzzy);
-            ui->rBtnBorder->click();
+            my_on_border_radius(ui->rBtnBorder->isChecked());
             break;
         case Qt::PartiallyChecked:
             temp = formFontJson->find("user")->find((*formFontJson)["index"][index].getValueString())->find("family");
@@ -404,7 +408,7 @@ void Dialog::initConnects()
             ui->sLdTranparent->setValue(sheet[index].ft_alpha);
             ui->sLdBorderRadius->setValue(sheet[index].bd_radius);
             ui->sLdFuzzy->setValue(sheet[index].ft_size);
-            ui->rBtnBorder->click();
+            my_on_border_radius(ui->rBtnBorder->isChecked());
             break;
         case Qt::Checked:
             temp = formFontJson->find("image");
@@ -413,7 +417,7 @@ void Dialog::initConnects()
             ui->sLdTranparent->setValue(sheet[index].bd_alpha);
             ui->sLdBorderRadius->setValue(sheet[index].bd_radius);
             ui->sLdFuzzy->setValue(sheet[index].bd_width);
-            ui->rBtnBorder->click();
+            my_on_border_radius(ui->rBtnBorder->isChecked());
             break;
         default:
             break;
@@ -482,31 +486,7 @@ void Dialog::initConnects()
         }
         formPart[index]->setStyleSheet(sheet[index].getString(index));
     });
-    connect(ui->rBtnBorder, &QRadioButton::toggled, VarBox, [=](bool checked){
-        int index = ui->cBxFormPart->currentIndex();
-        const auto x = sheet[index].bd_have;
-        if (checked) {
-            ui->cBxEnableBorderRadius->setChecked(x & QStyleSheet::Border);
-            ui->cBxLeftBorderRadius->setChecked(x & QStyleSheet::Left);
-            ui->cBxRightBorderRadius->setChecked(x & QStyleSheet::Right);
-            ui->cBxTopBorderRadius->setChecked(x & QStyleSheet::Top);
-            ui->cBxBottomBorderRadius->setChecked(x & QStyleSheet::Bottom);
-            ui->cBxLeftBorderRadius->setText(QStringLiteral("左"));
-            ui->cBxRightBorderRadius->setText(QStringLiteral("右"));
-            ui->cBxTopBorderRadius->setText(QStringLiteral("上"));
-            ui->cBxBottomBorderRadius->setText(QStringLiteral("下"));
-        } else {
-            ui->cBxEnableBorderRadius->setChecked(x & QStyleSheet::BorderRadius);
-            ui->cBxLeftBorderRadius->setChecked(x & QStyleSheet::TopLeft);
-            ui->cBxRightBorderRadius->setChecked(x & QStyleSheet::BottomLeft);
-            ui->cBxTopBorderRadius->setChecked(x & QStyleSheet::TopRight);
-            ui->cBxBottomBorderRadius->setChecked(x & QStyleSheet::BottomRight);
-            ui->cBxLeftBorderRadius->setText(QStringLiteral("左上"));
-            ui->cBxRightBorderRadius->setText(QStringLiteral("左下"));
-            ui->cBxTopBorderRadius->setText(QStringLiteral("右上"));
-            ui->cBxBottomBorderRadius->setText(QStringLiteral("右下"));
-        }
-    });
+    connect(ui->rBtnBorder, &QRadioButton::toggled, this, &Dialog::my_on_border_radius);
     connect(ui->cBxEnableBorderRadius, &QCheckBox::clicked, VarBox, [=](bool checked){
         int index = ui->cBxFormPart->currentIndex();
         if (checked) {
@@ -1001,6 +981,32 @@ void Dialog::my_on_rBtnWallhavenApiDefault_clicked()
     YJson json("WallpaperApi.json", YJson::AUTO);
     ui->linePictuerPath->setText(json["Default"]["ApiData"][ui->cBxApis->currentIndex()]["Folder"].getValueString());
     connect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
+}
+
+void Dialog::my_on_border_radius(bool checked)
+{
+    const auto x = sheet[ui->cBxFormPart->currentIndex()].bd_have;
+    if (checked) {
+        ui->cBxEnableBorderRadius->setChecked(x & QStyleSheet::Border);
+        ui->cBxLeftBorderRadius->setChecked(x & QStyleSheet::Left);
+        ui->cBxRightBorderRadius->setChecked(x & QStyleSheet::Right);
+        ui->cBxTopBorderRadius->setChecked(x & QStyleSheet::Top);
+        ui->cBxBottomBorderRadius->setChecked(x & QStyleSheet::Bottom);
+        ui->cBxLeftBorderRadius->setText(QStringLiteral("左"));
+        ui->cBxRightBorderRadius->setText(QStringLiteral("右"));
+        ui->cBxTopBorderRadius->setText(QStringLiteral("上"));
+        ui->cBxBottomBorderRadius->setText(QStringLiteral("下"));
+    } else {
+        ui->cBxEnableBorderRadius->setChecked(x & QStyleSheet::BorderRadius);
+        ui->cBxLeftBorderRadius->setChecked(x & QStyleSheet::TopLeft);
+        ui->cBxRightBorderRadius->setChecked(x & QStyleSheet::BottomLeft);
+        ui->cBxTopBorderRadius->setChecked(x & QStyleSheet::TopRight);
+        ui->cBxBottomBorderRadius->setChecked(x & QStyleSheet::BottomRight);
+        ui->cBxLeftBorderRadius->setText(QStringLiteral("左上"));
+        ui->cBxRightBorderRadius->setText(QStringLiteral("左下"));
+        ui->cBxTopBorderRadius->setText(QStringLiteral("右上"));
+        ui->cBxBottomBorderRadius->setText(QStringLiteral("右下"));
+    }
 }
 
 void Dialog::my_on_rBtnWallhavenApiUser_clicked()

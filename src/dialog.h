@@ -60,6 +60,7 @@ private slots:
     void my_on_rBtnOtherApi_clicked();
     void my_on_cBxApis_currentTextChanged(const QString &arg1);
     void my_on_rBtnWallhavenApiDefault_clicked();
+    void my_on_border_radius(bool checked);
 };
 
 #endif // DIALOG_H

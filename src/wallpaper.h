@@ -66,6 +66,7 @@ public:
     void apply();
     void dislike();
     bool applyClicked = false;
+    void loadApi();
     inline bool isActive() const { return m_doing; };
     inline void kill() { m_doing = false; };
 

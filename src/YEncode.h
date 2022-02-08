@@ -13,8 +13,8 @@ constexpr uint32_t get_0x1s(const int i)
     return (1 << (8-i)) - 1;
 }
 
-template <class C1, class C2>
-bool utf8_to_utf16LE(C1 utf16, C2 utf8)
+template <class C1>
+bool utf8_to_utf16LE(C1 utf16, const char* utf8)
 {
     uint32_t unicode;
     uint8_t len;// bool double_wchar = false;
@@ -44,6 +44,42 @@ bool utf8_to_utf16LE(C1 utf16, C2 utf8)
             break;
         }
     } while (*++utf8);
+    utf16.push_back(0);
+    return true;
+}
+
+template <class C1>
+bool utf8_to_utf16LE(C1 utf16, const std::string& utf8)
+{
+    uint32_t unicode;
+    uint8_t len;// bool double_wchar = false;
+    std::string::const_iterator iter = utf8.begin();
+    do {
+        unicode = static_cast<unsigned char>(*iter);
+        if (unicode < 0x80) len = 1;
+        else if (unicode >> 6 == 0x2) return false;
+        else if (unicode < utf8FirstCharMark[3]) len = 2;
+        else if (unicode < utf8FirstCharMark[4]) len = 3;
+        else if (unicode < utf8FirstCharMark[5]) len = 4;
+        else if (unicode < utf8FirstCharMark[6]) len = 5;
+        else len = 6;
+        unicode &= get_0x1s(len);
+        switch (len) {
+        case 6: unicode <<= 6; unicode |= *(++iter) & 0x3F;
+        case 5: unicode <<= 6; unicode |= *(++iter) & 0x3F;
+        case 4: unicode <<= 6; unicode |= *(++iter) & 0x3F;
+        case 3: unicode <<= 6; unicode |= *(++iter) & 0x3F;
+        case 2: unicode <<= 6; unicode |= *(++iter) & 0x3F;
+        default:
+            if (len <= 3) {
+                utf16.push_back(unicode);
+                break;
+            }
+            utf16.push_back(utf16FirstWcharMark[0] | (unicode >> 10));
+            utf16.push_back(utf16FirstWcharMark[1] | (unicode & 0x3FF));
+            break;
+        }
+    } while (++iter != utf8.end());
     utf16.push_back(0);
     return true;
 }

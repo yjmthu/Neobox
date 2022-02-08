@@ -260,6 +260,7 @@ void VARBOX::initBehaviors()
 {
     form->show();                                                              //显示悬浮窗
     form->keepInScreen();
+    qout << "显示悬浮窗";
 }
 
 void VARBOX::creatTrayIcon(bool create)
@@ -289,7 +290,10 @@ void VARBOX::creatTrayIcon(bool create)
 void VARBOX::creatMarkdown(bool create)
 {
     if ((MarkdownNote = create)) {
-        m_note = new class MarkdownNote();
+        m_note = new class MarkdownNote;
+    } else {
+        delete m_note;
+        m_note = nullptr;
     }
 }
 

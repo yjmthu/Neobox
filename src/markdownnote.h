@@ -5,6 +5,8 @@
 
 class MarkdownNote: public QWidget
 {
+    Q_OBJECT
+
 protected:
     void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
@@ -12,9 +14,11 @@ protected:
 public:
     explicit MarkdownNote(QWidget* parent=nullptr);
     ~MarkdownNote();
+    void writePosition();
 private:
-    class DoorButton *door {nullptr};
+    QWidget *door {nullptr};
     QPoint m_ptPress;
+    void readPosition();
 };
 
 #endif // MARKDOWNNOTE_H

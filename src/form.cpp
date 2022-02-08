@@ -126,8 +126,7 @@ void Form::setupUi()
     YJson *ptr = js->find("user");
     YJson *js_ui[4] { ptr->find("frame"), ptr->find("labUp"), ptr->find("labDown"), ptr->find("labMemory")};
     QWidget* _ui[4] { frame, labUp, labDown, labMemory};
-    for (int i = 0; i < 4; i++)
-    {
+    for (int i = 0; i < 4; i++) {
         YJson* familyinfo = js_ui[i]->find("family");
         if (familyinfo->getType() == YJson::Null || !strcmp(familyinfo->getValueString(), "none") || !strcmp(familyinfo->getValueString(), "null") )
             continue;
@@ -141,8 +140,7 @@ void Form::setupUi()
     delete js;
 
     std::ifstream file(".speed-box", std::ios::in | std::ios::binary);
-    if (file.is_open())
-    {
+    if (file.is_open()) {
         QPoint pt;
         file.read(reinterpret_cast<char*>(&pt), sizeof (QPoint));
         file.close();
@@ -174,11 +172,11 @@ void Form::loadStyle()
             qout << sheet[3].getString("QLabel");  */
     } else {
         sheet = new QStyleSheet[4]
-        { /*{bk r    g    b   a    ft   r    g    b    a   bd  r  g  b  a   b   w  r fuz si win 0  0  0 }*/
-            { 255, 255, 255, 80, /**/   0,   0,   0,   0, /**/ 0, 0, 0, 0, /**/ 0, 3, 0,  1, 0, QStyleSheet::TheAround, 0, 0 },
-            {   0,   0,   0,  0, /**/   0, 255, 255, 255, /**/ 0, 0, 0, 0, /**/ 0, 3, 0, 17, 0, QStyleSheet::TheLeft, 0, 0 },
-            {   0,   0,   0,  0, /**/ 250, 170,  35, 255, /**/ 0, 0, 0, 0, /**/ 0, 3, 0,  8, 0, QStyleSheet::TheTopRight, 0, 0 },
-            {   0,   0,   0,  0, /**/ 140, 240,  30, 255, /**/ 0, 0, 0, 0, /**/ 0, 3, 0,  8, 0, QStyleSheet::TheBottomRight, 0, 0 }
+        { /*{bk r    g    b   a    ft   r    g    b    a   bd  r  g  b  a   b   w  r fuz si win                            0  0  0 }*/
+            { 255, 255, 255, 80, /**/   0,   0,   0,   0, /**/ 0, 0, 0, 0, /**/ 0, 3, 0,  1, 80,      QStyleSheet::TheAround, 0, 0 },
+            {   0,   0,   0,  0, /**/   0, 255, 255, 255, /**/ 0, 0, 0, 0, /**/ 0, 3, 0, 17,  0,        QStyleSheet::TheLeft, 0, 0 },
+            {   0,   0,   0,  0, /**/ 250, 170,  35, 255, /**/ 0, 0, 0, 0, /**/ 0, 3, 0,  8,  0,    QStyleSheet::TheTopRight, 0, 0 },
+            {   0,   0,   0,  0, /**/ 140, 240,  30, 255, /**/ 0, 0, 0, 0, /**/ 0, 3, 0,  8,  0, QStyleSheet::TheBottomRight, 0, 0 }
         };
         QStyleSheet::toFile(sheet);
     }
@@ -187,7 +185,7 @@ void Form::loadStyle()
     labUp->setStyleSheet(sheet[2].getString(true));
     labDown->setStyleSheet(sheet[3].getString(true));
 
-    SystemFunctions::SetWindowCompositionAttribute(HWND(winId()), ACCENT_STATE::ACCENT_ENABLE_BLURBEHIND, (sheet->bk_fuzzy << 24) & RGB(sheet->bk_red,sheet->bk_green,sheet->bk_blue));
+    SystemFunctions::SetWindowCompositionAttribute(HWND(winId()), ACCENT_STATE::ACCENT_ENABLE_BLURBEHIND, (sheet->bk_win << 24) & RGB(sheet->bk_red, sheet->bk_green, sheet->bk_blue));
     delete [] sheet;
 }
 
@@ -217,17 +215,14 @@ void Form::initConnects()
 
 void Form::set_wallpaper_fail(const char* str)
 {
-    if (VarBox->dialog)
-    {
+    if (VarBox->dialog) {
         if (VarBox->dialog->isVisible())
             VarBox->dialog->setWindowState(Qt::WindowActive | Qt::WindowNoState);    // 让窗口从最小化恢复正常并激活窗口
             //d->activateWindow();
             //d->raise();
         else
             VarBox->dialog->show();
-    }
-    else
-    {
+    } else {
         *const_cast<Dialog**>(&(VarBox->dialog)) = new Dialog;
         VarBox->dialog->show();
     }
@@ -240,8 +235,7 @@ char FirstDriveFromMask (ULONG unitmask)
 {
     char i;
 
-    for (i = 0; i < 26; ++i)
-    {
+    for (i = 0; i < 26; ++i) {
         if (unitmask & 0x1)
             break;
         unitmask = unitmask >> 1;

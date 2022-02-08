@@ -1,5 +1,7 @@
 #include "markdownnote.h"
 
+#include <fstream>
+
 #include <QLabel>
 #include <QMouseEvent>
 #include <QPushButton>
@@ -23,6 +25,7 @@ protected:
             if (!m_moved) m_book->setVisible(!m_book->isVisible());
             else m_moved = false;
         }
+        m_book->writePosition();
         event->accept();
     }
     void mouseMoveEvent(QMouseEvent *event) {
@@ -46,15 +49,15 @@ public:
     DoorButton(MarkdownNote* book): QWidget(nullptr), m_book(book) {
         setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnBottomHint | Qt::Tool);
         setAttribute(Qt::WA_TranslucentBackground);
-        setMinimumSize(64, 64);
-        setMaximumSize(64, 64);
+        setMinimumSize(48, 48);
+        setMaximumSize(48, 48);
         m_labImage = new QLabel(this);
         m_labImage->setGeometry(0, 0, width(), height());
         m_labImage->setStyleSheet(
             QStringLiteral("QLabel{background-color:rgba(100,100,100,100);border-image:url(:/icons/checklist.ico);}")
         );
     }
-    ~DoorButton() {
+    virtual ~DoorButton() {
         //
     }
 private:
@@ -78,6 +81,7 @@ void MarkdownNote::mouseReleaseEvent(QMouseEvent *event)
     if (event->button() == Qt::LeftButton) {
         setMouseTracking(false);
     }
+    writePosition();
     event->accept();
 }
 
@@ -99,13 +103,41 @@ MarkdownNote::MarkdownNote(QWidget* parent):
     hlayout->addWidget(frame);
     frame->setStyleSheet(QStringLiteral("QFrame{border-radius:6px;background-color:rgba(100,100,100,100);}"));
     door = new DoorButton(this);
-    setMinimumSize(300,300);
-    setMaximumSize(300,300);
-    door->move(100, 100);
+    setMinimumSize(300, 300);
+    setMaximumSize(300, 300);
+    readPosition();
     door->show();
 }
 
 MarkdownNote::~MarkdownNote()
 {
     delete door;
+}
+
+void MarkdownNote::readPosition()
+{
+    QPoint pts[2];
+    std::ifstream file(".markdown-note", std::ios::in | std::ios::binary);
+    if (file.is_open())
+    {
+        file.read(reinterpret_cast<char *>(pts), sizeof (QPoint) * 2);
+        door->move(pts[0]);
+        this->move(pts[1]);
+        file.close();
+    } else {
+        door->move(100, 100);
+    }
+}
+
+void MarkdownNote::writePosition()
+{
+    QPoint pts[2] { door->pos(), this->pos() };
+    std::ofstream file(".markdown-note", std::ios::out | std::ios::binary);
+    if (file.is_open())
+    {
+        file.write(reinterpret_cast<const char *>(pts), sizeof (QPoint) * 2);
+        file.close();
+    } else {
+        // 失败
+    }
 }

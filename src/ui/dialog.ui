@@ -710,7 +710,7 @@
                <item>
                 <widget class="QLabel" name="label_12">
                  <property name="text">
-                  <string>圆角</string>
+                  <string>玻璃</string>
                  </property>
                 </widget>
                </item>
@@ -817,7 +817,7 @@
             </property>
             <layout class="QHBoxLayout" name="horizontalLayout_6">
              <item>
-              <widget class="QCheckBox" name="checkBox_4">
+              <widget class="QCheckBox" name="cBxEnableMarkdown">
                <property name="text">
                 <string>Markdown笔记</string>
                </property>
@@ -831,7 +831,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QCheckBox" name="checkBox_6">
+              <widget class="QCheckBox" name="cBxEnableDesktopClock">
                <property name="text">
                 <string>桌面时钟</string>
                </property>

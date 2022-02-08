@@ -1,4 +1,4 @@
-﻿#ifndef YSTRING_H
+﻿#ifndef YSTRIHG_H
 #define YSTRIHG_H
 
 #include <vector>

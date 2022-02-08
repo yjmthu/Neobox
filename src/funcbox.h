@@ -34,18 +34,18 @@ public:
     bool EnableTranslater { false }, AutoHide { false };
     bool enableUSBhelper { true };  // enableUSBhelper
     QString PathToOpen;                //右键要打开的文件夹
-    bool MarkdownNote {false}, DesktopClock {false}, TuoPanIcon {false};
+    bool MarkdownNote { false }, DesktopClock { false }, TuoPanIcon { false };
 
     const int ScreenWidth, ScreenHeight;                  //屏幕宽高
 
-    class Form* const form {nullptr}; class Dialog* const dialog {nullptr};
-    class MarkdownNote *m_note {nullptr};
+    class Form* const form { nullptr }; class Dialog* const dialog { nullptr };
+    class MarkdownNote* m_note { nullptr };
 
-    std::function<bool(const wchar_t*)> PathFileExists = nullptr;
-    VARBOX(int, int);
+    std::function<bool(const wchar_t*)> PathFileExists { nullptr };
+    explicit VARBOX(int, int);
     ~VARBOX();
-    class Wallpaper* wallpaper {nullptr};                          //壁纸处理类
-    class QSystemTrayIcon *systemTrayIcon {nullptr};
+    class Wallpaper* wallpaper { nullptr };                          //壁纸处理类
+    class QSystemTrayIcon *systemTrayIcon { nullptr };
 
     void sigleSave(QString group, QString key, QString value);
     static QByteArray runCmd(const QString & program, const QStringList& argument, short line);
