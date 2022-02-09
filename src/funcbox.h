@@ -9,6 +9,7 @@
 #include <QString>
 #include <QDebug>
 #include <QMessageBox>
+#include <QTextCodec>
 
 #ifdef Q_OS_WIN
 #include <Windows.h>
@@ -34,12 +35,12 @@ public:
     bool EnableTranslater { false }, AutoHide { false };
     bool enableUSBhelper { true };  // enableUSBhelper
     QString PathToOpen;                //右键要打开的文件夹
-    bool MarkdownNote { false }, DesktopClock { false }, TuoPanIcon { false };
+    bool m_MarkdownNote { false }, m_DesktopClock { false }, m_TuoPanIcon { false };
 
     const int ScreenWidth, ScreenHeight;                  //屏幕宽高
 
     class Form* const form { nullptr }; class Dialog* const dialog { nullptr };
-    class MarkdownNote* m_note { nullptr };
+    class MarkdownNote* m_note { nullptr }; class DesktopClock* m_clock { nullptr };
 
     std::function<bool(const wchar_t*)> PathFileExists { nullptr };
     explicit VARBOX(int, int);
@@ -47,15 +48,22 @@ public:
     class Wallpaper* wallpaper { nullptr };                          //壁纸处理类
     class QSystemTrayIcon *systemTrayIcon { nullptr };
 
-    void sigleSave(QString group, QString key, QString value);
     static QByteArray runCmd(const QString & program, const QStringList& argument, short line);
-
+    template<class _Ty>
+    static void saveOneSet(const QString& group, const QString& key, _Ty val) {
+        class QSettings IniRead(QStringLiteral("SpeedBox.ini"), QSettings::IniFormat);
+        IniRead.setIniCodec(QTextCodec::codecForName("UTF-8"));
+        IniRead.beginGroup(group);
+        IniRead.setValue(key, val);
+        IniRead.endGroup();
+    }
     uint32_t getVersion(const char* A);
 public slots:
     static void MSG(const char* text, const char* title="提示", QMessageBox::StandardButtons buttons=QMessageBox::Ok);
     static void openDirectory(const QString& dir);
-    void creatTrayIcon(bool create);
-    void creatMarkdown(bool create);
+    void createTrayIcon(bool create);
+    void createMarkdown(bool create);
+    void createDesktopClock(bool create);
 private:
      friend class Form;
      void initFile();

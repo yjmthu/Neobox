@@ -63,6 +63,7 @@ SOURCES += \
     bingsetting.cpp \
     blankform.cpp \
     calculator.cpp \
+    desktopclock.cpp \
     downloadprogress.cpp \
     gmpoperatetip.cpp \
     main.cpp \
@@ -85,6 +86,7 @@ HEADERS += \
     bingsetting.h \
     blankform.h \
     calculator.h \
+    desktopclock.h \
     dialog.h \
     downloadprogress.h \
     form.h \

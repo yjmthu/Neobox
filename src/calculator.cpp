@@ -31,23 +31,7 @@ Calculator::~Calculator()
 
 void Calculator::showEvent(QShowEvent* event)
 {   
-#ifdef Q_OS_WIN
-    int x, y;
-    RECT rt;
-    int w = (GetWindowRect(HWND(winId()), &rt), rt.right - rt.left), h = (rt.bottom - rt.top), sw = GetSystemMetrics(SM_CXSCREEN);
-    GetWindowRect(HWND(VarBox->form->winId()), &rt);
-    if (rt.top > h)
-        y = rt.top - h;
-    else
-        y = rt.bottom;
-    if (rt.left + rt.right + w > sw * 2)
-        x = sw - w;
-    else if (rt.right + rt.left < w)
-        x = 0;
-    else
-        x = (rt.left + rt.right - w) / 2;
-    SetWindowPos(HWND(winId()), HWND_TOPMOST, x, y, 0, 0, SWP_NOSIZE);
-#elif defined (Q_OS_LINUX)
+
     int x, y;
     QRect rt=VarBox->form->geometry();
     if (rt.top() > height())
@@ -61,7 +45,6 @@ void Calculator::showEvent(QShowEvent* event)
     else
         x = (rt.left() + rt.right() - width()) / 2;
     move(x, y);
-#endif
 
     QTextCursor&& cursor = ui->plainTextEdit->textCursor();
     cursor.movePosition(QTextCursor::End);

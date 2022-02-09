@@ -14,10 +14,10 @@ class USBdriveHelper : public SpeedWidget<QDialog>
 {
     Q_OBJECT
 signals:
-    void appQuit();
+    void appQuit(unsigned index);
 protected:
 #if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
-          void enterEvent(QEvent* event);
+    void enterEvent(QEvent* event);
 #else
           void enterEvent(QEnterEvent* event);
 #endif
@@ -26,12 +26,14 @@ protected:
     void closeEvent(QCloseEvent *event);
 
 public:
-    explicit USBdriveHelper(char U, QWidget *parent = nullptr);
+    USBdriveHelper(char U, unsigned index, std::vector<USBdriveHelper*>* vectorPtr, QWidget *parent = nullptr);
     ~USBdriveHelper();
+    unsigned m_index;
+    std::vector<USBdriveHelper*>* m_vectorPtr { nullptr };
+    std::string diskId;
 
 private:
     Ui::USBdriveHelper *ui;
-    std::vector<char*> pans;
     QWidget* widget;
 };
 

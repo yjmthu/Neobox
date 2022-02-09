@@ -28,20 +28,14 @@ bool utf8_to_utf16LE(C1 utf16, const char* utf8)
         else if (unicode < utf8FirstCharMark[6]) len = 5;
         else len = 6;
         unicode &= get_0x1s(len);
-        switch (len) {
-        case 6: unicode <<= 6; unicode |= *(++utf8) & 0x3F;
-        case 5: unicode <<= 6; unicode |= *(++utf8) & 0x3F;
-        case 4: unicode <<= 6; unicode |= *(++utf8) & 0x3F;
-        case 3: unicode <<= 6; unicode |= *(++utf8) & 0x3F;
-        case 2: unicode <<= 6; unicode |= *(++utf8) & 0x3F;
-        default:
-            if (len <= 3) {
-                utf16.push_back(unicode);
-                break;
-            }
+        for (auto i=len; --i;) {
+            unicode <<= 6; unicode |= *(++utf8) & 0x3F;
+        }
+        if (len <= 3) {
+            utf16.push_back(unicode);
+        } else {
             utf16.push_back(utf16FirstWcharMark[0] | (unicode >> 10));
             utf16.push_back(utf16FirstWcharMark[1] | (unicode & 0x3FF));
-            break;
         }
     } while (*++utf8);
     utf16.push_back(0);
@@ -52,7 +46,7 @@ template <class C1>
 bool utf8_to_utf16LE(C1 utf16, const std::string& utf8)
 {
     uint32_t unicode;
-    uint8_t len;// bool double_wchar = false;
+    uint8_t len;
     std::string::const_iterator iter = utf8.begin();
     do {
         unicode = static_cast<unsigned char>(*iter);
@@ -64,20 +58,14 @@ bool utf8_to_utf16LE(C1 utf16, const std::string& utf8)
         else if (unicode < utf8FirstCharMark[6]) len = 5;
         else len = 6;
         unicode &= get_0x1s(len);
-        switch (len) {
-        case 6: unicode <<= 6; unicode |= *(++iter) & 0x3F;
-        case 5: unicode <<= 6; unicode |= *(++iter) & 0x3F;
-        case 4: unicode <<= 6; unicode |= *(++iter) & 0x3F;
-        case 3: unicode <<= 6; unicode |= *(++iter) & 0x3F;
-        case 2: unicode <<= 6; unicode |= *(++iter) & 0x3F;
-        default:
-            if (len <= 3) {
-                utf16.push_back(unicode);
-                break;
-            }
+        for (auto i=len; --i;) {
+            unicode <<= 6; unicode |= *(++iter) & 0x3F;
+        }
+        if (len <= 3) {
+            utf16.push_back(unicode);
+        } else {
             utf16.push_back(utf16FirstWcharMark[0] | (unicode >> 10));
             utf16.push_back(utf16FirstWcharMark[1] | (unicode & 0x3FF));
-            break;
         }
     } while (++iter != utf8.end());
     utf16.push_back(0);
@@ -104,14 +92,10 @@ bool utf16LE_to_utf8(C1 utf8, C2 utf16)
         else len = 3;                          // 16位以内，3字节
         utf8.resize(utf8.size() + len);
         auto ptr = utf8.end();
-        switch (len) {
-        case 6: *--ptr = 0x80 | (unicode & 0x3F); unicode >>= 6;
-        case 5: *--ptr = 0x80 | (unicode & 0x3F); unicode >>= 6;
-        case 4: *--ptr = 0x80 | (unicode & 0x3F); unicode >>= 6;
-        case 3: *--ptr = 0x80 | (unicode & 0x3F); unicode >>= 6;
-        case 2: *--ptr = 0x80 | (unicode & 0x3F); unicode >>= 6;
-        default: *--ptr = utf8FirstCharMark[len] | unicode;
+        for (auto i=len; --i;) {
+            *--ptr = 0x80 | (unicode & 0x3F); unicode >>= 6;
         }
+        *--ptr = utf8FirstCharMark[len] | unicode;
     } while (*++utf16);
     utf8.push_back(0);
     return true;

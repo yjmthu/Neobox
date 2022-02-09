@@ -22,14 +22,14 @@
 
 typedef unsigned char byte;
 
-constexpr byte utf8bom[] = {0xEF, 0xBB, 0xBF};
-constexpr byte utf16le[] = {0xFF, 0xFE};
-
 inline const char* goEnd(const char* begin)
 {
     while (*begin) ++begin;
     return begin;
 }
+
+const unsigned char YJson::utf8bom[] = {0xEF, 0xBB, 0xBF};
+const unsigned char YJson::utf16le[] = {0xFF, 0xFE};
 
 std::pair<bool, std::string> YJson::ep = std::pair<bool, std::string>(false, std::string());
 
@@ -114,7 +114,7 @@ void YJson::loadFile(std::ifstream& file)
             std::vector<char> json_vector;
             json_vector.resize(size + 1);
             json_vector[size] = 0;
-            file.read(reinterpret_cast<char*>(&json_vector[0]), size);
+            file.read(&json_vector.front(), size);
             file.close();
             strict_parse(json_vector.cbegin(), json_vector.cend());
         }
@@ -596,7 +596,7 @@ bool YJson::toFile(const std::string name, const YJson::Encode& file_encode, boo
     if (buffer)
     {
         switch (file_encode) {
-        case (YJson::UTF16):
+        case (YJson::UTF16LE):
         {
             //std::cout << "UTF-16" << u8"保存开始。";
             std::wstring data;
@@ -663,7 +663,7 @@ void YJson::loadFile(const std::string &path, YJson::Encode encode)
     case YJson::UTF8:
     {
         // qout << "UTF8";
-        byte bom[3] {0};
+        unsigned char bom[3] {0};
         if (!(file.read(reinterpret_cast<char*>(bom), 3)))
         {
             file.close();
@@ -687,7 +687,7 @@ void YJson::loadFile(const std::string &path, YJson::Encode encode)
         strict_parse(json_vector.cbegin(), json_vector.cend());
         break;
     }
-    case YJson::UTF16BOM:
+    case YJson::UTF16LEBOM:
     {
         // qout << "UTF16BOM";
         file.seekg(2, std::ios::beg);
@@ -698,9 +698,9 @@ void YJson::loadFile(const std::string &path, YJson::Encode encode)
         strict_parse(json_vector.cbegin(), json_vector.cend());
         break;
     }
-    case YJson::UTF16:
+    case YJson::UTF16LE:
     {
-        byte bom[2] {0};
+        unsigned char bom[2] {0};
         if (!(file.read(reinterpret_cast<char*>(bom), 2)))
         {
             file.close();

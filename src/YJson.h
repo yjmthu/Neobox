@@ -11,7 +11,7 @@ protected:
 
 public:
     enum Type { False, True, Null, Number, String, Array, Object };
-    enum Encode { AUTO, UTF8, UTF8BOM, UTF16, UTF16BOM, OTHER };
+    enum Encode { AUTO, ANSI, UTF8, UTF8BOM, UTF16LE, UTF16LEBOM, UTF16BE, UTF16BEBOM, OTHER };
 
     inline explicit YJson(Type type):_type(static_cast<Type>(type)) { };
     inline YJson(const YJson& js): _type(js._type), _value(js._value) { CopyJson(&js, nullptr); }
@@ -102,6 +102,8 @@ public:
     iterator end() { return nullptr; }
 
 private:
+    static const unsigned char utf8bom[];
+    static const unsigned char utf16le[];
     YJson::Type _type = YJson::Null;
     YJson *_next = nullptr,*_prev = nullptr, *_child = nullptr, *_parent = nullptr;
     char *_key = nullptr, *_value = nullptr;

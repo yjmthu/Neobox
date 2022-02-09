@@ -1149,72 +1149,25 @@
             <property name="title">
              <string>翻译设置</string>
             </property>
-            <layout class="QHBoxLayout" name="horizontalLayout_26"/>
-           </widget>
-          </item>
-          <item>
-           <widget class="QGroupBox" name="groupBox_16">
-            <property name="title">
-             <string>皮肤设置</string>
-            </property>
-            <layout class="QHBoxLayout" name="horizontalLayout_8">
+            <layout class="QHBoxLayout" name="horizontalLayout_26">
              <item>
-              <widget class="QComboBox" name="comboBox_3">
-               <property name="cursor">
-                <cursorShape>OpenHandCursor</cursorShape>
+              <widget class="QCheckBox" name="cBxEnableFanyier">
+               <property name="text">
+                <string>启用翻译</string>
                </property>
-               <item>
-                <property name="text">
-                 <string>经典白</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>优雅灰</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>神秘紫</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>热情红</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>清新绿</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>道奇蓝</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>咖啡褐</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>暗夜黑</string>
-                </property>
-               </item>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="pushButton_5">
-               <property name="cursor">
-                <cursorShape>PointingHandCursor</cursorShape>
-               </property>
-               <property name="toolTip">
-                <string>*应用并保存皮肤</string>
-               </property>
+              <widget class="QCheckBox" name="cBxFanyierShiftZ">
                <property name="text">
-                <string>确认</string>
+                <string>Shift+Z显示界面</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="cBxFanyierShiftA">
+               <property name="text">
+                <string>Shift+A隐藏界面</string>
                </property>
               </widget>
              </item>
@@ -1293,6 +1246,75 @@
                  </property>
                  <property name="text">
                   <string>应用</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupBox_16">
+              <property name="title">
+               <string>皮肤设置</string>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_8">
+               <item>
+                <widget class="QComboBox" name="comboBox_3">
+                 <property name="cursor">
+                  <cursorShape>OpenHandCursor</cursorShape>
+                 </property>
+                 <item>
+                  <property name="text">
+                   <string>经典白</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>优雅灰</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>神秘紫</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>热情红</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>清新绿</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>道奇蓝</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>咖啡褐</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>暗夜黑</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="pushButton_5">
+                 <property name="cursor">
+                  <cursorShape>PointingHandCursor</cursorShape>
+                 </property>
+                 <property name="toolTip">
+                  <string>*应用并保存皮肤</string>
+                 </property>
+                 <property name="text">
+                  <string>确认</string>
                  </property>
                 </widget>
                </item>

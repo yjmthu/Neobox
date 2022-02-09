@@ -39,7 +39,7 @@ protected:
     BlankFrom *blank = nullptr;
 
 public:
-    explicit SpeedWidget(QWidget *parent = nullptr);
+    SpeedWidget(QWidget *parent = nullptr);
     ~SpeedWidget();
 
 private:

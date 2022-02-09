@@ -148,6 +148,7 @@ void Menu::initMenuConnect()
     connect(actions+8, &QAction::triggered, VarBox, [](){system("reboot");});
 #endif
     connect(actions+9, &QAction::triggered, qApp, &QCoreApplication::quit);            // 退出程序
+#ifdef Q_OS_WIN32
     connect(actions+10, &QAction::triggered, VarBox, [=](bool checked){
         if ((keepScreenOn = checked))                                                                   //启用自动移动鼠标
         {
@@ -156,4 +157,9 @@ void Menu::initMenuConnect()
             SetThreadExecutionState(ES_CONTINUOUS);
         }
     });
+#elif defined Q_OS_LINUX
+    connect(actions+10, &QAction::triggered, VarBox, [=](bool){
+        QMessageBox::information(nullptr, "提示", "Linux下不支持哦！");
+    });
+#endif
 }

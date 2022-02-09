@@ -30,6 +30,7 @@
 #include "wallpaper.h"
 #include "dialog.h"
 #include "markdownnote.h"
+#include "desktopclock.h"
 
 
 //wchar_t* GetCorrectUnicode(const QByteArray &ba)
@@ -74,6 +75,7 @@ VARBOX::~VARBOX()
 {
     qout << "结构体析构中~";
     delete systemTrayIcon;
+    delete m_clock;
     delete m_note;
     delete form;
     qout << "析构任务栏类";
@@ -184,14 +186,14 @@ label_2:
             unsigned safeEnum = IniRead->value(QStringLiteral("ColorTheme")).toInt();
             if (safeEnum > 7) safeEnum = 0;
             Dialog::curTheme = static_cast<Dialog::Theme>(safeEnum);
-            TuoPanIcon = IniRead->value(QStringLiteral("TuoPanIcon"), false).toBool();
+            m_TuoPanIcon = IniRead->value(QStringLiteral("TuoPanIcon"), false).toBool();
             IniRead->endGroup();
             IniRead->beginGroup(QStringLiteral("USBhelper"));
             enableUSBhelper = IniRead->value(QStringLiteral("enableUSBhelper"), enableUSBhelper).toBool();
             IniRead->endGroup();
             IniRead->beginGroup("Apps");
-            MarkdownNote = IniRead->value(QStringLiteral("MarkdownNote"), false).toBool();
-            DesktopClock = IniRead->value(QStringLiteral("DesktopClock"), false).toBool();
+            m_MarkdownNote = IniRead->value(QStringLiteral("MarkdownNote"), false).toBool();
+            m_DesktopClock = IniRead->value(QStringLiteral("DesktopClock"), false).toBool();
             IniRead->endGroup();
             delete IniRead;
             qout << "读取设置完毕。";
@@ -201,7 +203,7 @@ label_3:
             if (!dir.exists(PathToOpen) && !dir.mkdir(PathToOpen))
             {
                 PathToOpen = QDir::toNativeSeparators(qApp->applicationDirPath());
-                sigleSave("Dirs", "OpenDir", PathToOpen);
+                saveOneSet(QStringLiteral("Dirs"), QStringLiteral("OpenDir"), PathToOpen);
             }
         }
     const std::string apifile = "WallpaperApi.json";
@@ -218,13 +220,13 @@ label_3:
         std::vector<QString>::const_iterator iter = lst.begin();
         YJson json(apifile+".temp", YJson::UTF8);
         for (auto&c: json["Default"]["ApiData"])
-            c["Folder"].setText(QDir::toNativeSeparators((picfolder+"/"+*iter++)).toUtf8());
+            c["Folder"].setText(QDir::toNativeSeparators((picfolder+"/"+*iter++)).toStdString());
         for (auto&c: json["User"]["ApiData"])
             c["Folder"].setText(QDir::toNativeSeparators(picfolder+"/"+*iter).toUtf8());
-        json["BingApi"]["Folder"].setText(QDir::toNativeSeparators(picfolder+"/"+*++iter).toUtf8());
+        json["BingApi"]["Folder"].setText(QDir::toNativeSeparators(picfolder+"/"+*++iter).toStdString());
         for (auto&c: json["OtherApi"]["ApiData"])
         {
-            c["Folder"].setText(QDir::toNativeSeparators(picfolder+"/"+c.getKeyString()).toUtf8());
+            c["Folder"].setText(QDir::toNativeSeparators(picfolder+"/"+c.getKeyString()).toStdString());
             dir.mkdir(c["Folder"].getValueString());
         }
         json.toFile(apifile, YJson::UTF8, true);
@@ -236,9 +238,7 @@ void VARBOX::initChildren()
 {
     qout << "开始创建基本成员";
     wallpaper = new Wallpaper;                           // 创建壁纸更换对象
-    qout << "悬浮窗";
     Form* form = new Form;
-    qout << "基本成员创建完毕!";
 #ifdef Q_OS_WIN
     static APPBARDATA abd { 0,0,0,0,{0,0,0,0},0 };
     abd.cbSize = sizeof(APPBARDATA);
@@ -252,20 +252,20 @@ void VARBOX::initChildren()
         *const_cast<int *>(&ScreenHeight) = rect.height();
         form->keepInScreen();
     });
-    creatMarkdown(MarkdownNote);
-    creatTrayIcon(TuoPanIcon);
+    createMarkdown(m_MarkdownNote);
+    createTrayIcon(m_TuoPanIcon);
+    createDesktopClock(m_DesktopClock);
 }
 
 void VARBOX::initBehaviors()
 {
     form->show();                                                              //显示悬浮窗
     form->keepInScreen();
-    qout << "显示悬浮窗";
 }
 
-void VARBOX::creatTrayIcon(bool create)
+void VARBOX::createTrayIcon(bool create)
 {
-    if ((TuoPanIcon = create))
+    if ((m_TuoPanIcon = create))
     {
         systemTrayIcon = new QSystemTrayIcon;
         systemTrayIcon->setIcon(QIcon(QStringLiteral(":/icons/speedbox.ico")));
@@ -280,30 +280,30 @@ void VARBOX::creatTrayIcon(bool create)
         delete systemTrayIcon;
         systemTrayIcon = nullptr;
     }
-    QSettings *IniRead = new QSettings(QStringLiteral("SpeedBox.ini"), QSettings::IniFormat);
-    IniRead->setIniCodec(QTextCodec::codecForName("UTF-8"));
-    IniRead->beginGroup(QStringLiteral("UI"));
-    IniRead->setValue(QStringLiteral("TuoPanIcon"), create);
-    IniRead->endGroup();
+    saveOneSet<bool>(QStringLiteral("UI"), QStringLiteral("TuoPanIcon"), create);
 }
 
-void VARBOX::creatMarkdown(bool create)
+void VARBOX::createMarkdown(bool create)
 {
-    if ((MarkdownNote = create)) {
-        m_note = new class MarkdownNote;
+    if ((m_MarkdownNote = create)) {
+        m_note = new MarkdownNote;
     } else {
         delete m_note;
         m_note = nullptr;
     }
+    saveOneSet<bool>(QStringLiteral("Apps"), QStringLiteral("MarkdownNote"), create);
 }
 
-void VARBOX::sigleSave(QString group, QString key, QString value)
+void VARBOX::createDesktopClock(bool create)
 {
-    QSettings IniWrite(QStringLiteral("SpeedBox.ini"), QSettings::IniFormat);
-    IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    IniWrite.beginGroup(group);
-    IniWrite.setValue(key, value);
-    IniWrite.endGroup();
+    if ((m_DesktopClock = create)) {
+        m_clock = new DesktopClock;
+        m_clock->show();
+    } else {
+        delete m_clock;
+        m_clock = nullptr;
+    }
+    saveOneSet<bool>(QStringLiteral("Apps"), QStringLiteral("DesktopClock"), create);
 }
 
 QByteArray VARBOX::runCmd(const QString& program, const QStringList& argument, short line)
@@ -334,6 +334,7 @@ void VARBOX::openDirectory(const QString& dir)
 #endif
 }
 
+
 char _getINT(const char* &X)
 {
     unsigned char x = 0;
@@ -363,3 +364,4 @@ void VARBOX::MSG(const char *text, const char* title, QMessageBox::StandardButto
     qss.close();
     message.exec();
 }
+

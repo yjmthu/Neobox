@@ -37,12 +37,11 @@ std::string AnsiToUtf8(const std::string& strAnsi)//传入的strAnsi是GBK编码
 
     //unicode转UTF-8
     len = WideCharToMultiByte(CP_UTF8, 0, strUnicode, -1, NULL, 0, NULL, NULL);
-    char * strUtf8 = new char[len];
-    WideCharToMultiByte(CP_UTF8, 0, strUnicode, -1, strUtf8, len, NULL, NULL);
+    //char * strUtf8 = new char[len];
+    std::string strTemp(len, '\0');
+    WideCharToMultiByte(CP_UTF8, 0, strUnicode, -1, &strTemp.front(), len, NULL, NULL);
 
-    std::string strTemp(strUtf8);    //此时的strTemp是UTF-8编码
     delete[] strUnicode;
-    delete[] strUtf8;
     return strTemp;
 }
 
@@ -56,13 +55,10 @@ std::string Utf8ToAnsi(const std::string& strUtf8)//传入的strUtf8是UTF-8编�
 
     //unicode转gbk
     len = WideCharToMultiByte(CP_ACP, 0, strUnicode, -1, NULL, 0, NULL, NULL);
-    char *strAnsi = new char[len]; //len=3 本来为2，但是char*后面自动加上了\0
-    memset(strAnsi, 0, len);
-    WideCharToMultiByte(CP_ACP,0, strUnicode, -1, strAnsi, len, NULL, NULL);
+    std::string strTemp(len, 0);//此时的strTemp是GBK编码
+    WideCharToMultiByte(CP_ACP,0, strUnicode, -1, &strTemp.front(), len, NULL, NULL);
 
-    std::string strTemp(strAnsi);//此时的strTemp是GBK编码
     delete[] strUnicode;
-    delete[] strAnsi;
     return strTemp;
 }
 #endif
@@ -221,12 +217,9 @@ bool Wallpaper::systemParametersInfo(const std::wstring &path)
 
 void Wallpaper::_set_w(YJson* jsonArray)
 {
-    qout << "智能设置壁纸开始.";
-
     if (jsonArray->getChild())
     {
         int pic_num = jsonArray->getChildNum();
-        qout << "Wallhaven 找到随机id";
         std::uniform_int_distribution<int> dis(0, pic_num-1);
         YJson* item = jsonArray->find(dis(_gen));
         std::string pic_url = item->getValueString();
@@ -240,9 +233,7 @@ void Wallpaper::_set_w(YJson* jsonArray)
                 true
             );
         }
-        qout << "保存 json 文件";
         jsonArray->getTop()->toFile("ImgData.json", YJson::UTF8BOM, true);
-        qout << "json 文件保存完毕";
     } else {
         emit msgBox("当前页面没有找到图片, 请切换较小的页面或者更换壁纸类型!", "提示");
     }
@@ -251,24 +242,17 @@ void Wallpaper::_set_w(YJson* jsonArray)
 
 void Wallpaper::_set_b(YJson * file_data)
 {
-    qout << "详细处理";
     int curindex = file_data->find("current")->getValueInt();
-    qout << "当前索引: " << curindex;
     YJson* temp = file_data->find("images");
     qout << (bool)*temp;
     temp = temp->find(curindex);
-    qout << "加载必应json文件成功!";
     if (!temp)
     {
-        qout << "到达末尾";
         temp = file_data->find("images")->getChild();
         file_data->find("current")->setValue(1);
     } else {
-        qout << "加一";
         file_data->find("current")->setValue(curindex+1);
-        qout << "当前索引: " << file_data->find("current")->getValueInt();
     }
-    qout << "查找到images";
     std::string img_url("https://cn.bing.com");
     img_url += temp->find("url")->getValueString();
     QString bing_name;
@@ -279,15 +263,12 @@ void Wallpaper::_set_b(YJson * file_data)
         bing_name.insert(4, '-');
         bing_name.insert(7, '-');
         bing_name = QDir::toNativeSeparators(m_bing_folder + "/" + bing_name + "必应壁纸.jpg");
-    }
-    else
-    {
+    } else {
         qout << "使用CopyRight名称";
         bing_name = temp->find("copyright")->getValueString();
         bing_name = bing_name.mid(0, bing_name.indexOf(" (© "));
         bing_name = QDir::toNativeSeparators(m_bing_folder + "/" + bing_name + ".jpg");
     }
-    qout << "当前索引: " << file_data->find("current")->getValueInt();
     file_data->toFile("BingData.json", YJson::UTF8BOM, true);
     download_image(QString::fromStdString(img_url), bing_name, PaperType == Type::Bing);
 }
@@ -296,7 +277,6 @@ void Wallpaper::push_back()
 {
     QDir dir;
     loadApiFile();
-    qout << "push_back壁纸类型：" << (int)PaperType;
     switch (PaperType)
     {
     case Type::Bing:
@@ -331,7 +311,6 @@ void Wallpaper::set_from_Wallhaven()  // 从数据库中随机抽取一个链接
     std::string pic_url;
     YJson* jsonObject = nullptr, *jsonArray = nullptr, * find_item = nullptr;
     if (!QFile::exists(file_name)) goto label_1;
-    qout << "读取ImageData.json文件";
     jsonObject = new YJson(file_name, YJson::AUTO);
     if (YJson::ep.first){
         qout << "ImageData文件出现错误!";
@@ -380,10 +359,8 @@ void Wallpaper::set_from_Wallhaven()  // 从数据库中随机抽取一个链接
             qout << "执行_set_w";
             return _set_w(jsonArray);
         }
-        //qout << "找到Json文件和孩子!";
     }
-    qout << "json文件格式不正确！";
-    qout << "Wallhaven 创建新的Json对象";
+    qout << "json文件格式不正确！\n" << "Wallhaven 创建新的Json对象";
 label_1:
     delete jsonObject;
     jsonObject = new YJson(YJson::Object);
@@ -393,7 +370,6 @@ label_1:
     jsonArray->append(YJson::Array, "Used");
     jsonArray->append(YJson::Array, "Blacklist");
     jsonArray->append(YJson::Array, "Unused");
-    //qout << "Wallhaven 尝试从wallhaven下载源码";
     return get_url_from_Wallhaven(jsonArray);
 }
 
@@ -440,7 +416,6 @@ void Wallpaper::get_url_from_Wallhaven(YJson* jsonArray)
                     urllist->append(wn);
                 } while ((ptr = ptr->getNext()));
                 QString str = QString::fromStdString(m_wallhaven_api + "&page=" + std::to_string(++k));
-                qout << "post request" << str << bool(mgr);
                 mgr->get(QNetworkRequest(QUrl(str)));
             }
             else
@@ -685,19 +660,14 @@ void Wallpaper::set_from_Advance()
                     if (program_output.size() && f)
                     {
                         fclose(f);
-                        qout << "设置壁纸" ;
                         systemParametersInfo(program_output);
-                        qout << "添加壁纸记录" ;
 #ifdef Q_OS_WIN32
                         m_picture_history.emplace_back(AnsiToUtf8(program_output));
 #elif defined (Q_OS_LINUX)
                         m_picture_history.emplace_back(program_output);
 #endif
-                        qout << "当前壁纸后移" ;
                         m_curpic = --m_picture_history.end();
-                        qout << "删除输出";
                         program_output.clear();
-                        qout  << "清理现场";
                         thrd->deleteLater();
                         m_doing = false;
                         return ;

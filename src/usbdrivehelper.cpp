@@ -48,11 +48,10 @@ void USBdriveHelper::leaveEvent(QEvent *event)
 
 void USBdriveHelper::showEvent(QShowEvent *event)
 {
-    const QRect rect = geometry();
-    setGeometry(VarBox->ScreenWidth - rect.width() - 20, 20, rect.width(), rect.height());
+    move(VarBox->ScreenWidth - width() - 20, 20 + m_index * (height() + 5));
     widget->setGeometry(ui->frame->geometry());
     ui->frame->setGeometry(ui->frame->geometry());
-    ui->progressBar->setMinimumWidth(rect.width());
+    ui->progressBar->setMinimumWidth(width());
     event->accept();
 }
 
@@ -61,12 +60,14 @@ void USBdriveHelper::closeEvent(QCloseEvent *event)
     qout << "退出U盘管理";
     event->accept();
     deleteLater();
-    emit appQuit();
+    emit appQuit(m_index);
 }
 
 
-USBdriveHelper::USBdriveHelper(char U, QWidget *parent) :
+USBdriveHelper::USBdriveHelper(char U, unsigned index, std::vector<USBdriveHelper*>* vectorPtr, QWidget *parent) :
     SpeedWidget<QDialog>(parent),
+    m_index(index),
+    m_vectorPtr(vectorPtr),
     ui(new Ui::USBdriveHelper)
 {
     // setAttribute(Qt::WA_DeleteOnClose, true);
@@ -81,8 +82,8 @@ USBdriveHelper::USBdriveHelper(char U, QWidget *parent) :
     DWORD dwFreeClusters;    //可用的簇
     DWORD dwSectPerClust;    //每个簇有多少个扇区
     DWORD dwBytesPerSect;    //每个扇区有多少个字节
-    pans.push_back(new char[4] {char(U), ':','\\', '\0'});
-    BOOL bResult = GetDiskFreeSpaceA(pans.back(), &dwSectPerClust, &dwBytesPerSect, &dwFreeClusters, &dwTotalClusters);
+    diskId = {char(U), ':','\\', '\0'};
+    BOOL bResult = GetDiskFreeSpaceA(diskId.c_str(), &dwSectPerClust, &dwBytesPerSect, &dwFreeClusters, &dwTotalClusters);
     if (bResult)
     {
         DWORD64 total = dwTotalClusters * (DWORD64)dwSectPerClust * (DWORD64)dwBytesPerSect;
@@ -105,11 +106,11 @@ USBdriveHelper::USBdriveHelper(char U, QWidget *parent) :
     btn1->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding));
     btn2->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding));
     connect(btn1, &QPushButton::clicked, VarBox, [this](){
-        VarBox->openDirectory(pans.front());
+        VarBox->openDirectory(QString::fromStdString(diskId));
     });
 #ifdef Q_OS_WIN32
     connect(btn2, &QPushButton::clicked, this, [this]()->bool{
-        const QString paths = QString(R"(\\.\%1:)").arg(pans.back()[0]);
+        const QString paths = QString(R"(\\.\%1:)").arg(diskId.front());
         DWORD dw_ret;
         DWORD dw_error;
         TCHAR cs_volume[256] { 0 };
@@ -160,7 +161,7 @@ USBdriveHelper::USBdriveHelper(char U, QWidget *parent) :
             dw_error = GetLastError();
             return FALSE;
         }
-
+        emit appQuit(m_index);
         return TRUE;
     });
 #endif
@@ -184,8 +185,6 @@ USBdriveHelper::USBdriveHelper(char U, QWidget *parent) :
 
 USBdriveHelper::~USBdriveHelper()
 {
-    for (const auto &i : pans)
-        delete [] i;
     qout << "析构UI";
     delete ui;
 }

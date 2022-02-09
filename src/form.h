@@ -38,6 +38,7 @@ public:
     ~Form();
     void keepInScreen();
     bool tieBianHide;
+    std::vector<class USBdriveHelper*> m_usbHelpers;
 
 private:
     friend class Menu;                           //右键菜单可以访问私有数据

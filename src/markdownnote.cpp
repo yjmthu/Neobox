@@ -8,6 +8,7 @@
 #include <QPlainTextEdit>
 #include <QHBoxLayout>
 #include <QDebug>
+#include <QTimer>
 
 class DoorButton: public QWidget
 {
@@ -35,13 +36,21 @@ protected:
     }
     void enterEvent(QEvent *event) {
         m_labImage->setStyleSheet(
-            QStringLiteral("QLabel{background-color:rgba(100,100,100,100);border-image:url(:/icons/checklist.ico);}")
+            QStringLiteral("QLabel{"
+               "background-color:rgba(100,100,100,100);"
+               "border-image:url(:/icons/checklist.ico);"
+               "border-radius:3px;"
+            "}")
         );
         event->accept();
     }
     void leaveEvent(QEvent *event) {
         m_labImage->setStyleSheet(
-            QStringLiteral("QLabel{background-color:transparent;border-image:url(:/icons/checklist.ico);}")
+            QStringLiteral("QLabel{"
+               "background-color:transparent;"
+               "border-image:url(:/icons/checklist.ico);"
+               "border-radius:3px;"
+            "}")
         );
         event->accept();
     }
@@ -54,7 +63,11 @@ public:
         m_labImage = new QLabel(this);
         m_labImage->setGeometry(0, 0, width(), height());
         m_labImage->setStyleSheet(
-            QStringLiteral("QLabel{background-color:rgba(100,100,100,100);border-image:url(:/icons/checklist.ico);}")
+            QStringLiteral("QLabel{"
+               "background-color:transparent;"
+               "border-image:url(:/icons/checklist.ico);"
+               "border-radius:3px;"
+            "}")
         );
     }
     virtual ~DoorButton() {
@@ -98,19 +111,31 @@ MarkdownNote::MarkdownNote(QWidget* parent):
     setAttribute(Qt::WA_TranslucentBackground);
 
     QFrame *frame = new QFrame(this);
-    QHBoxLayout *hlayout = new QHBoxLayout(this);
-    setLayout(hlayout);
-    hlayout->addWidget(frame);
-    frame->setStyleSheet(QStringLiteral("QFrame{border-radius:6px;background-color:rgba(100,100,100,100);}"));
+    QHBoxLayout *mlayout = new QHBoxLayout(this);
+    setLayout(mlayout);
+    mlayout->addWidget(frame);
+    QHBoxLayout *hlayout = new QHBoxLayout(frame);
+    m_text = new QPlainTextEdit(frame);
+    hlayout->addWidget(m_text);
+    frame->setLayout(hlayout);
+    frame->setStyleSheet(QStringLiteral("QFrame{border-radius:6px;background-color:rgba(100,100,100,150);}"));
+    m_text->setStyleSheet(QStringLiteral("QFrame{border-radius:6px;background-color:rgba(50,50,50,100);}"));
     door = new DoorButton(this);
     setMinimumSize(300, 300);
     setMaximumSize(300, 300);
     readPosition();
     door->show();
+    readNoteText();
+    QTimer *timer = new QTimer(this);
+    timer->setInterval(3000);
+    connect(timer, &QTimer::timeout, this, &MarkdownNote::writeNoteText);
+    connect(m_text, &QPlainTextEdit::textChanged, this, [this](){ m_textChanged = true; });
+    timer->start();
 }
 
 MarkdownNote::~MarkdownNote()
 {
+    writeNoteText();
     delete door;
 }
 
@@ -127,6 +152,28 @@ void MarkdownNote::readPosition()
     } else {
         door->move(100, 100);
     }
+}
+
+void MarkdownNote::readNoteText()
+{
+    QFile file(QStringLiteral("MarkNote.md"));
+    if (file.open(QIODevice::ReadOnly))
+    {
+        m_text->setPlainText(file.readAll());
+        file.close();
+    }
+}
+
+void MarkdownNote::writeNoteText()
+{
+    if (!m_textChanged) return;
+    QFile file(QStringLiteral("MarkNote.md"));
+    if (file.open(QIODevice::WriteOnly))
+    {
+        file.write(m_text->toPlainText().toUtf8());
+        file.close();
+    }
+    m_textChanged = false;
 }
 
 void MarkdownNote::writePosition()

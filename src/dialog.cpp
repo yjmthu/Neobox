@@ -133,7 +133,7 @@ void Dialog::initUi()
     else
         ui->radioButton_13->setChecked(true);
 #endif
-    ui->cBxTuoPanIcon->setChecked(VarBox->TuoPanIcon);
+    ui->cBxTuoPanIcon->setChecked(VarBox->m_TuoPanIcon);
     ui->cBxTieBianHide->setChecked(VarBox->form->tieBianHide);
     ui->pushButton_4->setText(QStringLiteral("确定"));
     ui->comboBox_3->setCurrentIndex((int)curTheme);
@@ -141,6 +141,7 @@ void Dialog::initUi()
     ui->checkBox_3->setChecked(wallpaper->FirstChange);
     ui->BtnChooseFolder->setEnabled(ui->rBtnNative->isChecked());
     ui->cBxEnableUSBhelper->setChecked(VarBox->enableUSBhelper);
+    ui->cBxEnableFanyier->setChecked(VarBox->EnableTranslater);
     setFrameStyle(static_cast<int>(curTheme));
     checkSettings();
     loadFormStyle();
@@ -275,8 +276,8 @@ void Dialog::initConnects()
         }
         formPart[index]->setStyleSheet(sheet[index].getString(index));
     });
-    connect(ui->cBxEnableMarkdown, &QCheckBox::clicked, VarBox, &VARBOX::creatMarkdown);
-    connect(ui->cBxEnableDesktopClock, &QCheckBox::clicked, VarBox, [](bool /*checked*/){});
+    connect(ui->cBxEnableMarkdown, &QCheckBox::clicked, VarBox, &VARBOX::createMarkdown);
+    connect(ui->cBxEnableDesktopClock, &QCheckBox::clicked, VarBox, &VARBOX::createDesktopClock);
     connect(ui->pBtnFormColor, &QPushButton::clicked, this, [=](){
         int index = ui->cBxFormPart->currentIndex();
         QString str("QPushButton{background-color:rgb(%1,%2,%3);border:1px solid black;border-radius:4px;}");
@@ -423,7 +424,7 @@ void Dialog::initConnects()
             break;
         }
     });
-    connect(ui->cBxTuoPanIcon, &QCheckBox::clicked, VarBox, &VARBOX::creatTrayIcon);
+    connect(ui->cBxTuoPanIcon, &QCheckBox::clicked, VarBox, &VARBOX::createTrayIcon);
     connect(ui->cBxTieBianHide, &QCheckBox::clicked, VarBox, [](bool checked){VarBox->form->tieBianHide = checked;});
     connect(ui->cBxLeftBorderRadius, &QCheckBox::clicked, VarBox, [=](bool checked){
         int index = ui->cBxFormPart->currentIndex();
@@ -503,6 +504,7 @@ void Dialog::initConnects()
         formPart[index]->setStyleSheet(sheet[index].getString(index));
         qout << formPart[index]->styleSheet();
     });
+    connect(ui->cBxEnableFanyier, &QCheckBox::clicked, VarBox->form, &Form::enableTranslater);
     qout << "对话框链接B";
 }
 
@@ -587,7 +589,7 @@ void Dialog::chooseFolder()
     if (wallpaper->NativeDir.isEmpty() || (!d.exists(wallpaper->NativeDir) && !d.mkdir(wallpaper->NativeDir)))
 	{
         wallpaper->NativeDir = QDir::toNativeSeparators(QStandardPaths::writableLocation((QStandardPaths::PicturesLocation)));
-        VarBox->sigleSave("Wallpaper", "NativeDir", wallpaper->NativeDir);
+        VARBOX::saveOneSet<QString>("Wallpaper", "NativeDir", wallpaper->NativeDir);
         ui->LinePath->setText(wallpaper->NativeDir);
 	}
     QString titile = QStringLiteral("请选择一个文件夹");
@@ -790,7 +792,7 @@ void Dialog::on_pushButton_4_clicked()
 	}
     VarBox->PathToOpen = ui->lineEdit->text();
     QDir().mkdir(VarBox->PathToOpen);
-    VarBox->sigleSave("Dirs", "OpenDir", VarBox->PathToOpen);
+    VARBOX::saveOneSet<QString>(QStringLiteral("Dirs"), QStringLiteral("OpenDir"), VarBox->PathToOpen);
     jobTip->showTip(QStringLiteral("更换路径成功！"));
 }
 

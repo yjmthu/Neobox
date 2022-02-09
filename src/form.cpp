@@ -46,6 +46,8 @@ Form::Form(QWidget* parent) :
 Form::~Form()
 {
     qout << "析构Form开始";
+    for (auto i: m_usbHelpers)
+        delete i;
     delete translater;
     delete animation;
     delete netHelper;
@@ -250,7 +252,6 @@ char FirstDriveFromMask (ULONG unitmask)
 #endif
 {
     MSG *msg = static_cast<MSG*>(message);
-    static USBdriveHelper* helper = nullptr;
 
     if (MSG_APPBAR_MSGID == msg->message)
     {
@@ -272,20 +273,48 @@ char FirstDriveFromMask (ULONG unitmask)
         switch (msg->wParam)
         {
         case DBT_DEVICEARRIVAL:        //插入
-            qout << "设备插入";
-            if (lpdb->dbch_devicetype == DBT_DEVTYP_VOLUME && !helper && VarBox->enableUSBhelper)
+//            qout << "设备插入";
+            if (lpdb->dbch_devicetype == DBT_DEVTYP_VOLUME && VarBox->enableUSBhelper)
             {
                 PDEV_BROADCAST_VOLUME lpdbv = (PDEV_BROADCAST_VOLUME)lpdb;
-                helper = new USBdriveHelper(FirstDriveFromMask(lpdbv->dbcv_unitmask));
-                connect(this, &Form::appQuit, this, [](){ delete helper; helper = nullptr; });
-                connect(helper, &USBdriveHelper::appQuit, this, [&](){ helper = nullptr;});
-                helper->show();
+                m_usbHelpers.push_back(new USBdriveHelper(FirstDriveFromMask(lpdbv->dbcv_unitmask), m_usbHelpers.size(), &m_usbHelpers, nullptr));
+                connect(m_usbHelpers.back(), &USBdriveHelper::appQuit, this, [=](unsigned index){
+                    auto iter = m_usbHelpers.begin() + index;
+                    delete *iter;
+                    iter = m_usbHelpers.erase(iter);
+                    for (; iter < m_usbHelpers.end(); ++iter)
+                    {
+                        (*iter)->m_index -= 1;
+                    }
+
+                });
+                m_usbHelpers.back()->show();
             }
             break;
-        case DBT_DEVICEREMOVECOMPLETE: //设备删除
-            qout << "设备删除";
-            delete helper;
-            helper = nullptr;
+        case DBT_DEVICEREMOVECOMPLETE:      //设备删除
+            if (lpdb->dbch_devicetype == DBT_DEVTYP_VOLUME  && !m_usbHelpers.empty()) {
+                DEV_BROADCAST_VOLUME *db_volume = (DEV_BROADCAST_VOLUME *) lpdb;
+                char drive = FirstDriveFromMask(db_volume->dbcv_unitmask);
+                if (db_volume->dbcv_flags & DBTF_MEDIA) {
+                    qDebug("Drive %c: Media has been removed.", drive);
+                } else if (db_volume->dbcv_flags & DBTF_NET) {
+                    qDebug("Drive %c: Network share has been removed.", drive);
+                } else {
+                    qDebug("Drive %c: Device has been removed.", drive);
+                }
+                for (auto iter = m_usbHelpers.begin(); iter < m_usbHelpers.end(); ++iter)
+                {
+                    if ((*iter)->diskId.front() == drive) {
+                        for (auto i=iter+1; i < m_usbHelpers.end(); ++i)
+                        {
+                            (*i)->m_index -= 1;
+                        }
+                        delete *iter;
+                        m_usbHelpers.erase(iter);
+                        break;
+                    }
+                }
+            }
             break;
         }
     }
@@ -447,10 +476,5 @@ void Form::enableTranslater(bool checked)
         delete translater;
         translater = nullptr;
     }
-
-    QSettings IniWrite(QStringLiteral("SpeedBox.ini"), QSettings::IniFormat);
-    IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    IniWrite.beginGroup(QStringLiteral("Translate"));
-    IniWrite.setValue(QStringLiteral("EnableTranslater"), VarBox->EnableTranslater);
-    IniWrite.endGroup();
+    VARBOX::saveOneSet<bool>(QStringLiteral("Translate"), QStringLiteral("EnableTranslater"), VarBox->EnableTranslater);
 }
