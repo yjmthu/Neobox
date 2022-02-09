@@ -32,6 +32,10 @@ private:
     void set_from_Other();                //使用其它Api
     void get_url_from_Wallhaven(YJson* urlObject);   //从Wallhaven获取120个壁纸链接
     void get_url_from_Bing();             //从Wallhaven获取120个壁纸链接
+    template<class _Ty=QString>
+    void download_image(const _Ty& url, const QString& path, bool set);
+    void loadWallpaperSettings();
+    void loadApiFile();
     bool m_doing = false;
 
 public:
@@ -66,7 +70,6 @@ public:
     void apply();
     void dislike();
     bool applyClicked = false;
-    void loadApi();
     inline bool isActive() const { return m_doing; };
     inline void kill() { m_doing = false; };
 

@@ -1,0 +1,48 @@
+cmake_minimum_required(VERSION 3.5)
+
+project(demo LANGUAGES CXX) #项目名，语言 C++
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON) #当前include 打开
+
+set(CMAKE_AUTOUIC ON)  # ui转换支持打开
+set(CMAKE_AUTOMOC ON)  # moc转换支持打开 
+set(CMAKE_AUTORCC ON)  # 资源文件支持 打开
+
+set(CMAKE_CXX_STANDARD 11) # C++11
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(QT_MESSAGELOGCONTEXT TRUE) # Qt消息打开，默认关闭。需要打开QLog release/debug 消息打印相关
+add_definitions(-DQT_MESSAGELOGCONTEXT) #添加QtMessage 宏定义，默认关闭
+
+find_package(Qt5Core REQUIRED)
+find_package(Qt5Network REQUIRED)
+
+set(SOURCES
+    YJson.cpp
+    bingsetting.cpp
+    blankform.cpp
+    calculator.cpp
+    downloadprogress.cpp
+    gmpoperatetip.cpp
+    main.cpp
+    funcbox.cpp
+    dialog.cpp
+    form.cpp
+    markdownnote.cpp
+    menu.cpp
+    netspeedhelper.cpp
+    systemfunctions.cpp
+    translater.cpp
+    usbdrivehelper.cpp
+    wallpaper.cpp
+)
+
+include_directory(.) #  or include_directory(${CMAKE_CURRENT_SOURCE_DIR})
+
+#第三方链接库包含
+set(PROJECT_LIBS
+        user32                  
+)
+
+add_executable(SpeedBox ${SOURCES} )
+qt5_use_modules(SpeedBox Core Network) # This macro depends from Qt version
