@@ -39,18 +39,13 @@ private:
     bool m_doing = false;
 
 public:
-    enum class Type
-    {
-        Hot, Nature, Anime, Simple, Random, User, Bing, Other, Native, Advance
-    };
-    std::list<std::string> PicHistory;
-    std::list<std::string>::const_iterator CurPic;
-    bool update;
-    std::string url;
-    QUrl bing_api;
-    QString bing_folder;
-    QString image_path;
-    QString image_name;
+    enum class Type { Hot, Nature, Anime, Simple, Random, User, Bing, Other, Native, Advance };
+    std::list<std::string> m_picture_history;
+    std::list<std::string>::const_iterator m_curpic;
+    bool m_update_wallhaven_api;
+    std::string m_wallhaven_api, m_other_api;
+    QUrl m_bing_api;
+    QString m_bing_folder, m_wallhaven_folder, m_other_folder, m_other_name;
     class QTimer *timer = nullptr;                       //定时更换壁纸
 
     Type PaperType = Type::Hot;                                        //当下正在使用的壁纸类型

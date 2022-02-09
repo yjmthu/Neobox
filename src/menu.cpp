@@ -31,9 +31,7 @@ Menu::Menu(QWidget* parent) :
 
 Menu::~Menu()
 {
-    qout << "析构menu开始";
     delete [] actions;
-    qout << "析构menu结束";
 }
 
 void Menu::initUi()

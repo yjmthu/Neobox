@@ -619,7 +619,7 @@ void Dialog::saveWallpaperSettings()
 
 void Dialog::applyWallpaperSettings()
 {
-    wallpaper->update = ui->checkBox_2->isChecked();
+    wallpaper->m_update_wallhaven_api = ui->checkBox_2->isChecked();
     wallpaper->PaperType = static_cast<Wallpaper::Type>(buttonGroup->checkedId());
     wallpaper->NativeDir = ui->LinePath->text();
     wallpaper->PageNum = ui->sLdPageNum->value();
@@ -730,34 +730,34 @@ void Dialog::on_pBtnApply_2_clicked()
 
 void Dialog::openPicturePath()
 {
-	QString str = ui->linePictuerPath->text();
+    QString& img_folder = (ui->rBtnBingApi->isChecked())? wallpaper->m_bing_folder: (ui->rBtnOtherApi->isChecked()? wallpaper->m_other_folder: wallpaper->m_wallhaven_folder);
+    QString str = ui->linePictuerPath->text();
 	QDir dir;
     if (dir.exists(str) || (!str.isEmpty() && dir.mkdir(str)))
-        wallpaper->image_path = QDir::toNativeSeparators(str);
+        img_folder = QDir::toNativeSeparators(str);
 	else
 	{
-        if (dir.exists(wallpaper->image_path) || dir.mkdir(wallpaper->image_path))
-            ui->linePictuerPath->setText(QDir::toNativeSeparators(wallpaper->image_path));
+        if (dir.exists(img_folder) || dir.mkdir(img_folder))
+            ui->linePictuerPath->setText(QDir::toNativeSeparators(img_folder));
 		else
-            wallpaper->image_path = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
+            img_folder = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
 	}
-    if (dir.exists(wallpaper->image_path))
-        VarBox->openDirectory(wallpaper->image_path);
+    if (dir.exists(img_folder))
+        VarBox->openDirectory(img_folder);
 	else
 		QMessageBox::warning(this, "警告", "路径不存在！", QMessageBox::Ok, QMessageBox::Ok);
 }
 
 void Dialog::linePictuerPathReturn()
 {
-	QDir dir;
+    QString& img_folder = (ui->rBtnBingApi->isChecked())? wallpaper->m_bing_folder: (ui->rBtnOtherApi->isChecked()? wallpaper->m_other_folder: wallpaper->m_wallhaven_folder);
+    QDir dir;
 	if (dir.exists(ui->linePictuerPath->text()))
 	{
-        wallpaper->image_path = ui->linePictuerPath->text();
-	}
-	else
-	{
+        img_folder = ui->linePictuerPath->text();
+    } else {
 		QMessageBox::warning(this, "警告", "路径不存在！", QMessageBox::Ok, QMessageBox::Ok);
-        ui->linePictuerPath->setText(wallpaper->image_path);
+        ui->linePictuerPath->setText(img_folder);
 	}
 }
 
@@ -950,21 +950,22 @@ void Dialog::on_pushButton_12_clicked()
 
 void Dialog::on_toolButton_2_clicked()
 {
+    QString& img_folder = (ui->rBtnBingApi->isChecked())? wallpaper->m_bing_folder: (ui->rBtnOtherApi->isChecked()? wallpaper->m_other_folder: wallpaper->m_wallhaven_folder);
     QString titile = "请选择一个文件夹";
-    QString dir = QFileDialog::getExistingDirectory(NULL, titile, wallpaper->image_path.length()? wallpaper->image_path: qApp->applicationDirPath(), QFileDialog::ShowDirsOnly);
+    QString dir = QFileDialog::getExistingDirectory(NULL, titile, img_folder.length()? img_folder: qApp->applicationDirPath(), QFileDialog::ShowDirsOnly);
     if (!dir.isEmpty()) {
-        wallpaper->image_path = QDir::toNativeSeparators(dir);
-        ui->linePictuerPath->setText(wallpaper->image_path);
+        img_folder = QDir::toNativeSeparators(dir);
+        ui->linePictuerPath->setText(img_folder);
         std::string ph = "WallpaperApi.json";
         YJson json(ph, YJson::AUTO);
         if (ui->rBtnWallhavenApiDefault->isChecked()) {
-            json["Default"]["ApiData"][ui->cBxApis->currentIndex()]["Folder"].setText(wallpaper->image_path.toUtf8());
+            json["Default"]["ApiData"][ui->cBxApis->currentIndex()]["Folder"].setText(img_folder.toStdString());
         } else if (ui->rBtnWallhavenApiUser->isChecked()) {
-            json["User"]["ApiData"][(const char*)ui->cBxApis->currentText().toUtf8()]["Folder"].setText(wallpaper->image_path.toUtf8());
+            json["User"]["ApiData"][(const char*)ui->cBxApis->currentText().toUtf8()]["Folder"].setText(img_folder.toUtf8());
         } else if (ui->rBtnBingApi->isChecked()) {
-            json["BingApi"]["Folder"].setText(wallpaper->image_path.toUtf8());
+            json["BingApi"]["Folder"].setText(img_folder.toStdString());
         } else {
-            json["OtherApi"]["ApiData"][(const char*)ui->cBxApis->currentText().toUtf8()]["Folder"].setText(wallpaper->image_path.toUtf8());
+            json["OtherApi"]["ApiData"][(const char*)ui->cBxApis->currentText().toUtf8()]["Folder"].setText(img_folder.toUtf8());
         }
         json.toFile(ph, YJson::UTF8BOM, true);
         jobTip->showTip("修改成功！");
@@ -1060,8 +1061,8 @@ void Dialog::my_on_cBxApis_currentTextChanged(const QString &arg1)
         json["User"]["Curruent"].setText(ui->cBxApis->currentText().toUtf8());
         if (wallpaper->PaperType == Type::User)
         {
-            wallpaper->image_path = json["User"]["ApiData"][(const char*)arg1.toUtf8()]["Folder"].getValueString();
-            ui->linePictuerPath->setText(wallpaper->image_path);
+            wallpaper->m_wallhaven_folder = json["User"]["ApiData"][(const char*)arg1.toUtf8()]["Folder"].getValueString();
+            ui->linePictuerPath->setText(wallpaper->m_wallhaven_folder);
         }
         else
         {
@@ -1073,8 +1074,8 @@ void Dialog::my_on_cBxApis_currentTextChanged(const QString &arg1)
     {
         if (wallpaper->PaperType == Type::Bing)
         {
-            wallpaper->image_path = json["BingApi"]["Folder"].getValueString();
-            ui->linePictuerPath->setText(wallpaper->image_path);
+            wallpaper->m_bing_folder = json["BingApi"]["Folder"].getValueString();
+            ui->linePictuerPath->setText(wallpaper->m_bing_folder);
         }
         else
         {
@@ -1086,9 +1087,9 @@ void Dialog::my_on_cBxApis_currentTextChanged(const QString &arg1)
         if (wallpaper->PaperType == Type::Other)
         {
             json["OtherApi"]["Curruent"].setText(arg1.toUtf8());
-            wallpaper->image_path = json["OtherApi"]["ApiData"][(const char*)arg1.toUtf8()]["Folder"].getValueString();
-            wallpaper->url = json["OtherApi"]["ApiData"][(const char*)arg1.toUtf8()]["Url"].getValueString();
-            ui->linePictuerPath->setText(wallpaper->image_path);
+            wallpaper->m_other_folder = json["OtherApi"]["ApiData"][(const char*)arg1.toUtf8()]["Folder"].getValueString();
+            wallpaper->m_other_api = json["OtherApi"]["ApiData"][(const char*)arg1.toUtf8()]["Url"].getValueString();
+            ui->linePictuerPath->setText(wallpaper->m_other_folder);
         }
         else
         {
