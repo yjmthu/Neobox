@@ -1,7 +1,9 @@
 #include <QFile>
+
 #if defined (Q_OS_WIN32)
 #include <windows.h>
 #endif
+
 #include "funcbox.h"
 #include "form.h"
 #include "calculator.h"
