@@ -17,6 +17,7 @@
 #include <QFontDatabase>
 #include <QSystemTrayIcon>
 #include <QMenu>
+#include "systemfunctions.h"
 #elif defined (Q_OS_LINUX)
 //#include <sys/time.h>
 #include <dialog.h>
@@ -30,7 +31,8 @@
 #include "wallpaper.h"
 #include "dialog.h"
 #include "markdownnote.h"
-#include "desktopclock.h"
+#include "squareclock.h"
+#include "windowposition.h"
 
 
 //wchar_t* GetCorrectUnicode(const QByteArray &ba)
@@ -52,19 +54,11 @@ VARBOX* VarBox = nullptr;
 
 VARBOX::VARBOX(int w, int h):
     QObject(nullptr),
+    m_windowPosition(WindowPosition::fromFile()),
     ScreenWidth(w), ScreenHeight(h)
 {
     qout << "VarBox构造函数开始。";
-    VarBox = this;
-#if defined (Q_OS_WIN32)
-    QString data_path = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::HomeLocation) +  "/AppData/Local/SpeedBox");
-#elif defined(Q_OS_LINUX)
-    QString data_path = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) +  "/.config/SpeedBox";
-#endif
-    QDir().mkdir(data_path);
-    QDir::setCurrent(data_path);
-    QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/Nickainley-Normal-small.ttf"));
-    QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/Carattere-Regular-small.ttf"));
+    initProJob();
     initFile();
     initChildren();
     initBehaviors();
@@ -74,14 +68,12 @@ VARBOX::VARBOX(int w, int h):
 VARBOX::~VARBOX()
 {
     qout << "结构体析构中~";
+    delete m_windowPosition;
     delete systemTrayIcon;
-    delete m_clock;
+    delete m_sClock;
     delete m_note;
     delete form;
-    qout << "析构任务栏类";
-    qout << "析构壁纸类";
     delete wallpaper;
-    qout << "析构设置对话框";
     delete dialog;
     qout << "结构体析构成功。";
 }
@@ -188,12 +180,11 @@ label_2:
             Dialog::curTheme = static_cast<Dialog::Theme>(safeEnum);
             m_TuoPanIcon = IniRead->value(QStringLiteral("TuoPanIcon"), false).toBool();
             IniRead->endGroup();
-            IniRead->beginGroup(QStringLiteral("USBhelper"));
-            enableUSBhelper = IniRead->value(QStringLiteral("enableUSBhelper"), enableUSBhelper).toBool();
-            IniRead->endGroup();
             IniRead->beginGroup("Apps");
-            m_MarkdownNote = IniRead->value(QStringLiteral("MarkdownNote"), false).toBool();
-            m_DesktopClock = IniRead->value(QStringLiteral("DesktopClock"), false).toBool();
+            m_MarkdownNote = IniRead->value(QStringLiteral("MarkdownNote"), m_MarkdownNote).toBool();
+            m_SquareClock = IniRead->value(QStringLiteral("SquareClock"), m_SquareClock).toBool();
+            m_RoundClock = IniRead->value(QStringLiteral("RoundClock"), m_RoundClock).toBool();
+            enableUSBhelper = IniRead->value(QStringLiteral("UsbHelper"), enableUSBhelper).toBool();
             IniRead->endGroup();
             delete IniRead;
             qout << "读取设置完毕。";
@@ -254,7 +245,8 @@ void VARBOX::initChildren()
     });
     createMarkdown(m_MarkdownNote);
     createTrayIcon(m_TuoPanIcon);
-    createDesktopClock(m_DesktopClock);
+    createSquareClock(m_SquareClock);
+    createRoundClock(m_RoundClock);
 }
 
 void VARBOX::initBehaviors()
@@ -294,16 +286,47 @@ void VARBOX::createMarkdown(bool create)
     saveOneSet<bool>(QStringLiteral("Apps"), QStringLiteral("MarkdownNote"), create);
 }
 
-void VARBOX::createDesktopClock(bool create)
+void VARBOX::createSquareClock(bool create)
 {
-    if ((m_DesktopClock = create)) {
-        m_clock = new DesktopClock;
-        m_clock->show();
+    if ((m_SquareClock = create)) {
+        m_sClock = new SquareClock;
+        m_sClock->show();
     } else {
-        delete m_clock;
-        m_clock = nullptr;
+        delete m_sClock;
+        m_sClock = nullptr;
     }
-    saveOneSet<bool>(QStringLiteral("Apps"), QStringLiteral("DesktopClock"), create);
+    saveOneSet<bool>(QStringLiteral("Apps"), QStringLiteral("SquareClock"), create);
+}
+
+void VARBOX::createRoundClock(bool create)
+{
+//    if ((m_RoundClock = create)) {
+//        m_rClock = new DesktopClock;
+//        m_rClock->show();
+//    } else {
+//        delete m_rClock;
+//        m_rClock = nullptr;
+//    }
+//    saveOneSet<bool>(QStringLiteral("Apps"), QStringLiteral("RoundClock"), create);
+}
+
+void VARBOX::initProJob()
+{
+    VarBox = this;
+#if defined (Q_OS_WIN32)
+    switch (SystemFunctions::getWindowsVersion()) {
+    case SystemVersion::Windows10:
+        break;
+    case SystemVersion::Windows8_1:
+    case SystemVersion::Windows8:
+    case SystemVersion::Windows7:
+        break;
+    default:
+        break;
+    }
+#endif
+    QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/Nickainley-Normal-small.ttf"));
+    QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/Carattere-Regular-small.ttf"));
 }
 
 QByteArray VARBOX::runCmd(const QString& program, const QStringList& argument, short line)
@@ -325,10 +348,12 @@ QByteArray VARBOX::runCmd(const QString& program, const QStringList& argument, s
     else return nullptr;
 }
 
+extern std::string Utf8ToAnsi(const std::string& strUtf8);
 void VARBOX::openDirectory(const QString& dir)
 {
 #ifdef Q_OS_WIN
-    ShellExecuteW(NULL, L"open", L"explorer.exe", QDir::toNativeSeparators(dir).toStdWString().c_str(), NULL, SW_SHOWNORMAL);
+    auto path = Utf8ToAnsi(QDir::toNativeSeparators(dir).toStdString());
+    ShellExecuteA(NULL, "open", "explorer.exe", path.c_str(), NULL, SW_SHOWNORMAL);
 #elif defined Q_OS_LINUX
     system(("xdg-open \"" + dir + "\"").toStdString().c_str());
 #endif
@@ -360,7 +385,7 @@ void VARBOX::MSG(const char *text, const char* title, QMessageBox::StandardButto
     QMessageBox message(QMessageBox::Information, title, text, s, NULL);
     QFile qss(QStringLiteral(":/qss/dialog_style.qss"));
     qss.open(QFile::ReadOnly);
-    message.setStyleSheet(QString(qss.readAll()));
+    message.setStyleSheet(qss.readAll());
     qss.close();
     message.exec();
 }

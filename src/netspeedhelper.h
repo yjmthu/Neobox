@@ -20,7 +20,7 @@ public:
     ~NetSpeedHelper();
 
 private:
-    QTimer *timer;
+    QTimer *timer { nullptr };
     void get_mem_usage();                        //读取内存占用率
     void get_net_usage();                        //读取网速
 #ifdef Q_OS_WIN

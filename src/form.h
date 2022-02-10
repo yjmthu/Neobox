@@ -44,7 +44,8 @@ private:
     friend class Menu;                           //右键菜单可以访问私有数据
     friend void VARBOX::initChildren();
     friend class Dialog;
-    class QFrame* frame;
+    class QFrame* frame { nullptr };
+    class QStyleSheet *m_sheet { nullptr };
     QLabel *labUp, *labDown, *labMemory;
     void setupUi();
     void loadStyle();

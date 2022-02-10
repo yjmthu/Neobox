@@ -46,6 +46,7 @@ Dialog::Dialog():
     SpeedWidget<QWidget>(nullptr),
     ui(new Ui::Dialog),
     wallpaper(VarBox->wallpaper),
+    m_sheet(VarBox->form->m_sheet),
     formFontJson(new YJson("BoxFont.json", YJson::UTF8BOM)),
     formPart({VarBox->form->frame, VarBox->form->labMemory, VarBox->form->labUp, VarBox->form->labDown})
 {
@@ -60,7 +61,6 @@ Dialog::~Dialog()
 {
     qout << "析构dialog开始";
     delete formFontJson;
-    delete [] sheet;
     delete buttonGroup;
     delete ui;
     qout << "析构dialog结束";
@@ -142,6 +142,8 @@ void Dialog::initUi()
     ui->BtnChooseFolder->setEnabled(ui->rBtnNative->isChecked());
     ui->cBxEnableUSBhelper->setChecked(VarBox->enableUSBhelper);
     ui->cBxEnableFanyier->setChecked(VarBox->EnableTranslater);
+    ui->cBxEnableMarkdown->setChecked(VarBox->m_MarkdownNote);
+    ui->cBxEnableSquareClock->setChecked(VarBox->m_SquareClock);
     setFrameStyle(static_cast<int>(curTheme));
     checkSettings();
     loadFormStyle();
@@ -150,20 +152,16 @@ void Dialog::initUi()
 
 void Dialog::loadFormStyle()
 {
-    if (!QStyleSheet::fromFile(sheet)) {
-        QMessageBox::critical(this, "出错", "悬浮窗风格文件不存在，请尝试重新启动软件解决！");
-        return;
-    }
-    QString str(QStringLiteral("QPushButton{background-color:rgb(%1,%2,%3);border:1px solid black;border-radius:4px;}").arg(QString::number(sheet->bk_red), QString::number(sheet->bk_green), QString::number(sheet->bk_blue)));
+    QString str(QStringLiteral("QPushButton{background-color:rgb(%1,%2,%3);border:1px solid black;border-radius:4px;}").arg(QString::number(m_sheet->bk_red), QString::number(m_sheet->bk_green), QString::number(m_sheet->bk_blue)));
     ui->pBtnFormColor->setStyleSheet(str);
-    ui->sLdTranparent->setValue(sheet->bk_alpha);
-    ui->sLdBorderRadius->setValue(sheet->bd_radius);
-    ui->sLdFuzzy->setValue(sheet->bk_fuzzy);
-    ui->cBxEnableBorderRadius->setChecked(sheet->bd_have & QStyleSheet::Border);
-    ui->cBxLeftBorderRadius->setChecked(sheet->bd_have & QStyleSheet::Left);
-    ui->cBxRightBorderRadius->setChecked(sheet->bd_have & QStyleSheet::Right);
-    ui->cBxTopBorderRadius->setChecked(sheet->bd_have & QStyleSheet::Top);
-    ui->cBxBottomBorderRadius->setChecked(sheet->bd_have & QStyleSheet::Bottom);
+    ui->sLdTranparent->setValue(m_sheet->bk_alpha);
+    ui->sLdBorderRadius->setValue(m_sheet->bd_radius);
+    ui->sLdFuzzy->setValue(m_sheet->bk_fuzzy);
+    ui->cBxEnableBorderRadius->setChecked(m_sheet->bd_have & QStyleSheet::Border);
+    ui->cBxLeftBorderRadius->setChecked(m_sheet->bd_have & QStyleSheet::Left);
+    ui->cBxRightBorderRadius->setChecked(m_sheet->bd_have & QStyleSheet::Right);
+    ui->cBxTopBorderRadius->setChecked(m_sheet->bd_have & QStyleSheet::Top);
+    ui->cBxBottomBorderRadius->setChecked(m_sheet->bd_have & QStyleSheet::Bottom);
     YJson* temp = formFontJson->find("image");
     ui->lineMultyPath->setText(temp->getType() == YJson::Null ? "null" : temp->getValueString());
 }
@@ -253,57 +251,55 @@ void Dialog::initConnects()
     connect(ui->cBxEnableUSBhelper, &QCheckBox::clicked, this, [this](bool checked){
         curTheme = static_cast<Theme>(ui->comboBox_3->currentIndex());
         VarBox->enableUSBhelper = checked;
-        QSettings IniWrite(QStringLiteral("SpeedBox.ini"), QSettings::IniFormat);
-        IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
-        IniWrite.beginGroup("USBhelper");
-        IniWrite.setValue("enableUSBhelper",  VarBox->enableUSBhelper);
+        VARBOX::saveOneSet<bool>(QStringLiteral("Apps"), QStringLiteral("UsbHelper"), VarBox->enableUSBhelper);
         jobTip->showTip("应用并保存成功！");
     });
     connect(ui->sLdTranparent, &QSlider::valueChanged, this, [=](int value){
         int index = ui->cBxFormPart->currentIndex();
         switch (ui->cBxSetBorder->checkState()) {
         case Qt::Unchecked:
-            sheet[index].bk_alpha = value;
+            m_sheet[index].bk_alpha = value;
             break;
         case Qt::PartiallyChecked:
-            sheet[index].ft_alpha = value;
+            m_sheet[index].ft_alpha = value;
             break;
         case Qt::Checked:
-            sheet[index].bd_alpha = value;
+            m_sheet[index].bd_alpha = value;
             break;
         default:
             break;
         }
-        formPart[index]->setStyleSheet(sheet[index].getString(index));
+        formPart[index]->setStyleSheet(m_sheet[index].getString(index));
     });
     connect(ui->cBxEnableMarkdown, &QCheckBox::clicked, VarBox, &VARBOX::createMarkdown);
-    connect(ui->cBxEnableDesktopClock, &QCheckBox::clicked, VarBox, &VARBOX::createDesktopClock);
+    connect(ui->cBxEnableSquareClock, &QCheckBox::clicked, VarBox, &VARBOX::createSquareClock);
+    connect(ui->cBxEnableRoundClock, &QCheckBox::clicked, VarBox, &VARBOX::createRoundClock);
     connect(ui->pBtnFormColor, &QPushButton::clicked, this, [=](){
         int index = ui->cBxFormPart->currentIndex();
         QString str("QPushButton{background-color:rgb(%1,%2,%3);border:1px solid black;border-radius:4px;}");
-        QColor color = QColorDialog::getColor(ui->cBxSetBorder->isChecked()?QColor(sheet[index].bd_red, sheet[index].bd_green, sheet[index].bd_blue):QColor(sheet[index].bk_red, sheet[index].bk_green, sheet[index].bk_blue));
+        QColor color = QColorDialog::getColor(ui->cBxSetBorder->isChecked()?QColor(m_sheet[index].bd_red, m_sheet[index].bd_green, m_sheet[index].bd_blue):QColor(m_sheet[index].bk_red, m_sheet[index].bk_green, m_sheet[index].bk_blue));
         if (color.isValid()) {
             switch (ui->cBxSetBorder->checkState()) {
             case Qt::Unchecked:
-                sheet[index].bk_red = color.red();
-                sheet[index].bk_green = color.green();
-                sheet[index].bk_blue = color.blue();
+                m_sheet[index].bk_red = color.red();
+                m_sheet[index].bk_green = color.green();
+                m_sheet[index].bk_blue = color.blue();
                 break;
             case Qt::PartiallyChecked:
-                sheet[index].ft_red = color.red();
-                sheet[index].ft_green = color.green();
-                sheet[index].ft_blue = color.blue();
+                m_sheet[index].ft_red = color.red();
+                m_sheet[index].ft_green = color.green();
+                m_sheet[index].ft_blue = color.blue();
                 break;
             case Qt::Checked:
-                sheet[index].bd_red = color.red();
-                sheet[index].bd_green = color.green();
-                sheet[index].bd_blue = color.blue();
+                m_sheet[index].bd_red = color.red();
+                m_sheet[index].bd_green = color.green();
+                m_sheet[index].bd_blue = color.blue();
                 break;
             default:
                 break;
             }
             ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(color.red()), QString::number(color.green()), QString::number(color.blue())));
-            formPart[index]->setStyleSheet(sheet[index].getString(index));
+            formPart[index]->setStyleSheet(m_sheet[index].getString(index));
         }
     });
     connect(ui->cBxSetBorder, &QCheckBox::stateChanged, this, [=](int state){
@@ -315,42 +311,42 @@ void Dialog::initConnects()
             temp = formFontJson->find("image");
             ui->lineMultyPath->setText(temp->getType() == YJson::Null ? "null" : temp->getValueString());
             ui->cBxSetBorder->setText(QStringLiteral("背景"));
-            ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(sheet[index].bk_red), QString::number(sheet[index].bk_green), QString::number(sheet[index].bk_blue)));
-            ui->sLdTranparent->setValue(sheet[index].bk_alpha);
-            ui->sLdBorderRadius->setValue(sheet[index].bk_win);
+            ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(m_sheet[index].bk_red), QString::number(m_sheet[index].bk_green), QString::number(m_sheet[index].bk_blue)));
+            ui->sLdTranparent->setValue(m_sheet[index].bk_alpha);
+            ui->sLdBorderRadius->setValue(m_sheet[index].bk_win);
             ui->label_5->setText(QStringLiteral("模糊"));
             ui->label_6->setText(QStringLiteral("背景"));
             ui->label_12->setText(QStringLiteral("玻璃"));
             ui->sLdFuzzy->setMaximum(99);
-            ui->sLdFuzzy->setValue(sheet[index].bk_fuzzy);
+            ui->sLdFuzzy->setValue(m_sheet[index].bk_fuzzy);
             my_on_border_radius(ui->rBtnBorder->isChecked());
             break;
         case Qt::PartiallyChecked:  //
             temp = formFontJson->find("user")->find((*formFontJson)["index"][index].getValueString())->find("family");
             ui->lineMultyPath->setText(temp->getType() == YJson::Null ? "null" : temp->getValueString());
             ui->cBxSetBorder->setText(QStringLiteral("字体"));
-            ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(sheet[index].ft_red), QString::number(sheet[index].ft_green), QString::number(sheet[index].ft_blue)));
-            ui->sLdTranparent->setValue(sheet[index].ft_alpha);
-            ui->sLdBorderRadius->setValue(sheet[index].bd_radius);
+            ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(m_sheet[index].ft_red), QString::number(m_sheet[index].ft_green), QString::number(m_sheet[index].ft_blue)));
+            ui->sLdTranparent->setValue(m_sheet[index].ft_alpha);
+            ui->sLdBorderRadius->setValue(m_sheet[index].bd_radius);
             ui->label_5->setText(QStringLiteral("大小"));
             ui->label_6->setText(QStringLiteral("字体"));
             ui->label_12->setText(QStringLiteral("圆角"));
             ui->sLdFuzzy->setMaximum(30);
-            ui->sLdFuzzy->setValue(sheet[index].ft_size);
+            ui->sLdFuzzy->setValue(m_sheet[index].ft_size);
             my_on_border_radius(ui->rBtnBorder->isChecked());
             break;
         case Qt::Checked:
             temp = formFontJson->find("image");
             ui->lineMultyPath->setText(temp->getType() == YJson::Null ? "null" : temp->getValueString());
             ui->cBxSetBorder->setText(QStringLiteral("边线"));
-            ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(sheet[index].bd_red), QString::number(sheet[index].bd_green), QString::number(sheet[index].bd_blue)));
-            ui->sLdTranparent->setValue(sheet[index].bd_alpha);
-            ui->sLdBorderRadius->setValue(sheet[index].bd_radius);
+            ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(m_sheet[index].bd_red), QString::number(m_sheet[index].bd_green), QString::number(m_sheet[index].bd_blue)));
+            ui->sLdTranparent->setValue(m_sheet[index].bd_alpha);
+            ui->sLdBorderRadius->setValue(m_sheet[index].bd_radius);
             ui->label_5->setText(QStringLiteral("粗细"));
             ui->label_6->setText(QStringLiteral("背景"));
             ui->label_12->setText(QStringLiteral("圆角"));
             ui->sLdFuzzy->setMaximum(10);
-            ui->sLdFuzzy->setValue(sheet[index].bd_width);
+            ui->sLdFuzzy->setValue(m_sheet[index].bd_width);
             my_on_border_radius(ui->rBtnBorder->isChecked());
             break;
         default:
@@ -359,30 +355,30 @@ void Dialog::initConnects()
     });
     connect(ui->sLdBorderRadius, &QSlider::valueChanged, this, [=](int value){
         int index = ui->cBxFormPart->currentIndex();
-        sheet[index].bd_radius = value;
-        formPart[index]->setStyleSheet(sheet[index].getString(index));
+        m_sheet[index].bd_radius = value;
+        formPart[index]->setStyleSheet(m_sheet[index].getString(index));
     });
     connect(ui->sLdFuzzy, &QSlider::valueChanged, this, [=](int value){
         int index = ui->cBxFormPart->currentIndex();
         switch (ui->cBxSetBorder->checkState()) {
         case Qt::Unchecked:
-            sheet[index].bk_fuzzy = value;
-            formPart[index]->setStyleSheet(sheet[index].getString(index));
+            m_sheet[index].bk_fuzzy = value;
+            formPart[index]->setStyleSheet(m_sheet[index].getString(index));
             break;
         case Qt::PartiallyChecked:
-            sheet[index].ft_size = value;
-            formPart[index]->setStyleSheet(sheet[index].getString(index));
+            m_sheet[index].ft_size = value;
+            formPart[index]->setStyleSheet(m_sheet[index].getString(index));
             break;
         case Qt::Checked:
-            sheet[index].bd_width = value;
-            formPart[index]->setStyleSheet(sheet[index].getString(index));
+            m_sheet[index].bd_width = value;
+            formPart[index]->setStyleSheet(m_sheet[index].getString(index));
             break;
         default:
             break;
         }
     });
     connect(ui->pBtnSaveFormStyle, &QPushButton::clicked, this, [=](){
-        if (QStyleSheet::toFile(sheet)) {
+        if (QStyleSheet::toFile(m_sheet)) {
             jobTip->showTip(QStringLiteral("保存成功!"));
         } else {
             jobTip->showTip(QStringLiteral("保持失败！"));
@@ -396,28 +392,28 @@ void Dialog::initConnects()
         case Qt::Unchecked:
             temp = formFontJson->find("image");
             ui->lineMultyPath->setText(temp->getType() == YJson::Null ? "null" : temp->getValueString());
-            ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(sheet[index].bk_red), QString::number(sheet[index].bk_green), QString::number(sheet[index].bk_blue)));
-            ui->sLdTranparent->setValue(sheet[index].bk_alpha);
-            ui->sLdBorderRadius->setValue(sheet[index].bk_win);
-            ui->sLdFuzzy->setValue(sheet[index].bk_fuzzy);
+            ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(m_sheet[index].bk_red), QString::number(m_sheet[index].bk_green), QString::number(m_sheet[index].bk_blue)));
+            ui->sLdTranparent->setValue(m_sheet[index].bk_alpha);
+            ui->sLdBorderRadius->setValue(m_sheet[index].bk_win);
+            ui->sLdFuzzy->setValue(m_sheet[index].bk_fuzzy);
             my_on_border_radius(ui->rBtnBorder->isChecked());
             break;
         case Qt::PartiallyChecked:
             temp = formFontJson->find("user")->find((*formFontJson)["index"][index].getValueString())->find("family");
             ui->lineMultyPath->setText(temp->getType() == YJson::Null ? "null" : temp->getValueString());
-            ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(sheet[index].ft_red), QString::number(sheet[index].ft_green), QString::number(sheet[index].ft_blue)));
-            ui->sLdTranparent->setValue(sheet[index].ft_alpha);
-            ui->sLdBorderRadius->setValue(sheet[index].bd_radius);
-            ui->sLdFuzzy->setValue(sheet[index].ft_size);
+            ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(m_sheet[index].ft_red), QString::number(m_sheet[index].ft_green), QString::number(m_sheet[index].ft_blue)));
+            ui->sLdTranparent->setValue(m_sheet[index].ft_alpha);
+            ui->sLdBorderRadius->setValue(m_sheet[index].bd_radius);
+            ui->sLdFuzzy->setValue(m_sheet[index].ft_size);
             my_on_border_radius(ui->rBtnBorder->isChecked());
             break;
         case Qt::Checked:
             temp = formFontJson->find("image");
             ui->lineMultyPath->setText(temp->getType() == YJson::Null ? "null" : temp->getValueString());
-            ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(sheet[index].bd_red), QString::number(sheet[index].bd_green), QString::number(sheet[index].bd_blue)));
-            ui->sLdTranparent->setValue(sheet[index].bd_alpha);
-            ui->sLdBorderRadius->setValue(sheet[index].bd_radius);
-            ui->sLdFuzzy->setValue(sheet[index].bd_width);
+            ui->pBtnFormColor->setStyleSheet(str.arg(QString::number(m_sheet[index].bd_red), QString::number(m_sheet[index].bd_green), QString::number(m_sheet[index].bd_blue)));
+            ui->sLdTranparent->setValue(m_sheet[index].bd_alpha);
+            ui->sLdBorderRadius->setValue(m_sheet[index].bd_radius);
+            ui->sLdFuzzy->setValue(m_sheet[index].bd_width);
             my_on_border_radius(ui->rBtnBorder->isChecked());
             break;
         default:
@@ -430,78 +426,78 @@ void Dialog::initConnects()
         int index = ui->cBxFormPart->currentIndex();
         if (ui->rBtnBorder->isChecked()) {
             if (checked)
-                sheet[index].bd_have |= QStyleSheet::Left;
+                m_sheet[index].bd_have |= QStyleSheet::Left;
             else
-                sheet[index].bd_have &= ~QStyleSheet::Left;
+                m_sheet[index].bd_have &= ~QStyleSheet::Left;
         } else {
             if (checked)
-                sheet[index].bd_have |= QStyleSheet::TopLeft;
+                m_sheet[index].bd_have |= QStyleSheet::TopLeft;
             else
-                sheet[index].bd_have &= ~QStyleSheet::TopLeft;
+                m_sheet[index].bd_have &= ~QStyleSheet::TopLeft;
         }
-        formPart[index]->setStyleSheet(sheet[index].getString(index));
+        formPart[index]->setStyleSheet(m_sheet[index].getString(index));
     });
     connect(ui->cBxRightBorderRadius, &QCheckBox::clicked, VarBox, [=](bool checked){
         int index = ui->cBxFormPart->currentIndex();
         if (ui->rBtnBorder->isChecked()) {
 
             if (checked)
-                sheet[index].bd_have |= QStyleSheet::Right;
+                m_sheet[index].bd_have |= QStyleSheet::Right;
             else
-                sheet[index].bd_have &= ~QStyleSheet::Right;
+                m_sheet[index].bd_have &= ~QStyleSheet::Right;
         } else {
             if (checked)
-                sheet[index].bd_have |= QStyleSheet::BottomLeft;
+                m_sheet[index].bd_have |= QStyleSheet::BottomLeft;
             else
-                sheet[index].bd_have &= ~QStyleSheet::BottomLeft;
+                m_sheet[index].bd_have &= ~QStyleSheet::BottomLeft;
         }
-        formPart[index]->setStyleSheet(sheet[index].getString(index));
+        formPart[index]->setStyleSheet(m_sheet[index].getString(index));
     });
     connect(ui->cBxTopBorderRadius, &QCheckBox::clicked, VarBox, [=](bool checked){
         int index = ui->cBxFormPart->currentIndex();
         if (ui->rBtnBorder->isChecked()) {
             if (checked)
-                sheet[index].bd_have |= QStyleSheet::Top;
+                m_sheet[index].bd_have |= QStyleSheet::Top;
             else
-                sheet[index].bd_have &= ~QStyleSheet::Top;
+                m_sheet[index].bd_have &= ~QStyleSheet::Top;
         } else {
             if (checked)
-                sheet[index].bd_have |= QStyleSheet::TopRight;
+                m_sheet[index].bd_have |= QStyleSheet::TopRight;
             else
-                sheet[index].bd_have &= ~QStyleSheet::TopRight;
+                m_sheet[index].bd_have &= ~QStyleSheet::TopRight;
         }
-        formPart[index]->setStyleSheet(sheet[index].getString(index));
+        formPart[index]->setStyleSheet(m_sheet[index].getString(index));
     });
     connect(ui->cBxBottomBorderRadius, &QCheckBox::clicked, VarBox, [=](bool checked){
         int index = ui->cBxFormPart->currentIndex();
         if (ui->rBtnBorder->isChecked()) {
             if (checked)
-                sheet[index].bd_have |= QStyleSheet::Bottom;
+                m_sheet[index].bd_have |= QStyleSheet::Bottom;
             else
-                sheet[index].bd_have &= ~QStyleSheet::Bottom;
+                m_sheet[index].bd_have &= ~QStyleSheet::Bottom;
         } else {
             if (checked)
-                sheet[index].bd_have |= QStyleSheet::BottomRight;
+                m_sheet[index].bd_have |= QStyleSheet::BottomRight;
             else
-                sheet[index].bd_have &= ~QStyleSheet::BottomRight;
+                m_sheet[index].bd_have &= ~QStyleSheet::BottomRight;
         }
-        formPart[index]->setStyleSheet(sheet[index].getString(index));
+        formPart[index]->setStyleSheet(m_sheet[index].getString(index));
     });
     connect(ui->rBtnBorder, &QRadioButton::toggled, this, &Dialog::my_on_border_radius);
     connect(ui->cBxEnableBorderRadius, &QCheckBox::clicked, VarBox, [=](bool checked){
         int index = ui->cBxFormPart->currentIndex();
         if (checked) {
             if (ui->rBtnBorder->isChecked())
-                sheet[index].bd_have |= QStyleSheet::Border;
+                m_sheet[index].bd_have |= QStyleSheet::Border;
             else
-                sheet[index].bd_have |= QStyleSheet::BorderRadius;
+                m_sheet[index].bd_have |= QStyleSheet::BorderRadius;
         } else {
             if (ui->rBtnBorder->isChecked())
-                sheet[index].bd_have &= ~QStyleSheet::Border;
+                m_sheet[index].bd_have &= ~QStyleSheet::Border;
             else
-                sheet[index].bd_have &= ~QStyleSheet::BorderRadius;
+                m_sheet[index].bd_have &= ~QStyleSheet::BorderRadius;
         }
-        formPart[index]->setStyleSheet(sheet[index].getString(index));
+        formPart[index]->setStyleSheet(m_sheet[index].getString(index));
         qout << formPart[index]->styleSheet();
     });
     connect(ui->cBxEnableFanyier, &QCheckBox::clicked, VarBox->form, &Form::enableTranslater);
@@ -663,7 +659,7 @@ void Dialog::applyWallpaperSettings()
 void Dialog::setFormStyleSheet()
 {
     int index = ui->cBxFormPart->currentIndex();
-    QStyleSheet& i = sheet[index];
+    QStyleSheet& i = m_sheet[index];
     if (ui->cBxSetBorder->isChecked()) {
         i.bd_alpha = ui->sLdTranparent->value();
         i.bd_radius = ui->sLdBorderRadius->value();
@@ -675,7 +671,7 @@ void Dialog::setFormStyleSheet()
     }
 
 
-    formPart[index]->setStyleSheet(sheet[index].getString(index));
+    formPart[index]->setStyleSheet(m_sheet[index].getString(index));
 }
 
 void Dialog::checkSettings()
@@ -988,7 +984,7 @@ void Dialog::my_on_rBtnWallhavenApiDefault_clicked()
 
 void Dialog::my_on_border_radius(bool checked)
 {
-    const auto x = sheet[ui->cBxFormPart->currentIndex()].bd_have;
+    const auto x = m_sheet[ui->cBxFormPart->currentIndex()].bd_have;
     if (checked) {
         ui->cBxEnableBorderRadius->setChecked(x & QStyleSheet::Border);
         ui->cBxLeftBorderRadius->setChecked(x & QStyleSheet::Left);

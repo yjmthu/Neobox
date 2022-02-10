@@ -18,7 +18,7 @@ BlankFrom::BlankFrom(QWidget* p):
     closeButton->setCursor(Qt::PointingHandCursor);
     minButton->setStyleSheet(QStringLiteral("QPushButton{background-color:#85c43b;border-radius:7px;}"));
     closeButton->setStyleSheet(QStringLiteral("QPushButton{background-color:#ea6e4d;border-radius:7px;}"));
-    //setStyleSheet("QToolTip{border:1px solid rgb(118, 118, 118); background-color: #ffffff; color:#484848; font-size:12px;}");
+    // setStyleSheet("QToolTip{border:1px solid rgb(118, 118, 118); background-color: #ffffff; color:#484848; font-size:12px;}");
 }
 
 BlankFrom::~BlankFrom()

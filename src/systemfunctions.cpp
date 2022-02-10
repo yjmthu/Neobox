@@ -50,24 +50,21 @@ struct ACCENT_POLICY
 
 namespace SystemFunctions
 {
-    BOOL SetWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD AlphaColor)    //设置窗口WIN10风格
+    BOOL setWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD AlphaColor)    //设置窗口WIN10风格
     {
         typedef BOOL(WINAPI* pfnSetWindowCompositionAttribute)(HWND, struct WINDOWCOMPOSITIONATTRIBDATA*);
-        pfnSetWindowCompositionAttribute pSetWindowCompositionAttribute = NULL;
         if (mode == ACCENT_STATE::ACCENT_DISABLED)
         {
-            //		if (bAccentNormal == FALSE)
-            {
-                SendMessageA(hWnd, WM_THEMECHANGED, 0, 0);
-                //			bAccentNormal = TRUE;
-            }
+            SendMessageA(hWnd, WM_THEMECHANGED, 0, 0);
             return TRUE;
         }
-        //	bAccentNormal = FALSE;
         BOOL ret = FALSE;
-        HMODULE hUser = GetModuleHandleA("user32.dll");
-        if (hUser)
-            pSetWindowCompositionAttribute = (pfnSetWindowCompositionAttribute)GetProcAddress(hUser, "SetWindowCompositionAttribute");
+        HMODULE hUser = LoadLibrary(TEXT("user32.dll"));
+        if (!hUser) {
+            FreeLibrary(hUser);
+            return ret;
+        }
+        auto pSetWindowCompositionAttribute = reinterpret_cast<pfnSetWindowCompositionAttribute>(GetProcAddress(hUser, "SetWindowCompositionAttribute"));
         if (pSetWindowCompositionAttribute)
         {
             ACCENT_POLICY accent = { mode, 2, AlphaColor, 0 };
@@ -77,8 +74,108 @@ namespace SystemFunctions
             data.cbData = sizeof(accent);
             ret = pSetWindowCompositionAttribute(hWnd, &data);
         }
+        FreeLibrary(hUser);
         return ret;
     }
+
+    SystemVersion getWindowsVersion()
+    {
+        // 先判断是否为win8.1或win10
+        using pfnRtlGetNtVersionNumbers =  void (WINAPI*)(LPDWORD, LPDWORD,LPDWORD);
+        HINSTANCE hInst = LoadLibrary(TEXT("ntdll.dll"));
+        if (!hInst) return SystemVersion::WindowsUnknown;
+        DWORD dwMajor, dwMinor, dwBuildNumber;
+        auto RtlGetNtVersionNumbers = reinterpret_cast<pfnRtlGetNtVersionNumbers>(GetProcAddress(hInst, "RtlGetNtVersionNumbers"));
+        if (!RtlGetNtVersionNumbers)
+        {
+            FreeLibrary(hInst);
+            return SystemVersion::WindowsUnknown;
+        }
+        RtlGetNtVersionNumbers(&dwMajor, &dwMinor, &dwBuildNumber);
+        FreeLibrary(hInst);
+        if (dwMajor == 6 && dwMinor == 3)	//win 8.1
+            return SystemVersion::Windows8_1;
+        if (dwMajor == 10 && dwMinor == 0)	//win 10
+            return SystemVersion::Windows10;
+
+        // 判断win8.1以下的版本
+        SYSTEM_INFO info;                // 用SYSTEM_INFO结构判断64位AMD处理器
+        GetSystemInfo(&info);            // 调用GetSystemInfo函数填充结构
+        OSVERSIONINFOEX os;
+        os.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+        if (GetVersionEx((OSVERSIONINFO *)&os))
+        {
+
+            // 下面根据版本信息判断操作系统名称
+            switch (os.dwMajorVersion)
+            {                        //判断主版本号
+            case 4:
+                switch (os.dwMinorVersion)
+                {                //判断次版本号
+                case 0:
+                    if (os.dwPlatformId == VER_PLATFORM_WIN32_NT)
+                        return SystemVersion::WindowsNT4_0;
+                    else if (os.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS)
+                        return SystemVersion::Windows95;
+                    else
+                        return SystemVersion::WindowsUnknown;
+                case 10:
+                    return SystemVersion::Windows98;
+                case 90:
+                    return SystemVersion::WindowsMe;
+                default:
+                    return SystemVersion::WindowsUnknown;
+
+                }
+            case 5:
+                switch (os.dwMinorVersion)
+                {
+                case 0:
+                    return SystemVersion::Windows2k;
+                case 1:
+                    return SystemVersion::WindowsXP;
+                case 2:
+                    if (os.wProductType == VER_NT_WORKSTATION &&
+                        info.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
+                        return SystemVersion::WindowsXP;
+                    else if (GetSystemMetrics(SM_SERVERR2) == 0)
+                        return SystemVersion::WindowsServer03;
+                    else if (GetSystemMetrics(SM_SERVERR2) != 0)
+                        return SystemVersion::WindowsServer03R2;
+                    else
+                        return SystemVersion::WindowsUnknown;
+                default:
+                    return SystemVersion::WindowsUnknown;
+                }
+            case 6:
+                switch (os.dwMinorVersion)
+                {
+                case 0:
+                    if (os.wProductType == VER_NT_WORKSTATION)
+                        return SystemVersion::WindowsVista;
+                    else
+                        return SystemVersion::WindowsServer08;
+                case 1:
+                    if (os.wProductType == VER_NT_WORKSTATION)
+                        return SystemVersion::Windows7;
+                    else
+                        return SystemVersion::WindowsServer08R2;
+                case 2:
+                    if (os.wProductType == VER_NT_WORKSTATION)
+                        return SystemVersion::Windows8;
+                    else
+                        return SystemVersion::WindowsServer12;
+                default:
+                    return SystemVersion::WindowsUnknown;
+                }
+            default:
+                return SystemVersion::WindowsUnknown;
+            }
+        }
+        else
+            return SystemVersion::WindowsUnknown;
+    }
+
 }
 
 //#ifndef FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS

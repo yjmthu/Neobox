@@ -26,7 +26,7 @@ inline QString formatSpped(long long dw, bool up_down)
 #if defined (Q_OS_WIN32)
 
 NetSpeedHelper::NetSpeedHelper(QObject *parent) :
-    QObject(parent), timer(new QTimer), hIphlpapi(LoadLibraryA("iphlpapi.dll"))
+    QObject(parent), timer(new QTimer), hIphlpapi(LoadLibrary(TEXT("iphlpapi.dll")))
 {
     connect(timer, &QTimer::timeout, this, [this](){
         get_mem_usage();

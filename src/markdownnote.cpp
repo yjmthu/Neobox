@@ -10,6 +10,9 @@
 #include <QDebug>
 #include <QTimer>
 
+#include "funcbox.h"
+#include "windowposition.h"
+
 class DoorButton: public QWidget
 {
 protected:
@@ -107,7 +110,7 @@ void MarkdownNote::mouseMoveEvent(QMouseEvent *event)
 MarkdownNote::MarkdownNote(QWidget* parent):
     QWidget(parent)
 {
-    setWindowFlags(Qt::FramelessWindowHint | Qt::Tool);
+    setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnBottomHint | Qt::Tool);
     setAttribute(Qt::WA_TranslucentBackground);
 
     QFrame *frame = new QFrame(this);
@@ -141,16 +144,11 @@ MarkdownNote::~MarkdownNote()
 
 void MarkdownNote::readPosition()
 {
-    QPoint pts[2];
-    std::ifstream file(".markdown-note", std::ios::in | std::ios::binary);
-    if (file.is_open())
-    {
-        file.read(reinterpret_cast<char *>(pts), sizeof (QPoint) * 2);
-        door->move(pts[0]);
-        this->move(pts[1]);
-        file.close();
-    } else {
-        door->move(100, 100);
+    if (VarBox->m_windowPosition->m_noteBookPos != QPoint(0, 0)) {
+        this->move(VarBox->m_windowPosition->m_noteBookPos);
+    }
+    if (VarBox->m_windowPosition->m_noteDoorPos != QPoint(0, 0)) {
+        door->move(VarBox->m_windowPosition->m_noteDoorPos);
     }
 }
 
@@ -178,13 +176,7 @@ void MarkdownNote::writeNoteText()
 
 void MarkdownNote::writePosition()
 {
-    QPoint pts[2] { door->pos(), this->pos() };
-    std::ofstream file(".markdown-note", std::ios::out | std::ios::binary);
-    if (file.is_open())
-    {
-        file.write(reinterpret_cast<const char *>(pts), sizeof (QPoint) * 2);
-        file.close();
-    } else {
-        // 失败
-    }
+    VarBox->m_windowPosition->m_noteBookPos = this->pos();
+    VarBox->m_windowPosition->m_noteDoorPos = door->pos();
+    VarBox->m_windowPosition->toFile();
 }

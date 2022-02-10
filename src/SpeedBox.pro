@@ -11,9 +11,9 @@ msvc {
 mingw {
 }
 
-win32 {
-    LIBS += -luser32
-}
+#win32 {
+#    LIBS += -luser32
+#}
 
 
 unix {
@@ -63,7 +63,6 @@ SOURCES += \
     bingsetting.cpp \
     blankform.cpp \
     calculator.cpp \
-    desktopclock.cpp \
     downloadprogress.cpp \
     gmpoperatetip.cpp \
     main.cpp \
@@ -73,6 +72,7 @@ SOURCES += \
     markdownnote.cpp \
     menu.cpp \
     netspeedhelper.cpp \
+    squareclock.cpp \
     systemfunctions.cpp \
     translater.cpp \
     usbdrivehelper.cpp \
@@ -86,7 +86,6 @@ HEADERS += \
     bingsetting.h \
     blankform.h \
     calculator.h \
-    desktopclock.h \
     dialog.h \
     downloadprogress.h \
     form.h \
@@ -97,10 +96,12 @@ HEADERS += \
     netspeedhelper.h \
     qstylesheet.h \
     speedwidget.h \
+    squareclock.h \
     systemfunctions.h \
     translater.h \
     usbdrivehelper.h \
-    wallpaper.h
+    wallpaper.h \
+    windowposition.h
 
 
 RESOURCES += \

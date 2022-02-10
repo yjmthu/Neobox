@@ -5,6 +5,7 @@
 #include <QTextCodec>
 #include <QSharedMemory>
 #include <QApplication>
+#include <QStandardPaths>
 
 #include "funcbox.h"
 #include "form.h"
@@ -25,6 +26,13 @@ int main(int argc, char* argv[])
     a.setQuitOnLastWindowClosed(false);                                    //防止QFileDialog被当成最主窗口导致程序结束
     QDir::setCurrent(a.applicationDirPath());
     QFile::remove(QStringLiteral("Speed_Box_Updater.exe"));
+#if defined (Q_OS_WIN32)
+    const QString& dataRath = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::HomeLocation) +  "/AppData/Local/SpeedBox");
+#elif defined(Q_OS_LINUX)
+    QString data_path = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) +  "/.config/SpeedBox";
+#endif
+    QDir().mkdir(dataRath);
+    QDir::setCurrent(dataRath);
     QScreen* screen = QGuiApplication::primaryScreen();                    //获取屏幕分辨率
     QRect geo = screen->geometry();
     VarBox = new VARBOX(geo.width(), geo.height());

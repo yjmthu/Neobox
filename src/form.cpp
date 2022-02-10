@@ -20,6 +20,7 @@
 #include "systemfunctions.h"
 #include "qstylesheet.h"
 #include "YJson.h"
+#include "windowposition.h"
 
 #ifdef Q_OS_WIN32
 #include <Windows.h>
@@ -48,6 +49,7 @@ Form::~Form()
     qout << "析构Form开始";
     for (auto i: m_usbHelpers)
         delete i;
+    delete [] m_sheet;
     delete translater;
     delete animation;
     delete netHelper;
@@ -56,12 +58,8 @@ Form::~Form()
 
 void Form::saveBoxPos()
 {
-    const QPoint pos = this->pos();
-    std::ofstream file(".speed-box", std::ios::out | std::ios::binary);
-    if (file.is_open()) {
-        file.write(reinterpret_cast<const char*>(&pos), sizeof (QPoint));
-        file.close();
-    }
+    VarBox->m_windowPosition->m_netFormPos = this->pos();
+    VarBox->m_windowPosition->toFile();
 }
 
 void Form::keepInScreen()
@@ -141,15 +139,8 @@ void Form::setupUi()
     if (changed) js->toFile("BoxFont.json", YJson::UTF8BOM, true);
     delete js;
 
-    std::ifstream file(".speed-box", std::ios::in | std::ios::binary);
-    if (file.is_open()) {
-        QPoint pt;
-        file.read(reinterpret_cast<char*>(&pt), sizeof (QPoint));
-        file.close();
-        move(pt);
-    } else {
-        move(100, 100);
-    }
+    if (VarBox->m_windowPosition->m_netFormPos != QPoint(0, 0))
+        move(VarBox->m_windowPosition->m_netFormPos);
 
     if (VarBox->EnableTranslater) {
         enableTranslater(true);
@@ -162,33 +153,31 @@ void Form::setupUi()
 
 void Form::loadStyle()
 {
-    QStyleSheet *sheet;
     std::ifstream file_in(".boxstyle", std::ios::in | std::ios::binary);
     if (file_in.is_open()) {
-        sheet = new QStyleSheet[4];
-        file_in.read(reinterpret_cast<char *>(sheet), sizeof (QStyleSheet) * 4);
+        m_sheet = new QStyleSheet[4];
+        file_in.read(reinterpret_cast<char *>(m_sheet), sizeof (QStyleSheet) * 4);
         file_in.close();
         /*  qout << sheet[0].getString("QFrame");
             qout << sheet[1].getString("QLabel");
             qout << sheet[2].getString("QLabel");
             qout << sheet[3].getString("QLabel");  */
     } else {
-        sheet = new QStyleSheet[4]
+        m_sheet = new QStyleSheet[4]
         { /*{bk r    g    b   a    ft   r    g    b    a   bd  r  g  b  a   b   w  r fuz si win                            0  0  0 }*/
             { 255, 255, 255, 80, /**/   0,   0,   0,   0, /**/ 0, 0, 0, 0, /**/ 0, 3, 0,  1, 80,      QStyleSheet::TheAround, 0, 0 },
             {   0,   0,   0,  0, /**/   0, 255, 255, 255, /**/ 0, 0, 0, 0, /**/ 0, 3, 0, 17,  0,        QStyleSheet::TheLeft, 0, 0 },
             {   0,   0,   0,  0, /**/ 250, 170,  35, 255, /**/ 0, 0, 0, 0, /**/ 0, 3, 0,  8,  0,    QStyleSheet::TheTopRight, 0, 0 },
             {   0,   0,   0,  0, /**/ 140, 240,  30, 255, /**/ 0, 0, 0, 0, /**/ 0, 3, 0,  8,  0, QStyleSheet::TheBottomRight, 0, 0 }
         };
-        QStyleSheet::toFile(sheet);
+        QStyleSheet::toFile(m_sheet);
     }
-    frame->setStyleSheet(sheet[0].getString(false));
-    labMemory->setStyleSheet(sheet[1].getString(true));
-    labUp->setStyleSheet(sheet[2].getString(true));
-    labDown->setStyleSheet(sheet[3].getString(true));
+    frame->setStyleSheet(m_sheet[0].getString(false));
+    labMemory->setStyleSheet(m_sheet[1].getString(true));
+    labUp->setStyleSheet(m_sheet[2].getString(true));
+    labDown->setStyleSheet(m_sheet[3].getString(true));
 
-    SystemFunctions::SetWindowCompositionAttribute(HWND(winId()), ACCENT_STATE::ACCENT_ENABLE_BLURBEHIND, (sheet->bk_win << 24) & RGB(sheet->bk_red, sheet->bk_green, sheet->bk_blue));
-    delete [] sheet;
+    SystemFunctions::setWindowCompositionAttribute(HWND(winId()), ACCENT_STATE::ACCENT_ENABLE_BLURBEHIND, (m_sheet->bk_win << 24) & RGB(m_sheet->bk_red, m_sheet->bk_green, m_sheet->bk_blue));
 }
 
 void Form::initSettings()

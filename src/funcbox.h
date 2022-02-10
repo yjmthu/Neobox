@@ -32,15 +32,18 @@ public:
     const char* const Version = "22.1.11";
     const bool FirstUse[1] = { false };
 
+    class WindowPosition* const m_windowPosition { nullptr };
+
     bool EnableTranslater { false }, AutoHide { false };
-    bool enableUSBhelper { true };  // enableUSBhelper
-    QString PathToOpen;                //右键要打开的文件夹
-    bool m_MarkdownNote { false }, m_DesktopClock { false }, m_TuoPanIcon { false };
+    bool enableUSBhelper { true };     // enableUSBhelper
+    QString PathToOpen;                // 右键要打开的文件夹
+    bool m_MarkdownNote { false }, m_SquareClock { false }, m_RoundClock { false }, m_TuoPanIcon { false };
 
     const int ScreenWidth, ScreenHeight;                  //屏幕宽高
 
     class Form* const form { nullptr }; class Dialog* const dialog { nullptr };
-    class MarkdownNote* m_note { nullptr }; class DesktopClock* m_clock { nullptr };
+    class MarkdownNote* m_note { nullptr }; class SquareClock* m_sClock { nullptr };
+    void * m_rClock { nullptr };
 
     std::function<bool(const wchar_t*)> PathFileExists { nullptr };
     explicit VARBOX(int, int);
@@ -63,9 +66,11 @@ public slots:
     static void openDirectory(const QString& dir);
     void createTrayIcon(bool create);
     void createMarkdown(bool create);
-    void createDesktopClock(bool create);
+    void createSquareClock(bool create);
+    void createRoundClock(bool create);
 private:
      friend class Form;
+     void initProJob();
      void initFile();
      void initChildren();
      void initBehaviors();

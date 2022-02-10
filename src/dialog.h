@@ -27,7 +27,7 @@ private:
     Ui::Dialog* ui = nullptr;
     class QButtonGroup* buttonGroup { nullptr };                 //单选按钮组合，互斥，添加按钮id
     class Wallpaper *wallpaper { nullptr };
-    class QStyleSheet *sheet { nullptr };
+    class QStyleSheet *const m_sheet { nullptr };
     class YJson* formFontJson { nullptr };
     std::array<QWidget*, 4> formPart;
 	void checkSettings();                                //读取注册表

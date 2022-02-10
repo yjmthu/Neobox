@@ -545,6 +545,13 @@
                </property>
               </widget>
              </item>
+             <item>
+              <widget class="QCheckBox" name="cBxFormToolTip">
+               <property name="text">
+                <string>开启Tip</string>
+               </property>
+              </widget>
+             </item>
             </layout>
            </widget>
           </item>
@@ -831,9 +838,16 @@
               </widget>
              </item>
              <item>
-              <widget class="QCheckBox" name="cBxEnableDesktopClock">
+              <widget class="QCheckBox" name="cBxEnableSquareClock">
                <property name="text">
-                <string>桌面时钟</string>
+                <string>方形时钟</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="cBxEnableRoundClock">
+               <property name="text">
+                <string>圆形时钟</string>
                </property>
               </widget>
              </item>
