@@ -134,14 +134,15 @@ void Dialog::initUi()
         ui->radioButton_13->setChecked(true);
 #endif
     ui->cBxTuoPanIcon->setChecked(VarBox->m_TuoPanIcon);
-    ui->cBxTieBianHide->setChecked(VarBox->form->tieBianHide);
+    ui->cBxTieBianHide->setChecked(VarBox->form->m_tieBianHide);
+    ui->cBxFormToolTip->setChecked(VarBox->form->m_showToolTip);
     ui->pushButton_4->setText(QStringLiteral("确定"));
     ui->comboBox_3->setCurrentIndex((int)curTheme);
     ui->lineEdit->setText(VarBox->PathToOpen);
     ui->checkBox_3->setChecked(wallpaper->FirstChange);
     ui->BtnChooseFolder->setEnabled(ui->rBtnNative->isChecked());
-    ui->cBxEnableUSBhelper->setChecked(VarBox->enableUSBhelper);
-    ui->cBxEnableFanyier->setChecked(VarBox->EnableTranslater);
+    ui->cBxEnableUSBhelper->setChecked(VarBox->m_enableUSBhelper);
+    ui->cBxEnableFanyier->setChecked(VarBox->m_enableTranslater);
     ui->cBxEnableMarkdown->setChecked(VarBox->m_MarkdownNote);
     ui->cBxEnableSquareClock->setChecked(VarBox->m_SquareClock);
     setFrameStyle(static_cast<int>(curTheme));
@@ -250,8 +251,8 @@ void Dialog::initConnects()
     connect(ui->pushButton, &QPushButton::clicked, VarBox, std::bind(VARBOX::openDirectory, qApp->applicationDirPath()));
     connect(ui->cBxEnableUSBhelper, &QCheckBox::clicked, this, [this](bool checked){
         curTheme = static_cast<Theme>(ui->comboBox_3->currentIndex());
-        VarBox->enableUSBhelper = checked;
-        VARBOX::saveOneSet<bool>(QStringLiteral("Apps"), QStringLiteral("UsbHelper"), VarBox->enableUSBhelper);
+        VarBox->m_enableUSBhelper = checked;
+        VARBOX::saveOneSet<bool>(QStringLiteral("Apps"), QStringLiteral("UsbHelper"), VarBox->m_enableUSBhelper);
         jobTip->showTip("应用并保存成功！");
     });
     connect(ui->sLdTranparent, &QSlider::valueChanged, this, [=](int value){
@@ -421,7 +422,14 @@ void Dialog::initConnects()
         }
     });
     connect(ui->cBxTuoPanIcon, &QCheckBox::clicked, VarBox, &VARBOX::createTrayIcon);
-    connect(ui->cBxTieBianHide, &QCheckBox::clicked, VarBox, [](bool checked){VarBox->form->tieBianHide = checked;});
+    connect(ui->cBxTieBianHide, &QCheckBox::clicked, VarBox, [](bool checked){
+        VarBox->form->m_tieBianHide = checked;
+        VARBOX::saveOneSet(QStringLiteral("UI"), QStringLiteral("TieBianHide"), checked);
+    });
+    connect(ui->cBxFormToolTip, &QCheckBox::clicked, VarBox, [](bool checked){
+        VarBox->form->m_showToolTip = checked;
+        VARBOX::saveOneSet(QStringLiteral("UI"), QStringLiteral("ShowToolTip"), checked);
+    });
     connect(ui->cBxLeftBorderRadius, &QCheckBox::clicked, VarBox, [=](bool checked){
         int index = ui->cBxFormPart->currentIndex();
         if (ui->rBtnBorder->isChecked()) {

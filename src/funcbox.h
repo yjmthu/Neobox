@@ -22,6 +22,7 @@ constexpr int RETCODE_UPDATE     =           1072;       //更新常数，更新
 constexpr int RETCODE_RESTART    =           1073;       //重启常数，双击时界面会返回这个常数实现整个程序重新启动。
 constexpr int MSG_APPBAR_MSGID   =           2731;
 
+#include "systemfunctions.h"
 
 
 class VARBOX: public QObject
@@ -32,10 +33,12 @@ public:
     const char* const Version = "22.1.11";
     const bool FirstUse[1] = { false };
 
+    const SystemVersion m_systemVersion;
+
     class WindowPosition* const m_windowPosition { nullptr };
 
-    bool EnableTranslater { false }, AutoHide { false };
-    bool enableUSBhelper { true };     // enableUSBhelper
+    bool m_enableTranslater { false }, m_autoHide { false };
+    bool m_enableUSBhelper { true };     // enableUSBhelper
     QString PathToOpen;                // 右键要打开的文件夹
     bool m_MarkdownNote { false }, m_SquareClock { false }, m_RoundClock { false }, m_TuoPanIcon { false };
 

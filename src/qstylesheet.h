@@ -11,7 +11,7 @@ struct QStyleSheet
     uint32_t ft_red, ft_green, ft_blue, ft_alpha;
     uint32_t bd_red, bd_green, bd_blue, bd_alpha;
     uint32_t bd_width, bd_radius, bk_fuzzy, ft_size;
-    uint32_t bk_win, bd_have, bk_img, other2;
+    uint32_t bk_win, bd_have, bk_img, other;
 
     enum _Border { None = 0, Left = 1, Top = 2, Right = 4, Bottom = 8, Border = 16 };
     enum _BorderRadius {

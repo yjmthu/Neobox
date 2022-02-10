@@ -81,7 +81,7 @@ void Menu::initActions()
 
 void Menu::showEvent(QShowEvent *event)
 {
-    actions[2].setChecked(VarBox->EnableTranslater);
+    actions[2].setChecked(VarBox->m_enableTranslater);
     event->accept();
 }
 
@@ -124,7 +124,7 @@ void Menu::initMenuConnect()
         lator.exec();
     });
     connect(actions+2, &QAction::triggered, VarBox->form, &Form::enableTranslater);    //是否启用翻译功能
-    actions[2].setChecked(VarBox->EnableTranslater);                                   //设置是否选中“划词翻译”
+    actions[2].setChecked(VarBox->m_enableTranslater);                                   //设置是否选中“划词翻译”
     connect(actions+4, &QAction::triggered, VarBox->wallpaper, &Wallpaper::next);
     connect(actions+3, &QAction::triggered, VarBox->wallpaper, &Wallpaper::prev);      //设置受否开机自启                                                                              //是否自动移动鼠标防止息屏
     connect(actions+5, &QAction::triggered, VarBox->wallpaper, &Wallpaper::dislike);

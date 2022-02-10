@@ -37,7 +37,7 @@ public:
 	explicit Form(QWidget* parent = nullptr);
     ~Form();
     void keepInScreen();
-    bool tieBianHide;
+    bool m_tieBianHide, m_showToolTip;
     std::vector<class USBdriveHelper*> m_usbHelpers;
 
 private:
@@ -51,7 +51,7 @@ private:
     void loadStyle();
     class NetSpeedHelper* netHelper;                   //设置对话
     QPoint m_ptPress;
-    class Translater* translater = nullptr;            //翻译类，自带ui
+    class Translater* translater { nullptr };            //翻译类，自带ui
 	bool moved = false;
     void initSettings();
 	void initConnects();                         //初始化连接

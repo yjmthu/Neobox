@@ -54,6 +54,7 @@ VARBOX* VarBox = nullptr;
 
 VARBOX::VARBOX(int w, int h):
     QObject(nullptr),
+    m_systemVersion(SystemFunctions::getWindowsVersion()),
     m_windowPosition(WindowPosition::fromFile()),
     ScreenWidth(w), ScreenHeight(h)
 {
@@ -80,12 +81,10 @@ VARBOX::~VARBOX()
 
 void VARBOX::initFile()
 {
-    QDir().exists(QStringLiteral("./Scripts")) || QDir().mkdir(QStringLiteral("./Scripts"));
-    FILE* shell_file = fopen("./Scripts/SetWallPaper.sh", "rb");
-    if (!shell_file)
+    if (!QDir().exists(QStringLiteral("./Scripts")))
+        QDir().mkdir(QStringLiteral("./Scripts"));
+    if (!QFile::exists(QStringLiteral("./Scripts/SetWallPaper.sh")))
         QFile::copy(QStringLiteral("://scripts/SetWallpaper.sh"), QStringLiteral("./Scripts/SetWallPaper.sh"));
-    else
-        fclose(shell_file);
     const QString file = QStringLiteral("SpeedBox.ini");
     qout << "配置文件目录" << file;
     QString picfolder { QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)) };
@@ -97,7 +96,7 @@ void VARBOX::initFile()
         QSettings set(file, QSettings::IniFormat);
         set.setIniCodec(QTextCodec::codecForName("UTF-8"));
         set.beginGroup(QStringLiteral("SpeedBox"));
-        QByteArray x = set.value(QStringLiteral("Version")).toByteArray();
+        const QByteArray& x = set.value(QStringLiteral("Version")).toByteArray();
         set.endGroup();
         qout << "文件存在，版本信息为" << x;
         if (getVersion(x) < getVersion("21.8.1"))
@@ -142,6 +141,7 @@ label_1:
             IniWrite->setValue(QStringLiteral("ColorTheme"), static_cast<int>(Dialog::curTheme));
             IniWrite->setValue(QStringLiteral("TuoPanIcon"), false);
             IniWrite->setValue(QStringLiteral("TieBianHide"), true);
+            IniWrite->setValue(QStringLiteral("ShowToolTip"), true);
             IniWrite->endGroup();
 
             IniWrite->beginGroup(QStringLiteral("Dirs"));
@@ -166,8 +166,8 @@ label_2:
             IniRead->endGroup();
 
             IniRead->beginGroup(QStringLiteral("Translate"));
-            AutoHide = IniRead->value(QStringLiteral("AutoHide")).toBool();
-            EnableTranslater = IniRead->value(QStringLiteral("EnableTranslater")).toBool();
+            m_autoHide = IniRead->value(QStringLiteral("AutoHide")).toBool();
+            m_enableTranslater = IniRead->value(QStringLiteral("EnableTranslater")).toBool();
             IniRead->endGroup();
             qout << "读取翻译信息完毕";
             IniRead->beginGroup(QStringLiteral("Dirs"));
@@ -184,7 +184,7 @@ label_2:
             m_MarkdownNote = IniRead->value(QStringLiteral("MarkdownNote"), m_MarkdownNote).toBool();
             m_SquareClock = IniRead->value(QStringLiteral("SquareClock"), m_SquareClock).toBool();
             m_RoundClock = IniRead->value(QStringLiteral("RoundClock"), m_RoundClock).toBool();
-            enableUSBhelper = IniRead->value(QStringLiteral("UsbHelper"), enableUSBhelper).toBool();
+            m_enableUSBhelper = IniRead->value(QStringLiteral("UsbHelper"), m_enableUSBhelper).toBool();
             IniRead->endGroup();
             delete IniRead;
             qout << "读取设置完毕。";
@@ -314,7 +314,7 @@ void VARBOX::initProJob()
 {
     VarBox = this;
 #if defined (Q_OS_WIN32)
-    switch (SystemFunctions::getWindowsVersion()) {
+    switch (m_systemVersion) {
     case SystemVersion::Windows10:
         break;
     case SystemVersion::Windows8_1:

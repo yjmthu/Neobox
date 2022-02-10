@@ -89,7 +89,7 @@ Translater::Translater() :
     ui->TextFrom->setContextMenuPolicy(Qt::CustomContextMenu);
     ui->TextTo->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(timer, &QTimer::timeout, this, [=](){
-        if (isVisible() && --time_left <= 0 && VarBox->AutoHide)
+        if (isVisible() && --time_left <= 0 && VarBox->m_autoHide)
             hide();
     });
 
@@ -236,8 +236,8 @@ void Translater::initConnects()
 void Translater::showEvent(QShowEvent* event)
 {
     int x, y;
-    ui->pBtnPin->setChecked(!VarBox->AutoHide);
-    ui->pBtnPin->setIcon(QIcon(VarBox->AutoHide?":/icons/drip_pin.ico": ":/icons/drip_blue_pin.ico"));
+    ui->pBtnPin->setChecked(!VarBox->m_autoHide);
+    ui->pBtnPin->setIcon(QIcon(VarBox->m_autoHide?":/icons/drip_pin.ico": ":/icons/drip_blue_pin.ico"));
     QRect rt = VarBox->form->geometry();
     if (rt.top() > height())
         y = rt.top() - height();
@@ -255,7 +255,7 @@ void Translater::showEvent(QShowEvent* event)
     cursor.movePosition(QTextCursor::End);
     ui->TextFrom->setTextCursor(cursor);
     ui->TextFrom->setFocus();
-    if (VarBox->AutoHide) timer->start(1000);
+    if (VarBox->m_autoHide) timer->start(1000);
     event->accept();
 }
 
@@ -447,13 +447,13 @@ void Translater::getReply(const QByteArray& q)
 void Translater::setFix(bool checked)
 {
     ui->pBtnPin->setIcon(QIcon(checked?QStringLiteral(":/icons/drip_blue_pin.ico"):QStringLiteral(":/icons/drip_pin.ico")));
-    VarBox->AutoHide = !checked;
+    VarBox->m_autoHide = !checked;
     QSettings IniWrite(QStringLiteral("SpeedBox.ini"), QSettings::IniFormat);
     IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
     IniWrite.beginGroup("Translate");
-    IniWrite.setValue("AutoHide", VarBox->AutoHide);
+    IniWrite.setValue("AutoHide", VarBox->m_autoHide);
     IniWrite.endGroup();
-    if (VarBox->AutoHide)
+    if (VarBox->m_autoHide)
         timer->start(1000);
 }
 

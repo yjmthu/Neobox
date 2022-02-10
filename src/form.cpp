@@ -87,7 +87,7 @@ void Form::setupUi()
     QHBoxLayout *horizontalLayout = new QHBoxLayout(this);
     frame = new QFrame(this), labUp = new QLabel(frame), labDown = new QLabel(frame), labMemory = new QLabel(frame);
     QHBoxLayout *hboxlayout = new QHBoxLayout(frame);
-    QVBoxLayout *vboxlayout = new QVBoxLayout();
+    QVBoxLayout *vboxlayout = new QVBoxLayout(this);
     horizontalLayout->setContentsMargins(0, 0, 0, 0);
     vboxlayout->setContentsMargins(0, 0, 0, 0);
     vboxlayout->addWidget(labUp);
@@ -135,18 +135,17 @@ void Form::setupUi()
         font.setItalic(js_ui[i]->find("italic")->getType() == YJson::True);
         _ui[i]->setFont(font);
     }
-    frame->setToolTip(js->find("tip")->getValueString());
-    if (changed) js->toFile("BoxFont.json", YJson::UTF8BOM, true);
+    if (m_showToolTip)
+        frame->setToolTip(js->find("tip")->getValueString());
+    if (changed)
+        js->toFile("BoxFont.json", YJson::UTF8BOM, true);
     delete js;
 
     if (VarBox->m_windowPosition->m_netFormPos != QPoint(0, 0))
         move(VarBox->m_windowPosition->m_netFormPos);
 
-    if (VarBox->EnableTranslater) {
+    if (VarBox->m_enableTranslater)
         enableTranslater(true);
-    } else {
-        translater = nullptr;                     // 防止野指针
-    }
     loadStyle();
 }
 
@@ -177,7 +176,8 @@ void Form::loadStyle()
     labUp->setStyleSheet(m_sheet[2].getString(true));
     labDown->setStyleSheet(m_sheet[3].getString(true));
 
-    SystemFunctions::setWindowCompositionAttribute(HWND(winId()), ACCENT_STATE::ACCENT_ENABLE_BLURBEHIND, (m_sheet->bk_win << 24) & RGB(m_sheet->bk_red, m_sheet->bk_green, m_sheet->bk_blue));
+    if (VarBox->m_systemVersion == SystemVersion::Windows10)
+        SystemFunctions::setWindowCompositionAttribute(HWND(winId()), ACCENT_STATE::ACCENT_ENABLE_BLURBEHIND, (m_sheet->bk_win << 24) & RGB(m_sheet->bk_red, m_sheet->bk_green, m_sheet->bk_blue));
 }
 
 void Form::initSettings()
@@ -185,7 +185,8 @@ void Form::initSettings()
     QSettings IniRead(QStringLiteral("SpeedBox.ini"), QSettings::IniFormat);
     IniRead.setIniCodec(QTextCodec::codecForName("UTF-8"));
     IniRead.beginGroup(QStringLiteral("UI"));
-    tieBianHide = IniRead.value(QStringLiteral("TieBianHide"), true).toBool();
+    m_tieBianHide = IniRead.value(QStringLiteral("TieBianHide"), true).toBool();
+    m_showToolTip = IniRead.value(QStringLiteral("ShowToolTip"), true).toBool();
     IniRead.endGroup();
 }
 
@@ -263,7 +264,7 @@ char FirstDriveFromMask (ULONG unitmask)
         {
         case DBT_DEVICEARRIVAL:        //插入
 //            qout << "设备插入";
-            if (lpdb->dbch_devicetype == DBT_DEVTYP_VOLUME && VarBox->enableUSBhelper)
+            if (lpdb->dbch_devicetype == DBT_DEVTYP_VOLUME && VarBox->m_enableUSBhelper)
             {
                 PDEV_BROADCAST_VOLUME lpdbv = (PDEV_BROADCAST_VOLUME)lpdb;
                 m_usbHelpers.push_back(new USBdriveHelper(FirstDriveFromMask(lpdbv->dbcv_unitmask), m_usbHelpers.size(), &m_usbHelpers, nullptr));
@@ -347,7 +348,7 @@ void Form::mouseReleaseEvent(QMouseEvent* event)
 
 void Form::mouseDoubleClickEvent(QMouseEvent*)
 {
-    if (VarBox->EnableTranslater)
+    if (VarBox->m_enableTranslater)
     {
         if (!translater->isVisible()) {
             translater->show();
@@ -397,7 +398,7 @@ void Form::mouseMoveEvent(QMouseEvent* event)
     void Form::enterEvent(QEnterEvent* event)
 #endif
 {
-    if (tieBianHide)
+    if (m_tieBianHide)
     {
         const QPoint pos = this->pos();
         if (moved) {
@@ -423,7 +424,7 @@ void Form::mouseMoveEvent(QMouseEvent* event)
 
 void Form::leaveEvent(QEvent* event)
 {
-    if (tieBianHide)
+    if (m_tieBianHide)
     {
         QPoint pos = this->pos();
         if (pos.x() + FORM_WIDTH >= VarBox->ScreenWidth)  // 右侧隐藏
@@ -458,12 +459,12 @@ void Form::startAnimation(int width, int height)
 void Form::enableTranslater(bool checked)
 {
     if (checked) {
-        VarBox->EnableTranslater = true;
+        VarBox->m_enableTranslater = true;
         translater = new Translater;
     } else {
-        VarBox->EnableTranslater = false;
+        VarBox->m_enableTranslater = false;
         delete translater;
         translater = nullptr;
     }
-    VARBOX::saveOneSet<bool>(QStringLiteral("Translate"), QStringLiteral("EnableTranslater"), VarBox->EnableTranslater);
+    VARBOX::saveOneSet<bool>(QStringLiteral("Translate"), QStringLiteral("EnableTranslater"), VarBox->m_enableTranslater);
 }

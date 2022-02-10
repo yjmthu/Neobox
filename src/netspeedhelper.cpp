@@ -20,7 +20,7 @@ inline QString formatSpped(long long dw, bool up_down)
             the_unit++;
         }
     }
-    return  QString("%1 %2 %3B").arg(units[up_down], QString::number(DW, 'f', 1), units[the_unit]);
+    return QString("%1 %2 %3B").arg(units[up_down], QString::number(DW, 'f', 1), units[the_unit]);
 }
 
 #if defined (Q_OS_WIN32)
