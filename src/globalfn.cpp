@@ -85,6 +85,19 @@ std::string utf8ToAnsi(const std::string& strUtf8)//传入的strUtf8是UTF-8编�
     delete[] strUnicode;
     return strTemp;
 }
+wchar_t* getCorrectUnicode(const QByteArray &ba)
+{
+    QTextCodec::ConverterState state;
+    QTextCodec *codec = QTextCodec::codecForName("UTF-8");
+    codec->toUnicode(ba.constData(), ba.size(), &state);
+    QString str = (state.invalidChars > 0) ? QTextCodec::codecForName("GBK")->toUnicode(ba): ba;
+    auto s = reinterpret_cast<const wchar_t*>(str.utf16());
+    auto l = wcslen(s)+1;
+    auto t = new wchar_t[l];
+    std::copy(s, s+l+1, t);
+    return t;
+}
+
 #endif
 
 void openDirectory(const QString& dir)

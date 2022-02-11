@@ -6,11 +6,11 @@
 #include <fstream>
 
 struct WindowPosition {
-    QPoint m_netFormPos;
-    QPoint m_noteDoorPos;
-    QPoint m_noteBookPos;
-    QPoint m_squareClockPos;
-    QPoint m_roundClockPos;
+    QPoint m_netFormPos {0, 0};
+    QPoint m_noteDoorPos {0, 0};
+    QPoint m_noteBookPos {0, 0};
+    QPoint m_squareClockPos {0, 0};
+    QPoint m_roundClockPos {0, 0};
     // QPoint m_other1, m_other2, m_other3, m_other4;
     void toFile() {
         std::ofstream file(".window-pos", std::ios::out | std::ios::binary);
@@ -28,12 +28,10 @@ struct WindowPosition {
             qDebug("读取窗口位置成功。");
             file.read(reinterpret_cast<char*>(ret), sizeof (WindowPosition));
             file.close();
-            return ret;
         } else {
             qDebug("读取窗口位置失败。");
-            memset(ret, 0, sizeof (WindowPosition));
-            return ret;
         }
+        return ret;
     }
 };
 

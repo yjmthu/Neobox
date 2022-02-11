@@ -36,19 +36,6 @@
 #include "windowposition.h"
 #include "globalfn.h"
 
-//wchar_t* GetCorrectUnicode(const QByteArray &ba)
-//{
-//    QTextCodec::ConverterState state;
-//    QTextCodec *codec = QTextCodec::codecForName("UTF-8");
-//    codec->toUnicode(ba.constData(), ba.size(), &state);
-//    QString str = (state.invalidChars > 0) ? QTextCodec::codecForName("GBK")->toUnicode(ba): ba;
-//    qout << "转换后的字符串: " << str;
-//    auto s = reinterpret_cast<const wchar_t*>(str.utf16());
-//    auto l = wcslen(s)+1;
-//    auto t = new wchar_t[l];
-//    std::copy(s, s+l+1, t);
-//    return t;
-//}
 
 VARBOX* VarBox = nullptr;
 
