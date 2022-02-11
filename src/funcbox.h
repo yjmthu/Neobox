@@ -63,6 +63,15 @@ public:
         IniRead.setValue(key, val);
         IniRead.endGroup();
     }
+    template<class _Ty>
+    static QVariant readOneSet(const QString& group, const QString& key, _Ty val) {
+        class QSettings IniRead(QStringLiteral("SpeedBox.ini"), QSettings::IniFormat);
+        IniRead.setIniCodec(QTextCodec::codecForName("UTF-8"));
+        IniRead.beginGroup(group);
+        QVariant var(IniRead.value(key, val));
+        IniRead.endGroup();
+        return var;
+    }
     uint32_t getVersion(const char* A);
 public slots:
     static void MSG(const char* text, const char* title="提示", QMessageBox::StandardButtons buttons=QMessageBox::Ok);

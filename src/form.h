@@ -37,7 +37,7 @@ public:
 	explicit Form(QWidget* parent = nullptr);
     ~Form();
     void keepInScreen();
-    bool m_tieBianHide, m_showToolTip;
+    bool m_tieBianHide { true }, m_showToolTip { true };
     std::vector<class USBdriveHelper*> m_usbHelpers;
 
 private:

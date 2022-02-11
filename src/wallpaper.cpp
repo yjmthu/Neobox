@@ -13,6 +13,7 @@
 #include <QNetworkReply>
 #include <QTimer>
 #include <QEventLoop>
+#include <QStandardPaths>
 #if defined (Q_OS_LINUX)
 #include <unistd.h>
 #elif defined (Q_OS_WINDOWS)
@@ -135,8 +136,8 @@ Wallpaper::Wallpaper():
 #endif
     m_curpic = m_picture_history.end();
 
-    timer->setInterval(TimeInterval * 60000);
-    if (FirstChange) {
+    timer->setInterval(m_timeInterval * 60000);
+    if (m_firstChange) {
         qout << "自动换已经开启，正在下载第一张壁纸。";
         if (isOnline(false)) {
             qout << "网络正常！";
@@ -157,7 +158,7 @@ Wallpaper::Wallpaper():
             });
             thrd->start();
         }
-        if (AutoSaveBingPicture && PaperType != Type::Bing)
+        if (m_autoSaveBingPicture && m_paperType != Type::Bing)
         {
             qout << "下载必应壁纸。";
             loadApiFile();
@@ -168,7 +169,7 @@ Wallpaper::Wallpaper():
         qout << "未开启自动更换壁纸。";
     }
     connect(timer, &QTimer::timeout, this, &Wallpaper::next);
-    if (AutoChange)
+    if (m_autoChange)
         timer->start();
     qout << "wallpaper初始化完毕";
 }
@@ -256,7 +257,7 @@ void Wallpaper::_set_b(YJson * file_data)
     std::string img_url("https://cn.bing.com");
     img_url += temp->find("url")->getValueString();
     QString bing_name;
-    if (UseDateAsBingName)
+    if (m_useDateAsBingName)
     {
         qout << "使用日期名称";
         bing_name = temp->find("enddate")->getValueString();
@@ -270,14 +271,14 @@ void Wallpaper::_set_b(YJson * file_data)
         bing_name = QDir::toNativeSeparators(m_bing_folder + "/" + bing_name + ".jpg");
     }
     file_data->toFile("BingData.json", YJson::UTF8BOM, true);
-    download_image(QString::fromStdString(img_url), bing_name, PaperType == Type::Bing);
+    download_image(QString::fromStdString(img_url), bing_name, m_paperType == Type::Bing);
 }
 
 void Wallpaper::push_back()
 {
     QDir dir;
     loadApiFile();
-    switch (PaperType)
+    switch (m_paperType)
     {
     case Type::Bing:
         set_from_Bing();
@@ -310,7 +311,8 @@ void Wallpaper::set_from_Wallhaven()  // 从数据库中随机抽取一个链接
     constexpr char file_name[] = "ImgData.json";
     std::string pic_url;
     YJson* jsonObject = nullptr, *jsonArray = nullptr, * find_item = nullptr;
-    if (!QFile::exists(file_name)) goto label_1;
+    if (!QFile::exists(file_name))
+        goto label_1;
     jsonObject = new YJson(file_name, YJson::AUTO);
     if (YJson::ep.first){
         qout << "ImageData文件出现错误!";
@@ -321,7 +323,7 @@ void Wallpaper::set_from_Wallhaven()  // 从数据库中随机抽取一个链接
         jsonObject->find("Api") &&
         (find_item = jsonObject->find("PageNum")) &&
         find_item->getType() == YJson::Number &&
-        find_item->getValueInt() == PageNum &&
+        find_item->getValueInt() == m_pageNum &&
         (jsonArray = jsonObject->find("ImgUrls")) &&
         jsonArray->getType() == YJson::Object)
     {
@@ -365,7 +367,7 @@ label_1:
     delete jsonObject;
     jsonObject = new YJson(YJson::Object);
     jsonObject->append(Wallpaper::m_wallhaven_api, "Api");
-    jsonObject->append(PageNum, "PageNum");
+    jsonObject->append(m_pageNum, "PageNum");
     jsonArray = jsonObject->append(YJson::Object, "ImgUrls");
     jsonArray->append(YJson::Array, "Used");
     jsonArray->append(YJson::Array, "Blacklist");
@@ -380,7 +382,7 @@ void Wallpaper::get_url_from_Wallhaven(YJson* jsonArray)
     YJson* urllist =  jsonArray->find("Unused"), *blacklist = jsonArray->find("Blacklist");
     m_doing = true;
     auto mgr = new QNetworkAccessManager;
-    k = int(5 * (PageNum - 1) + 1);
+    k = int(5 * (m_pageNum - 1) + 1);
     connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep){
         if (rep->error() != QNetworkReply::NoError)
         {
@@ -390,7 +392,7 @@ void Wallpaper::get_url_from_Wallhaven(YJson* jsonArray)
             return;
         }
         qout << "一轮壁纸链接请求结束";
-        if (k <= 5 * PageNum)
+        if (k <= 5 * m_pageNum)
         {
             YJson *js = new YJson(rep->readAll());
             if (js->find("error"))  //{"error":"Not Found"}
@@ -482,19 +484,24 @@ void Wallpaper::get_url_from_Bing()
 void Wallpaper::loadWallpaperSettings()
 {
     qout << "读取壁纸信息";
+    m_nativeDir = { QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)) };
     QSettings *IniRead = new QSettings("SpeedBox.ini", QSettings::IniFormat);
     IniRead->beginGroup("Wallpaper");
-    NativeDir = IniRead->value("NativeDir").toString();
-    unsigned safeEnum = IniRead->value("PaperType").toInt();
+    m_nativeDir = IniRead->value("NativeDir", m_nativeDir).toString();
+    unsigned safeEnum = IniRead->value("PaperType", static_cast<int>(m_paperType)).toInt();
     if (safeEnum > 9) safeEnum = 0;
-    PaperType = static_cast<Type>(safeEnum);
-    TimeInterval = IniRead->value("TimeInerval").toInt();
-    PageNum = IniRead->value("PageNum").toInt();
-    UserCommand = IniRead->value("UserCommand").toString();
-    AutoChange = IniRead->value("AutoChange").toBool();
-    UseDateAsBingName = IniRead->value("UseDateAsBingName", UseDateAsBingName).toBool();
-    AutoSaveBingPicture = IniRead->value("AutoSaveBingPicture", AutoSaveBingPicture).toBool();
-    FirstChange = IniRead->value("FirstChange", FirstChange).toBool();
+    m_paperType = static_cast<Type>(safeEnum);
+    m_timeInterval = IniRead->value("TimeInerval", m_timeInterval).toInt();
+    m_pageNum = IniRead->value("PageNum", m_pageNum).toInt();
+    m_autoChange = IniRead->value("AutoChange", m_autoChange).toBool();
+#if defined (Q_OS_WIN32)
+    m_userCommand = IniRead->value("UserCommand", QStringLiteral("python.exe -u \"X:\\xxxxx.py\"")).toString();
+#elif defined (Q_OS_LINUX)
+    m_userCommand = IniRead->value("UserCommand", "python.exe -u \"~/xxxxx.py\"").toString();
+#endif
+    m_useDateAsBingName = IniRead->value("UseDateAsBingName", m_useDateAsBingName).toBool();
+    m_autoSaveBingPicture = IniRead->value("AutoSaveBingPicture", m_autoSaveBingPicture).toBool();
+    m_firstChange = IniRead->value("FirstChange", m_firstChange).toBool();
     IniRead->endGroup();
     delete IniRead;
     qout << "读取壁纸信息完毕";
@@ -540,7 +547,7 @@ void Wallpaper::download_image(const _Ty &url, const QString &path, bool set)
 
 void Wallpaper::set_from_Native()
 {
-    QDir dir(NativeDir);
+    QDir dir(m_nativeDir);
     if (!dir.exists()) return;
     QStringList filters;
     filters << "*.png" << "*.jpg" << "*.jpeg" << "*.bmp" << "*.wbep";
@@ -549,7 +556,7 @@ void Wallpaper::set_from_Native()
     if (!dir_count) return;
     std::uniform_int_distribution<int> dis(0, dir_count - 1);
     QString file_name = dir[dis(_gen)];       //随机生成文件名称。
-    file_name = QDir::toNativeSeparators(NativeDir + "/" + file_name);
+    file_name = QDir::toNativeSeparators(m_nativeDir + "/" + file_name);
 
     if (m_doing)
         return emit msgBox("当前正忙, 请稍后再试.", "提示");
@@ -624,12 +631,12 @@ QStringList _parse_arguments(const QString& str)
 
 void Wallpaper::set_from_Advance()
 {
-    if (UserCommand.isEmpty()) return;
-    qout << "高级命令开始" << UserCommand;
+    if (m_userCommand.isEmpty()) return;
+    qout << "高级命令开始" << m_userCommand;
     static std::string program_output;
     m_doing = true;
     auto thrd = QThread::create([=](){
-        QStringList&& lst = _parse_arguments(UserCommand);
+        QStringList&& lst = _parse_arguments(m_userCommand);
         const QString program_file = lst[0];
         lst.removeFirst();
         if (applyClicked)
@@ -686,7 +693,7 @@ void Wallpaper::next()
 {
     if (m_doing) return emit msgBox("频繁点击是没有效的哦！", "提示");
     qout << "下一张图片";
-    if (m_curpic != m_picture_history.end() && ++m_curpic != m_picture_history.end())
+    if (++m_curpic < m_picture_history.end())
     {
         FILE* file = readFile(*m_curpic);
         if (!file) return;
@@ -707,9 +714,10 @@ void Wallpaper::next()
         });
         thrd->start();
         return;
+    } else {
+        qout << "壁纸类型：" << static_cast<int>(m_paperType);
+        push_back();
     }
-    qout << "壁纸类型：" << static_cast<int>(PaperType);
-    push_back();
 }
 
 void Wallpaper::prev()
@@ -803,10 +811,10 @@ void Wallpaper::loadApiFile()
 {
     YJson& json = *new YJson("WallpaperApi.json", YJson::UTF8);
     const char* curApi = nullptr;
-    int index = static_cast<int>(PaperType);
+    int index = static_cast<int>(m_paperType);
     m_bing_api = QString::fromStdString(json["BingApi"]["Parameter"].urlEncode(json["MainApis"]["BingApi"].getValueString()));
     m_bing_folder = json["BingApi"]["Folder"].getValueString();
-    switch (PaperType)
+    switch (m_paperType)
     {
     case Type::Other:
         curApi = json["OtherApi"]["Curruent"].getValueString();

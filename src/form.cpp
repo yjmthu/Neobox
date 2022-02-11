@@ -185,8 +185,8 @@ void Form::initSettings()
     QSettings IniRead(QStringLiteral("SpeedBox.ini"), QSettings::IniFormat);
     IniRead.setIniCodec(QTextCodec::codecForName("UTF-8"));
     IniRead.beginGroup(QStringLiteral("UI"));
-    m_tieBianHide = IniRead.value(QStringLiteral("TieBianHide"), true).toBool();
-    m_showToolTip = IniRead.value(QStringLiteral("ShowToolTip"), true).toBool();
+    m_tieBianHide = IniRead.value(QStringLiteral("TieBianHide"), m_tieBianHide).toBool();
+    m_showToolTip = IniRead.value(QStringLiteral("ShowToolTip"), m_showToolTip).toBool();
     IniRead.endGroup();
 }
 
@@ -458,13 +458,12 @@ void Form::startAnimation(int width, int height)
 
 void Form::enableTranslater(bool checked)
 {
-    if (checked) {
-        VarBox->m_enableTranslater = true;
+    if ((VarBox->m_enableTranslater = checked)) {
         translater = new Translater;
     } else {
-        VarBox->m_enableTranslater = false;
         delete translater;
         translater = nullptr;
     }
-    VARBOX::saveOneSet<bool>(QStringLiteral("Translate"), QStringLiteral("EnableTranslater"), VarBox->m_enableTranslater);
+    VARBOX::saveOneSet<bool>(
+                QStringLiteral("Translate"), QStringLiteral("EnableTranslater"), VarBox->m_enableTranslater);
 }

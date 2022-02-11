@@ -10,6 +10,7 @@ class QNetworkConfigurationManager;
 #include <QUrl>
 #include <QNetworkAccessManager>
 #include <random>
+#include <deque>
 
 class Wallpaper: public QObject
 {
@@ -40,23 +41,23 @@ private:
 
 public:
     enum class Type { Hot, Nature, Anime, Simple, Random, User, Bing, Other, Native, Advance };
-    std::list<std::string> m_picture_history;
-    std::list<std::string>::const_iterator m_curpic;
+    std::deque<std::string> m_picture_history;
+    std::deque<std::string>::const_iterator m_curpic;
     bool m_update_wallhaven_api;
     std::string m_wallhaven_api, m_other_api;
     QUrl m_bing_api;
     QString m_bing_folder, m_wallhaven_folder, m_other_folder, m_other_name;
     class QTimer *timer = nullptr;                       //定时更换壁纸
 
-    Type PaperType = Type::Hot;                                        //当下正在使用的壁纸类型
-    bool AutoChange = false;
-    unsigned char PageNum = 1;
-    unsigned char TimeInterval;
-    bool UseDateAsBingName;
-    bool AutoSaveBingPicture;
-    QString NativeDir;                                                 //当下正在使用的用户本地壁纸文件夹
-    QString UserCommand;                //当下正在使用的用户高级命令
-    bool FirstChange = true;
+    Type m_paperType { Type::Hot };                                        //当下正在使用的壁纸类型
+    bool m_autoChange { false };
+    unsigned char m_pageNum { 0X01 };
+    unsigned char m_timeInterval { 0X0F };
+    bool m_useDateAsBingName { true };
+    bool m_autoSaveBingPicture { false };
+    QString m_nativeDir;                                                 //当下正在使用的用户本地壁纸文件夹
+    QString m_userCommand;                //当下正在使用的用户高级命令
+    bool m_firstChange { true };
 
     Wallpaper(); ~Wallpaper();
     void push_back();
@@ -64,7 +65,7 @@ public:
     void prev();
     void apply();
     void dislike();
-    bool applyClicked = false;
+    bool applyClicked { false };
     inline bool isActive() const { return m_doing; };
     inline void kill() { m_doing = false; };
 
