@@ -130,8 +130,7 @@ void Menu::initMenuConnect()
     connect(actions+3, &QAction::triggered, VarBox->wallpaper, &Wallpaper::prev);      //设置受否开机自启                                                                              //是否自动移动鼠标防止息屏
     connect(actions+5, &QAction::triggered, VarBox->wallpaper, &Wallpaper::dislike);
     connect(actions+6, &QAction::triggered, VarBox, [](){
-        qout << VarBox->PathToOpen;
-        GlobalFn::openDirectory(VarBox->PathToOpen);
+        GlobalFn::openDirectory(VarBox->m_pathToOpen);
     });                 //打开exe所在文件夹
 #ifdef Q_OS_WIN32
     connect(actions+7, &QAction::triggered, VarBox,

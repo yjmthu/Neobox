@@ -38,10 +38,8 @@ Form::Form(QWidget* parent) :
     netHelper(new NetSpeedHelper)
 {
     *const_cast<Form**>(&(VarBox->form)) = this;
-    qout << "悬浮窗UI";
     initSettings();
     setupUi();                         //创建界面
-    qout << "悬浮窗连接";
 	initConnects();
 }
 
@@ -88,7 +86,7 @@ void Form::setupUi()
     QHBoxLayout *horizontalLayout = new QHBoxLayout(this);
     frame = new QFrame(this), labUp = new QLabel(frame), labDown = new QLabel(frame), labMemory = new QLabel(frame);
     QHBoxLayout *hboxlayout = new QHBoxLayout(frame);
-    QVBoxLayout *vboxlayout = new QVBoxLayout(this);
+    QVBoxLayout *vboxlayout = new QVBoxLayout;
     horizontalLayout->setContentsMargins(0, 0, 0, 0);
     vboxlayout->setContentsMargins(0, 0, 0, 0);
     vboxlayout->addWidget(labUp);

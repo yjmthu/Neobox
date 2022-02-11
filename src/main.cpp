@@ -27,12 +27,13 @@ int main(int argc, char* argv[])
     QDir::setCurrent(a.applicationDirPath());
     QFile::remove(QStringLiteral("Speed_Box_Updater.exe"));
 #if defined (Q_OS_WIN32)
-    const QString& dataRath = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::HomeLocation) +  "/AppData/Local/SpeedBox");
+    QDir dir = QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
 #elif defined(Q_OS_LINUX)
     QString data_path = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) +  "/.config/SpeedBox";
 #endif
-    QDir().mkdir(dataRath);
-    QDir::setCurrent(dataRath);
+    dir.mkpath(QStringLiteral("./AppData/Local/SpeedBox"));
+    dir.cd(QStringLiteral("./AppData/Local/SpeedBox"));
+    QDir::setCurrent(dir.absolutePath());
     QScreen* screen = QGuiApplication::primaryScreen();                    //获取屏幕分辨率
     QRect geo = screen->geometry();
     VarBox = new VARBOX(geo.width(), geo.height());

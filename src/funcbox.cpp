@@ -98,7 +98,7 @@ void VARBOX::initFile()
         IniRead->endGroup();
         qout << "读取翻译信息完毕";
         IniRead->beginGroup(QStringLiteral("Dirs"));
-        PathToOpen = IniRead->value(QStringLiteral("OpenDir"), QDir::toNativeSeparators(qApp->applicationDirPath())).toString();
+        m_pathToOpen = IniRead->value(QStringLiteral("OpenDir"), QDir::toNativeSeparators(qApp->applicationDirPath())).toString();
         IniRead->endGroup();
         qout << "读取路径信息完毕";
         IniRead->beginGroup(QStringLiteral("UI"));
@@ -116,10 +116,10 @@ void VARBOX::initFile()
         delete IniRead;
         qout << "读取设置完毕。";
     }
-    if (!dir.exists(PathToOpen) && !dir.mkdir(PathToOpen))
+    if (!dir.exists(m_pathToOpen) && !dir.mkdir(m_pathToOpen))
     {
-        PathToOpen = QDir::toNativeSeparators(qApp->applicationDirPath());
-        GlobalFn::saveOneSet(QStringLiteral("Dirs"), QStringLiteral("OpenDir"), PathToOpen);
+        m_pathToOpen = QDir::toNativeSeparators(qApp->applicationDirPath());
+        GlobalFn::saveOneSet(QStringLiteral("Dirs"), QStringLiteral("OpenDir"), m_pathToOpen);
     }
     const std::string apifile("WallpaperApi.json");
     if (!QFile::exists(QString::fromStdString(apifile)))

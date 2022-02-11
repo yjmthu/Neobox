@@ -39,7 +39,7 @@ public:
 
     bool m_enableTranslater { false }, m_autoHide { false };
     bool m_enableUSBhelper { true };     // enableUSBhelper
-    QString PathToOpen;                // 右键要打开的文件夹
+    QString m_pathToOpen;                // 右键要打开的文件夹
     bool m_MarkdownNote { false }, m_SquareClock { false }, m_RoundClock { false }, m_TuoPanIcon { false };
 
     const int ScreenWidth, ScreenHeight;                  //屏幕宽高

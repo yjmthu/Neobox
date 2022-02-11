@@ -79,7 +79,7 @@ Wallpaper::Wallpaper():
         }
     }
 #endif
-    m_curpic = m_picture_history.end();
+    m_curpic = m_picture_history.begin();
 
     timer->setInterval(m_timeInterval * 60000);
     if (m_firstChange) {

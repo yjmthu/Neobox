@@ -123,7 +123,7 @@ void Dialog::initUi()
         my_on_rBtnWallhavenApiDefault_clicked();
     }
 #if defined (Q_OS_WIN32)
-    if (VarBox->PathToOpen.compare(QDir::toNativeSeparators(qApp->applicationDirPath())))
+    if (VarBox->m_pathToOpen.compare(QDir::toNativeSeparators(qApp->applicationDirPath())))
         ui->radioButton_14->setChecked(true);
     else
         ui->radioButton_13->setChecked(true);
@@ -138,7 +138,7 @@ void Dialog::initUi()
     ui->cBxFormToolTip->setChecked(VarBox->form->m_showToolTip);
     ui->pushButton_4->setText(QStringLiteral("确定"));
     ui->comboBox_3->setCurrentIndex((int)curTheme);
-    ui->lineEdit->setText(VarBox->PathToOpen);
+    ui->lineEdit->setText(VarBox->m_pathToOpen);
     ui->checkBox_3->setChecked(wallpaper->m_firstChange);
     ui->BtnChooseFolder->setEnabled(ui->rBtnNative->isChecked());
     ui->cBxEnableUSBhelper->setChecked(VarBox->m_enableUSBhelper);
@@ -790,9 +790,9 @@ void Dialog::on_pushButton_4_clicked()
 		}
         return;
 	}
-    VarBox->PathToOpen = ui->lineEdit->text();
-    QDir().mkdir(VarBox->PathToOpen);
-    GlobalFn::saveOneSet<QString>(QStringLiteral("Dirs"), QStringLiteral("OpenDir"), VarBox->PathToOpen);
+    VarBox->m_pathToOpen = ui->lineEdit->text();
+    QDir().mkdir(VarBox->m_pathToOpen);
+    GlobalFn::saveOneSet<QString>(QStringLiteral("Dirs"), QStringLiteral("OpenDir"), VarBox->m_pathToOpen);
     jobTip->showTip(QStringLiteral("更换路径成功！"));
 }
 
