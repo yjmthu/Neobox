@@ -64,6 +64,7 @@ SOURCES += \
     blankform.cpp \
     calculator.cpp \
     downloadprogress.cpp \
+    globalfn.cpp \
     gmpoperatetip.cpp \
     main.cpp \
     funcbox.cpp \
@@ -72,6 +73,7 @@ SOURCES += \
     markdownnote.cpp \
     menu.cpp \
     netspeedhelper.cpp \
+    roundclock.cpp \
     squareclock.cpp \
     systemfunctions.cpp \
     translater.cpp \
@@ -90,11 +92,13 @@ HEADERS += \
     downloadprogress.h \
     form.h \
     funcbox.h \
+    globalfn.h \
     gmpoperatetip.h \
     markdownnote.h \
     menu.h \
     netspeedhelper.h \
     qstylesheet.h \
+    roundclock.h \
     speedwidget.h \
     squareclock.h \
     systemfunctions.h \

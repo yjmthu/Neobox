@@ -4,8 +4,6 @@
 #include <QDialog>
 #include "speedwidget.h"
 
-class GMPOperateTip;
-
 namespace Ui {
     class BingSetting;
 }

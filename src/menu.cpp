@@ -14,6 +14,7 @@
 #include "form.h"
 #include "wallpaper.h"
 #include "calculator.h"
+#include "globalfn.h"
 
 constexpr int MENU_WIDTH = 90;
 constexpr int MENU_HEIGHT = 330;
@@ -130,18 +131,18 @@ void Menu::initMenuConnect()
     connect(actions+5, &QAction::triggered, VarBox->wallpaper, &Wallpaper::dislike);
     connect(actions+6, &QAction::triggered, VarBox, [](){
         qout << VarBox->PathToOpen;
-        VarBox->openDirectory(VarBox->PathToOpen);
+        GlobalFn::openDirectory(VarBox->PathToOpen);
     });                 //打开exe所在文件夹
 #ifdef Q_OS_WIN32
     connect(actions+7, &QAction::triggered, VarBox,
             std::bind(
                 (QByteArray (*)(const QString &, const QStringList&, short))
-                VARBOX::runCmd, QStringLiteral("shutdown"), QStringList({"-s", "-t", "0"}), 0)
+                GlobalFn::runCmd, QStringLiteral("shutdown"), QStringList({"-s", "-t", "0"}), 0)
             );            //关闭电脑
     connect(actions+8, &QAction::triggered, VarBox,
             std::bind(
                 (QByteArray (*)(const QString &, const QStringList&, short))
-                VARBOX::runCmd, QStringLiteral("shutdown"), QStringList({"-r", "-t", "0"}), 0)
+                GlobalFn::runCmd, QStringLiteral("shutdown"), QStringList({"-r", "-t", "0"}), 0)
             );
 #elif defined Q_OS_LINUX
     connect(actions+7, &QAction::triggered, VarBox, [](){system("shutdown -h now");});            //关闭电脑

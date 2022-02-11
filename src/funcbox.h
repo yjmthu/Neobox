@@ -46,36 +46,14 @@ public:
 
     class Form* const form { nullptr }; class Dialog* const dialog { nullptr };
     class MarkdownNote* m_note { nullptr }; class SquareClock* m_sClock { nullptr };
-    void * m_rClock { nullptr };
+    class RoundClock * m_rClock { nullptr };
 
     std::function<bool(const wchar_t*)> PathFileExists { nullptr };
     explicit VARBOX(int, int);
     ~VARBOX();
     class Wallpaper* wallpaper { nullptr };                          //壁纸处理类
     class QSystemTrayIcon *systemTrayIcon { nullptr };
-
-    static QByteArray runCmd(const QString & program, const QStringList& argument, short line);
-    template<class _Ty>
-    static void saveOneSet(const QString& group, const QString& key, _Ty val) {
-        class QSettings IniRead(QStringLiteral("SpeedBox.ini"), QSettings::IniFormat);
-        IniRead.setIniCodec(QTextCodec::codecForName("UTF-8"));
-        IniRead.beginGroup(group);
-        IniRead.setValue(key, val);
-        IniRead.endGroup();
-    }
-    template<class _Ty>
-    static QVariant readOneSet(const QString& group, const QString& key, _Ty val) {
-        class QSettings IniRead(QStringLiteral("SpeedBox.ini"), QSettings::IniFormat);
-        IniRead.setIniCodec(QTextCodec::codecForName("UTF-8"));
-        IniRead.beginGroup(group);
-        QVariant var(IniRead.value(key, val));
-        IniRead.endGroup();
-        return var;
-    }
-    uint32_t getVersion(const char* A);
 public slots:
-    static void MSG(const char* text, const char* title="提示", QMessageBox::StandardButtons buttons=QMessageBox::Ok);
-    static void openDirectory(const QString& dir);
     void createTrayIcon(bool create);
     void createMarkdown(bool create);
     void createSquareClock(bool create);

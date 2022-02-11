@@ -21,6 +21,7 @@
 #include "qstylesheet.h"
 #include "YJson.h"
 #include "windowposition.h"
+#include "globalfn.h"
 
 #ifdef Q_OS_WIN32
 #include <Windows.h>
@@ -218,7 +219,7 @@ void Form::set_wallpaper_fail(const char* str)
         *const_cast<Dialog**>(&(VarBox->dialog)) = new Dialog;
         VarBox->dialog->show();
     }
-    VarBox->MSG(str, "出错");
+    GlobalFn::msgBox(str, "出错");
 }
 
 #ifdef Q_OS_WIN32
@@ -464,6 +465,6 @@ void Form::enableTranslater(bool checked)
         delete translater;
         translater = nullptr;
     }
-    VARBOX::saveOneSet<bool>(
+    GlobalFn::saveOneSet<bool>(
                 QStringLiteral("Translate"), QStringLiteral("EnableTranslater"), VarBox->m_enableTranslater);
 }

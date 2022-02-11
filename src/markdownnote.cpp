@@ -26,8 +26,10 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event) {
         if (event->button() == Qt::LeftButton) {
             setMouseTracking(false);
-            if (!m_moved) m_book->setVisible(!m_book->isVisible());
-            else m_moved = false;
+            if (!m_moved)
+                m_book->setVisible(!m_book->isVisible());
+            else
+                m_moved = false;
         }
         m_book->writePosition();
         event->accept();

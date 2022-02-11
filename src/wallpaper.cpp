@@ -25,62 +25,7 @@
 #include "YEncode.h"
 #include "YString.h"
 #include "YJson.h"
-
-#if defined (Q_OS_WIN32)
-
-std::string AnsiToUtf8(const std::string& strAnsi)//传入的strAnsi是GBK编码
-{
-    //gbk转unicode
-    int len = MultiByteToWideChar(CP_ACP, 0, strAnsi.c_str(), -1, NULL, 0);
-    wchar_t *strUnicode = new wchar_t[len];
-    wmemset(strUnicode, 0, len);
-    MultiByteToWideChar(CP_ACP, 0, strAnsi.c_str(), -1, strUnicode, len);
-
-    //unicode转UTF-8
-    len = WideCharToMultiByte(CP_UTF8, 0, strUnicode, -1, NULL, 0, NULL, NULL);
-    //char * strUtf8 = new char[len];
-    std::string strTemp(len, '\0');
-    WideCharToMultiByte(CP_UTF8, 0, strUnicode, -1, &strTemp.front(), len, NULL, NULL);
-
-    delete[] strUnicode;
-    return strTemp;
-}
-
-std::string Utf8ToAnsi(const std::string& strUtf8)//传入的strUtf8是UTF-8编码
-{
-    //UTF-8转unicode
-    int len = MultiByteToWideChar(CP_UTF8, 0, strUtf8.c_str(), -1, NULL, 0);
-    wchar_t * strUnicode = new wchar_t[len];//len = 2
-    wmemset(strUnicode, 0, len);
-    MultiByteToWideChar(CP_UTF8, 0, strUtf8.c_str(), -1, strUnicode, len);
-
-    //unicode转gbk
-    len = WideCharToMultiByte(CP_ACP, 0, strUnicode, -1, NULL, 0, NULL, NULL);
-    std::string strTemp(len, 0);//此时的strTemp是GBK编码
-    WideCharToMultiByte(CP_ACP,0, strUnicode, -1, &strTemp.front(), len, NULL, NULL);
-
-    delete[] strUnicode;
-    return strTemp;
-}
-#endif
-
-FILE* readFile(const std::string& filePath)
-{
-#if defined (Q_OS_WIN32)
-    const std::string ansiString(Utf8ToAnsi(filePath));
-    return fopen(ansiString.c_str(), "rb");
-#elif defined (Q_OS_LINUX)
-    return fopen(filePath.c_str(), "rb");
-#endif
-}
-
-const char* get_file_name(const char* file_path)
-{
-    const char* ptr = file_path;
-    while (*++ptr);
-    while (!strchr("\\/", *--ptr));
-    return ++ptr;
-}
+#include "globalfn.h"
 
 void check_is_wallhaven(const char* pic, char* id)
 {
@@ -122,7 +67,7 @@ Wallpaper::Wallpaper():
 {
     loadWallpaperSettings();
 
-    connect(this, &Wallpaper::msgBox, VarBox, std::bind(VARBOX::MSG, std::placeholders::_1, std::placeholders::_2, QMessageBox::Ok));
+    connect(this, &Wallpaper::msgBox, VarBox, std::bind(GlobalFn::msgBox, std::placeholders::_1, std::placeholders::_2, QMessageBox::Ok));
 #if defined (Q_OS_WIN32)
     QSettings set("HKEY_CURRENT_USER\\Control Panel\\Desktop", QSettings::NativeFormat);
     if (set.contains("WallPaper"))
@@ -647,7 +592,7 @@ void Wallpaper::set_from_Advance()
             lst << "1";
         }
         qout << "程序: " <<  program_file << "; 参数: " << lst;
-        program_output = static_cast<const char*>(VarBox->runCmd(program_file, lst, 1));
+        program_output = static_cast<const char*>(GlobalFn::runCmd(program_file, lst, 1));
         qout << "运行输出ansi: " << program_output.c_str();
     });
     connect(thrd, &QThread::finished, this, [=](){
@@ -669,7 +614,7 @@ void Wallpaper::set_from_Advance()
                         fclose(f);
                         systemParametersInfo(program_output);
 #ifdef Q_OS_WIN32
-                        m_picture_history.emplace_back(AnsiToUtf8(program_output));
+                        m_picture_history.emplace_back(GlobalFn::ansiToUtf8(program_output));
 #elif defined (Q_OS_LINUX)
                         m_picture_history.emplace_back(program_output);
 #endif
@@ -695,7 +640,7 @@ void Wallpaper::next()
     qout << "下一张图片";
     if (++m_curpic < m_picture_history.end())
     {
-        FILE* file = readFile(*m_curpic);
+        FILE* file = GlobalFn::readFile(*m_curpic);
         if (!file) return;
         m_doing = true;
         auto thrd = QThread::create([=](){
@@ -730,7 +675,7 @@ void Wallpaper::prev()
                 emit msgBox("无法找到更早的壁纸历史记录！", "提示");
                 return ;
             }
-            FILE* file = readFile(*--m_curpic);
+            FILE* file = GlobalFn::readFile(*--m_curpic);
             if (file) {
                 char buffer;
                 if (!fread(&buffer, sizeof(char), 1, file))
@@ -758,7 +703,7 @@ void Wallpaper::dislike()
 {
     qout << "不喜欢该壁纸。";
     const char* pic_path = m_curpic->c_str();
-    const char* pic_name = get_file_name(pic_path);
+    const char* pic_name = GlobalFn::getFileName(pic_path);
     char id[21] = { 0 };
     check_is_wallhaven(pic_name, id);
     if (*id)
@@ -782,7 +727,7 @@ void Wallpaper::dislike()
     {
         if (m_doing)
             return emit msgBox("和后台壁纸切换冲突，请稍后再试。", "提示");
-        FILE * file = readFile(*m_curpic);
+        FILE * file = GlobalFn::readFile(*m_curpic);
         if (!file) {
             m_curpic = m_picture_history.erase(m_curpic);
             return push_back();

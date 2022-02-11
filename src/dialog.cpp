@@ -31,7 +31,7 @@
 #include "wallpaper.h"
 #include "bingsetting.h"
 #include "qstylesheet.h"
-
+#include "globalfn.h"
 
 const QStringList Dialog::reg_keys {
     QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Classes\\*\\shell\\QCoper"),
@@ -145,6 +145,7 @@ void Dialog::initUi()
     ui->cBxEnableFanyier->setChecked(VarBox->m_enableTranslater);
     ui->cBxEnableMarkdown->setChecked(VarBox->m_MarkdownNote);
     ui->cBxEnableSquareClock->setChecked(VarBox->m_SquareClock);
+    ui->cBxEnableRoundClock->setChecked(VarBox->m_RoundClock);
     setFrameStyle(static_cast<int>(curTheme));
     checkSettings();
     loadFormStyle();
@@ -175,17 +176,12 @@ void Dialog::initChildren()
 void Dialog::initConnects()
 {
     qout << "对话框链接A";
-    connect(ui->pushButton_14, &QPushButton::clicked, this, [](){
-        QDesktopServices::openUrl(QUrl(QStringLiteral("https://yjmthu.github.io/Speed-Box")));
-    });
+    connect(ui->pushButton_14, &QPushButton::clicked, this, std::bind(&QDesktopServices::openUrl, QUrl(QStringLiteral("https://yjmthu.github.io/Speed-Box"))));
     connect(ui->rBtnNative, &QRadioButton::toggled, this, [this](bool checked){ui->BtnChooseFolder->setEnabled(checked);});
     connect(ui->BtnChooseFolder, &QToolButton::clicked, this, &Dialog::chooseFolder);
     connect(ui->pBtnCancel, &QPushButton::clicked, this, &Dialog::close);
     connect(ui->pBtnOk, &QPushButton::clicked, this, &Dialog::saveWallpaperSettings);
-    connect(ui->pBtnOpenAppData, &QPushButton::clicked, VarBox, [](){
-        qout << QDir::currentPath();
-        VarBox->openDirectory(QDir::currentPath());
-    });
+    connect(ui->pBtnOpenAppData, &QPushButton::clicked, VarBox, std::bind(GlobalFn::openDirectory, QDir::currentPath()));
     connect(ui->pBtnOpenPicturePath, &QPushButton::clicked, this, &Dialog::openPicturePath);
     connect(ui->linePictuerPath, &QLineEdit::returnPressed, this, &Dialog::linePictuerPathReturn);
     connect(ui->cBxAutoStart, &QPushButton::clicked, this, [this](bool checked){
@@ -248,11 +244,11 @@ void Dialog::initConnects()
     connect(ui->rBtnBingApi, &QRadioButton::clicked, this, &Dialog::my_on_rBtnBingApi_clicked);
     connect(ui->rBtnOtherApi, &QRadioButton::clicked, this, &Dialog::my_on_rBtnOtherApi_clicked);
     connect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
-    connect(ui->pushButton, &QPushButton::clicked, VarBox, std::bind(VARBOX::openDirectory, qApp->applicationDirPath()));
+    connect(ui->pushButton, &QPushButton::clicked, VarBox, std::bind(GlobalFn::openDirectory, qApp->applicationDirPath()));
     connect(ui->cBxEnableUSBhelper, &QCheckBox::clicked, this, [this](bool checked){
         curTheme = static_cast<Theme>(ui->comboBox_3->currentIndex());
         VarBox->m_enableUSBhelper = checked;
-        VARBOX::saveOneSet<bool>(QStringLiteral("Apps"), QStringLiteral("UsbHelper"), VarBox->m_enableUSBhelper);
+        GlobalFn::saveOneSet<bool>(QStringLiteral("Apps"), QStringLiteral("UsbHelper"), VarBox->m_enableUSBhelper);
         jobTip->showTip("应用并保存成功！");
     });
     connect(ui->sLdTranparent, &QSlider::valueChanged, this, [=](int value){
@@ -424,11 +420,11 @@ void Dialog::initConnects()
     connect(ui->cBxTuoPanIcon, &QCheckBox::clicked, VarBox, &VARBOX::createTrayIcon);
     connect(ui->cBxTieBianHide, &QCheckBox::clicked, VarBox, [](bool checked){
         VarBox->form->m_tieBianHide = checked;
-        VARBOX::saveOneSet(QStringLiteral("UI"), QStringLiteral("TieBianHide"), checked);
+        GlobalFn::saveOneSet<bool>(QStringLiteral("UI"), QStringLiteral("TieBianHide"), checked);
     });
     connect(ui->cBxFormToolTip, &QCheckBox::clicked, VarBox, [](bool checked){
         VarBox->form->m_showToolTip = checked;
-        VARBOX::saveOneSet(QStringLiteral("UI"), QStringLiteral("ShowToolTip"), checked);
+        GlobalFn::saveOneSet<bool>(QStringLiteral("UI"), QStringLiteral("ShowToolTip"), checked);
     });
     connect(ui->cBxLeftBorderRadius, &QCheckBox::clicked, VarBox, [=](bool checked){
         int index = ui->cBxFormPart->currentIndex();
@@ -593,7 +589,7 @@ void Dialog::chooseFolder()
     if (wallpaper->m_nativeDir.isEmpty() || (!d.exists(wallpaper->m_nativeDir) && !d.mkdir(wallpaper->m_nativeDir)))
 	{
         wallpaper->m_nativeDir = QDir::toNativeSeparators(QStandardPaths::writableLocation((QStandardPaths::PicturesLocation)));
-        VARBOX::saveOneSet<QString>("Wallpaper", "NativeDir", wallpaper->m_nativeDir);
+        GlobalFn::saveOneSet<QString>("Wallpaper", "NativeDir", wallpaper->m_nativeDir);
         ui->LinePath->setText(wallpaper->m_nativeDir);
 	}
     QString titile = QStringLiteral("请选择一个文件夹");
@@ -749,7 +745,7 @@ void Dialog::openPicturePath()
             img_folder = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
 	}
     if (dir.exists(img_folder))
-        VarBox->openDirectory(img_folder);
+        GlobalFn::openDirectory(img_folder);
 	else
 		QMessageBox::warning(this, "警告", "路径不存在！", QMessageBox::Ok, QMessageBox::Ok);
 }
@@ -796,7 +792,7 @@ void Dialog::on_pushButton_4_clicked()
 	}
     VarBox->PathToOpen = ui->lineEdit->text();
     QDir().mkdir(VarBox->PathToOpen);
-    VARBOX::saveOneSet<QString>(QStringLiteral("Dirs"), QStringLiteral("OpenDir"), VarBox->PathToOpen);
+    GlobalFn::saveOneSet<QString>(QStringLiteral("Dirs"), QStringLiteral("OpenDir"), VarBox->PathToOpen);
     jobTip->showTip(QStringLiteral("更换路径成功！"));
 }
 
@@ -872,7 +868,7 @@ void Dialog::on_pushButton_10_clicked()
         }
         else
         {
-            if (VarBox->getVersion(VarBox->Version) < VarBox->getVersion(version))
+            if (GlobalFn::getVersion(VarBox->Version) < GlobalFn::getVersion(version))
             {
                 jobTip->showTip(QString("\t有新版本已经出现！\n当前版本：%1%2%3").arg(VarBox->Version, "; 最新版本：", version), 2000);
                 ui->pushButton_12->setEnabled(true);
@@ -908,7 +904,7 @@ void Dialog::on_pushButton_12_clicked()
         mgr0->deleteLater();
         if (json.ep.first)
         {
-            VarBox->MSG("Json文件出错, 下载失败!");
+            GlobalFn::msgBox("Json文件出错, 下载失败!");
             return;
         }
         if (json.getType() != YJson::Object)

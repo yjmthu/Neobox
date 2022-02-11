@@ -9,6 +9,7 @@
 #include <QDesktopServices>
 
 #include "YString.h"
+#include "globalfn.h"
 
 
 inline QString bytes_to_string(int64_t size)
@@ -105,9 +106,7 @@ USBdriveHelper::USBdriveHelper(char U, unsigned index, std::vector<USBdriveHelpe
     horizontalLayout->setSpacing(0);
     btn1->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding));
     btn2->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding));
-    connect(btn1, &QPushButton::clicked, VarBox, [this](){
-        VarBox->openDirectory(QString::fromStdString(diskId));
-    });
+    connect(btn1, &QPushButton::clicked, VarBox, std::bind(GlobalFn::openDirectory, QString::fromStdString(diskId)));
 #ifdef Q_OS_WIN32
     connect(btn2, &QPushButton::clicked, this, [this]()->bool{
         const QString paths = QString(R"(\\.\%1:)").arg(diskId.front());

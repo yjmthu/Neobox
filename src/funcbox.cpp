@@ -32,8 +32,9 @@
 #include "dialog.h"
 #include "markdownnote.h"
 #include "squareclock.h"
+#include "roundclock.h"
 #include "windowposition.h"
-
+#include "globalfn.h"
 
 //wchar_t* GetCorrectUnicode(const QByteArray &ba)
 //{
@@ -72,6 +73,7 @@ VARBOX::~VARBOX()
     delete m_windowPosition;
     delete systemTrayIcon;
     delete m_sClock;
+    delete m_rClock;
     delete m_note;
     delete form;
     delete wallpaper;
@@ -88,13 +90,13 @@ void VARBOX::initFile()
     const QString file = QStringLiteral("SpeedBox.ini");
     qout << "配置文件目录" << file;
     QDir dir;
-    const QByteArray& x { readOneSet<QByteArray>(QStringLiteral("SpeedBox"), QStringLiteral("Version"), "21.8.0").toByteArray() };
+    const QByteArray& x { GlobalFn::readOneSet<QByteArray>(QStringLiteral("SpeedBox"), QStringLiteral("Version"), "21.8.0").toByteArray() };
     qout << "文件存在，版本信息为" << x;
-    if (getVersion(x) < getVersion("21.8.1"))
+    if (GlobalFn::getVersion(x) < GlobalFn::getVersion("21.8.1"))
     {
         qout << "ini文件过期，将其删除。";
         QFile::remove(file);
-        saveOneSet<QString>(QStringLiteral("SpeedBox"), QStringLiteral("Version"), Version);
+        GlobalFn::saveOneSet<QString>(QStringLiteral("SpeedBox"), QStringLiteral("Version"), Version);
     } else {
         qout << "开始读取设置。";
         QSettings *IniRead = new QSettings(file, QSettings::IniFormat);
@@ -130,7 +132,7 @@ void VARBOX::initFile()
     if (!dir.exists(PathToOpen) && !dir.mkdir(PathToOpen))
     {
         PathToOpen = QDir::toNativeSeparators(qApp->applicationDirPath());
-        saveOneSet(QStringLiteral("Dirs"), QStringLiteral("OpenDir"), PathToOpen);
+        GlobalFn::saveOneSet(QStringLiteral("Dirs"), QStringLiteral("OpenDir"), PathToOpen);
     }
     const std::string apifile("WallpaperApi.json");
     if (!QFile::exists(QString::fromStdString(apifile)))
@@ -207,7 +209,7 @@ void VARBOX::createTrayIcon(bool create)
         delete systemTrayIcon;
         systemTrayIcon = nullptr;
     }
-    saveOneSet<bool>(QStringLiteral("UI"), QStringLiteral("TuoPanIcon"), create);
+    GlobalFn::saveOneSet<bool>(QStringLiteral("UI"), QStringLiteral("TuoPanIcon"), create);
 }
 
 void VARBOX::createMarkdown(bool create)
@@ -218,7 +220,7 @@ void VARBOX::createMarkdown(bool create)
         delete m_note;
         m_note = nullptr;
     }
-    saveOneSet<bool>(QStringLiteral("Apps"), QStringLiteral("MarkdownNote"), create);
+    GlobalFn::saveOneSet<bool>(QStringLiteral("Apps"), QStringLiteral("MarkdownNote"), create);
 }
 
 void VARBOX::createSquareClock(bool create)
@@ -230,19 +232,19 @@ void VARBOX::createSquareClock(bool create)
         delete m_sClock;
         m_sClock = nullptr;
     }
-    saveOneSet<bool>(QStringLiteral("Apps"), QStringLiteral("SquareClock"), create);
+    GlobalFn::saveOneSet<bool>(QStringLiteral("Apps"), QStringLiteral("SquareClock"), create);
 }
 
 void VARBOX::createRoundClock(bool create)
 {
-//    if ((m_RoundClock = create)) {
-//        m_rClock = new DesktopClock;
-//        m_rClock->show();
-//    } else {
-//        delete m_rClock;
-//        m_rClock = nullptr;
-//    }
-//    saveOneSet<bool>(QStringLiteral("Apps"), QStringLiteral("RoundClock"), create);
+    if ((m_RoundClock = create)) {
+        m_rClock = new RoundClock;
+        m_rClock->show();
+    } else {
+        delete m_rClock;
+        m_rClock = nullptr;
+    }
+    GlobalFn::saveOneSet<bool>(QStringLiteral("Apps"), QStringLiteral("RoundClock"), create);
 }
 
 void VARBOX::initProJob()
@@ -262,66 +264,5 @@ void VARBOX::initProJob()
 #endif
     QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/Nickainley-Normal-small.ttf"));
     QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/Carattere-Regular-small.ttf"));
-}
-
-QByteArray VARBOX::runCmd(const QString& program, const QStringList& argument, short line)
-{
-    QProcess process;
-    process.setProgram(program);
-    process.setArguments(argument);
-    connect(&process, &QProcess::errorOccurred, [&](){ qout << "运行出错"; line=0; });
-    process.start();
-    process.waitForStarted(); //等待程序启动
-    process.waitForFinished(15000);
-    if (line) {
-        for (int c = 1; c < line; c++)
-        {
-            process.readLine();
-        }
-        return process.readLine();
-    }
-    else return nullptr;
-}
-
-extern std::string Utf8ToAnsi(const std::string& strUtf8);
-void VARBOX::openDirectory(const QString& dir)
-{
-#ifdef Q_OS_WIN
-    auto path = Utf8ToAnsi(QDir::toNativeSeparators(dir).toStdString());
-    ShellExecuteA(NULL, "open", "explorer.exe", path.c_str(), NULL, SW_SHOWNORMAL);
-#elif defined Q_OS_LINUX
-    system(("xdg-open \"" + dir + "\"").toStdString().c_str());
-#endif
-}
-
-
-char _getINT(const char* &X)
-{
-    unsigned char x = 0;
-    while (true)
-    {
-        x += *X++ - '0';
-        if (*X == '.' || *X == '\0')
-            return x;
-        x *= 10;
-    }
-    return x;
-}
-uint32_t VARBOX::getVersion(const char* A)
-{
-    uint32_t buffer = _getINT(A);
-    (buffer <<= 8) |= _getINT(++A);
-    (buffer <<= 8) |= _getINT(++A);
-    return buffer;
-}
-
-void VARBOX::MSG(const char *text, const char* title, QMessageBox::StandardButtons s)
-{
-    QMessageBox message(QMessageBox::Information, title, text, s, NULL);
-    QFile qss(QStringLiteral(":/qss/dialog_style.qss"));
-    qss.open(QFile::ReadOnly);
-    message.setStyleSheet(qss.readAll());
-    qss.close();
-    message.exec();
 }
 
