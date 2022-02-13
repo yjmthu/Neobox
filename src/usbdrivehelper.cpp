@@ -49,7 +49,7 @@ void USBdriveHelper::leaveEvent(QEvent *event)
 
 void USBdriveHelper::showEvent(QShowEvent *event)
 {
-    move(VarBox->ScreenWidth - width() - 20, 20 + m_index * (height() + 5));
+    move(VarBox->m_dScreenWidth - width() - 20, 20 + m_index * (height() + 5));
     widget->setGeometry(ui->frame->geometry());
     ui->frame->setGeometry(ui->frame->geometry());
     ui->progressBar->setMinimumWidth(width());

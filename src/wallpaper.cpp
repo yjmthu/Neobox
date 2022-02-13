@@ -49,7 +49,7 @@ bool Wallpaper::set_wallpaper(const QString &file_path)             //根据路�
         qout << "设置壁纸：" << file_path;
         m_picture_history.emplace_back(file_path.toStdString());
         std::wstring temp_utf16;
-        utf8_to_utf16LE<std::wstring&>(temp_utf16, (--(m_curpic = m_picture_history.end()))->c_str());
+        YEncode::utf8_to_utf16LE<std::wstring&>(temp_utf16, (--(m_curpic = m_picture_history.end()))->c_str());
         return systemParametersInfo(temp_utf16);
 #elif defined (Q_OS_LINUX)
         m_picture_history.push_back(file_path.toStdString());
@@ -127,7 +127,7 @@ Wallpaper::~Wallpaper()
 bool Wallpaper::systemParametersInfo(const std::string &path)
 {
     std::wstring str;
-    utf8_to_utf16LE<std::wstring&>(str, path);
+    YEncode::utf8_to_utf16LE<std::wstring&>(str, path);
 #if defined (Q_OS_WIN32)
         return ::SystemParametersInfoW(
             SPI_SETDESKWALLPAPER,

@@ -30,29 +30,25 @@ class VARBOX: public QObject
     Q_OBJECT
 
 public:
-    const char* const Version = "22.1.11";
-    const bool FirstUse[1] = { false };
+    constexpr static char m_dVersion[] = "22.1.11";
+    const bool m_bFirstUse { false };
+    const SystemVersion m_dSystemVersion;
+    const int m_dScreenWidth, m_dScreenHeight;                  //屏幕宽高
 
-    const SystemVersion m_systemVersion;
+    QString m_pathToOpen;                                       // 右键要打开的文件夹
+    bool m_bEnableTranslater { false }, m_bAutoHide { false }, m_bEnableUSBhelper { true }, m_bMarkdownNote { false }, m_bSquareClock { false }, m_bRoundClock { false }, m_bTuoPanIcon { false };
 
-    class WindowPosition* const m_windowPosition { nullptr };
+    class WindowPosition* const m_pWindowPosition { nullptr };
+    class Form* const m_pForm { nullptr };
+    class Dialog* const m_pDialog { nullptr };
+    class MarkdownNote* m_pNote { nullptr };
+    class SquareClock* m_sClock { nullptr };
+    class RoundClock* m_rClock { nullptr };
+    class Wallpaper* m_pWallpaper { nullptr };                  //壁纸处理类
+    class QSystemTrayIcon* m_pSystemTrayIcon { nullptr };
 
-    bool m_enableTranslater { false }, m_autoHide { false };
-    bool m_enableUSBhelper { true };     // enableUSBhelper
-    QString m_pathToOpen;                // 右键要打开的文件夹
-    bool m_MarkdownNote { false }, m_SquareClock { false }, m_RoundClock { false }, m_TuoPanIcon { false };
-
-    const int ScreenWidth, ScreenHeight;                  //屏幕宽高
-
-    class Form* const form { nullptr }; class Dialog* const dialog { nullptr };
-    class MarkdownNote* m_note { nullptr }; class SquareClock* m_sClock { nullptr };
-    class RoundClock * m_rClock { nullptr };
-
-    std::function<bool(const wchar_t*)> PathFileExists { nullptr };
     explicit VARBOX(int, int);
     ~VARBOX();
-    class Wallpaper* wallpaper { nullptr };                          //壁纸处理类
-    class QSystemTrayIcon *systemTrayIcon { nullptr };
 public slots:
     void createTrayIcon(bool create);
     void createMarkdown(bool create);
@@ -63,7 +59,7 @@ private:
      void initProJob();
      void initFile();
      void initChildren();
-     void initBehaviors();
+     void initBehavior();
 };
 
 extern VARBOX* VarBox;

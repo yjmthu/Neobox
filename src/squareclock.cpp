@@ -28,8 +28,8 @@ void SquareClock::mouseReleaseEvent(QMouseEvent *event)
     if (event->button() == Qt::LeftButton) {
         setMouseTracking(false);
     }
-    VarBox->m_windowPosition->m_squareClockPos = this->pos();
-    VarBox->m_windowPosition->toFile();
+    VarBox->m_pWindowPosition->m_squareClockPos = this->pos();
+    VarBox->m_pWindowPosition->toFile();
     event->accept();
 }
 
@@ -80,7 +80,7 @@ void SquareClock::setupUi()
     pFuncChangeText();
     connect(timer, &QTimer::timeout, this, pFuncChangeText);
     timer->start();
-    if (VarBox->m_windowPosition->m_squareClockPos != QPoint(0, 0)) {
-        move(VarBox->m_windowPosition->m_squareClockPos);
+    if (VarBox->m_pWindowPosition->m_squareClockPos != QPoint(0, 0)) {
+        move(VarBox->m_pWindowPosition->m_squareClockPos);
     }
 }

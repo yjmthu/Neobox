@@ -35,13 +35,13 @@ void Calculator::showEvent(QShowEvent* event)
 {   
 
     int x, y;
-    QRect rt=VarBox->form->geometry();
+    QRect rt=VarBox->m_pForm->geometry();
     if (rt.top() > height())
         y = rt.top() - height();
     else
         y = rt.bottom();
-    if (rt.left() + rt.right() + width() > VarBox->ScreenWidth * 2)
-        x = VarBox->ScreenWidth - width();
+    if (rt.left() + rt.right() + width() > VarBox->m_dScreenWidth * 2)
+        x = VarBox->m_dScreenWidth - width();
     else if (rt.right() + rt.left() < width())
         x = 0;
     else

@@ -40,14 +40,14 @@ YJson::YJson(const std::string& str) { strict_parse<std::string::const_iterator>
 YJson::YJson(const std::wstring& str)
 {
     std::deque<char> dstr;
-    utf16LE_to_utf8<std::deque<char>&, std::wstring::const_iterator>(dstr, str.cbegin());
+    YEncode::utf16LE_to_utf8<std::deque<char>&, std::wstring::const_iterator>(dstr, str.cbegin());
     strict_parse(dstr.cbegin(), dstr.cend());
 }
 
 YJson::YJson(const wchar_t* str)
 {
     std::deque<char> dstr;
-    utf16LE_to_utf8<std::deque<char>&, const wchar_t*>(dstr, str);
+    YEncode::utf16LE_to_utf8<std::deque<char>&, const wchar_t*>(dstr, str);
     strict_parse(dstr.cbegin(), dstr.cend());
 }
 
@@ -133,7 +133,7 @@ void YJson::loadFile(std::ifstream& file)
                 wchar_t* json_wstr = new wchar_t[size/sizeof(wchar_t) + 1];
                 char *ptr = reinterpret_cast<char*>(json_wstr); *ptr = c[2];
                 file.read(++ptr, size);
-                utf16LE_to_utf8<std::deque<char>&, const wchar_t*>(json_str, json_wstr);
+                YEncode::utf16LE_to_utf8<std::deque<char>&, const wchar_t*>(json_str, json_wstr);
                 delete [] json_wstr; file.close();
                 strict_parse(json_str.cbegin(), json_str.cend());
             }
@@ -591,7 +591,7 @@ bool YJson::toFile(const std::string name, const YJson::Encode& file_encode, boo
 {
     //qout << "开始打印" << name;
     if (ep.first) return false;
-    char* buffer = fmt?print_value(0):print_value();
+    char* buffer = fmt ? print_value(0): print_value();
     //qout << "打印成功" << buffer;
     if (buffer)
     {
@@ -601,7 +601,7 @@ bool YJson::toFile(const std::string name, const YJson::Encode& file_encode, boo
             //std::cout << "UTF-16" << u8"保存开始。";
             std::wstring data;
             data.push_back(*reinterpret_cast<const wchar_t*>(utf16le));
-            utf8_to_utf16LE<std::wstring&>(data, buffer);
+            YEncode::utf8_to_utf16LE<std::wstring&>(data, buffer);
             data.back() = L'\n';
             std::ofstream outFile(name, std::ios::out | std::ios::binary);
             if (outFile.is_open())
@@ -693,7 +693,7 @@ void YJson::loadFile(const std::string &path, YJson::Encode encode)
         file.seekg(2, std::ios::beg);
         std::wstring json_wstr(size / sizeof(wchar_t), 0);
         file.read(reinterpret_cast<char*>(&json_wstr[0]), size - 2);
-        utf16LE_to_utf8<std::string&, std::wstring::const_iterator>(json_vector, json_wstr.cbegin());
+        YEncode::utf16LE_to_utf8<std::string&, std::wstring::const_iterator>(json_vector, json_wstr.cbegin());
         file.close();
         strict_parse(json_vector.cbegin(), json_vector.cend());
         break;
@@ -722,7 +722,7 @@ void YJson::loadFile(const std::string &path, YJson::Encode encode)
             file.read(ptr+2, size - 2);
         }
         json_wstr.back() = '\0';
-        utf16LE_to_utf8<std::string&, std::wstring::const_iterator>(json_vector, json_wstr.cbegin());
+        YEncode::utf16LE_to_utf8<std::string&, std::wstring::const_iterator>(json_vector, json_wstr.cbegin());
         file.close();
         strict_parse(json_vector.cbegin(), json_vector.cend());
         break;
@@ -965,13 +965,13 @@ T YJson::parse_string(T str, T end)
             case 't': *ptr2++ = '\t';    break;
             case 'u': uc=parse_hex4(ptr+1);ptr+=4;                                                   /* get the unicode char. */
 
-                if ((uc>=utf16FirstWcharMark[1] && uc<utf16FirstWcharMark[2]) || uc==0)    break;    /* check for invalid.    */
+                if ((uc>=YEncode::utf16FirstWcharMark[1] && uc<YEncode::utf16FirstWcharMark[2]) || uc==0)    break;    /* check for invalid.    */
 
-                if (uc>=utf16FirstWcharMark[0] && uc<utf16FirstWcharMark[1])                         /* UTF16 surrogate pairs.    */
+                if (uc>=YEncode::utf16FirstWcharMark[0] && uc<YEncode::utf16FirstWcharMark[1])                         /* UTF16 surrogate pairs.    */
                 {
                     if (ptr[1]!='\\' || ptr[2]!='u')    break;                                       /* missing second-half of surrogate.    */
                     uc2=parse_hex4(ptr+3);ptr+=6;
-                    if (uc2<utf16FirstWcharMark[1] || uc2>=utf16FirstWcharMark[2])        break;     /* invalid second-half of surrogate.    */
+                    if (uc2<YEncode::utf16FirstWcharMark[1] || uc2>=YEncode::utf16FirstWcharMark[2])        break;     /* invalid second-half of surrogate.    */
                     uc=0x10000 + (((uc&0x3FF)<<10) | (uc2&0x3FF));
                 }
 
@@ -981,7 +981,7 @@ T YJson::parse_string(T str, T end)
                     case 4: *--ptr2 =((uc | 0x80) & 0xBF); uc >>= 6;
                     case 3: *--ptr2 =((uc | 0x80) & 0xBF); uc >>= 6;
                     case 2: *--ptr2 =((uc | 0x80) & 0xBF); uc >>= 6;
-                    case 1: *--ptr2 =(uc | utf8FirstCharMark[len]);
+                    case 1: *--ptr2 =(uc | YEncode::utf8FirstCharMark[len]);
                 }
                 ptr2+=len;
                 break;

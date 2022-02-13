@@ -23,11 +23,11 @@ BingSetting::BingSetting():
     ui->setupUi(this);
     initSpeedBox(ui->frame, &BingSetting::showMinimized, &BingSetting::close);
 
-    if (VarBox->wallpaper->m_useDateAsBingName)
+    if (VarBox->m_pWallpaper->m_useDateAsBingName)
         ui->radioButton->setChecked(true);
     else
         ui->radioButton_2->setChecked(true);
-    ui->checkBox->setChecked(VarBox->wallpaper->m_autoSaveBingPicture);
+    ui->checkBox->setChecked(VarBox->m_pWallpaper->m_autoSaveBingPicture);
     ui->checkBox_2->setChecked(true);
     ui->checkBox_2->setEnabled(false);
 }
@@ -57,7 +57,7 @@ void BingSetting::on_pushButton_2_clicked()
 
 void BingSetting::on_pushButton_3_clicked()
 {
-    VarBox->wallpaper->m_useDateAsBingName = ui->radioButton->isChecked();
-    VarBox->wallpaper->m_autoSaveBingPicture = ui->checkBox->isChecked();
+    VarBox->m_pWallpaper->m_useDateAsBingName = ui->radioButton->isChecked();
+    VarBox->m_pWallpaper->m_autoSaveBingPicture = ui->checkBox->isChecked();
     jobTip->showTip(QStringLiteral("应用成功，可能需要点击保存！"));
 }

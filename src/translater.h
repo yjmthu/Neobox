@@ -58,11 +58,12 @@ private:
         "SP2ZH_CN" //西语　»　中文
     };
     Ui::Translater *ui;                                     //界面
-    Type type;
-    class QxtGlobalShortcut * const shortcut_show, * const shortcut_hide;
+    class QxtGlobalShortcut * const shortcut_show {nullptr}, * const shortcut_hide {nullptr};
+    static constexpr size_t m_dLangPos {53};
+    char m_dYouDaoApi[65] { "http://fanyi.youdao.com/translate?&doctype=json&type=????????&i=" };
     unsigned long long last_post_time;
     void requestData(const char*, std::string*);
-    class QNetworkAccessManager * const mgr;
+    class QNetworkAccessManager * const mgr {nullptr};
     class QTimer * const timer;
     void initConnects();
     char time_left = 10;
@@ -72,14 +73,14 @@ private:
 
 #endif
 #if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
-    class QTextToSpeech *speaker;
+    class QTextToSpeech *speaker {nullptr};
 #endif
 
 private slots:
     void setFix(bool checked);
     void copyTranlate();
     void startEnToZh(bool checked);
-    void getReply(const QByteArray&);
+    void getReply(const QString& q);
 };
 
 #endif // TRANSLATER_H

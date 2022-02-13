@@ -45,10 +45,10 @@ Dialog::Theme Dialog::curTheme { Dialog::Theme::White };
 Dialog::Dialog():
     SpeedWidget<QWidget>(nullptr),
     ui(new Ui::Dialog),
-    wallpaper(VarBox->wallpaper),
-    m_sheet(VarBox->form->m_sheet),
+    wallpaper(VarBox->m_pWallpaper),
+    m_sheet(VarBox->m_pForm->m_sheet),
     formFontJson(new YJson("BoxFont.json", YJson::UTF8BOM)),
-    formPart({VarBox->form->frame, VarBox->form->labMemory, VarBox->form->labUp, VarBox->form->labDown})
+    formPart({VarBox->m_pForm->frame, VarBox->m_pForm->labMemory, VarBox->m_pForm->labUp, VarBox->m_pForm->labDown})
 {
     ui->setupUi(this);                                   // 一定要在下面这句之前，否则会出现问题。
     initChildren();
@@ -133,23 +133,23 @@ void Dialog::initUi()
     else
         ui->radioButton_13->setChecked(true);
 #endif
-    ui->cBxTuoPanIcon->setChecked(VarBox->m_TuoPanIcon);
-    ui->cBxTieBianHide->setChecked(VarBox->form->m_tieBianHide);
-    ui->cBxFormToolTip->setChecked(VarBox->form->m_showToolTip);
+    ui->cBxTuoPanIcon->setChecked(VarBox->m_bTuoPanIcon);
+    ui->cBxTieBianHide->setChecked(VarBox->m_pForm->m_tieBianHide);
+    ui->cBxFormToolTip->setChecked(VarBox->m_pForm->m_showToolTip);
     ui->pushButton_4->setText(QStringLiteral("确定"));
     ui->comboBox_3->setCurrentIndex((int)curTheme);
     ui->lineEdit->setText(VarBox->m_pathToOpen);
     ui->checkBox_3->setChecked(wallpaper->m_firstChange);
     ui->BtnChooseFolder->setEnabled(ui->rBtnNative->isChecked());
-    ui->cBxEnableUSBhelper->setChecked(VarBox->m_enableUSBhelper);
-    ui->cBxEnableFanyier->setChecked(VarBox->m_enableTranslater);
-    ui->cBxEnableMarkdown->setChecked(VarBox->m_MarkdownNote);
-    ui->cBxEnableSquareClock->setChecked(VarBox->m_SquareClock);
-    ui->cBxEnableRoundClock->setChecked(VarBox->m_RoundClock);
+    ui->cBxEnableUSBhelper->setChecked(VarBox->m_bEnableUSBhelper);
+    ui->cBxEnableFanyier->setChecked(VarBox->m_bEnableTranslater);
+    ui->cBxEnableMarkdown->setChecked(VarBox->m_bMarkdownNote);
+    ui->cBxEnableSquareClock->setChecked(VarBox->m_bSquareClock);
+    ui->cBxEnableRoundClock->setChecked(VarBox->m_bRoundClock);
     setFrameStyle(static_cast<int>(curTheme));
     checkSettings();
     loadFormStyle();
-    move((VarBox->ScreenWidth - width()) / 2, (VarBox->ScreenHeight - height()) / 2);
+    move((VarBox->m_dScreenWidth - width()) / 2, (VarBox->m_dScreenHeight - height()) / 2);
 }
 
 void Dialog::loadFormStyle()
@@ -247,8 +247,8 @@ void Dialog::initConnects()
     connect(ui->pushButton, &QPushButton::clicked, VarBox, std::bind(GlobalFn::openDirectory, qApp->applicationDirPath()));
     connect(ui->cBxEnableUSBhelper, &QCheckBox::clicked, this, [this](bool checked){
         curTheme = static_cast<Theme>(ui->comboBox_3->currentIndex());
-        VarBox->m_enableUSBhelper = checked;
-        GlobalFn::saveOneSet<bool>(QStringLiteral("Apps"), QStringLiteral("UsbHelper"), VarBox->m_enableUSBhelper);
+        VarBox->m_bEnableUSBhelper = checked;
+        GlobalFn::saveOneSet<bool>(QStringLiteral("Apps"), QStringLiteral("UsbHelper"), VarBox->m_bEnableUSBhelper);
         jobTip->showTip("应用并保存成功！");
     });
     connect(ui->sLdTranparent, &QSlider::valueChanged, this, [=](int value){
@@ -419,11 +419,11 @@ void Dialog::initConnects()
     });
     connect(ui->cBxTuoPanIcon, &QCheckBox::clicked, VarBox, &VARBOX::createTrayIcon);
     connect(ui->cBxTieBianHide, &QCheckBox::clicked, VarBox, [](bool checked){
-        VarBox->form->m_tieBianHide = checked;
+        VarBox->m_pForm->m_tieBianHide = checked;
         GlobalFn::saveOneSet<bool>(QStringLiteral("UI"), QStringLiteral("TieBianHide"), checked);
     });
     connect(ui->cBxFormToolTip, &QCheckBox::clicked, VarBox, [](bool checked){
-        VarBox->form->m_showToolTip = checked;
+        VarBox->m_pForm->m_showToolTip = checked;
         GlobalFn::saveOneSet<bool>(QStringLiteral("UI"), QStringLiteral("ShowToolTip"), checked);
     });
     connect(ui->cBxLeftBorderRadius, &QCheckBox::clicked, VarBox, [=](bool checked){
@@ -504,7 +504,7 @@ void Dialog::initConnects()
         formPart[index]->setStyleSheet(m_sheet[index].getString(index));
         qout << formPart[index]->styleSheet();
     });
-    connect(ui->cBxEnableFanyier, &QCheckBox::clicked, VarBox->form, &Form::enableTranslater);
+    connect(ui->cBxEnableFanyier, &QCheckBox::clicked, VarBox->m_pForm, &Form::enableTranslater);
     qout << "对话框链接B";
 }
 
@@ -579,7 +579,7 @@ bool Dialog::eventFilter(QObject* target, QEvent* event)
 
 void Dialog::closeEvent(QCloseEvent *event)
 {
-    *const_cast<Dialog**>(&(VarBox->dialog)) = nullptr;
+    *const_cast<Dialog**>(&(VarBox->m_pDialog)) = nullptr;
     event->accept();
 }
 
@@ -830,7 +830,7 @@ void Dialog::on_pushButton_5_clicked()
 // 展示版本信息
 void Dialog::on_pushButton_13_clicked()
 {
-    jobTip->showTip(QString("版本号：") + VarBox->Version, 1000);
+    jobTip->showTip(QString("版本号：") + VarBox->m_dVersion, 1000);
 }
 
 // 检查是否有更新 https://gitee.com/yjmthu/Speed-Box/raw/main/Update.json
@@ -862,15 +862,15 @@ void Dialog::on_pushButton_10_clicked()
             return;
         }
         const char * version = json.find("Latest Version")->getValueString();
-        if (!strcmp(VarBox->Version, version))
+        if (!strcmp(VarBox->m_dVersion, version))
         {
             jobTip->showTip("当前已经是最新版本！", 1000);
         }
         else
         {
-            if (GlobalFn::getVersion(VarBox->Version) < GlobalFn::getVersion(version))
+            if (GlobalFn::getVersion(VarBox->m_dVersion) < GlobalFn::getVersion(version))
             {
-                jobTip->showTip(QString("\t有新版本已经出现！\n当前版本：%1%2%3").arg(VarBox->Version, "; 最新版本：", version), 2000);
+                jobTip->showTip(QString("\t有新版本已经出现！\n当前版本：%1%2%3").arg(VarBox->m_dVersion, "; 最新版本：", version), 2000);
                 ui->pushButton_12->setEnabled(true);
             }
             else

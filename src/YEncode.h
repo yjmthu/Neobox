@@ -5,6 +5,9 @@
 #include <deque>
 #include <vector>
 #include <string>
+#include <cstring>
+
+namespace YEncode {
 
 constexpr uint16_t utf16FirstWcharMark[3] = { 0xD800, 0xDC00, 0xE000 };
 constexpr unsigned char utf8FirstCharMark[7] = { 0x00, 0x00, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC };
@@ -101,31 +104,81 @@ bool utf16LE_to_utf8(C1 utf8, C2 utf16)
     return true;
 }
 
-inline unsigned char ToHex(unsigned char x)
+inline unsigned char _toHex(unsigned char x)
 {
     return  x > 9 ? x + 55 : x + 48;
 }
 
-template <typename T1>
-typename std::enable_if<std::is_same<T1, const char*>::value || std::is_same<T1, std::string::const_iterator>::value, std::string>::type
-urlEncode(T1 str, size_t length)
+inline unsigned char _fromHex(unsigned char x)
 {
-    std::string strTemp;
-    for (size_t i = 0; i < length; i++)
-    {
-        if (isalnum((unsigned char)str[i]) || strchr("-_.~", str[i]))
-            strTemp.push_back(str[i]);
-        else if (str[i] == ' ')
-            strTemp.push_back('+');
-        else
-        {
-            strTemp.push_back('%');
-            strTemp.push_back(ToHex((unsigned char)str[i] >> 4));
-            strTemp.push_back(ToHex((unsigned char)str[i] % 16));
-        }
-    }
-    return strTemp;
+    unsigned char y;
+    if (x >= 'A' && x <= 'Z') y = x - 'A' + 10;
+    else if (x >= 'a' && x <= 'z') y = x - 'a' + 10;
+    else if (x >= '0' && x <= '9') y = x - '0';
+    else throw 0;
+    return y;
 }
 
+template <typename _Ty1=std::string, typename _Ty2=std::string>
+_Ty2 urlEncode(const _Ty1& str)
+{
+    _Ty2 ret;
+    ret.reserve(str.size());
+    for (auto i: str)
+    {
+        if (isalnum((unsigned char)i) || strchr("-_.~", i))
+            ret.push_back(i);
+        else if (i == ' ')
+            ret.push_back('+');
+        else
+        {
+            ret.push_back('%');
+            ret.push_back(_toHex(static_cast<unsigned char>(i) >> 4));
+            ret.push_back(_toHex(static_cast<unsigned char>(i) % 16));
+        }
+    }
+    return ret;
+}
+
+template <typename _Ty=std::string>
+_Ty urlEncode(const char* str, size_t size)
+{
+    _Ty ret;
+    ret.reserve(size);
+    for (size_t i=0; i<size; i++) {
+        if (isalnum((unsigned char)str[i]) || strchr("-_.~", str[i]))
+            ret.push_back(str[i]);
+        else if (str[i] == ' ')
+            ret.push_back('+');
+        else
+        {
+            ret.push_back('%');
+            ret.push_back(_toHex(static_cast<unsigned char>(str[i]) >> 4));
+            ret.push_back(_toHex(static_cast<unsigned char>(str[i]) % 16));
+        }
+    }
+}
+
+template <typename _Ty=std::string>
+std::string UrlDecode(const std::string& str)
+{
+    std::string ret;
+    ret.reserve(str.size());
+    for (size_t i = 0; i < str.length(); i++)
+    {
+        if (str[i] == '+') ret += ' ';
+        else if (str[i] == '%')
+        {
+            if (i + 2 < str.length()) throw 0;
+            unsigned char high = _fromHex((unsigned char)str[++i]);
+            unsigned char low = _fromHex((unsigned char)str[++i]);
+            ret.push_back(high*16 + low);
+        }
+        else ret.push_back(str[i]);
+    }
+    return ret;
+}
+
+}
 
 #endif // YENCODE_H

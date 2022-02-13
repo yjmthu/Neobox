@@ -82,7 +82,7 @@ void Menu::initActions()
 
 void Menu::showEvent(QShowEvent *event)
 {
-    actions[2].setChecked(VarBox->m_enableTranslater);
+    actions[2].setChecked(VarBox->m_bEnableTranslater);
     event->accept();
 }
 
@@ -90,11 +90,11 @@ void Menu::Show(int x, int y)                   //自动把右键菜单移动到
 {
     actions[10].setChecked(keepScreenOn);
 	int px, py;
-    if (x + MENU_WIDTH < VarBox->ScreenWidth)   //菜单右边界不超出屏幕时
+    if (x + MENU_WIDTH < VarBox->m_dScreenWidth)   //菜单右边界不超出屏幕时
 		px = x;
 	else
-        px = VarBox->ScreenWidth - MENU_WIDTH;  //右边界和屏幕对齐
-    if (y + MENU_HEIGHT < VarBox->ScreenHeight) //菜单底部不超出屏幕底部时
+        px = VarBox->m_dScreenWidth - MENU_WIDTH;  //右边界和屏幕对齐
+    if (y + MENU_HEIGHT < VarBox->m_dScreenHeight) //菜单底部不超出屏幕底部时
 		py = y;
 	else
 		py = y - MENU_HEIGHT;                  //菜单底部和鼠标对齐
@@ -105,30 +105,30 @@ void Menu::Show(int x, int y)                   //自动把右键菜单移动到
 void Menu::initMenuConnect()
 {
     connect(actions, &QAction::triggered, VarBox, [](){
-        if (VarBox->dialog)
+        if (VarBox->m_pDialog)
         {
-            if (VarBox->dialog->isVisible())
-                VarBox->dialog->setWindowState(Qt::WindowActive | Qt::WindowNoState);    // 让窗口从最小化恢复正常并激活窗口
+            if (VarBox->m_pDialog->isVisible())
+                VarBox->m_pDialog->setWindowState(Qt::WindowActive | Qt::WindowNoState);    // 让窗口从最小化恢复正常并激活窗口
                 //d->activateWindow();
                 //d->raise();
             else
-                VarBox->dialog->show();
+                VarBox->m_pDialog->show();
         }
         else
         {
-            *const_cast<Dialog**>(&(VarBox->dialog)) = new Dialog;
-            VarBox->dialog->show();
+            *const_cast<Dialog**>(&(VarBox->m_pDialog)) = new Dialog;
+            VarBox->m_pDialog->show();
         }
     });                                         //打开壁纸设置界面
     connect(actions+1, &QAction::triggered, VarBox, [](){
         Calculator lator;
         lator.exec();
     });
-    connect(actions+2, &QAction::triggered, VarBox->form, &Form::enableTranslater);    //是否启用翻译功能
-    actions[2].setChecked(VarBox->m_enableTranslater);                                   //设置是否选中“划词翻译”
-    connect(actions+4, &QAction::triggered, VarBox->wallpaper, &Wallpaper::next);
-    connect(actions+3, &QAction::triggered, VarBox->wallpaper, &Wallpaper::prev);      //设置受否开机自启                                                                              //是否自动移动鼠标防止息屏
-    connect(actions+5, &QAction::triggered, VarBox->wallpaper, &Wallpaper::dislike);
+    connect(actions+2, &QAction::triggered, VarBox->m_pForm, &Form::enableTranslater);    //是否启用翻译功能
+    actions[2].setChecked(VarBox->m_bEnableTranslater);                                   //设置是否选中“划词翻译”
+    connect(actions+4, &QAction::triggered, VarBox->m_pWallpaper, &Wallpaper::next);
+    connect(actions+3, &QAction::triggered, VarBox->m_pWallpaper, &Wallpaper::prev);      //设置受否开机自启                                                                              //是否自动移动鼠标防止息屏
+    connect(actions+5, &QAction::triggered, VarBox->m_pWallpaper, &Wallpaper::dislike);
     connect(actions+6, &QAction::triggered, VarBox, [](){
         GlobalFn::openDirectory(VarBox->m_pathToOpen);
     });                 //打开exe所在文件夹

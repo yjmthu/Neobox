@@ -1,6 +1,4 @@
-﻿#include <thread>
-#include <sstream>
-#include <QApplication>
+﻿#include <QApplication>
 #include <QClipboard>
 #include <QButtonGroup>
 #include <QMessageBox>
@@ -32,6 +30,10 @@
 #include <sapi.h> //导入语音头文件
 #endif
 
+#include <thread>
+#include <sstream>
+#include <algorithm>
+
 #include "YEncode.h"
 #include "YString.h"
 #include "YJson.h"
@@ -40,6 +42,7 @@
 #include "gmpoperatetip.h"
 #include "translater.h"
 
+constexpr size_t Translater::m_dLangPos;
 
 #if (QT_VERSION_CHECK(6,0,0) <= QT_VERSION)
 bool  MSSpeak(LPCTSTR speakContent) // 文字转为语音
@@ -63,7 +66,7 @@ bool  MSSpeak(LPCTSTR speakContent) // 文字转为语音
 
 Translater::Translater() :
     QWidget(nullptr),
-    ui(new Ui::Translater), type(Type::ZH_CN2EN),
+    ui(new Ui::Translater),
     shortcut_show(new QxtGlobalShortcut(QKeySequence("Shift+Z"))),
     shortcut_hide(new QxtGlobalShortcut(QKeySequence("Shift+A"))),
     mgr(new QNetworkAccessManager), timer(new QTimer)
@@ -71,7 +74,7 @@ Translater::Translater() :
         , speaker(new QTextToSpeech)
     #endif
 {
-    setWindowFlags(Qt::Tool | Qt::FramelessWindowHint);
+    setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
     setAttribute(Qt::WA_TranslucentBackground);
     QFile qss(QStringLiteral(":/qss/translater_style.qss"));
     qss.open(QFile::ReadOnly);
@@ -80,7 +83,7 @@ Translater::Translater() :
 
 	ui->setupUi(this);
     BlankFrom *blank = new BlankFrom(this); GMPOperateTip* jobTip = new GMPOperateTip(this);
-    connect(blank->closeButton, &QPushButton::clicked, VarBox, [](){VarBox->form->enableTranslater(false);});
+    connect(blank->closeButton, &QPushButton::clicked, VarBox, [](){VarBox->m_pForm->enableTranslater(false);});
     connect(blank->minButton, &QPushButton::clicked, this, &Translater::hide);
     blank->closeButton->setToolTip(QStringLiteral("退出"));
     blank->minButton->setToolTip(QStringLiteral("隐藏"));
@@ -89,15 +92,15 @@ Translater::Translater() :
     ui->TextFrom->setContextMenuPolicy(Qt::CustomContextMenu);
     ui->TextTo->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(timer, &QTimer::timeout, this, [=](){
-        if (isVisible() && --time_left <= 0 && VarBox->m_autoHide)
+        if (isVisible() && --time_left <= 0 && VarBox->m_bAutoHide)
             hide();
     });
 
-    if (*VarBox->FirstUse)
+    if (VarBox->m_bFirstUse)
     {
         ui->TextFrom->setPlainText(QStringLiteral("在这输入你想翻译的文本,一秒钟只能翻译一次。"));
         ui->TextTo->setPlainText(QStringLiteral("Enter the text you want to translate here. You can only translate it once a second."));
-        *const_cast<bool*>(VarBox->FirstUse) = false;
+        *const_cast<bool*>(&VarBox->m_bFirstUse) = false;
     }
     auto btngrp = new QButtonGroup(this);
     btngrp->addButton(ui->pBtnEnToZh, 0);
@@ -121,16 +124,18 @@ Translater::Translater() :
 #ifdef Q_OS_WIN
         hCurrentCursor = GetForegroundWindow();
 #endif
-        if (!isVisible()) show();
-        activateWindow();  //SwitchToThisWindow(HWND(winId()), TRUE);
+        if (!isVisible())
+            show();
+        activateWindow();        //SwitchToThisWindow(HWND(winId()), TRUE);
         QClipboard* cl = QApplication::clipboard();              //读取剪切板
-        QString content = cl->text();
-        if (content.isEmpty()) return ;
+        const QString& content = cl->text();
+        if (content.isEmpty())
+            return ;
         ui->TextFrom->setPlainText(content);
         ushort uNum = content.at(0).unicode();
         if(uNum >= 0x4E00 && uNum <= 0x9FA5)
         {
-            if (type == Type::EN2ZH_CN)
+            if (m_dYouDaoApi[m_dLangPos] == types[Type::EN2ZH_CN][0])
             {
                 ui->pBtnZhToEn->click();
                 return ;
@@ -138,13 +143,13 @@ Translater::Translater() :
         }
         else
         {
-            if (type == Type::ZH_CN2EN)
+            if (m_dYouDaoApi[m_dLangPos] == types[Type::ZH_CN2EN][0])
             {
                 ui->pBtnEnToZh->click();
                 return ;
             }
         }
-        getReply(content.toUtf8());
+        getReply(content);
     });
     connect(shortcut_hide, &QxtGlobalShortcut::activated, this, [=](){
         qout << "按下隐藏热键";
@@ -166,10 +171,8 @@ Translater::~Translater()
     delete speaker;
 #endif
     qout << "析构Translater开始";
-    qout << "删除mgr";
     delete timer;
     delete mgr;
-    qout << "删除ui";
     delete shortcut_hide;
     delete shortcut_show;
     delete ui;
@@ -236,15 +239,15 @@ void Translater::initConnects()
 void Translater::showEvent(QShowEvent* event)
 {
     int x, y;
-    ui->pBtnPin->setChecked(!VarBox->m_autoHide);
-    ui->pBtnPin->setIcon(QIcon(VarBox->m_autoHide?":/icons/drip_pin.ico": ":/icons/drip_blue_pin.ico"));
-    QRect rt = VarBox->form->geometry();
+    ui->pBtnPin->setChecked(!VarBox->m_bAutoHide);
+    ui->pBtnPin->setIcon(QIcon(VarBox->m_bAutoHide?":/icons/drip_pin.ico": ":/icons/drip_blue_pin.ico"));
+    QRect rt = VarBox->m_pForm->geometry();
     if (rt.top() > height())
         y = rt.top() - height();
     else
         y = rt.bottom();
-    if (rt.left() + rt.right() + width() > VarBox->ScreenWidth * 2)
-        x = VarBox->ScreenWidth - width();
+    if (rt.left() + rt.right() + width() > VarBox->m_dScreenWidth * 2)
+        x = VarBox->m_dScreenWidth - width();
     else if (rt.right() + rt.left() < width())
         x = 0;
     else
@@ -255,7 +258,7 @@ void Translater::showEvent(QShowEvent* event)
     cursor.movePosition(QTextCursor::End);
     ui->TextFrom->setTextCursor(cursor);
     ui->TextFrom->setFocus();
-    if (VarBox->m_autoHide) timer->start(1000);
+    if (VarBox->m_bAutoHide) timer->start(1000);
     event->accept();
 }
 
@@ -340,7 +343,7 @@ bool Translater::eventFilter(QObject* target, QEvent* event)
                     cur.insertText("\n");
                     goto label_end;
                 }
-                getReply(text.toUtf8());
+                getReply(text);
 label_end:
                 event->accept();
 				return true;
@@ -380,9 +383,9 @@ void Translater::keyPressEvent(QKeyEvent* event)
 	}
 }
 
-void Translater::getReply(const QByteArray& q)
+void Translater::getReply(const QString& q)
 {
-    constexpr char youdao_api[] = "http://fanyi.youdao.com/translate?&doctype=json&type=%1&i=%2";
+    std::string url(m_dYouDaoApi);
     qout << "开始执行翻译函数";
 
 #if defined (Q_OS_WIN32)
@@ -441,19 +444,20 @@ void Translater::getReply(const QByteArray& q)
                 emit msgBox("翻译失败，未知原因。");
         }
     });
-    mgr->get(QNetworkRequest(QUrl(QString(youdao_api).arg(types[type], (const char*)q))));
+    url += YEncode::urlEncode<std::string, std::string>(q.toStdString());
+    mgr->get(QNetworkRequest(QUrl(QString::fromStdString(url))));
 }
 
 void Translater::setFix(bool checked)
 {
     ui->pBtnPin->setIcon(QIcon(checked?QStringLiteral(":/icons/drip_blue_pin.ico"):QStringLiteral(":/icons/drip_pin.ico")));
-    VarBox->m_autoHide = !checked;
+    VarBox->m_bAutoHide = !checked;
     QSettings IniWrite(QStringLiteral("SpeedBox.ini"), QSettings::IniFormat);
     IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
     IniWrite.beginGroup("Translate");
-    IniWrite.setValue("AutoHide", VarBox->m_autoHide);
+    IniWrite.setValue("AutoHide", VarBox->m_bAutoHide);
     IniWrite.endGroup();
-    if (VarBox->m_autoHide)
+    if (VarBox->m_bAutoHide)
         timer->start(1000);
 }
 
@@ -462,7 +466,7 @@ void Translater::startEnToZh(bool checked)
     time_left = 10;
     ui->pBtnEnToZh->setIcon(QIcon(checked?":/icons/black_zh.ico": ":/icons/empty_zh.ico"));
     ui->pBtnZhToEn->setIcon(QIcon(checked?":/icons/empty_en.ico":":/icons/black_en.ico"));
-    type = checked ? Type::EN2ZH_CN : Type::ZH_CN2EN;
+    strncpy(m_dYouDaoApi+m_dLangPos, types[checked ? Type::EN2ZH_CN: Type::ZH_CN2EN], 8);
     QString str = ui->TextFrom->toPlainText();
     if (!str.isEmpty()) getReply(str.toUtf8());
 }

@@ -37,34 +37,35 @@
 #include "globalfn.h"
 
 
+constexpr char VARBOX::m_dVersion[];
 VARBOX* VarBox = nullptr;
 
 
 VARBOX::VARBOX(int w, int h):
     QObject(nullptr),
-    m_systemVersion(SystemFunctions::getWindowsVersion()),
-    m_windowPosition(WindowPosition::fromFile()),
-    ScreenWidth(w), ScreenHeight(h)
+    m_dSystemVersion(SystemFunctions::getWindowsVersion()),
+    m_dScreenWidth(w), m_dScreenHeight(h),
+    m_pWindowPosition(WindowPosition::fromFile())
 {
     qout << "VarBox构造函数开始。";
     initProJob();
     initFile();
     initChildren();
-    initBehaviors();
+    initBehavior();
     qout << "VarBox构造函数结束。";
 }
 
 VARBOX::~VARBOX()
 {
     qout << "结构体析构中~";
-    delete m_windowPosition;
-    delete systemTrayIcon;
+    delete m_pWindowPosition;
+    delete m_pSystemTrayIcon;
     delete m_sClock;
     delete m_rClock;
-    delete m_note;
-    delete form;
-    delete wallpaper;
-    delete dialog;
+    delete m_pNote;
+    delete m_pForm;
+    delete m_pWallpaper;
+    delete m_pDialog;
     qout << "结构体析构成功。";
 }
 
@@ -83,18 +84,18 @@ void VARBOX::initFile()
     {
         qout << "ini文件过期，将其删除。";
         QFile::remove(file);
-        GlobalFn::saveOneSet<QString>(QStringLiteral("SpeedBox"), QStringLiteral("Version"), Version);
+        GlobalFn::saveOneSet<QString>(QStringLiteral("SpeedBox"), QStringLiteral("Version"), m_dVersion);
     } else {
         qout << "开始读取设置。";
         QSettings *IniRead = new QSettings(file, QSettings::IniFormat);
         IniRead->setIniCodec(QTextCodec::codecForName("UTF-8"));
         IniRead->beginGroup(QStringLiteral("SpeedBox"));
-        IniRead->setValue(QStringLiteral("Version"), Version);
+        IniRead->setValue(QStringLiteral("Version"), m_dVersion);
         IniRead->endGroup();
 
         IniRead->beginGroup(QStringLiteral("Translate"));
-        m_autoHide = IniRead->value(QStringLiteral("AutoHide"), m_autoHide).toBool();
-        m_enableTranslater = IniRead->value(QStringLiteral("EnableTranslater"), m_enableTranslater).toBool();
+        m_bAutoHide = IniRead->value(QStringLiteral("AutoHide"), m_bAutoHide).toBool();
+        m_bEnableTranslater = IniRead->value(QStringLiteral("EnableTranslater"), m_bEnableTranslater).toBool();
         IniRead->endGroup();
         qout << "读取翻译信息完毕";
         IniRead->beginGroup(QStringLiteral("Dirs"));
@@ -105,13 +106,13 @@ void VARBOX::initFile()
         unsigned safeEnum = IniRead->value(QStringLiteral("ColorTheme"), static_cast<int>(Dialog::curTheme)).toInt();
         if (safeEnum > 7) safeEnum = 0;
         Dialog::curTheme = static_cast<Dialog::Theme>(safeEnum);
-        m_TuoPanIcon = IniRead->value(QStringLiteral("TuoPanIcon"), m_TuoPanIcon).toBool();
+        m_bTuoPanIcon = IniRead->value(QStringLiteral("TuoPanIcon"), m_bTuoPanIcon).toBool();
         IniRead->endGroup();
         IniRead->beginGroup(QStringLiteral("Apps"));
-        m_MarkdownNote = IniRead->value(QStringLiteral("MarkdownNote"), m_MarkdownNote).toBool();
-        m_SquareClock = IniRead->value(QStringLiteral("SquareClock"), m_SquareClock).toBool();
-        m_RoundClock = IniRead->value(QStringLiteral("RoundClock"), m_RoundClock).toBool();
-        m_enableUSBhelper = IniRead->value(QStringLiteral("UsbHelper"), m_enableUSBhelper).toBool();
+        m_bMarkdownNote = IniRead->value(QStringLiteral("MarkdownNote"), m_bMarkdownNote).toBool();
+        m_bSquareClock = IniRead->value(QStringLiteral("SquareClock"), m_bSquareClock).toBool();
+        m_bRoundClock = IniRead->value(QStringLiteral("RoundClock"), m_bRoundClock).toBool();
+        m_bEnableUSBhelper = IniRead->value(QStringLiteral("UsbHelper"), m_bEnableUSBhelper).toBool();
         IniRead->endGroup();
         delete IniRead;
         qout << "读取设置完毕。";
@@ -152,7 +153,7 @@ void VARBOX::initFile()
 void VARBOX::initChildren()
 {
     qout << "开始创建基本成员";
-    wallpaper = new Wallpaper;                           // 创建壁纸更换对象
+    m_pWallpaper = new Wallpaper;                           // 创建壁纸更换对象
     Form* form = new Form;
 #ifdef Q_OS_WIN
     static APPBARDATA abd { 0,0,0,0,{0,0,0,0},0 };
@@ -162,57 +163,57 @@ void VARBOX::initChildren()
     SHAppBarMessage(ABM_NEW, &abd);
 #endif
     QObject::connect(QGuiApplication::primaryScreen(), &QScreen::geometryChanged, form, [this, form](const QRect&rect){
-        this->form->move(this->form->pos().x() * rect.width() / VarBox->ScreenWidth, this->form->pos().y() * rect.height() / VarBox->ScreenHeight);
-        *const_cast<int *>(&ScreenWidth) = rect.width();
-        *const_cast<int *>(&ScreenHeight) = rect.height();
+        this->m_pForm->move(this->m_pForm->pos().x() * rect.width() / VarBox->m_dScreenWidth, this->m_pForm->pos().y() * rect.height() / VarBox->m_dScreenHeight);
+        *const_cast<int *>(&m_dScreenWidth) = rect.width();
+        *const_cast<int *>(&m_dScreenHeight) = rect.height();
         form->keepInScreen();
     });
-    createMarkdown(m_MarkdownNote);
-    createTrayIcon(m_TuoPanIcon);
-    createSquareClock(m_SquareClock);
-    createRoundClock(m_RoundClock);
+    createMarkdown(m_bMarkdownNote);
+    createTrayIcon(m_bTuoPanIcon);
+    createSquareClock(m_bSquareClock);
+    createRoundClock(m_bRoundClock);
 }
 
-void VARBOX::initBehaviors()
+void VARBOX::initBehavior()
 {
-    form->show();                                                              //显示悬浮窗
-    form->keepInScreen();
+    m_pForm->show();                                                              //显示悬浮窗
+    m_pForm->keepInScreen();
 }
 
 void VARBOX::createTrayIcon(bool create)
 {
-    if ((m_TuoPanIcon = create))
+    if ((m_bTuoPanIcon = create))
     {
-        systemTrayIcon = new QSystemTrayIcon;
-        systemTrayIcon->setIcon(QIcon(QStringLiteral(":/icons/speedbox.ico")));
+        m_pSystemTrayIcon = new QSystemTrayIcon;
+        m_pSystemTrayIcon->setIcon(QIcon(QStringLiteral(":/icons/speedbox.ico")));
         QMenu *m_trayMenu = new QMenu;
         QAction *initAct = m_trayMenu->addAction(QStringLiteral("复原"));
         QAction *quitAct = m_trayMenu->addAction(QStringLiteral("退出"));
         connect(quitAct, &QAction::triggered, qApp, &QApplication::quit);
-        connect(initAct, &QAction::triggered, form, [=](){form->move(100, 100);form->saveBoxPos();});
-        systemTrayIcon->setContextMenu(m_trayMenu);
-        systemTrayIcon->show();
+        connect(initAct, &QAction::triggered, m_pForm, [=](){m_pForm->move(100, 100);m_pForm->saveBoxPos();});
+        m_pSystemTrayIcon->setContextMenu(m_trayMenu);
+        m_pSystemTrayIcon->show();
     } else {
-        delete systemTrayIcon;
-        systemTrayIcon = nullptr;
+        delete m_pSystemTrayIcon;
+        m_pSystemTrayIcon = nullptr;
     }
     GlobalFn::saveOneSet<bool>(QStringLiteral("UI"), QStringLiteral("TuoPanIcon"), create);
 }
 
 void VARBOX::createMarkdown(bool create)
 {
-    if ((m_MarkdownNote = create)) {
-        m_note = new MarkdownNote;
+    if ((m_bMarkdownNote = create)) {
+        m_pNote = new MarkdownNote;
     } else {
-        delete m_note;
-        m_note = nullptr;
+        delete m_pNote;
+        m_pNote = nullptr;
     }
     GlobalFn::saveOneSet<bool>(QStringLiteral("Apps"), QStringLiteral("MarkdownNote"), create);
 }
 
 void VARBOX::createSquareClock(bool create)
 {
-    if ((m_SquareClock = create)) {
+    if ((m_bSquareClock = create)) {
         m_sClock = new SquareClock;
         m_sClock->show();
     } else {
@@ -224,7 +225,7 @@ void VARBOX::createSquareClock(bool create)
 
 void VARBOX::createRoundClock(bool create)
 {
-    if ((m_RoundClock = create)) {
+    if ((m_bRoundClock = create)) {
         m_rClock = new RoundClock;
         m_rClock->show();
     } else {
@@ -238,7 +239,7 @@ void VARBOX::initProJob()
 {
     VarBox = this;
 #if defined (Q_OS_WIN32)
-    switch (m_systemVersion) {
+    switch (m_dSystemVersion) {
     case SystemVersion::Windows10:
         break;
     case SystemVersion::Windows8_1:

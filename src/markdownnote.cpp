@@ -146,11 +146,11 @@ MarkdownNote::~MarkdownNote()
 
 void MarkdownNote::readPosition()
 {
-    if (VarBox->m_windowPosition->m_noteBookPos != QPoint(0, 0)) {
-        this->move(VarBox->m_windowPosition->m_noteBookPos);
+    if (VarBox->m_pWindowPosition->m_noteBookPos != QPoint(0, 0)) {
+        this->move(VarBox->m_pWindowPosition->m_noteBookPos);
     }
-    if (VarBox->m_windowPosition->m_noteDoorPos != QPoint(0, 0)) {
-        door->move(VarBox->m_windowPosition->m_noteDoorPos);
+    if (VarBox->m_pWindowPosition->m_noteDoorPos != QPoint(0, 0)) {
+        door->move(VarBox->m_pWindowPosition->m_noteDoorPos);
     }
 }
 
@@ -178,7 +178,7 @@ void MarkdownNote::writeNoteText()
 
 void MarkdownNote::writePosition()
 {
-    VarBox->m_windowPosition->m_noteBookPos = this->pos();
-    VarBox->m_windowPosition->m_noteDoorPos = door->pos();
-    VarBox->m_windowPosition->toFile();
+    VarBox->m_pWindowPosition->m_noteBookPos = this->pos();
+    VarBox->m_pWindowPosition->m_noteDoorPos = door->pos();
+    VarBox->m_pWindowPosition->toFile();
 }

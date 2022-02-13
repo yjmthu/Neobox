@@ -37,7 +37,7 @@ Form::Form(QWidget* parent) :
     QWidget(parent),
     netHelper(new NetSpeedHelper)
 {
-    *const_cast<Form**>(&(VarBox->form)) = this;
+    *const_cast<Form**>(&(VarBox->m_pForm)) = this;
     initSettings();
     setupUi();                         //创建界面
 	initConnects();
@@ -57,20 +57,20 @@ Form::~Form()
 
 void Form::saveBoxPos()
 {
-    VarBox->m_windowPosition->m_netFormPos = this->pos();
-    VarBox->m_windowPosition->toFile();
+    VarBox->m_pWindowPosition->m_netFormPos = this->pos();
+    VarBox->m_pWindowPosition->toFile();
 }
 
 void Form::keepInScreen()
 {
     QRect rt = geometry();
     int x = rt.left(), y = rt.top();
-    if (x + 1 > VarBox->ScreenWidth)
-        x = VarBox->ScreenWidth - 2;
+    if (x + 1 > VarBox->m_dScreenWidth)
+        x = VarBox->m_dScreenWidth - 2;
     else if (rt.right() < 1)
         x = 2 - width();
-    if (y + height() > VarBox->ScreenHeight)
-        y = VarBox->ScreenHeight - height();
+    if (y + height() > VarBox->m_dScreenHeight)
+        y = VarBox->m_dScreenHeight - height();
     else if (rt.bottom() < 1)
         y = 2 - height();
     move(x, y);
@@ -140,10 +140,10 @@ void Form::setupUi()
         js->toFile("BoxFont.json", YJson::UTF8BOM, true);
     delete js;
 
-    if (VarBox->m_windowPosition->m_netFormPos != QPoint(0, 0))
-        move(VarBox->m_windowPosition->m_netFormPos);
+    if (VarBox->m_pWindowPosition->m_netFormPos != QPoint(0, 0))
+        move(VarBox->m_pWindowPosition->m_netFormPos);
 
-    if (VarBox->m_enableTranslater)
+    if (VarBox->m_bEnableTranslater)
         enableTranslater(true);
     loadStyle();
 }
@@ -175,7 +175,7 @@ void Form::loadStyle()
     labUp->setStyleSheet(m_sheet[2].getString(true));
     labDown->setStyleSheet(m_sheet[3].getString(true));
 
-    if (VarBox->m_systemVersion == SystemVersion::Windows10)
+    if (VarBox->m_dSystemVersion == SystemVersion::Windows10)
         SystemFunctions::setWindowCompositionAttribute(HWND(winId()), ACCENT_STATE::ACCENT_ENABLE_BLURBEHIND, (m_sheet->bk_win << 24) & RGB(m_sheet->bk_red, m_sheet->bk_green, m_sheet->bk_blue));
 }
 
@@ -199,23 +199,23 @@ void Form::initConnects()
     });
     connect(netHelper, &NetSpeedHelper::memInfo, labMemory, &QLabel::setText);
     connect(animation, &QPropertyAnimation::finished, this, &Form::saveBoxPos);
-    connect(VarBox->wallpaper, &Wallpaper::setFailed, this, &Form::set_wallpaper_fail);
+    connect(VarBox->m_pWallpaper, &Wallpaper::setFailed, this, &Form::set_wallpaper_fail);
     qout << "FORM链接B";
 }
 
 
 void Form::set_wallpaper_fail(const char* str)
 {
-    if (VarBox->dialog) {
-        if (VarBox->dialog->isVisible())
-            VarBox->dialog->setWindowState(Qt::WindowActive | Qt::WindowNoState);    // 让窗口从最小化恢复正常并激活窗口
+    if (VarBox->m_pDialog) {
+        if (VarBox->m_pDialog->isVisible())
+            VarBox->m_pDialog->setWindowState(Qt::WindowActive | Qt::WindowNoState);    // 让窗口从最小化恢复正常并激活窗口
             //d->activateWindow();
             //d->raise();
         else
-            VarBox->dialog->show();
+            VarBox->m_pDialog->show();
     } else {
-        *const_cast<Dialog**>(&(VarBox->dialog)) = new Dialog;
-        VarBox->dialog->show();
+        *const_cast<Dialog**>(&(VarBox->m_pDialog)) = new Dialog;
+        VarBox->m_pDialog->show();
     }
     GlobalFn::msgBox(str, "出错");
 }
@@ -263,7 +263,7 @@ char FirstDriveFromMask (ULONG unitmask)
         {
         case DBT_DEVICEARRIVAL:        //插入
 //            qout << "设备插入";
-            if (lpdb->dbch_devicetype == DBT_DEVTYP_VOLUME && VarBox->m_enableUSBhelper)
+            if (lpdb->dbch_devicetype == DBT_DEVTYP_VOLUME && VarBox->m_bEnableUSBhelper)
             {
                 PDEV_BROADCAST_VOLUME lpdbv = (PDEV_BROADCAST_VOLUME)lpdb;
                 m_usbHelpers.push_back(new USBdriveHelper(FirstDriveFromMask(lpdbv->dbcv_unitmask), m_usbHelpers.size(), &m_usbHelpers, nullptr));
@@ -347,7 +347,7 @@ void Form::mouseReleaseEvent(QMouseEvent* event)
 
 void Form::mouseDoubleClickEvent(QMouseEvent*)
 {
-    if (VarBox->m_enableTranslater)
+    if (VarBox->m_bEnableTranslater)
     {
         if (!translater->isVisible()) {
             translater->show();
@@ -401,9 +401,9 @@ void Form::mouseMoveEvent(QMouseEvent* event)
     {
         const QPoint pos = this->pos();
         if (moved) {
-            if (pos.x() + FORM_WIDTH >= VarBox->ScreenWidth)   // 右侧显示
+            if (pos.x() + FORM_WIDTH >= VarBox->m_dScreenWidth)   // 右侧显示
             {
-                startAnimation(VarBox->ScreenWidth - FORM_WIDTH + 2, pos.y());
+                startAnimation(VarBox->m_dScreenWidth - FORM_WIDTH + 2, pos.y());
                 moved = false;
             }
             else if (pos.x() <= 0)                    // 左侧显示
@@ -426,9 +426,9 @@ void Form::leaveEvent(QEvent* event)
     if (m_tieBianHide)
     {
         QPoint pos = this->pos();
-        if (pos.x() + FORM_WIDTH >= VarBox->ScreenWidth)  // 右侧隐藏
+        if (pos.x() + FORM_WIDTH >= VarBox->m_dScreenWidth)  // 右侧隐藏
         {
-            startAnimation(VarBox->ScreenWidth - 2, pos.y());
+            startAnimation(VarBox->m_dScreenWidth - 2, pos.y());
             moved = true;
         }
         else if (pos.x() <= 2)                    // 左侧隐藏
@@ -457,12 +457,12 @@ void Form::startAnimation(int width, int height)
 
 void Form::enableTranslater(bool checked)
 {
-    if ((VarBox->m_enableTranslater = checked)) {
+    if ((VarBox->m_bEnableTranslater = checked)) {
         translater = new Translater;
     } else {
         delete translater;
         translater = nullptr;
     }
     GlobalFn::saveOneSet<bool>(
-                QStringLiteral("Translate"), QStringLiteral("EnableTranslater"), VarBox->m_enableTranslater);
+                QStringLiteral("Translate"), QStringLiteral("EnableTranslater"), VarBox->m_bEnableTranslater);
 }
