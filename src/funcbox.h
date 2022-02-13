@@ -30,13 +30,19 @@ class VARBOX: public QObject
     Q_OBJECT
 
 public:
-    constexpr static char m_dVersion[] = "22.1.11";
+    constexpr static char m_dVersion[] { "22.2.18" };
     const bool m_bFirstUse { false };
     const SystemVersion m_dSystemVersion;
     const int m_dScreenWidth, m_dScreenHeight;                  //屏幕宽高
 
     QString m_pathToOpen;                                       // 右键要打开的文件夹
-    bool m_bEnableTranslater { false }, m_bAutoHide { false }, m_bEnableUSBhelper { true }, m_bMarkdownNote { false }, m_bSquareClock { false }, m_bRoundClock { false }, m_bTuoPanIcon { false };
+    bool m_bEnableTranslater { false };
+    bool m_bAutoHide { false };
+    bool m_bEnableUSBhelper { true };
+    bool m_bMarkdownNote { false };
+    bool m_bSquareClock { false };
+    bool m_bRoundClock { false };
+    bool m_bTuoPanIcon { false };
 
     class WindowPosition* const m_pWindowPosition { nullptr };
     class Form* const m_pForm { nullptr };
@@ -55,7 +61,6 @@ public slots:
     void createSquareClock(bool create);
     void createRoundClock(bool create);
 private:
-     friend class Form;
      void initProJob();
      void initFile();
      void initChildren();
