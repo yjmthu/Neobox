@@ -55,12 +55,12 @@ private:
         "KR2ZH_CN", //韩语　»　中文
         "FR2ZH_CN", //法语　»　中文
         "RU2ZH_CN", //俄语　»　中文
-        "SP2ZH_CN" //西语　»　中文
+        "SP2ZH_CN"  //西语　»　中文
     };
     Ui::Translater *ui;                                     //界面
     class QxtGlobalShortcut * const shortcut_show {nullptr}, * const shortcut_hide {nullptr};
     static constexpr size_t m_dLangPos {53};
-    char m_dYouDaoApi[65] { "http://fanyi.youdao.com/translate?&doctype=json&type=????????&i=" };
+    char m_dYouDaoApi[65] { "http://fanyi.youdao.com/translate?&doctype=json&type=ZH_CN2EN&i=" };
     unsigned long long last_post_time;
     void requestData(const char*, std::string*);
     class QNetworkAccessManager * const mgr {nullptr};
