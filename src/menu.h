@@ -13,7 +13,9 @@ protected:
 public:
     explicit Menu(QWidget* parent);
 	~Menu();
-    void Show(int, int);          // 自动移动menu到合适位置，防止menu出现在屏幕之外。
+    void Show(int, int);          // 自动移动menu到合适位置，防止menu出现在屏幕之外。'
+    static constexpr int WIDTH { 90 };
+    static constexpr int HEIGHT { 330 };
 
 private:
     static bool keepScreenOn;

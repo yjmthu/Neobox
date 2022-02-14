@@ -40,13 +40,13 @@ int main(int argc, char* argv[])
     int exit_code = a.exec();
     shared_memory.detach();
     switch (exit_code) {
-    case RETCODE_RESTART:                                   //如果收到重启常数
+    case VARBOX::RETCODE_RESTART:                                   //如果收到重启常数
         QProcess::startDetached(a.applicationFilePath(), QStringList());   //重启程序
         break;
-    case RETCODE_UPDATE:
+    case VARBOX::RETCODE_UPDATE:
         QProcess::startDetached(QDir(a.applicationDirPath()).absoluteFilePath("Speed_Box_Updater.exe"), QStringList());   //重启程序
         break;
-    case RETCODE_ERROR_EXIT:
+    case VARBOX::RETCODE_ERROR_EXIT:
         QMessageBox::critical(nullptr, "出错", "程序遇到不能处理的错误，必须立即退出！");
     default:
         break;

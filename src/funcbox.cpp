@@ -36,7 +36,10 @@
 #include "windowposition.h"
 #include "globalfn.h"
 
-
+constexpr int VARBOX::RETCODE_ERROR_EXIT;
+constexpr int VARBOX::RETCODE_UPDATE;
+constexpr int VARBOX::RETCODE_RESTART;
+constexpr int VARBOX::MSG_APPBAR_MSGID;
 constexpr char VARBOX::m_dVersion[];
 VARBOX* VarBox = nullptr;
 
@@ -94,7 +97,6 @@ void VARBOX::initFile()
         IniRead->endGroup();
 
         IniRead->beginGroup(QStringLiteral("Translate"));
-        m_bAutoHide = IniRead->value(QStringLiteral("AutoHide"), m_bAutoHide).toBool();
         m_bEnableTranslater = IniRead->value(QStringLiteral("EnableTranslater"), m_bEnableTranslater).toBool();
         IniRead->endGroup();
         qout << "读取翻译信息完毕";

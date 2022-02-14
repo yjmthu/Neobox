@@ -16,8 +16,8 @@
 #include "calculator.h"
 #include "globalfn.h"
 
-constexpr int MENU_WIDTH = 90;
-constexpr int MENU_HEIGHT = 330;
+constexpr int Menu::WIDTH;
+constexpr int Menu::HEIGHT;
 
 bool Menu::keepScreenOn = false;
 
@@ -52,8 +52,8 @@ void Menu::initUi()
     }
     qss.close();
 
-    setMaximumSize(MENU_WIDTH, MENU_HEIGHT);                      //限定大小
-	setMinimumSize(MENU_WIDTH, MENU_HEIGHT);
+    setMaximumSize(WIDTH, HEIGHT);                      //限定大小
+    setMinimumSize(WIDTH, HEIGHT);
 }
 
 void Menu::initActions()
@@ -90,14 +90,14 @@ void Menu::Show(int x, int y)                   //自动把右键菜单移动到
 {
     actions[10].setChecked(keepScreenOn);
 	int px, py;
-    if (x + MENU_WIDTH < VarBox->m_dScreenWidth)   //菜单右边界不超出屏幕时
+    if (x + WIDTH < VarBox->m_dScreenWidth)   //菜单右边界不超出屏幕时
 		px = x;
 	else
-        px = VarBox->m_dScreenWidth - MENU_WIDTH;  //右边界和屏幕对齐
-    if (y + MENU_HEIGHT < VarBox->m_dScreenHeight) //菜单底部不超出屏幕底部时
+        px = VarBox->m_dScreenWidth - WIDTH;  //右边界和屏幕对齐
+    if (y + HEIGHT < VarBox->m_dScreenHeight) //菜单底部不超出屏幕底部时
 		py = y;
 	else
-		py = y - MENU_HEIGHT;                  //菜单底部和鼠标对齐
+        py = y - HEIGHT;                  //菜单底部和鼠标对齐
     move(px, py);                              //移动右键菜单到 (px, py)
     show();
 }

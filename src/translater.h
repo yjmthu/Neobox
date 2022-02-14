@@ -2,6 +2,7 @@
 #define TRANSLATER_H
 
 #include "ui_translater.h"
+#include <chrono>
 
 namespace Ui {
 class Translater;
@@ -35,45 +36,33 @@ public:
     explicit Translater();
     ~Translater();
 
+    class QxtGlobalShortcut *m_pShortcutShow  {nullptr};
+    class QxtGlobalShortcut *m_pShortcutHide  {nullptr};
+    static bool m_bShiftA;
+    static bool m_bShiftZ;
+    void initConnects();
+    static void initSettings();
+
 private:
-    enum Type
-    {
-        ZH_CN2EN, ZH_CN2JA, ZH_CN2KR, ZH_CN2FR,
-        ZH_CN2RU, ZH_CN2SP, EN2ZH_CN, JA2ZH_CN,
-        KR2ZH_CN, FR2ZH_CN, RU2ZH_CN, SP2ZH_CN,
-    };
-    const char types[12][9] =
-    {
-        "ZH_CN2EN", //中文　»　英语
-        "ZH_CN2JA", //中文　»　日语
-        "ZH_CN2KR", //中文　»　韩语
-        "ZH_CN2FR", //中文　»　法语
-        "ZH_CN2RU", //中文　»　俄语
-        "ZH_CN2SP", //中文　»　西语
-        "EN2ZH_CN", //英语　»　中文
-        "JA2ZH_CN", //日语　»　中文
-        "KR2ZH_CN", //韩语　»　中文
-        "FR2ZH_CN", //法语　»　中文
-        "RU2ZH_CN", //俄语　»　中文
-        "SP2ZH_CN"  //西语　»　中文
-    };
+    enum LangType { EN, JA, KR, FR, RU, SP, ZH_CN };
+    LangType m_dLangFrom  { LangType::EN };
+    LangType m_dLangTo    { LangType::EN };
+    const char m_aLangType[6][3] {/*英*/ "EN", /*日*/"JA", /*韩*/"KR", /*法*/"FR", /*俄*/"RU", /*西*/"SP" };
+    const char m_sNativeLang[6] { "ZH_CN" };
     Ui::Translater *ui;                                     //界面
-    class QxtGlobalShortcut * const shortcut_show {nullptr}, * const shortcut_hide {nullptr};
     static constexpr size_t m_dLangPos {53};
     char m_dYouDaoApi[65] { "http://fanyi.youdao.com/translate?&doctype=json&type=ZH_CN2EN&i=" };
-    unsigned long long last_post_time;
+    decltype (std::chrono::milliseconds().count()) m_dLastPostTime;
     void requestData(const char*, std::string*);
-    class QNetworkAccessManager * const mgr {nullptr};
-    class QTimer * const timer;
-    void initConnects();
-    char time_left = 10;
+    class QNetworkAccessManager* const m_pMgr         {nullptr};
+    class QTimer* const m_pTimer;
+    char m_dTimeLeft                                  {  10   };
 #if defined (Q_OS_WIN32)
-    HWND hCurrentCursor = NULL;
-#elif defined (Q_OS_LINUX)
-
+    HWND hCurrentCursor                               {nullptr};
 #endif
 #if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
-    class QTextToSpeech *speaker {nullptr};
+    class QTextToSpeech *m_pSpeaker                   {nullptr};
+    static bool m_bAutoHide;
 #endif
 
 private slots:
@@ -81,6 +70,10 @@ private slots:
     void copyTranlate();
     void startEnToZh(bool checked);
     void getReply(const QString& q);
+
+public slots:
+    void setShiftA();
+    void setShiftZ();
 };
 
 #endif // TRANSLATER_H

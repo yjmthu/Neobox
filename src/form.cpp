@@ -117,7 +117,7 @@ void Form::setupUi()
             changed = true;
             js->append((*js)["default"], "user");
         } else {
-            return qApp->exit(RETCODE_ERROR_EXIT);
+            return qApp->exit(VARBOX::RETCODE_ERROR_EXIT);
         }
     } else {
         js = new YJson("BoxFont.json", YJson::UTF8BOM);
@@ -242,7 +242,7 @@ char FirstDriveFromMask (ULONG unitmask)
 {
     MSG *msg = static_cast<MSG*>(message);
 
-    if (MSG_APPBAR_MSGID == msg->message)
+    if (VARBOX::MSG_APPBAR_MSGID == msg->message)
     {
         switch ((UINT)msg->wParam)
         {
@@ -330,7 +330,7 @@ void Form::mousePressEvent(QMouseEvent* event)
 	}
     else if (event->button() == Qt::MiddleButton)
     {
-        qApp->exit(RETCODE_RESTART);
+        qApp->exit(VARBOX::RETCODE_RESTART);
     }
 	event->accept();
 }

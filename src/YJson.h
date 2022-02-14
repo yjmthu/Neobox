@@ -25,7 +25,6 @@ public:
     explicit YJson(const std::wstring&);
     YJson(const std::initializer_list<const char*>& lst);
     ~YJson();
-    static std::pair<bool, std::string> ep;
 
     inline YJson::Type getType() const { return _type; }
     inline YJson* getPrev() const { return _prev; }
@@ -109,7 +108,7 @@ private:
     char *_key = nullptr, *_value = nullptr;
 
     template<typename Type>
-    bool strict_parse(Type value, Type end);
+    void strict_parse(Type value, Type end);
 
     template<typename Type>
     Type parse_value(Type, Type end);

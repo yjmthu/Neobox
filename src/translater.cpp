@@ -41,8 +41,13 @@
 #include "blankform.h"
 #include "gmpoperatetip.h"
 #include "translater.h"
+#include "globalfn.h"
 
 constexpr size_t Translater::m_dLangPos;
+bool Translater::m_bShiftA                              { true  };
+bool Translater::m_bShiftZ                              { true  };
+bool Translater::m_bAutoHide                            { false };
+
 
 #if (QT_VERSION_CHECK(6,0,0) <= QT_VERSION)
 bool  MSSpeak(LPCTSTR speakContent) // 文字转为语音
@@ -67,13 +72,12 @@ bool  MSSpeak(LPCTSTR speakContent) // 文字转为语音
 Translater::Translater() :
     QWidget(nullptr),
     ui(new Ui::Translater),
-    shortcut_show(new QxtGlobalShortcut(QKeySequence("Shift+Z"))),
-    shortcut_hide(new QxtGlobalShortcut(QKeySequence("Shift+A"))),
-    mgr(new QNetworkAccessManager), timer(new QTimer)
+    m_pMgr(new QNetworkAccessManager), m_pTimer(new QTimer)
     #if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
-        , speaker(new QTextToSpeech)
+        , m_pSpeaker(new QTextToSpeech)
     #endif
 {
+    initSettings();
     setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
     setAttribute(Qt::WA_TranslucentBackground);
     QFile qss(QStringLiteral(":/qss/translater_style.qss"));
@@ -91,8 +95,19 @@ Translater::Translater() :
 	ui->TextFrom->installEventFilter(this);
     ui->TextFrom->setContextMenuPolicy(Qt::CustomContextMenu);
     ui->TextTo->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(timer, &QTimer::timeout, this, [=](){
-        if (isVisible() && --time_left <= 0 && VarBox->m_bAutoHide)
+
+
+    if (m_bShiftA) {
+        m_pShortcutHide = new QxtGlobalShortcut(QKeySequence("Shift+A"));
+        setShiftA();
+    }
+    if (m_bShiftZ) {
+        m_pShortcutShow = new QxtGlobalShortcut(QKeySequence("Shift+Z"));
+        setShiftZ();
+    }
+
+    connect(m_pTimer, &QTimer::timeout, this, [=](){
+        if (isVisible() && --m_dTimeLeft <= 0 && m_bAutoHide)
             hide();
     });
 
@@ -116,65 +131,21 @@ Translater::Translater() :
     setMinimumSize(size);
     setMaximumSize(size);
 
-    connect(this, &Translater::msgBox, this, [=](const char* str){
-        jobTip->showTip(str);
-    });
-    connect(shortcut_show, &QxtGlobalShortcut::activated, this, [=](){
-        qout << "按下显示热键";
-#ifdef Q_OS_WIN
-        hCurrentCursor = GetForegroundWindow();
-#endif
-        if (!isVisible())
-            show();
-        activateWindow();        //SwitchToThisWindow(HWND(winId()), TRUE);
-        QClipboard* cl = QApplication::clipboard();              //读取剪切板
-        const QString& content = cl->text();
-        if (content.isEmpty())
-            return ;
-        ui->TextFrom->setPlainText(content);
-        ushort uNum = content.at(0).unicode();
-        if(uNum >= 0x4E00 && uNum <= 0x9FA5)
-        {
-            if (m_dYouDaoApi[m_dLangPos] == types[Type::EN2ZH_CN][0])
-            {
-                ui->pBtnZhToEn->click();
-                return ;
-            }
-        }
-        else
-        {
-            if (m_dYouDaoApi[m_dLangPos] == types[Type::ZH_CN2EN][0])
-            {
-                ui->pBtnEnToZh->click();
-                return ;
-            }
-        }
-        getReply(content);
-    });
-    connect(shortcut_hide, &QxtGlobalShortcut::activated, this, [=](){
-        qout << "按下隐藏热键";
-        if (isVisible())
-        {
-#ifdef Q_OS_WIN
-            if (hCurrentCursor && IsWindow(hCurrentCursor) && IsWindowVisible(hCurrentCursor))
-                SetForegroundWindow(hCurrentCursor);
-#endif
-            hide();
-        }
-    });
+    connect(this, &Translater::msgBox, this, [=](const char* str){ jobTip->showTip(str); });
+
     initConnects();
 }
 
 Translater::~Translater()
 {
 #if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
-    delete speaker;
+    delete m_pSpeaker;
 #endif
     qout << "析构Translater开始";
-    delete timer;
-    delete mgr;
-    delete shortcut_hide;
-    delete shortcut_show;
+    delete m_pTimer;
+    delete m_pMgr;
+    delete m_pShortcutHide;
+    delete m_pShortcutShow;
     delete ui;
     qout << "析构Translater结束";
 
@@ -187,7 +158,7 @@ void Translater::initConnects()
     connect(ui->pBtnZhToEn, &QPushButton::clicked, this, [=](bool checked){startEnToZh(!checked);});
     connect(ui->pBtnCopyTranlate, &QPushButton::clicked, this, &Translater::copyTranlate);
     connect(ui->bBtnClean, &QPushButton::clicked, this, [this](){
-        time_left = 10;
+        m_dTimeLeft = 10;
         ui->TextFrom->clear();ui->TextTo->clear();
         ui->TextFrom->setFocus();
     });
@@ -213,7 +184,7 @@ void Translater::initConnects()
         menu->connect(menu->addAction(QStringLiteral("Read All")), &QAction::triggered, this, [this](){
 
 #if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
-        speaker->say(ui->TextFrom->toPlainText());
+        m_pSpeaker->say(ui->TextFrom->toPlainText());
 #else
         MSSpeak(ui->TextFrom->toPlainText().toStdWString().c_str());
 #endif
@@ -226,7 +197,7 @@ void Translater::initConnects()
         menu->setStyleSheet(menu_style);
         menu->connect(menu->addAction("Read All"), &QAction::triggered, this, [this](){
 #if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
-        speaker->say(ui->TextTo->toPlainText());
+        m_pSpeaker->say(ui->TextTo->toPlainText());
 #else
         MSSpeak(ui->TextTo->toPlainText().toStdWString().c_str());
 #endif
@@ -236,11 +207,22 @@ void Translater::initConnects()
     });
 }
 
+void Translater::initSettings()
+{
+    QSettings IniRead(QStringLiteral("SpeedBox.ini"), QSettings::IniFormat);
+    IniRead.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    IniRead.beginGroup(QStringLiteral("Translate"));
+    m_bAutoHide = IniRead.value(QStringLiteral("AutoHide"), m_bAutoHide).toBool();
+    m_bShiftA = IniRead.value(QStringLiteral("HideShiftA"), m_bShiftA).toBool();
+    m_bShiftZ = IniRead.value(QStringLiteral("ShowShiftZ"), m_bShiftZ).toBool();
+    IniRead.endGroup();
+}
+
 void Translater::showEvent(QShowEvent* event)
 {
     int x, y;
-    ui->pBtnPin->setChecked(!VarBox->m_bAutoHide);
-    ui->pBtnPin->setIcon(QIcon(VarBox->m_bAutoHide?":/icons/drip_pin.ico": ":/icons/drip_blue_pin.ico"));
+    ui->pBtnPin->setChecked(!m_bAutoHide);
+    ui->pBtnPin->setIcon(QIcon(m_bAutoHide? ":/icons/drip_pin.ico": ":/icons/drip_blue_pin.ico"));
     QRect rt = VarBox->m_pForm->geometry();
     if (rt.top() > height())
         y = rt.top() - height();
@@ -258,7 +240,8 @@ void Translater::showEvent(QShowEvent* event)
     cursor.movePosition(QTextCursor::End);
     ui->TextFrom->setTextCursor(cursor);
     ui->TextFrom->setFocus();
-    if (VarBox->m_bAutoHide) timer->start(1000);
+    if (m_bAutoHide)
+        m_pTimer->start(1000);
     event->accept();
 }
 
@@ -299,19 +282,19 @@ bool Translater::nativeEvent(const QByteArray &, void *message, long long *)
 
 void Translater::mouseReleaseEvent(QMouseEvent *event)
 {
-    time_left = 10;
+    m_dTimeLeft = 10;
     event->accept();
 }
 
 void Translater::mousePressEvent(QMouseEvent *event)
 {
-    time_left = 10;
+    m_dTimeLeft = 10;
     event->accept();
 }
 
 void Translater::hideEvent(QHideEvent *event)
 {
-    timer->stop();
+    m_pTimer->stop();
     event->accept();
 }
 
@@ -326,7 +309,7 @@ bool Translater::eventFilter(QObject* target, QEvent* event)
 {
 	if (target == ui->TextFrom)
 	{
-        time_left = 10;
+        m_dTimeLeft = 10;
         if (event->type() == QEvent::KeyPress)               //
 		{
 			QKeyEvent* k = static_cast<QKeyEvent*>(event);
@@ -359,7 +342,7 @@ label_end:
 	}
     else if (target == ui->TextTo)
     {
-        time_left = 10;
+        m_dTimeLeft = 10;
     }
 	return QWidget::eventFilter(target, event);
 }
@@ -386,7 +369,6 @@ void Translater::keyPressEvent(QKeyEvent* event)
 void Translater::getReply(const QString& q)
 {
     std::string url(m_dYouDaoApi);
-    qout << "开始执行翻译函数";
 
 #if defined (Q_OS_WIN32)
     unsigned long long time_now = GetTickCount();  // haomiao
@@ -395,85 +377,134 @@ void Translater::getReply(const QString& q)
     gettimeofday(&tv, NULL);
     unsigned long long time_now = tv.tv_sec * 1000000 + tv.tv_usec;  //weimiao
 #endif
-    if (time_now - last_post_time < 1000)
-        QThread::msleep(last_post_time + 1000 - time_now);
+    if (time_now - m_dLastPostTime < 1000)
+        QThread::msleep(m_dLastPostTime + 1000 - time_now);
 
-    connect(mgr, &QNetworkAccessManager::finished, this, [this](QNetworkReply* rep) {
+    connect(m_pMgr, &QNetworkAccessManager::finished, this, [this](QNetworkReply* rep) {
+        static int ss = -1;
+        const QByteArray& data = rep->readAll();
+        qout << "木头人" << ++ss;
         if (rep->error() != QNetworkReply::NoError)
         {
-            emit msgBox("翻译请求失败,可能是没有网络！");
-            return ;
-        }
-        YJson json_data(rep->readAll());
-        YJson* have_item = nullptr;
-        if ((have_item = json_data.find("translateResult")) &&
-            (have_item = have_item->getChild()))
-        {
-            YJson * temp = nullptr;
-            ui->TextTo->clear();
-            do {
-                temp = have_item->getChild()->find("tgt");
-                ui->TextTo->appendPlainText(temp->getValueString());
-            } while ((have_item = have_item->getNext()));
-            QTextCursor cursor = ui->TextFrom->textCursor();
-            cursor.movePosition(QTextCursor::End);
-            ui->TextFrom->setTextCursor(cursor);
-#if defined (Q_OS_WIN32)
-            last_post_time = GetTickCount();
-#elif defined (Q_OS_LINUX)
-            struct timeval tv;
-            gettimeofday(&tv, NULL);
-            last_post_time = tv.tv_sec * 1000000 + tv.tv_usec;
-#endif
-        }//"errorCode":0
-        else if (json_data.find("errorCode"))
-        {
-            if ((have_item = json_data.find("error_msg")))
+            rep->deleteLater();
+            emit msgBox("翻译请求失败, 可能是没有网络！");
+        } else try {
+            rep->deleteLater();
+            YJson json_data(data);
+            YJson* have_item = nullptr;
+            if ((have_item = json_data.find("translateResult")) &&
+                (have_item = have_item->getChild()))
             {
-                qout << "错误消息：" << have_item->getValueString();
-                if (!strcmp(have_item->getValueString(), "Invalid Access Limit"))
-                    emit msgBox("翻译失败，使用公共密钥造成请求间隔时间过短!");
-                else if (!strcmp(have_item->getValueString(), "UNAUTHORIZED USER"))
-                    emit msgBox("翻译失败，APPID不存在！");
-                else if (!strcmp(have_item->getValueString(), "Invalid Sign"))
-                    emit msgBox("翻译失败，密钥错误！");
-                else
-                    emit msgBox("翻译失败，其它错误。");
+                YJson * temp = nullptr;
+                ui->TextTo->clear();
+                do {
+                    temp = have_item->getChild()->find("tgt");
+                    ui->TextTo->appendPlainText(temp->getValueString());
+                } while ((have_item = have_item->getNext()));
+                QTextCursor cursor = ui->TextFrom->textCursor();
+                cursor.movePosition(QTextCursor::End);
+                ui->TextFrom->setTextCursor(cursor);
+
+                auto time_now = std::chrono::system_clock::now();
+                m_dLastPostTime = std::chrono::duration_cast<std::chrono::milliseconds>(time_now.time_since_epoch()).count();
+            } else {
+                emit msgBox("null");
             }
-            else
-                emit msgBox("翻译失败，未知原因。");
+        } catch (std::string& errorStr) {
+            emit msgBox("Json文件出错");
         }
     });
+    static int ii =-1;
+    qout << "狼人杀" << ++ii;
     url += YEncode::urlEncode<std::string, std::string>(q.toStdString());
-    mgr->get(QNetworkRequest(QUrl(QString::fromStdString(url))));
+    m_pMgr->get(QNetworkRequest(QUrl(QString::fromStdString(url))));
+}
+
+void Translater::setShiftA()
+{
+
+    connect(m_pShortcutHide, &QxtGlobalShortcut::activated, this, [=](){
+        qout << "按下隐藏热键";
+        if (isVisible())
+        {
+#ifdef Q_OS_WIN
+            if (hCurrentCursor && IsWindow(hCurrentCursor) && IsWindowVisible(hCurrentCursor))
+                SetForegroundWindow(hCurrentCursor);
+#endif
+            hide();
+        }
+    });
+}
+
+void Translater::setShiftZ()
+{
+    connect(m_pShortcutShow, &QxtGlobalShortcut::activated, this, [=](){
+        qout << "按下显示热键";
+#ifdef Q_OS_WIN
+        hCurrentCursor = GetForegroundWindow();
+#endif
+        if (!isVisible())
+            show();
+        activateWindow();        //SwitchToThisWindow(HWND(winId()), TRUE);
+        QClipboard* cl = QApplication::clipboard();              //读取剪切板
+        const QString& content = cl->text();
+        if (content.isEmpty())
+            return ;
+        ui->TextFrom->setPlainText(content);
+        ushort uNum = content.at(0).unicode();
+        if(uNum >= 0x4E00 && uNum <= 0x9FA5)
+        {
+            if (!strncmp(m_dYouDaoApi+m_dLangPos, m_aLangType[m_dLangTo], 2))
+            {
+                ui->pBtnZhToEn->click();
+                return ;
+            }
+        }
+        else
+        {
+            if (!strncmp(m_dYouDaoApi+m_dLangPos+6, m_aLangType[m_dLangTo], 2))
+            {
+                ui->pBtnEnToZh->click();
+                return ;
+            }
+        }
+        getReply(content);
+    });
 }
 
 void Translater::setFix(bool checked)
 {
     ui->pBtnPin->setIcon(QIcon(checked?QStringLiteral(":/icons/drip_blue_pin.ico"):QStringLiteral(":/icons/drip_pin.ico")));
-    VarBox->m_bAutoHide = !checked;
-    QSettings IniWrite(QStringLiteral("SpeedBox.ini"), QSettings::IniFormat);
-    IniWrite.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    IniWrite.beginGroup("Translate");
-    IniWrite.setValue("AutoHide", VarBox->m_bAutoHide);
-    IniWrite.endGroup();
-    if (VarBox->m_bAutoHide)
-        timer->start(1000);
+    m_bAutoHide = !checked;
+    GlobalFn::saveOneSet<bool>(QStringLiteral("Translate"), QStringLiteral("AutoHide"), m_bAutoHide);
+    if (m_bAutoHide)
+        m_pTimer->start(1000);
 }
 
 void Translater::startEnToZh(bool checked)
 {
-    time_left = 10;
-    ui->pBtnEnToZh->setIcon(QIcon(checked?":/icons/black_zh.ico": ":/icons/empty_zh.ico"));
-    ui->pBtnZhToEn->setIcon(QIcon(checked?":/icons/empty_en.ico":":/icons/black_en.ico"));
-    strncpy(m_dYouDaoApi+m_dLangPos, types[checked ? Type::EN2ZH_CN: Type::ZH_CN2EN], 8);
+    m_dTimeLeft = 10;
+    if (checked)
+    {
+        ui->pBtnEnToZh->setIcon(QIcon(":/icons/black_zh.ico"));
+        ui->pBtnZhToEn->setIcon(QIcon(":/icons/empty_en.ico"));
+        strncpy(m_dYouDaoApi+m_dLangPos, m_aLangType[m_dLangFrom], 2);
+        m_dYouDaoApi[m_dLangPos+2] = '2';
+        strncpy(m_dYouDaoApi+m_dLangPos+3, m_sNativeLang, 5);
+    } else {
+        ui->pBtnEnToZh->setIcon(QIcon(":/icons/empty_zh.ico"));
+        ui->pBtnZhToEn->setIcon(QIcon(":/icons/black_en.ico"));
+        strncpy(m_dYouDaoApi+m_dLangPos, m_sNativeLang, 5);
+        m_dYouDaoApi[m_dLangPos+5] = '2';
+        strncpy(m_dYouDaoApi+m_dLangPos+6, m_aLangType[m_dLangTo], 2);
+    }
     QString str = ui->TextFrom->toPlainText();
-    if (!str.isEmpty()) getReply(str.toUtf8());
+    if (!str.isEmpty()) getReply(str);
 }
 
 void Translater::copyTranlate()
 {
-    time_left = 10;
+    m_dTimeLeft = 10;
 	QApplication::clipboard()->setText(ui->TextTo->toPlainText());
     emit msgBox("复制成功！");
 }

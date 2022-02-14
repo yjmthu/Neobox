@@ -28,13 +28,15 @@ DownloadProgress::DownloadProgress(const QString& zipfile, const QUrl& url1, con
 {
     ui->setupUi(this);
     connect(mgr2, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep2){
+        const QByteArray& data = rep2->readAll();
+        rep2->deleteLater();
         succeed = true;
         QString temp_str_2 = QDir::toNativeSeparators(qApp->applicationDirPath()+"/Speed_Box_Updater.exe");
         if (QFile::exists(temp_str_2)) QFile::remove(temp_str_2);
         QFile file(temp_str_2);
         if (file.open(QIODevice::WriteOnly))
         {
-            file.write(rep2->readAll());
+            file.write(data);
             file.close();
             if (!file.size())
             {
@@ -43,7 +45,7 @@ DownloadProgress::DownloadProgress(const QString& zipfile, const QUrl& url1, con
             } else {
                 if (QMessageBox::information(this, "提示", "更新已经下载完成，点击确认重启软件后完成更新！", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
                 {
-                    qApp->exit(RETCODE_UPDATE);
+                    qApp->exit(VARBOX::RETCODE_UPDATE);
                 } else {
                     emit message("成功取消更新。", 700);
                 }
@@ -52,18 +54,21 @@ DownloadProgress::DownloadProgress(const QString& zipfile, const QUrl& url1, con
         close();
     });
     connect(mgr1, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep1){
+        const QByteArray& data = rep1->readAll();
         succeed = true;
         if (rep1->error() != QNetworkReply::NoError)
         {
+            rep1->deleteLater();
             close();
             emit message("下载zip文件出错!", 2000);
             return ;
         }
+        rep1->deleteLater();
         if (QFile::exists(zipfile)) QFile::remove(zipfile);
         QFile file(zipfile);
         if (file.open(QIODevice::WriteOnly))
         {
-            file.write(rep1->readAll());
+            file.write(data);
             file.close();
             if (!file.size())
             {

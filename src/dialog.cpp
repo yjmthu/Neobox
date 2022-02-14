@@ -20,6 +20,8 @@
 #include <QComboBox>
 #include <QSystemTrayIcon>
 
+#include <3rd_qxtglobalshortcut/qxtglobalshortcut.h>
+
 #include "YString.h"
 #include "YJson.h"
 #include "dialog.h"
@@ -32,6 +34,7 @@
 #include "bingsetting.h"
 #include "qstylesheet.h"
 #include "globalfn.h"
+#include "translater.h"
 
 const QStringList Dialog::reg_keys {
     QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Classes\\*\\shell\\QCoper"),
@@ -146,6 +149,8 @@ void Dialog::initUi()
     ui->cBxEnableMarkdown->setChecked(VarBox->m_bMarkdownNote);
     ui->cBxEnableSquareClock->setChecked(VarBox->m_bSquareClock);
     ui->cBxEnableRoundClock->setChecked(VarBox->m_bRoundClock);
+    ui->cBxFanyierShiftA->setChecked(Translater::m_bShiftA);
+    ui->cBxFanyierShiftZ->setChecked(Translater::m_bShiftZ);
     setFrameStyle(static_cast<int>(curTheme));
     checkSettings();
     loadFormStyle();
@@ -176,6 +181,7 @@ void Dialog::initChildren()
 void Dialog::initConnects()
 {
     qout << "对话框链接A";
+    if (!VarBox->m_pForm->translater) Translater::initSettings();
     connect(ui->pushButton_14, &QPushButton::clicked, this, std::bind(&QDesktopServices::openUrl, QUrl(QStringLiteral("https://yjmthu.github.io/Speed-Box"))));
     connect(ui->rBtnNative, &QRadioButton::toggled, this, [this](bool checked){ui->BtnChooseFolder->setEnabled(checked);});
     connect(ui->BtnChooseFolder, &QToolButton::clicked, this, &Dialog::chooseFolder);
@@ -184,6 +190,36 @@ void Dialog::initConnects()
     connect(ui->pBtnOpenAppData, &QPushButton::clicked, VarBox, std::bind(GlobalFn::openDirectory, QDir::currentPath()));
     connect(ui->pBtnOpenPicturePath, &QPushButton::clicked, this, &Dialog::openPicturePath);
     connect(ui->linePictuerPath, &QLineEdit::returnPressed, this, &Dialog::linePictuerPathReturn);
+    connect(ui->cBxFanyierShiftA, &QCheckBox::clicked, this, [=](bool checked){
+        auto tlr = VarBox->m_pForm->translater;
+        Translater::m_bShiftA = checked;
+        if (tlr) {
+            if (checked) {
+                tlr->m_pShortcutHide = new QxtGlobalShortcut(QKeySequence("Shift+A"));
+                tlr->setShiftA();
+            } else {
+                delete tlr->m_pShortcutHide;
+                tlr->m_pShortcutHide = nullptr;
+            }
+        }
+        GlobalFn::saveOneSet<bool>("Translate", "HideShiftA", checked);
+        jobTip->showTip("修改成功！");
+    });
+    connect(ui->cBxFanyierShiftZ, &QCheckBox::clicked, this, [=](bool checked){
+        auto tlr = VarBox->m_pForm->translater;
+        Translater::m_bShiftZ = checked;
+        if (tlr) {
+            if (checked) {
+                tlr->m_pShortcutShow = new QxtGlobalShortcut(QKeySequence("Shift+Z"));
+                tlr->setShiftZ();
+            } else {
+                delete tlr->m_pShortcutShow;
+                tlr->m_pShortcutShow = nullptr;
+            }
+        }
+        GlobalFn::saveOneSet<bool>("Translate", "ShowShiftZ", checked);
+        jobTip->showTip("修改成功！");
+    });
     connect(ui->cBxAutoStart, &QPushButton::clicked, this, [this](bool checked){
 #ifdef Q_OS_WIN32
         QSettings* reg = new QSettings(
@@ -848,13 +884,16 @@ void Dialog::on_pushButton_10_clicked()
     QNetworkAccessManager* mgr = new QNetworkAccessManager;
 
     connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep){
+        const QByteArray& data = rep->readAll();
         if (rep->error() != QNetworkReply::NoError)
         {
+            rep->deleteLater();
             jobTip->showTip(QStringLiteral("下载失败！"));
             mgr->deleteLater();
             return;
         }
-        const YJson json(rep->readAll());
+        rep->deleteLater();
+        const YJson json(data);
         if (json.getType() != YJson::Object)
         {
             jobTip->showTip(QStringLiteral("Gitee源出现问题！"));
@@ -889,61 +928,55 @@ void Dialog::on_pushButton_10_clicked()
 // 下载更新  https://gitee.com/yjmthu/Speed-Box/raw/main/Update.json
 void Dialog::on_pushButton_12_clicked()
 {
-    if (Wallpaper::isOnline())
-    {
+    if (Wallpaper::isOnline()) {
         QMessageBox::information(this, "提示", "点击确认开始下载,下载时间一般不会很长,请耐心等待,\n不要关闭设置窗口.");
-    }
-    else
-    {
+    } else {
         QMessageBox::information(this, "提示", "没有网络！");
         return;
     }
     QNetworkAccessManager* mgr0 = new QNetworkAccessManager;
     connect(mgr0, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep){
-        YJson json(rep->readAll());
+        const QByteArray& data { rep->readAll() };
+        rep->deleteLater();
         mgr0->deleteLater();
-        if (json.ep.first)
-        {
+        try {
+            YJson json(data);
+            if (json.getType() != YJson::Object)
+            {
+                jobTip->showTip(QStringLiteral("Gitee源出现问题！"));
+                return;
+            }
+            YJson *urls = json.find("Files"); YJson *child = nullptr;
+            if (urls && urls->getType() == YJson::Object)
+            {
+                if (!(child = urls->find("zip")))
+                {
+                    jobTip->showTip(QStringLiteral("Json 文件不含zip, 下载失败！"));
+                    return;
+                }
+                const QUrl url1(child->getValueString());
+                if (!(child = urls->find("update")))
+                {
+                    jobTip->showTip(QStringLiteral("Json 文件不含zip, 下载失败!"));
+                    return;
+                }
+                if (!json["File Name"])
+                {
+                    jobTip->showTip("Json 文件不含File Name, 下载失败！");
+                    return;
+                }
+                const QUrl url2(child->getValueString());
+                const QString zipfile = json["File Name"].getValueString();
+
+                DownloadProgress pro(zipfile, url1, url2,this);
+                pro.exec();
+                qout << "下载第一个文件";
+            } else {
+                jobTip->showTip("未知原因，下载失败！");
+            }
+        } catch (std::string& errorStr) {
+            qout << errorStr.c_str();
             GlobalFn::msgBox("Json文件出错, 下载失败!");
-            return;
-        }
-        if (json.getType() != YJson::Object)
-        {
-            jobTip->showTip(QStringLiteral("Gitee源出现问题！"));
-            return;
-        }
-        YJson *urls = json.find("Files"); YJson *child = nullptr;
-        //VarBox->MSG(json.toString());
-        if (urls && urls->getType() == YJson::Object)
-        {
-            if (!(child = urls->find("zip")))
-            {
-                jobTip->showTip(QStringLiteral("Json 文件不含zip, 下载失败！"));
-                return;
-            }
-            const QUrl url1(child->getValueString());
-            if (!(child = urls->find("update")))
-            {
-                jobTip->showTip(QStringLiteral("Json 文件不含zip, 下载失败!"));
-                return;
-            }
-            if (!json["File Name"])
-            {
-                jobTip->showTip("Json 文件不含File Name, 下载失败！");
-                return;
-            }
-            const QUrl url2(child->getValueString());
-            const QString zipfile = json["File Name"].getValueString();
-            qout << "文件地址：" << url1 << url2 << zipfile;
-
-            DownloadProgress pro(zipfile, url1, url2,this);
-
-            pro.exec();
-            qout << "下载第一个文件";
-        }
-        else
-        {
-            jobTip->showTip("未知原因，下载失败！");
         }
 
     });

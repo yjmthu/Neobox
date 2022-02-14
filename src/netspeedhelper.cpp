@@ -57,7 +57,7 @@ void NetSpeedHelper::get_mem_usage()
 
 void NetSpeedHelper::get_net_usage()
 {
-    static unsigned char iGetAddressTime = 10;  //10秒一次获取网卡信息
+    static unsigned char iGetAddressTime = 10;  // 10秒一次获取网卡信息
     static DWORD m_last_in_bytes = 0 /* 总上一秒下载字节 */,  m_last_out_bytes = 0 /* 总上一秒上传字节 */;
 
     if (iGetAddressTime == 10)        // 10秒更新
@@ -72,7 +72,7 @@ void NetSpeedHelper::get_net_usage()
         iGetAddressTime = 0;
     }
     else
-        iGetAddressTime++;
+        ++iGetAddressTime;
 
     DWORD dwMISize = 0;
     if (GetIfTable(mi, &dwMISize, FALSE) == ERROR_INSUFFICIENT_BUFFER)
@@ -86,12 +86,9 @@ void NetSpeedHelper::get_net_usage()
     for (DWORD i = 0; i < mi->dwNumEntries; i++)
     {
         paa = &piaa[0];
-        while (paa)
-        {
-            if (paa->IfType != IF_TYPE_SOFTWARE_LOOPBACK && paa->IfType != IF_TYPE_TUNNEL)
-            {
-                if (paa->IfIndex == mi->table[i].dwIndex)
-                {
+        while (paa) {
+            if (paa->IfType != IF_TYPE_SOFTWARE_LOOPBACK && paa->IfType != IF_TYPE_TUNNEL) {
+                if (paa->IfIndex == mi->table[i].dwIndex) {
                     m_in_bytes += mi->table[i].dwInOctets;
                     m_out_bytes += mi->table[i].dwOutOctets;
                 }
@@ -100,8 +97,7 @@ void NetSpeedHelper::get_net_usage()
         }
     }
 
-    if (m_last_in_bytes)
-    {
+    if (m_last_in_bytes) {
         emit netInfo(
             formatSpped(m_out_bytes - m_last_out_bytes, false),
             formatSpped(m_in_bytes - m_last_in_bytes, true)

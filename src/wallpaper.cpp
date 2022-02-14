@@ -31,7 +31,7 @@ void check_is_wallhaven(const char* pic, char* id)
 {
     if (strlen(pic) != 20)
         return ;
-    if (!strncmp(pic, "wallhaven-", 10) && StrContainCharInRanges<char>(pic+10, 6, "a-z", "0-9") &&
+    if (!strncmp(pic, "wallhaven-", 10) && YString::StrContainCharInRanges<char>(pic+10, 6, "a-z", "0-9") &&
             (!strcmp(pic+16, ".png") || !strcmp(pic+16, ".jpg")))
     {
         for (int i=0; i < 20; ++i)
@@ -72,9 +72,8 @@ Wallpaper::Wallpaper():
     QSettings set("HKEY_CURRENT_USER\\Control Panel\\Desktop", QSettings::NativeFormat);
     if (set.contains("WallPaper"))
     {
-        const QString temp_paper = set.value("WallPaper").toString();
-        if (!temp_paper.isEmpty())
-        {
+        const QString& temp_paper = set.value("WallPaper").toString();
+        if (!temp_paper.isEmpty()) {
             m_picture_history.emplace_back(temp_paper.toStdString());
         }
     }
@@ -221,8 +220,16 @@ void Wallpaper::_set_b(YJson * file_data)
 
 void Wallpaper::push_back()
 {
+    qout << "push_back(), 壁纸类型：" << static_cast<int>(m_paperType);
     QDir dir;
-    loadApiFile();
+    try {
+        loadApiFile();
+    } catch (std::string& errorStr) {
+        qout << "错误原因:" << errorStr.c_str();
+        return;
+    }
+
+    qout << 12345;
     switch (m_paperType)
     {
     case Type::Bing:
@@ -258,10 +265,9 @@ void Wallpaper::set_from_Wallhaven()  // 从数据库中随机抽取一个链接
     YJson* jsonObject = nullptr, *jsonArray = nullptr, * find_item = nullptr;
     if (!QFile::exists(file_name))
         goto label_1;
-    jsonObject = new YJson(file_name, YJson::AUTO);
-    if (YJson::ep.first){
-        qout << "ImageData文件出现错误!";
-        YJson::ep.first = false;
+    try {
+        jsonObject = new YJson(file_name, YJson::AUTO);
+    } catch (std::string& errorStr) {
         goto label_1;
     }
     if (jsonObject->getType() == YJson::Object &&
@@ -331,15 +337,18 @@ void Wallpaper::get_url_from_Wallhaven(YJson* jsonArray)
     connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep){
         if (rep->error() != QNetworkReply::NoError)
         {
+            rep->deleteLater();
             delete jsonArray->getTop();
             mgr->deleteLater();
             m_doing = false;
             return;
         }
+        const QByteArray& data = rep->readAll();
+        rep->deleteLater();
         qout << "一轮壁纸链接请求结束";
         if (k <= 5 * m_pageNum)
         {
-            YJson *js = new YJson(rep->readAll());
+            YJson *js = new YJson(data);
             if (js->find("error"))  //{"error":"Not Found"}
             {
                 delete js;
@@ -364,9 +373,7 @@ void Wallpaper::get_url_from_Wallhaven(YJson* jsonArray)
                 } while ((ptr = ptr->getNext()));
                 QString str = QString::fromStdString(m_wallhaven_api + "&page=" + std::to_string(++k));
                 mgr->get(QNetworkRequest(QUrl(str)));
-            }
-            else
-            {
+            } else {
                 mgr->deleteLater();
                 m_doing = false;
                 if (urllist->getChild())
@@ -408,15 +415,19 @@ void Wallpaper::get_url_from_Bing()
         if (rep->error() == QNetworkReply::NoError)
         {
             QByteArray && by = rep->readAll();
-            YJson bing_data(by);
-            if (!bing_data.ep.first) {
+            rep->deleteLater();
+            try {
+                YJson bing_data(by);
                 bing_data.append(0, "current");
                 bing_data.append(QDateTime::currentDateTime().toString("yyyyMMdd").toStdString(), "today");
                 mgr->deleteLater();
                 m_doing = false;
                 _set_b(&bing_data);
+            } catch (std::string& errorStr) {
+                qout << errorStr.c_str();
             }
         }
+        rep->deleteLater();
         mgr->deleteLater();
         m_doing = false;
         loop->quit();
@@ -464,25 +475,27 @@ void Wallpaper::download_image(const _Ty &url, const QString &path, bool set)
         connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep)->void{
             if (rep->error() != QNetworkReply::NoError)
             {
+                rep->deleteLater();
                 qout << "下载图片出错！";
                 mgr->deleteLater();
                 m_doing = false;
                 return;
             }
+            const QByteArray& data = rep->readAll();
+            rep->deleteLater();
             QFile file(path);
             qout << "下载图片成功!";
-            if (file.open(QIODevice::WriteOnly))
+            if (data.size() && file.open(QIODevice::WriteOnly))
             {
-                file.write(rep->readAll());
+                file.write(data);
                 file.close();
-                file.size() || QFile::remove(path);
                 qout << file.size();
             }
             mgr->deleteLater();
             m_doing = false;
-            set && set_wallpaper(path);
+            if (set)
+                set_wallpaper(path);
         });
-        qout << "发送图片下载的get请求。";
         mgr->get(QNetworkRequest(QUrl(url)));
     } else if (set) {
         qout << "本地图片文件存在";
@@ -660,7 +673,6 @@ void Wallpaper::next()
         thrd->start();
         return;
     } else {
-        qout << "壁纸类型：" << static_cast<int>(m_paperType);
         push_back();
     }
 }
@@ -754,9 +766,12 @@ void Wallpaper::dislike()
 
 void Wallpaper::loadApiFile()
 {
-    YJson& json = *new YJson("WallpaperApi.json", YJson::UTF8);
+    qout << 123;
+    YJson json("WallpaperApi.json", YJson::UTF8);
+    qout << 456;
     const char* curApi = nullptr;
     int index = static_cast<int>(m_paperType);
+    qout << 789;
     m_bing_api = QString::fromStdString(json["BingApi"]["Parameter"].urlEncode(json["MainApis"]["BingApi"].getValueString()));
     m_bing_folder = json["BingApi"]["Folder"].getValueString();
     switch (m_paperType)
@@ -780,7 +795,6 @@ void Wallpaper::loadApiFile()
         m_wallhaven_api = json["Default"]["ApiData"][index]["Parameter"].urlEncode(json["MainApis"]["WallhavenApi"].getValueString());
         m_wallhaven_folder = json["Default"]["ApiData"][index]["Folder"].getValueString();
     }
-    delete &json;
 }
 
 bool Wallpaper::isOnline(bool wait)
@@ -794,8 +808,9 @@ bool Wallpaper::isOnline(bool wait)
 //        "User-Agent",
 //        "Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko"
 //    );
-    connect(mgr, &QNetworkAccessManager::finished, loop, [loop](QNetworkReply *re){
-        success = re->error() == QNetworkReply::NoError;
+    connect(mgr, &QNetworkAccessManager::finished, loop, [loop](QNetworkReply *rep){
+        success = rep->error() == QNetworkReply::NoError;
+        rep->deleteLater();
         qout << "网络链接情况：" << success;
         loop->quit();
     });

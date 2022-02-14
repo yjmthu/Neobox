@@ -160,6 +160,7 @@ USBdriveHelper::USBdriveHelper(char U, unsigned index, std::vector<USBdriveHelpe
             dw_error = GetLastError();
             return FALSE;
         }
+        Q_UNUSED(dw_error);
         emit appQuit(m_index);
         return TRUE;
     });
