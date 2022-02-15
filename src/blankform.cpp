@@ -27,17 +27,19 @@ BlankFrom::~BlankFrom()
 }
 
 #if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
-void BlankFrom::enterEvent(QEvent *)
+void BlankFrom::enterEvent(QEvent * e)
 #else
-void BlankFrom::enterEvent(QEnterEvent *)
+void BlankFrom::enterEvent(QEnterEvent *e)
 #endif
 {
     closeButton->setStyleSheet(QStringLiteral("QPushButton{border-image: url(:/icons/close.png);border-radius:7px;}"));
     minButton->setStyleSheet(QStringLiteral("QPushButton{border-image: url(:/icons/minimize.png);border-radius:7px;}"));
+    e->accept();
 }
 
-void BlankFrom::leaveEvent(QEvent *)
+void BlankFrom::leaveEvent(QEvent *e)
 {
     minButton->setStyleSheet(QStringLiteral("QPushButton{background-color:#85c43b;border-radius:7px;}"));
     closeButton->setStyleSheet(QStringLiteral("QPushButton{background-color:#ea6e4d;border-radius:7px;}"));
+    e->accept();
 }
