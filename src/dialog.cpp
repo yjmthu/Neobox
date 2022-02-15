@@ -74,7 +74,6 @@ void Dialog::initUi()
     typedef Wallpaper::Type Type;
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window | Qt::WindowSystemMenuHint | Qt::WindowMinimizeButtonHint);  //| Qt::WindowStaysOnTopHint
     setAttribute(Qt::WA_DeleteOnClose, true);
-    ui->pushButton_12->setEnabled(false);
 
     QFile qss(":/qss/dialog_style.qss");
     qss.open(QFile::ReadOnly);
@@ -145,12 +144,11 @@ void Dialog::initUi()
     ui->checkBox_3->setChecked(wallpaper->m_firstChange);
     ui->BtnChooseFolder->setEnabled(ui->rBtnNative->isChecked());
     ui->cBxEnableUSBhelper->setChecked(VarBox->m_bEnableUSBhelper);
-    ui->cBxEnableFanyier->setChecked(VarBox->m_bEnableTranslater);
     ui->cBxEnableMarkdown->setChecked(VarBox->m_bMarkdownNote);
     ui->cBxEnableSquareClock->setChecked(VarBox->m_bSquareClock);
     ui->cBxEnableRoundClock->setChecked(VarBox->m_bRoundClock);
-    ui->cBxFanyierShiftA->setChecked(Translater::m_bShiftA);
-    ui->cBxFanyierShiftZ->setChecked(Translater::m_bShiftZ);
+    ui->cBxFanyierShiftA->setChecked(Translater::getShiftAState());
+    ui->cBxFanyierShiftZ->setChecked(Translater::getShiftZState());
     setFrameStyle(static_cast<int>(curTheme));
     checkSettings();
     loadFormStyle();
@@ -181,8 +179,7 @@ void Dialog::initChildren()
 void Dialog::initConnects()
 {
     qout << "对话框链接A";
-    if (!VarBox->m_pForm->translater) Translater::initSettings();
-    connect(ui->pushButton_14, &QPushButton::clicked, this, std::bind(&QDesktopServices::openUrl, QUrl(QStringLiteral("https://yjmthu.github.io/Speed-Box"))));
+    connect(ui->pBtnAppWebSite, &QPushButton::clicked, this, std::bind(&QDesktopServices::openUrl, QUrl(QStringLiteral("https://yjmthu.github.io/Speed-Box"))));
     connect(ui->rBtnNative, &QRadioButton::toggled, this, [this](bool checked){ui->BtnChooseFolder->setEnabled(checked);});
     connect(ui->BtnChooseFolder, &QToolButton::clicked, this, &Dialog::chooseFolder);
     connect(ui->pBtnCancel, &QPushButton::clicked, this, &Dialog::close);
@@ -192,7 +189,6 @@ void Dialog::initConnects()
     connect(ui->linePictuerPath, &QLineEdit::returnPressed, this, &Dialog::linePictuerPathReturn);
     connect(ui->cBxFanyierShiftA, &QCheckBox::clicked, this, [=](bool checked){
         auto tlr = VarBox->m_pForm->translater;
-        Translater::m_bShiftA = checked;
         if (tlr) {
             if (checked) {
                 tlr->m_pShortcutHide = new QxtGlobalShortcut(QKeySequence("Shift+A"));
@@ -207,7 +203,6 @@ void Dialog::initConnects()
     });
     connect(ui->cBxFanyierShiftZ, &QCheckBox::clicked, this, [=](bool checked){
         auto tlr = VarBox->m_pForm->translater;
-        Translater::m_bShiftZ = checked;
         if (tlr) {
             if (checked) {
                 tlr->m_pShortcutShow = new QxtGlobalShortcut(QKeySequence("Shift+Z"));
@@ -540,7 +535,9 @@ void Dialog::initConnects()
         formPart[index]->setStyleSheet(m_sheet[index].getString(index));
         qout << formPart[index]->styleSheet();
     });
-    connect(ui->cBxEnableFanyier, &QCheckBox::clicked, VarBox->m_pForm, &Form::enableTranslater);
+    connect(ui->pBtnCheckUpdate, &QPushButton::clicked, VarBox, [](){
+        qApp->exit(VARBOX::RETCODE_UPDATE);
+    });
     qout << "对话框链接B";
 }
 
@@ -863,11 +860,7 @@ void Dialog::on_pushButton_5_clicked()
     jobTip->showTip(QStringLiteral("设置成功！"));
 }
 
-// 展示版本信息
-void Dialog::on_pushButton_13_clicked()
-{
-    jobTip->showTip(QString("版本号：") + VarBox->m_dVersion, 1000);
-}
+#if 0
 
 // 检查是否有更新 https://gitee.com/yjmthu/Speed-Box/raw/main/Update.json
 void Dialog::on_pushButton_10_clicked()
@@ -910,7 +903,6 @@ void Dialog::on_pushButton_10_clicked()
             if (GlobalFn::getVersion(VarBox->m_dVersion) < GlobalFn::getVersion(version))
             {
                 jobTip->showTip(QString("\t有新版本已经出现！\n当前版本：%1%2%3").arg(VarBox->m_dVersion, "; 最新版本：", version), 2000);
-                ui->pushButton_12->setEnabled(true);
             }
             else
             {
@@ -982,6 +974,8 @@ void Dialog::on_pushButton_12_clicked()
     });
     mgr0->get(QNetworkRequest(QUrl("https://gitee.com/yjmthu/Speed-Box/raw/main/update/update.json")));
 }
+
+#endif
 
 void Dialog::on_toolButton_2_clicked()
 {

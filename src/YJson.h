@@ -1,8 +1,8 @@
 ﻿#ifndef YJSON_H
 #define YJSON_H
+
 #include <cstring>
 #include <string>
-#include <iostream>
 
 class YJson
 {

@@ -42,6 +42,7 @@ namespace SystemFunctions
 {
     BOOL setWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD AlphaColor);
     SystemVersion getWindowsVersion();
+    void runUpdateAsAdmin();
 }
 
 #endif

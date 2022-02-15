@@ -44,9 +44,7 @@
 #include "globalfn.h"
 
 constexpr size_t Translater::m_dLangPos;
-bool Translater::m_bShiftA                              { true  };
-bool Translater::m_bShiftZ                              { true  };
-bool Translater::m_bAutoHide                            { false };
+bool Translater::m_bAutoHide  { false };
 
 
 #if (QT_VERSION_CHECK(6,0,0) <= QT_VERSION)
@@ -95,16 +93,6 @@ Translater::Translater() :
 	ui->TextFrom->installEventFilter(this);
     ui->TextFrom->setContextMenuPolicy(Qt::CustomContextMenu);
     ui->TextTo->setContextMenuPolicy(Qt::CustomContextMenu);
-
-
-    if (m_bShiftA) {
-        m_pShortcutHide = new QxtGlobalShortcut(QKeySequence("Shift+A"));
-        setShiftA();
-    }
-    if (m_bShiftZ) {
-        m_pShortcutShow = new QxtGlobalShortcut(QKeySequence("Shift+Z"));
-        setShiftZ();
-    }
 
     connect(m_pTimer, &QTimer::timeout, this, [=](){
         if (isVisible() && --m_dTimeLeft <= 0 && m_bAutoHide)
@@ -213,9 +201,27 @@ void Translater::initSettings()
     IniRead.setIniCodec(QTextCodec::codecForName("UTF-8"));
     IniRead.beginGroup(QStringLiteral("Translate"));
     m_bAutoHide = IniRead.value(QStringLiteral("AutoHide"), m_bAutoHide).toBool();
-    m_bShiftA = IniRead.value(QStringLiteral("HideShiftA"), m_bShiftA).toBool();
-    m_bShiftZ = IniRead.value(QStringLiteral("ShowShiftZ"), m_bShiftZ).toBool();
+    if (IniRead.value(QStringLiteral("HideShiftA"), true).toBool())
+    {
+        m_pShortcutHide = new QxtGlobalShortcut(QKeySequence("Shift+A"));
+        setShiftA();
+    }
+
+    if (IniRead.value(QStringLiteral("ShowShiftZ"), true).toBool()) {
+        m_pShortcutShow = new QxtGlobalShortcut(QKeySequence("Shift+Z"));
+        setShiftZ();
+    }
     IniRead.endGroup();
+}
+
+bool Translater::getShiftAState()
+{
+    return GlobalFn::readOneSet<bool>(QStringLiteral("Translate"), QStringLiteral("HideShiftA"), true).toBool();
+}
+
+bool Translater::getShiftZState()
+{
+    return GlobalFn::readOneSet<bool>(QStringLiteral("Translate"), QStringLiteral("ShowShiftZ"), true).toBool();
 }
 
 void Translater::showEvent(QShowEvent* event)

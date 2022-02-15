@@ -9,6 +9,7 @@
 
 #include "funcbox.h"
 #include "form.h"
+#include "systemfunctions.h"
 
 int main(int argc, char* argv[])
 {
@@ -44,7 +45,7 @@ int main(int argc, char* argv[])
         QProcess::startDetached(a.applicationFilePath(), QStringList());   //重启程序
         break;
     case VARBOX::RETCODE_UPDATE:
-        QProcess::startDetached(QDir(a.applicationDirPath()).absoluteFilePath("Speed_Box_Updater.exe"), QStringList());   //重启程序
+        SystemFunctions::runUpdateAsAdmin();  //重启程序
         break;
     case VARBOX::RETCODE_ERROR_EXIT:
         QMessageBox::critical(nullptr, "出错", "程序遇到不能处理的错误，必须立即退出！");

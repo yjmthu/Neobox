@@ -4,6 +4,8 @@
 #ifdef Q_OS_WIN32
 #include <Windows.h>
 
+#include <QDebug>
+
 enum class WINDOWCOMPOSITIONATTRIB
 {
     WCA_UNDEFINED = 0,
@@ -50,6 +52,85 @@ struct ACCENT_POLICY
 
 namespace SystemFunctions
 {
+    BOOL isRunAsAdministrator()
+    {
+        BOOL fIsRunAsAdmin = FALSE;
+        DWORD dwError = ERROR_SUCCESS;
+        PSID pAdministratorsGroup = NULL;
+
+        SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
+        if (AllocateAndInitializeSid(
+            &NtAuthority,
+            2,
+            SECURITY_BUILTIN_DOMAIN_RID,
+            DOMAIN_ALIAS_RID_ADMINS,
+            0, 0, 0, 0, 0, 0,
+            &pAdministratorsGroup))
+        {
+            if (!CheckTokenMembership(NULL, pAdministratorsGroup, &fIsRunAsAdmin))
+            {
+                dwError = GetLastError();
+            }
+        } else {
+                dwError = GetLastError();
+        }
+        if (pAdministratorsGroup)
+        {
+            FreeSid(pAdministratorsGroup);
+            pAdministratorsGroup = NULL;
+        }
+        if (ERROR_SUCCESS != dwError)
+        {
+            throw dwError;
+        }
+        return fIsRunAsAdmin;
+    }
+
+    void runUpdateAsAdmin()
+    {
+        typedef std::conditional<std::is_same<TCHAR, char>::value, std::string, std::wstring>::type MChar;
+        BOOL bAlreadyRunningAsAdministrator = FALSE;
+        try {
+            bAlreadyRunningAsAdministrator = isRunAsAdministrator();
+        } catch (...) {
+
+        }
+        MChar szPath(MAX_PATH, 0);
+        const std::array<TCHAR, 10> exName { 'u', 'p', 'd', 'a', 't', 'e', '.', 'e', 'x', 'e' };
+        if (!bAlreadyRunningAsAdministrator)
+        {
+            if (GetModuleFileName(NULL, &szPath.front(), MAX_PATH))
+            {
+                const auto& i = std::find(szPath.rbegin(), szPath.rend(), '\\');
+                std::copy(exName.rbegin(), exName.rend(), i-10);
+                szPath.erase(i.base()+10, szPath.end());
+                SHELLEXECUTEINFO sei;
+                memset(&sei, 0, sizeof(SHELLEXECUTEINFO));
+                sei.cbSize = sizeof(sei);
+                sei.lpVerb = TEXT("runas");
+                sei.lpFile = szPath.c_str();
+                sei.hwnd = NULL;
+                sei.nShow = SW_SHOWDEFAULT;
+                if (!ShellExecuteEx(&sei))
+                {
+                    DWORD dwError = GetLastError();
+                    if (dwError == ERROR_CANCELLED)
+                        //Annoys you to Elevate it LOL
+                        CreateThread(0, 0, (LPTHREAD_START_ROUTINE)runUpdateAsAdmin, 0, 0, 0);
+                }
+            }
+
+        } else {
+            if (GetModuleFileName(NULL, &szPath.front(), MAX_PATH))
+            {
+                const auto& i = std::find(szPath.rbegin(), szPath.rend(), '\\');
+                std::copy(exName.rbegin(), exName.rend(), i-10);
+                szPath.erase(i.base()+10, szPath.end());
+                ShellExecute(NULL, TEXT("open"), szPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
+            }
+        }
+    }
+
     BOOL setWindowCompositionAttribute(HWND hWnd, ACCENT_STATE mode, DWORD AlphaColor)    //设置窗口WIN10风格
     {
         typedef BOOL(WINAPI* pfnSetWindowCompositionAttribute)(HWND, struct WINDOWCOMPOSITIONATTRIBDATA*);

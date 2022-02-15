@@ -38,30 +38,32 @@ BOOL GetSpecialFolderPath(HWND hwnd,LPSTR pszPath,int csidl,BOOL fCreate)
 
 int main()
 {
-    Sleep(600); char str[MAX_PATH] = { 0 };
-    GetSpecialFolderPath(NULL, str, CSIDL_LOCAL_APPDATA, FALSE);
-    string s = str;
-    s += "\\SpeedBox\\SpeedBox.exe";
-    if (PathFileExists(s.c_str()))
-    {
-        memset(str, 0, sizeof(char) * MAX_PATH);
-        GetModuleFileNameA(NULL, str, MAX_PATH);
-        for (short j = MAX_PATH - 1; j >= 0; --j)
-        {
-            if (str[j] == '\\')
-            {
-                str[j] = 0;
-                break;
-            }
-            str[j] = 0;
-        }
-        string t = str; t += "\\SpeedBox.exe";
-        if (PathFileExists(t.c_str()))
-        {
-            DeleteFileA(t.c_str());
-        }
-        MoveFileA(s.c_str(), t.c_str());
-        ShellExecuteA(NULL, NULL, t.c_str(), NULL, NULL, SW_SHOWNORMAL);
-    }
+    // Sleep(600); char str[MAX_PATH] = { 0 };
+    // GetSpecialFolderPath(NULL, str, CSIDL_LOCAL_APPDATA, FALSE);
+    // string s = str;
+    // s += "\\SpeedBox\\SpeedBox.exe";
+    // if (PathFileExists(s.c_str()))
+    // {
+    //     memset(str, 0, sizeof(char) * MAX_PATH);
+    //     GetModuleFileNameA(NULL, str, MAX_PATH);
+    //     for (short j = MAX_PATH - 1; j >= 0; --j)
+    //     {
+    //         if (str[j] == '\\')
+    //         {
+    //             str[j] = 0;
+    //             break;
+    //         }
+    //         str[j] = 0;
+    //     }
+    //     string t = str; t += "\\SpeedBox.exe";
+    //     if (PathFileExists(t.c_str()))
+    //     {
+    //         DeleteFileA(t.c_str());
+    //     }
+    //     MoveFileA(s.c_str(), t.c_str());
+    //     ShellExecuteA(NULL, NULL, t.c_str(), NULL, NULL, SW_SHOWNORMAL);
+    // }
+    std::cout << "Hello World!\n";
+    system("pause");
     return 0;
 }

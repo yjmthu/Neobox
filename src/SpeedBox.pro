@@ -60,6 +60,7 @@ include(3rd_qxtglobalshortcut/3rd_qxtglobalshortcut.pri)
 
 SOURCES += \
     YJson.cpp \
+    aboutnew.cpp \
     bingsetting.cpp \
     blankform.cpp \
     calculator.cpp \
@@ -85,6 +86,7 @@ HEADERS += \
     YEncode.h \
     YJson.h \
     YString.h \
+    aboutnew.h \
     bingsetting.h \
     blankform.h \
     calculator.h \

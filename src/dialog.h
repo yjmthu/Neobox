@@ -51,9 +51,6 @@ private slots:
     void on_pushButton_4_clicked();
     void on_radioButton_13_clicked();
     void on_radioButton_14_clicked();
-    void on_pushButton_13_clicked();
-    void on_pushButton_10_clicked();
-    void on_pushButton_12_clicked();
     void on_toolButton_2_clicked();
     void my_on_rBtnWallhavenApiUser_clicked();
     void my_on_rBtnBingApi_clicked();

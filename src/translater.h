@@ -38,16 +38,18 @@ public:
 
     class QxtGlobalShortcut *m_pShortcutShow  {nullptr};
     class QxtGlobalShortcut *m_pShortcutHide  {nullptr};
-    static bool m_bShiftA;
-    static bool m_bShiftZ;
     void initConnects();
-    static void initSettings();
+    void initSettings();
+    static bool getShiftAState();
+    static bool getShiftZState();
 
 private:
     enum LangType { EN, JA, KR, FR, RU, SP, ZH_CN };
     LangType m_dLangFrom  { LangType::EN };
     LangType m_dLangTo    { LangType::EN };
-    const char m_aLangType[6][3] {/*英*/ "EN", /*日*/"JA", /*韩*/"KR", /*法*/"FR", /*俄*/"RU", /*西*/"SP" };
+    const char m_aLangType[6][3] {
+        /*英*/ "EN", /*日*/"JA", /*韩*/"KR", /*法*/"FR", /*俄*/"RU", /*西*/"SP"
+    };
     const char m_sNativeLang[6] { "ZH_CN" };
     Ui::Translater *ui;                                     //界面
     static constexpr size_t m_dLangPos {53};
