@@ -25,8 +25,8 @@
 #endif
 
 #include "funcbox.h"
-#include "YString.h"
-#include "YJson.h"
+#include "ystring.h"
+#include "yjson.h"
 #include "form.h"
 #include "wallpaper.h"
 #include "dialog.h"

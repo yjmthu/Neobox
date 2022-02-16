@@ -52,6 +52,15 @@ struct ACCENT_POLICY
 
 namespace SystemFunctions
 {
+
+    bool is64BitOS()
+    {
+        SYSTEM_INFO cur_system_info;
+        GetNativeSystemInfo(&cur_system_info);
+        WORD systemStr = cur_system_info.wProcessorArchitecture;
+        return systemStr == PROCESSOR_ARCHITECTURE_IA64 || systemStr == PROCESSOR_ARCHITECTURE_AMD64;
+    }
+
     BOOL isRunAsAdministrator()
     {
         BOOL fIsRunAsAdmin = FALSE;

@@ -22,9 +22,9 @@
 
 #include "funcbox.h"
 #include "wallpaper.h"
-#include "YEncode.h"
-#include "YString.h"
-#include "YJson.h"
+#include "yencode.h"
+#include "ystring.h"
+#include "yjson.h"
 #include "globalfn.h"
 
 void check_is_wallhaven(const char* pic, char* id)

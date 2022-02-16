@@ -8,7 +8,7 @@
 #include <math.h>
 #include <QDesktopServices>
 
-#include "YString.h"
+#include "ystring.h"
 #include "globalfn.h"
 
 

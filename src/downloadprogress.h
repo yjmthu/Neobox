@@ -16,15 +16,15 @@ signals:
 protected:
     void closeEvent(QCloseEvent *event);
 public:
-    explicit DownloadProgress(const QString& zipfile, const QUrl& url1, const QUrl& url2,QWidget *parent = nullptr);
+    explicit DownloadProgress(const QString& zipfile, const QUrl& url1, const QUrl& url2, QWidget *parent=nullptr);
     ~DownloadProgress();
     const QString zipfile;
 
 private:
-    Ui::DownloadProgress *ui = nullptr;
+    Ui::DownloadProgress *ui { nullptr };
     const QUrl url1, url2;
-    class QNetworkAccessManager *mgr1 = nullptr, *mgr2 = nullptr;
-    bool succeed = true;
+    class QNetworkAccessManager *mgr1 { nullptr }, *mgr2 { nullptr };
+    bool succeed { true };
 public slots:
     void setZip(qint64, qint64);
     void setExe(qint64, qint64);

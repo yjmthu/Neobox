@@ -8,9 +8,9 @@
 #include <cmath>
 #include <algorithm>
 
-#include "YJson.h"
-#include "YString.h"
-#include "YEncode.h"
+#include "yjson.h"
+#include "ystring.h"
+#include "yencode.h"
 
 #ifdef max
 #undef max
@@ -589,13 +589,25 @@ bool YJson::toFile(const std::string name, const YJson::Encode& file_encode, boo
             }
             break;
         }
-        default:
+        case UTF8BOM:
         {
             //cout << "UTF-8" << "保存开始。";
             std::ofstream outFile(name, std::ios::out | std::ios::binary);
             if (outFile.is_open())
             {
                 outFile.write(reinterpret_cast<const char*>(utf8bom), 3);
+                outFile.write((const char*)(buffer), strlen(buffer));
+                outFile.write("\n", sizeof(char));
+                outFile.close();
+            }
+            break;
+        }
+        default:
+        {
+            //cout << "UTF-8" << "保存开始。";
+            std::ofstream outFile(name, std::ios::out | std::ios::binary);
+            if (outFile.is_open())
+            {
                 outFile.write((const char*)(buffer), strlen(buffer));
                 outFile.write("\n", sizeof(char));
                 outFile.close();
@@ -1171,7 +1183,7 @@ char* YJson::print_object(int depth)
     std::deque<char*> entries;
     YJson *child = _child;
     char* buffer = nullptr;
-    if (!child) return joinKeyValue("{}", false);;
+    if (!child) return joinKeyValue("{}", depth, false);;
     do {
         if (!(buffer = child->print_value(depth+1)))
             return nullptr;

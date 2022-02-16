@@ -22,8 +22,8 @@
 
 #include <3rd_qxtglobalshortcut/qxtglobalshortcut.h>
 
-#include "YString.h"
-#include "YJson.h"
+#include "ystring.h"
+#include "yjson.h"
 #include "dialog.h"
 #include "ui_dialog.h"
 #include "form.h"

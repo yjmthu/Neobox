@@ -4,7 +4,7 @@
 
 
 BlankFrom::BlankFrom(QWidget* p):
-    QWidget(p)
+    QWidget {p}
 {
     setMaximumSize(100, 40);
     setMinimumSize(100, 40);

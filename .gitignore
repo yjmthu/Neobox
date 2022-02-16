@@ -5,4 +5,11 @@
 *.Release
 *.stash
 *.Debug
+*.cmake
+*.make
+*.exe
+*.dll
+*.rsp
+*.a
+*.d
 Makefile

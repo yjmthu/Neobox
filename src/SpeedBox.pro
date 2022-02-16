@@ -59,7 +59,7 @@ CONFIG += debug
 include(3rd_qxtglobalshortcut/3rd_qxtglobalshortcut.pri)
 
 SOURCES += \
-    YJson.cpp \
+    yjson.cpp \
     aboutnew.cpp \
     bingsetting.cpp \
     blankform.cpp \
@@ -82,10 +82,10 @@ SOURCES += \
     wallpaper.cpp \
 
 HEADERS += \
-    FormulaPaser.h \
-    YEncode.h \
-    YJson.h \
-    YString.h \
+    formulapaser.h \
+    yencode.h \
+    yjson.h \
+    ystring.h \
     aboutnew.h \
     bingsetting.h \
     blankform.h \

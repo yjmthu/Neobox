@@ -7,8 +7,8 @@
 #include <QFontDatabase>
 #include <QApplication>
 #include "dialog.h"
-#include "YString.h"
-#include "YJson.h"
+#include "ystring.h"
+#include "yjson.h"
 #include "funcbox.h"
 #include "menu.h"
 #include "form.h"

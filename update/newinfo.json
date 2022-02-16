@@ -1,0 +1,42 @@
+{
+    "Winindows": {
+        "x86": {
+            "Latest Version": "22.1.18",
+            "Qt Version": "5.15.2",
+            "Files": {
+                "Dir": {},
+                "Exe": {}
+            },
+            "UpdateDescription": "欢迎体验新版本!"
+        },
+        "x64": {
+            "Latest Version": "22.1.18",
+            "Qt Version": "5.15.2",
+            "Files": {
+                "Dir": {},
+                "Exe": {}
+            },
+            "UpdateDescription": "欢迎体验新版本!"
+        }
+    },
+    "Arch Linux": {
+        "x86": {
+            "Latest Version": "22.1.18",
+            "Qt Version": "5.15.2",
+            "Files": {
+                "Dir": {},
+                "Exe": {}
+            },
+            "UpdateDescription": "欢迎体验新版本!"
+        },
+        "x64": {
+            "Latest Version": "22.1.18",
+            "Qt Version": "5.15.2",
+            "Files": {
+                "Dir": {},
+                "Exe": {}
+            },
+            "UpdateDescription": "欢迎体验新版本!"
+        }
+    }
+}
