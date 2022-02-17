@@ -1,21 +1,23 @@
 {
-    "Winindows": {
+    "Windows": {
         "x86": {
-            "Latest Version": "22.1.18",
-            "Qt Version": "5.15.2",
+            "SpeedBox": [22, 1, 18],
+            "Qt": [5, 15, 2],
             "Files": {
                 "Zip": [true, "", 25],
-                "Exe": [true, ""]
+                "Exe": [true, ""],
+                "Updater": [false, ""]
             },
             "Struct": {"Folder":{"bearer":{"Folder":{},"File":["qgenericbearer.dll"]},"imageformats":{"Folder":{},"File":["qgif.dll","qicns.dll","qico.dll","qjpeg.dll","qsvg.dll","qtga.dll","qtiff.dll","qwbmp.dll","qwebp.dll"]},"platforms":{"Folder":{},"File":["qwindows.dll"]},"styles":{"Folder":{},"File":["qwindowsvistastyle.dll"]},"texttospeech":{"Folder":{},"File":["qtexttospeech_sapi.dll"]}},"File":["libcrypto-1_1.dll","libgcc_s_dw2-1.dll","libssl-1_1.dll","libstdc++-6.dll","libwinpthread-1.dll","Qt5Core.dll","Qt5Gui.dll","Qt5Network.dll","Qt5Svg.dll","Qt5TextToSpeech.dll","Qt5Widgets.dll","SpeedBox.exe"]},
             "UpdateDescription": "欢迎体验新版本!"
         },
         "x64": {
-            "Latest Version": "22.1.18",
-            "Qt Version": "5.15.2",
+            "SpeedBox": [22, 1, 18],
+            "Qt": [5, 15, 2],
             "Files": {
                 "Zip": [true, "", 25],
-                "Exe": [true, ""]
+                "Exe": [true, ""],
+                "Updater": [false, ""]
             },
             "Struct": {"Folder":{"bearer":{"Folder":{},"File":["qgenericbearer.dll"]},"imageformats":{"Folder":{},"File":["qgif.dll","qicns.dll","qico.dll","qjpeg.dll","qsvg.dll","qtga.dll","qtiff.dll","qwbmp.dll","qwebp.dll"]},"platforms":{"Folder":{},"File":["qwindows.dll"]},"styles":{"Folder":{},"File":["qwindowsvistastyle.dll"]},"texttospeech":{"Folder":{},"File":["qtexttospeech_sapi.dll"]}},"File":["libcrypto-1_1-x64.dll","libgcc_s_seh-1.dll","libssl-1_1-x64.dll","libstdc++-6.dll","libwinpthread-1.dll","Qt5Core.dll","Qt5Gui.dll","Qt5Network.dll","Qt5Svg.dll","Qt5TextToSpeech.dll","Qt5Widgets.dll","SpeedBox.exe"]},
             "UpdateDescription": "欢迎体验新版本!"
@@ -23,8 +25,8 @@
     },
     "Arch Linux": {
         "x86": {
-            "Latest Version": "22.1.18",
-            "Qt Version": "5.15.2",
+            "SpeedBox": [22, 1, 18],
+            "Qt": [5, 15, 2],
             "Files": {
                 "Zip": [false, "", 0],
                 "Exe": [false, ""]
@@ -32,8 +34,8 @@
             "UpdateDescription": "欢迎体验新版本!"
         },
         "x64": {
-            "Latest Version": "22.1.18",
-            "Qt Version": "5.15.2",
+            "SpeedBox": [22, 1, 18],
+            "Qt": [5, 15, 2],
             "Files": {
                 "Zip": [false, "", 0],
                 "Exe": [false, ""]

@@ -40,7 +40,7 @@ constexpr int VARBOX::RETCODE_ERROR_EXIT;
 constexpr int VARBOX::RETCODE_UPDATE;
 constexpr int VARBOX::RETCODE_RESTART;
 constexpr int VARBOX::MSG_APPBAR_MSGID;
-constexpr char VARBOX::m_dVersion[];
+constexpr uint32_t VARBOX::m_dVersion;
 VARBOX* VarBox = nullptr;
 
 
@@ -81,44 +81,35 @@ void VARBOX::initFile()
     const QString file = QStringLiteral("SpeedBox.ini");
     qout << "配置文件目录" << file;
     QDir dir;
-    const QByteArray& x { GlobalFn::readOneSet<QByteArray>(QStringLiteral("SpeedBox"), QStringLiteral("Version"), "21.8.0").toByteArray() };
-    qout << "文件存在，版本信息为" << x;
-    if (GlobalFn::getVersion(x) < GlobalFn::getVersion("21.8.1"))
-    {
-        qout << "ini文件过期，将其删除。";
-        QFile::remove(file);
-        GlobalFn::saveOneSet<QString>(QStringLiteral("SpeedBox"), QStringLiteral("Version"), m_dVersion);
-    } else {
-        qout << "开始读取设置。";
-        QSettings *IniRead = new QSettings(file, QSettings::IniFormat);
-        IniRead->setIniCodec(QTextCodec::codecForName("UTF-8"));
-        IniRead->beginGroup(QStringLiteral("SpeedBox"));
-        IniRead->setValue(QStringLiteral("Version"), m_dVersion);
-        IniRead->endGroup();
+    qout << "开始读取设置。";
+    QSettings *IniRead = new QSettings(file, QSettings::IniFormat);
+    IniRead->setIniCodec(QTextCodec::codecForName("UTF-8"));
+    IniRead->beginGroup(QStringLiteral("SpeedBox"));
+    IniRead->setValue(QStringLiteral("Version"), m_dVersion);
+    IniRead->endGroup();
 
-        IniRead->beginGroup(QStringLiteral("Translate"));
-        m_bEnableTranslater = IniRead->value(QStringLiteral("EnableTranslater"), m_bEnableTranslater).toBool();
-        IniRead->endGroup();
-        qout << "读取翻译信息完毕";
-        IniRead->beginGroup(QStringLiteral("Dirs"));
-        m_pathToOpen = IniRead->value(QStringLiteral("OpenDir"), QDir::toNativeSeparators(qApp->applicationDirPath())).toString();
-        IniRead->endGroup();
-        qout << "读取路径信息完毕";
-        IniRead->beginGroup(QStringLiteral("UI"));
-        unsigned safeEnum = IniRead->value(QStringLiteral("ColorTheme"), static_cast<int>(Dialog::curTheme)).toInt();
-        if (safeEnum > 7) safeEnum = 0;
-        Dialog::curTheme = static_cast<Dialog::Theme>(safeEnum);
-        m_bTuoPanIcon = IniRead->value(QStringLiteral("TuoPanIcon"), m_bTuoPanIcon).toBool();
-        IniRead->endGroup();
-        IniRead->beginGroup(QStringLiteral("Apps"));
-        m_bMarkdownNote = IniRead->value(QStringLiteral("MarkdownNote"), m_bMarkdownNote).toBool();
-        m_bSquareClock = IniRead->value(QStringLiteral("SquareClock"), m_bSquareClock).toBool();
-        m_bRoundClock = IniRead->value(QStringLiteral("RoundClock"), m_bRoundClock).toBool();
-        m_bEnableUSBhelper = IniRead->value(QStringLiteral("UsbHelper"), m_bEnableUSBhelper).toBool();
-        IniRead->endGroup();
-        delete IniRead;
-        qout << "读取设置完毕。";
-    }
+    IniRead->beginGroup(QStringLiteral("Translate"));
+    m_bEnableTranslater = IniRead->value(QStringLiteral("EnableTranslater"), m_bEnableTranslater).toBool();
+    IniRead->endGroup();
+    qout << "读取翻译信息完毕";
+    IniRead->beginGroup(QStringLiteral("Dirs"));
+    m_pathToOpen = IniRead->value(QStringLiteral("OpenDir"), QDir::toNativeSeparators(qApp->applicationDirPath())).toString();
+    IniRead->endGroup();
+    qout << "读取路径信息完毕";
+    IniRead->beginGroup(QStringLiteral("UI"));
+    unsigned safeEnum = IniRead->value(QStringLiteral("ColorTheme"), static_cast<int>(Dialog::curTheme)).toInt();
+    if (safeEnum > 7) safeEnum = 0;
+    Dialog::curTheme = static_cast<Dialog::Theme>(safeEnum);
+    m_bTuoPanIcon = IniRead->value(QStringLiteral("TuoPanIcon"), m_bTuoPanIcon).toBool();
+    IniRead->endGroup();
+    IniRead->beginGroup(QStringLiteral("Apps"));
+    m_bMarkdownNote = IniRead->value(QStringLiteral("MarkdownNote"), m_bMarkdownNote).toBool();
+    m_bSquareClock = IniRead->value(QStringLiteral("SquareClock"), m_bSquareClock).toBool();
+    m_bRoundClock = IniRead->value(QStringLiteral("RoundClock"), m_bRoundClock).toBool();
+    m_bEnableUSBhelper = IniRead->value(QStringLiteral("UsbHelper"), m_bEnableUSBhelper).toBool();
+    IniRead->endGroup();
+    delete IniRead;
+    qout << "读取设置完毕。";
     if (!dir.exists(m_pathToOpen) && !dir.mkdir(m_pathToOpen))
     {
         m_pathToOpen = QDir::toNativeSeparators(qApp->applicationDirPath());

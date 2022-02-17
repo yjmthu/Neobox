@@ -35,6 +35,7 @@
 #include "qstylesheet.h"
 #include "globalfn.h"
 #include "translater.h"
+#include "aboutnew.h"
 
 const QStringList Dialog::reg_keys {
     QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Classes\\*\\shell\\QCoper"),
@@ -535,8 +536,10 @@ void Dialog::initConnects()
         formPart[index]->setStyleSheet(m_sheet[index].getString(index));
         qout << formPart[index]->styleSheet();
     });
-    connect(ui->pBtnCheckUpdate, &QPushButton::clicked, VarBox, [](){
-        qApp->exit(VARBOX::RETCODE_UPDATE);
+    connect(ui->pBtnCheckUpdate, &QPushButton::clicked, this, [](){
+        AboutNew *chekNew = new AboutNew;
+        chekNew->exec();
+        // qApp->exit(VARBOX::RETCODE_UPDATE)
     });
     qout << "对话框链接B";
 }

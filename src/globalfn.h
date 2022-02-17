@@ -30,7 +30,11 @@ std::string ansiToUtf8(const std::string& strAnsi);
 std::string utf8ToAnsi(const std::string& strUtf8);
 #endif
 const char* getFileName(const char* filePath);
-uint32_t getVersion(const char* A);
+// uint32_t getVersion(const char* A);
+inline constexpr uint32_t getVersion(uint32_t h, uint32_t m, uint32_t l)
+{
+    return (h << 16) | (m << 8) | l;
+}
 FILE* readFile(const std::string& filePath);
 void msgBox(const char* text, const char* title="提示", QMessageBox::StandardButtons buttons=QMessageBox::Ok);
 QByteArray runCmd(const QString & program, const QStringList& argument, short line);

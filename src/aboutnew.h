@@ -1,15 +1,23 @@
 #ifndef ABOUTNEW_H
 #define ABOUTNEW_H
 
-#include <QWidget>
+#include <QDialog>
 
-class AboutNew : public QWidget
+class AboutNew : public QDialog
 {
     Q_OBJECT
+protected:
+    void showEvent(QShowEvent *event);
 public:
     explicit AboutNew(QWidget *parent = nullptr);
+    ~AboutNew();
 private:
-    class YJson* DownloadJson();
+    class QPlainTextEdit* m_pTextEdit { nullptr };
+    class YJson* m_pJson {nullptr};
+    void GetUpdate();
+    bool DownloadJson();
+    bool DownloadExe();
+    bool DownloadUpdater();
     bool DownloadZip();
 
 signals:

@@ -463,9 +463,7 @@ void Translater::setShiftZ()
                 ui->pBtnZhToEn->click();
                 return ;
             }
-        }
-        else
-        {
+        } else {
             if (!strncmp(m_dYouDaoApi+m_dLangPos+6, m_aLangType[m_dLangTo], 2))
             {
                 ui->pBtnEnToZh->click();

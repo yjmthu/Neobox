@@ -22,15 +22,15 @@ unix {
 }
 
 # 版本信息
-VERSION = 22.0.0.0
+# VERSION = 22.0.0.0
 # 图标
 RC_ICONS += icons/speedbox.ico
 # 公司名称
-# QMAKE_TARGET_COMPANY = "NULL"
+QMAKE_TARGET_COMPANY = "Individual"
 # 产品名称
-QMAKE_TARGET_PRODUCT = "Speed Box"
+QMAKE_TARGET_PRODUCT = "SpeedBox"
 # 文件说明
-QMAKE_TARGET_DESCRIPTION = "Speed Box"
+QMAKE_TARGET_DESCRIPTION = "SpeedBox"
 # 版权信息
 QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2021"
 # 中文（中国）

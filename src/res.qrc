@@ -29,6 +29,7 @@
         <file>scripts/SpeedBox.desktop</file>
         <file>json/BoxFont.json</file>
         <file>icons/checklist.ico</file>
-        <file>json/Directory.json</file>
+        <file>json/Directory_x64.json</file>
+        <file>json/Directory_x86.json</file>
     </qresource>
 </RCC>
