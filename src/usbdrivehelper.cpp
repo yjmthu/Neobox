@@ -12,26 +12,6 @@
 #include "ystring.h"
 #include "globalfn.h"
 
-
-inline QString bytes_to_string(int64_t size)
-{
-    int64_t r = 1;
-    if (size < (r <<= 10))
-        return QString("%1 B").arg(size);
-    if (size < (r <<= 10))
-        return QString("%1 KB").arg(QString::number((double)size / (r>>10), 'f', 1));
-    if (size < (r <<= 10))
-        return QString("%1 MB").arg(QString::number((double)size / (r>>10), 'f', 1));
-    if (size < (r <<= 10))
-        return QString("%1 GB").arg(QString::number((double)size / (r>>10), 'f', 1));
-    if (size < (r <<= 10))
-        return QString("%1 TB").arg(QString::number((double)size / (r>>10), 'f', 1));
-    if (size < (r <<= 10))
-        return QString("%1 PB").arg(QString::number((double)size / (r>>10), 'f', 1));
-    return "Error";
-}
-
-
 #if (QT_VERSION_CHECK(6,0,0) > QT_VERSION)
 void USBdriveHelper::enterEvent(QEvent *event)
 #else
@@ -92,8 +72,8 @@ USBdriveHelper::USBdriveHelper(char U, unsigned index, std::vector<USBdriveHelpe
         DWORD64 used = dwFreeClusters * (DWORD64)dwSectPerClust * (DWORD64)dwBytesPerSect;
         int rate = 100 - used * 100 / total;
         ui->progressBar->setValue(rate);
-        ui->label_7->setText(bytes_to_string(total));
-        ui->label_8->setText(bytes_to_string(used));
+        ui->label_7->setText(GlobalFn::bytes_to_string(total));
+        ui->label_8->setText(GlobalFn::bytes_to_string(used));
     }
 #endif
     widget = new QWidget(this);
