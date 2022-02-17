@@ -2,8 +2,8 @@
 #include <string>
 #include <cstring>
 #include <algorithm>
+#include <fstream>
 #include <windows.h>
-#include <shlobj.h>
 
 #include "yjson.h"
 #include "zip.h"
@@ -16,46 +16,6 @@ typedef std::conditional<std::is_same<TCHAR, char>::value, std::string, std::wst
 #define xout std::cout
 #endif
 
-BOOL PathFileExists(const TCHAR* pszPath)
-{
-    typedef BOOL(WINAPI* pfnPathFileExists)(const TCHAR* pszPath);
-    pfnPathFileExists pPathFileExists = NULL;
-    BOOL ret = FALSE;
-    HMODULE hShlw = GetModuleHandle(TEXT("Shlwapi.dll"));
-    if (hShlw)
-#ifdef UNICODE
-        pPathFileExists = (pfnPathFileExists)GetProcAddress(hShlw, "PathFileExistsW");
-#else
-        pPathFileExists = (pfnPathFileExists)GetProcAddress(hShlw, "PathFileExistsA");
-#endif
-    if (pPathFileExists)
-    {
-        ret = pPathFileExists(pszPath);
-    }
-    return ret;
-}
-
-typedef BOOL(WINAPI* pfnSHGetSpecialFolderPath)(_Reserved_ HWND hwnd, _Out_writes_(MAX_PATH) LPTSTR pszPath, _In_ int csidl, _In_ BOOL fCreate);
-BOOL GetSpecialFolderPath(HWND hwnd,LPTSTR pszPath,int csidl,BOOL fCreate)
-{
-    pfnSHGetSpecialFolderPath pGetSpecialFolderPath = NULL;
-    BOOL ret = FALSE;
-    HMODULE hShell = LoadLibrary(TEXT("shell32.dll"));
-    if (hShell)
-    {
-#ifdef UNICODE
-        pGetSpecialFolderPath = (pfnSHGetSpecialFolderPath)GetProcAddress(hShell, "SHGetSpecialFolderPathW");
-#else
-        pGetSpecialFolderPath = (pfnSHGetSpecialFolderPath)GetProcAddress(hShell, "SHGetSpecialFolderPathA");
-#endif
-        if (pGetSpecialFolderPath)
-        {
-            ret = pGetSpecialFolderPath(hwnd, pszPath, csidl, fCreate);
-        }
-        FreeLibrary(hShell);
-    }
-    return ret;
-}
 
 MString ToCurString(const std::string& strUtf8)
 {
@@ -94,6 +54,18 @@ std::string ToAnsiString(const MString& strCur)
 #else
     return strCur;
 #endif
+}
+
+bool PathFileExists(const TCHAR* pszPath)
+{
+    const std::string path { ToAnsiString(pszPath) };
+    std::ifstream file(path, std::ios::in | std::ios::binary);
+    if (file.is_open()) {
+        file.close();
+        return true;
+    } else {
+        return false;
+    }
 }
 
 bool DeleteJsonDirectory(const MString& m_sParentFolder, YJson* m_pJson)
@@ -143,22 +115,15 @@ int main()
 {
     try {
         MString m_sAppDataPath(MAX_PATH, 0), m_sProFilePath;
-        if (!GetModuleFileName(NULL, &m_sAppDataPath.front(), MAX_PATH)) {
+        if (!GetCurrentDirectory(MAX_PATH, &m_sAppDataPath.front())) {
             throw MString(TEXT("获取可执行文件目录出错！\n"));
         }
-        // m_sExeFolderPath.erase(std::find(m_sExeFolderPath.rbegin(), m_sExeFolderPath.rend(), '\\').base()-1, m_sExeFolderPath.end());
-        // MString m_sAppDataPath(MAX_PATH, 0), m_sProFilePath;
-        // if (!GetSpecialFolderPath(NULL, &m_sAppDataPath.front(), CSIDL_LOCAL_APPDATA, FALSE)) {
-        //     xout << TEXT("获取AppData目录出错！\n");
-        //     break;
-        // }
         m_sAppDataPath.erase(std::find(m_sAppDataPath.begin(), m_sAppDataPath.end(), 0), m_sAppDataPath.end());
-        m_sAppDataPath += TEXT("\\SpeedBox");
         m_sProFilePath = m_sAppDataPath + TEXT("\\profile.json");
         auto m_hFile = CreateFile(m_sProFilePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
         if ( m_hFile == INVALID_HANDLE_VALUE) {
             CloseHandle(m_hFile);
-            throw MString(TEXT("打开profile.json文件出错！\n"));
+            throw MString(TEXT("打开profile.json文件出错！文件位置：")) + m_sProFilePath;
         }
 
         auto m_dFileSize = GetFileSize(m_hFile, NULL);
@@ -180,7 +145,7 @@ int main()
                     throw MString(TEXT("拷贝文件出错！\n"));
                 }
             } else {
-                throw MString(TEXT("找不到已经下载的更新文件！\n"));
+                throw MString(TEXT("找不到已经下载的更新文件！文件位置：")) + m_sOldExeFile;
             }
         } else if (!strcmp(m_sType, "zip")) {
             xout << TEXT("The update file's type is zip.\n");
