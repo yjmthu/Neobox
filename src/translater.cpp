@@ -387,7 +387,7 @@ void Translater::getReply(const QString& q)
         QThread::msleep(m_dLastPostTime + 1000 - time_now);
     url += YEncode::urlEncode<std::string, std::string>(q.toStdString());
     QNetworkReply *m_pReply = m_pMgr->get(QNetworkRequest(QUrl(QString::fromStdString(url))));
-    connect(m_pReply, &QIODevice::readyRead, this, [=]() {
+    connect(m_pReply, &QNetworkReply::finished, this, [=]() {
         const QByteArray& m_qReplyData = m_pReply->readAll();
         m_pReply->deleteLater();
         try {
