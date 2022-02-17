@@ -1,7 +1,7 @@
 {
     "Windows": {
         "x86": {
-            "SpeedBox": [22, 1, 19],
+            "SpeedBox": [22, 2, 19],
             "Qt": [5, 15, 2],
             "Files": {
                 "Zip": [true, "https://github.com/yjmthu/Speed-Box/releases/download/v22.2.18/SpeedBox_v22.2.18_x64.zip", 25],
@@ -12,7 +12,7 @@
             "UpdateDescription": "欢迎体验新版本!"
         },
         "x64": {
-            "SpeedBox": [22, 1, 19],
+            "SpeedBox": [22, 2, 19],
             "Qt": [5, 15, 2],
             "Files": {
                 "Zip": [true, "https://github.com/yjmthu/Speed-Box/releases/download/v22.2.18/SpeedBox_v22.2.18_x64.zip", 25],
@@ -25,7 +25,7 @@
     },
     "Arch Linux": {
         "x86": {
-            "SpeedBox": [22, 1, 18],
+            "SpeedBox": [22, 2, 18],
             "Qt": [5, 15, 2],
             "Files": {
                 "Zip": [false, "", 0],
@@ -34,7 +34,7 @@
             "UpdateDescription": "欢迎体验新版本!"
         },
         "x64": {
-            "SpeedBox": [22, 1, 18],
+            "SpeedBox": [22, 2, 18],
             "Qt": [5, 15, 2],
             "Files": {
                 "Zip": [false, "", 0],
