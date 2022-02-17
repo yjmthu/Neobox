@@ -9,6 +9,7 @@
 #include <QEventLoop>
 #include <QProgressBar>
 #include <QTimer>
+#include <QDir>
 
 #include "funcbox.h"
 #include "yjson.h"
@@ -143,7 +144,7 @@ bool AboutNew::DownloadData(const QString &url, const QString &path, bool redire
 
 bool AboutNew::NeedUpdater(YJson *js)
 {
-    if (QFile::exists(qApp->applicationDirPath()+"/update.exe")) {
+    if (QFile::exists("./update.exe")) {
         return js->find("Updater")->getChild()->getType();
     } else {
         return true;
@@ -168,6 +169,7 @@ bool AboutNew::NeedZip()
     file.close();
 
     YJson json(YJson::Object);
+    json.append(QDir::toNativeSeparators(qApp->applicationDirPath()).toStdString(), "path");
     if (m_pJsWin->find("Struct")->isSameTo(m_jsOld)) {
         json.append("exe", "type");
         json.toFile("./profile.json", YJson::UTF8);
@@ -184,7 +186,11 @@ bool AboutNew::NeedZip()
 bool AboutNew::DownloadJson()
 {
     QEventLoop loop(this);
+#if 0
     auto m_reply = m_pNetMgr->get(QNetworkRequest(QUrl("https://gitee.com/yjmthu/Speed-Box/raw/main/update/newinfo.json")));
+#else
+    auto m_reply = m_pNetMgr->get(QNetworkRequest(QUrl("https://raw.githubusercontent.com/yjmthu/Speed-Box/main/update/newinfo.json")));
+#endif
     connect(m_reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
     loop.exec();
     if (m_reply->error() == QNetworkReply::NoError) {

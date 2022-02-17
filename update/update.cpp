@@ -141,26 +141,24 @@ int on_extract_entry(const char *filename, void *arg) {
 
 int main()
 {
-    MString m_sExeFolderPath(MAX_PATH, 0);
-    do {
-        if (!GetModuleFileName(NULL, &m_sExeFolderPath.front(), MAX_PATH)) {
-            xout << TEXT("获取可执行文件目录出错！\n");
-            break;
-        }
-        m_sExeFolderPath.erase(std::find(m_sExeFolderPath.rbegin(), m_sExeFolderPath.rend(), '\\').base()-1, m_sExeFolderPath.end());
+    try {
         MString m_sAppDataPath(MAX_PATH, 0), m_sProFilePath;
-        if (!GetSpecialFolderPath(NULL, &m_sAppDataPath.front(), CSIDL_LOCAL_APPDATA, FALSE)) {
-            xout << TEXT("获取AppData目录出错！\n");
-            break;
+        if (!GetModuleFileName(NULL, &m_sAppDataPath.front(), MAX_PATH)) {
+            throw MString(TEXT("获取可执行文件目录出错！\n"));
         }
+        // m_sExeFolderPath.erase(std::find(m_sExeFolderPath.rbegin(), m_sExeFolderPath.rend(), '\\').base()-1, m_sExeFolderPath.end());
+        // MString m_sAppDataPath(MAX_PATH, 0), m_sProFilePath;
+        // if (!GetSpecialFolderPath(NULL, &m_sAppDataPath.front(), CSIDL_LOCAL_APPDATA, FALSE)) {
+        //     xout << TEXT("获取AppData目录出错！\n");
+        //     break;
+        // }
         m_sAppDataPath.erase(std::find(m_sAppDataPath.begin(), m_sAppDataPath.end(), 0), m_sAppDataPath.end());
         m_sAppDataPath += TEXT("\\SpeedBox");
         m_sProFilePath = m_sAppDataPath + TEXT("\\profile.json");
         auto m_hFile = CreateFile(m_sProFilePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
         if ( m_hFile == INVALID_HANDLE_VALUE) {
             CloseHandle(m_hFile);
-            xout << TEXT("打开profile.json文件出错！\n");
-            break;
+            throw MString(TEXT("打开profile.json文件出错！\n"));
         }
 
         auto m_dFileSize = GetFileSize(m_hFile, NULL);
@@ -168,45 +166,37 @@ int main()
         std::string m_sBuffer(m_dFileSize, 0);
         ReadFile(m_hFile, &m_sBuffer.front(), m_dFileSize, &m_dSizeRead, NULL);
         CloseHandle(m_hFile);
-        try {
-            YJson js(m_sBuffer);
-            const char* m_sType = js["type"].getValueString();
-            if (!m_sType) throw std::string();
-            if (!strcmp(m_sType, "exe")) {
-                MString m_sOldExeFile { m_sAppDataPath + TEXT("\\SpeedBox.exe") };
-                MString m_sNewExeFile { m_sExeFolderPath + TEXT("\\SpeedBox.exe") };
-                if (PathFileExists(m_sOldExeFile.c_str())) {
-                    if (CopyFile(m_sOldExeFile.c_str(), m_sNewExeFile.c_str(), FALSE))
-                    {
-                        DeleteFile(m_sOldExeFile.c_str());
-                    } else {
-                        xout << TEXT("拷贝文件出错！\n");
-                        break;
-                    }
+        YJson js(m_sBuffer);
+        MString m_sExeFolderPath { ToCurString(js["path"].getValueString()) };
+        const char* m_sType = js["type"].getValueString();
+        if (!strcmp(m_sType, "exe")) {
+            MString m_sOldExeFile { m_sAppDataPath + TEXT("\\SpeedBox.exe") };
+            MString m_sNewExeFile { m_sExeFolderPath + TEXT("\\SpeedBox.exe") };
+            if (PathFileExists(m_sOldExeFile.c_str())) {
+                if (CopyFile(m_sOldExeFile.c_str(), m_sNewExeFile.c_str(), FALSE))
+                {
+                    DeleteFile(m_sOldExeFile.c_str());
                 } else {
-                    xout << TEXT("找不到已经下载的更新文件！\n");
-                    break;
+                    throw MString(TEXT("拷贝文件出错！\n"));
                 }
-            } else if (!strcmp(m_sType, "zip")) {
-                xout << TEXT("The update file's type is zip.\n");
-                std::string m_sOldZipFile { ToAnsiString(m_sAppDataPath + TEXT("\\Speed-Box.zip")) };
-                std::string m_sToFolder { ToAnsiString(m_sExeFolderPath) };
-                DeleteJsonDirectory(m_sExeFolderPath, js.find("binary"));
-                int arg = js["count"].getValueInt();
-                zip_extract(m_sOldZipFile.c_str(), m_sToFolder.c_str(), on_extract_entry, &arg);
-                DeleteFileA(m_sOldZipFile.c_str());
             } else {
-                xout << TEXT("未知的文件类型！\n");
-                break;
+                throw MString(TEXT("找不到已经下载的更新文件！\n"));
             }
-        } catch (const std::string& errorStr) {
-            xout << TEXT("JSON文件出错！\n");
-            break;
+        } else if (!strcmp(m_sType, "zip")) {
+            xout << TEXT("The update file's type is zip.\n");
+            std::string m_sOldZipFile { ToAnsiString(m_sAppDataPath + TEXT("\\Speed-Box.zip")) };
+            std::string m_sToFolder { ToAnsiString(m_sExeFolderPath) };
+            DeleteJsonDirectory(m_sExeFolderPath, js.find("binary"));
+            int arg = js["count"].getValueInt();
+            zip_extract(m_sOldZipFile.c_str(), m_sToFolder.c_str(), on_extract_entry, &arg);
+            DeleteFileA(m_sOldZipFile.c_str());
+        } else {
+            throw MString(TEXT("未知的文件类型！\n"));
         }
         MString m_sNewSpeedBox { m_sExeFolderPath + TEXT("\\SpeedBox.exe") };
         ShellExecute(NULL, NULL, m_sNewSpeedBox.c_str(), NULL, NULL, SW_SHOWNORMAL);
-        return 0;
-    } while (false);
-    MessageBox(NULL, TEXT("更新失败！"), TEXT("出错"), 0);
+    } catch (const MString& errorStr) {
+        MessageBox(NULL, errorStr.c_str(), TEXT("出错"), 0);
+    }
     return 0;
 }

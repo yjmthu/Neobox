@@ -108,7 +108,7 @@ namespace SystemFunctions
         const std::array<TCHAR, 10> exName { 'u', 'p', 'd', 'a', 't', 'e', '.', 'e', 'x', 'e' };
         if (!bAlreadyRunningAsAdministrator)
         {
-            if (GetModuleFileName(NULL, &szPath.front(), MAX_PATH))
+            if (GetCurrentDirectory(MAX_PATH, &szPath.front()))
             {
                 const auto& i = std::find(szPath.rbegin(), szPath.rend(), '\\');
                 std::copy(exName.rbegin(), exName.rend(), i-10);

@@ -1,0 +1,3 @@
+C:/Users/yjmth/Documents/GitHub/Speed-Box/update/build/CMakeFiles/update.dir
+C:/Users/yjmth/Documents/GitHub/Speed-Box/update/build/CMakeFiles/edit_cache.dir
+C:/Users/yjmth/Documents/GitHub/Speed-Box/update/build/CMakeFiles/rebuild_cache.dir
