@@ -114,26 +114,53 @@ void AboutNew::GetUpdate()
 bool AboutNew::DownloadData(const QString &url, const QString &path)
 {
     QEventLoop loop;
-    QNetworkReply *m_pReply = m_pNetMgr->get(QNetworkRequest(QUrl(url)));
-    connect(m_pReply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
-    connect(m_pReply, &QNetworkReply::downloadProgress, this, [this](qint64 a, qint64 b){m_pProgressBar->setValue(100*a/b);});
-    loop.exec();
-    if (m_pReply->error() == QNetworkReply::NoError) {
-        if (QFile::exists(path)) QFile::remove(path);
-        QFile file(path);
-        if (file.open(QIODevice::WriteOnly))
+//    QNetworkReply *m_pReply = m_pNetMgr->get(QNetworkRequest(QUrl(url)));
+//    connect(m_pReply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+//    // connect(m_pReply, &QNetworkReply::downloadProgress, this, [this](qint64 a, qint64 b){m_pProgressBar->setValue(100*a/b);});
+//    loop.exec();
+//    if (m_pReply->error() == QNetworkReply::NoError) {
+//        if (QFile::exists(path))
+//            QFile::remove(path);
+//        QFile file(path);
+//        if (file.open(QIODevice::WriteOnly))
+//        {
+//            const QByteArray& bytes = m_pReply->readAll();
+//            m_pTextEdit->appendPlainText(QStringLiteral("文件大小：%1。").arg(GlobalFn::bytes_to_string(bytes.size())));
+//            file.write(bytes);
+//            file.close();
+//        }
+//        m_pReply->deleteLater();
+//    } else {
+//        m_pTextEdit->appendPlainText(QStringLiteral("下载出错。"));
+//        m_pReply->deleteLater();
+//        return false;
+//    }
+    qout << "本地找不到文件, 直接开始下载";
+    auto mgr = new QNetworkAccessManager;
+    connect(mgr, &QNetworkAccessManager::finished, this, [=, &loop](QNetworkReply* rep)->void{
+        if (rep->error() != QNetworkReply::NoError)
         {
-            const QByteArray& bytes = m_pReply->readAll();
-            m_pTextEdit->appendPlainText(QStringLiteral("文件大小：%1。").arg(GlobalFn::bytes_to_string(bytes.size())));
-            file.write(bytes);
-            file.close();
+            rep->deleteLater();
+            qout << "下载图片出错！";
+            mgr->deleteLater();
+            loop.quit();
+            return;
         }
-        m_pReply->deleteLater();
-    } else {
-        m_pTextEdit->appendPlainText(QStringLiteral("下载出错。"));
-        m_pReply->deleteLater();
-        return false;
-    }
+        const QByteArray& data = rep->readAll();
+        rep->deleteLater();
+        QFile file(path);
+        qout << "下载图片成功!";
+        if (data.size() && file.open(QIODevice::WriteOnly))
+        {
+            file.write(data);
+            file.close();
+            qout << file.size();
+        }
+        mgr->deleteLater();
+        loop.quit();
+    });
+    mgr->get(QNetworkRequest(QUrl(url)));
+    loop.exec();
     return QFile::exists(path);
 }
 
