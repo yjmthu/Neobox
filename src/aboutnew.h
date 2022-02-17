@@ -16,7 +16,6 @@ private:
     class QProgressBar* m_pProgressBar { nullptr };
     class QNetworkAccessManager *m_pNetMgr { nullptr };
     class YJson* m_pJson {nullptr}, *m_pJsWin { nullptr };
-    void GetUpdate();
     bool DownloadData(const QString& url, const QString& path);
     bool NeedUpdater(YJson* js);
     bool NeedZip();
@@ -24,7 +23,8 @@ private:
     bool DownloadExe(YJson* js);
     bool DownloadUpdater(YJson* js);
     bool DownloadZip(YJson* js);
-
+private slots:
+    void GetUpdate();
 signals:
 
 };
