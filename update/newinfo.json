@@ -15,7 +15,7 @@
             "SpeedBox": [22, 2, 19],
             "Qt": [5, 15, 2],
             "Files": {
-                "Zip": [true, "https://github.com/yjmthu/Speed-Box/releases/download/v22.2.18/SpeedBox_v22.2.18_x64.zip", 25],
+                "Zip": [true, "https://gitee.com/yjmthu/Speed-Box/attach_files/935309/download/Speed-Box_v22.1.5.zip", 25],
                 "Exe": [true, "https://github.com/yjmthu/Speed-Box/releases/download/v22.2.18/SpeedBox_x64.exe"],
                 "Updater": [false, "https://raw.githubusercontent.com/yjmthu/Speed-Box/main/update/build/update.exe"]
             },
