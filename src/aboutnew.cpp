@@ -210,7 +210,7 @@ bool AboutNew::DownloadExe(YJson* js)
 {
     QString url = js->find("Exe")->find(1)->getValueString();
     m_pTextEdit->appendPlainText("下载地址："+url);
-    return DownloadData(url, "./SpeedBox.exe", false);
+    return DownloadData(url, "./SpeedBox.exe", true);
 }
 
 bool AboutNew::DownloadUpdater(YJson* js)
