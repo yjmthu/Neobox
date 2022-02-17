@@ -4,6 +4,7 @@
 
 #include <QThread>
 #include <QHBoxLayout>
+#include <QSlider>
 #include <stdio.h>
 #include <math.h>
 #include <QDesktopServices>

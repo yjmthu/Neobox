@@ -54,9 +54,9 @@ void AboutNew::GetUpdate()
         m_pTextEdit->appendPlainText(QStringLiteral("检查更新失败！"));
     } else try {
 #ifdef Q_OS_WIN32
-        YJson *m_pJsWin = m_pJson->find("Windows")->find(Is64BitOS()? "x64": "x86");
+        m_pJsWin = m_pJson->find("Windows")->find(Is64BitOS()? "x64": "x86");
         YJson *m_pJsBoxVersion = m_pJsWin->find("SpeedBox");
-        YJson *m_pJsQtVersion = m_pJsWin->find("Qt");
+
         uint32_t m_nNewBoxVersion = GlobalFn::getVersion(m_pJsBoxVersion->find(0)->getValueInt(),
                     m_pJsBoxVersion->find(1)->getValueInt(),m_pJsBoxVersion->find(2)->getValueInt());
         uint32_t m_nNewQtVersion = GlobalFn::getVersion(m_pJsQtVersion->find(0)->getValueInt(),
@@ -123,7 +123,7 @@ bool AboutNew::DownloadData(const QString &url, const QString &path)
 
 bool AboutNew::NeedZip(YJson *js)
 {
-
+YJson *m_pJsQtVersion = m_pJsWin->find("Qt");
 }
 
 bool AboutNew::DownloadJson()
