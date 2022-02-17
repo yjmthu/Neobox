@@ -27,6 +27,7 @@ constexpr bool Is64BitOS()
 
 void AboutNew::showEvent(QShowEvent *event)
 {
+    move((VarBox->m_dScreenWidth-width())/2, (VarBox->m_dScreenHeight-height())/2);
     QTimer::singleShot(50, this, &AboutNew::GetUpdate);
     event->accept();
 }
@@ -161,6 +162,20 @@ bool AboutNew::NeedZip()
     uint32_t m_nNewQtVersion = GlobalFn::getVersion(m_pJsQtVersion->find(0)->getValueInt(),
                 m_pJsQtVersion->find(1)->getValueInt(),m_pJsQtVersion->find(2)->getValueInt());
     if (QT_VERSION != m_nNewQtVersion) {
+#if __SIZEOF_POINTER__ == 4
+        QFile file(QStringLiteral(":/json/Directory_x86.json"));
+#elif __SIZEOF_POINTER__ == 8
+        QFile file(QStringLiteral(":/json/Directory_x64.json"));
+#endif
+        file.open(QFile::ReadOnly);
+        YJson m_jsOld(file.readAll());
+        file.close();
+        YJson json(YJson::Object);
+        json.append(QDir::toNativeSeparators(qApp->applicationDirPath()).toStdString(), "path");
+        json.append("zip", "type");
+        json.append(m_jsOld, "binary");
+        json.append(25, "count");
+        json.toFile("./profile.json", YJson::UTF8);
         return true;
     }
 #if __SIZEOF_POINTER__ == 4

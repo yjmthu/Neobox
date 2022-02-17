@@ -149,7 +149,7 @@ int main()
             }
         } else if (!strcmp(m_sType, "zip")) {
             xout << TEXT("The update file's type is zip.\n");
-            std::string m_sOldZipFile { ToAnsiString(m_sAppDataPath + TEXT("\\Speed-Box.zip")) };
+            std::string m_sOldZipFile { ToAnsiString(m_sAppDataPath + TEXT("\\SpeedBox.zip")) };
             std::string m_sToFolder { ToAnsiString(m_sExeFolderPath) };
             DeleteJsonDirectory(m_sExeFolderPath, js.find("binary"));
             int arg = js["count"].getValueInt();
