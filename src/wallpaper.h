@@ -49,14 +49,14 @@ public:
     QString m_bing_folder, m_wallhaven_folder, m_other_folder, m_other_name;
     class QTimer *timer = nullptr;                       //定时更换壁纸
 
-    Type m_paperType { Type::Hot };                                        //当下正在使用的壁纸类型
+    Type m_paperType { Type::Hot };                     //当下正在使用的壁纸类型
     bool m_autoChange { false };
     unsigned char m_pageNum { 0X01 };
     unsigned char m_timeInterval { 0X0F };
     bool m_useDateAsBingName { true };
     bool m_autoSaveBingPicture { false };
-    QString m_nativeDir;                                                 //当下正在使用的用户本地壁纸文件夹
-    QString m_userCommand;                //当下正在使用的用户高级命令
+    QString m_nativeDir;                                  //当下正在使用的用户本地壁纸文件夹
+    QString m_userCommand;                                //当下正在使用的用户高级命令
     bool m_firstChange { true };
 
     Wallpaper(); ~Wallpaper();

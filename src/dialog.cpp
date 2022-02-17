@@ -29,7 +29,6 @@
 #include "form.h"
 #include "blankform.h"
 #include "gmpoperatetip.h"
-#include "downloadprogress.h"
 #include "wallpaper.h"
 #include "bingsetting.h"
 #include "qstylesheet.h"
@@ -179,7 +178,6 @@ void Dialog::initChildren()
 
 void Dialog::initConnects()
 {
-    qout << "对话框链接A";
     connect(ui->pBtnAppWebSite, &QPushButton::clicked, this, std::bind(&QDesktopServices::openUrl, QUrl(QStringLiteral("https://yjmthu.github.io/Speed-Box"))));
     connect(ui->rBtnNative, &QRadioButton::toggled, this, [this](bool checked){ui->BtnChooseFolder->setEnabled(checked);});
     connect(ui->BtnChooseFolder, &QToolButton::clicked, this, &Dialog::chooseFolder);
@@ -540,7 +538,6 @@ void Dialog::initConnects()
         AboutNew chekNew;
         chekNew.exec();
     });
-    qout << "对话框链接B";
 }
 
 void Dialog::initButtonFilter()

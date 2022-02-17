@@ -4,6 +4,7 @@
 #include <QPlainTextEdit>
 #include <QVBoxLayout>
 #include <QNetworkAccessManager>
+#include <QNetworkRequest>
 #include <QNetworkReply>
 #include <QEventLoop>
 #include <QProgressBar>
@@ -102,7 +103,6 @@ void AboutNew::GetUpdate()
             }
         } else {
             m_pTextEdit->appendPlainText(QStringLiteral("当版本%1已经是最新！").arg(getIntToVersion(VARBOX::m_dVersion)));
-            m_pTextEdit->appendPlainText(QStringLiteral("当前版本:%1; 最新版本为%2.").arg(getIntToVersion(VARBOX::m_dVersion), getIntToVersion(m_nNewBoxVersion)));
         }
 #elif defined (Q_OS_LINUX)
 #endif
@@ -111,57 +111,34 @@ void AboutNew::GetUpdate()
     }
 }
 
-bool AboutNew::DownloadData(const QString &url, const QString &path)
+bool AboutNew::DownloadData(const QString &url, const QString &path, bool redirected)
 {
-    QEventLoop loop;
-//    QNetworkReply *m_pReply = m_pNetMgr->get(QNetworkRequest(QUrl(url)));
-//    connect(m_pReply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
-//    // connect(m_pReply, &QNetworkReply::downloadProgress, this, [this](qint64 a, qint64 b){m_pProgressBar->setValue(100*a/b);});
-//    loop.exec();
-//    if (m_pReply->error() == QNetworkReply::NoError) {
-//        if (QFile::exists(path))
-//            QFile::remove(path);
-//        QFile file(path);
-//        if (file.open(QIODevice::WriteOnly))
-//        {
-//            const QByteArray& bytes = m_pReply->readAll();
-//            m_pTextEdit->appendPlainText(QStringLiteral("文件大小：%1。").arg(GlobalFn::bytes_to_string(bytes.size())));
-//            file.write(bytes);
-//            file.close();
-//        }
-//        m_pReply->deleteLater();
-//    } else {
-//        m_pTextEdit->appendPlainText(QStringLiteral("下载出错。"));
-//        m_pReply->deleteLater();
-//        return false;
-//    }
-    qout << "本地找不到文件, 直接开始下载";
-    auto mgr = new QNetworkAccessManager;
-    connect(mgr, &QNetworkAccessManager::finished, this, [=, &loop](QNetworkReply* rep)->void{
-        if (rep->error() != QNetworkReply::NoError)
-        {
-            rep->deleteLater();
-            qout << "下载图片出错！";
-            mgr->deleteLater();
-            loop.quit();
-            return;
-        }
-        const QByteArray& data = rep->readAll();
-        rep->deleteLater();
-        QFile file(path);
-        qout << "下载图片成功!";
-        if (data.size() && file.open(QIODevice::WriteOnly))
-        {
-            file.write(data);
-            file.close();
-            qout << file.size();
-        }
-        mgr->deleteLater();
-        loop.quit();
-    });
-    mgr->get(QNetworkRequest(QUrl(url)));
+    QEventLoop loop(this);
+    QNetworkRequest netReq = QNetworkRequest(QUrl(url));
+    if (redirected)
+        netReq.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    QNetworkReply *m_pReply = m_pNetMgr->get(netReq);
+    connect(m_pReply, &QNetworkReply::downloadProgress, this, [this](qint64 a, qint64 b){m_pProgressBar->setValue(100*a/b);});
+    connect(m_pReply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
     loop.exec();
-    return QFile::exists(path);
+    if (m_pReply->error() == QNetworkReply::NoError) {
+        if (QFile::exists(path))
+            QFile::remove(path);
+        QFile file(path);
+        if (file.open(QIODevice::WriteOnly))
+        {
+            const QByteArray& bytes = m_pReply->readAll();
+            m_pTextEdit->appendPlainText(QStringLiteral("下载完成，文件大小：%1。").arg(GlobalFn::bytes_to_string(bytes.size())));
+            file.write(bytes);
+            file.close();
+        }
+        m_pReply->deleteLater();
+        return QFile::exists(path);
+    } else {
+        m_pTextEdit->appendPlainText(QStringLiteral("下载出错。"));
+        m_pReply->deleteLater();
+        return false;
+    }
 }
 
 bool AboutNew::NeedUpdater(YJson *js)
@@ -178,8 +155,9 @@ bool AboutNew::NeedZip()
     YJson *m_pJsQtVersion = m_pJsWin->find("Qt");
     uint32_t m_nNewQtVersion = GlobalFn::getVersion(m_pJsQtVersion->find(0)->getValueInt(),
                 m_pJsQtVersion->find(1)->getValueInt(),m_pJsQtVersion->find(2)->getValueInt());
-    if (QT_VERSION != getIntToVersion(m_nNewQtVersion))
+    if (QT_VERSION != m_nNewQtVersion) {
         return true;
+    }
 #if __SIZEOF_POINTER__ == 4
     QFile file(QStringLiteral(":/json/Directory_x86.json"));
 #elif __SIZEOF_POINTER__ == 8
@@ -205,26 +183,20 @@ bool AboutNew::NeedZip()
 
 bool AboutNew::DownloadJson()
 {
-    QNetworkAccessManager* mgr { new QNetworkAccessManager };
-    QEventLoop* loop { new QEventLoop };
-    connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* reply) {
-        if (reply->error() == QNetworkReply::NoError) {
-            try {
-                m_pJson = new YJson(reply->readAll());
-            } catch (...) {
-                m_pJson = nullptr;
-            }
-        } else {
+    QEventLoop loop(this);
+    auto m_reply = m_pNetMgr->get(QNetworkRequest(QUrl("https://gitee.com/yjmthu/Speed-Box/raw/main/update/newinfo.json")));
+    connect(m_reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    loop.exec();
+    if (m_reply->error() == QNetworkReply::NoError) {
+        try {
+            m_pJson = new YJson(m_reply->readAll());
+        } catch (...) {
             m_pJson = nullptr;
         }
-        reply->deleteLater();
-        loop->quit();
-    });
-
-    mgr->get(QNetworkRequest(QUrl("https://raw.githubusercontent.com/yjmthu/Speed-Box/main/update/newinfo.json")));
-    loop->exec();
-    loop->deleteLater();
-    mgr->deleteLater();
+    } else {
+        m_pJson = nullptr;
+    }
+    m_reply->deleteLater();
     return m_pJson;
 }
 
@@ -232,19 +204,19 @@ bool AboutNew::DownloadExe(YJson* js)
 {
     QString url = js->find("Exe")->find(1)->getValueString();
     m_pTextEdit->appendPlainText("下载地址："+url);
-    return DownloadData(url, "./SpeedBox.exe");
+    return DownloadData(url, "./SpeedBox.exe", false);
 }
 
 bool AboutNew::DownloadUpdater(YJson* js)
 {
     QString url = js->find("Updater")->find(1)->getValueString();
     m_pTextEdit->appendPlainText("下载地址："+url);
-    return DownloadData(url, "./update.exe");
+    return DownloadData(url, "./update.exe", false);
 }
 
 bool AboutNew::DownloadZip(YJson* js)
 {
     QString url = js->find("Zip")->find(1)->getValueString();
     m_pTextEdit->appendPlainText("下载地址："+url);
-    return DownloadData(url, "./SpeedBox.zip");
+    return DownloadData(url, "./SpeedBox.zip", true);
 }

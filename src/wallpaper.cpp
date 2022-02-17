@@ -229,7 +229,6 @@ void Wallpaper::push_back()
         return;
     }
 
-    qout << 12345;
     switch (m_paperType)
     {
     case Type::Bing:
@@ -472,6 +471,8 @@ void Wallpaper::download_image(const _Ty &url, const QString &path, bool set)
         qout << "本地找不到文件, 直接开始下载";
         m_doing = true;
         auto mgr = new QNetworkAccessManager;
+        QNetworkRequest netReq = QNetworkRequest(QUrl(url));
+        netReq.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
         connect(mgr, &QNetworkAccessManager::finished, this, [=](QNetworkReply* rep)->void{
             if (rep->error() != QNetworkReply::NoError)
             {
@@ -496,7 +497,7 @@ void Wallpaper::download_image(const _Ty &url, const QString &path, bool set)
             if (set)
                 set_wallpaper(path);
         });
-        mgr->get(QNetworkRequest(QUrl(url)));
+        mgr->get(netReq);
     } else if (set) {
         qout << "本地图片文件存在";
         set_wallpaper(path);
@@ -766,12 +767,9 @@ void Wallpaper::dislike()
 
 void Wallpaper::loadApiFile()
 {
-    qout << 123;
     YJson json("WallpaperApi.json", YJson::UTF8);
-    qout << 456;
     const char* curApi = nullptr;
     int index = static_cast<int>(m_paperType);
-    qout << 789;
     m_bing_api = QString::fromStdString(json["BingApi"]["Parameter"].urlEncode(json["MainApis"]["BingApi"].getValueString()));
     m_bing_folder = json["BingApi"]["Folder"].getValueString();
     switch (m_paperType)

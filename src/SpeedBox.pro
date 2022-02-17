@@ -51,7 +51,7 @@ CONFIG += release
 # CONFIG += debug
 
 # 禁用qDebug()
-# DEFINES += QT_NO_DEBUG_OUTPUT
+DEFINES += QT_NO_DEBUG_OUTPUT
 
 # 禁用 Qt 6之前的函数
 # DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000
@@ -64,7 +64,6 @@ SOURCES += \
     bingsetting.cpp \
     blankform.cpp \
     calculator.cpp \
-    downloadprogress.cpp \
     globalfn.cpp \
     gmpoperatetip.cpp \
     main.cpp \
@@ -91,7 +90,6 @@ HEADERS += \
     blankform.h \
     calculator.h \
     dialog.h \
-    downloadprogress.h \
     form.h \
     funcbox.h \
     globalfn.h \
