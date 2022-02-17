@@ -17,7 +17,7 @@
             "Files": {
                 "Zip": [true, "https://github.com/yjmthu/Speed-Box/releases/download/v22.2.18/SpeedBox_v22.2.18_x64.zip", 25],
                 "Exe": [true, "https://github.com/yjmthu/Speed-Box/releases/download/v22.2.18/SpeedBox_x86.exe"],
-                "Updater": [false, "https://gitee.com/yjmthu/Speed-Box/raw/main/update/build/update.exe"]
+                "Updater": [true, "https://gitee.com/yjmthu/Speed-Box/raw/main/update/build/update.exe"]
             },
             "Struct": {"Folder":{"bearer":{"Folder":{},"File":["qgenericbearer.dll"]},"imageformats":{"Folder":{},"File":["qgif.dll","qicns.dll","qico.dll","qjpeg.dll","qsvg.dll","qtga.dll","qtiff.dll","qwbmp.dll","qwebp.dll"]},"platforms":{"Folder":{},"File":["qwindows.dll"]},"styles":{"Folder":{},"File":["qwindowsvistastyle.dll"]},"texttospeech":{"Folder":{},"File":["qtexttospeech_sapi.dll"]}},"File":["libcrypto-1_1-x64.dll","libgcc_s_seh-1.dll","libssl-1_1-x64.dll","libstdc++-6.dll","libwinpthread-1.dll","Qt5Core.dll","Qt5Gui.dll","Qt5Network.dll","Qt5Svg.dll","Qt5TextToSpeech.dll","Qt5Widgets.dll","SpeedBox.exe"]},
             "UpdateDescription": "欢迎体验新版本!"
