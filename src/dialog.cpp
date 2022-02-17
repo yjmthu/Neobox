@@ -537,9 +537,8 @@ void Dialog::initConnects()
         qout << formPart[index]->styleSheet();
     });
     connect(ui->pBtnCheckUpdate, &QPushButton::clicked, this, [](){
-        AboutNew *chekNew = new AboutNew;
-        chekNew->exec();
-        // qApp->exit(VARBOX::RETCODE_UPDATE)
+        AboutNew chekNew;
+        chekNew.exec();
     });
     qout << "对话框链接B";
 }
