@@ -7,7 +7,6 @@
 *.Debug
 *.cmake
 *.make
-*.exe
 *.dll
 *.rsp
 *.a
