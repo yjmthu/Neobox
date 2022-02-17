@@ -39,6 +39,23 @@ FILE* readFile(const std::string& filePath);
 void msgBox(const char* text, const char* title="提示", QMessageBox::StandardButtons buttons=QMessageBox::Ok);
 QByteArray runCmd(const QString & program, const QStringList& argument, short line);
 void openDirectory(const QString& dir);
+inline QString bytes_to_string(int64_t size)
+{
+    int64_t r = 1;
+    if (size < (r <<= 10))
+        return QString("%1 B").arg(size);
+    if (size < (r <<= 10))
+        return QString("%1 KB").arg(QString::number((double)size / (r>>10), 'f', 1));
+    if (size < (r <<= 10))
+        return QString("%1 MB").arg(QString::number((double)size / (r>>10), 'f', 1));
+    if (size < (r <<= 10))
+        return QString("%1 GB").arg(QString::number((double)size / (r>>10), 'f', 1));
+    if (size < (r <<= 10))
+        return QString("%1 TB").arg(QString::number((double)size / (r>>10), 'f', 1));
+    if (size < (r <<= 10))
+        return QString("%1 PB").arg(QString::number((double)size / (r>>10), 'f', 1));
+    return "Error";
+}
 }
 
 #endif // GLOBALFN_H
