@@ -11,4 +11,5 @@
 *.rsp
 *.a
 *.d
+*.o
 Makefile

@@ -47,8 +47,8 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++11
 
 # release模式生成的文件更小，运行速度更快
-# CONFIG += release
-CONFIG += debug
+CONFIG += release
+# CONFIG += debug
 
 # 禁用qDebug()
 # DEFINES += QT_NO_DEBUG_OUTPUT

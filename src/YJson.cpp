@@ -174,6 +174,55 @@ void YJson::CopyJson(const YJson* json, YJson* parent)
     }
 }
 
+bool YJson::isSameTo(const YJson *other)
+{
+    if (this == other)
+        return true;
+    if (this->_type != other->_type)
+        return false;
+    if (_key) {
+        if (!other->_key)
+            return false;
+        else if (strcmp(_key, other->_key))
+            return false;
+    } else if (other->_key)
+        return false;
+    switch (_type) {
+    case YJson::Array:
+    case YJson::Object:
+    {
+        YJson* child1 = _child, *child2 = other->_child;
+        if (child1) {
+            if (!child2)
+                return false;
+            else {
+                if (child1->_next) {
+                    if (!child2->_next)
+                        return false;
+                    else
+                        return child1->isSameTo(child2) && child1->_next->isSameTo(child2->_next);
+                } else if (child2->_next)
+                    return false;
+                else
+                    return child1->isSameTo(child2);
+            }
+        } else if (child2)
+            return false;
+        else
+            return true;
+    }
+    case YJson::Number:
+        return !memcmp(_value, other->_value, sizeof (double));
+    case YJson::String:
+        return !strcmp(_value, other->_value);
+    case YJson::Null:
+    case YJson::False:
+    case YJson::True:
+    default:
+        return true;
+    }
+}
+
 int YJson::getChildNum() const
 {
     int j = 0; YJson* child = _child;
@@ -512,6 +561,57 @@ YJson& YJson::operator=(const YJson& s)
     return *this;
 }
 
+bool YJson::isSameTo(const YJson &other, bool cmpKey)
+{
+    if (this == &other)
+        return true;
+    if (this->_type != other._type)
+        return false;
+    if (cmpKey) {
+        if (_key) {
+            if (!other._key)
+                return false;
+            else if (strcmp(_key, other._key))
+                return false;
+        } else if (other._key)
+            return false;
+    }
+    switch (_type) {
+    case YJson::Array:
+    case YJson::Object:
+    {
+        YJson* child1 = _child, *child2 = other._child;
+        if (child1) {
+            if (!child2)
+                return false;
+            else {
+                if (child1->_next) {
+                    if (!child2->_next)
+                        return false;
+                    else
+                        return child1->isSameTo(child2) && child1->_next->isSameTo(child2->_next);
+                } else if (child2->_next)
+                    return false;
+                else
+                    return child1->isSameTo(child2);
+            }
+        } else if (child2)
+            return false;
+        else
+            return true;
+    }
+    case YJson::Number:
+        return !memcmp(_value, other._value, sizeof (double));
+    case YJson::String:
+        return !strcmp(_value, other._value);
+    case YJson::Null:
+    case YJson::False:
+    case YJson::True:
+    default:
+        return true;
+    }
+}
+
 YJson& YJson::operator=(YJson&& s) noexcept
 {
     std::swap(_type, s._type);
@@ -563,7 +663,7 @@ YJson YJson::join(const YJson & j1, const YJson & j2)
 
 char* YJson::toString(bool fmt)
 {
-    return fmt?print_value(0):print_value();
+    return fmt? print_value(0):print_value();
 }
 
 bool YJson::toFile(const std::string name, const YJson::Encode& file_encode, bool fmt)

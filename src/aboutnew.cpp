@@ -54,37 +54,49 @@ void AboutNew::GetUpdate()
         m_pTextEdit->appendPlainText(QStringLiteral("检查更新失败！"));
     } else try {
 #ifdef Q_OS_WIN32
-        YJson *m_pJsWin = m_pJson->find("Windows")->find(Is64BitOS()? "x64": "x86");
+        m_pJsWin = m_pJson->find("Windows")->find(Is64BitOS()? "x64": "x86");
         YJson *m_pJsBoxVersion = m_pJsWin->find("SpeedBox");
-        YJson *m_pJsQtVersion = m_pJsWin->find("Qt");
+
         uint32_t m_nNewBoxVersion = GlobalFn::getVersion(m_pJsBoxVersion->find(0)->getValueInt(),
                     m_pJsBoxVersion->find(1)->getValueInt(),m_pJsBoxVersion->find(2)->getValueInt());
-        uint32_t m_nNewQtVersion = GlobalFn::getVersion(m_pJsQtVersion->find(0)->getValueInt(),
-                    m_pJsQtVersion->find(1)->getValueInt(),m_pJsQtVersion->find(2)->getValueInt());
         if (m_nNewBoxVersion > VARBOX::m_dVersion)
         {
             m_pTextEdit->appendPlainText(QStringLiteral("当前版本:%1; 最新版本为%2.").arg(getIntToVersion(VARBOX::m_dVersion), getIntToVersion(m_nNewBoxVersion)));
             if (QMessageBox::question(this, QStringLiteral("提示"), QStringLiteral("是否要下载最新版本？")) == QMessageBox::StandardButton::Yes)
             {
                 YJson *m_pJsFile = m_pJsWin->find("Files");
-                if (QT_VERSION != getIntToVersion(m_nNewQtVersion)) {
-                    YJson *m_pJsUpdater = m_pJsFile->find("Updater");
-                    if (m_pJsUpdater->getChild()->getType() == YJson::False && QFile::exists(qApp->applicationDirPath()+"/update.exe"))
-                    {
-                        DownloadUpdater();
+                if (NeedUpdater(m_pJsFile)) {
+                    m_pTextEdit->appendPlainText(QStringLiteral("正在下载更新程序..."));
+                    if (DownloadUpdater(m_pJsFile)) {
+                        m_pTextEdit->appendPlainText(QStringLiteral("更新程序下载完成。"));
                     } else {
-                        DownloadZip();
-                    }
-                } else {
-                    YJson *m_pJsUpdater = m_pJsFile->find("Updater");
-                    if (m_pJsUpdater->getChild()->getType() == YJson::False && QFile::exists(qApp->applicationDirPath()+"/update.exe"))
-                    {
-                        DownloadUpdater();
-                    } else {
-                        DownloadExe();
+                        m_pTextEdit->appendPlainText(QStringLiteral("更新程序下载失败。"));
+                        throw 0;
                     }
                 }
-
+                if (NeedZip()) {
+                    m_pTextEdit->appendPlainText(QStringLiteral("正在下载压缩包..."));
+                    if (DownloadZip(m_pJsFile)) {
+                        m_pTextEdit->appendPlainText(QStringLiteral("压缩包下载完成。"));
+                    } else {
+                        m_pTextEdit->appendPlainText(QStringLiteral("压缩包下载失败。"));
+                        throw 0;
+                    }
+                } else {
+                    m_pTextEdit->appendPlainText(QStringLiteral("正在下载主程序..."));
+                    if (DownloadExe(m_pJsFile)) {
+                        m_pTextEdit->appendPlainText(QStringLiteral("主程序下载完成。"));
+                    } else {
+                        m_pTextEdit->appendPlainText(QStringLiteral("主程序下载失败。"));
+                        throw 0;
+                    }
+                }
+                if (QMessageBox::question(this, QStringLiteral("提示"), QStringLiteral("下载完成，是否现在运行更新程序？")) == QMessageBox::Yes)
+                {
+                    qApp->exit(VARBOX::RETCODE_UPDATE);
+                } else {
+                    m_pTextEdit->appendPlainText(QStringLiteral("成功取消下载更新。"));
+                }
             } else {
                 m_pTextEdit->appendPlainText(QStringLiteral("成功取消下载更新。"));
             }
@@ -94,7 +106,7 @@ void AboutNew::GetUpdate()
 #elif defined (Q_OS_LINUX)
 #endif
     } catch (...) {
-        //
+        m_pTextEdit->appendPlainText(QStringLiteral("出现未知错误，无法正常更新。"));
     }
 }
 
@@ -121,9 +133,43 @@ bool AboutNew::DownloadData(const QString &url, const QString &path)
     return QFile::exists(path);
 }
 
-bool AboutNew::NeedZip(YJson *js)
+bool AboutNew::NeedUpdater(YJson *js)
 {
+    if (QFile::exists(qApp->applicationDirPath()+"/update.exe")) {
+        return js->find("Updater")->getChild()->getType();
+    } else {
+        return true;
+    }
+}
 
+bool AboutNew::NeedZip()
+{
+    YJson *m_pJsQtVersion = m_pJsWin->find("Qt");
+    uint32_t m_nNewQtVersion = GlobalFn::getVersion(m_pJsQtVersion->find(0)->getValueInt(),
+                m_pJsQtVersion->find(1)->getValueInt(),m_pJsQtVersion->find(2)->getValueInt());
+    if (QT_VERSION != getIntToVersion(m_nNewQtVersion))
+        return true;
+#if __SIZEOF_POINTER__ == 4
+    QFile file(QStringLiteral(":/json/Directory_x86.json"));
+#elif __SIZEOF_POINTER__ == 8
+    QFile file(QStringLiteral(":/json/Directory_x64.json"));
+#endif
+    file.open(QFile::ReadOnly);
+    YJson m_jsOld(file.readAll());
+    file.close();
+
+    YJson json(YJson::Object);
+    if (m_pJsWin->find("Struct")->isSameTo(m_jsOld)) {
+        json.append("exe", "type");
+        json.toFile("./profile.json", YJson::UTF8);
+        return false;
+    } else {
+        json.append("zip", "type");
+        json.append(m_jsOld, "binary");
+        json.append(25, "count");
+        json.toFile("./profile.json", YJson::UTF8);
+        return true;
+    }
 }
 
 bool AboutNew::DownloadJson()
@@ -151,18 +197,17 @@ bool AboutNew::DownloadJson()
     return m_pJson;
 }
 
-bool AboutNew::DownloadExe()
+bool AboutNew::DownloadExe(YJson* js)
 {
-    m_pTextEdit->appendPlainText(QStringLiteral("成功取消下载更新。"));
-    return false;
+    return DownloadData(js->find("Exe")->find(1)->getValueString(), "./SpeedBox.exe");
 }
 
-bool AboutNew::DownloadUpdater()
+bool AboutNew::DownloadUpdater(YJson* js)
 {
-    return false;
+    return DownloadData(js->find("Updater")->find(1)->getValueString(), "./update.exe");
 }
 
-bool AboutNew::DownloadZip()
+bool AboutNew::DownloadZip(YJson* js)
 {
-    return false;
+    return DownloadData(js->find("Zip")->find(1)->getValueString(), "./SpeedBox.zip");
 }

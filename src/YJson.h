@@ -10,7 +10,7 @@ protected:
     inline explicit YJson() { }
 
 public:
-    enum Type { False, True, Null, Number, String, Array, Object };
+    enum Type { False=0, True=1, Null, Number, String, Array, Object };
     enum Encode { AUTO, ANSI, UTF8, UTF8BOM, UTF16LE, UTF16LEBOM, UTF16BE, UTF16BEBOM, OTHER };
 
     inline explicit YJson(Type type):_type(static_cast<Type>(type)) { };
@@ -44,11 +44,12 @@ public:
     YJson* getTop() const;
 
     char* toString(bool fmt=false);
-    bool toFile(const std::string name, const YJson::Encode& encode=YJson::UTF8BOM, bool fmt=false);
-    void loadFile(const std::string& path, YJson::Encode encode=YJson::Encode::AUTO);
+    bool toFile(const std::string name, const YJson::Encode& encode=UTF8BOM, bool fmt=false);
+    void loadFile(const std::string& path, YJson::Encode encode=AUTO);
 
     YJson& operator=(const YJson&);
     YJson& operator=(YJson&&) noexcept;
+    bool isSameTo(const YJson& other, bool cmpKey=false);
     inline YJson& operator[](int i) const { auto j = find(i); if (!j) throw std::string("nullptr"); else return *j; }
     inline YJson& operator[](const char* key) const { auto j = find(key); if (!j) throw std::string("nullptr"); else  return *j; }
     inline YJson& operator[](const std::string& key) const { auto j = find(key); if (!j) throw std::string("nullptr"); else  return *j; }
@@ -65,13 +66,13 @@ public:
     YJson* find(int index) const;
     YJson* find(const char* key) const;
     YJson* find(const std::string& key) const;
-    inline YJson* findByVal(int value) const {return findByVal(static_cast<double>(value));};
+    inline YJson* findByVal(int value) const { return findByVal(static_cast<double>(value)); };
     YJson* findByVal(double value) const;
     YJson* findByVal(const char* str) const;
 
     YJson* append(const YJson&, const char* key=nullptr);
     YJson* append(YJson::Type type, const char* key=nullptr);
-    inline YJson* append(int value, const char* key=nullptr) { return append(static_cast<double>(value), key);};
+    inline YJson* append(int value, const char* key=nullptr) { return append(static_cast<double>(value), key); }
     YJson* append(double, const char* key=nullptr);
     YJson* append(const char*, const char* key=nullptr);
     YJson* append(const std::string&, const char* key=nullptr);
@@ -138,6 +139,7 @@ private:
 
     void loadFile(std::ifstream &);
     void CopyJson(const YJson*, YJson*);
+    bool isSameTo(const YJson* other);
 };
 
 #endif
