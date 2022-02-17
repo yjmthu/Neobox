@@ -56,7 +56,11 @@ void AboutNew::GetUpdate()
         m_pTextEdit->appendPlainText(QStringLiteral("检查更新失败！"));
     } else try {
 #ifdef Q_OS_WIN32
-        m_pJsWin = m_pJson->find("Windows")->find(Is64BitOS()? "x64": "x86");
+#if __SIZEOF_POINTER__ == 4
+        m_pJsWin = m_pJson->find("Windows")->find("x86");
+#elif __SIZEOF_POINTER__ == 8
+        m_pJsWin = m_pJson->find("Windows")->find("x64");
+#endif
         YJson *m_pJsBoxVersion = m_pJsWin->find("SpeedBox");
 
         uint32_t m_nNewBoxVersion = GlobalFn::getVersion(m_pJsBoxVersion->find(0)->getValueInt(),
