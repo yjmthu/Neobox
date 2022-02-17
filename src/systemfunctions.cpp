@@ -105,14 +105,12 @@ namespace SystemFunctions
 
         }
         MChar szPath(MAX_PATH, 0);
-        const std::array<TCHAR, 10> exName { 'u', 'p', 'd', 'a', 't', 'e', '.', 'e', 'x', 'e' };
         if (!bAlreadyRunningAsAdministrator)
         {
             if (GetCurrentDirectory(MAX_PATH, &szPath.front()))
             {
-                const auto& i = std::find(szPath.rbegin(), szPath.rend(), '\\');
-                std::copy(exName.rbegin(), exName.rend(), i-10);
-                szPath.erase(i.base()+10, szPath.end());
+                szPath.erase(std::find(szPath.begin(), szPath.end(), 0), szPath.end());
+                szPath += TEXT("\\update.exe");
                 SHELLEXECUTEINFO sei;
                 memset(&sei, 0, sizeof(SHELLEXECUTEINFO));
                 sei.cbSize = sizeof(sei);
@@ -130,11 +128,10 @@ namespace SystemFunctions
             }
 
         } else {
-            if (GetModuleFileName(NULL, &szPath.front(), MAX_PATH))
+            if (GetCurrentDirectory(MAX_PATH, &szPath.front()))
             {
-                const auto& i = std::find(szPath.rbegin(), szPath.rend(), '\\');
-                std::copy(exName.rbegin(), exName.rend(), i-10);
-                szPath.erase(i.base()+10, szPath.end());
+                szPath.erase(std::find(szPath.begin(), szPath.end(), 0), szPath.end());
+                szPath += TEXT("\\update.exe");
                 ShellExecute(NULL, TEXT("open"), szPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
             }
         }
