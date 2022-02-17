@@ -2,7 +2,7 @@
     "Windows": {
         "x86": {
             "SpeedBox": [22, 2, 19],
-            "Qt": [5, 15, 2],
+            "Qt": [5, 15, 3],
             "Files": {
                 "Zip": [true, "https://github.com/yjmthu/Speed-Box/releases/download/v22.2.18/SpeedBox_v22.2.18_x86.zip", 25],
                 "Exe": [true, "https://github.com/yjmthu/Speed-Box/releases/download/v22.2.18/SpeedBox_x86.exe"],
@@ -13,7 +13,7 @@
         },
         "x64": {
             "SpeedBox": [22, 2, 19],
-            "Qt": [5, 15, 2],
+            "Qt": [5, 15, 3],
             "Files": {
                 "Zip": [true, "https://github.com/yjmthu/Speed-Box/releases/download/v22.2.18/SpeedBox_v22.2.18_x64.zip", 25],
                 "Exe": [true, "https://github.com/yjmthu/Speed-Box/releases/download/v22.2.18/SpeedBox_x64.exe"],
