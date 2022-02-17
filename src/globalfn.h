@@ -29,7 +29,7 @@ static QVariant readOneSet(const QString& group, const QString& key, _Ty val) {
 std::string ansiToUtf8(const std::string& strAnsi);
 std::string utf8ToAnsi(const std::string& strUtf8);
 #endif
-const char* getFileName(const char* file_path);
+const char* getFileName(const char* filePath);
 uint32_t getVersion(const char* A);
 FILE* readFile(const std::string& filePath);
 void msgBox(const char* text, const char* title="提示", QMessageBox::StandardButtons buttons=QMessageBox::Ok);

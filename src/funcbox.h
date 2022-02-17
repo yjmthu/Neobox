@@ -5,7 +5,6 @@
 #define qout qDebug()
 #endif
 
-
 #include <QString>
 #include <QDebug>
 #include <QMessageBox>

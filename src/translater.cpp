@@ -34,9 +34,9 @@
 #include <sstream>
 #include <algorithm>
 
-#include "YEncode.h"
-#include "YString.h"
-#include "YJson.h"
+#include "yencode.h"
+#include "ystring.h"
+#include "yjson.h"
 #include "form.h"
 #include "blankform.h"
 #include "gmpoperatetip.h"
@@ -385,28 +385,22 @@ void Translater::getReply(const QString& q)
 #endif
     if (time_now - m_dLastPostTime < 1000)
         QThread::msleep(m_dLastPostTime + 1000 - time_now);
-
-    connect(m_pMgr, &QNetworkAccessManager::finished, this, [this](QNetworkReply* rep) {
-        static int ss = -1;
-        const QByteArray& data = rep->readAll();
-        qout << "木头人" << ++ss;
-        if (rep->error() != QNetworkReply::NoError)
-        {
-            rep->deleteLater();
-            emit msgBox("翻译请求失败, 可能是没有网络！");
-        } else try {
-            rep->deleteLater();
-            YJson json_data(data);
-            YJson* have_item = nullptr;
-            if ((have_item = json_data.find("translateResult")) &&
-                (have_item = have_item->getChild()))
+    url += YEncode::urlEncode<std::string, std::string>(q.toStdString());
+    QNetworkReply *m_pReply = m_pMgr->get(QNetworkRequest(QUrl(QString::fromStdString(url))));
+    connect(m_pReply, &QIODevice::readyRead, this, [=]() {
+        const QByteArray& m_qReplyData = m_pReply->readAll();
+        m_pReply->deleteLater();
+        try {
+            YJson m_vJsonData(m_qReplyData);
+            YJson* m_pHaveItem, *m_pJsTemp;
+            if ((m_pHaveItem = m_vJsonData.find("translateResult")) &&
+                (m_pHaveItem = m_pHaveItem->getChild()))
             {
-                YJson * temp = nullptr;
                 ui->TextTo->clear();
                 do {
-                    temp = have_item->getChild()->find("tgt");
-                    ui->TextTo->appendPlainText(temp->getValueString());
-                } while ((have_item = have_item->getNext()));
+                    m_pJsTemp = m_pHaveItem->getChild()->find("tgt");
+                    ui->TextTo->appendPlainText(m_pJsTemp->getValueString());
+                } while ((m_pHaveItem = m_pHaveItem->getNext()));
                 QTextCursor cursor = ui->TextFrom->textCursor();
                 cursor.movePosition(QTextCursor::End);
                 ui->TextFrom->setTextCursor(cursor);
@@ -420,10 +414,14 @@ void Translater::getReply(const QString& q)
             emit msgBox("Json文件出错");
         }
     });
-    static int ii =-1;
-    qout << "狼人杀" << ++ii;
-    url += YEncode::urlEncode<std::string, std::string>(q.toStdString());
-    m_pMgr->get(QNetworkRequest(QUrl(QString::fromStdString(url))));
+    connect(m_pReply, &QNetworkReply::errorOccurred, this, [=](QNetworkReply::NetworkError){
+        emit msgBox("发送get请求出错, 可能是没有网络！");
+        m_pReply->deleteLater();
+    });
+    connect(m_pReply, &QNetworkReply::sslErrors, this, [=](const QList<QSslError> &){
+        emit msgBox("sslErrors");
+        m_pReply->deleteLater();
+    });
 }
 
 void Translater::setShiftA()
