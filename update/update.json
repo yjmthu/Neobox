@@ -1,11 +1,11 @@
 {
     "Platform": "Winindows 10 | Winindows 11; 64bit",
-    "Latest Version": "22.1.5",
+    "Latest Version": "22.2.20",
     "Qt Version": "5.15.2",
     "Files": {
         "main": "https://gitee.com/yjmthu/Speed-Box/raw/main/update/SpeedBox.exe",
         "update": "https://gitee.com/yjmthu/Speed-Box/attach_files/882654/download/Speed_Box_Updater.exe",
-        "zip": "https://gitee.com/yjmthu/Speed-Box/attach_files/935309/download/Speed-Box_v22.1.5.zip"
+        "zip": "https://gitee.com/yjmthu/Speed-Box/attach_files/972236/download/SpeedBox_v22.2.20_x64.zip"
     },
     "File Name": "Speed-Box_v21.11.17.zip",
     "UpdateDescription": "欢迎体验新版本!"
