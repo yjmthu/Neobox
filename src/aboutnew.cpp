@@ -205,7 +205,7 @@ bool AboutNew::NeedZip()
 bool AboutNew::DownloadJson()
 {
     QEventLoop loop(this);
-#if 0
+#if 1
     auto m_reply = m_pNetMgr->get(QNetworkRequest(QUrl("https://gitee.com/yjmthu/Speed-Box/raw/main/update/newinfo.json")));
 #else
     auto m_reply = m_pNetMgr->get(QNetworkRequest(QUrl("https://raw.githubusercontent.com/yjmthu/Speed-Box/main/update/newinfo.json")));
