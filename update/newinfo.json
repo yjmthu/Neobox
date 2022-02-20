@@ -12,7 +12,7 @@
             "UpdateDescription": "欢迎体验新版本!"
         },
         "x64": {
-            "SpeedBox": [22, 2, 20],
+            "SpeedBox": [22, 2, 22],
             "Qt": [5, 15, 2],
             "Files": {
                 "Zip": [true, "https://gitee.com/yjmthu/Speed-Box/attach_files/972236/download/SpeedBox_v22.2.20_x64.zip", 25, "https://github.com/yjmthu/Speed-Box/releases/download/v22.2.20/SpeedBox_v22.2.20_x64.zip", 25],
