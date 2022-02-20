@@ -31,5 +31,8 @@
         <file>icons/checklist.ico</file>
         <file>json/Directory_x64.json</file>
         <file>json/Directory_x86.json</file>
+        <file>icons/Alipay.jpg</file>
+        <file>icons/background.jpg</file>
+        <file>icons/WeChat.png</file>
     </qresource>
 </RCC>

@@ -35,6 +35,7 @@
 #include "globalfn.h"
 #include "translater.h"
 #include "aboutnew.h"
+#include "aboutauthor.h"
 
 const QStringList Dialog::reg_keys {
     QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Classes\\*\\shell\\QCoper"),
@@ -537,6 +538,10 @@ void Dialog::initConnects()
     connect(ui->pBtnCheckUpdate, &QPushButton::clicked, this, [](){
         AboutNew chekNew;
         chekNew.exec();
+    });
+    connect(ui->pBtnAboutApp, &QPushButton::clicked, this, [=](){
+        AboutAuthor dlg;
+        dlg.exec();
     });
     connect(ui->tBtnChooseIconFont, &QToolButton::clicked, this, [=](){jobTip->showTip("暂不可用。");});
 }

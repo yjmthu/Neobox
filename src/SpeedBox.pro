@@ -59,6 +59,7 @@ DEFINES += QT_NO_DEBUG_OUTPUT
 include(3rd_qxtglobalshortcut/3rd_qxtglobalshortcut.pri)
 
 SOURCES += \
+    aboutauthor.cpp \
     yjson.cpp \
     aboutnew.cpp \
     bingsetting.cpp \
@@ -81,6 +82,7 @@ SOURCES += \
     wallpaper.cpp \
 
 HEADERS += \
+    aboutauthor.h \
     formulapaser.h \
     yencode.h \
     yjson.h \
@@ -120,6 +122,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 TARGET = "SpeedBox"
 
 FORMS += \
+    ui/aboutauthor.ui \
     ui/bingsetting.ui \
     ui/calculator.ui \
     ui/dialog.ui \
