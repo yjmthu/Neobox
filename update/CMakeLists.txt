@@ -17,5 +17,6 @@ message(STATUS "THIS IS SOURCE DIR" ${UPDATE_SOURCE_DIR})
 set(CMAKE_INCLUDE_CURRENT_DIR ON) #当前include 打开
 
 # include_directory(.) #  or include_directory(${CMAKE_CURRENT_SOURCE_DIR})
+# command ： cmake -G "MinGW Makefiles" .. -DCMAKE_BUILD_TYPE=Release
 
 add_executable(update ${SRC_LIST} )

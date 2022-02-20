@@ -123,7 +123,8 @@ int main()
         auto m_hFile = CreateFile(m_sProFilePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
         if ( m_hFile == INVALID_HANDLE_VALUE) {
             CloseHandle(m_hFile);
-            throw MString(TEXT("打开profile.json文件出错！文件位置：")) + m_sProFilePath;
+            DeleteFile(m_sProFilePath.c_str());
+            throw MString(TEXT("找不到profile.json文件！文件位置：")) + m_sProFilePath;
         }
 
         auto m_dFileSize = GetFileSize(m_hFile, NULL);
@@ -131,6 +132,7 @@ int main()
         std::string m_sBuffer(m_dFileSize, 0);
         ReadFile(m_hFile, &m_sBuffer.front(), m_dFileSize, &m_dSizeRead, NULL);
         CloseHandle(m_hFile);
+        DeleteFile(m_sProFilePath.c_str());
         YJson js(m_sBuffer);
         MString m_sExeFolderPath { ToCurString(js["path"].getValueString()) };
         const char* m_sType = js["type"].getValueString();
@@ -149,12 +151,17 @@ int main()
             }
         } else if (!strcmp(m_sType, "zip")) {
             xout << TEXT("The update file's type is zip.\n");
-            std::string m_sOldZipFile { ToAnsiString(m_sAppDataPath + TEXT("\\SpeedBox.zip")) };
-            std::string m_sToFolder { ToAnsiString(m_sExeFolderPath) };
-            DeleteJsonDirectory(m_sExeFolderPath, js.find("binary"));
-            int arg = js["count"].getValueInt();
-            zip_extract(m_sOldZipFile.c_str(), m_sToFolder.c_str(), on_extract_entry, &arg);
-            DeleteFileA(m_sOldZipFile.c_str());
+            MString _m_sOldZipFile { m_sAppDataPath + TEXT("\\SpeedBox.zip") };
+            std::string m_sOldZipFile { ToAnsiString(_m_sOldZipFile) };
+            if (PathFileExists(_m_sOldZipFile.c_str())) {
+                std::string m_sToFolder { ToAnsiString(m_sExeFolderPath) };
+                DeleteJsonDirectory(m_sExeFolderPath, js.find("binary"));
+                int arg = js["count"].getValueInt();
+                zip_extract(m_sOldZipFile.c_str(), m_sToFolder.c_str(), on_extract_entry, &arg);
+                DeleteFileA(m_sOldZipFile.c_str());
+            } else {
+                throw MString(TEXT("找不到已经下载的更新文件！文件位置：")) + _m_sOldZipFile;
+            }
         } else {
             throw MString(TEXT("未知的文件类型！\n"));
         }
