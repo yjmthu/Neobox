@@ -538,6 +538,7 @@ void Dialog::initConnects()
         AboutNew chekNew;
         chekNew.exec();
     });
+    connect(ui->tBtnChooseIconFont, &QToolButton::clicked, this, [=](){jobTip->showTip("暂不可用。");});
 }
 
 void Dialog::initButtonFilter()
@@ -1091,9 +1092,7 @@ void Dialog::my_on_cBxApis_currentTextChanged(const QString &arg1)
         {
             wallpaper->m_wallhaven_folder = json["User"]["ApiData"][(const char*)arg1.toUtf8()]["Folder"].getValueString();
             ui->linePictuerPath->setText(wallpaper->m_wallhaven_folder);
-        }
-        else
-        {
+        } else {
             ui->linePictuerPath->setText(json["User"]["ApiData"][(const char*)arg1.toUtf8()]["Folder"].getValueString());
         }
         json.toFile(ph, YJson::UTF8BOM, true);
@@ -1104,9 +1103,7 @@ void Dialog::my_on_cBxApis_currentTextChanged(const QString &arg1)
         {
             wallpaper->m_bing_folder = json["BingApi"]["Folder"].getValueString();
             ui->linePictuerPath->setText(wallpaper->m_bing_folder);
-        }
-        else
-        {
+        } else {
             ui->linePictuerPath->setText(json["BingApi"]["Folder"].getValueString());
         }
     }
@@ -1118,9 +1115,7 @@ void Dialog::my_on_cBxApis_currentTextChanged(const QString &arg1)
             wallpaper->m_other_folder = json["OtherApi"]["ApiData"][(const char*)arg1.toUtf8()]["Folder"].getValueString();
             wallpaper->m_other_api = json["OtherApi"]["ApiData"][(const char*)arg1.toUtf8()]["Url"].getValueString();
             ui->linePictuerPath->setText(wallpaper->m_other_folder);
-        }
-        else
-        {
+        } else {
             json["OtherApi"]["Curruent"].setText(arg1.toUtf8());
             ui->linePictuerPath->setText(json["OtherApi"]["ApiData"][(const char*)arg1.toUtf8()]["Folder"].getValueString());
         }

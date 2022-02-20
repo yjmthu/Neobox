@@ -40,7 +40,7 @@ private:
     bool m_doing = false;
 
 public:
-    enum class Type { Hot, Nature, Anime, Simple, Random, User, Bing, Other, Native, Advance };
+    enum Type { Hot, Nature, Anime, Simple, Random, User, Bing, Other, Native, Advance };
     std::deque<std::string> m_picture_history;
     std::deque<std::string>::const_iterator m_curpic;
     bool m_update_wallhaven_api;
