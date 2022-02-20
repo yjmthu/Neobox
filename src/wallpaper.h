@@ -57,7 +57,7 @@ public:
     bool m_autoSaveBingPicture { false };
     QString m_nativeDir;                                  //当下正在使用的用户本地壁纸文件夹
     QString m_userCommand;                                //当下正在使用的用户高级命令
-    bool m_firstChange { true };
+    bool m_firstChange { false };
 
     Wallpaper(); ~Wallpaper();
     void push_back();

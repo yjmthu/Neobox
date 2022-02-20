@@ -991,7 +991,7 @@ void Dialog::on_toolButton_2_clicked()
         img_folder = QDir::toNativeSeparators(dir);
         ui->linePictuerPath->setText(img_folder);
         std::string ph = "WallpaperApi.json";
-        YJson json(ph, YJson::AUTO);
+        YJson json(ph, YJson::UTF8BOM);
         if (ui->rBtnWallhavenApiDefault->isChecked()) {
             json["Default"]["ApiData"][ui->cBxApis->currentIndex()]["Folder"].setText(img_folder.toStdString());
         } else if (ui->rBtnWallhavenApiUser->isChecked()) {
@@ -1013,7 +1013,7 @@ void Dialog::my_on_rBtnWallhavenApiDefault_clicked()
     disconnect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
     ui->cBxApis->clear();
     ui->cBxApis->addItems({"最热", "自然", "动漫", "极简"});
-    YJson json("WallpaperApi.json", YJson::AUTO);
+    YJson json("WallpaperApi.json", YJson::UTF8BOM);
     ui->linePictuerPath->setText(json["Default"]["ApiData"][ui->cBxApis->currentIndex()]["Folder"].getValueString());
     connect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
 }
@@ -1048,7 +1048,7 @@ void Dialog::my_on_rBtnWallhavenApiUser_clicked()
 {
     disconnect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
     ui->cBxApis->clear();
-    YJson json("WallpaperApi.json", YJson::AUTO);
+    YJson json("WallpaperApi.json", YJson::UTF8BOM);
     YJson& temp = json["User"];
     for (auto& c: temp["ApiData"])
         ui->cBxApis->addItem(c.getKeyString());
@@ -1062,7 +1062,7 @@ void Dialog::my_on_rBtnBingApi_clicked()
     disconnect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
     ui->cBxApis->clear();
     ui->cBxApis->addItem(QStringLiteral("Bing"));
-    YJson json("WallpaperApi.json", YJson::AUTO);
+    YJson json("WallpaperApi.json", YJson::UTF8BOM);
     ui->linePictuerPath->setText(json["BingApi"]["Folder"].getValueString());
     connect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
 }
@@ -1071,7 +1071,7 @@ void Dialog::my_on_rBtnOtherApi_clicked()
 {
     disconnect(ui->cBxApis, &QComboBox::currentTextChanged, this, &Dialog::my_on_cBxApis_currentTextChanged);
     ui->cBxApis->clear();
-    YJson json("WallpaperApi.json", YJson::AUTO);
+    YJson json("WallpaperApi.json", YJson::UTF8BOM);
     YJson& temp = json["OtherApi"];
     for (auto& c: temp["ApiData"])
         ui->cBxApis->addItem(c.getKeyString());
@@ -1084,7 +1084,7 @@ void Dialog::my_on_cBxApis_currentTextChanged(const QString &arg1)
 {
     typedef Wallpaper::Type Type ;
     constexpr char ph[] = "WallpaperApi.json";
-    YJson json(ph, YJson::AUTO);
+    YJson json(ph, YJson::UTF8BOM);
     if (ui->rBtnWallhavenApiDefault->isChecked())
     {
         ui->linePictuerPath->setText(json["Default"]["ApiData"][ui->cBxApis->currentIndex()]["Folder"].getValueString());

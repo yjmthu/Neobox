@@ -22,7 +22,7 @@ unix {
 }
 
 # 版本信息
-# VERSION = 22.0.0.0
+VERSION = 22.2.20.0
 # 图标
 RC_ICONS += icons/speedbox.ico
 # 公司名称

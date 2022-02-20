@@ -122,12 +122,15 @@ void VARBOX::initFile()
         QString picfolder { QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)) + "/桌面壁纸" };
         dir.mkdir(picfolder);
         dir.cd(picfolder);
-        QFile::copy(QStringLiteral(":/json/WallpaperApi.json"), QString::fromStdString(apifile+".temp"));
+        QFile _m_QapiFile(QStringLiteral(":/json/WallpaperApi.json"));
+        _m_QapiFile.open(QFile::ReadOnly);
+        const QByteArray& dataAll = _m_QapiFile.readAll();
+        _m_QapiFile.close();
         const QStringList lst {"最热壁纸", "风景壁纸", "动漫壁纸", "极简壁纸", "随机壁纸", "鬼刀壁纸", "必应壁纸"};
         for (const auto&c: lst)
             dir.mkdir(c);
         QStringList::ConstIterator iter = lst.begin();
-        YJson json(apifile+".temp", YJson::UTF8);
+        YJson json(static_cast<const char*>(dataAll) + 3);
         for (auto&c: json["Default"]["ApiData"])
             c["Folder"].setText(QDir::toNativeSeparators((picfolder+"/"+*iter++)).toStdString());
         for (auto&c: json["User"]["ApiData"])
@@ -138,8 +141,7 @@ void VARBOX::initFile()
             c["Folder"].setText(QDir::toNativeSeparators(picfolder+"/"+c.getKeyString()).toStdString());
             dir.mkdir(c["Folder"].getValueString());
         }
-        json.toFile(apifile, YJson::UTF8, true);
-        QFile::remove(QString::fromStdString(apifile+".temp"));
+        json.toFile(apifile, YJson::UTF8BOM, true);
     }
 }
 
