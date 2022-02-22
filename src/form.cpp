@@ -141,7 +141,11 @@ void Form::setupUi()
     delete js;
 
     if (VarBox->m_pWindowPosition->m_netFormPos != QPoint(0, 0))
-        move(VarBox->m_pWindowPosition->m_netFormPos);
+    {
+        const QPoint & pt = VarBox->m_pWindowPosition->m_netFormPos;
+        move(pt);
+        moved = pt.x() == VarBox->m_dScreenWidth-2 || pt.x() == 2 - width() || pt.y() == 2 - height();
+    }
 
     if (VarBox->m_bEnableTranslater)
         enableTranslater(true);
