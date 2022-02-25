@@ -547,6 +547,23 @@ bool YJson::remove(YJson* item)
         return false;
 }
 
+bool YJson::isUtf8BomFile(const std::string &path)
+{
+    std::ifstream file(path, std::ios::in | std::ios::binary);
+    if (file.is_open()) {
+        unsigned char bom[3];
+        if (file.read(reinterpret_cast<char*>(bom), 3)){
+            if (std::equal(bom, bom + 3, utf8bom)) {
+                file.close();
+                return true;
+            }
+        } else {
+            file.close();
+        }
+    }
+    return false;
+}
+
 YJson& YJson::operator=(const YJson& s)
 {
     if (&s == this)

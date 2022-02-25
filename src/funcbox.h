@@ -29,7 +29,7 @@ public:
     static constexpr int RETCODE_RESTART    { 1073 };       //重启常数，双击时界面会返回这个常数实现整个程序重新启动。
     static constexpr int MSG_APPBAR_MSGID   { 2731 };
 
-    constexpr static uint32_t m_dVersion  { GlobalFn::getVersion(22, 2, 20) };
+    constexpr static uint32_t m_dVersion  { GlobalFn::getVersion(22, 2, 22) };
     const bool m_bFirstUse                { false };
     const SystemVersion m_dSystemVersion;
     const int m_dScreenWidth, m_dScreenHeight;                  //屏幕宽高

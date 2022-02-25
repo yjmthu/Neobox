@@ -116,9 +116,9 @@ void VARBOX::initFile()
         GlobalFn::saveOneSet(QStringLiteral("Dirs"), QStringLiteral("OpenDir"), m_pathToOpen);
     }
     const std::string apifile("WallpaperApi.json");
-    if (!QFile::exists(QString::fromStdString(apifile)))
+    if (!YJson::isUtf8BomFile(apifile))
     {
-        qout << "文件不存在!";
+        qout << "文件不存在或者不符合要求!";
         QString picfolder { QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)) + "/桌面壁纸" };
         dir.mkdir(picfolder);
         dir.cd(picfolder);
@@ -142,6 +142,28 @@ void VARBOX::initFile()
             dir.mkdir(c["Folder"].getValueString());
         }
         json.toFile(apifile, YJson::UTF8BOM, true);
+    }
+    const std::string imgDataFile("ImgData.json");
+    if (QFile::exists(QString::fromStdString(imgDataFile)) && !YJson::isUtf8BomFile(imgDataFile)) {
+        try {
+            YJson js(imgDataFile, YJson::UTF8);
+            js.toFile(imgDataFile, YJson::UTF8BOM);
+        } catch (...) {
+            if (!QFile::remove(QString::fromStdString(imgDataFile))) {
+                GlobalFn::msgBox("编码错误，请手动删除配置文件后再运行程序！", "出错");
+            }
+        }
+    }
+    const std::string bingDataFile("BingData.json");
+    if (QFile::exists(QString::fromStdString(bingDataFile)) && !YJson::isUtf8BomFile(bingDataFile)) {
+        try {
+            YJson js(bingDataFile, YJson::UTF8);
+            js.toFile(bingDataFile, YJson::UTF8BOM);
+        } catch (...) {
+            if (!QFile::remove(QString::fromStdString(bingDataFile))) {
+                GlobalFn::msgBox("编码错误，请手动删除配置文件后再运行程序！", "出错");
+            }
+        }
     }
 }
 

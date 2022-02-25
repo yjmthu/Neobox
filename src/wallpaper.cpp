@@ -178,7 +178,7 @@ void Wallpaper::_set_w(YJson* jsonArray)
                 true
             );
         }
-        jsonArray->getTop()->toFile("ImgData.json", YJson::UTF8BOM, true);
+        jsonArray->getTop()->toFile("ImgData.json", YJson::UTF8BOM);
     } else {
         emit msgBox("当前页面没有找到图片, 请切换较小的页面或者更换壁纸类型!", "提示");
     }
@@ -214,7 +214,7 @@ void Wallpaper::_set_b(YJson * file_data)
         bing_name = bing_name.mid(0, bing_name.indexOf(" (© "));
         bing_name = QDir::toNativeSeparators(m_bing_folder + "/" + bing_name + ".jpg");
     }
-    file_data->toFile("BingData.json", YJson::UTF8BOM, true);
+    file_data->toFile("BingData.json", YJson::UTF8BOM);
     download_image(QString::fromStdString(img_url), bing_name, m_paperType == Type::Bing);
 }
 
@@ -265,7 +265,7 @@ void Wallpaper::set_from_Wallhaven()  // 从数据库中随机抽取一个链接
     if (!QFile::exists(file_name))
         goto label_1;
     try {
-        jsonObject = new YJson(file_name, YJson::AUTO);
+        jsonObject = new YJson(file_name, YJson::UTF8BOM);
     } catch (std::string& errorStr) {
         goto label_1;
     }
@@ -545,7 +545,7 @@ void Wallpaper::set_from_Bing()
     if (!QFile::exists("BingData.json"))
         return get_url_from_Bing();
     qout << "必应文件存在";
-    file_data = new YJson("BingData.json", YJson::AUTO);
+    file_data = new YJson("BingData.json", YJson::UTF8BOM);
     qout << "加载文件完成";
     if (QDateTime::currentDateTime().toString("yyyyMMdd") != file_data->find("today")->getValueString())
     {
@@ -721,7 +721,7 @@ void Wallpaper::dislike()
     check_is_wallhaven(pic_name, id);
     if (*id)
     {
-        YJson *json = new YJson("ImgData.json", YJson::AUTO);
+        YJson *json = new YJson("ImgData.json", YJson::UTF8BOM);
         YJson *blacklist = json->find("ImgUrls")->find("Blacklist");
         if (!blacklist->findByVal(id))
             blacklist->append(id);
@@ -767,7 +767,7 @@ void Wallpaper::dislike()
 
 void Wallpaper::loadApiFile()
 {
-    YJson json("WallpaperApi.json", YJson::UTF8);
+    YJson json("WallpaperApi.json", YJson::UTF8BOM);
     const char* curApi = nullptr;
     int index = static_cast<int>(m_paperType);
     m_bing_api = QString::fromStdString(json["BingApi"]["Parameter"].urlEncode(json["MainApis"]["BingApi"].getValueString()));

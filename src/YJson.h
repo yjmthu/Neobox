@@ -83,6 +83,7 @@ public:
     inline bool removeByVal(int value) { return remove(findByVal(value)); }
     inline bool removeByVal(double value) { return remove(findByVal(value)); }
     inline bool removeByVal(const std::string & str) { return remove(findByVal(str.c_str())); }
+    static bool isUtf8BomFile(const std::string& path);
 
     inline bool clear()
     { if (_type != YJson::Array && _type != YJson::Object) return false; else if (_child) { delete _child; _child = nullptr;} return true; }
