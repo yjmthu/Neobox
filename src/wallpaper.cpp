@@ -81,19 +81,15 @@ Wallpaper::Wallpaper():
     m_curpic = m_picture_history.begin();
 
     timer->setInterval(m_timeInterval * 60000);
+    connect(timer, &QTimer::timeout, this, &Wallpaper::next);
     if (m_firstChange) {
-        qout << "自动换已经开启，正在下载第一张壁纸。";
         if (isOnline(false)) {
-            qout << "网络正常！";
             push_back();
         } else {
-            qout << "网络异常，正在检测网络连接。";
             m_doing = true;
             auto thrd = QThread::create([=](){
                 if (isOnline(true)) {
                     push_back();
-                } else {
-                    qout << "网络异常，放弃更换第一张壁纸。";
                 }
             });
             connect(thrd, &QThread::finished, this, [=](){
@@ -104,17 +100,11 @@ Wallpaper::Wallpaper():
         }
         if (m_autoSaveBingPicture && m_paperType != Type::Bing)
         {
-            qout << "下载必应壁纸。";
             loadApiFile();
             set_from_Bing();
         }
-        qout << "自动换结束。";
-    } else {
-        qout << "未开启自动更换壁纸。";
     }
-    connect(timer, &QTimer::timeout, this, &Wallpaper::next);
-    if (m_autoChange)
-        timer->start();
+    if (m_autoChange) timer->start();
     qout << "wallpaper初始化完毕";
 }
 
@@ -199,7 +189,7 @@ void Wallpaper::_set_b(YJson * file_data)
         file_data->find("current")->setValue(curindex+1);
     }
     std::string img_url("https://cn.bing.com");
-    img_url += temp->find("url")->getValueString();
+    (img_url += temp->find("urlbase")->getValueString()) += "_UHD.jpg&rf=LaDigue_UHD.jpg";
     QString bing_name;
     if (m_useDateAsBingName)
     {
@@ -363,8 +353,7 @@ void Wallpaper::get_url_from_Wallhaven(YJson* jsonArray)
                 do {
                     wn = ptr->find("path")->getValueString() + 31;
                     //qout << "后缀名:" << wn;
-                    if (blacklist->findByVal(wn))
-                    {
+                    if (blacklist->findByVal(wn)) {
                         //qout << "在黑名单内";
                         continue;
                     }
@@ -375,10 +364,9 @@ void Wallpaper::get_url_from_Wallhaven(YJson* jsonArray)
             } else {
                 mgr->deleteLater();
                 m_doing = false;
-                if (urllist->getChild())
+                if (urllist->getChild()) {
                     _set_w(urllist);
-                else
-                {
+                } else {
                     delete jsonArray->getTop();
                     emit msgBox("该页面范围下没有壁纸, 请更换壁纸类型或者页面位置!", "出错");
                 }
@@ -386,14 +374,11 @@ void Wallpaper::get_url_from_Wallhaven(YJson* jsonArray)
             delete js;
         }
         else {
-            if (urllist->getChild())
-            {
+            if (urllist->getChild()) {
                 mgr->deleteLater();
                 m_doing = false;
                 _set_w(urllist);
-            }
-            else
-            {
+            } else {
                 delete jsonArray->getTop();
                 mgr->deleteLater();
                 m_doing = false;
@@ -652,6 +637,7 @@ void Wallpaper::next()
 {
     if (m_doing) return emit msgBox("频繁点击是没有效的哦！", "提示");
     qout << "下一张图片";
+    if (m_autoChange) timer->start();
     if (++m_curpic < m_picture_history.end())
     {
         FILE* file = GlobalFn::readFile(*m_curpic);
@@ -694,11 +680,11 @@ void Wallpaper::prev()
                 if (!fread(&buffer, sizeof(char), 1, file))
                 {
                     fclose(file);
-                    return ;
+                } else {
+                    fclose(file);
+                    systemParametersInfo(*m_curpic);
                 }
-                fclose(file);
-                systemParametersInfo(*m_curpic);
-                return;
+                return ;
             }
             m_curpic = m_picture_history.erase(m_curpic);
             if (m_curpic != m_picture_history.begin())

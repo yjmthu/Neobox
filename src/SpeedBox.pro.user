@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 6.0.2, 2022-02-25T11:12:56. -->
+<!-- Written by QtCreator 6.0.2, 2022-02-28T17:41:29. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -415,7 +415,6 @@
     <value type="bool" key="RunConfiguration.UseLibrarySearchPath">true</value>
     <value type="bool" key="RunConfiguration.UseQmlDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseQmlDebuggerAuto">true</value>
-    <value type="QString" key="RunConfiguration.WorkingDirectory.default">C:/Users/yjmth/Documents/CppBuild/build-SpeedBox-Desktop_Qt_5_15_2_MinGW_32_bit-Release</value>
    </valuemap>
    <value type="qlonglong" key="ProjectExplorer.Target.RunConfigurationCount">1</value>
   </valuemap>
