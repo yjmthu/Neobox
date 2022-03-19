@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
     QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QGuiApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 
-    QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
+    // QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
 #endif
     QSharedMemory shared_memory;
     shared_memory.setKey(QStringLiteral("__SpeedBox__"));

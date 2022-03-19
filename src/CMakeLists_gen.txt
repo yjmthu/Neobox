@@ -1,0 +1,176 @@
+# Generated from SpeedBox.pro.
+
+cmake_minimum_required(VERSION 3.16)
+project(SpeedBox VERSION 22.2.22.0 LANGUAGES CXX)
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+
+if(NOT DEFINED INSTALL_EXAMPLESDIR)
+    set(INSTALL_EXAMPLESDIR "examples")
+endif()
+
+set(INSTALL_EXAMPLEDIR "${INSTALL_EXAMPLESDIR}")
+
+find_package(QT NAMES Qt5 Qt6 REQUIRED COMPONENTS Core)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Gui Network TextToSpeech)
+find_package(Qt${QT_VERSION_MAJOR} OPTIONAL_COMPONENTS Core5Compat Widgets X11Extras)
+
+qt_add_executable(SpeedBox WIN32 MACOSX_BUNDLE
+    3rd_qxtglobalshortcut/qxtglobal.cpp 3rd_qxtglobalshortcut/qxtglobal.h
+    3rd_qxtglobalshortcut/qxtglobalshortcut.cpp 3rd_qxtglobalshortcut/qxtglobalshortcut.h 3rd_qxtglobalshortcut/qxtglobalshortcut_p.h
+    aboutauthor.cpp aboutauthor.h
+    aboutnew.cpp aboutnew.h
+    bingsetting.cpp bingsetting.h
+    blankform.cpp blankform.h
+    calculator.cpp calculator.h
+    dialog.cpp dialog.h
+    form.cpp form.h
+    formulapaser.h
+    funcbox.cpp funcbox.h
+    globalfn.cpp globalfn.h
+    gmpoperatetip.cpp gmpoperatetip.h
+    main.cpp
+    markdownnote.cpp markdownnote.h
+    menu.cpp menu.h
+    netspeedhelper.cpp netspeedhelper.h
+    qstylesheet.h
+    roundclock.cpp roundclock.h
+    speedwidget.h
+    squareclock.cpp squareclock.h
+    systemfunctions.cpp systemfunctions.h
+    translater.cpp translater.h
+    ui/aboutauthor.ui
+    ui/bingsetting.ui
+    ui/calculator.ui
+    ui/dialog.ui
+    ui/downloadprogress.ui
+    ui/translater.ui
+    ui/usbdrivehelper.ui
+    usbdrivehelper.cpp usbdrivehelper.h
+    wallpaper.cpp wallpaper.h
+    windowposition.h
+    yencode.h
+    yjson.cpp yjson.h
+    ystring.h
+)
+target_compile_definitions(SpeedBox PUBLIC
+    BUILD_QXT_CORE
+    BUILD_QXT_GUI
+)
+
+target_link_libraries(SpeedBox PUBLIC
+    Qt::Core
+    Qt::Gui
+    Qt::Network
+    Qt::TextToSpeech
+)
+
+
+# Resources:
+set(res_resource_files
+    "fonts/Carattere-Regular-small.ttf"
+    "fonts/FangZhengKaiTiJianTi-1.ttf"
+    "fonts/Nickainley-Normal-small.ttf"
+    "icons/Alipay.jpg"
+    "icons/Poison_Spider.ico"
+    "icons/Upan.ico"
+    "icons/WeChat.png"
+    "icons/background.jpg"
+    "icons/black_en.ico"
+    "icons/black_zh.ico"
+    "icons/blue_purple_arrow.png"
+    "icons/checklist.ico"
+    "icons/close.png"
+    "icons/copy.ico"
+    "icons/drip_blue_pin.ico"
+    "icons/drip_copy.ico"
+    "icons/drip_pin.ico"
+    "icons/drip_trash.ico"
+    "icons/empty_en.ico"
+    "icons/empty_zh.ico"
+    "icons/minimize.png"
+    "icons/speedbox.ico"
+    "icons/ya.ico"
+    "json/BoxFont.json"
+    "json/Directory_x64.json"
+    "json/Directory_x86.json"
+    "json/WallpaperApi.json"
+    "qss/bing_style.qss"
+    "qss/calculater.qss"
+    "qss/dialog_style.qss"
+    "qss/menu_style.qss"
+    "qss/translater_style.qss"
+    "scripts/SetWallpaper.sh"
+    "scripts/SpeedBox.desktop"
+)
+
+qt6_add_resources(SpeedBox "res"
+    PREFIX
+        "/"
+    FILES
+        ${res_resource_files}
+)
+
+if(MSVC)
+    target_compile_options(SpeedBox
+        /utf-8
+    )
+endif()
+
+if(UNIX)
+    target_link_libraries(SpeedBox PUBLIC
+        Qt::X11Extras
+        X11
+    )
+endif()
+
+if((QT_VERSION_MAJOR GREATER 5))
+    target_link_libraries(SpeedBox PUBLIC
+        Qt::Core5Compat
+    )
+endif()
+
+if((QT_VERSION_MAJOR GREATER 4))
+    target_link_libraries(SpeedBox PUBLIC
+        Qt::Widgets
+    )
+endif()
+
+if(UNIX AND NOT MACOS)
+    target_sources(SpeedBox PUBLIC
+        3rd_qxtglobalshortcut/qxtglobalshortcut_x11.cpp
+        3rd_qxtglobalshortcut/qxtwindowsystem_x11.cpp
+        3rd_qxtglobalshortcut/x11info.h
+    )
+
+    target_link_libraries(SpeedBox PUBLIC
+        Qt::X11Extras
+    )
+endif()
+
+if(MACOS)
+    target_sources(SpeedBox PUBLIC
+        3rd_qxtglobalshortcut/qxtglobalshortcut_mac.cpp
+        3rd_qxtglobalshortcut/qxtwindowsystem_mac.cpp 3rd_qxtglobalshortcut/qxtwindowsystem_mac.h
+    )
+endif()
+
+if(WIN32)
+    target_sources(SpeedBox PUBLIC
+        3rd_qxtglobalshortcut/qxtglobalshortcut_win.cpp
+        3rd_qxtglobalshortcut/qxtwindowsystem_win.cpp
+    )
+
+    target_link_libraries(SpeedBox PUBLIC
+        user32
+    )
+endif()
+
+install(TARGETS SpeedBox
+    RUNTIME DESTINATION "${INSTALL_EXAMPLEDIR}"
+    BUNDLE DESTINATION "${INSTALL_EXAMPLEDIR}"
+    LIBRARY DESTINATION "${INSTALL_EXAMPLEDIR}"
+)

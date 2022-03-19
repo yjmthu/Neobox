@@ -35,9 +35,6 @@ protected:
 public:
     explicit Translater();
     ~Translater();
-
-    class QxtGlobalShortcut *m_pShortcutShow  {nullptr};
-    class QxtGlobalShortcut *m_pShortcutHide  {nullptr};
     void initConnects();
     void initSettings();
     static bool getShiftAState();

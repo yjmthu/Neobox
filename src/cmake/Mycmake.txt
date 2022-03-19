@@ -1,0 +1,93 @@
+# Generated from SpeedBox.pro.
+
+cmake_minimum_required(VERSION 3.16)
+project(SpeedBox VERSION 22.2.22.0 LANGUAGES CXX)
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+
+if(NOT DEFINED INSTALL_EXAMPLESDIR)
+    set(INSTALL_EXAMPLESDIR "examples")
+endif()
+
+set(INSTALL_EXAMPLEDIR "${INSTALL_EXAMPLESDIR}")
+
+find_package(QT NAMES Qt5 Qt6 REQUIRED COMPONENTS Core)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Gui Network TextToSpeech)
+find_package(Qt${QT_VERSION_MAJOR} OPTIONAL_COMPONENTS Core5Compat Widgets X11Extras)
+
+qt_add_executable(SpeedBox WIN32 MACOSX_BUNDLE
+    aboutauthor.cpp aboutauthor.h
+    aboutnew.cpp aboutnew.h
+    bingsetting.cpp bingsetting.h
+    blankform.cpp blankform.h
+    calculator.cpp calculator.h
+    dialog.cpp dialog.h
+    form.cpp form.h
+    formulapaser.h
+    funcbox.cpp funcbox.h
+    globalfn.cpp globalfn.h
+    gmpoperatetip.cpp gmpoperatetip.h
+    main.cpp
+    markdownnote.cpp markdownnote.h
+    menu.cpp menu.h
+    netspeedhelper.cpp netspeedhelper.h
+    qstylesheet.h
+    roundclock.cpp roundclock.h
+    speedwidget.h
+    squareclock.cpp squareclock.h
+    systemfunctions.cpp systemfunctions.h
+    translater.cpp translater.h
+    ui/aboutauthor.ui
+    ui/bingsetting.ui
+    ui/calculator.ui
+    ui/dialog.ui
+    ui/downloadprogress.ui
+    ui/translater.ui
+    ui/usbdrivehelper.ui
+    usbdrivehelper.cpp usbdrivehelper.h
+    wallpaper.cpp wallpaper.h
+    windowposition.h
+    yencode.h
+    yjson.cpp yjson.h
+    ystring.h
+)
+target_link_libraries(SpeedBox PUBLIC
+    Qt::Core
+    Qt::Gui
+    Qt::Network
+    Qt::TextToSpeech
+)
+
+if(MSVC)
+    target_compile_options(SpeedBox
+        /utf-8
+    )
+endif()
+
+if(UNIX)
+    target_link_libraries(SpeedBox PUBLIC
+        Qt::X11Extras
+        X11
+    )
+endif()
+
+if((QT_VERSION_MAJOR GREATER 5))
+    target_link_libraries(SpeedBox PUBLIC
+        Qt::Core5Compat
+    )
+endif()
+
+if((QT_VERSION_MAJOR GREATER 4))
+    target_link_libraries(SpeedBox PUBLIC
+        Qt::Widgets
+    )
+endif()
+
+install(TARGETS SpeedBox
+    RUNTIME DESTINATION "${INSTALL_EXAMPLEDIR}"
+    BUNDLE DESTINATION "${INSTALL_EXAMPLEDIR}"
+    LIBRARY DESTINATION "${INSTALL_EXAMPLEDIR}"
+)

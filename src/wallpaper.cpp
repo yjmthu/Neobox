@@ -1,4 +1,5 @@
 ﻿#include <cstdio>
+#include <algorithm>
 #include <QDateTime>
 #include <QSettings>
 #include <QDir>

@@ -13,3 +13,4 @@
 *.d
 *.o
 Makefile
+src/build/

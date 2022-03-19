@@ -30,7 +30,7 @@ AboutAuthor::AboutAuthor(QWidget *parent) :
     ui(new Ui::AboutAuthor)
 {
     this->setWindowIcon(QIcon(":/icons/speedbox.ico"));
-    ui->setupUi(this);
+    ui->setupUi( this);
 
     QPalette pl = ui->textBrowser->palette();
     pl.setBrush(QPalette::Base,QBrush(QColor(255, 0, 0, 0)));

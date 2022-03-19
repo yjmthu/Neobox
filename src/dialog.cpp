@@ -20,8 +20,6 @@
 #include <QComboBox>
 #include <QSystemTrayIcon>
 
-#include <3rd_qxtglobalshortcut/qxtglobalshortcut.h>
-
 #include "ystring.h"
 #include "yjson.h"
 #include "dialog.h"
@@ -52,7 +50,12 @@ Dialog::Dialog():
     wallpaper(VarBox->m_pWallpaper),
     m_sheet(VarBox->m_pForm->m_sheet),
     formFontJson(new YJson("BoxFont.json", YJson::UTF8BOM)),
-    formPart({VarBox->m_pForm->frame, VarBox->m_pForm->labMemory, VarBox->m_pForm->labUp, VarBox->m_pForm->labDown})
+    formPart({
+        (QWidget*)(VarBox->m_pForm->frame),
+        (QWidget*)(VarBox->m_pForm->labMemory),
+        (QWidget*)(VarBox->m_pForm->labUp),
+        (QWidget*)(VarBox->m_pForm->labDown)
+    })
 {
     ui->setupUi(this);                                   // 一定要在下面这句之前，否则会出现问题。
     initChildren();
@@ -191,11 +194,9 @@ void Dialog::initConnects()
         auto tlr = VarBox->m_pForm->translater;
         if (tlr) {
             if (checked) {
-                tlr->m_pShortcutHide = new QxtGlobalShortcut(QKeySequence("Shift+A"));
+                // tlr->m_pShortcutHide = new QxtGlobalShortcut(QKeySequence("Shift+A"));
                 tlr->setShiftA();
             } else {
-                delete tlr->m_pShortcutHide;
-                tlr->m_pShortcutHide = nullptr;
             }
         }
         GlobalFn::saveOneSet<bool>("Translate", "HideShiftA", checked);
@@ -205,11 +206,9 @@ void Dialog::initConnects()
         auto tlr = VarBox->m_pForm->translater;
         if (tlr) {
             if (checked) {
-                tlr->m_pShortcutShow = new QxtGlobalShortcut(QKeySequence("Shift+Z"));
+                // tlr->m_pShortcutShow = new QxtGlobalShortcut(QKeySequence("Shift+Z"));
                 tlr->setShiftZ();
             } else {
-                delete tlr->m_pShortcutShow;
-                tlr->m_pShortcutShow = nullptr;
             }
         }
         GlobalFn::saveOneSet<bool>("Translate", "ShowShiftZ", checked);

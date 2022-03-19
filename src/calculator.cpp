@@ -8,7 +8,7 @@
 #include "form.h"
 #include "calculator.h"
 #include "ui_calculator.h"
-#include "FormulaPaser.h"
+#include "formulapaser.h"
 
 Calculator::Calculator(QWidget *parent) :
     SpeedWidget<QDialog>(parent),

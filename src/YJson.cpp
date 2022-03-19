@@ -253,6 +253,13 @@ std::string YJson::urlEncode() const
             case YJson::String:
                 param.append(ptr->_value);
                 break;
+            case YJson::True:
+                param.append("true");
+                break;
+            case YJson::False:
+                param.append("false");
+                break;
+            case YJson::Null:
             default:
                 param.append("null");
             }
@@ -286,6 +293,13 @@ std::string YJson::urlEncode(const char *url) const
             case YJson::String:
                 param.append(ptr->_value);
                 break;
+            case YJson::True:
+                param.append("true");
+                break;
+            case YJson::False:
+                param.append("false");
+                break;
+            case YJson::Null:
             default:
                 param.append("null");
             }
