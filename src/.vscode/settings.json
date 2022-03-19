@@ -3,6 +3,7 @@
     "files.associations": {
         "qfile": "cpp",
         "qdatetime": "cpp",
-        "qapplication": "cpp"
+        "qapplication": "cpp",
+        "qkeysequence": "cpp"
     }
 }
