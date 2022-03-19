@@ -23,14 +23,17 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # 这些生成的中间文件都会在build目录下，这样的话，编译器则不能定位由uic程序产生的诸如_ui_mainwindow.h等文件。所以，我们需要把build目录添加到包含目录中
 include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}
+    "${PROJECT_SOURCE_DIR}/3rd_qxtglobalshortcut"
 )
+
+add_subdirectory(3rd_qxtglobalshortcut)
 
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Gui Widgets Network TextToSpeech REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Widgets Network TextToSpeech REQUIRED)
 
-# add_definitions(-DQT_NO_DEBUG_OUTPUT)
+add_definitions(-DQT_NO_DEBUG_OUTPUT)
 # set(CMAKE_BUILD_TYPE DEBUG)
-# set(CMAKE_BUILD_TYPE RELEASE)
+set(CMAKE_BUILD_TYPE RELEASE)
 
 # 添加所有的头文件
 SET(SPEEDBOX_HEADERS 
@@ -117,6 +120,7 @@ add_executable(SpeedBox
     ${SPEEDBOX_RESOURCES_RCC}
 )
 
+# 这句放在这似乎不管用
 # target_compile_definitions(SpeedBox PUBLIC QT_DEBUG_NO_OUTPUT)
 
 #为target添加需要链接的共享库
@@ -129,3 +133,4 @@ target_link_libraries(SpeedBox
     User32
 )
 
+target_link_libraries(SpeedBox 3rd_qxtglobalshortcut)
