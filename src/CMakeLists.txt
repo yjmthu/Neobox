@@ -31,6 +31,7 @@ add_subdirectory(3rd_qxtglobalshortcut)
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Gui Widgets Network TextToSpeech REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Widgets Network TextToSpeech REQUIRED)
 
+# 禁用debug输出
 add_definitions(-DQT_NO_DEBUG_OUTPUT)
 # set(CMAKE_BUILD_TYPE DEBUG)
 set(CMAKE_BUILD_TYPE RELEASE)
@@ -113,7 +114,7 @@ QT5_WRAP_UI(SPEEDBOX_FORMS_HEADERS ${SPEEDBOX_FORMS})
 QT5_ADD_RESOURCES(SPEEDBOX_RESOURCES_RCC ${SPEEDBOX_RESOURCES})
 
 #生成可执行文件
-add_executable(SpeedBox
+add_executable(SpeedBox WIN32
     ${SPEEDBOX_SOURCES}
     ${SPEEDBOX_HEADERS_MOC}
     ${SPEEDBOX_FORMS_HEADERS}
@@ -130,7 +131,6 @@ target_link_libraries(SpeedBox
     Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::Network
     Qt${QT_VERSION_MAJOR}::TextToSpeech
-    User32
 )
 
 target_link_libraries(SpeedBox 3rd_qxtglobalshortcut)

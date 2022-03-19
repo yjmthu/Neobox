@@ -24,6 +24,7 @@
 #include <QTextCodec>
 #include <QTextToSpeech> //导入语音头文件
 #include <menu.h>
+#include <3rd_qxtglobalshortcut/qxtglobalshortcut.h>
 #else
 #include <sapi.h> //导入语音头文件
 #endif
@@ -130,6 +131,8 @@ Translater::~Translater()
     qout << "析构Translater开始";
     delete m_pTimer;
     delete m_pMgr;
+    delete m_pShortcutHide;
+    delete m_pShortcutShow;
     delete ui;
     qout << "析构Translater结束";
 
@@ -199,12 +202,12 @@ void Translater::initSettings()
     m_bAutoHide = IniRead.value(QStringLiteral("AutoHide"), m_bAutoHide).toBool();
     if (IniRead.value(QStringLiteral("HideShiftA"), true).toBool())
     {
-        // m_pShortcutHide = new QxtGlobalShortcut(QKeySequence("Shift+A"));
+        m_pShortcutHide = new QxtGlobalShortcut(QKeySequence("Shift+A"));
         setShiftA();
     }
 
     if (IniRead.value(QStringLiteral("ShowShiftZ"), true).toBool()) {
-        // m_pShortcutShow = new QxtGlobalShortcut(QKeySequence("Shift+Z"));
+        m_pShortcutShow = new QxtGlobalShortcut(QKeySequence("Shift+Z"));
         setShiftZ();
     }
     IniRead.endGroup();
@@ -422,7 +425,7 @@ void Translater::getReply(const QString& q)
 
 void Translater::setShiftA()
 {
-#if 0
+#if 1
     connect(m_pShortcutHide, &QxtGlobalShortcut::activated, this, [=](){
         qout << "按下隐藏热键";
         if (isVisible())
@@ -439,7 +442,7 @@ void Translater::setShiftA()
 
 void Translater::setShiftZ()
 {
-#if 0
+#if 1
     connect(m_pShortcutShow, &QxtGlobalShortcut::activated, this, [=](){
         qout << "按下显示热键";
 #ifdef Q_OS_WIN

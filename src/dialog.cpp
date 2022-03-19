@@ -20,6 +20,8 @@
 #include <QComboBox>
 #include <QSystemTrayIcon>
 
+#include <3rd_qxtglobalshortcut/qxtglobalshortcut.h>
+
 #include "ystring.h"
 #include "yjson.h"
 #include "dialog.h"
@@ -194,9 +196,11 @@ void Dialog::initConnects()
         auto tlr = VarBox->m_pForm->translater;
         if (tlr) {
             if (checked) {
-                // tlr->m_pShortcutHide = new QxtGlobalShortcut(QKeySequence("Shift+A"));
+                tlr->m_pShortcutHide = new QxtGlobalShortcut(QKeySequence("Shift+A"));
                 tlr->setShiftA();
             } else {
+                delete tlr->m_pShortcutHide;
+                tlr->m_pShortcutHide = nullptr;
             }
         }
         GlobalFn::saveOneSet<bool>("Translate", "HideShiftA", checked);
@@ -206,9 +210,11 @@ void Dialog::initConnects()
         auto tlr = VarBox->m_pForm->translater;
         if (tlr) {
             if (checked) {
-                // tlr->m_pShortcutShow = new QxtGlobalShortcut(QKeySequence("Shift+Z"));
+                tlr->m_pShortcutShow = new QxtGlobalShortcut(QKeySequence("Shift+Z"));
                 tlr->setShiftZ();
             } else {
+                delete tlr->m_pShortcutShow;
+                tlr->m_pShortcutShow = nullptr;
             }
         }
         GlobalFn::saveOneSet<bool>("Translate", "ShowShiftZ", checked);

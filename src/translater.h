@@ -37,6 +37,8 @@ public:
     ~Translater();
     void initConnects();
     void initSettings();
+    class QxtGlobalShortcut *m_pShortcutShow  {nullptr};
+    class QxtGlobalShortcut *m_pShortcutHide  {nullptr};
     static bool getShiftAState();
     static bool getShiftZState();
 
