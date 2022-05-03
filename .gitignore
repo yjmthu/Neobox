@@ -1,4 +1,3 @@
-
 *.user
 *.html
 *.obj
@@ -14,3 +13,5 @@
 *.o
 Makefile
 build/
+.vscode/
+.cache/
