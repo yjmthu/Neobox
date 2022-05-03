@@ -13,6 +13,7 @@ public:
     const char m_szSettingFile[13] { "setting.json" };
 private:
     class SpeedBox* m_SpeedBox;
+    friend class SpeedMenu;
     void GetSetting();
     void LoadFonts();
 };

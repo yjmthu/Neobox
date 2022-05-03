@@ -40,7 +40,7 @@ void VarBox::GetSetting()
     } else {
         m_Setting = new YJson("{\"Wallpaper\":"
                                   "{\"AutoChange\":false,\"FirstChange\":false,\"TimeInterval\":15,\"ImageType\":0},"
-                              "\"FormUi\":{\"BkColor\":\"yellow\"}}");
+                              "\"FormUi\":{\"BkColor\":[0,0,0,200]}}");
         m_Setting->toFile(m_szSettingFile, YJson::UTF8, true);
     }
 }

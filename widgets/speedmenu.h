@@ -20,6 +20,9 @@ private:
     void SetupSettingMenu();
     void SetupImageType(QMenu* parent, QAction* ac);
     void SetAdditionalMenu();
+signals:
+    void ChangeBoxColor(QColor col);
+    void ChangeBoxAlpha(int alpha);
 };
 
 #endif // SPEEDMENU_H

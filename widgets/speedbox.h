@@ -24,6 +24,7 @@ public:
     ~SpeedBox();
 
 private:
+    friend class SpeedMenu;
     const int m_Width, m_Height;
     const int m_ScreenWidth, m_ScreenHeight;
     const int m_ExecType;
@@ -31,13 +32,18 @@ private:
     class NetSpeedHelper *m_NetSpeedHelper;
     class SpeedMenu* m_Menu;
     QPoint m_LastPos;
+    QColor m_BackCol;
     void SetupUi();
     void ReadPosition();
     void AutoHide();
+    void GetBackGroundColor();
 private slots:
     void WritePosition();
 
 public slots:
     void OnTimer();
+private slots:
+    void SetBackGroundColor(QColor col);
+    void SetBackGroundAlpha(int alpha);
 };
 #endif // SPEEDBOX_H

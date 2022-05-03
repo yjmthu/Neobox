@@ -2,6 +2,7 @@
 #include "speedapp.h"
 
 #include "wallpaper/wallpaper.h"
+#include "widgets/speedbox.h"
 
 #include <yjson.h>
 
@@ -22,6 +23,7 @@
 #include <QPushButton>
 #include <QHeaderView>
 #include <QLabel>
+#include <QColorDialog>
 
 #include <thread>
 #include <unistd.h>
@@ -141,6 +143,20 @@ void SpeedMenu::SetupSettingMenu()
         } else {
             QFile::remove(fileName);
         }
+    });
+    auto ptr = m_pAppSettingMenu->addAction("背景颜色");
+    connect(ptr, &QAction::triggered, this, [this](){
+        QColor col = QColorDialog::getColor(m_VarBox->m_SpeedBox->m_BackCol, nullptr, QStringLiteral("选择颜色"));
+        if (col.isValid()) {
+            emit ChangeBoxColor(col);
+        }
+    });
+    ptr = m_pAppSettingMenu->addAction("背景透明");
+    connect(ptr, &QAction::triggered, this, [this](){
+        int val = QInputDialog::getInt(nullptr, QStringLiteral("请输入不透明度"),
+            QStringLiteral("整数(1~255)"), m_VarBox->m_SpeedBox->m_BackCol.alpha(),
+            0, 255);
+        emit ChangeBoxAlpha(val);
     });
 }
 

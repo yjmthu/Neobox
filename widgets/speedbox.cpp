@@ -7,6 +7,8 @@
 
 #include "wallpaper/wallpaper.h"
 
+#include <yjson.h>
+
 #include <QMouseEvent>
 #include <QApplication>
 #include <QPainter>
@@ -56,7 +58,7 @@ void SpeedBox::paintEvent(QPaintEvent *)
 {
     QPainter painter;
     painter.begin(this);
-    painter.setBrush(QBrush(QColor(150, 150, 150, 200)));
+    painter.setBrush(QBrush(m_BackCol));
     painter.setPen(Qt::transparent);
     painter.drawRoundedRect(QRect(0, 0, width(), height()), 3, 3); // round rect
     painter.setFont(QFont("Carattere", 20, QFont::Bold));
@@ -193,6 +195,9 @@ void SpeedBox::SetupUi()
     setCursor(Qt::CursorShape::PointingHandCursor);
     setAcceptDrops(true);
     ReadPosition();
+    GetBackGroundColor();
+    connect(m_Menu, &SpeedMenu::ChangeBoxColor, this, &SpeedBox::SetBackGroundColor);
+    connect(m_Menu, &SpeedMenu::ChangeBoxAlpha, this, &SpeedBox::SetBackGroundAlpha);
 }
 
 void SpeedBox::ReadPosition()
@@ -218,8 +223,39 @@ void SpeedBox::WritePosition()
     fclose(fp);
 }
 
+void SpeedBox::GetBackGroundColor()
+{
+    auto ptr = m_VarBox->m_Setting->find("FormUi")->find("BkColor")->getChild();
+    m_BackCol.setRed(ptr->getValueInt());
+    ptr = ptr->getNext();
+    m_BackCol.setGreen(ptr->getValueInt());
+    ptr = ptr->getNext();
+    m_BackCol.setBlue(ptr->getValueInt());
+    ptr = ptr->getNext();
+    m_BackCol.setAlpha(ptr->getValueInt());
+}
+
 void SpeedBox::OnTimer()
 {
     m_NetSpeedHelper->GetSysInfo();
     update();
+}
+
+void SpeedBox::SetBackGroundColor(QColor col)
+{
+    auto ptr = m_VarBox->m_Setting->find("FormUi")->find("BkColor")->getChild();
+    ptr->setValue(col.red());
+    m_BackCol.setRed(col.red());
+    ptr = ptr->getNext();
+    m_BackCol.setGreen(col.green());
+    ptr = ptr->getNext();
+    m_BackCol.setBlue(col.blue());
+    m_VarBox->m_Setting->toFile(m_VarBox->m_szSettingFile, YJson::UTF8, true);
+}
+
+void SpeedBox::SetBackGroundAlpha(int alpha)
+{
+    m_BackCol.setAlpha(alpha);
+    m_VarBox->m_Setting->find("FormUi")->find("BkColor")->find(-1)->setValue(alpha);
+    m_VarBox->m_Setting->toFile(m_VarBox->m_szSettingFile, YJson::UTF8, true);
 }
