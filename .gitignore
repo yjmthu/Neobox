@@ -13,4 +13,4 @@
 *.d
 *.o
 Makefile
-./build
+build/
