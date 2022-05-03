@@ -1,0 +1,16 @@
+
+*.user
+*.html
+*.obj
+*.Release
+*.stash
+*.Debug
+*.cmake
+*.make
+*.dll
+*.rsp
+*.a
+*.d
+*.o
+Makefile
+./build

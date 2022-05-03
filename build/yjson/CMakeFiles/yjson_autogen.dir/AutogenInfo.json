@@ -1,0 +1,86 @@
+{
+	"BUILD_DIR" : "/home/yjmthu/Documents/GitHub/Neobox/build/yjson/yjson_autogen",
+	"CMAKE_BINARY_DIR" : "/home/yjmthu/Documents/GitHub/Neobox/build",
+	"CMAKE_CURRENT_BINARY_DIR" : "/home/yjmthu/Documents/GitHub/Neobox/build/yjson",
+	"CMAKE_CURRENT_SOURCE_DIR" : "/home/yjmthu/Documents/GitHub/YJson",
+	"CMAKE_EXECUTABLE" : "/usr/bin/cmake",
+	"CMAKE_LIST_FILES" : 
+	[
+		"/home/yjmthu/Documents/GitHub/YJson/CMakeLists.txt",
+		"/home/yjmthu/Documents/GitHub/Neobox/build/CMakeFiles/3.23.1/CMakeCCompiler.cmake",
+		"/usr/share/cmake/Modules/CMakeCInformation.cmake",
+		"/usr/share/cmake/Modules/CMakeLanguageInformation.cmake",
+		"/usr/share/cmake/Modules/Compiler/GNU-C.cmake",
+		"/usr/share/cmake/Modules/Compiler/GNU.cmake",
+		"/usr/share/cmake/Modules/Platform/Linux-GNU-C.cmake",
+		"/usr/share/cmake/Modules/Platform/Linux-GNU.cmake",
+		"/usr/share/cmake/Modules/CMakeCommonLanguageInclude.cmake"
+	],
+	"CMAKE_SOURCE_DIR" : "/home/yjmthu/Documents/GitHub/Neobox",
+	"DEP_FILE" : "/home/yjmthu/Documents/GitHub/Neobox/build/yjson/yjson_autogen/deps",
+	"DEP_FILE_RULE_NAME" : "yjson_autogen/timestamp",
+	"HEADERS" : 
+	[
+		[
+			"/home/yjmthu/Documents/GitHub/YJson/yjson.h",
+			"MU",
+			"EWIEGA46WW/moc_yjson.cpp",
+			null
+		]
+	],
+	"HEADER_EXTENSIONS" : [ "h", "hh", "h++", "hm", "hpp", "hxx", "in", "txx" ],
+	"INCLUDE_DIR" : "/home/yjmthu/Documents/GitHub/Neobox/build/yjson/yjson_autogen/include",
+	"MOC_COMPILATION_FILE" : "/home/yjmthu/Documents/GitHub/Neobox/build/yjson/yjson_autogen/mocs_compilation.cpp",
+	"MOC_DEFINITIONS" : [],
+	"MOC_DEPEND_FILTERS" : 
+	[
+		[
+			"Q_PLUGIN_METADATA",
+			"[\n][ \t]*Q_PLUGIN_METADATA[ \t]*\\([^\\)]*FILE[ \t]*\"([^\"]+)\""
+		]
+	],
+	"MOC_INCLUDES" : 
+	[
+		"/home/yjmthu/Documents/GitHub/Neobox/build/yjson",
+		"/home/yjmthu/Documents/GitHub/YJson",
+		"/home/yjmthu/Documents/GitHub/YJson",
+		"/usr/include/c++/11.2.0",
+		"/usr/include/c++/11.2.0/x86_64-pc-linux-gnu",
+		"/usr/include/c++/11.2.0/backward",
+		"/usr/lib/gcc/x86_64-pc-linux-gnu/11.2.0/include",
+		"/usr/local/include",
+		"/usr/lib/gcc/x86_64-pc-linux-gnu/11.2.0/include-fixed",
+		"/usr/include"
+	],
+	"MOC_MACRO_NAMES" : [ "Q_OBJECT", "Q_GADGET", "Q_NAMESPACE", "Q_NAMESPACE_EXPORT" ],
+	"MOC_OPTIONS" : [],
+	"MOC_PATH_PREFIX" : false,
+	"MOC_PREDEFS_CMD" : 
+	[
+		"/usr/bin/c++",
+		"-dM",
+		"-E",
+		"-c",
+		"/usr/share/cmake/Modules/CMakeCXXCompilerABI.cpp"
+	],
+	"MOC_PREDEFS_FILE" : "/home/yjmthu/Documents/GitHub/Neobox/build/yjson/yjson_autogen/moc_predefs.h",
+	"MOC_RELAXED_MODE" : false,
+	"MOC_SKIP" : [],
+	"MULTI_CONFIG" : false,
+	"PARALLEL" : 6,
+	"PARSE_CACHE_FILE" : "/home/yjmthu/Documents/GitHub/Neobox/build/yjson/CMakeFiles/yjson_autogen.dir/ParseCache.txt",
+	"QT_MOC_EXECUTABLE" : "/usr/bin/moc",
+	"QT_UIC_EXECUTABLE" : "/usr/bin/uic",
+	"QT_VERSION_MAJOR" : 5,
+	"QT_VERSION_MINOR" : 15,
+	"SETTINGS_FILE" : "/home/yjmthu/Documents/GitHub/Neobox/build/yjson/CMakeFiles/yjson_autogen.dir/AutogenUsed.txt",
+	"SOURCES" : 
+	[
+		[ "/home/yjmthu/Documents/GitHub/YJson/yjson.cpp", "MU", null ]
+	],
+	"UIC_OPTIONS" : [],
+	"UIC_SEARCH_PATHS" : [],
+	"UIC_SKIP" : [],
+	"UIC_UI_FILES" : [],
+	"VERBOSITY" : 0
+}

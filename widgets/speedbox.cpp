@@ -1,0 +1,225 @@
+#include "speedbox.h"
+#include "speedapp.h"
+#include "speedmenu.h"
+
+#include "core/netspeedhelper.h"
+#include "core/appcode.hpp"
+
+#include "wallpaper/wallpaper.h"
+
+#include <QMouseEvent>
+#include <QApplication>
+#include <QPainter>
+#include <QMimeData>
+#include <QMessageBox>
+#include <QScreen>
+#include <QPropertyAnimation>
+#include <QGraphicsBlurEffect>
+#include <QTimer>
+
+void SpeedBox::mousePressEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton) {
+        m_LastPos = event->pos();
+        setMouseTracking(true);
+    } else if (event->button() == Qt::RightButton) {
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+        m_Menu->popup(event->globalPos());
+#else
+        m_Menu->popup(event->globalPosition().toPoint());
+#endif
+    } else if (event->button() == Qt::MiddleButton) {
+        qApp->exit(static_cast<int>(ExitCode::RETCODE_RESTART));
+    } else {
+        // TO DO
+    }
+}
+
+void SpeedBox::mouseReleaseEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton) {
+        setMouseTracking(false);
+        WritePosition();
+    }
+}
+
+void SpeedBox::mouseMoveEvent(QMouseEvent *event)
+{
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+    move(event->globalPos() - m_LastPos);
+#else
+    move(event->globalPosition().toPoint() - m_LastPos);
+#endif
+}
+
+void SpeedBox::paintEvent(QPaintEvent *)
+{
+    QPainter painter;
+    painter.begin(this);
+    painter.setBrush(QBrush(QColor(150, 150, 150, 200)));
+    painter.setPen(Qt::transparent);
+    painter.drawRoundedRect(QRect(0, 0, width(), height()), 3, 3); // round rect
+    painter.setFont(QFont("Carattere", 20, QFont::Bold));
+    painter.setPen(QColor(0, 255, 255, 255));
+    painter.drawText(6, 29, QString::fromStdString(m_NetSpeedHelper->m_SysInfo[0]));
+    painter.setPen(QColor(250, 170, 35, 255));
+    painter.setFont(QFont("Nickainley Normal", 10, QFont::ExtraBold));
+    painter.drawText(32, 16, QString::fromStdString(m_NetSpeedHelper->m_SysInfo[1]));
+    painter.setPen(QColor(140, 240, 30, 255));
+    painter.drawText(32, 36, QString::fromStdString(m_NetSpeedHelper->m_SysInfo[2]));
+    painter.end();
+}
+
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+void SpeedBox::enterEvent(QEvent* event)
+#else
+void SpeedBox::enterEvent(QEnterEvent* event)
+#endif
+{
+    const QRect& rect = geometry();
+    m_Animation->setStartValue(geometry());
+    if (m_Width != width()) {
+        m_Animation->setDuration(200);
+        if (rect.left() == 0) {
+            m_Animation->setEndValue(
+            QRect(0, rect.top(), m_Width, m_Height));
+        } else if (rect.right() + 1 >= m_ScreenWidth) {
+            m_Animation->setEndValue(
+            QRect(m_ScreenWidth-m_Width, rect.top(), m_Width, m_Height));
+        } else {
+            goto label;
+        }
+    } else  if (m_Height != height()) {
+        m_Animation->setDuration(100);
+        if (rect.top() == 0) {
+            m_Animation->setEndValue(
+            QRect(rect.left(), 0, m_Width, m_Height));
+        } else if (rect.bottom() + 1 >= m_ScreenHeight) {
+            m_Animation->setEndValue(
+            QRect(rect.left(), m_ScreenHeight-m_Height, m_Width, m_Height));
+        } else {
+            goto label;
+        }
+    } else {
+        goto label;
+    }
+    m_Animation->start();
+label:
+    if (event) event->accept();
+}
+
+void SpeedBox::leaveEvent(QEvent* event)
+{
+    AutoHide();
+    if (event) event->accept();
+}
+
+void SpeedBox::AutoHide()
+{
+    constexpr int liuchu = 2;
+    const QRect& rect = geometry();
+    m_Animation->setStartValue(geometry());
+    if (rect.left() == 0) {
+        m_Animation->setDuration(200);
+        m_Animation->setEndValue(
+        QRect(0, rect.top(), liuchu, m_Height));
+    } else if (rect.right() + 1 >= m_ScreenWidth) {
+        m_Animation->setDuration(200);
+        m_Animation->setEndValue(
+        QRect(m_ScreenWidth-liuchu, rect.top(), liuchu, m_Height));
+    } else if (rect.top() == 0) {
+        m_Animation->setDuration(100);
+        m_Animation->setEndValue(
+        QRect(rect.left(), 0, m_Width, liuchu));
+    } else if (rect.bottom() + 1 >= m_ScreenHeight) {
+        m_Animation->setDuration(100);
+        m_Animation->setEndValue(
+        QRect(rect.left(), m_ScreenHeight-liuchu, m_Width, liuchu));
+    } else {
+        return;
+    }
+    // animation->setLoopCount(-1);
+    m_Animation->start();
+}
+
+void SpeedBox::dragEnterEvent(QDragEnterEvent *event)
+{
+    if(event->mimeData()->hasFormat("text/uri-list"))
+        event->acceptProposedAction();
+}
+
+void SpeedBox::dropEvent(QDropEvent *event)
+{
+    std::string temp = event->mimeData()->urls().first().toString().toStdString();
+    temp.erase(0, 7);
+    m_VarBox->m_Wallpaper->SetDropFile(temp);
+}
+
+SpeedBox::SpeedBox(int type, QWidget *parent)
+    : QWidget(parent)
+    , m_Animation(new QPropertyAnimation(this))
+    , m_Width(100)
+    , m_Height(42)
+    , m_ScreenHeight(0)
+    , m_ScreenWidth(0)
+    , m_ExecType(type)
+    , m_NetSpeedHelper(new NetSpeedHelper(this))
+    , m_Menu(new SpeedMenu(this))
+{
+    QRect geo = QGuiApplication::primaryScreen()->geometry();
+    *const_cast<int*>(&m_ScreenWidth) = geo.width();
+    *const_cast<int*>(&m_ScreenHeight) = geo.height();
+    m_Animation->setTargetObject(this);
+    m_Animation->setPropertyName("geometry");
+//     connect(m_Animation, &QPropertyAnimation::finished,
+//     this, &SpeedBox::WritePosition);
+//     QGraphicsBlurEffect *blureffect = new QGraphicsBlurEffect(this);
+//     blureffect->setBlurRadius(5);	   //数值越大，越模糊
+//     setGraphicsEffect(blureffect);      //设置模糊特效
+
+    SetupUi();
+}
+
+SpeedBox::~SpeedBox()
+{
+}
+
+void SpeedBox::SetupUi()
+{
+    setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
+    setAttribute(Qt::WA_TranslucentBackground);
+    setMaximumSize(m_Width, m_Height);
+    setToolTip(u8"行動是治癒恐懼的良藥，而猶豫、拖延將不斷滋養恐懼");
+    setCursor(Qt::CursorShape::PointingHandCursor);
+    setAcceptDrops(true);
+    ReadPosition();
+}
+
+void SpeedBox::ReadPosition()
+{
+    int pt[2] { 0, 0 };
+    FILE* fp = fopen("boxpos", "rb");
+    if (!fp) {
+        setGeometry(30, 30, m_Width, m_Height);
+        return;
+    }
+    fread(pt, sizeof(int), 2, fp);
+    fclose(fp);
+    setGeometry(pt[0], pt[1], m_Width, m_Height);
+    AutoHide();
+}
+
+void SpeedBox::WritePosition()
+{
+    int pt[2] { x(), y() };
+    FILE* fp = fopen("boxpos", "wb");
+    if (!fp) return;
+    fwrite(pt, sizeof(int), 2, fp);
+    fclose(fp);
+}
+
+void SpeedBox::OnTimer()
+{
+    m_NetSpeedHelper->GetSysInfo();
+    update();
+}

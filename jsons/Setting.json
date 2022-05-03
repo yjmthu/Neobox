@@ -1,0 +1,11 @@
+{
+    "Wallpaper": {
+        "AutoChange": false,
+        "FirstChange": false,
+        "TimeInterval": 30,
+        "ImageType": 0
+    },
+    "FormUi": {
+        "BkColor": "yellow"
+    }
+}

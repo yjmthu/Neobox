@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Neobox
+Exec=env QT_AUTO_SCREEN_SCALE_FACTOR=1 /home/yjmthu/OneDrive/PersonalFiles/UserFiles/GitHub/Neobox/build/Neobox
+Terminal=false
+Type=Application
+
