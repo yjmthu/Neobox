@@ -35,13 +35,14 @@ VarBox::~VarBox()
 
 void VarBox::GetSetting()
 {
-    if (Wallpaper::PathFileExists(m_szSettingFile)) {
-        m_Setting = new YJson(m_szSettingFile, YJson::UTF8);
-    } else {
-        m_Setting = new YJson("{\"Wallpaper\":"
-                                  "{\"AutoChange\":false,\"FirstChange\":false,\"TimeInterval\":15,\"ImageType\":0},"
-                              "\"FormUi\":{\"BkColor\":[0,0,0,200]}}");
-        m_Setting->toFile(m_szSettingFile, YJson::UTF8, true);
+    if (!Wallpaper::PathFileExists(m_szSettingFile)) {
+        QFile::copy(":/jsons/Setting.json", m_szSettingFile);
+        QFile::setPermissions(m_szSettingFile, QFileDevice::ReadUser | QFileDevice::WriteUser);
+    }
+    m_Setting = new YJson(m_szSettingFile, YJson::UTF8);
+    if (!Wallpaper::PathFileExists(Wallpaper::m_szWallScript)) {
+        QFile::copy(":/scripts/SetWallpaper.sh", Wallpaper::m_szWallScript);
+        QFile::setPermissions(Wallpaper::m_szWallScript, QFileDevice::ReadUser | QFileDevice::Permission::ExeUser);
     }
 }
 

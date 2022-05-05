@@ -1,5 +1,6 @@
 #include "wallpaper/apiclass.hpp"
 #include "widgets/speedapp.h"
+#include "core/sysapi.h"
 
 #include <string>
 #include <QDebug>
@@ -57,6 +58,8 @@ inline int remove(std::string& path)
     return remove(path.c_str());
 }
 
+constexpr char Wallpaper::m_szWallScript[16];
+
 bool Wallpaper::DownloadImage(const ImageInfo& imageInfo)
 {
     std::string imgFile = (*imageInfo)[0] + FILE_SEP_PATH + (*imageInfo)[1];
@@ -102,10 +105,32 @@ label:
     }
 }
 
+Wallpaper::Desktop Wallpaper::GetDesktop()
+{
+#if defined (_WIN32)
+    return Desktop::WIN;
+#elif defined (__linux__)
+    std::vector<std::string> vec;
+    GetCmdOutput("echo $XDG_CURRENT_DESKTOP", vec);
+    if (vec[0].find("KDE") != std::string::npos) {
+        return Desktop::KDE;
+    } else if (vec[0].find("GNOME") != std::string::npos) {
+        return Desktop::DDE;
+    } else if (vec[0].find("DDE") != std::string::npos) {
+        return Desktop::DDE;
+    } else if (vec[0].find("XFCE") != std::string::npos) {
+        return Desktop::XFCE;
+    } else {
+        return Desktop::UNKNOWN;
+    }
+#else
+#endif
+}
+
 bool Wallpaper::SetWallpaper(const std::string &imagePath)
 {
+    static auto m_DesktopType = GetDesktop();
     if (!PathFileExists(imagePath)) return false;
-    COUT(imagePath);
 #if defined (_WIN32)
     wxCStrData str = imagePath.c_str();
     return ::SystemParametersInfo(
@@ -115,19 +140,30 @@ bool Wallpaper::SetWallpaper(const std::string &imagePath)
         SPIF_SENDCHANGE | SPIF_UPDATEINIFILE
     );
 #elif defined (__linux__)
-
-#if 0
-    /*
+    std::ostringstream sstr;
+    switch (m_DesktopType) {
+    case Desktop::KDE:
+        char buffer[1024];
+        getcwd(buffer, 1024);
+        sstr << '\"' << buffer << '/' << m_szWallScript << "\" \"";
+        break;
+    case Desktop::GNOME:
+        sstr << "gsettings set org.gnome.desktop.background picture-uri \"file:";
+        break;
+    case Desktop::DDE:
+        /*
         Old deepin:
         std::string m_sCmd ("gsettings set com.deepin.wrap.gnome.desktop.background picture-uri \"");
     */
-    // xrandr|grep 'connected primary'|awk '{print $1}' ======> eDP
-    std::string m_sCmd("dbus-send --dest=com.deepin.daemon.Appearance /com/deepin/daemon/Appearance --print-reply com.deepin.daemon.Appearance.SetMonitorBackground string:\"eDP\" string:\"file://");
-#elif 1
-    std::string m_sCmd ("gsettings set org.gnome.desktop.background picture-uri \"file:");
-#endif
-    m_sCmd += imagePath;
-    m_sCmd.push_back('\"');
+        // xrandr|grep 'connected primary'|awk '{print $1}' ======> eDP
+        sstr << "dbus-send --dest=com.deepin.daemon.Appearance /com/deepin/daemon/Appearance --print-reply com.deepin.daemon.Appearance.SetMonitorBackground string:\"eDP\" string:\"file://";
+        break;
+    default:
+        std::cout << "不支持的桌面类型；\n";
+        return false;
+    }
+    sstr << imagePath << '\"';
+    std::string m_sCmd = sstr.str();
     return system(m_sCmd.c_str()) == 0;
 #endif
 }

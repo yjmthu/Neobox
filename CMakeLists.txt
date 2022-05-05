@@ -37,13 +37,13 @@ include_directories(
 )
 
 add_subdirectory(${YJSON_DIR} yjson)
+add_subdirectory(3rdlib/3rd_qxtglobalshortcut 3rd_qxtglobalshortcut)
 
 set(QRC_SOURCE_FILES recourses.qrc)
 
 set(PROJECT_SOURCES
         main.cpp
-        3rdlib/httplib.hpp
-    
+
         widgets/speedapp.cpp
         widgets/speedapp.h
         widgets/speedbox.cpp
@@ -88,6 +88,7 @@ endif()
 
 if (WIN32)
     target_link_libraries(Neobox PRIVATE
+        3rd_qxtglobalshortcut
         yjson
         Qt${QT_VERSION_MAJOR}::Widgets
         libssl
@@ -95,6 +96,7 @@ if (WIN32)
     )
 elseif (UNIX)
     target_link_libraries(Neobox PRIVATE
+        3rd_qxtglobalshortcut
         yjson
         Qt${QT_VERSION_MAJOR}::Widgets
         pthread

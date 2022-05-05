@@ -61,14 +61,15 @@ void SpeedBox::paintEvent(QPaintEvent *)
     painter.setBrush(QBrush(m_BackCol));
     painter.setPen(Qt::transparent);
     painter.drawRoundedRect(QRect(0, 0, width(), height()), 3, 3); // round rect
-    painter.setFont(QFont("Carattere", 20, QFont::Bold));
-    painter.setPen(QColor(0, 255, 255, 255));
-    painter.drawText(6, 29, QString::fromStdString(m_NetSpeedHelper->m_SysInfo[0]));
-    painter.setPen(QColor(250, 170, 35, 255));
-    painter.setFont(QFont("Nickainley Normal", 10, QFont::ExtraBold));
-    painter.drawText(32, 16, QString::fromStdString(m_NetSpeedHelper->m_SysInfo[1]));
-    painter.setPen(QColor(140, 240, 30, 255));
-    painter.drawText(32, 36, QString::fromStdString(m_NetSpeedHelper->m_SysInfo[2]));
+    painter.setFont(std::get<1>(m_Style[0]));
+    painter.setPen(std::get<0>(m_Style[0]));
+    painter.drawText(std::get<2>(m_Style[0]), QString::fromStdString(m_NetSpeedHelper->m_SysInfo[0]));
+    painter.setPen(std::get<0>(m_Style[1]));
+    painter.setFont(std::get<1>(m_Style[1]));
+    painter.drawText(std::get<2>(m_Style[1]), QString::fromStdString(m_NetSpeedHelper->m_SysInfo[1]));
+    painter.setPen(std::get<0>(m_Style[2]));
+    painter.setFont(std::get<1>(m_Style[2]));
+    painter.drawText(std::get<2>(m_Style[2]), QString::fromStdString(m_NetSpeedHelper->m_SysInfo[2]));
     painter.end();
 }
 
@@ -198,6 +199,23 @@ void SpeedBox::SetupUi()
     GetBackGroundColor();
     connect(m_Menu, &SpeedMenu::ChangeBoxColor, this, &SpeedBox::SetBackGroundColor);
     connect(m_Menu, &SpeedMenu::ChangeBoxAlpha, this, &SpeedBox::SetBackGroundAlpha);
+    GetStyle();
+}
+
+void SpeedBox::GetStyle()
+{
+    const char* li[] = {"MemUseage", "NetUpSpeed", "NetDownSpeed"};
+    auto ui = *m_VarBox->m_Setting->find("FormUi");
+    for (size_t i=0; i<3; ++i) {
+        auto& ptr = ui[li[i]];
+        std::get<0>(m_Style[i]).setNamedColor(ptr["color"].getValueString());
+        std::get<1>(m_Style[i]).setFamily(ptr["font-family"].getValueString());
+        std::get<1>(m_Style[i]).setPointSize(ptr["font-size"].getValueInt());
+        std::get<1>(m_Style[i]).setItalic(ptr["italic"].isTrue());
+        std::get<1>(m_Style[i]).setBold(ptr["bold"].isTrue());
+        std::get<2>(m_Style[i]).setX(ptr["pos"][0].getValueInt());
+        std::get<2>(m_Style[i]).setY(ptr["pos"][1].getValueInt());
+    }
 }
 
 void SpeedBox::ReadPosition()

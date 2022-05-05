@@ -6,6 +6,30 @@
         "ImageType": 0
     },
     "FormUi": {
-        "BkColor": "yellow"
+        "BkColor": [0, 0, 0, 250],
+        "MemUseage": {
+            "font-family": "Carattere",
+            "font-size": 20, 
+            "color": "#FFFF00",
+            "bold": true,
+            "italic": false,
+            "pos": [6, 29]
+        },
+        "NetUpSpeed":  {
+            "font-family": "Nickainley Normal",
+            "font-size": 10, 
+            "color": "#FAAA23",
+            "bold": true,
+            "italic": false,
+            "pos": [32, 16]
+        },
+        "NetDownSpeed": {
+            "font-family": "Nickainley Normal",
+            "font-size": 10, 
+            "color": "#8CF01E",
+            "bold": true,
+            "italic": false,
+            "pos": [32, 36]
+        }
     }
 }

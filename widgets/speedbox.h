@@ -33,9 +33,11 @@ private:
     class SpeedMenu* m_Menu;
     QPoint m_LastPos;
     QColor m_BackCol;
+    std::array<std::tuple<QColor, QFont, QPoint>, 3> m_Style;
     void SetupUi();
     void ReadPosition();
     void AutoHide();
+    void GetStyle();
     void GetBackGroundColor();
 private slots:
     void WritePosition();

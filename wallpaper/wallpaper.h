@@ -43,6 +43,7 @@ protected:
     void ReadSettings();
     void WriteSettings();
 public:
+    enum class Desktop { WIN, KDE, DDE, GNOME, XFCE, UNKNOWN };
     explicit Wallpaper();
     virtual ~Wallpaper();
     static bool DownloadImage(const ImageInfo& imageInfo);
@@ -67,6 +68,7 @@ public:
     const void* GetDataByName(const char* key) const;
     int GetInt() const;
     std::string GetString() const;
+    static constexpr char m_szWallScript[16] { "SetWallpaper.sh" };
 private:
     // bool m_IsWorking;
     class QTimer *m_Timer;
@@ -78,6 +80,7 @@ private:
     bool m_PrevAvailable;
     bool m_NextAvailable;
     bool m_KeepChange;
+    static Desktop GetDesktop();
 public slots:
     void SetAutoChange(bool flag);
     void SetFirstChange(bool flag);

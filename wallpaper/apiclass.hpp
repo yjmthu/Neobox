@@ -25,7 +25,7 @@
 #endif
 
 #include "wallpaper.h"
-#include "3rdlib/httplib.hpp"
+#include "3rdlib/httplib/httplib.hpp"
 #include <yjson.h>
 
 inline std::string ToUtf8(const std::string& path)
