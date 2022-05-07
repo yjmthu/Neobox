@@ -207,11 +207,11 @@ void SpeedMenu::SetAdditionalMenu()
         const char* curType = m_Setting->find("WallhavenCurrent")->getValueString();
         m_tempMenu->addAction("壁纸类型");
         m_tempMenu->addSeparator();
-        for (auto& i: *m_Setting->find("WallhavenApi")) {
-            const std::string temp = i.getKeyString();
-            auto ac = m_tempMenu->addAction(i.getKeyString());
+        for (YJson** i = &m_Setting->find("WallhavenApi")->getChild(); i; i = &(*i)->getNext()) {
+            const std::string temp = (*i)->getKeyString();
+            auto ac = m_tempMenu->addAction((*i)->getKeyString());
             ac->setCheckable(true);
-            ac->setChecked(!strcmp(i.getKeyString(), curType));
+            ac->setChecked(!strcmp((*i)->getKeyString(), curType));
             group->addAction(ac);
             QMenu* mn = new QMenu(m_tempMenu);
             ac->setMenu(mn);
@@ -238,11 +238,11 @@ void SpeedMenu::SetAdditionalMenu()
                     QLineEdit *lineEdit = new QLineEdit(&dlg);
                     auto label = new QLabel(&dlg);
                     label->setText(QStringLiteral("类型名称"));
-                    lineEdit->setText(i.getKeyString());
+                    lineEdit->setText((*i)->getKeyString());
                     hlayout1.addWidget(label);
                     hlayout1.addWidget(lineEdit);
                     dlg.setLayout(vlayout);
-                    int row = i.find("Parameter")->size(), index = 0;
+                    int row = (*i)->find("Parameter")->size(), index = 0;
                     // std::cout << "row num is " << row << std::endl;
                     QTableWidget m_TableWidget(row,  2);
                     vlayout->addLayout(&hlayout1);
@@ -281,9 +281,9 @@ void SpeedMenu::SetAdditionalMenu()
                         if (!js.empty()) {
                             auto newKey = lineEdit->text().toStdString();
                             if (newKey.empty()) newKey = u8"新类型";
-                            YJson::swap(*i.find("Parameter"), js);
-                            if (newKey != i.getKeyString()) {
-                                i.setKeyString(newKey);
+                            YJson::swap(*(*i)->find("Parameter"), js);
+                            if (newKey != (*i)->getKeyString()) {
+                                (*i)->setKeyString(newKey);
                                 m_Setting->find("WallhavenCurrent")->setText(newKey);
                             }
                             if (m_VarBox->m_Wallpaper->IsWorking()) return;
@@ -292,20 +292,20 @@ void SpeedMenu::SetAdditionalMenu()
                         }
                         dlg.close();
                     });
-                    for (auto&j:*i.find("Parameter")) {
-                        m_TableWidget.setItem(index, 0, new QTableWidgetItem(j.getKeyString()));
-                        if (j.isNumber()) {
-                            m_TableWidget.setItem(index++, 1, new QTableWidgetItem(QString::number(j.getValueInt())));
+                    for (YJson *j = (*i)->find("Parameter")->getChild(); i; i = &(*i)->getNext()) {
+                        m_TableWidget.setItem(index, 0, new QTableWidgetItem(j->getKeyString()));
+                        if (j->isNumber()) {
+                            m_TableWidget.setItem(index++, 1, new QTableWidgetItem(QString::number(j->getValueInt())));
                         } else {
-                            m_TableWidget.setItem(index++, 1, new QTableWidgetItem(j.getValueString()));
+                            m_TableWidget.setItem(index++, 1, new QTableWidgetItem(j->getValueString()));
                         }
                     }
                     dlg.exec();
                 });
             if (!ac->isChecked()) {
                 connect(mn->addAction("删除此项"), &QAction::triggered, 
-                    this, [m_Setting, &i, this](){
-                        m_Setting->find("WallhavenApi")->remove(&i);
+                    this, [m_Setting, i, this](){
+                        m_Setting->find("WallhavenApi")->remove(*i);
                         m_VarBox->m_Wallpaper->SetSlot(2);
                         SetupSettingMenu();
                     });

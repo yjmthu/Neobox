@@ -42,7 +42,7 @@ public:
             return ptr;
         }
         std::mt19937 generator(std::random_device{}());
-        YJson* choice = val->find(std::uniform_int_distribution<size_t>(0, val->size()-1)(generator));
+        YJson*& choice = val->find(std::uniform_int_distribution<size_t>(0, val->size()-1)(generator));
         const char* name = choice->getValueString();
         ptr->emplace_back(m_ImageDir);
         ptr->emplace_back(name);
@@ -126,9 +126,9 @@ private:
     bool WriteDefaultSetting() override {
         delete m_Setting;
         m_Setting = new YJson(u8"{\"WallhavenApi\":{\"Hot\":{\"Parameter\":{ \"sorting\":\"toplist\",\"categories\":111},\"Directory\":\"最热壁纸\"},\"Nature\":{\"Parameter\":{\"sorting\":\"toplist\",\"categories\":100,\"q\":\"nature\"},\"Directory\":\"风景壁纸\"},\"Anime\":{\"Parameter\":{\"categories\":\"010\",\"sorting\":\"toplist\"},\"Directory\":\"动漫壁纸\"},\"Simple\":{\"Parameter\":{\"q\":\"minimalism\"},\"Directory\":\"极简壁纸\"},\"Random\":{\"Parameter\":{\"sorting\":\"random\"},\"Directory\":\"随机壁纸\"}},\"WallhavenCurrent\":\"Hot\",\"PageNumber\":1}");
-        for (auto& i: *m_Setting->find("WallhavenApi")) {
-            auto& ptr = i["Directory"];
-            ptr.setText(m_HomePicLocation + FILE_SEP_PATH + ptr.getValueString());
+        for (YJson* i = m_Setting->find("WallhavenApi")->getChild(); i; i = i->getNext()) {
+            auto ptr = i->find("Directory");
+            ptr->setText(m_HomePicLocation + FILE_SEP_PATH + ptr->getValueString());
         }
         m_Setting->toFile(m_SettingPath, YJson::UTF8, true);
         return true;
@@ -144,8 +144,8 @@ private:
             if (res->status != 200) break;
             YJson root(res->body);
             YJson& data = root["data"];
-            for (auto& i: data) {
-                const char* name = i.find("path")->getValueString() + 31;
+            for (YJson* i = data.getChild(); i; i = i->getNext()) {
+                const char* name = i->find("path")->getValueString() + 31;
                 if ( !m_BlackArray->find(name)) {
                     m_Array->append(name);
                     ++m_TotalDownload;

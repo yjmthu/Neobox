@@ -14,8 +14,8 @@ public:
         if (Wallpaper::PathFileExists(m_SettingPath)) {
             m_Setting = new YJson(m_SettingPath, YJson::UTF8);
             m_Command = m_Setting->find("executeable")->getValueString();
-            for (auto& i: *m_Setting->find("arglist")) {
-                m_ArgList.emplace_back(i.getValueString());
+            for (YJson* i = m_Setting->find("arglist")->getChild(); i; i = i->getNext()) {
+                m_ArgList.emplace_back(i->getValueString());
             }
             return true;
         }
