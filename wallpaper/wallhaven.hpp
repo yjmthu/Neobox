@@ -134,6 +134,7 @@ private:
         return true;
     }
     size_t DownloadUrl() {
+        std::cout << "Get next url\n";
         size_t m_TotalDownload = 0;
         httplib::Client clt("https://wallhaven.cc");
         auto m_Array = m_Data->find("Unused");
@@ -156,26 +157,11 @@ private:
         return m_TotalDownload;
     }
     void GetApiPathUrl() {
-        // m_PageNumber = m_Setting->find("PageNumber")->getValueInt();
         const char* curType = m_Setting->find("WallhavenCurrent")->getValueString();
-        // std::cout << "curtype: " << curType << std::endl;
         YJson* val = m_Setting->find("WallhavenApi")->find(curType);
         m_ImageDir = val->find("Directory")->getValueString();
         YJson* param = val->find("Parameter");
         m_ImageUrl = param->urlEncode("/api/v1/search?");
-        // for (auto& i: *param) {
-        //     m_ImageUrl += i.getKeyString();
-        //     m_ImageUrl.push_back('=');
-        //     if (i.isString()) {
-        //         m_ImageUrl += i.getValueString();
-        //     } else if (i.isNumber()) {
-        //         m_ImageUrl += std::to_string(i.getValueInt());
-        //     } else {
-        //         throw std::errc::function_not_supported;
-        //     }
-        //     m_ImageUrl.push_back('&');
-        // }
-        // if (str.back() == '&') str.pop_back();
     }
     bool NeedGetImageUrl() {
         if (Wallpaper::PathFileExists(m_DataPath)) {

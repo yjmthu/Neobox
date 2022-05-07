@@ -21,7 +21,7 @@ include_directories(
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Gui Widgets X11Extras REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Widgets X11Extras REQUIRED)
 
-set(CMAKE_BUILD_TYPE RELEASE)
+# set(CMAKE_BUILD_TYPE RELEASE)
 
 add_library(3rd_qxtglobalshortcut
     ${CMAKE_CURRENT_SOURCE_DIR}/qxtglobal.cpp ${CMAKE_CURRENT_SOURCE_DIR}/qxtglobal.h

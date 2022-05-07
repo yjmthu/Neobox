@@ -29,10 +29,10 @@ int main(int argc, char *argv[])
     if (argc == 2 && !strcmp("-b", argv[1])) sleep(3);
     // qputenv("QT_SCALE_FACTOR", "2.0");
     // qputenv("QT_AUTO_SCREEN_SCALE_FACTOR", "1.0");
-   QSharedMemory m_SharedMemory;
-   m_SharedMemory.setKey(QStringLiteral("__NeoboxMutex__"));
-   if(m_SharedMemory.attach() || !m_SharedMemory.create(1))                 //防止多次打开
-       return 0;
+    QSharedMemory m_SharedMemory;
+    m_SharedMemory.setKey(QStringLiteral("__NeoboxMutex__"));
+    if(m_SharedMemory.attach() || !m_SharedMemory.create(1))                 //防止多次打开
+        return 0;
     // 控制图片缩放质量
 #if (QT_VERSION_MAJOR < 6)
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);

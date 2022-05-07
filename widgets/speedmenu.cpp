@@ -207,7 +207,7 @@ void SpeedMenu::SetAdditionalMenu()
         const char* curType = m_Setting->find("WallhavenCurrent")->getValueString();
         m_tempMenu->addAction("壁纸类型");
         m_tempMenu->addSeparator();
-        for (YJson** i = &m_Setting->find("WallhavenApi")->getChild(); i; i = &(*i)->getNext()) {
+        for (YJson** i = &m_Setting->find("WallhavenApi")->getChild(); *i; i = &(*i)->getNext()) {
             const std::string temp = (*i)->getKeyString();
             auto ac = m_tempMenu->addAction((*i)->getKeyString());
             ac->setCheckable(true);
@@ -231,7 +231,7 @@ void SpeedMenu::SetAdditionalMenu()
                     m_VarBox->m_Wallpaper->SetSlot(2);
                 });
             connect(mn->addAction("参数设置"), &QAction::triggered, 
-                this, [&i, this, ac, m_Setting](){
+                this, [i, this, ac, m_Setting](){
                     QDialog dlg;
                     QVBoxLayout *vlayout = new QVBoxLayout(&dlg);
                     QHBoxLayout hlayout1, hlayout2;
@@ -292,7 +292,7 @@ void SpeedMenu::SetAdditionalMenu()
                         }
                         dlg.close();
                     });
-                    for (YJson *j = (*i)->find("Parameter")->getChild(); i; i = &(*i)->getNext()) {
+                    for (YJson *j = (*i)->find("Parameter")->getChild(); j; j = j->getNext()) {
                         m_TableWidget.setItem(index, 0, new QTableWidgetItem(j->getKeyString()));
                         if (j->isNumber()) {
                             m_TableWidget.setItem(index++, 1, new QTableWidgetItem(QString::number(j->getValueInt())));
