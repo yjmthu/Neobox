@@ -24,14 +24,23 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QColorDialog>
+#include <QSettings>
 
 #include <thread>
 #include <unistd.h>
 
 void SpeedMenu::showEvent(QShowEvent *event)
 {
-    m_AutoStartApp->setChecked(
-        QFile::exists(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)+"/.config/autostart/Neobox.desktop"));
+    QString m_AutoStartFile = QStandardPaths::writableLocation(QStandardPaths::HomeLocation)+"/.config/autostart/Neobox.desktop";
+    if (!QFile::exists(m_AutoStartFile)) {
+        m_AutoStartApp->setChecked(false);
+    } else {
+        QSettings m_Setting(m_AutoStartFile, QSettings::IniFormat);
+        m_Setting.beginGroup("Desktop Entry");
+        QString str = m_Setting.value("Exec", "null").toString();
+        m_AutoStartApp->setChecked(str.indexOf(qApp->applicationFilePath()) != -1);
+        m_Setting.endGroup();
+    }
 }
 
 SpeedMenu::SpeedMenu(QWidget *parent)
@@ -128,20 +137,24 @@ void SpeedMenu::SetupSettingMenu()
     m_AutoStartApp = m_pAppSettingMenu->addAction("开机自启");
     m_AutoStartApp->setCheckable(true);
     connect(m_AutoStartApp, &QAction::triggered, this, [](bool checked) {
-        QString fileName = QStandardPaths::writableLocation(QStandardPaths::HomeLocation)+"/.config/autostart/Neobox.desktop";
+        QString configLocation = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + "/.config";
+        QString desktopFileName = configLocation + "/autostart/Neobox.desktop";
+        QString iconFileName = configLocation + "/Neobox/Neobox.ico";
         if (checked) {
-            QFile file(fileName);
-            file.open(QIODevice::WriteOnly);
-            QTextStream stream(&file);
-            stream << "[Desktop Entry]" << Qt::endl
-                   << "Name=Neobox" << Qt::endl
-                   << "Icon=" << "/home/yjmthu/Documents/GitHub/Neobox/icons/speedbox.ico" << Qt::endl
-                   << "Exec=\""<< qApp->applicationFilePath() << "\" -b" << Qt::endl
-                   << "Terminal=false" << Qt::endl
-                   << "Type=Application" << Qt::endl;
+            if (!QFile::exists(iconFileName)) {
+                QFile::copy(":/icons/speedbox.ico", iconFileName);
+                QFile::setPermissions(iconFileName, QFileDevice::ReadUser);
+            }
+            std::ofstream file(desktopFileName.toStdString(), std::ios::binary | std::ios::out);
+            file << "[Desktop Entry]" << std::endl
+                 << "Name=Neobox" << std::endl
+                 << "Icon=" << iconFileName.toStdString() << std::endl
+                 << "Exec=\"" << qApp->applicationFilePath().toStdString() << "\" -b" << std::endl
+                 << "Terminal=false" << std::endl
+                 << "Type=Application" << std::endl;
             file.close();
         } else {
-            QFile::remove(fileName);
+            QFile::remove(desktopFileName);
         }
     });
     auto ptr = m_pAppSettingMenu->addAction("背景颜色");
