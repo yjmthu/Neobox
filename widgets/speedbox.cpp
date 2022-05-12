@@ -208,8 +208,8 @@ void SpeedBox::GetStyle()
     auto ui = *m_VarBox->m_Setting->find("FormUi");
     for (size_t i=0; i<3; ++i) {
         auto& ptr = ui[li[i]];
-        std::get<0>(m_Style[i]).setNamedColor(ptr["color"].getValueString());
-        std::get<1>(m_Style[i]).setFamily(ptr["font-family"].getValueString());
+        std::get<0>(m_Style[i]).setNamedColor(QString::fromStdString(ptr["color"].getValueString()));
+        std::get<1>(m_Style[i]).setFamily(QString::fromStdString(ptr["font-family"].getValueString()));
         std::get<1>(m_Style[i]).setPointSize(ptr["font-size"].getValueInt());
         std::get<1>(m_Style[i]).setItalic(ptr["italic"].isTrue());
         std::get<1>(m_Style[i]).setBold(ptr["bold"].isTrue());
@@ -268,12 +268,12 @@ void SpeedBox::SetBackGroundColor(QColor col)
     m_BackCol.setGreen(col.green());
     ptr = ptr->getNext();
     m_BackCol.setBlue(col.blue());
-    m_VarBox->m_Setting->toFile(m_VarBox->m_szSettingFile, YJson::UTF8, true);
+    m_VarBox->SaveSetting();
 }
 
 void SpeedBox::SetBackGroundAlpha(int alpha)
 {
     m_BackCol.setAlpha(alpha);
     m_VarBox->m_Setting->find("FormUi")->find("BkColor")->find(-1)->setValue(alpha);
-    m_VarBox->m_Setting->toFile(m_VarBox->m_szSettingFile, YJson::UTF8, true);
+    m_VarBox->SaveSetting();
 }

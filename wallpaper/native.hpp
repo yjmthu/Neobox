@@ -57,9 +57,6 @@ public:
                         temp = pf(generator);
                     m_RandomQue.push_back(temp);
                 }
-                for (auto i: m_RandomQue) {
-                    std::cout << i << ' ';
-                }
                 std::cout << std::endl;
             }
             m_ToGet = m_RandomQue.back();

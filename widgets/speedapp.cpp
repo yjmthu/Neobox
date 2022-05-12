@@ -35,6 +35,7 @@ VarBox::~VarBox()
 
 void VarBox::GetSetting()
 {
+    const char m_szSettingFile[13] { "Setting.json" };
     if (!Wallpaper::PathFileExists(m_szSettingFile)) {
         QFile::copy(":/jsons/Setting.json", m_szSettingFile);
         QFile::setPermissions(m_szSettingFile, QFileDevice::ReadUser | QFileDevice::WriteUser);
@@ -44,6 +45,11 @@ void VarBox::GetSetting()
         QFile::copy(":/scripts/SetWallpaper.sh", Wallpaper::m_szWallScript);
         QFile::setPermissions(Wallpaper::m_szWallScript, QFileDevice::ReadUser | QFileDevice::Permission::ExeUser);
     }
+}
+
+void VarBox::SaveSetting()
+{
+    m_Setting->toFile("Setting.json", YJson::UTF8, true);
 }
 
 void VarBox::LoadFonts()

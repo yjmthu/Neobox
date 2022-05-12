@@ -3,16 +3,10 @@
 namespace WallClass {
 
 class Wallhaven: public WallBase {
-private:
-    // inline static bool SaveJson(const char* path, const boost::json::value& data) {
-    //     std::ofstream file(path, std::ios::out);
-    //     if (!file.is_open()) return false;;
-    //     file << data << std::endl;
-    //     file.close();
-    //     return true;
-    // }
 public:
     virtual bool LoadSetting() override {
+        if (!Wallpaper::PathFileExists(m_SettingPath))
+            return true;
         try {
             m_Setting = new YJson(m_SettingPath, YJson::UTF8);
             return true;
@@ -42,12 +36,12 @@ public:
             return ptr;
         }
         std::mt19937 generator(std::random_device{}());
-        YJson*& choice = val->find(std::uniform_int_distribution<size_t>(0, val->size()-1)(generator));
-        const char* name = choice->getValueString();
+        auto choice = val->find(std::uniform_int_distribution<size_t>(0, val->size()-1)(generator));
+        const auto& name = choice->getValueString();
         ptr->emplace_back(m_ImageDir);
         ptr->emplace_back(name);
         ptr->emplace_back("https://w.wallhaven.cc");
-        ptr->emplace_back("/full/" + std::string(name+10, name+12) + "/" + name);
+        ptr->emplace_back("/full/" + name.substr(10, 2) + "/" + name);
         m_Data->find("Used")->append(name);
         val->remove(choice);
         m_Data->toFile(m_DataPath);
@@ -119,18 +113,38 @@ public:
             m_Data->find("Api")->setText(m_ImageUrl);
             m_Data->find("Used")->clear();
             m_Data->find("Unused")->clear();
+            std::cout << "Need DownloadUrl\n";
             m_NeedDownUrl = true;
         }
     }
 private:
     bool WriteDefaultSetting() override {
         delete m_Setting;
-        m_Setting = new YJson(u8"{\"WallhavenApi\":{\"Hot\":{\"Parameter\":{ \"sorting\":\"toplist\",\"categories\":111},\"Directory\":\"最热壁纸\"},\"Nature\":{\"Parameter\":{\"sorting\":\"toplist\",\"categories\":100,\"q\":\"nature\"},\"Directory\":\"风景壁纸\"},\"Anime\":{\"Parameter\":{\"categories\":\"010\",\"sorting\":\"toplist\"},\"Directory\":\"动漫壁纸\"},\"Simple\":{\"Parameter\":{\"q\":\"minimalism\"},\"Directory\":\"极简壁纸\"},\"Random\":{\"Parameter\":{\"sorting\":\"random\"},\"Directory\":\"随机壁纸\"}},\"WallhavenCurrent\":\"Hot\",\"PageNumber\":1}");
-        for (YJson* i = m_Setting->find("WallhavenApi")->getChild(); i; i = i->getNext()) {
-            auto ptr = i->find("Directory");
-            ptr->setText(m_HomePicLocation + FILE_SEP_PATH + ptr->getValueString());
+        m_Setting = new YJson(YJson::Object);
+        std::initializer_list<std::tuple<std::string, bool, std::string, std::string>> paramLIst = {
+            { u8"最热壁纸", true,  "categories", "111"},
+            { u8"风景壁纸", true,  "q",          "nature"},
+            { u8"动漫壁纸", true,  "categories", "010"},
+            { u8"随机壁纸", false, "sorting",    "random"},
+            { u8"极简壁纸", false, "q",          "minimalism"},
+            { u8"鬼刀壁纸", false, "q",          "ghostblade"}
+        };
+        auto m_ApiObject = m_Setting->append(YJson::Object, "WallhavenApi");
+        for (auto& i: paramLIst) {
+            std::cout << std::get<0>(i) << std::get<1>(i) << std::get<2>(i) << std::get<3>(i) << std::endl;
+            auto item = m_ApiObject->append(YJson::Object, std::get<0>(i));
+            auto ptr = item->append(YJson::Object, "Parameter"); // i->find("Directory");
+            if (std::get<1>(i)) {
+                ptr->append("sorting", "toplist");
+            }
+            ptr->append(std::get<3>(i), std::get<2>(i));
+            item->append(m_HomePicLocation + FILE_SEP_PATH + std::get<0>(i), "Directory");
         }
+        m_Setting->append(std::get<0>(*paramLIst.begin()), "WallhavenCurrent");
+        m_Setting->append(1, "PageNumber");
         m_Setting->toFile(m_SettingPath, YJson::UTF8, true);
+
+        std::cout << "My default json file is: \n" << *m_Setting << std::endl;
         return true;
     }
     size_t DownloadUrl() {
@@ -144,10 +158,11 @@ private:
             auto res = clt.Get(url.c_str());
             if (res->status != 200) break;
             YJson root(res->body);
-            YJson& data = root["data"];
-            for (YJson* i = data.getChild(); i; i = i->getNext()) {
-                const char* name = i->find("path")->getValueString() + 31;
-                if ( !m_BlackArray->find(name)) {
+            YJson& data = root[std::string_view("data")];
+            for (auto& i: data) {
+                std::string_view name = i.find("path")->getValueString();
+                name = name.substr(31);
+                if (!m_BlackArray->findByVal(name)) {
                     m_Array->append(name);
                     ++m_TotalDownload;
                 }
@@ -157,10 +172,10 @@ private:
         return m_TotalDownload;
     }
     void GetApiPathUrl() {
-        const char* curType = m_Setting->find("WallhavenCurrent")->getValueString();
-        YJson* val = m_Setting->find("WallhavenApi")->find(curType);
+        const std::string& curType = m_Setting->find("WallhavenCurrent")->getValueString();
+        auto val = m_Setting->find("WallhavenApi")->find(curType);
         m_ImageDir = val->find("Directory")->getValueString();
-        YJson* param = val->find("Parameter");
+        auto param = val->find("Parameter");
         m_ImageUrl = param->urlEncode("/api/v1/search?");
     }
     bool NeedGetImageUrl() {
@@ -195,7 +210,7 @@ private:
 
     }
     const char m_DataPath[13] { "ImgData.json" };
-    const char m_SettingPath[13] { "ApiFile.json" };
+    const char m_SettingPath[18] { "Wallhaven.json" };
     YJson* m_Setting;
     YJson* m_Data;
     std::string m_ImageUrl;

@@ -1,6 +1,17 @@
 cmake_minimum_required(VERSION 3.5)
 
+if (UNIX)
+    SET(CMAKE_C_COMPILER /usr/bin/clang)
+    SET(CMAKE_CXX_COMPILER /usr/bin/clang++)
+endif()
+
+# set(CMAKE_CXX_FLAGS"${CMAKE_CXX_FLAGS} -std=c++17")
+
 project(Neobox VERSION 0.1 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -29,6 +40,8 @@ SET(CMAKE_BUILD_TYPE "Debug")
 
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
+set_property(TARGET Qt5::Core PROPERTY INTERFACE_COMPILE_FEATURES "")
+add_compile_options("-std=c++1z")
 
 set(YJSON_DIR ${CMAKE_SOURCE_DIR}/../YJson)
 
@@ -111,6 +124,9 @@ set_target_properties(Neobox PROPERTIES
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
 )
 
+target_compile_features(Neobox PRIVATE cxx_std_17)
+
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(Neobox)
 endif()
+

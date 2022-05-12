@@ -329,7 +329,7 @@ void Wallpaper::SetTimeInterval(int minute)
         m_Timer->setInterval(minute * 60000);
     }
     m_VarBox->m_Setting->find("Wallpaper")->find("TimeInterval")->setValue((double)minute);
-    m_VarBox->m_Setting->toFile(m_VarBox->m_szSettingFile, YJson::UTF8);
+    m_VarBox->SaveSetting();
 }
 
 bool Wallpaper::SetNext()
@@ -438,7 +438,7 @@ void Wallpaper::ReadSettings()
         m_CurImage.swap(temp);
         while (std::getline(file, temp)) {
             // std::cout << temp;
-            m_PrevImgs.push_back(temp);
+            m_PrevImgs.push_front(temp);
         }
     }
     file.close();
@@ -450,8 +450,8 @@ void Wallpaper::WriteSettings()
     std::ofstream file("History.txt", std::ios::out);
     if (!file.is_open()) return;
     if (!m_CurImage.empty()) file << m_CurImage << std::endl;
-    for (const auto& i: m_PrevImgs) {
-        file << i << std::endl;
+    for (auto i=m_PrevImgs.rbegin(); i!=m_PrevImgs.rend(); ++i) {
+        file << *i << std::endl;
         if (!--m_CountLimit) break;
     }
     file.close();
@@ -465,14 +465,14 @@ void Wallpaper::SetAutoChange(bool flag)
         m_Timer->stop();
     }
     m_VarBox->m_Setting->find("Wallpaper")->find("AutoChange")->setValue(flag);
-    m_VarBox->m_Setting->toFile(m_VarBox->m_szSettingFile, YJson::UTF8);
+    m_VarBox->SaveSetting();
 }
 
 
 void Wallpaper::SetFirstChange(bool flag)
 {
     m_VarBox->m_Setting->find("Wallpaper")->find("FirstChange")->setValue(flag);
-    m_VarBox->m_Setting->toFile(m_VarBox->m_szSettingFile, YJson::UTF8);
+    m_VarBox->SaveSetting();
 }
 
 void Wallpaper::SetCurDir(const std::string& str)
@@ -497,7 +497,21 @@ bool Wallpaper::SetImageType(int index)
     }
     m_Wallpaper = WallBase::GetNewInstance(index);
     m_VarBox->m_Setting->find("Wallpaper")->find("ImageType")->setValue((int)index);
-    m_VarBox->m_Setting->toFile(m_VarBox->m_szSettingFile, YJson::UTF8, true);
+    m_VarBox->SaveSetting();
+    if (index == 1) return true;
+    std::thread([](){
+#ifdef __WIN32
+        Sleep(10000);
+#elif defined (__linux__)
+        sleep(10);
+#else
+#endif
+        WallBase *ptr = WallBase::GetNewInstance(1);
+        for (int i=0; i<7; ++i) {
+            Wallpaper::DownloadImage(ptr->GetNext());
+        }
+        delete ptr;
+    }).detach();
     return true;
 }
 

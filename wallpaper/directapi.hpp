@@ -43,5 +43,6 @@ private:
         ss << std::put_time(std::localtime(&t), m_ImageNameFormat.c_str());
         return ss.str();
     }
+    const char m_SettingPath[13] { "ApiFile.json" };
 };
 }

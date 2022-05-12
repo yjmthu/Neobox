@@ -1,5 +1,8 @@
 #!/bin/sh
 
+export CC=/usr/bin/clang
+export CXX=/usr/bin/clang++
+
 BUILD_DIR=./build
 if [ ! -d "$BUILD_DIR" ]; then
     mkdir $BUILD_DIR

@@ -10,7 +10,7 @@ public:
     ~VarBox();
     class Wallpaper *m_Wallpaper;
     class YJson* m_Setting;
-    const char m_szSettingFile[13] { "Setting.json" };
+    void SaveSetting();
 private:
     class SpeedBox* m_SpeedBox;
     friend class SpeedMenu;

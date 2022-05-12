@@ -6,6 +6,7 @@
 #include <QTimer>
 #include <QDebug>
 
+#include <cstdint>
 #include <array>
 #include <algorithm>
 #include <cstring>
@@ -35,7 +36,7 @@ _Ty StringToInt(std::string::const_iterator first, std::string::const_iterator l
     return sign?res:-res;
 }
 
-void formatSpped(std::string& str, long long dw, bool up_down)
+void formatSpped(std::string& str, uint64_t dw, bool up_down)
 {
     static const char* units[] = {
         u8"↑", u8"↓",
@@ -164,8 +165,8 @@ void NetSpeedHelper::SetMemInfo()
 
 void NetSpeedHelper::SetNetInfo()
 {
-    static unsigned long long recv_bytes = 0, send_bytes = 0;
-    unsigned long long recv=0, send=0;
+    static uint64_t recv_bytes = 0, send_bytes = 0;
+    uint64_t recv=0, send=0;
     std::list<std::string> result;
     GetCmdOutput("cat /proc/net/dev", result);
     result.pop_front();
@@ -178,9 +179,9 @@ void NetSpeedHelper::SetNetInfo()
         for (size_t i=0; i < 9; ++i) {
             right = std::find_if(left, str.end(), [](char c)->bool{return strchr(" \n\t\r", c);});
             if (i == 0) {
-                recv += StringToInt<unsigned long long>(left, right);
+                recv += StringToInt<uint64_t>(left, right);
             } else if (i == 8) {
-                send += StringToInt<unsigned long long>(left, right);
+                send += StringToInt<uint64_t>(left, right);
             }
             left = std::find_if(right, str.end(), &isdigit);
         }

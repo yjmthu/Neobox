@@ -56,6 +56,7 @@ public:
     bool SetNext();
     bool SetPrevious();
     bool SetDropFile(const std::string& filePath);
+    inline const std::string& GetCurIamge() const { return m_CurImage; }
     bool RemoveCurrent();
     bool IsPrevAvailable();
     bool IsNextAvailable();

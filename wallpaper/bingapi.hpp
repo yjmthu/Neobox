@@ -52,11 +52,10 @@ public:
         auto jsTemp = m_Setting->find("images")->find(m_CurImageIndex);
         ImageInfo ptr(new std::vector<std::string>);
         ptr->push_back(m_ImageDir);
-        ptr->push_back(GetImageName(jsTemp));
+        ptr->push_back(GetImageName(*jsTemp));
         ptr->push_back(m_ApiUrl);
         if (++m_CurImageIndex > 7) m_CurImageIndex = 0;
         ptr->push_back(jsTemp->find("urlbase")->getValueString() + std::string("_UHD.jpg"));
-        // std::cout << ptr->at(0) << "/" << ptr->at(1) << std::endl;
         return ptr;
     }
     virtual void Dislike(const std::string& img) {
@@ -80,11 +79,11 @@ private:
         ss << std::put_time(std::localtime(&t), fmt);
         return ss.str();
     }
-    std::string GetImageName(YJson* imgInfo) {
+    std::string GetImageName(YJson& imgInfo) {
         std::string str(m_ImageNameFormat);
         auto pos = str.find("\%s");
         if (pos != std::string::npos) {
-            std::string temp =  imgInfo->find("copyright")->getValueString();
+            std::string temp =  imgInfo.find("copyright")->getValueString();
             temp.erase(temp.find(u8" (© "));
             str.replace(pos, 2, temp);
         }

@@ -14,8 +14,8 @@ public:
         if (Wallpaper::PathFileExists(m_SettingPath)) {
             m_Setting = new YJson(m_SettingPath, YJson::UTF8);
             m_Command = m_Setting->find("executeable")->getValueString();
-            for (YJson* i = m_Setting->find("arglist")->getChild(); i; i = i->getNext()) {
-                m_ArgList.emplace_back(i->getValueString());
+            for (auto i: *m_Setting->find("arglist")) {
+                m_ArgList.emplace_back(i.getValueString());
             }
             return true;
         }
@@ -37,7 +37,7 @@ public:
         // std::cout << cmd << std::endl;
         GetCmdOutput(cmd.c_str(), result, 1);
         auto& str = result.front();
-        while (!str.empty() && std::strchr("\n\r", str.back())) {
+        while (!str.empty() && '\n' != str.back()) {
             str.pop_back();
         }
         if (str.empty()) return ptr;

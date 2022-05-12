@@ -1,0 +1,17 @@
+{
+  "configurations": {
+    "GdbLaunch": {
+      "adapter": "CodeLLDB",
+      "configuration": {
+        "request": "launch",
+        "program": "./build/Neobox",
+        "cwd": "${workspaceFolder}",
+        "args": [ ],
+        "environment": [ ],
+        "externalConsole": true,
+        "MIMode": "lldb"
+      }
+    }
+  }
+}
+
