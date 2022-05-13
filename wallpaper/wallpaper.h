@@ -50,7 +50,7 @@ public:
     static bool SetWallpaper(const std::string& imagePath);
     static bool PathFileExists(const std::string& filePath);
     static bool PathDirExists(const std::string& dirPath);
-    static bool IsImageFile(const std::string& fileName);
+    static bool IsImageFile(const std::string_view fileName);
     static bool IsOnline();
     static bool IsWorking();
     bool SetNext();

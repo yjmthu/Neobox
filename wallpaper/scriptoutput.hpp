@@ -13,8 +13,8 @@ public:
     virtual bool LoadSetting() {
         if (Wallpaper::PathFileExists(m_SettingPath)) {
             m_Setting = new YJson(m_SettingPath, YJson::UTF8);
-            m_Command = m_Setting->find("executeable")->getValueString();
-            for (auto i: *m_Setting->find("arglist")) {
+            m_Command = m_Setting->find("executeable")->second.getValueString();
+            for (auto& i: m_Setting->find("arglist")->second.getArray()) {
                 m_ArgList.emplace_back(i.getValueString());
             }
             return true;
@@ -26,7 +26,7 @@ public:
         m_Setting = new YJson(YJson::Object);
         m_Setting->append(m_Command, "executeable");
         m_Setting->append(YJson::Array, "arglist");
-        m_Setting->toFile(m_SettingPath, YJson::UTF8, true);
+        m_Setting->toFile(m_SettingPath);
         return true;
     }
     virtual ImageInfo GetNext() {
@@ -34,7 +34,6 @@ public:
         if (m_Command.empty()) return ptr;
         std::vector<std::string> result;
         std::string cmd = GetCommandWithArg();
-        // std::cout << cmd << std::endl;
         GetCmdOutput(cmd.c_str(), result, 1);
         auto& str = result.front();
         while (!str.empty() && '\n' != str.back()) {

@@ -112,9 +112,9 @@ void SpeedMenu::SetupSettingMenu()
     m_Actions->setMenu(m_pSettingMenu);
     ptr4->setCheckable(true);
     ptr5->setCheckable(true);
-    auto m_Setting = m_VarBox->m_Setting->find("Wallpaper");
-    ptr4->setChecked(m_Setting->find("FirstChange")->isTrue());
-    ptr5->setChecked(m_Setting->find("AutoChange")->isTrue());
+    auto& m_Setting = m_VarBox->m_Setting->find("Wallpaper")->second;
+    ptr4->setChecked(m_Setting.find("FirstChange")->second.isTrue());
+    ptr5->setChecked(m_Setting.find("AutoChange")->second.isTrue());
     connect(ptr4, &QAction::triggered, 
         m_VarBox->m_Wallpaper, &Wallpaper::SetFirstChange);
     connect(ptr5, &QAction::triggered, 
@@ -178,7 +178,7 @@ void SpeedMenu::SetupSettingMenu()
 void SpeedMenu::SetupImageType(QMenu* parent, QAction* ac)
 {
     size_t index = 0;
-    static size_t type = m_VarBox->m_Setting->find("Wallpaper")->find("ImageType")->getValueInt();
+    static size_t type = m_VarBox->m_Setting->find("Wallpaper")->second.find("ImageType")->second.getValueInt();
     QMenu* mu = new QMenu(parent);
 
     auto acGroup = new QActionGroup(this);
@@ -219,14 +219,15 @@ void SpeedMenu::SetAdditionalMenu()
     {
         QActionGroup* group = new QActionGroup(m_tempMenu);
         YJson *m_Setting = *reinterpret_cast<YJson*const*>(m_VarBox->m_Wallpaper->GetDataByName("m_Setting"));
-        const auto& curType = m_Setting->find("WallhavenCurrent")->getValueString();
+        const auto& curType = m_Setting->find("WallhavenCurrent")->second.getValueString();
         m_tempMenu->addAction("壁纸类型");
         m_tempMenu->addSeparator();
-        for (auto i = m_Setting->find("WallhavenApi")->begin(); i; ++i) {
-            const std::string temp = i->getKeyString();
-            auto ac = m_tempMenu->addAction(QString::fromStdString(i->getKeyString()));
+        auto& _jjk = m_Setting->find("WallhavenApi")->second.getObject();
+        for (auto i = _jjk.begin(); i != _jjk.end(); ++i) {
+            const std::string_view temp = i->first;
+            auto ac = m_tempMenu->addAction(QString::fromStdString(i->first));
             ac->setCheckable(true);
-            ac->setChecked(i->getKeyString() == curType);
+            ac->setChecked(i->first == curType);
             group->addAction(ac);
             QMenu* mn = new QMenu(m_tempMenu);
             ac->setMenu(mn);
@@ -241,8 +242,8 @@ void SpeedMenu::SetAdditionalMenu()
                         QStringLiteral("输入页面"), QStringLiteral("页面位置（1~100）："),
                         m_VarBox->m_Wallpaper->GetInt(),
                         1, 100);
-                    m_Setting->find("WallhavenCurrent")->setText(temp);
-                    m_Setting->find("PageNumber")->setValue(val);
+                    m_Setting->find("WallhavenCurrent")->second.setText(temp);
+                    m_Setting->find("PageNumber")->second.setValue(val);
                     m_VarBox->m_Wallpaper->SetSlot(3);
                 });
             connect(mn->addAction("参数设置"), &QAction::triggered, 
@@ -253,11 +254,11 @@ void SpeedMenu::SetAdditionalMenu()
                     QLineEdit *lineEdit = new QLineEdit(&dlg);
                     auto label = new QLabel(&dlg);
                     label->setText(QStringLiteral("类型名称"));
-                    lineEdit->setText(QString::fromStdString(i->getKeyString()));
+                    lineEdit->setText(QString::fromStdString(i->first));
                     hlayout1.addWidget(label);
                     hlayout1.addWidget(lineEdit);
                     dlg.setLayout(vlayout);
-                    int row = i->find("Parameter")->size(), index = 0;
+                    int row = i->second.find("Parameter")->second.sizeO(), index = 0;
                     QTableWidget m_TableWidget(row,  2);
                     vlayout->addLayout(&hlayout1);
                     vlayout->addWidget(&m_TableWidget);
@@ -291,13 +292,13 @@ void SpeedMenu::SetAdditionalMenu()
                                 js.append(val, key.c_str());
                             }
                         }
-                        if (!js.empty()) {
+                        if (!js.emptyO()) {
                             auto newKey = lineEdit->text().toStdString();
                             if (newKey.empty()) newKey = u8"新类型";
-                            YJson::swap(*i->find("Parameter"), js);
-                            if (newKey != i->getKeyString()) {
-                                i->setKeyString(newKey);
-                                m_Setting->find("WallhavenCurrent")->setText(newKey);
+                            YJson::swap(i->second.find("Parameter")->second, js);
+                            if (newKey != i->first) {
+                                i->first = newKey;
+                                m_Setting->find("WallhavenCurrent")->second.setText(newKey);
                             }
                             if (m_VarBox->m_Wallpaper->IsWorking()) return;
                             m_VarBox->m_Wallpaper->SetSlot(ac->isChecked()? 3:2);
@@ -305,12 +306,12 @@ void SpeedMenu::SetAdditionalMenu()
                         }
                         dlg.close();
                     });
-                    for (auto& j: *i->find("Parameter")) {
-                        m_TableWidget.setItem(index, 0, new QTableWidgetItem(QString::fromStdString(j.getKeyString())));
-                        if (j.isNumber()) {
-                            m_TableWidget.setItem(index++, 1, new QTableWidgetItem(QString::number(j.getValueInt())));
+                    for (auto& j: i->second.find("Parameter")->second.getObject()) {
+                        m_TableWidget.setItem(index, 0, new QTableWidgetItem(QString::fromStdString(j.first)));
+                        if (j.second.isNumber()) {
+                            m_TableWidget.setItem(index++, 1, new QTableWidgetItem(QString::number(j.second.getValueInt())));
                         } else {
-                            m_TableWidget.setItem(index++, 1, new QTableWidgetItem(QString::fromStdString(j.getValueString())));
+                            m_TableWidget.setItem(index++, 1, new QTableWidgetItem(QString::fromStdString(j.second.getValueString())));
                         }
                     }
                     dlg.exec();
@@ -318,7 +319,7 @@ void SpeedMenu::SetAdditionalMenu()
             if (!ac->isChecked()) {
                 connect(mn->addAction("删除此项"), &QAction::triggered, 
                     this, [m_Setting, i, this](){
-                        m_Setting->find("WallhavenApi")->remove(i);
+                        m_Setting->find("WallhavenApi")->second.remove(i);
                         m_VarBox->m_Wallpaper->SetSlot(2);
                         SetupSettingMenu();
                     });
@@ -356,18 +357,18 @@ void SpeedMenu::SetAdditionalMenu()
                 int row = m_TableWidget.rowCount();
                 YJson js(YJson::Object);
                 js.append(m_TypeDir, "Directory");
-                auto ptr = js.append(YJson::Object, "Parameter");
+                auto& ptr = js.append(YJson::Object, "Parameter")->second;
                 for (int i=0; i<row; ++i) {
                     std::string key = m_TableWidget.item(i, 0)->text().toStdString();
                     std::string val = m_TableWidget.item(i, 1)->text().toStdString();
                     if (key.empty() || val.empty()) {
                         continue;
                     } else {
-                        ptr->append(val, key.c_str());
+                        ptr.append(val, key);
                     }
                 }
-                if (!ptr->empty()) {
-                    YJson::swap(*m_Setting->find("WallhavenApi")->append(YJson::Object, m_TypeName.c_str()), js);
+                if (!ptr.emptyO()) {
+                    YJson::swap(m_Setting->find("WallhavenApi")->second.append(YJson::Object, m_TypeName)->second, js);
                     m_VarBox->m_Wallpaper->SetSlot(3);
                     SetupSettingMenu();
                 }

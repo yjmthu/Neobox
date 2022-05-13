@@ -19,9 +19,9 @@ public:
         m_ImageNameFormat = "\%s \%Y\%m\%d.jpg";
         if (Wallpaper::PathFileExists(m_SettingPath)) {
             m_Setting = new YJson(m_SettingPath, YJson::UTF8);
-            if (m_Setting->find("today")->getValueString() == GetToday("\%Y\%m\%d")) {
-                m_ImageDir = m_Setting->find("imgdir")->getValueString();
-                m_ImageNameFormat = m_Setting->find("imgfmt")->getValueString();
+            if (m_Setting->find("today")->second.getValueString() == GetToday("\%Y\%m\%d")) {
+                m_ImageDir = m_Setting->find("imgdir")->second.getValueString();
+                m_ImageNameFormat = m_Setting->find("imgfmt")->second.getValueString();
                 return true;
             } else {
                 delete m_Setting;
@@ -45,17 +45,17 @@ public:
         m_Setting->append(GetToday("\%Y\%m\%d"), "today");
         m_Setting->append(m_ImageDir, "imgdir");
         m_Setting->append(m_ImageNameFormat, "imgfmt");
-        m_Setting->toFile(m_SettingPath, YJson::UTF8, true);
+        m_Setting->toFile(m_SettingPath);
         return true;
     }
     virtual ImageInfo GetNext() {
-        auto jsTemp = m_Setting->find("images")->find(m_CurImageIndex);
+        auto jsTemp = m_Setting->find("images")->second.find(m_CurImageIndex);
         ImageInfo ptr(new std::vector<std::string>);
         ptr->push_back(m_ImageDir);
         ptr->push_back(GetImageName(*jsTemp));
         ptr->push_back(m_ApiUrl);
         if (++m_CurImageIndex > 7) m_CurImageIndex = 0;
-        ptr->push_back(jsTemp->find("urlbase")->getValueString() + std::string("_UHD.jpg"));
+        ptr->push_back(jsTemp->find("urlbase")->second.getValueString() + "_UHD.jpg");
         return ptr;
     }
     virtual void Dislike(const std::string& img) {
@@ -63,8 +63,8 @@ public:
     }
     virtual void SetCurDir(const std::string& str) {
         m_ImageDir = str;
-        m_Setting->find("imgdir")->setText(str);
-        m_Setting->toFile(m_SettingPath, YJson::UTF8, true);
+        m_Setting->find("imgdir")->second.setText(str);
+        m_Setting->toFile(m_SettingPath);
     }
 private:
     std::string m_ImageNameFormat;
@@ -83,7 +83,7 @@ private:
         std::string str(m_ImageNameFormat);
         auto pos = str.find("\%s");
         if (pos != std::string::npos) {
-            std::string temp =  imgInfo.find("copyright")->getValueString();
+            std::string temp =  imgInfo.find("copyright")->second.getValueString();
             temp.erase(temp.find(u8" (© "));
             str.replace(pos, 2, temp);
         }

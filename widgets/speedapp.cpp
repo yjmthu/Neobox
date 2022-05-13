@@ -49,7 +49,7 @@ void VarBox::GetSetting()
 
 void VarBox::SaveSetting()
 {
-    m_Setting->toFile("Setting.json", YJson::UTF8, true);
+    m_Setting->toFile("Setting.json");
 }
 
 void VarBox::LoadFonts()

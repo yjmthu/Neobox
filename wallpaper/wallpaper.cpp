@@ -208,19 +208,18 @@ Wallpaper::Wallpaper():
     m_PrevAvailable(false),
     m_NextAvailable(true)
 {
-    auto m_Setting = m_VarBox->m_Setting->find("Wallpaper");
-    SetImageType(m_Setting->find("ImageType")->getValueInt());
-    m_Timer->setInterval(m_Setting->find("TimeInterval")->getValueInt() * 60000);
+    auto& m_Setting = m_VarBox->m_Setting->find("Wallpaper")->second;
+    SetImageType(m_Setting.find("ImageType")->second.getValueInt());
+    m_Timer->setInterval(m_Setting.find("TimeInterval")->second.getValueInt() * 60000);
     m_Timer->setSingleShot(true);
-    m_KeepChange = m_Setting->find("AutoChange")->isTrue();
+    m_KeepChange = m_Setting.find("AutoChange")->second.isTrue();
     connect(m_Timer, &QTimer::timeout, this, std::bind(&Wallpaper::SetSlot, this, 1));
     connect(this, &Wallpaper::StartTimer, this, [this](bool start){
-        // std::cout << "Start Timer\n";
         if (m_Timer->isActive()) m_Timer->stop();
         if (start) m_Timer->start();
     });
     ReadSettings();
-    if (m_Setting->find("FirstChange")->isTrue()) {
+    if (m_Setting.find("FirstChange")->second.isTrue()) {
         // COUT("=======BEGIN1=======");
         WallBase::m_IsWorking = true;
         std::thread([this](){
@@ -318,7 +317,7 @@ const std::string& Wallpaper::GetImageDir() const
 
 int Wallpaper::GetTimeInterval() const
 {
-    return m_VarBox->m_Setting->find("Wallpaper")->find("TimeInterval")->getValueInt();
+    return m_VarBox->m_Setting->find("Wallpaper")->second.find("TimeInterval")->second.getValueInt();
 }
 
 void Wallpaper::SetTimeInterval(int minute)
@@ -328,7 +327,7 @@ void Wallpaper::SetTimeInterval(int minute)
     } else {
         m_Timer->setInterval(minute * 60000);
     }
-    m_VarBox->m_Setting->find("Wallpaper")->find("TimeInterval")->setValue((double)minute);
+    m_VarBox->m_Setting->find("Wallpaper")->second.find("TimeInterval")->second.setValue((double)minute);
     m_VarBox->SaveSetting();
 }
 
@@ -377,16 +376,15 @@ bool Wallpaper::SetPrevious()
     return false;
 }
 
-bool Wallpaper::IsImageFile(const std::string& fileName)
+bool Wallpaper::IsImageFile(const std::string_view fileName)
 {
     // BMP, PNG, GIF, JPG
-    // auto iter = std::find(fileName.rbegin(), fileName.rend(), '.').base();
-    std::string temp = fileName.substr(fileName.find_last_of('.') + 1);
-    if (temp.size() != 3) return false;
+    std::string temp(fileName.substr(fileName.find_last_of('.') + 1));
+    if (temp.size() < 3) return false;
     for (auto& i: temp) {
         i = toupper(i);
     }
-    return temp == "JPG" || temp == "PNG" || temp == "BMP" || temp == "GIF";
+    return temp == "JPG" || temp == "PNG" || temp == "BMP" || temp == "GIF" || temp == "JPEG";
 }
 
 bool Wallpaper::SetDropFile(const std::string& filePath)
@@ -464,14 +462,14 @@ void Wallpaper::SetAutoChange(bool flag)
     } else if (m_Timer->isActive()) {
         m_Timer->stop();
     }
-    m_VarBox->m_Setting->find("Wallpaper")->find("AutoChange")->setValue(flag);
+    m_VarBox->m_Setting->find("Wallpaper")->second.find("AutoChange")->second.setValue(flag);
     m_VarBox->SaveSetting();
 }
 
 
 void Wallpaper::SetFirstChange(bool flag)
 {
-    m_VarBox->m_Setting->find("Wallpaper")->find("FirstChange")->setValue(flag);
+    m_VarBox->m_Setting->find("Wallpaper")->second.find("FirstChange")->second.setValue(flag);
     m_VarBox->SaveSetting();
 }
 
@@ -484,7 +482,7 @@ void Wallpaper::SetCurDir(const std::string& str)
 
 int Wallpaper::GetImageType()
 {
-    return m_VarBox->m_Setting->find("Wallpaper")->find("ImageType")->getValueInt();
+    return m_VarBox->m_Setting->find("Wallpaper")->second.find("ImageType")->second.getValueInt();
 }
 
 bool Wallpaper::SetImageType(int index)
@@ -496,7 +494,7 @@ bool Wallpaper::SetImageType(int index)
         delete m_Wallpaper;
     }
     m_Wallpaper = WallBase::GetNewInstance(index);
-    m_VarBox->m_Setting->find("Wallpaper")->find("ImageType")->setValue((int)index);
+    m_VarBox->m_Setting->find("Wallpaper")->second.find("ImageType")->second.setValue((int)index);
     m_VarBox->SaveSetting();
     if (index == 1) return true;
     std::thread([](){

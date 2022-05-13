@@ -204,17 +204,17 @@ void SpeedBox::SetupUi()
 
 void SpeedBox::GetStyle()
 {
-    const char* li[] = {"MemUseage", "NetUpSpeed", "NetDownSpeed"};
-    auto ui = *m_VarBox->m_Setting->find("FormUi");
+    const char* li[] = { "MemUseage", "NetUpSpeed", "NetDownSpeed" };
+    auto& ui = m_VarBox->m_Setting->find("FormUi")->second;
     for (size_t i=0; i<3; ++i) {
-        auto& ptr = ui[li[i]];
-        std::get<0>(m_Style[i]).setNamedColor(QString::fromStdString(ptr["color"].getValueString()));
-        std::get<1>(m_Style[i]).setFamily(QString::fromStdString(ptr["font-family"].getValueString()));
-        std::get<1>(m_Style[i]).setPointSize(ptr["font-size"].getValueInt());
-        std::get<1>(m_Style[i]).setItalic(ptr["italic"].isTrue());
-        std::get<1>(m_Style[i]).setBold(ptr["bold"].isTrue());
-        std::get<2>(m_Style[i]).setX(ptr["pos"][0].getValueInt());
-        std::get<2>(m_Style[i]).setY(ptr["pos"][1].getValueInt());
+        auto& ptr = ui[li[i]].second;
+        std::get<0>(m_Style[i]).setNamedColor(QString::fromStdString(ptr["color"].second.getValueString()));
+        std::get<1>(m_Style[i]).setFamily(QString::fromStdString(ptr["font-family"].second.getValueString()));
+        std::get<1>(m_Style[i]).setPointSize(ptr["font-size"].second.getValueInt());
+        std::get<1>(m_Style[i]).setItalic(ptr["italic"].second.isTrue());
+        std::get<1>(m_Style[i]).setBold(ptr["bold"].second.isTrue());
+        std::get<2>(m_Style[i]).setX(ptr["pos"].second[0].getValueInt());
+        std::get<2>(m_Style[i]).setY(ptr["pos"].second[1].getValueInt());
     }
 }
 
@@ -243,14 +243,11 @@ void SpeedBox::WritePosition()
 
 void SpeedBox::GetBackGroundColor()
 {
-    auto ptr = m_VarBox->m_Setting->find("FormUi")->find("BkColor")->getChild();
+    auto ptr = m_VarBox->m_Setting->find("FormUi")->second.find("BkColor")->second.beginA();
     m_BackCol.setRed(ptr->getValueInt());
-    ptr = ptr->getNext();
-    m_BackCol.setGreen(ptr->getValueInt());
-    ptr = ptr->getNext();
-    m_BackCol.setBlue(ptr->getValueInt());
-    ptr = ptr->getNext();
-    m_BackCol.setAlpha(ptr->getValueInt());
+    m_BackCol.setGreen((++ptr)->getValueInt());
+    m_BackCol.setBlue((++ptr)->getValueInt());
+    m_BackCol.setAlpha((++ptr)->getValueInt());
 }
 
 void SpeedBox::OnTimer()
@@ -261,12 +258,12 @@ void SpeedBox::OnTimer()
 
 void SpeedBox::SetBackGroundColor(QColor col)
 {
-    auto ptr = m_VarBox->m_Setting->find("FormUi")->find("BkColor")->getChild();
+    auto ptr = m_VarBox->m_Setting->find("FormUi")->second.find("BkColor")->second.beginA();
     ptr->setValue(col.red());
     m_BackCol.setRed(col.red());
-    ptr = ptr->getNext();
+    (++ptr)->setValue(col.green());
     m_BackCol.setGreen(col.green());
-    ptr = ptr->getNext();
+    (++ptr)->setValue(col.blue());
     m_BackCol.setBlue(col.blue());
     m_VarBox->SaveSetting();
 }
@@ -274,6 +271,6 @@ void SpeedBox::SetBackGroundColor(QColor col)
 void SpeedBox::SetBackGroundAlpha(int alpha)
 {
     m_BackCol.setAlpha(alpha);
-    m_VarBox->m_Setting->find("FormUi")->find("BkColor")->find(-1)->setValue(alpha);
+    m_VarBox->m_Setting->find("FormUi")->second.find("BkColor")->second.endA()->setValue(alpha);
     m_VarBox->SaveSetting();
 }
