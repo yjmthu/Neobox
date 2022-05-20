@@ -246,6 +246,7 @@ void SpeedMenu::SetAdditionalMenu()
                     m_Setting->find("PageNumber")->second.setValue(val);
                     m_VarBox->m_Wallpaper->SetSlot(3);
                 });
+            if (i->second.find("Parameter")->second.isObject()) {
             connect(mn->addAction("参数设置"), &QAction::triggered, 
                 this, [i, this, ac, m_Setting](){
                     QDialog dlg;
@@ -315,7 +316,7 @@ void SpeedMenu::SetAdditionalMenu()
                         }
                     }
                     dlg.exec();
-                });
+            });}
             if (!ac->isChecked()) {
                 connect(mn->addAction("删除此项"), &QAction::triggered, 
                     this, [m_Setting, i, this](){
@@ -404,6 +405,8 @@ label:
         break;
     }
     case 1:
+        //
+        //break;
     case 2:
     case 3:
     case 4:

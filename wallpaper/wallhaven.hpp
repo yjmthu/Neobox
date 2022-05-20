@@ -1,8 +1,23 @@
 ﻿#include "apiclass.hpp"
+#include "yjson.h"
+
+#include <regex>
 
 namespace WallClass {
 
 class Wallhaven: public WallBase {
+private:
+    static void IsPngFile(std::string& str) {
+        using namespace std::literals;
+        httplib::Client clt("https://wallhaven.cc");
+        str = "/api/v1/w/"s + str;
+        std::cout << str << std::endl;
+        auto res = clt.Get(str.c_str());
+        YJson js;
+        js.parse(res->body);
+        // std::cout << js;
+        str = js["data"].second["path"].second.getValueString().substr(31);
+    }
 public:
     virtual bool LoadSetting() override {
         if (!Wallpaper::PathFileExists(m_SettingPath))
@@ -16,14 +31,15 @@ public:
     }
     virtual ImageInfo GetNext() override {
         // https://w.wallhaven.cc/full/1k/wallhaven-1kmx19.jpg
+        using namespace std::literals;
 
         ImageInfo ptr(new std::vector<std::string>);
 
         if (m_NeedDownUrl) {
-            std::cout << "Start Download Url\n";
+            std::cout << "Start Download Url\n"sv;
             size_t t = DownloadUrl();
             m_NeedDownUrl = false;
-            std::cout << t << " Urls Are Downloaded\n";
+            std::cout << t << " Urls Are Downloaded\n"sv;
             if (!t) return ptr;
         }
 
@@ -37,11 +53,13 @@ public:
         }
         std::mt19937 generator(std::random_device{}());
         auto choice = val.find(std::uniform_int_distribution<size_t>(0, val.sizeA()-1)(generator));
-        const auto& name = choice->getValueString();
+        std::string& name = choice->getValueString();
+        if (name.length() == 6) IsPngFile(name);
+        else std::cout << "string: " << name << std::endl;
         ptr->emplace_back(m_ImageDir);
         ptr->emplace_back(name);
-        ptr->emplace_back("https://w.wallhaven.cc");
-        ptr->emplace_back("/full/" + name.substr(10, 2) + "/" + name);
+        ptr->emplace_back("https://w.wallhaven.cc"sv);
+        ptr->emplace_back("/full/"s + name.substr(10, 2) + "/"s + name);
         m_Data->find("Used")->second.append(name);
         val.remove(choice);
         m_Data->toFile(m_DataPath);
@@ -63,7 +81,6 @@ public:
                     m_Data->find("Unused")->second.removeByValA(m_FileName);
                     m_Data->find("Used")->second.removeByValA(m_FileName);
                     m_Data->find("Blacklist")->second.append(m_FileName);
-                    std::cout << m_Data << std::endl;
                     m_Data->toFile(m_DataPath);
             } else {
                 return;
@@ -120,23 +137,24 @@ public:
     }
 private:
     bool WriteDefaultSetting() override {
+        using namespace std::literals;
         delete m_Setting;
         m_Setting = new YJson(YJson::Object);
         std::initializer_list<std::tuple<std::string, bool, std::string, std::string>> paramLIst = {
-            { u8"最热壁纸", true,  "categories", "111"},
-            { u8"风景壁纸", true,  "q",          "nature"},
-            { u8"动漫壁纸", true,  "categories", "010"},
-            { u8"随机壁纸", false, "sorting",    "random"},
-            { u8"极简壁纸", false, "q",          "minimalism"},
-            { u8"鬼刀壁纸", false, "q",          "ghostblade"}
+            { u8"最热壁纸"s, true,  "categories"s, "111"s},
+            { u8"风景壁纸"s, true,  "q"s,          "nature"s},
+            { u8"动漫壁纸"s, true,  "categories"s, "010"s},
+            { u8"随机壁纸"s, false, "sorting"s,    "random"s},
+            { u8"极简壁纸"s, false, "q"s,          "minimalism"s},
+            { u8"鬼刀壁纸"s, false, "q"s,          "ghostblade"s}
         };
         auto& m_ApiObject = m_Setting->append(YJson::Object, "WallhavenApi")->second;
         for (auto& i: paramLIst) {
             std::cout << std::get<0>(i) << std::get<1>(i) << std::get<2>(i) << std::get<3>(i) << std::endl;
             auto& item = m_ApiObject.append(YJson::Object, std::get<0>(i))->second;
-            auto& ptr = item.append(YJson::Object, "Parameter")->second; // i->find("Directory");
+            auto& ptr = item.append(YJson::Object, "Parameter")->second;
             if (std::get<1>(i)) {
-                ptr.append("sorting", "toplist");
+                ptr.append("toplist", "sorting");
             }
             ptr.append(std::get<3>(i), std::get<2>(i));
             item.append(m_HomePicLocation + FILE_SEP_PATH + std::get<0>(i), "Directory");
@@ -144,6 +162,7 @@ private:
         m_Setting->append(std::get<0>(*paramLIst.begin()), "WallhavenCurrent");
         m_Setting->append(1, "PageNumber");
         m_Setting->toFile(m_SettingPath);
+        m_Setting->append(YJson::Null, "ApiKey");
 
         std::cout << "My default json file is: \n" << *m_Setting << std::endl;
         return true;
@@ -152,21 +171,44 @@ private:
         using namespace std::literals;
         std::cout << "Get next url\n";
         size_t m_TotalDownload = 0;
-        httplib::Client clt("https://wallhaven.cc");
+        httplib::Client clt("https://wallhaven.cc"s);
         auto& m_Array = m_Data->find("Unused")->second.getArray();
         auto& m_BlackArray = m_Data->find("Blacklist")->second;
-        for (size_t i=5*(GetInt()-1) + 1, n=i+5; i < n; ++i) {
-            std::string url = m_ImageUrl + "&page=" + std::to_string(i);
-            auto res = clt.Get(url.c_str());
-            if (res->status != 200) break;
-            YJson root; 
-            root.parse(res->body);
-            YJson& data = root["data"sv].second;
-            for (auto& i: data.getArray()) {
-                std::string name = i.find("path")->second.getValueString().substr(31);
-                if (m_BlackArray.findByValA(name) == m_BlackArray.endA()) {
-                    m_Array.emplace_back(name);
-                    ++m_TotalDownload;
+        if (std::equal(m_ImageUrl.begin(), m_ImageUrl.begin()+4, "/api")) {
+            for (size_t i=5*(GetInt()-1) + 1, n=i+5; i < n; ++i) {
+                std::string url = m_ImageUrl + "&page=" + std::to_string(i);
+                auto res = clt.Get(url.c_str());
+                if (res->status != 200) break;
+                YJson root; 
+                root.parse(res->body);
+                YJson& data = root["data"sv].second;
+                for (auto& i: data.getArray()) {
+                    std::string name = i.find("path")->second.getValueString().substr(31);
+                    if (m_BlackArray.findByValA(name) == m_BlackArray.endA()) {
+                        m_Array.emplace_back(name);
+                        ++m_TotalDownload;
+                    }
+                }
+            }
+        } else { // wallhaven-6ozrgw.png
+             const std::regex pattern("<li><figure.*?data-wallpaper-id=\"(\\w{6})\"");
+             const auto& blackList = m_BlackArray.getArray();
+             auto cmp = [](const YJson& i, const std::string& name)->bool { return i.getValueString().find(name) != std::string::npos;};
+             std::regex_iterator<std::string_view::const_iterator> end;
+             for (size_t i=5*(GetInt()-1) + 1, n=i+5; i < n; ++i) {
+                std::string url = (i != 1? m_ImageUrl + "&page=" + std::to_string(i): m_ImageUrl);
+                std::cout << url << std::endl;
+                auto res = clt.Get(url.c_str());
+                if (res->status != 200) break;
+                const std::string_view data = res->body;
+                std::regex_iterator iter(data.cbegin(), data.cend(), pattern);
+                while (iter != end) {
+                    const auto& i = iter->str(1);
+                    if (std::find_if(blackList.begin(), blackList.end(), std::bind(cmp, std::placeholders::_1, std::ref(i))) == blackList.end() && std::find_if(m_Array.begin(), m_Array.end(), [&i](const YJson& j)->bool{ return j.getValueString() == i;}) == m_Array.end()) {
+                        m_Array.emplace_back(i);
+                        ++m_TotalDownload;
+                    }
+                    ++iter;
                 }
             }
         }
@@ -174,25 +216,55 @@ private:
         return m_TotalDownload;
     }
     void GetApiPathUrl() {
+        using namespace std::literals;
         const std::string_view curType = m_Setting->find("WallhavenCurrent")->second.getValueString();
-        auto& val = m_Setting->find("WallhavenApi")->second.find(curType)->second;
+        auto& data = m_Setting->find("WallhavenApi")->second;
+        auto& val = data[curType].second;
         m_ImageDir = val.find("Directory")->second.getValueString();
-        m_ImageUrl = val.find("Parameter")->second.urlEncode("/api/v1/search?");
+        auto& param = val["Parameter"].second;
+        if (param.isObject()) {
+            m_ImageUrl = param.urlEncode("/api/v1/search?"sv);
+        } else if (param.isString()) {
+            m_ImageUrl = param.getValueString();
+        } else {
+            throw std::runtime_error("Cant find Wallhaven Parameter or Path!"s);
+        }
+        auto& ApiKey = m_Setting->find("ApiKey")->second;
+        if (ApiKey.isString()) {
+            m_ImageUrl.append("&apikey="s + ApiKey.getValueString());
+        }
     }
     bool NeedGetImageUrl() {
+        using namespace std::literals;
         if (Wallpaper::PathFileExists(m_DataPath)) {
             try {
                 m_Data = new YJson(m_DataPath, YJson::UTF8);
+                if (!m_Data->isObject()) throw nullptr;
+                std::array<std::tuple<std::string, YJson::Type, YJson>, 4> lst {
+                    std::tuple<std::string, YJson::Type, YJson>
+                    { "Used"s, YJson::Array, YJson::Array },
+                    { "Unused"s, YJson::Array, YJson::Array },
+                    { "Blacklist"s, YJson::Array, YJson::Array },
+                    { "Api"s, YJson::String, YJson::String }
+                };
+                for (auto& [i, j, k]: lst) {
+                    auto iter = m_Data->find(i);
+                    if (iter == m_Data->endO()) {
+                        m_Data->append(std::move(k), i);
+                    } else if (iter->second.getType() != j) {
+                        YJson::swap(iter->second, k);
+                    }
+                }
             } catch (...) {
                 delete m_Data;
-                m_Data = new YJson(YJson::Object);
-                m_Data->append(m_ImageUrl, "Api");
-                m_Data->append(YJson::Array, "Used");
-                m_Data->append(YJson::Array, "Unused");
-                m_Data->append(YJson::Array, "Blacklist");
+                m_Data = new YJson((YJson::O {
+                    { "Api"sv,       m_ImageUrl   },
+                    { "Used"sv,      YJson::Array },
+                    { "Unused"sv,    YJson::Array },
+                    { "Blacklist"sv, YJson::Array }
+                }));
                 return true;
             }
-            using namespace std::literals;
             if (m_Data->find("Api"sv)->second.getValueString() != m_ImageUrl) {
                 m_Data->find("Api"sv)->second.setText(m_ImageUrl);
                 m_Data->find("Used"sv)->second.clearA();
@@ -201,11 +273,12 @@ private:
             }
             return false;
         } else {
-            m_Data = new YJson(YJson::Object);
-            m_Data->append(m_ImageUrl, "Api");
-            m_Data->append(YJson::Array, "Used");
-            m_Data->append(YJson::Array, "Unused");
-            m_Data->append(YJson::Array, "Blacklist");
+            m_Data = new YJson(YJson::O {
+                {"Api"sv, m_ImageUrl},
+                {"Used"sv, YJson::Array},
+                {"Unused"sv, YJson::Array},
+                {"Blacklist"sv, YJson::Array}
+            });
             return true;
         }
         return true;

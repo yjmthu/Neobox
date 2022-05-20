@@ -80,24 +80,26 @@ public:
     virtual bool LoadSetting() {
         if (Wallpaper::PathFileExists(m_SettingPath)) {
             m_Setting = new YJson(m_SettingPath, YJson::UTF8);
-            m_ImageDir = m_Setting->find("imgdir")->second.getValueString();
-
+            m_ImageDir = m_Setting->find("imgdirs")->second.beginA()->getValueString();
             return true;
         }
-        // std::cout << "fffffffff\n";
         return false;
     }
     virtual bool WriteDefaultSetting() {
+        using namespace std::literals;
         m_ImageDir = m_HomePicLocation;
-        m_Setting = new YJson(YJson::Object);
-        m_Setting->append(m_ImageDir, "imgdir");
-        m_Setting->append(true, "random");
+        m_Setting = new YJson(YJson::O {
+            {"imgdirs"sv, { m_ImageDir }},
+            {"random"sv, true},
+            {"recursion"sv, false}
+        });
         m_Setting->toFile(m_SettingPath);
         return true;
     }
     virtual void Dislike(const std::string& img) {}
     virtual void SetCurDir(const std::string& str) {
-        m_Setting->find("imgdir")->second.setText(m_ImageDir = str);
+        auto& li = m_Setting->find("imgdirs")->second;
+        li.beginA()->setText(m_ImageDir = str);
         m_Setting->toFile(m_SettingPath);
     }
     virtual const void* GetDataByName(const char* key) const {

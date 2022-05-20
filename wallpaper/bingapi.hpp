@@ -41,7 +41,8 @@ public:
         httplib::Client clt(m_ApiUrl);
         auto res = clt.Get("/HPImageArchive.aspx?format=js&idx=0&n=8");
         if (res->status != 200) return false;
-        m_Setting = new YJson(res->body);
+        m_Setting = new YJson;
+        m_Setting->parse(res->body);
         m_Setting->append(GetToday("\%Y\%m\%d"), "today");
         m_Setting->append(m_ImageDir, "imgdir");
         m_Setting->append(m_ImageNameFormat, "imgfmt");

@@ -1,7 +1,7 @@
 {
   "configurations": {
     "GdbLaunch": {
-      "adapter": "CodeLLDB",
+      "adapter": "vscode-cpptools",
       "configuration": {
         "request": "launch",
         "program": "./build/Neobox",
@@ -9,7 +9,7 @@
         "args": [ ],
         "environment": [ ],
         "externalConsole": true,
-        "MIMode": "lldb"
+        "MIMode": "gdb"
       }
     }
   }

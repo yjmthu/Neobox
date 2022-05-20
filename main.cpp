@@ -17,7 +17,7 @@ inline void DoExit(ExitCode m_ExitCode) {
     case ExitCode::RETCODE_NORMAL:
         break;
     case ExitCode::RETCODE_RESTART:
-        QProcess::startDetached(qApp->applicationFilePath(), QStringList({"-r"}));    //重启程序
+        QProcess::startDetached(qApp->applicationFilePath(), QStringList({"-r"}));    // 重启程序
         break;
     default:
         break;
