@@ -9,13 +9,7 @@
 #include <memory>
 #include <iostream>
 #include <fstream>
-
-#ifdef _WIN32
-#define FILE_SEP_PATH "\\"
-#elif defined __linux__
-#include <sys/stat.h>
-#define FILE_SEP_PATH "/"
-#endif
+#include <filesystem>
 
 #include <QObject>
 #include <QDir>
@@ -33,7 +27,7 @@ inline void writelog(const std::string& s) {
 #define COUT(s)
 #endif
 
-typedef std::shared_ptr<std::vector<std::string>> ImageInfo;
+typedef std::shared_ptr<std::vector<std::filesystem::path>> ImageInfoEx;
 
 class Wallpaper: public QObject
 {
@@ -46,22 +40,21 @@ public:
     enum class Desktop { WIN, KDE, DDE, GNOME, XFCE, UNKNOWN };
     explicit Wallpaper();
     virtual ~Wallpaper();
-    static bool DownloadImage(const ImageInfo& imageInfo);
-    static bool SetWallpaper(const std::string& imagePath);
-    static bool PathFileExists(const std::string& filePath);
-    static bool PathDirExists(const std::string& dirPath);
+    static bool DownloadImage(const ImageInfoEx& imageInfo);
+    static bool SetWallpaper(const std::filesystem::path& imagePath);
     static bool IsImageFile(const std::string_view fileName);
     static bool IsOnline();
     static bool IsWorking();
     bool SetNext();
     bool SetPrevious();
     bool SetDropFile(const std::string& filePath);
-    inline const std::string& GetCurIamge() const { return m_CurImage; }
+    inline const std::filesystem::path& GetCurIamge() const
+        { return m_CurImage; }
     bool RemoveCurrent();
     bool IsPrevAvailable();
     bool IsNextAvailable();
     void SetSlot(int type);
-    const std::string& GetImageDir() const;
+    const std::filesystem::path& GetImageDir() const;
     int GetTimeInterval() const;
     void SetTimeInterval(int minute);
     int GetImageType();
@@ -75,9 +68,9 @@ private:
     class QTimer *m_Timer;
     class WallBase* m_Wallpaper;
     std::queue<class WallBase*> m_Jobs;
-    std::deque<std::string> m_PrevImgs;
-    std::stack<std::string> m_NextImgs;
-    std::string m_CurImage;
+    std::deque<std::filesystem::path> m_PrevImgs;
+    std::stack<std::filesystem::path> m_NextImgs;
+    std::filesystem::path m_CurImage;
     bool m_PrevAvailable;
     bool m_NextAvailable;
     bool m_KeepChange;
@@ -86,8 +79,6 @@ public slots:
     void SetAutoChange(bool flag);
     void SetFirstChange(bool flag);
     void SetCurDir(const std::string& str);
-    // void SetValue(const std::string& str, int val);
-    // void Update(bool update);
 signals:
     void StartTimer(bool start);
 };

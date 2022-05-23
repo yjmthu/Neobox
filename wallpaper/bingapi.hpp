@@ -15,9 +15,9 @@ public:
     }
     virtual bool LoadSetting() {
         m_ApiUrl = "https://cn.bing.com";
-        m_ImageDir = m_HomePicLocation + u8"" FILE_SEP_PATH "必应壁纸";
+        m_ImageDir = m_HomePicLocation / u8"必应壁纸";
         m_ImageNameFormat = "\%s \%Y\%m\%d.jpg";
-        if (Wallpaper::PathFileExists(m_SettingPath)) {
+        if (std::filesystem::exists(m_SettingPath)) {
             m_Setting = new YJson(m_SettingPath, YJson::UTF8);
             if (m_Setting->find("today")->second.getValueString() == GetToday("\%Y\%m\%d")) {
                 m_ImageDir = m_Setting->find("imgdir")->second.getValueString();
@@ -33,11 +33,7 @@ public:
     }
     virtual bool WriteDefaultSetting() {
         // https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8
-        //     std::string img_url("https://cn.bing.com");
-        // https://www.bing.com/th?id=OHR.Yellowstone150_ZH-CN0551084440_UHD.jpg
 
-        // (img_url += temp->find("urlbase")->getValueString()) += "_UHD.jpg";
-    
         httplib::Client clt(m_ApiUrl);
         auto res = clt.Get("/HPImageArchive.aspx?format=js&idx=0&n=8");
         if (res->status != 200) return false;
@@ -49,11 +45,12 @@ public:
         m_Setting->toFile(m_SettingPath);
         return true;
     }
-    virtual ImageInfo GetNext() {
+    virtual ImageInfoEx GetNext() {
+        // https://www.bing.com/th?id=OHR.Yellowstone150_ZH-CN0551084440_UHD.jpg
+
         auto jsTemp = m_Setting->find("images")->second.find(m_CurImageIndex);
-        ImageInfo ptr(new std::vector<std::string>);
-        ptr->push_back(m_ImageDir);
-        ptr->push_back(GetImageName(*jsTemp));
+        ImageInfoEx ptr(new std::vector<std::filesystem::path>);
+        ptr->push_back(m_ImageDir / GetImageName(*jsTemp));
         ptr->push_back(m_ApiUrl);
         if (++m_CurImageIndex > 7) m_CurImageIndex = 0;
         ptr->push_back(jsTemp->find("urlbase")->second.getValueString() + "_UHD.jpg");

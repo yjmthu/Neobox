@@ -5,7 +5,6 @@
 #include "directapi.hpp"
 
 bool WallBase::m_IsWorking = false;
-// int WallBase::m_JobLeft = 0;
 
 WallBase* WallBase::GetNewInstance(int type) {
     switch (type) {

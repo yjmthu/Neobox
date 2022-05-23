@@ -2,6 +2,7 @@
 #include "yjson.h"
 
 #include <regex>
+#include <filesystem>
 
 namespace WallClass {
 
@@ -20,7 +21,7 @@ private:
     }
 public:
     virtual bool LoadSetting() override {
-        if (!Wallpaper::PathFileExists(m_SettingPath))
+        if (!std::filesystem::exists(m_SettingPath))
             return true;
         try {
             m_Setting = new YJson(m_SettingPath, YJson::UTF8);
@@ -29,11 +30,11 @@ public:
             return false;
         }
     }
-    virtual ImageInfo GetNext() override {
+    virtual ImageInfoEx GetNext() override {
         // https://w.wallhaven.cc/full/1k/wallhaven-1kmx19.jpg
         using namespace std::literals;
 
-        ImageInfo ptr(new std::vector<std::string>);
+        ImageInfoEx ptr(new std::vector<std::filesystem::path>);
 
         if (m_NeedDownUrl) {
             std::cout << "Start Download Url\n"sv;
@@ -56,8 +57,7 @@ public:
         std::string& name = choice->getValueString();
         if (name.length() == 6) IsPngFile(name);
         else std::cout << "string: " << name << std::endl;
-        ptr->emplace_back(m_ImageDir);
-        ptr->emplace_back(name);
+        ptr->emplace_back(m_ImageDir / name);
         ptr->emplace_back("https://w.wallhaven.cc"sv);
         ptr->emplace_back("/full/"s + name.substr(10, 2) + "/"s + name);
         m_Data->find("Used")->second.append(name);
@@ -157,7 +157,7 @@ private:
                 ptr.append("toplist", "sorting");
             }
             ptr.append(std::get<3>(i), std::get<2>(i));
-            item.append(m_HomePicLocation + FILE_SEP_PATH + std::get<0>(i), "Directory");
+            item.append(m_HomePicLocation / std::get<0>(i), "Directory");
         }
         m_Setting->append(std::get<0>(*paramLIst.begin()), "WallhavenCurrent");
         m_Setting->append(1, "PageNumber");
@@ -236,7 +236,7 @@ private:
     }
     bool NeedGetImageUrl() {
         using namespace std::literals;
-        if (Wallpaper::PathFileExists(m_DataPath)) {
+        if (std::filesystem::exists(m_DataPath)) {
             try {
                 m_Data = new YJson(m_DataPath, YJson::UTF8);
                 if (!m_Data->isObject()) throw nullptr;
@@ -274,10 +274,10 @@ private:
             return false;
         } else {
             m_Data = new YJson(YJson::O {
-                {"Api"sv, m_ImageUrl},
-                {"Used"sv, YJson::Array},
-                {"Unused"sv, YJson::Array},
-                {"Blacklist"sv, YJson::Array}
+                { "Api"sv,       m_ImageUrl   },
+                { "Used"sv,      YJson::Array },
+                { "Unused"sv,    YJson::Array },
+                { "Blacklist"sv, YJson::Array }
             });
             return true;
         }

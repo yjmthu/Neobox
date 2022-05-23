@@ -27,8 +27,8 @@ public:
     virtual ~Native() {
         delete m_Setting;
     }
-    virtual ImageInfo GetNext() {
-        ImageInfo ptr(new std::vector<std::string>);
+    virtual ImageInfoEx GetNext() {
+        ImageInfoEx ptr(new std::vector<std::filesystem::path>);
         DIR *dir = nullptr;
         struct dirent *file;
         if(!(dir = opendir(m_ImageDir.c_str()))) return ptr;
@@ -78,7 +78,7 @@ public:
         return ptr;
     }
     virtual bool LoadSetting() {
-        if (Wallpaper::PathFileExists(m_SettingPath)) {
+        if (std::filesystem::exists(m_SettingPath)) {
             m_Setting = new YJson(m_SettingPath, YJson::UTF8);
             m_ImageDir = m_Setting->find("imgdirs")->second.beginA()->getValueString();
             return true;
@@ -98,8 +98,9 @@ public:
     }
     virtual void Dislike(const std::string& img) {}
     virtual void SetCurDir(const std::string& str) {
+        m_ImageDir = str;
         auto& li = m_Setting->find("imgdirs")->second;
-        li.beginA()->setText(m_ImageDir = str);
+        li.beginA()->setText(str);
         m_Setting->toFile(m_SettingPath);
     }
     virtual const void* GetDataByName(const char* key) const {

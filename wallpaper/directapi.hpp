@@ -11,10 +11,9 @@ public:
     virtual bool LoadSetting() {
         return false;
     }
-    virtual ImageInfo GetNext() {
-        return ImageInfo(new std::vector<std::string> {
-            m_ImageDir,
-            GetImageName(),
+    virtual ImageInfoEx GetNext() {
+        return ImageInfoEx(new std::vector<std::filesystem::path> {
+            m_ImageDir / GetImageName(),
             m_ApiUrl,
             m_ApiPath
         });
@@ -25,7 +24,7 @@ public:
     virtual bool WriteDefaultSetting() {
         m_ApiUrl = "https://source.unsplash.com";
         m_ApiPath = "/random/2500x1600";
-        m_ImageDir = m_HomePicLocation + u8"" FILE_SEP_PATH "随机壁纸";
+        m_ImageDir = m_HomePicLocation / u8"随机壁纸";
         m_ImageNameFormat = "\%F \%T.jpg";
         return true;
     }

@@ -11,7 +11,7 @@ public:
     }
     virtual ~ScriptOutput(){ }
     virtual bool LoadSetting() {
-        if (Wallpaper::PathFileExists(m_SettingPath)) {
+        if (std::filesystem::exists(m_SettingPath)) {
             m_Setting = new YJson(m_SettingPath, YJson::UTF8);
             m_Command = m_Setting->find("executeable")->second.getValueString();
             for (auto& i: m_Setting->find("arglist")->second.getArray()) {
@@ -22,15 +22,14 @@ public:
         return false;
     }
     virtual bool WriteDefaultSetting() {
-        // m_Command = "";
         m_Setting = new YJson(YJson::Object);
         m_Setting->append(m_Command, "executeable");
         m_Setting->append(YJson::Array, "arglist");
         m_Setting->toFile(m_SettingPath);
         return true;
     }
-    virtual ImageInfo GetNext() {
-        ImageInfo ptr(new std::vector<std::string>);
+    virtual ImageInfoEx GetNext() {
+        ImageInfoEx ptr(new std::vector<std::filesystem::path>);
         if (m_Command.empty()) return ptr;
         std::vector<std::string> result;
         std::string cmd = GetCommandWithArg();
@@ -40,9 +39,7 @@ public:
             str.pop_back();
         }
         if (str.empty()) return ptr;
-        auto pos = str.find_last_of(FILE_SEP_PATH);
-        ptr->push_back(str.substr(0, pos));
-        ptr->push_back(str.substr(pos+1));
+        ptr->push_back(str);
         return ptr;
     }
     virtual void Dislike(const std::string& img) {}

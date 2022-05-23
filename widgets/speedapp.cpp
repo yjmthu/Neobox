@@ -3,6 +3,7 @@
 #include "wallpaper/wallpaper.h"
 
 #include <yjson.h>
+#include <filesystem>
 
 #include <QDir>
 #include <QStandardPaths>
@@ -36,12 +37,12 @@ VarBox::~VarBox()
 void VarBox::GetSetting()
 {
     const char m_szSettingFile[13] { "Setting.json" };
-    if (!Wallpaper::PathFileExists(m_szSettingFile)) {
+    if (!std::filesystem::exists(m_szSettingFile)) {
         QFile::copy(":/jsons/Setting.json", m_szSettingFile);
         QFile::setPermissions(m_szSettingFile, QFileDevice::ReadUser | QFileDevice::WriteUser);
     }
     m_Setting = new YJson(m_szSettingFile, YJson::UTF8);
-    if (!Wallpaper::PathFileExists(Wallpaper::m_szWallScript)) {
+    if (!std::filesystem::exists(Wallpaper::m_szWallScript)) {
         QFile::copy(":/scripts/SetWallpaper.sh", Wallpaper::m_szWallScript);
         QFile::setPermissions(Wallpaper::m_szWallScript, QFileDevice::ReadUser | QFileDevice::Permission::ExeUser);
     }

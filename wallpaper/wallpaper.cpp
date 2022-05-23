@@ -2,8 +2,6 @@
 #include "widgets/speedapp.h"
 #include "core/sysapi.h"
 
-#include <string>
-#include <QDebug>
 #include <QTimer>
 #include <QMessageBox>
 
@@ -16,91 +14,42 @@
 #include <dirent.h>
 #endif
 
-#ifdef _WIN32
-
-inline size_t GetFileSize(const TCHAR* filePath)
-{
-    WIN32_FIND_DATA fileInfo; 
-    HANDLE hFind; 
-    DWORD fileSize = 0; 
-    hFind = FindFirstFile(filePath, &fileInfo); 
-    if(hFind != INVALID_HANDLE_VALUE) 
-        fileSize = fileInfo.nFileSizeLow;
-    FindClose(hFind);
-    return fileSize;
-}
-
-#elif defined __linux__
-
-inline size_t GetFileSize(const char* filePath)
-{
-#if 0
-    size_t fileSize = 0;
-    FILE* file = fopen(filePath, "r");
-    if (file) {
-        fileSize = file_length(fileno(file));
-        fclose(file);
-    }
-#else
-    struct stat info;
-    if (stat(filePath, &info) != 0) return 0;
-    size_t fileSize = info.st_size;
-#endif
-    return fileSize;
-}
-
-#endif
-
-// extern int remove (const char *__filename) __THROW;
-
-inline int remove(std::string& path)
-{
-    return remove(path.c_str());
-}
-
 constexpr char Wallpaper::m_szWallScript[16];
 
-bool Wallpaper::DownloadImage(const ImageInfo& imageInfo)
+bool Wallpaper::DownloadImage(const ImageInfoEx& imageInfo)
 {
-    std::string imgFile = (*imageInfo)[0] + FILE_SEP_PATH + (*imageInfo)[1];
-    // std::cout << "To save image: " << imgFile << std::endl;
-    if (!PathDirExists((*imageInfo)[0]))
-        mkdir((*imageInfo)[0].c_str(), 0777);
-    if (PathFileExists(imgFile)) {
-        if (!GetFileSize(imgFile.c_str()))
-            remove(imgFile);
+    if (imageInfo->empty()) return false;
+    // if (!std::filesystem::exists(imageInfo->front()))
+    //     std::filesystem::create_directories(imageInfo->front());
+    if (std::filesystem::exists(imageInfo->front())) {
+        if (!std::filesystem::file_size(imageInfo->front()))
+            std::filesystem::remove(imageInfo->front());
         else
             return true;
     }
-    if (imageInfo->size() != 4) return false;
-    httplib::Client clt((*imageInfo)[2]);
+    if (imageInfo->size() != 3) return false;
+    httplib::Client clt(imageInfo->at(1));
 
-    std::ofstream file(imgFile, std::ios::binary | std::ios::out);
+    std::ofstream file(imageInfo->front(), std::ios::binary | std::ios::out);
     if (!file.is_open()) return false;
     auto m_fHandleData = [&file](const char* data, size_t length){
         file.write(data, length);
         return true;
     };
-    // std::cout << "Post Get:" << imageInfo->at(3) << std::endl;
-    auto res = clt.Get((*imageInfo)[3].c_str(), m_fHandleData);
+    auto res = clt.Get(imageInfo->at(2).c_str(), m_fHandleData);
 label:
     if (res->status == 200) {
-        // std::cout << "Get Ok\n";
         file.close();
         return true;
     } else if (res->status == 301 || res->status == 302) {
-        // std::cout << "Redirect On\n";
         file.seekp(std::ios::beg);
         clt.set_follow_location(true);
-        res = clt.Get((*imageInfo)[3].c_str(), m_fHandleData);
-        // for (auto& i: res->headers) {
-        //     std::cout << i.first << ": " << i.second << std::endl;
-        // }
+        res = clt.Get(imageInfo->at(2).c_str(), m_fHandleData);
         goto label;
     } else {
-        // std::cout << "Get Bad" << res->status << "\n";
         file.close();
-        if (PathFileExists(imgFile)) remove(imgFile);
+        if (std::filesystem::exists(imageInfo->front()))
+            std::filesystem::remove(imageInfo->front());
         return false;
     }
 }
@@ -127,10 +76,10 @@ Wallpaper::Desktop Wallpaper::GetDesktop()
 #endif
 }
 
-bool Wallpaper::SetWallpaper(const std::string &imagePath)
+bool Wallpaper::SetWallpaper(const std::filesystem::path& imagePath)
 {
     static auto m_DesktopType = GetDesktop();
-    if (!PathFileExists(imagePath)) return false;
+    if (!std::filesystem::exists(imagePath)) return false;
 #if defined (_WIN32)
     wxCStrData str = imagePath.c_str();
     return ::SystemParametersInfo(
@@ -166,27 +115,6 @@ bool Wallpaper::SetWallpaper(const std::string &imagePath)
     std::string m_sCmd = sstr.str();
     return system(m_sCmd.c_str()) == 0;
 #endif
-}
-
-bool Wallpaper::PathFileExists(const std::string &filePath)
-{
-    FILE *fp = fopen(filePath.c_str(), "rb");
-    if (fp) {
-        fclose(fp);
-        return true;
-    }
-    return false;
-}
-
-bool Wallpaper::PathDirExists(const std::string &dirPath)
-{
-    DIR *dp = opendir(dirPath.c_str());
-    if (dp) {
-        closedir(dp);
-        return true;
-    }
-    return false;
-
 }
 
 bool Wallpaper::IsOnline()
@@ -256,7 +184,7 @@ Wallpaper::~Wallpaper()
 bool Wallpaper::IsPrevAvailable()
 {
     while (!m_PrevImgs.empty()) {
-        if (PathFileExists(m_PrevImgs.back()))
+        if (std::filesystem::exists(m_PrevImgs.back()))
             return true;
         m_PrevImgs.pop_back();
     }
@@ -310,7 +238,7 @@ void Wallpaper::SetSlot(int type)
     }
 }
 
-const std::string& Wallpaper::GetImageDir() const
+const std::filesystem::path& Wallpaper::GetImageDir() const
 {
     return m_Wallpaper->GetImageDir();
 }
@@ -335,13 +263,12 @@ bool Wallpaper::SetNext()
 {
     // std::cout << "=====NEXT======\n";
     if (m_NextImgs.empty()) {
-        const ImageInfo ptr = m_Wallpaper->GetNext();
+        const ImageInfoEx ptr = m_Wallpaper->GetNext();
         if (ptr->empty() || !DownloadImage(ptr)) return false;
-        auto imgFile = (*ptr)[0] + FILE_SEP_PATH + (*ptr)[1];
-        if (!SetWallpaper(imgFile))
+        if (!SetWallpaper(ptr->front()))
             return false;
         if (!m_CurImage.empty()) m_PrevImgs.push_back(m_CurImage);
-        m_CurImage = imgFile;
+        m_CurImage = ptr->front();
         return true;
     } else {
         if (SetWallpaper(m_NextImgs.top())) {
@@ -407,15 +334,15 @@ bool Wallpaper::RemoveCurrent()
     COUT("=====DISLIKE======");
     if (m_NextImgs.empty()) {
         if (!SetNext()) return false;
-        if (PathFileExists(m_PrevImgs.back()))
-            remove(m_PrevImgs.back());
+        if (std::filesystem::exists(m_PrevImgs.back()))
+            std::filesystem::remove(m_PrevImgs.back());
         m_Wallpaper->Dislike(m_PrevImgs.back());
         m_PrevImgs.pop_back();
         return true;
     } else {
         if (SetWallpaper(m_NextImgs.top())) {
-            if (PathFileExists(m_CurImage))
-                remove(m_CurImage);
+            if (std::filesystem::exists(m_CurImage))
+                std::filesystem::remove(m_CurImage);
             m_CurImage = m_NextImgs.top();
             m_NextImgs.pop();
             return true;
@@ -433,7 +360,7 @@ void Wallpaper::ReadSettings()
     if (!file.is_open()) return;
     std::string temp;
     if (std::getline(file, temp)) {
-        m_CurImage.swap(temp);
+        m_CurImage = temp;
         while (std::getline(file, temp)) {
             // std::cout << temp;
             m_PrevImgs.push_front(temp);
@@ -475,7 +402,7 @@ void Wallpaper::SetFirstChange(bool flag)
 
 void Wallpaper::SetCurDir(const std::string& str)
 {
-    if (!PathDirExists(str))
+    if (!std::filesystem::exists(str))
         mkdir(str.c_str(), 0777);
     m_Wallpaper->SetCurDir(str);
 }
@@ -517,11 +444,6 @@ const void* Wallpaper::GetDataByName(const char* key) const
 {
     return m_Wallpaper->GetDataByName(key);
 }
-
-// void Wallpaper::SetValue(const std::string &str, int val)
-// {
-//     m_Wallpaper->SetValue(str, val);
-// }
 
 int Wallpaper::GetInt() const
 {
