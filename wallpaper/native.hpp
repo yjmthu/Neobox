@@ -28,7 +28,7 @@ public:
         delete m_Setting;
     }
     virtual ImageInfoEx GetNext() {
-        ImageInfoEx ptr(new std::vector<std::filesystem::path>);
+        ImageInfoEx ptr(new std::vector<std::string>);
         DIR *dir = nullptr;
         struct dirent *file;
         if(!(dir = opendir(m_ImageDir.c_str()))) return ptr;

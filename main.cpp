@@ -26,7 +26,6 @@ inline void DoExit(ExitCode m_ExitCode) {
 
 int main(int argc, char *argv[])
 {
-    if (argc == 2 && !strcmp("-b", argv[1])) sleep(3);
     // qputenv("QT_SCALE_FACTOR", "2.0");
     // qputenv("QT_AUTO_SCREEN_SCALE_FACTOR", "1.0");
     QSharedMemory m_SharedMemory;
@@ -46,3 +45,4 @@ int main(int argc, char *argv[])
     DoExit(static_cast<ExitCode>(ret));
     return 0;
 }
+

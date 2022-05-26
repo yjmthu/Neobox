@@ -140,6 +140,18 @@ NetSpeedHelper::~NetSpeedHelper()
     // delete m_Timer;
 }
 
+void NetSpeedHelper::StartTimer()
+{
+    m_RecvBytes = 0;
+    m_SendBytes = 0;
+    m_Timer->start();
+}
+
+void NetSpeedHelper::StopTimer()
+{
+    m_Timer->stop();
+}
+
 void NetSpeedHelper::SetMemInfo()
 {
 
@@ -165,7 +177,6 @@ void NetSpeedHelper::SetMemInfo()
 
 void NetSpeedHelper::SetNetInfo()
 {
-    static uint64_t recv_bytes = 0, send_bytes = 0;
     uint64_t recv=0, send=0;
     std::list<std::string> result;
     GetCmdOutput("cat /proc/net/dev", result);
@@ -186,13 +197,13 @@ void NetSpeedHelper::SetNetInfo()
             left = std::find_if(right, str.end(), &isdigit);
         }
     }
-    if (recv_bytes) {
-        formatSpped(m_SysInfo[1], send - send_bytes, false);
-        formatSpped(m_SysInfo[2], recv - recv_bytes, true);
+    if (m_RecvBytes) {
+        formatSpped(m_SysInfo[1], send - m_SendBytes, false);
+        formatSpped(m_SysInfo[2], recv - m_RecvBytes, true);
     }
     // std::cout << recv << " " << send << std::endl;
-    recv_bytes = recv;
-    send_bytes = send;
+    m_RecvBytes = recv;
+    m_SendBytes = send;
 }
 #endif
 

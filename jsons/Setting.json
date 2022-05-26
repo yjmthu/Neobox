@@ -5,6 +5,9 @@
         "TimeInterval": 30,
         "ImageType": 0
     },
+    "FormGlobal": {
+        "ShowForm": true
+    },
     "FormUi": {
         "BkColor": [0, 0, 0, 250],
         "MemUseage": {

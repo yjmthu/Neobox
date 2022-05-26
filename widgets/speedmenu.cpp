@@ -1,8 +1,13 @@
 #include "speedmenu.h"
 #include "speedapp.h"
 
+#include "core/appcode.hpp"
 #include "wallpaper/wallpaper.h"
-#include "widgets/speedbox.h"
+#include "translate/text.h"
+#include "speedbox.h"
+#include "screenfetch.h"
+
+#include "3rdlib/3rd_qxtglobalshortcut/qxtglobalshortcut.h"
 
 #include <yjson.h>
 
@@ -45,7 +50,7 @@ void SpeedMenu::showEvent(QShowEvent *event)
 
 SpeedMenu::SpeedMenu(QWidget *parent)
     : QMenu(parent)
-    , m_Actions(new QAction[11])
+    , m_Actions(new QAction[9])
 {
     SetupUi();
     SetupConntects();
@@ -59,20 +64,35 @@ SpeedMenu::~SpeedMenu()
 void SpeedMenu::SetupUi()
 {
     constexpr char lst[11][13] = {
-        u8"软件设置", u8"划词翻译", u8"上一张图", u8"下一张图", u8"不看此图",
-        u8"打开目录", u8"快速关机", u8"快捷重启", u8"本次退出", u8"防止息屏"
+        u8"软件设置", u8"截图翻译", u8"上一张图", u8"下一张图", u8"不看此图",
+        u8"打开目录", u8"快速关机", u8"快捷重启", u8"本次退出"
     };
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 9; ++i) {
         m_Actions[i].setText(lst[i]);
         addAction(m_Actions+i);
     }
-    m_Actions[1].setCheckable(true);
-    m_Actions[9].setCheckable(true);
     SetupSettingMenu();
+}
+
+void SpeedMenu::ScreenShot()
+{
+    ScreenFetch getscreen;
+    getscreen.exec();
+    if (getscreen.m_IsGetPicture)
+        (new TextDlg)->show();
 }
 
 void SpeedMenu::SetupConntects()
 {
+    connect(m_Actions+1, &QAction::triggered, this, &SpeedMenu::ScreenShot);
+
+    QxtGlobalShortcut* shotCut = new QxtGlobalShortcut(this);
+    if (shotCut->setShortcut(QKeySequence("Shift+A"))) {
+        connect(shotCut, &QxtGlobalShortcut::activated, this, &SpeedMenu::ScreenShot);
+    } else {
+        std::cout << "Can't regist Shift+A\n";
+    }
+
     connect(m_Actions+2, &QAction::triggered, qApp,
             std::bind(&Wallpaper::SetSlot, m_VarBox->m_Wallpaper, -1));
     connect(m_Actions+3, &QAction::triggered, qApp,
@@ -150,7 +170,7 @@ void SpeedMenu::SetupSettingMenu()
                  << "Name=Neobox" << std::endl
                  << "Comment=A powerful wallpaper tool." << std::endl
                  << "Icon=" << iconFileName.toStdString() << std::endl
-                 << "Exec=\"" << qApp->applicationFilePath().toStdString() << "\" -b" << std::endl
+                 << "Exec=sh -c \"(sleep 3 && exec \'" << qApp->applicationFilePath().toStdString() << "\' -b)\"" << std::endl
                  << "Categories=System" << std::endl
                  << "Terminal=false" << std::endl
                  << "Type=Application" << std::endl;
@@ -159,7 +179,22 @@ void SpeedMenu::SetupSettingMenu()
             QFile::remove(desktopFileName);
         }
     });
-    auto ptr = m_pAppSettingMenu->addAction("背景颜色");
+    auto ptr = m_pAppSettingMenu->addAction("显示界面");
+    ptr->setCheckable(true);
+    ptr->setChecked(m_VarBox->m_Setting->find("FormGlobal")->second["ShowForm"].second.isTrue());
+    connect(ptr, &QAction::triggered, [](bool checked){
+        m_VarBox->m_Setting->find("FormGlobal")->second["ShowForm"].second = checked;
+        if (checked) {
+            m_VarBox->m_SpeedBox->show();
+        } else {
+            m_VarBox->m_SpeedBox->hide();
+        }
+        m_VarBox->SaveSetting();
+    });
+    connect(m_pAppSettingMenu->addAction("重启软件"), &QAction::triggered, this, [](){
+        qApp->exit(static_cast<int>(ExitCode::RETCODE_RESTART));
+    });
+    ptr = m_pAppSettingMenu->addAction("背景颜色");
     connect(ptr, &QAction::triggered, this, [this](){
         QColor col = QColorDialog::getColor(m_VarBox->m_SpeedBox->m_BackCol, nullptr, QStringLiteral("选择颜色"));
         if (col.isValid()) {

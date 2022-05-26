@@ -27,7 +27,7 @@ inline void writelog(const std::string& s) {
 #define COUT(s)
 #endif
 
-typedef std::shared_ptr<std::vector<std::filesystem::path>> ImageInfoEx;
+typedef std::shared_ptr<std::vector<std::string>> ImageInfoEx;
 
 class Wallpaper: public QObject
 {

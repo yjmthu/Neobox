@@ -11,8 +11,12 @@ public:
     explicit NetSpeedHelper(QObject *parent);
     ~NetSpeedHelper();
     void GetSysInfo();
-    std::string m_SysInfo[3] = {u8"0", u8"↑ 0.0B", u8"↓ 0.0B"};
+    std::string m_SysInfo[3] = {u8"0", u8"↑ 0.0B", u8"↓ 0.0B"}; 
+    void StartTimer();
+    void StopTimer();
+
 private:
+    uint64_t m_RecvBytes, m_SendBytes;
 #ifdef _WIN32
     PIP_ADAPTER_ADDRESSES piaa = nullptr;   // Network Card
     MIB_IFTABLE *mi = nullptr;              // Network Speed

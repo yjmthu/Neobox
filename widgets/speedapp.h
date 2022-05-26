@@ -10,6 +10,8 @@ public:
     ~VarBox();
     class Wallpaper *m_Wallpaper;
     class YJson* m_Setting;
+    class SpeedMenu* m_Menu;
+    class Translater* m_Translater;
     void SaveSetting();
 private:
     class SpeedBox* m_SpeedBox;

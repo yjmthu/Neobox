@@ -49,7 +49,7 @@ public:
         // https://www.bing.com/th?id=OHR.Yellowstone150_ZH-CN0551084440_UHD.jpg
 
         auto jsTemp = m_Setting->find("images")->second.find(m_CurImageIndex);
-        ImageInfoEx ptr(new std::vector<std::filesystem::path>);
+        ImageInfoEx ptr(new std::vector<std::string>);
         ptr->push_back(m_ImageDir / GetImageName(*jsTemp));
         ptr->push_back(m_ApiUrl);
         if (++m_CurImageIndex > 7) m_CurImageIndex = 0;

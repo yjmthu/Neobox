@@ -1,6 +1,8 @@
 #include "speedapp.h"
 #include "speedbox.h"
 #include "wallpaper/wallpaper.h"
+#include "speedmenu.h"
+#include "translate/translater.h"
 
 #include <yjson.h>
 #include <filesystem>
@@ -8,7 +10,7 @@
 #include <QDir>
 #include <QStandardPaths>
 #include <QFontDatabase>
-#include <QDebug>
+#include <QSystemTrayIcon>
 
 VarBox* m_VarBox = nullptr;
 
@@ -22,13 +24,22 @@ VarBox::VarBox()
     QDir::setCurrent(dir.absolutePath());
     GetSetting();
     m_Wallpaper = new Wallpaper;
-    int m_BoxExecType = 0;
-    m_SpeedBox = new SpeedBox(m_BoxExecType);
-    m_SpeedBox->show();
+    m_SpeedBox = new SpeedBox;
+    auto m_Tray = new QSystemTrayIcon(m_SpeedBox);
+    m_Menu = new SpeedMenu(m_SpeedBox);
+    m_Tray->setContextMenu(m_Menu);
+    m_Tray->setIcon(QIcon(QStringLiteral(":/icons/speedbox.ico")));
+    m_SpeedBox->SetupUi();
+    m_Tray->show();
+    if (m_VarBox->m_Setting->find("FormGlobal")->second["ShowForm"].second.isTrue())
+        m_SpeedBox->show();
+    m_Translater = new Translater;
+    QObject::connect(m_Tray, &QSystemTrayIcon::activated, m_Translater, &Translater::IntelligentShow);
 }
 
 VarBox::~VarBox()
 {
+    delete m_Translater;
     delete m_SpeedBox;
     delete m_Setting;
     delete m_Wallpaper;

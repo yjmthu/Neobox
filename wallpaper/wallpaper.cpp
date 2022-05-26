@@ -19,8 +19,9 @@ constexpr char Wallpaper::m_szWallScript[16];
 bool Wallpaper::DownloadImage(const ImageInfoEx& imageInfo)
 {
     if (imageInfo->empty()) return false;
-    // if (!std::filesystem::exists(imageInfo->front()))
-    //     std::filesystem::create_directories(imageInfo->front());
+    auto dir = imageInfo->front().substr(imageInfo->front().front() == '"'? 1: 0, imageInfo->front().find_last_of(std::filesystem::path::preferred_separator));
+    if (!std::filesystem::exists(dir))
+        std::filesystem::create_directories(dir);
     if (std::filesystem::exists(imageInfo->front())) {
         if (!std::filesystem::file_size(imageInfo->front()))
             std::filesystem::remove(imageInfo->front());
@@ -92,9 +93,7 @@ bool Wallpaper::SetWallpaper(const std::filesystem::path& imagePath)
     std::ostringstream sstr;
     switch (m_DesktopType) {
     case Desktop::KDE:
-        char buffer[1024];
-        getcwd(buffer, 1024);
-        sstr << '\"' << buffer << '/' << m_szWallScript << "\" \"";
+        sstr << std::filesystem::current_path() / m_szWallScript << ' ';
         break;
     case Desktop::GNOME:
         sstr << "gsettings set org.gnome.desktop.background picture-uri \"file:";
@@ -111,8 +110,9 @@ bool Wallpaper::SetWallpaper(const std::filesystem::path& imagePath)
         std::cout << "不支持的桌面类型；\n";
         return false;
     }
-    sstr << imagePath << '\"';
+    sstr << imagePath;
     std::string m_sCmd = sstr.str();
+    std::cout << imagePath << std::endl << m_sCmd << std::endl;
     return system(m_sCmd.c_str()) == 0;
 #endif
 }
@@ -124,8 +124,12 @@ bool Wallpaper::IsOnline()
     return InternetGetConnectedState(&flags, 0);
 #else
     httplib::Client cli("http://www.msftconnecttest.com");
-    auto res = cli.Get("/connecttest.txt");
-    return res->status == 200;
+    try {
+        auto res = cli.Get("/connecttest.txt");
+        return res->status == 200;
+    } catch (...) {
+        return false;
+    }
 #endif
 }
 

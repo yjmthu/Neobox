@@ -58,6 +58,8 @@ set(PROJECT_SOURCES
         widgets/speedmenu.h
         widgets/pathdialog.cpp
         widgets/pathdialog.h
+        widgets/screenfetch.cpp
+        widgets/screenfetch.h
 
         wallpaper/apiclass.cpp
         wallpaper/apiclass.hpp
@@ -67,6 +69,11 @@ set(PROJECT_SOURCES
         core/appcode.hpp
         core/netspeedhelper.cpp
         core/netspeedhelper.h
+
+        translate/translater.cpp
+        translate/translater.h
+        translate/text.cpp
+        translate/text.h
 )
 
 qt5_add_resources(QRC_FILES ${QRC_SOURCE_FILES})
@@ -99,6 +106,8 @@ if (WIN32)
         Qt${QT_VERSION_MAJOR}::Widgets
         libssl
         libcrypto
+        lept
+        tesseract
     )
 elseif (UNIX)
     target_link_libraries(Neobox PRIVATE
@@ -108,6 +117,8 @@ elseif (UNIX)
         pthread
         ssl
         crypto
+        lept
+        tesseract
     )
 endif()
 

@@ -29,15 +29,16 @@ public:
         return true;
     }
     virtual ImageInfoEx GetNext() {
-        ImageInfoEx ptr(new std::vector<std::filesystem::path>);
+        ImageInfoEx ptr(new std::vector<std::string>);
         if (m_Command.empty()) return ptr;
         std::vector<std::string> result;
         std::string cmd = GetCommandWithArg();
         GetCmdOutput(cmd.c_str(), result, 1);
         auto& str = result.front();
-        while (!str.empty() && '\n' != str.back()) {
+        while (!str.empty() && '\n' == str.back()) {
             str.pop_back();
         }
+        std::cout << "[ " << str << " ]" << std::endl;
         if (str.empty()) return ptr;
         ptr->push_back(str);
         return ptr;

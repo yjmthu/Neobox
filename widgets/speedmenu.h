@@ -9,7 +9,7 @@ class SpeedMenu : public QMenu
 protected:
     void showEvent(QShowEvent *event);
 public:
-    explicit SpeedMenu(QWidget *parent);
+    explicit SpeedMenu(QWidget *parent=nullptr);
     ~SpeedMenu();
 private:
     QAction* m_Actions;
@@ -20,6 +20,8 @@ private:
     void SetupSettingMenu();
     void SetupImageType(QMenu* parent, QAction* ac);
     void SetAdditionalMenu();
+private slots:
+    void ScreenShot();
 signals:
     void ChangeBoxColor(QColor col);
     void ChangeBoxAlpha(int alpha);

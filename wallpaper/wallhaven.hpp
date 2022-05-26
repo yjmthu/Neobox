@@ -34,7 +34,7 @@ public:
         // https://w.wallhaven.cc/full/1k/wallhaven-1kmx19.jpg
         using namespace std::literals;
 
-        ImageInfoEx ptr(new std::vector<std::filesystem::path>);
+        ImageInfoEx ptr(new std::vector<std::string>);
 
         if (m_NeedDownUrl) {
             std::cout << "Start Download Url\n"sv;
@@ -56,7 +56,6 @@ public:
         auto choice = val.find(std::uniform_int_distribution<size_t>(0, val.sizeA()-1)(generator));
         std::string& name = choice->getValueString();
         if (name.length() == 6) IsPngFile(name);
-        else std::cout << "string: " << name << std::endl;
         ptr->emplace_back(m_ImageDir / name);
         ptr->emplace_back("https://w.wallhaven.cc"sv);
         ptr->emplace_back("/full/"s + name.substr(10, 2) + "/"s + name);

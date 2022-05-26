@@ -2,6 +2,7 @@
 #include "speedapp.h"
 #include "speedmenu.h"
 
+#include "translate/translater.h"
 #include "core/netspeedhelper.h"
 #include "core/appcode.hpp"
 
@@ -26,7 +27,7 @@ void SpeedBox::mousePressEvent(QMouseEvent *event)
         setMouseTracking(true);
     } else if (event->button() == Qt::RightButton) {
 #if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-        m_Menu->popup(event->globalPos());
+        m_VarBox->m_Menu->popup(event->globalPos());
 #else
         m_Menu->popup(event->globalPosition().toPoint());
 #endif
@@ -54,6 +55,12 @@ void SpeedBox::mouseMoveEvent(QMouseEvent *event)
 #endif
 }
 
+void SpeedBox::mouseDoubleClickEvent(QMouseEvent* event)
+{
+    m_VarBox->m_Translater->IntelligentShow();
+    event->accept();
+}
+
 void SpeedBox::paintEvent(QPaintEvent *)
 {
     QPainter painter;
@@ -71,6 +78,18 @@ void SpeedBox::paintEvent(QPaintEvent *)
     painter.setFont(std::get<1>(m_Style[2]));
     painter.drawText(std::get<2>(m_Style[2]), QString::fromStdString(m_NetSpeedHelper->m_SysInfo[2]));
     painter.end();
+}
+
+void SpeedBox::showEvent(QShowEvent* event)
+{
+    m_NetSpeedHelper->StartTimer();
+    event->accept();
+}
+
+void SpeedBox::hideEvent(QHideEvent* event)
+{
+    m_NetSpeedHelper->StopTimer();
+    event->accept();
 }
 
 #if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
@@ -158,16 +177,15 @@ void SpeedBox::dropEvent(QDropEvent *event)
     m_VarBox->m_Wallpaper->SetDropFile(temp);
 }
 
-SpeedBox::SpeedBox(int type, QWidget *parent)
+SpeedBox::SpeedBox(QWidget *parent)
     : QWidget(parent)
     , m_Animation(new QPropertyAnimation(this))
     , m_Width(100)
     , m_Height(42)
     , m_ScreenHeight(0)
     , m_ScreenWidth(0)
-    , m_ExecType(type)
     , m_NetSpeedHelper(new NetSpeedHelper(this))
-    , m_Menu(new SpeedMenu(this))
+    // , m_Menu(new SpeedMenu(this))
 {
     QRect geo = QGuiApplication::primaryScreen()->geometry();
     *const_cast<int*>(&m_ScreenWidth) = geo.width();
@@ -179,8 +197,6 @@ SpeedBox::SpeedBox(int type, QWidget *parent)
 //     QGraphicsBlurEffect *blureffect = new QGraphicsBlurEffect(this);
 //     blureffect->setBlurRadius(5);	   //数值越大，越模糊
 //     setGraphicsEffect(blureffect);      //设置模糊特效
-
-    SetupUi();
 }
 
 SpeedBox::~SpeedBox()
@@ -197,8 +213,8 @@ void SpeedBox::SetupUi()
     setAcceptDrops(true);
     ReadPosition();
     GetBackGroundColor();
-    connect(m_Menu, &SpeedMenu::ChangeBoxColor, this, &SpeedBox::SetBackGroundColor);
-    connect(m_Menu, &SpeedMenu::ChangeBoxAlpha, this, &SpeedBox::SetBackGroundAlpha);
+    connect(m_VarBox->m_Menu, &SpeedMenu::ChangeBoxColor, this, &SpeedBox::SetBackGroundColor);
+    connect(m_VarBox->m_Menu, &SpeedMenu::ChangeBoxAlpha, this, &SpeedBox::SetBackGroundAlpha);
     GetStyle();
 }
 
@@ -221,7 +237,7 @@ void SpeedBox::GetStyle()
 void SpeedBox::ReadPosition()
 {
     int pt[2] { 0, 0 };
-    FILE* fp = fopen("boxpos", "rb");
+    FILE* fp = fopen("boxpos.bin", "rb");
     if (!fp) {
         setGeometry(30, 30, m_Width, m_Height);
         return;
@@ -235,7 +251,7 @@ void SpeedBox::ReadPosition()
 void SpeedBox::WritePosition()
 {
     int pt[2] { x(), y() };
-    FILE* fp = fopen("boxpos", "wb");
+    FILE* fp = fopen("boxpos.bin", "wb");
     if (!fp) return;
     fwrite(pt, sizeof(int), 2, fp);
     fclose(fp);
