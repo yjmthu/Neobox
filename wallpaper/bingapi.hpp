@@ -14,14 +14,14 @@ public:
         delete m_Setting;
     }
     virtual bool LoadSetting() {
-        m_ApiUrl = "https://cn.bing.com";
+        m_ApiUrl = u8"https://cn.bing.com";
         m_ImageDir = m_HomePicLocation / u8"必应壁纸";
-        m_ImageNameFormat = "\%s \%Y\%m\%d.jpg";
+        m_ImageNameFormat = u8"\%s \%Y\%m\%d.jpg";
         if (std::filesystem::exists(m_SettingPath)) {
             m_Setting = new YJson(m_SettingPath, YJson::UTF8);
-            if (m_Setting->find("today")->second.getValueString() == GetToday("\%Y\%m\%d")) {
-                m_ImageDir = m_Setting->find("imgdir")->second.getValueString();
-                m_ImageNameFormat = m_Setting->find("imgfmt")->second.getValueString();
+            if (m_Setting->find(u8"today")->second.getValueString() == GetToday(u8"\%Y\%m\%d")) {
+                m_ImageDir = m_Setting->find(u8"imgdir")->second.getValueString();
+                m_ImageNameFormat = m_Setting->find(u8"imgfmt")->second.getValueString();
                 return true;
             } else {
                 delete m_Setting;
@@ -39,21 +39,21 @@ public:
         if (res->status != 200) return false;
         m_Setting = new YJson;
         m_Setting->parse(res->body);
-        m_Setting->append(GetToday("\%Y\%m\%d"), "today");
-        m_Setting->append(m_ImageDir, "imgdir");
-        m_Setting->append(m_ImageNameFormat, "imgfmt");
+        m_Setting->append(GetToday(u8"\%Y\%m\%d"), u8"today");
+        m_Setting->append(m_ImageDir, u8"imgdir");
+        m_Setting->append(m_ImageNameFormat, u8"imgfmt");
         m_Setting->toFile(m_SettingPath);
         return true;
     }
     virtual ImageInfoEx GetNext() {
         // https://www.bing.com/th?id=OHR.Yellowstone150_ZH-CN0551084440_UHD.jpg
 
-        auto jsTemp = m_Setting->find("images")->second.find(m_CurImageIndex);
-        ImageInfoEx ptr(new std::vector<std::string>);
-        ptr->push_back(m_ImageDir / GetImageName(*jsTemp));
+        auto jsTemp = m_Setting->find(u8"images")->second.find(m_CurImageIndex);
+        ImageInfoEx ptr(new std::vector<std::u8string>);
+        ptr->push_back((m_ImageDir / GetImageName(*jsTemp)).u8string());
         ptr->push_back(m_ApiUrl);
         if (++m_CurImageIndex > 7) m_CurImageIndex = 0;
-        ptr->push_back(jsTemp->find("urlbase")->second.getValueString() + "_UHD.jpg");
+        ptr->push_back(jsTemp->find(u8"urlbase")->second.getValueString() + u8"_UHD.jpg");
         return ptr;
     }
     virtual void Dislike(const std::string& img) {
@@ -61,35 +61,36 @@ public:
     }
     virtual void SetCurDir(const std::string& str) {
         m_ImageDir = str;
-        m_Setting->find("imgdir")->second.setText(str);
+        m_Setting->find(u8"imgdir")->second.setText(str);
         m_Setting->toFile(m_SettingPath);
     }
 private:
-    std::string m_ImageNameFormat;
-    std::string m_ApiUrl;
+    std::u8string m_ImageNameFormat;
+    std::u8string m_ApiUrl;
     const char m_SettingPath[13] { "BingApi.json" };
     YJson* m_Setting;
     unsigned m_CurImageIndex = 0;
-    std::string GetToday(const char* fmt) {
+    std::u8string GetToday(const char8_t* fmt) {
         auto t = std::chrono::system_clock::to_time_t(
             std::chrono::system_clock::now());
-        std::stringstream ss;
+        std::basic_stringstream<char8_t> ss;
         ss << std::put_time(std::localtime(&t), fmt);
         return ss.str();
     }
-    std::string GetImageName(YJson& imgInfo) {
-        std::string str(m_ImageNameFormat);
-        auto pos = str.find("\%s");
+    std::u8string GetImageName(YJson& imgInfo) {
+        std::u8string str(m_ImageNameFormat.begin(), m_ImageNameFormat.end());
+        auto pos = str.find(u8"\%s");
         if (pos != std::string::npos) {
-            std::string temp =  imgInfo.find("copyright")->second.getValueString();
+            std::u8string temp =  imgInfo.find(u8"copyright")->second.getValueString();
             temp.erase(temp.find(u8" (© "));
             str.replace(pos, 2, temp);
         }
         auto t = std::chrono::system_clock::to_time_t(
             std::chrono::system_clock::now() - std::chrono::hours(24 * m_CurImageIndex));
         std::stringstream ss;
-        ss << std::put_time(std::localtime(&t), str.c_str());
-        return ss.str();
+        ss << std::put_time(std::localtime(&t), (const char *)str.c_str());
+        std::string temp = ss.str();
+        return std::u8string(temp.begin(), temp.end());
     }
 };
 }

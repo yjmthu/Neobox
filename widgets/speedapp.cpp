@@ -23,15 +23,16 @@ VarBox::VarBox()
     if (dir.exists(relPath) || dir.mkpath(relPath)) dir.cd(relPath);
     QDir::setCurrent(dir.absolutePath());
     GetSetting();
+    m_Tray = new QSystemTrayIcon;
     m_Wallpaper = new Wallpaper;
     m_SpeedBox = new SpeedBox;
-    auto m_Tray = new QSystemTrayIcon(m_SpeedBox);
-    m_Menu = new SpeedMenu(m_SpeedBox);
+    m_Menu = new SpeedMenu;
+    m_Menu->showEvent(nullptr);
     m_Tray->setContextMenu(m_Menu);
     m_Tray->setIcon(QIcon(QStringLiteral(":/icons/speedbox.ico")));
     m_SpeedBox->SetupUi();
     m_Tray->show();
-    if (m_VarBox->m_Setting->find("FormGlobal")->second["ShowForm"].second.isTrue())
+    if (m_VarBox->m_Setting->find(u8"FormGlobal")->second[u8"ShowForm"].second.isTrue())
         m_SpeedBox->show();
     m_Translater = new Translater;
     QObject::connect(m_Tray, &QSystemTrayIcon::activated, m_Translater, &Translater::IntelligentShow);
@@ -40,9 +41,11 @@ VarBox::VarBox()
 VarBox::~VarBox()
 {
     delete m_Translater;
+    delete m_Menu;
     delete m_SpeedBox;
-    delete m_Setting;
     delete m_Wallpaper;
+    delete m_Tray;
+    delete m_Setting;
 }
 
 void VarBox::GetSetting()

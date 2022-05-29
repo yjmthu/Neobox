@@ -21,13 +21,7 @@ inline void writelog(const std::string& s) {
     f.close();
 }
 
-#if 0
-#define COUT(s) writelog((s))
-#else
-#define COUT(s)
-#endif
-
-typedef std::shared_ptr<std::vector<std::string>> ImageInfoEx;
+typedef std::shared_ptr<std::vector<std::u8string>> ImageInfoEx;
 
 class Wallpaper: public QObject
 {
@@ -42,13 +36,13 @@ public:
     virtual ~Wallpaper();
     static bool DownloadImage(const ImageInfoEx& imageInfo);
     static bool SetWallpaper(const std::filesystem::path& imagePath);
-    static bool IsImageFile(const std::string_view fileName);
+    static bool IsImageFile(const std::filesystem::path& fileName);
     static bool IsOnline();
     static bool IsWorking();
     bool SetNext();
     bool SetPrevious();
-    bool SetDropFile(const std::string& filePath);
-    inline const std::filesystem::path& GetCurIamge() const
+    bool SetDropFile(const std::filesystem::path& filePath);
+    inline const std::filesystem::path GetCurIamge() const
         { return m_CurImage; }
     bool RemoveCurrent();
     bool IsPrevAvailable();
@@ -61,10 +55,9 @@ public:
     bool SetImageType(int index);
     const void* GetDataByName(const char* key) const;
     int GetInt() const;
-    std::string GetString() const;
+    std::u8string GetString() const;
     static constexpr char m_szWallScript[16] { "SetWallpaper.sh" };
 private:
-    // bool m_IsWorking;
     class QTimer *m_Timer;
     class WallBase* m_Wallpaper;
     std::queue<class WallBase*> m_Jobs;

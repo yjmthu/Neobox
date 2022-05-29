@@ -18,7 +18,7 @@ include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Gui Widgets X11Extras REQUIRED)
+find_package(QT NAMES Qt5 COMPONENTS Core Gui Widgets X11Extras REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Widgets X11Extras REQUIRED)
 
 # set(CMAKE_BUILD_TYPE RELEASE)

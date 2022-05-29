@@ -28,7 +28,7 @@ public:
         delete m_Setting;
     }
     virtual ImageInfoEx GetNext() {
-        ImageInfoEx ptr(new std::vector<std::string>);
+        ImageInfoEx ptr(new std::vector<std::u8string>);
         DIR *dir = nullptr;
         struct dirent *file;
         if(!(dir = opendir(m_ImageDir.c_str()))) return ptr;
@@ -46,8 +46,9 @@ public:
             if (m_Toltal < 20) {
                 for (int i = 0; i < m_Toltal; i++)
                     m_RandomQue.push_back(i);
-                std::random_shuffle(m_RandomQue.begin(), m_RandomQue.end(), 
-                [](size_t i){return std::rand()%i;});
+                std::random_device rd;
+                std::mt19937 g(rd());
+                std::shuffle(m_RandomQue.begin(), m_RandomQue.end(), g);
             } else {
                 std::mt19937 generator(std::random_device{}());
                 auto pf = std::uniform_int_distribution<size_t>(0, m_Toltal-1);
@@ -64,12 +65,12 @@ public:
         }
 
         if (!m_Toltal) return ptr;
-        ptr->push_back(m_ImageDir);
+        ptr->push_back(m_ImageDir.u8string());
         while((file = readdir(dir))) {
             if(file->d_type == DT_REG && Wallpaper::IsImageFile(file->d_name)) {
                 if (m_Index++ == m_ToGet) {
-                    ptr->push_back(file->d_name);
-                    std::cout << ptr->back() << std::endl;
+                    ptr->push_back((char8_t *)file->d_name);
+                    // std::cout << ptr->back() << std::endl;
                     break;
                 }
             }
@@ -80,7 +81,7 @@ public:
     virtual bool LoadSetting() {
         if (std::filesystem::exists(m_SettingPath)) {
             m_Setting = new YJson(m_SettingPath, YJson::UTF8);
-            m_ImageDir = m_Setting->find("imgdirs")->second.beginA()->getValueString();
+            m_ImageDir = m_Setting->find(u8"imgdirs")->second.beginA()->getValueString();
             return true;
         }
         return false;
@@ -89,9 +90,9 @@ public:
         using namespace std::literals;
         m_ImageDir = m_HomePicLocation;
         m_Setting = new YJson(YJson::O {
-            {"imgdirs"sv, { m_ImageDir }},
-            {"random"sv, true},
-            {"recursion"sv, false}
+            { u8"imgdirs"sv, { m_ImageDir }},
+            { u8"random"sv, true},
+            { u8"recursion"sv, false}
         });
         m_Setting->toFile(m_SettingPath);
         return true;
@@ -99,7 +100,7 @@ public:
     virtual void Dislike(const std::string& img) {}
     virtual void SetCurDir(const std::string& str) {
         m_ImageDir = str;
-        auto& li = m_Setting->find("imgdirs")->second;
+        auto& li = m_Setting->find(u8"imgdirs")->second;
         li.beginA()->setText(str);
         m_Setting->toFile(m_SettingPath);
     }

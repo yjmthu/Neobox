@@ -13,16 +13,16 @@ public:
         if (!std::filesystem::exists(m_SettingPath))
             return false;
         m_Setting = new YJson(m_SettingPath, YJson::UTF8);
-        auto& data = m_Setting->find("ApiData"sv)->second.find(m_Setting->find("ApiUrl"sv)->second.getValueString())->second;
-        m_ApiUrl = data["Url"sv].second.getValueString();
-        m_ImageDir = data["Directory"].second.getValueString();
-        m_ApiPath = data["Paths"sv].second[data["CurPath"sv].second.getValueInt()].getValueString();
-        m_ImageNameFormat = data["ImageNameFormat"sv].second.getValueString();
+        auto& data = m_Setting->find(u8"ApiData"sv)->second.find(m_Setting->find(u8"ApiUrl"sv)->second.getValueString())->second;
+        m_ApiUrl = data[u8"Url"sv].second.getValueString();
+        m_ImageDir = data[u8"Directory"].second.getValueString();
+        m_ApiPath = data[u8"Paths"sv].second[data[u8"CurPath"sv].second.getValueInt()].getValueString();
+        m_ImageNameFormat = data[u8"ImageNameFormat"sv].second.getValueString();
         return true;
     }
     virtual ImageInfoEx GetNext() {
-        return ImageInfoEx(new std::vector<std::string> {
-            m_ImageDir / GetImageName(),
+        return ImageInfoEx(new std::vector<std::u8string> {
+            (m_ImageDir / GetImageName()).u8string(),
             m_ApiUrl,
             m_ApiPath
         });
@@ -32,26 +32,26 @@ public:
     }
     virtual bool WriteDefaultSetting() {
         using namespace std::literals;
-        m_ApiUrl = "https://source.unsplash.com";
-        m_ApiPath = "/random/2500x1600";
+        m_ApiUrl = u8"https://source.unsplash.com";
+        m_ApiPath = u8"/random/2500x1600";
         m_ImageDir = m_HomePicLocation / u8"随机壁纸";
-        m_ImageNameFormat = "\%F \%T.jpg";
+        m_ImageNameFormat = u8"\%F \%T.jpg";
         m_Setting = new YJson(YJson::O {
-            { "ApiUrl"sv, "Unsplash"sv },
-            { "ApiData"sv, YJson::O {
-                { "Unsplash"sv, YJson::O {
-                    { "Url"sv, m_ApiUrl },
-                    { "CurPath"sv, 0 },
-                    { "Paths"sv, { m_ApiPath } },
-                    { "Directory"sv, m_ImageDir },
-                    { "ImageNameFormat"sv, m_ImageNameFormat }
+            { u8"ApiUrl"sv, u8"Unsplash"sv },
+            { u8"ApiData"sv, YJson::O {
+                { u8"Unsplash"sv, YJson::O {
+                    { u8"Url"sv, m_ApiUrl },
+                    { u8"CurPath"sv, 0 },
+                    { u8"Paths"sv, { m_ApiPath } },
+                    { u8"Directory"sv, m_ImageDir },
+                    { u8"ImageNameFormat"sv, m_ImageNameFormat }
                 } },
-                { "Xiaowai"sv, YJson::O {
-                    { "Url"sv, "xiaowai.xyz"sv},
-                    { "CurPath"sv, 0 },
-                    { "Paths"sv, { "1"sv, "2"sv, "4"sv } },
-                    { "Directory"sv, m_HomePicLocation / u8"小歪壁纸" },
-                    { "ImageNameFormat"sv, m_ImageNameFormat }
+                { u8"Xiaowai"sv, YJson::O {
+                    { u8"Url"sv, u8"xiaowai.xyz"sv},
+                    { u8"CurPath"sv, 0 },
+                    { u8"Paths"sv, { u8"1"sv, u8"2"sv, u8"4"sv } },
+                    { u8"Directory"sv, m_HomePicLocation / u8"小歪壁纸" },
+                    { u8"ImageNameFormat"sv, m_ImageNameFormat }
                 } }
             } },
         });
@@ -62,15 +62,16 @@ public:
         m_ImageDir = str;
     }
 private:
-    std::string m_ApiUrl;
-    std::string m_ApiPath;
-    std::string m_ImageNameFormat;
-    std::string GetImageName() {
+    std::u8string m_ApiUrl;
+    std::u8string m_ApiPath;
+    std::u8string m_ImageNameFormat;
+    std::u8string GetImageName() {
         auto t = std::chrono::system_clock::to_time_t(
             std::chrono::system_clock::now());
-        std::stringstream ss;
-        ss << std::put_time(std::localtime(&t), m_ImageNameFormat.c_str());
-        return ss.str();
+        std::ostringstream ss;
+        ss << std::put_time(std::localtime(&t), reinterpret_cast<const char*>(m_ImageNameFormat.c_str()));
+        std::string&& str = ss.str();
+        return std::u8string(str.begin(), str.end());
     }
     YJson* m_Setting;
     const char m_SettingPath[13] { "ApiFile.json" };

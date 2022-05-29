@@ -61,7 +61,7 @@ public:
     virtual const void* GetDataByName(const char* key) const {
         return nullptr;
     }
-    virtual std::string GetString() const { return std::string(); }
+    virtual std::u8string GetString() const { return std::u8string(); }
     virtual int GetInt() const { return 0; }
     virtual void Update(bool update) {}
 private:

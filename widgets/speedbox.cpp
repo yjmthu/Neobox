@@ -70,13 +70,16 @@ void SpeedBox::paintEvent(QPaintEvent *)
     painter.drawRoundedRect(QRect(0, 0, width(), height()), 3, 3); // round rect
     painter.setFont(std::get<1>(m_Style[0]));
     painter.setPen(std::get<0>(m_Style[0]));
-    painter.drawText(std::get<2>(m_Style[0]), QString::fromStdString(m_NetSpeedHelper->m_SysInfo[0]));
+    painter.drawText(std::get<2>(m_Style[0]), QString::fromUtf8(
+        m_NetSpeedHelper->m_SysInfo[0].data(), m_NetSpeedHelper->m_SysInfo[0].size()));
     painter.setPen(std::get<0>(m_Style[1]));
     painter.setFont(std::get<1>(m_Style[1]));
-    painter.drawText(std::get<2>(m_Style[1]), QString::fromStdString(m_NetSpeedHelper->m_SysInfo[1]));
+    painter.drawText(std::get<2>(m_Style[1]), QString::fromUtf8(
+        m_NetSpeedHelper->m_SysInfo[1].data(), m_NetSpeedHelper->m_SysInfo[1].size()));
     painter.setPen(std::get<0>(m_Style[2]));
     painter.setFont(std::get<1>(m_Style[2]));
-    painter.drawText(std::get<2>(m_Style[2]), QString::fromStdString(m_NetSpeedHelper->m_SysInfo[2]));
+    painter.drawText(std::get<2>(m_Style[2]), QString::fromUtf8(
+        m_NetSpeedHelper->m_SysInfo[2].data(), m_NetSpeedHelper->m_SysInfo[2].size()));
     painter.end();
 }
 
@@ -172,7 +175,8 @@ void SpeedBox::dragEnterEvent(QDragEnterEvent *event)
 
 void SpeedBox::dropEvent(QDropEvent *event)
 {
-    std::string temp = event->mimeData()->urls().first().toString().toStdString();
+    QByteArray data = event->mimeData()->urls().first().toString().toUtf8();
+    std::u8string temp(data.begin(), data.end());
     temp.erase(0, 7);
     m_VarBox->m_Wallpaper->SetDropFile(temp);
 }
@@ -208,7 +212,7 @@ void SpeedBox::SetupUi()
     setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
     setAttribute(Qt::WA_TranslucentBackground);
     setMaximumSize(m_Width, m_Height);
-    setToolTip(u8"行動是治癒恐懼的良藥，而猶豫、拖延將不斷滋養恐懼");
+    setToolTip("行動是治癒恐懼的良藥，而猶豫、拖延將不斷滋養恐懼");
     setCursor(Qt::CursorShape::PointingHandCursor);
     setAcceptDrops(true);
     ReadPosition();
@@ -220,17 +224,19 @@ void SpeedBox::SetupUi()
 
 void SpeedBox::GetStyle()
 {
-    const char* li[] = { "MemUseage", "NetUpSpeed", "NetDownSpeed" };
-    auto& ui = m_VarBox->m_Setting->find("FormUi")->second;
+    const char8_t* li[] = { u8"MemUseage", u8"NetUpSpeed", u8"NetDownSpeed" };
+    auto& ui = m_VarBox->m_Setting->find(u8"FormUi")->second;
     for (size_t i=0; i<3; ++i) {
         auto& ptr = ui[li[i]].second;
-        std::get<0>(m_Style[i]).setNamedColor(QString::fromStdString(ptr["color"].second.getValueString()));
-        std::get<1>(m_Style[i]).setFamily(QString::fromStdString(ptr["font-family"].second.getValueString()));
-        std::get<1>(m_Style[i]).setPointSize(ptr["font-size"].second.getValueInt());
-        std::get<1>(m_Style[i]).setItalic(ptr["italic"].second.isTrue());
-        std::get<1>(m_Style[i]).setBold(ptr["bold"].second.isTrue());
-        std::get<2>(m_Style[i]).setX(ptr["pos"].second[0].getValueInt());
-        std::get<2>(m_Style[i]).setY(ptr["pos"].second[1].getValueInt());
+        std::u8string_view str = ptr[u8"color"].second.getValueString();
+        std::get<0>(m_Style[i]).setNamedColor(QString::fromUtf8(reinterpret_cast<const char*>(str.data()), str.size()));
+        str = ptr[u8"font-family"].second.getValueString();
+        std::get<1>(m_Style[i]).setFamily(QString::fromUtf8(reinterpret_cast<const char*>(str.data()), str.size()));
+        std::get<1>(m_Style[i]).setPointSize(ptr[u8"font-size"].second.getValueInt());
+        std::get<1>(m_Style[i]).setItalic(ptr[u8"italic"].second.isTrue());
+        std::get<1>(m_Style[i]).setBold(ptr[u8"bold"].second.isTrue());
+        std::get<2>(m_Style[i]).setX(ptr[u8"pos"].second[0].getValueInt());
+        std::get<2>(m_Style[i]).setY(ptr[u8"pos"].second[1].getValueInt());
     }
 }
 
@@ -259,7 +265,7 @@ void SpeedBox::WritePosition()
 
 void SpeedBox::GetBackGroundColor()
 {
-    auto ptr = m_VarBox->m_Setting->find("FormUi")->second.find("BkColor")->second.beginA();
+    auto ptr = m_VarBox->m_Setting->find(u8"FormUi")->second.find(u8"BkColor")->second.beginA();
     m_BackCol.setRed(ptr->getValueInt());
     m_BackCol.setGreen((++ptr)->getValueInt());
     m_BackCol.setBlue((++ptr)->getValueInt());
@@ -274,7 +280,7 @@ void SpeedBox::OnTimer()
 
 void SpeedBox::SetBackGroundColor(QColor col)
 {
-    auto ptr = m_VarBox->m_Setting->find("FormUi")->second.find("BkColor")->second.beginA();
+    auto ptr = m_VarBox->m_Setting->find(u8"FormUi")->second.find(u8"BkColor")->second.beginA();
     ptr->setValue(col.red());
     m_BackCol.setRed(col.red());
     (++ptr)->setValue(col.green());
@@ -287,6 +293,6 @@ void SpeedBox::SetBackGroundColor(QColor col)
 void SpeedBox::SetBackGroundAlpha(int alpha)
 {
     m_BackCol.setAlpha(alpha);
-    m_VarBox->m_Setting->find("FormUi")->second.find("BkColor")->second.endA()->setValue(alpha);
+    m_VarBox->m_Setting->find(u8"FormUi")->second.find(u8"BkColor")->second.endA()->setValue(alpha);
     m_VarBox->SaveSetting();
 }

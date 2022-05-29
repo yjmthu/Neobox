@@ -19,7 +19,7 @@ constexpr char Wallpaper::m_szWallScript[16];
 bool Wallpaper::DownloadImage(const ImageInfoEx& imageInfo)
 {
     if (imageInfo->empty()) return false;
-    auto dir = imageInfo->front().substr(imageInfo->front().front() == '"'? 1: 0, imageInfo->front().find_last_of(std::filesystem::path::preferred_separator));
+    auto dir = imageInfo->front().substr(0, imageInfo->front().find_last_of(std::filesystem::path::preferred_separator));
     if (!std::filesystem::exists(dir))
         std::filesystem::create_directories(dir);
     if (std::filesystem::exists(imageInfo->front())) {
@@ -31,13 +31,13 @@ bool Wallpaper::DownloadImage(const ImageInfoEx& imageInfo)
     if (imageInfo->size() != 3) return false;
     httplib::Client clt(imageInfo->at(1));
 
-    std::ofstream file(imageInfo->front(), std::ios::binary | std::ios::out);
+    std::ofstream file(std::filesystem::path(imageInfo->front()), std::ios::binary | std::ios::out);
     if (!file.is_open()) return false;
-    auto m_fHandleData = [&file](const char* data, size_t length){
+    auto m_fHandleData = [&file](const char* data, size_t length) {
         file.write(data, length);
         return true;
     };
-    auto res = clt.Get(imageInfo->at(2).c_str(), m_fHandleData);
+    auto res = clt.Get(imageInfo->at(2), m_fHandleData);
 label:
     if (res->status == 200) {
         file.close();
@@ -45,7 +45,7 @@ label:
     } else if (res->status == 301 || res->status == 302) {
         file.seekp(std::ios::beg);
         clt.set_follow_location(true);
-        res = clt.Get(imageInfo->at(2).c_str(), m_fHandleData);
+        res = clt.Get(imageInfo->at(2), m_fHandleData);
         goto label;
     } else {
         file.close();
@@ -61,7 +61,7 @@ Wallpaper::Desktop Wallpaper::GetDesktop()
     return Desktop::WIN;
 #elif defined (__linux__)
     std::vector<std::string> vec;
-    GetCmdOutput("echo $XDG_CURRENT_DESKTOP", vec);
+    GetCmdOutput<char>("echo $XDG_CURRENT_DESKTOP", vec);
     if (vec[0].find("KDE") != std::string::npos) {
         return Desktop::KDE;
     } else if (vec[0].find("GNOME") != std::string::npos) {
@@ -140,18 +140,18 @@ Wallpaper::Wallpaper():
     m_PrevAvailable(false),
     m_NextAvailable(true)
 {
-    auto& m_Setting = m_VarBox->m_Setting->find("Wallpaper")->second;
-    SetImageType(m_Setting.find("ImageType")->second.getValueInt());
-    m_Timer->setInterval(m_Setting.find("TimeInterval")->second.getValueInt() * 60000);
+    auto& m_Setting = m_VarBox->m_Setting->find(u8"Wallpaper")->second;
+    SetImageType(m_Setting.find(u8"ImageType")->second.getValueInt());
+    m_Timer->setInterval(m_Setting.find(u8"TimeInterval")->second.getValueInt() * 60000);
     m_Timer->setSingleShot(true);
-    m_KeepChange = m_Setting.find("AutoChange")->second.isTrue();
+    m_KeepChange = m_Setting.find(u8"AutoChange")->second.isTrue();
     connect(m_Timer, &QTimer::timeout, this, std::bind(&Wallpaper::SetSlot, this, 1));
     connect(this, &Wallpaper::StartTimer, this, [this](bool start){
         if (m_Timer->isActive()) m_Timer->stop();
         if (start) m_Timer->start();
     });
     ReadSettings();
-    if (m_Setting.find("FirstChange")->second.isTrue()) {
+    if (m_Setting.find(u8"FirstChange")->second.isTrue()) {
         // COUT("=======BEGIN1=======");
         WallBase::m_IsWorking = true;
         std::thread([this](){
@@ -249,7 +249,7 @@ const std::filesystem::path& Wallpaper::GetImageDir() const
 
 int Wallpaper::GetTimeInterval() const
 {
-    return m_VarBox->m_Setting->find("Wallpaper")->second.find("TimeInterval")->second.getValueInt();
+    return m_VarBox->m_Setting->find(u8"Wallpaper")->second.find(u8"TimeInterval")->second.getValueInt();
 }
 
 void Wallpaper::SetTimeInterval(int minute)
@@ -259,7 +259,7 @@ void Wallpaper::SetTimeInterval(int minute)
     } else {
         m_Timer->setInterval(minute * 60000);
     }
-    m_VarBox->m_Setting->find("Wallpaper")->second.find("TimeInterval")->second.setValue((double)minute);
+    m_VarBox->m_Setting->find(u8"Wallpaper")->second.find(u8"TimeInterval")->second.setValue((double)minute);
     m_VarBox->SaveSetting();
 }
 
@@ -307,20 +307,19 @@ bool Wallpaper::SetPrevious()
     return false;
 }
 
-bool Wallpaper::IsImageFile(const std::string_view fileName)
+bool Wallpaper::IsImageFile(const std::filesystem::path& filesName)
 {
     // BMP, PNG, GIF, JPG
-    std::string temp(fileName.substr(fileName.find_last_of('.') + 1));
-    if (temp.size() < 3) return false;
+    if (!filesName.has_extension()) return false;
+    auto temp = filesName.extension().string();
     for (auto& i: temp) {
         i = toupper(i);
     }
     return temp == "JPG" || temp == "PNG" || temp == "BMP" || temp == "GIF" || temp == "JPEG";
 }
 
-bool Wallpaper::SetDropFile(const std::string& filePath)
+bool Wallpaper::SetDropFile(const std::filesystem::path& filePath)
 {
-    COUT("=====Drop======");
     if (WallBase::m_IsWorking) return false;
     if (!IsImageFile(filePath))
         return false;
@@ -335,7 +334,6 @@ bool Wallpaper::SetDropFile(const std::string& filePath)
 
 bool Wallpaper::RemoveCurrent()
 {
-    COUT("=====DISLIKE======");
     if (m_NextImgs.empty()) {
         if (!SetNext()) return false;
         if (std::filesystem::exists(m_PrevImgs.back()))
@@ -378,9 +376,9 @@ void Wallpaper::WriteSettings()
     int m_CountLimit = 100;
     std::ofstream file("History.txt", std::ios::out);
     if (!file.is_open()) return;
-    if (!m_CurImage.empty()) file << m_CurImage << std::endl;
+    if (!m_CurImage.empty()) file << m_CurImage.string() << std::endl;
     for (auto i=m_PrevImgs.rbegin(); i!=m_PrevImgs.rend(); ++i) {
-        file << *i << std::endl;
+        file << i->string() << std::endl;
         if (!--m_CountLimit) break;
     }
     file.close();
@@ -393,27 +391,27 @@ void Wallpaper::SetAutoChange(bool flag)
     } else if (m_Timer->isActive()) {
         m_Timer->stop();
     }
-    m_VarBox->m_Setting->find("Wallpaper")->second.find("AutoChange")->second.setValue(flag);
+    m_VarBox->m_Setting->find(u8"Wallpaper")->second.find(u8"AutoChange")->second.setValue(flag);
     m_VarBox->SaveSetting();
 }
 
 
 void Wallpaper::SetFirstChange(bool flag)
 {
-    m_VarBox->m_Setting->find("Wallpaper")->second.find("FirstChange")->second.setValue(flag);
+    m_VarBox->m_Setting->find(u8"Wallpaper")->second.find(u8"FirstChange")->second.setValue(flag);
     m_VarBox->SaveSetting();
 }
 
 void Wallpaper::SetCurDir(const std::string& str)
 {
     if (!std::filesystem::exists(str))
-        mkdir(str.c_str(), 0777);
+        std::filesystem::create_directory(str);
     m_Wallpaper->SetCurDir(str);
 }
 
 int Wallpaper::GetImageType()
 {
-    return m_VarBox->m_Setting->find("Wallpaper")->second.find("ImageType")->second.getValueInt();
+    return m_VarBox->m_Setting->find(u8"Wallpaper")->second.find(u8"ImageType")->second.getValueInt();
 }
 
 bool Wallpaper::SetImageType(int index)
@@ -425,7 +423,7 @@ bool Wallpaper::SetImageType(int index)
         delete m_Wallpaper;
     }
     m_Wallpaper = WallBase::GetNewInstance(index);
-    m_VarBox->m_Setting->find("Wallpaper")->second.find("ImageType")->second.setValue((int)index);
+    m_VarBox->m_Setting->find(u8"Wallpaper")->second.find(u8"ImageType")->second.setValue((int)index);
     m_VarBox->SaveSetting();
     if (index == 1) return true;
     std::thread([](){
@@ -454,7 +452,7 @@ int Wallpaper::GetInt() const
     return m_Wallpaper->GetInt();
 }
 
-std::string Wallpaper::GetString() const
+std::u8string Wallpaper::GetString() const
 {
     return m_Wallpaper->GetString();
 }

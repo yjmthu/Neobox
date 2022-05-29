@@ -2,6 +2,7 @@
 #include "speedapp.h"
 
 #include "core/appcode.hpp"
+#include "core/sysapi.h"
 #include "wallpaper/wallpaper.h"
 #include "translate/text.h"
 #include "speedbox.h"
@@ -30,6 +31,7 @@
 #include <QLabel>
 #include <QColorDialog>
 #include <QSettings>
+#include <QShowEvent>
 
 #include <thread>
 #include <unistd.h>
@@ -46,6 +48,8 @@ void SpeedMenu::showEvent(QShowEvent *event)
         m_AutoStartApp->setChecked(str.indexOf(qApp->applicationFilePath()) != -1);
         m_Setting.endGroup();
     }
+    if (event)
+        event->accept();
 }
 
 SpeedMenu::SpeedMenu(QWidget *parent)
@@ -64,8 +68,8 @@ SpeedMenu::~SpeedMenu()
 void SpeedMenu::SetupUi()
 {
     constexpr char lst[11][13] = {
-        u8"软件设置", u8"截图翻译", u8"上一张图", u8"下一张图", u8"不看此图",
-        u8"打开目录", u8"快速关机", u8"快捷重启", u8"本次退出"
+        "软件设置", "文字识别", "上一张图", "下一张图", "不看此图",
+        "打开目录", "快速关机", "快捷重启", "本次退出"
     };
     for (int i = 0; i < 9; ++i) {
         m_Actions[i].setText(lst[i]);
@@ -78,8 +82,9 @@ void SpeedMenu::ScreenShot()
 {
     ScreenFetch getscreen;
     getscreen.exec();
-    if (getscreen.m_IsGetPicture)
-        (new TextDlg)->show();
+    void* image = getscreen.m_Picture;
+    if (image)
+        (new TextDlg(image))->show();
 }
 
 void SpeedMenu::SetupConntects()
@@ -112,6 +117,7 @@ void SpeedMenu::SetupConntects()
 
 void SpeedMenu::SetupSettingMenu()
 {
+    using namespace std::literals;
     QMenu *m_pSettingMenu = new QMenu(this);
     auto ptr0 = m_pSettingMenu->addAction("软件设置");
     auto ptr1 = m_pSettingMenu->addAction("壁纸设置");
@@ -132,16 +138,16 @@ void SpeedMenu::SetupSettingMenu()
     m_Actions->setMenu(m_pSettingMenu);
     ptr4->setCheckable(true);
     ptr5->setCheckable(true);
-    auto& m_Setting = m_VarBox->m_Setting->find("Wallpaper")->second;
-    ptr4->setChecked(m_Setting.find("FirstChange")->second.isTrue());
-    ptr5->setChecked(m_Setting.find("AutoChange")->second.isTrue());
+    auto& m_Setting = m_VarBox->m_Setting->find(u8"Wallpaper")->second;
+    ptr4->setChecked(m_Setting.find(u8"FirstChange")->second.isTrue());
+    ptr5->setChecked(m_Setting.find(u8"AutoChange")->second.isTrue());
     connect(ptr4, &QAction::triggered, 
         m_VarBox->m_Wallpaper, &Wallpaper::SetFirstChange);
     connect(ptr5, &QAction::triggered, 
         m_VarBox->m_Wallpaper, &Wallpaper::SetAutoChange);
     connect(ptr6, &QAction::triggered, this, [](){
-        auto i = QFileDialog::getExistingDirectory(nullptr, u8"选择文件夹",
-            QString::fromStdString(m_VarBox->m_Wallpaper->GetImageDir()), QFileDialog::ShowDirsOnly);
+        auto i = QFileDialog::getExistingDirectory(nullptr, "选择文件夹",
+            QString::fromStdU16String(m_VarBox->m_Wallpaper->GetImageDir().u16string()), QFileDialog::ShowDirsOnly);
         if (!i.isEmpty()) m_VarBox->m_Wallpaper->SetCurDir(i.toStdString());
     });
     connect(ptr7, &QAction::triggered, this, [](){
@@ -165,8 +171,8 @@ void SpeedMenu::SetupSettingMenu()
                 QFile::copy(":/icons/speedbox.ico", iconFileName);
                 QFile::setPermissions(iconFileName, QFileDevice::ReadUser);
             }
-            std::ofstream file(desktopFileName.toStdString(), std::ios::binary | std::ios::out);
-            file << "[Desktop Entry]" << std::endl
+            std::ofstream file(desktopFileName.toLocal8Bit(), std::ios::binary | std::ios::out);
+            file << "[Desktop Entry]"sv << std::endl
                  << "Name=Neobox" << std::endl
                  << "Comment=A powerful wallpaper tool." << std::endl
                  << "Icon=" << iconFileName.toStdString() << std::endl
@@ -181,9 +187,9 @@ void SpeedMenu::SetupSettingMenu()
     });
     auto ptr = m_pAppSettingMenu->addAction("显示界面");
     ptr->setCheckable(true);
-    ptr->setChecked(m_VarBox->m_Setting->find("FormGlobal")->second["ShowForm"].second.isTrue());
+    ptr->setChecked(m_VarBox->m_Setting->find(u8"FormGlobal")->second[u8"ShowForm"].second.isTrue());
     connect(ptr, &QAction::triggered, [](bool checked){
-        m_VarBox->m_Setting->find("FormGlobal")->second["ShowForm"].second = checked;
+        m_VarBox->m_Setting->find(u8"FormGlobal")->second[u8"ShowForm"].second = checked;
         if (checked) {
             m_VarBox->m_SpeedBox->show();
         } else {
@@ -213,7 +219,7 @@ void SpeedMenu::SetupSettingMenu()
 void SpeedMenu::SetupImageType(QMenu* parent, QAction* ac)
 {
     size_t index = 0;
-    static size_t type = m_VarBox->m_Setting->find("Wallpaper")->second.find("ImageType")->second.getValueInt();
+    static size_t type = m_VarBox->m_Setting->find(u8"Wallpaper")->second.find(u8"ImageType")->second.getValueInt();
     QMenu* mu = new QMenu(parent);
 
     auto acGroup = new QActionGroup(this);
@@ -254,13 +260,14 @@ void SpeedMenu::SetAdditionalMenu()
     {
         QActionGroup* group = new QActionGroup(m_tempMenu);
         YJson *m_Setting = *reinterpret_cast<YJson*const*>(m_VarBox->m_Wallpaper->GetDataByName("m_Setting"));
-        const auto& curType = m_Setting->find("WallhavenCurrent")->second.getValueString();
+        const auto& curType = m_Setting->find(u8"WallhavenCurrent")->second.getValueString();
         m_tempMenu->addAction("壁纸类型");
         m_tempMenu->addSeparator();
-        auto& _jjk = m_Setting->find("WallhavenApi")->second.getObject();
+        auto& _jjk = m_Setting->find(u8"WallhavenApi")->second.getObject();
         for (auto i = _jjk.begin(); i != _jjk.end(); ++i) {
-            const std::string_view temp = i->first;
-            auto ac = m_tempMenu->addAction(QString::fromStdString(i->first));
+            const std::u8string_view temp = i->first;
+            auto ac = m_tempMenu->addAction(
+                QString::fromUtf8(reinterpret_cast<const char*>(i->first.data()), i->first.size()));
             ac->setCheckable(true);
             ac->setChecked(i->first == curType);
             group->addAction(ac);
@@ -277,11 +284,11 @@ void SpeedMenu::SetAdditionalMenu()
                         QStringLiteral("输入页面"), QStringLiteral("页面位置（1~100）："),
                         m_VarBox->m_Wallpaper->GetInt(),
                         1, 100);
-                    m_Setting->find("WallhavenCurrent")->second.setText(temp);
-                    m_Setting->find("PageNumber")->second.setValue(val);
+                    m_Setting->find(u8"WallhavenCurrent")->second.setText(temp);
+                    m_Setting->find(u8"PageNumber")->second.setValue(val);
                     m_VarBox->m_Wallpaper->SetSlot(3);
                 });
-            if (i->second.find("Parameter")->second.isObject()) {
+            if (i->second.find(u8"Parameter")->second.isObject()) {
             connect(mn->addAction("参数设置"), &QAction::triggered, 
                 this, [i, this, ac, m_Setting](){
                     QDialog dlg;
@@ -290,11 +297,11 @@ void SpeedMenu::SetAdditionalMenu()
                     QLineEdit *lineEdit = new QLineEdit(&dlg);
                     auto label = new QLabel(&dlg);
                     label->setText(QStringLiteral("类型名称"));
-                    lineEdit->setText(QString::fromStdString(i->first));
+                    lineEdit->setText(QString::fromUtf8(reinterpret_cast<const char *>(i->first.data()), i->first.size()));
                     hlayout1.addWidget(label);
                     hlayout1.addWidget(lineEdit);
                     dlg.setLayout(vlayout);
-                    int row = i->second.find("Parameter")->second.sizeO(), index = 0;
+                    int row = i->second.find(u8"Parameter")->second.sizeO(), index = 0;
                     QTableWidget m_TableWidget(row,  2);
                     vlayout->addLayout(&hlayout1);
                     vlayout->addWidget(&m_TableWidget);
@@ -320,21 +327,22 @@ void SpeedMenu::SetAdditionalMenu()
                         int row = m_TableWidget.rowCount();
                         YJson js(YJson::Object);
                         for (int i=0; i<row; ++i) {
-                            std::string key = m_TableWidget.item(i, 0)->text().toStdString();
-                            std::string val = m_TableWidget.item(i, 1)->text().toStdString();
+                            std::u8string&& key = GetU8String(m_TableWidget.item(i, 0)->text().toUtf8());
+                            std::u8string&& val = GetU8String(m_TableWidget.item(i, 1)->text().toUtf8());
                             if (key.empty() || val.empty()) {
                                 continue;
                             } else {
-                                js.append(val, key.c_str());
+                                js.append(val, key);
                             }
                         }
                         if (!js.emptyO()) {
-                            auto newKey = lineEdit->text().toStdString();
+                            auto array = lineEdit->text().toUtf8();
+                            std::u8string newKey(array.begin(), array.end());
                             if (newKey.empty()) newKey = u8"新类型";
-                            YJson::swap(i->second.find("Parameter")->second, js);
+                            YJson::swap(i->second.find(u8"Parameter")->second, js);
                             if (newKey != i->first) {
                                 i->first = newKey;
-                                m_Setting->find("WallhavenCurrent")->second.setText(newKey);
+                                m_Setting->find(u8"WallhavenCurrent")->second.setText(newKey);
                             }
                             if (m_VarBox->m_Wallpaper->IsWorking()) return;
                             m_VarBox->m_Wallpaper->SetSlot(ac->isChecked()? 3:2);
@@ -342,12 +350,15 @@ void SpeedMenu::SetAdditionalMenu()
                         }
                         dlg.close();
                     });
-                    for (auto& j: i->second.find("Parameter")->second.getObject()) {
-                        m_TableWidget.setItem(index, 0, new QTableWidgetItem(QString::fromStdString(j.first)));
+                    for (auto& j: i->second.find(u8"Parameter")->second.getObject()) {
+                        m_TableWidget.setItem(index, 0,  new QTableWidgetItem(
+                            QString::fromUtf8(reinterpret_cast<const char*>(j.first.data(), j.first.size()))));
                         if (j.second.isNumber()) {
                             m_TableWidget.setItem(index++, 1, new QTableWidgetItem(QString::number(j.second.getValueInt())));
                         } else {
-                            m_TableWidget.setItem(index++, 1, new QTableWidgetItem(QString::fromStdString(j.second.getValueString())));
+                            std::u8string_view str = j.second.getValueString();
+                            m_TableWidget.setItem(index++, 1, new QTableWidgetItem(
+                                QString::fromUtf8(reinterpret_cast<const char*>(str.data()), str.size())));
                         }
                     }
                     dlg.exec();
@@ -355,7 +366,7 @@ void SpeedMenu::SetAdditionalMenu()
             if (!ac->isChecked()) {
                 connect(mn->addAction("删除此项"), &QAction::triggered, 
                     this, [m_Setting, i, this](){
-                        m_Setting->find("WallhavenApi")->second.remove(i);
+                        m_Setting->find(u8"WallhavenApi")->second.remove(i);
                         m_VarBox->m_Wallpaper->SetSlot(2);
                         SetupSettingMenu();
                     });
@@ -363,10 +374,10 @@ void SpeedMenu::SetAdditionalMenu()
         }
         connect(m_tempMenu->addAction("添加更多"),
             &QAction::triggered, this, [this, m_Setting](){
-            std::string m_TypeName = QInputDialog::getText(nullptr, QStringLiteral("获取名称"), QStringLiteral("请输入名称：")).toStdString();
-            if (m_TypeName.empty()) return ;
-            auto m_TypeDir = QFileDialog::getExistingDirectory(nullptr, u8"选择文件夹",
-                QString::fromStdString(m_VarBox->m_Wallpaper->GetImageDir()), QFileDialog::ShowDirsOnly).toStdString();
+            QString m_TypeName = QInputDialog::getText(nullptr, QStringLiteral("获取名称"), QStringLiteral("请输入名称："));
+            if (m_TypeName.isEmpty()) return ;
+            auto m_TypeDir = QFileDialog::getExistingDirectory(nullptr, "选择文件夹",
+                QString::fromStdU16String(m_VarBox->m_Wallpaper->GetImageDir().u16string()), QFileDialog::ShowDirsOnly).toStdString();
             if (m_TypeDir.empty()) return;
             QDialog dlg(nullptr);
             QVBoxLayout *vlayout = new QVBoxLayout(&dlg);
@@ -392,11 +403,11 @@ void SpeedMenu::SetAdditionalMenu()
             connect(bt3, &QPushButton::clicked, this, [&m_TableWidget, m_Setting, this, &m_TypeDir, &m_TypeName, &dlg](){
                 int row = m_TableWidget.rowCount();
                 YJson js(YJson::Object);
-                js.append(m_TypeDir, "Directory");
-                auto& ptr = js.append(YJson::Object, "Parameter")->second;
+                js.append(m_TypeDir, u8"Directory");
+                auto& ptr = js.append(YJson::Object, u8"Parameter")->second;
                 for (int i=0; i<row; ++i) {
-                    std::string key = m_TableWidget.item(i, 0)->text().toStdString();
-                    std::string val = m_TableWidget.item(i, 1)->text().toStdString();
+                    std::u8string&& key = GetU8String(m_TableWidget.item(i, 0)->text().toUtf8());
+                    std::u8string&& val = GetU8String(m_TableWidget.item(i, 1)->text().toUtf8());
                     if (key.empty() || val.empty()) {
                         continue;
                     } else {
@@ -404,7 +415,7 @@ void SpeedMenu::SetAdditionalMenu()
                     }
                 }
                 if (!ptr.emptyO()) {
-                    YJson::swap(m_Setting->find("WallhavenApi")->second.append(YJson::Object, m_TypeName)->second, js);
+                    YJson::swap(m_Setting->find(u8"WallhavenApi")->second.append(YJson::Object, GetU8String(m_TypeName.toUtf8()))->second, js);
                     m_VarBox->m_Wallpaper->SetSlot(3);
                     SetupSettingMenu();
                 }
@@ -418,19 +429,20 @@ void SpeedMenu::SetAdditionalMenu()
         });
         m_tempMenu->addSeparator();
         connect(m_tempMenu->addAction("当前壁纸"), &QAction::triggered, this, [](){
-            const std::string& curImage = m_VarBox->m_Wallpaper->GetCurIamge();
+            const std::u8string& curImage = m_VarBox->m_Wallpaper->GetCurIamge().u8string();
             auto beg = curImage.find_last_of('/') + 1;
-            std::string imgData = curImage.substr(beg, curImage.find_last_of('.') - beg);
-            auto index = imgData.find("wallhaven-");
-            if (imgData.size() != 16 || index == std::string::npos) {
+            std::u8string imgData = curImage.substr(beg, curImage.find_last_of(u8'.') - beg);
+            auto index = imgData.find(u8"wallhaven-");
+            if (imgData.size() != 16 || index == std::u8string::npos) {
                 goto label;
             } else {
                 imgData = imgData.substr(index + 10);
                 if (imgData.length() != 6 || std::find_if(imgData.begin(), imgData.end(), [](char c)->bool{ return !std::isdigit(c) && !std::islower(c); }) != imgData.end()) {
                     goto label;
                 } else {
-                    std::string url("https://wallhaven.cc/w/");
-                    QDesktopServices::openUrl(QString::fromStdString(url + imgData));
+                    std::u8string url(u8"https://wallhaven.cc/w/");
+                    url += imgData;
+                    QDesktopServices::openUrl(QString::fromUtf8(reinterpret_cast<const char*>(url.data()), url.size()));
                     return;
                 }
             }

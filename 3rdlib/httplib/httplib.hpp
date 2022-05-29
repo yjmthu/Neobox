@@ -1175,6 +1175,7 @@ class Client {
 public:
   // Universal interface
   explicit Client(const std::string &scheme_host_port);
+  explicit Client(const std::u8string &scheme_host_port);
 
   explicit Client(const std::string &scheme_host_port,
                   const std::string &client_cert_path,
@@ -1194,10 +1195,12 @@ public:
   bool is_valid() const;
 
   Result Get(const char *path);
+  Result Get(const std::u8string& path);
   Result Get(const char *path, const Headers &headers);
   Result Get(const char *path, Progress progress);
   Result Get(const char *path, const Headers &headers, Progress progress);
   Result Get(const char *path, ContentReceiver content_receiver);
+  Result Get(const std::u8string& path, ContentReceiver content_receiver);
   Result Get(const char *path, const Headers &headers,
              ContentReceiver content_receiver);
   Result Get(const char *path, ContentReceiver content_receiver,
@@ -7782,6 +7785,9 @@ inline bool SSLClient::check_host_name(const char *pattern,
 inline Client::Client(const std::string &scheme_host_port)
     : Client(scheme_host_port, std::string(), std::string()) {}
 
+inline Client::Client(const std::u8string &scheme_host_port)
+    : Client(std::string(std::string_view((char*)&scheme_host_port[0], scheme_host_port.size())), std::string(), std::string()) {}
+
 inline Client::Client(const std::string &scheme_host_port,
                       const std::string &client_cert_path,
                       const std::string &client_key_path) {
@@ -7844,6 +7850,10 @@ inline bool Client::is_valid() const {
 }
 
 inline Result Client::Get(const char *path) { return cli_->Get(path); }
+inline Result Client::Get(const std::u8string& path) {
+  const char* _path = reinterpret_cast<const char*>(path.c_str());
+  return cli_->Get(_path);
+}
 inline Result Client::Get(const char *path, const Headers &headers) {
   return cli_->Get(path, headers);
 }
@@ -7856,6 +7866,10 @@ inline Result Client::Get(const char *path, const Headers &headers,
 }
 inline Result Client::Get(const char *path, ContentReceiver content_receiver) {
   return cli_->Get(path, std::move(content_receiver));
+}
+inline Result Client::Get(const std::u8string& path, ContentReceiver content_receiver) {
+  const char* _path = reinterpret_cast<const char*>(path.c_str());
+  return cli_->Get(_path, std::move(content_receiver));
 }
 inline Result Client::Get(const char *path, const Headers &headers,
                           ContentReceiver content_receiver) {

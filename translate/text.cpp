@@ -9,6 +9,8 @@
 #include <tesseract/baseapi.h>
 #include <leptonica/allheaders.h>
 
+#include <QString>
+#include <QThread>
 #include <QApplication>
 #include <QClipboard>
 #include <QMessageBox>
@@ -18,10 +20,11 @@
 #include <QPushButton>
 #include <QButtonGroup>
 
-TextDlg::TextDlg()
+TextDlg::TextDlg(void* image)
     : QDialog()
     , m_TextEdit(new QPlainTextEdit(this))
 {
+    setWindowFlags(Qt::WindowStaysOnTopHint);
     setAttribute(Qt::WA_DeleteOnClose);
     setWindowTitle("识别结果");
     using namespace std::literals;
@@ -32,10 +35,12 @@ TextDlg::TextDlg()
     btCut->setText("截图");
     connect(btCut, &QPushButton::clicked, this, [this](){
         hide();
+        QThread::sleep(1);
         ScreenFetch getscreen;
         getscreen.exec();
-        if (getscreen.m_IsGetPicture)
-            ParsePicture();
+        void* image = getscreen.m_Picture;
+        if (image)
+            ParsePicture(image);
         show();
     });
     QPushButton* btCopy = new QPushButton(this);
@@ -58,12 +63,24 @@ TextDlg::TextDlg()
     hbx->addWidget(btTransText);
     vbx->addLayout(hbx);
     
-    ParsePicture();
+    ParsePicture(image);
 }
 
-void TextDlg::ParsePicture()
+inline QString RemoveExtraSpaces(const char* str)
+{
+    QString result(str);
+    QRegExp pattern("([\u4e00-\u9fff]) ([\u4e00-\u9fff])");
+    result.replace(pattern, QStringLiteral("\\1\\2"));
+    result.replace(pattern, QStringLiteral("\\1\\2"));
+    result.replace("\n\n", "\n");
+    return result;
+}
+
+void TextDlg::ParsePicture(void* image)
 {
     using namespace std::literals;
+    if (!image) return;
+    Pix* pix = reinterpret_cast<Pix*>(image);
     char *outText;
 
     tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
@@ -73,22 +90,16 @@ void TextDlg::ParsePicture()
         return;
     }
 
-    // Open input image with leptonica library
-    if (!std::filesystem::exists("screenfetch.jpg"s)) {
-        QMessageBox::critical(nullptr, "错误", "没有找到截图文件!");
-        return;
-    }
-
-    Pix *image = pixRead("screenfetch.jpg");
-    api->SetImage(image);
+    // Pix *image = pixRead("screenfetch.jpg");
+    api->SetImage(pix);
     // Get OCR result
     outText = api->GetUTF8Text();
     // printf("OCR output:\n%s", outText);
-    m_TextEdit->setPlainText(outText);
+    m_TextEdit->setPlainText(RemoveExtraSpaces(outText));
 
     // Destroy used object and release memory
     api->End();
     delete api;
     delete [] outText;
-    pixDestroy(&image);
+    pixDestroy(&pix);
 }

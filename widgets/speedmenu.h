@@ -7,8 +7,8 @@ class SpeedMenu : public QMenu
 {
     Q_OBJECT
 protected:
-    void showEvent(QShowEvent *event);
 public:
+    void showEvent(QShowEvent *event) override;
     explicit SpeedMenu(QWidget *parent=nullptr);
     ~SpeedMenu();
 private:

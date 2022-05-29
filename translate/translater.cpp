@@ -2,6 +2,7 @@
 
 #include "3rdlib/httplib/httplib.hpp"
 #include "3rdlib/3rd_qxtglobalshortcut/qxtglobalshortcut.h"
+#include "core/sysapi.h"
 
 #include <iostream>
 #include <yjson.h>
@@ -33,7 +34,7 @@ void Translater::SetupUi()
 {
     setWindowTitle("极简翻译");
     setWindowIcon(QIcon(":/icons/speedbox.ico"));
-    setWindowFlags(Qt::WindowStaysOnTopHint | Qt::Tool);
+    setWindowFlags(Qt::WindowStaysOnTopHint | Qt::Dialog);
     QVBoxLayout* vbx = new QVBoxLayout(this);
     vbx->addWidget(m_TextFrom);
     vbx->addWidget(m_TextTo);
@@ -121,9 +122,9 @@ label:
 void Translater::GetReply(const QString& text)
 {
     using namespace std::literals;
-    static YJson param = YJson::O { { "doctype"sv, "json"sv }, { "i"sv, YJson::String } };
+    static YJson param = YJson::O { { u8"doctype"sv, u8"json"sv }, { u8"i"sv, YJson::String } };
 
-    param["i"sv].second.setText(text.toStdString());
+    param[u8"i"sv].second.setText(GetU8String(text.toUtf8()));
     bool isChinese;
     if (m_BtnGroup->checkedId() == 0) {
         auto uNum = text.front().unicode();
@@ -131,39 +132,39 @@ void Translater::GetReply(const QString& text)
     } else {
         isChinese = m_BtnGroup->checkedId() == 1;
     }
-    param["type"sv].second = isChinese?"ZH_CN2EN"sv:"EN2ZH_CN"sv;
-    httplib::Client clt("http://fanyi.youdao.com"s);
-    std::string url = param.urlEncode("/translate?"sv);
+    param[u8"type"sv].second = isChinese?u8"ZH_CN2EN"sv:u8"EN2ZH_CN"sv;
+    httplib::Client clt(u8"http://fanyi.youdao.com"s);
+    std::u8string url = param.urlEncode(u8"/translate?"sv);
     // std::cout << "http://fanyi.youdao.com"s << url << std::endl;
-    auto res = clt.Get(url.c_str());
+    auto res = clt.Get(url);
     if (res->status != 200) {
         m_TextTo->setPlainText(QStringLiteral("网络开小差了~"));
         return;
     }
     const std::string& body = res->body;
     auto ptr = YJson::Parse(body);
-    if (!ptr->isObject() || ptr->find("errorCode")->second != 0) {
-        m_TextTo->setPlainText(QString::fromStdString(body));
+    if (!ptr->isObject() || ptr->find(u8"errorCode")->second != 0) {
+        m_TextTo->setPlainText(QString::fromUtf8(body.data(), body.size()));
         return;
     }
     m_TextTo->clear();
     if (isChinese) {
-        for (auto& i: ptr->find("translateResult"sv)->second.getArray()) {
-            std::string tempStr;
+        for (auto& i: ptr->find(u8"translateResult"sv)->second.getArray()) {
+            std::u8string tempStr;
             for (auto& j: i.getArray()) {
-                tempStr.append(j["tgt"sv].second.getValueString());
+                tempStr.append(j[u8"tgt"sv].second.getValueString());
                 tempStr.push_back(' ');
             }
             if (!tempStr.empty()) tempStr.pop_back();
-            m_TextTo->appendPlainText(QString::fromStdString(tempStr));
+            m_TextTo->appendPlainText(QString::fromUtf8(reinterpret_cast<const char*>(tempStr.data()), tempStr.size()));
         }
     } else {
-        for (auto& i: ptr->find("translateResult"sv)->second.getArray()) {
-            std::string tempStr;
+        for (auto& i: ptr->find(u8"translateResult"sv)->second.getArray()) {
+            std::u8string tempStr;
             for (auto& j: i.getArray()) {
-                tempStr.append(j["tgt"sv].second.getValueString());
+                tempStr.append(j[u8"tgt"sv].second.getValueString());
             }
-            m_TextTo->appendPlainText(QString::fromStdString(tempStr));
+            m_TextTo->appendPlainText(QString::fromUtf8(reinterpret_cast<const char*>(tempStr.data()), tempStr.size()));
         }
     }
 }

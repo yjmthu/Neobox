@@ -1,19 +1,82 @@
 #include "screenfetch.h"
 
 #include <iostream>
+#include <leptonica/allheaders.h>
 
 #include <QMouseEvent>
 #include <QPainter>
+#include <QApplication>
 #include <QGuiApplication>
 #include <QScreen>
+#include <QDesktopWidget>
+
+Pix* QImage2Pix(const QImage&& image)
+{
+    // image.save("screenfetch.jpg", "jpg", 100);
+    Pix * pix;
+    int width = image.width();
+    int height = image.height();
+    int depth = image.depth();
+    pix = pixCreate(width, height, depth);
+    if(image.isNull() )
+    {
+        std::cout << "image is null\n";
+        return nullptr;
+    }
+    if( image.colorCount() )
+    {
+        QVector<QRgb> table = image.colorTable();
+
+        PIXCMAP * map = pixcmapCreate(8);
+
+        int n = table.size();
+        for(int i = 0; i < n; i++)
+        {
+            pixcmapAddColor(map, qRed(table[i]), qGreen(table[i]), qBlue(table[i]));
+        }
+        pixSetColormap(pix, map);
+    }
+    int bytePerLine = image.bytesPerLine();
+    l_uint32* start = pixGetData(pix);
+    l_int32 wpld = pixGetWpl(pix);
+    if(image.format() == QImage::Format_Mono || image.format() == QImage::Format_Indexed8 || image.format() == QImage::Format_RGB888)
+    {
+        for(int i = 0; i < height; i++)
+        {
+            const uchar * lines = image.scanLine(i);
+            uchar * lined = (uchar *)(start + wpld * i) ;
+            memcpy(lined , lines, static_cast<size_t>(bytePerLine));
+        }
+    }
+    else if (image.format() == QImage::Format_RGB32 || image.format() == QImage::Format_ARGB32)
+    {
+        std::cout << "QImage::Format_RGB32\n";
+        for(int i = 0; i < image.height(); i++)
+        {
+            const QRgb * lines = (const QRgb *)image.scanLine(i);
+            l_uint32 * lined = start + wpld * i ;
+            for(int j = 0; j < width; j ++)
+            {
+                uchar rval = qRed(lines[j]);
+                uchar gval = qGreen(lines[j]);
+                uchar bval = qBlue(lines[j]);
+                l_uint32 pixel;
+                composeRGBPixel(rval, gval, bval, &pixel);
+                lined[j] = pixel;
+            }
+        }
+    }
+    return pix;
+}
 
 ScreenFetch::ScreenFetch()
     : QDialog(nullptr)
-    , m_IsGetPicture(false)
+    , m_Picture(nullptr)
     , m_IsTrackingMouse(false)
+    , m_Pixmap(QGuiApplication::primaryScreen()->grabWindow(QApplication::desktop()->winId()))
     , m_TextRect( 0, 0, 0, 0 )
 {
-    setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
+    setWindowFlags(Qt::WindowStaysOnTopHint);
     setAttribute(Qt::WA_TranslucentBackground);
     setWindowState(windowState() ^ Qt::WindowFullScreen);
 }
@@ -26,10 +89,16 @@ void ScreenFetch::paintEvent(QPaintEvent* event)
 {
     QPainter painter;
     painter.begin(this);
-    // painter.setCompositionMode(QPainter::CompositionMode_Clear);
+    QBrush brush;
+    brush.setTexture(m_Pixmap);
+    painter.setBrush(brush);
+    painter.drawRect(rect());
     painter.fillRect(rect(), QColor(0, 0, 0, 150));
     painter.setCompositionMode(QPainter::CompositionMode_Clear);
     painter.eraseRect(m_TextRect);
+    painter.setCompositionMode(QPainter::CompositionMode_SourceOver); 
+    painter.setPen(Qt::red);
+    painter.drawRect(m_TextRect);
     painter.end();
     event->accept();
 }
@@ -73,11 +142,17 @@ void ScreenFetch::mousePressEvent(QMouseEvent* event)
             m_IsTrackingMouse = false;
             auto screen = QGuiApplication::primaryScreen();
             if (m_TextRect.width() && m_TextRect.height()) {
-                screen->grabWindow(0, m_TextRect.left(), m_TextRect.top(), m_TextRect.width(), m_TextRect.height()).save("screenfetch.jpg", "jpg");
+                double scale = (double)m_Pixmap.height() / (double)screen->geometry().height();
+                m_Picture = QImage2Pix(m_Pixmap.toImage().copy(
+                    QRect(
+                        (double)m_TextRect.left() * scale,
+                        (double)m_TextRect.top() * scale,
+                        (double)m_TextRect.width() * scale,
+                        (double)m_TextRect.height() * scale
+                    )));
             } else {
-                screen->grabWindow(0).save("screenfetch.jpg", "jpg");
+                m_Picture = QImage2Pix(m_Pixmap.toImage());
             }
-            m_IsGetPicture = true;
             close();
         } else {
             m_IsTrackingMouse = true;

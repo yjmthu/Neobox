@@ -13,8 +13,8 @@ public:
     virtual bool LoadSetting() {
         if (std::filesystem::exists(m_SettingPath)) {
             m_Setting = new YJson(m_SettingPath, YJson::UTF8);
-            m_Command = m_Setting->find("executeable")->second.getValueString();
-            for (auto& i: m_Setting->find("arglist")->second.getArray()) {
+            m_Command = m_Setting->find(u8"executeable")->second.getValueString();
+            for (auto& i: m_Setting->find(u8"arglist")->second.getArray()) {
                 m_ArgList.emplace_back(i.getValueString());
             }
             return true;
@@ -23,22 +23,22 @@ public:
     }
     virtual bool WriteDefaultSetting() {
         m_Setting = new YJson(YJson::Object);
-        m_Setting->append(m_Command, "executeable");
-        m_Setting->append(YJson::Array, "arglist");
+        m_Setting->append(m_Command, u8"executeable");
+        m_Setting->append(YJson::Array, u8"arglist");
         m_Setting->toFile(m_SettingPath);
         return true;
     }
     virtual ImageInfoEx GetNext() {
-        ImageInfoEx ptr(new std::vector<std::string>);
+        ImageInfoEx ptr(new std::vector<std::u8string>);
         if (m_Command.empty()) return ptr;
-        std::vector<std::string> result;
-        std::string cmd = GetCommandWithArg();
-        GetCmdOutput(cmd.c_str(), result, 1);
+        std::vector<std::u8string> result;
+        std::u8string cmd = GetCommandWithArg();
+        GetCmdOutput<char8_t>((const char*)cmd.c_str(), result, 1);
         auto& str = result.front();
         while (!str.empty() && '\n' == str.back()) {
             str.pop_back();
         }
-        std::cout << "[ " << str << " ]" << std::endl;
+        // std::cout << "[ " << str << " ]" << std::endl;
         if (str.empty()) return ptr;
         ptr->push_back(str);
         return ptr;
@@ -59,14 +59,14 @@ public:
 private:
     const char m_SettingPath[19] { "ScriptCommand.json" };
     YJson* m_Setting;
-    std::string m_Command;
-    std::vector<std::string> m_ArgList;
-    std::string GetCommandWithArg() const {
+    std::u8string m_Command;
+    std::vector<std::u8string> m_ArgList;
+    std::u8string GetCommandWithArg() const {
         // if (m_Command.empty()) return "";
-        std::string cmd;
-        auto check = [&cmd](const std::string& str){
-            if (!strchr("\"\'", str.front()) && str.find(' ') != std::string::npos) {
-                cmd.append("\"" + str + "\"");
+        std::u8string cmd;
+        auto check = [&cmd](const std::u8string& str){
+            if (!strchr("\"\'", str.front()) && str.find(' ') != std::u8string::npos) {
+                cmd.append(u8"\"" + str + u8"\"");
             } else {
                 cmd.append(str);
             }

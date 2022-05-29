@@ -15,8 +15,9 @@ protected:
 public:
     explicit ScreenFetch();
     ~ScreenFetch();
-    bool m_IsGetPicture;
+    void* m_Picture;
 private:
+    QPixmap m_Pixmap;
     QRect m_TextRect;
     bool m_IsTrackingMouse;
 };

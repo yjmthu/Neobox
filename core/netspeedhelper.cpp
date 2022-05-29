@@ -39,8 +39,8 @@ _Ty StringToInt(std::string::const_iterator first, std::string::const_iterator l
 void formatSpped(std::string& str, uint64_t dw, bool up_down)
 {
     static const char* units[] = {
-        u8"↑", u8"↓",
-        u8"", u8"K", u8"M", u8"G", u8"T", u8"P", u8"N"
+        "↑", "↓",
+        "", "K", "M", "G", "T", "P", "N"
     };
     static char temp[20];
     long double DW = dw;
@@ -156,7 +156,7 @@ void NetSpeedHelper::SetMemInfo()
 {
 
     std::list<std::string> result;
-    GetCmdOutput("free -m", result);
+    GetCmdOutput<char>("free -m", result);
     result.pop_front();
 
     std::array<double, 2> ary{ 0, 0};
@@ -179,7 +179,7 @@ void NetSpeedHelper::SetNetInfo()
 {
     uint64_t recv=0, send=0;
     std::list<std::string> result;
-    GetCmdOutput("cat /proc/net/dev", result);
+    GetCmdOutput<char>("cat /proc/net/dev", result);
     result.pop_front();
     result.pop_front();
     for (auto& str: result)          // 这样可以获取所有网卡的数据。

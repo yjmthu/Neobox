@@ -9,6 +9,7 @@ public:
     VarBox();
     ~VarBox();
     class Wallpaper *m_Wallpaper;
+    class QSystemTrayIcon *m_Tray;
     class YJson* m_Setting;
     class SpeedMenu* m_Menu;
     class Translater* m_Translater;
