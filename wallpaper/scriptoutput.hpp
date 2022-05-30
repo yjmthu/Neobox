@@ -10,7 +10,7 @@ public:
         InitBase();
     }
     virtual ~ScriptOutput(){ }
-    virtual bool LoadSetting() {
+    virtual bool LoadSetting() override {
         if (std::filesystem::exists(m_SettingPath)) {
             m_Setting = new YJson(m_SettingPath, YJson::UTF8);
             m_Command = m_Setting->find(u8"executeable")->second.getValueString();
@@ -21,14 +21,14 @@ public:
         }
         return false;
     }
-    virtual bool WriteDefaultSetting() {
+    virtual bool WriteDefaultSetting() override {
         m_Setting = new YJson(YJson::Object);
         m_Setting->append(m_Command, u8"executeable");
         m_Setting->append(YJson::Array, u8"arglist");
         m_Setting->toFile(m_SettingPath);
         return true;
     }
-    virtual ImageInfoEx GetNext() {
+    virtual ImageInfoEx GetNext() override {
         ImageInfoEx ptr(new std::vector<std::u8string>);
         if (m_Command.empty()) return ptr;
         std::vector<std::u8string> result;
@@ -45,7 +45,7 @@ public:
     }
     virtual void Dislike(const std::filesystem::path& img) override {}
     virtual void SetCurDir(const std::string& str) {}
-    virtual const void* GetDataByName(const char* key) const {
+    virtual const void* GetDataByName(const char* key) const override {
         if (!strcmp(key, "m_Setting")) {
             return &m_Setting;
         } else if (!strcmp(key, "m_Command")) {

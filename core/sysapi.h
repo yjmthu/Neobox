@@ -53,7 +53,7 @@ void GetCmdOutput(const char* cmd, _Ty& result, int rows = -1)
 	}
 	return 0;
 }
-#elif defined _linux_
+#elif defined __linux__
 
 template<typename _Char, typename _Ty>
 void GetCmdOutput(const char* cmd, _Ty& result, int rows = -1)

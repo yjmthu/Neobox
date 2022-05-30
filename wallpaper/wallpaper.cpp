@@ -310,12 +310,8 @@ bool Wallpaper::SetPrevious()
 bool Wallpaper::IsImageFile(const std::filesystem::path& filesName)
 {
     // BMP, PNG, GIF, JPG
-    if (!filesName.has_extension()) return false;
-    auto temp = filesName.extension().string();
-    for (auto& i: temp) {
-        i = toupper(i);
-    }
-    return temp == "JPG" || temp == "PNG" || temp == "BMP" || temp == "GIF" || temp == "JPEG";
+    std::regex pattern(".*\\.(jpg|bmp|gif|jpeg|png)$");
+    return std::regex_match(filesName.string(), pattern);
 }
 
 bool Wallpaper::SetDropFile(const std::filesystem::path& filePath)

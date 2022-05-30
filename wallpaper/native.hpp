@@ -5,19 +5,13 @@ namespace WallClass {
 class Native: public WallBase {
 private:
     size_t GetFileCount() {
-        DIR *dir;
-        struct dirent *ptr;
         size_t m_iCount = 0;
-        if(!(dir = opendir(m_ImageDir.c_str()))) 
-            return m_iCount;
-        while((ptr = readdir(dir))) {
-            if(strcmp(ptr->d_name,".") == 0 || strcmp(ptr->d_name,"..") == 0)
-                continue;
-            if(ptr->d_type == DT_REG && Wallpaper::IsImageFile(ptr->d_name)) {
-                m_iCount++;
+        if (!std::filesystem::exists(m_ImageDir) || !std::filesystem::is_directory(m_ImageDir)) return m_iCount;
+        for (auto& iter : std::filesystem::directory_iterator(m_ImageDir)) {
+            if (!std::filesystem::is_directory(iter.status()) && Wallpaper::IsImageFile(iter.path())) {
+                ++m_iCount;
             }
         }
-        closedir(dir);
         return m_iCount;
     }
 public:
@@ -27,13 +21,11 @@ public:
     virtual ~Native() {
         delete m_Setting;
     }
-    virtual ImageInfoEx GetNext() {
+    virtual ImageInfoEx GetNext() override {
         ImageInfoEx ptr(new std::vector<std::u8string>);
-        DIR *dir = nullptr;
-        struct dirent *file;
-        if(!(dir = opendir(m_ImageDir.c_str()))) return ptr;
-        size_t m_Toltal = GetFileCount(), m_Index = 0, m_ToGet;
+        if (!std::filesystem::exists(m_ImageDir) || !std::filesystem::is_directory(m_ImageDir)) return ptr;
 
+        size_t m_Toltal = GetFileCount(), m_Index = 0, m_ToGet;
         while (!m_RandomQue.empty()) {
             if (m_RandomQue.back() < m_Toltal) {
                 m_ToGet = m_RandomQue.back();
@@ -65,20 +57,22 @@ public:
         }
 
         if (!m_Toltal) return ptr;
-        ptr->push_back(m_ImageDir.u8string());
-        while((file = readdir(dir))) {
-            if(file->d_type == DT_REG && Wallpaper::IsImageFile(file->d_name)) {
-                if (m_Index++ == m_ToGet) {
-                    ptr->push_back((char8_t *)file->d_name);
-                    // std::cout << ptr->back() << std::endl;
-                    break;
+
+        for (auto& iter : std::filesystem::directory_iterator(m_ImageDir))
+        {
+            if (!std::filesystem::is_directory(iter.status())) {
+                const auto& path = iter.path();
+                if (Wallpaper::IsImageFile(path)) {
+                    if (m_Index++ == m_ToGet) {
+                        ptr->push_back(path.u8string());
+                        break;
+                    }
                 }
             }
         }
-        closedir(dir);
         return ptr;
     }
-    virtual bool LoadSetting() {
+    virtual bool LoadSetting() override {
         if (std::filesystem::exists(m_SettingPath)) {
             m_Setting = new YJson(m_SettingPath, YJson::UTF8);
             m_ImageDir = m_Setting->find(u8"imgdirs")->second.beginA()->getValueString();
@@ -86,7 +80,7 @@ public:
         }
         return false;
     }
-    virtual bool WriteDefaultSetting() {
+    virtual bool WriteDefaultSetting() override {
         using namespace std::literals;
         m_ImageDir = m_HomePicLocation;
         m_Setting = new YJson(YJson::O {
@@ -97,14 +91,14 @@ public:
         m_Setting->toFile(m_SettingPath);
         return true;
     }
-    virtual void Dislike(const std::string& img) {}
+    virtual void Dislike(const std::filesystem::path& img) override {}
     virtual void SetCurDir(const std::string& str) {
         m_ImageDir = str;
         auto& li = m_Setting->find(u8"imgdirs")->second;
         li.beginA()->setText(str);
         m_Setting->toFile(m_SettingPath);
     }
-    virtual const void* GetDataByName(const char* key) const {
+    virtual const void* GetDataByName(const char* key) const override {
         if (!strcmp(key, "m_Setting")) {
             return &m_Setting;
         } else {

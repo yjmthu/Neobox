@@ -8,7 +8,7 @@ public:
         InitBase();
     }
     virtual ~DirectApi() {}
-    virtual bool LoadSetting() {
+    virtual bool LoadSetting() override {
         using namespace std::literals;
         if (!std::filesystem::exists(m_SettingPath))
             return false;
@@ -20,7 +20,7 @@ public:
         m_ImageNameFormat = data[u8"ImageNameFormat"sv].second.getValueString();
         return true;
     }
-    virtual ImageInfoEx GetNext() {
+    virtual ImageInfoEx GetNext() override {
         return ImageInfoEx(new std::vector<std::u8string> {
             (m_ImageDir / GetImageName()).u8string(),
             m_ApiUrl,
@@ -30,7 +30,7 @@ public:
     virtual void Dislike(const std::filesystem::path& img) override {
         // remove(img.c_str());
     }
-    virtual bool WriteDefaultSetting() {
+    virtual bool WriteDefaultSetting() override {
         using namespace std::literals;
         m_ApiUrl = u8"https://source.unsplash.com";
         m_ApiPath = u8"/random/2500x1600";
