@@ -71,15 +71,18 @@ void SpeedBox::paintEvent(QPaintEvent *)
     painter.setFont(std::get<1>(m_Style[0]));
     painter.setPen(std::get<0>(m_Style[0]));
     painter.drawText(std::get<2>(m_Style[0]), QString::fromUtf8(
-        m_NetSpeedHelper->m_SysInfo[0].data(), m_NetSpeedHelper->m_SysInfo[0].size()));
+        reinterpret_cast<const char *>(m_NetSpeedHelper->m_SysInfo[0].data()),
+        m_NetSpeedHelper->m_SysInfo[0].size()));
     painter.setPen(std::get<0>(m_Style[1]));
     painter.setFont(std::get<1>(m_Style[1]));
     painter.drawText(std::get<2>(m_Style[1]), QString::fromUtf8(
-        m_NetSpeedHelper->m_SysInfo[1].data(), m_NetSpeedHelper->m_SysInfo[1].size()));
+        reinterpret_cast<const char *>(m_NetSpeedHelper->m_SysInfo[1].data()),
+        m_NetSpeedHelper->m_SysInfo[1].size()));
     painter.setPen(std::get<0>(m_Style[2]));
     painter.setFont(std::get<1>(m_Style[2]));
     painter.drawText(std::get<2>(m_Style[2]), QString::fromUtf8(
-        m_NetSpeedHelper->m_SysInfo[2].data(), m_NetSpeedHelper->m_SysInfo[2].size()));
+        reinterpret_cast<const char*>(m_NetSpeedHelper->m_SysInfo[2].data()),
+        m_NetSpeedHelper->m_SysInfo[2].size()));
     painter.end();
 }
 

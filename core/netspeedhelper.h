@@ -11,7 +11,7 @@ public:
     explicit NetSpeedHelper(QObject *parent);
     ~NetSpeedHelper();
     void GetSysInfo();
-    std::string m_SysInfo[3] = { "0", "↑ 0.0B", "↓ 0.0B"}; 
+    std::u8string m_SysInfo[3] = { u8"0", u8"↑ 0.0B", u8"↓ 0.0B"}; 
     void StartTimer();
     void StopTimer();
 

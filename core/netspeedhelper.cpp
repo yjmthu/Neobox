@@ -36,13 +36,13 @@ _Ty StringToInt(std::string::const_iterator first, std::string::const_iterator l
     return sign?res:-res;
 }
 
-void formatSpped(std::string& str, uint64_t dw, bool up_down)
+void formatSpped(std::u8string& str, uint64_t dw, bool up_down)
 {
-    static const char* units[] = {
-        "↑", "↓",
-        "", "K", "M", "G", "T", "P", "N"
+    static const char8_t* units[] = {
+        u8"↑", u8"↓",
+        u8"", u8"K", u8"M", u8"G", u8"T", u8"P", u8"N"
     };
-    static char temp[20];
+    static char8_t temp[20];
     long double DW = dw;
     size_t the_unit = 2;
     while (DW >= 1000) {
@@ -50,7 +50,13 @@ void formatSpped(std::string& str, uint64_t dw, bool up_down)
         ++the_unit;
     }
     if (the_unit > 8) the_unit = 8;
-    sprintf(temp, "%s %0.1Lf %sB", units[up_down], DW, units[the_unit]);
+    sprintf(
+        reinterpret_cast<char*>(temp),
+        "%s %0.1Lf %sB",
+        reinterpret_cast<const char*>(units[up_down]),
+        DW,
+        reinterpret_cast<const char*>(units[the_unit])
+    );
     str = temp;
 }
 
@@ -154,7 +160,7 @@ void NetSpeedHelper::StopTimer()
 
 void NetSpeedHelper::SetMemInfo()
 {
-
+    static char8_t m_szMemStr[4];
     std::list<std::string> result;
     GetCmdOutput<char>("free -m", result);
     result.pop_front();
@@ -171,8 +177,8 @@ void NetSpeedHelper::SetMemInfo()
             left = std::find_if(right, str.end(), &isdigit);
         }
     }
-
-    m_SysInfo[0] = std::to_string(static_cast<unsigned short>(ary[1]/ary[0]*100));
+    sprintf(reinterpret_cast<char*>(m_szMemStr), "%d", static_cast<uint16_t>(ary[1]/ary[0]*100));
+    m_SysInfo[0] = m_szMemStr;
 }
 
 void NetSpeedHelper::SetNetInfo()

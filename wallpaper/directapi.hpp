@@ -47,9 +47,13 @@ public:
                     { u8"ImageNameFormat"sv, m_ImageNameFormat }
                 } },
                 { u8"Xiaowai"sv, YJson::O {
-                    { u8"Url"sv, u8"xiaowai.xyz"sv},
+                    { u8"Url"sv, u8"https://api.ixiaowai.cn"sv},
                     { u8"CurPath"sv, 0 },
-                    { u8"Paths"sv, { u8"1"sv, u8"2"sv, u8"4"sv } },
+                    { u8"Paths"sv, {
+                        u8"/api/api.php"sv,
+                        u8"/mcapi/mcapi.php"sv,
+                        u8"/gqapi/gqapi.php"sv
+                    } },
                     { u8"Directory"sv, m_HomePicLocation / u8"小歪壁纸" },
                     { u8"ImageNameFormat"sv, m_ImageNameFormat }
                 } }
