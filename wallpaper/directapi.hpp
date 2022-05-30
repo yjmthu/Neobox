@@ -27,7 +27,7 @@ public:
             m_ApiPath
         });
     }
-    virtual void Dislike(const std::string& img) {
+    virtual void Dislike(const std::filesystem::path& img) override {
         // remove(img.c_str());
     }
     virtual bool WriteDefaultSetting() {

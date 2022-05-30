@@ -62,25 +62,23 @@ void formatSpped(std::u8string& str, uint64_t dw, bool up_down)
 
 #ifdef _WIN32
 
-NetSpeedHelper::NetSpeedHelper(wxWindow* box):
-    m_Timer(new wxTimer(box, wxID_ANY))
-{
-    box->Connect(wxEVT_TIMER, wxTimerEventHandler(SpeedBox::OnTimer), box);
-    m_Timer->Start(1000);
-}
-
 NetSpeedHelper::~NetSpeedHelper()
 {
-    m_Timer->Stop();
+    m_Timer->stop();
     HeapFree(GetProcessHeap(), 0, piaa);
     HeapFree(GetProcessHeap(), 0, mi);
 }
 
-void NetSpeedHelper::SetMemInfo()
+NetSpeedHelper::NetSpeedHelper(QObject* parent) :
+    QObject(parent), m_Timer(new QTimer(this))
 {
+    char8_t m_szMemStr[4];
+    connect(m_Timer, &QTimer::timeout, dynamic_cast<SpeedBox*>(parent), &SpeedBox::OnTimer);
+    m_Timer->start(1000);                                    //开始检测网速和内存
     MEMORYSTATUS ms;
     GlobalMemoryStatus(&ms);
-    m_SysInfo[0] = wxString::Format("%lu", ms.dwMemoryLoad);
+    sprintf(reinterpret_cast<char*>(m_szMemStr), "%d", static_cast<uint16_t>(ms.dwMemoryLoad));
+    m_SysInfo[0] = m_szMemStr;
 }
 
 void NetSpeedHelper::SetNetInfo()
@@ -146,18 +144,6 @@ NetSpeedHelper::~NetSpeedHelper()
     // delete m_Timer;
 }
 
-void NetSpeedHelper::StartTimer()
-{
-    m_RecvBytes = 0;
-    m_SendBytes = 0;
-    m_Timer->start();
-}
-
-void NetSpeedHelper::StopTimer()
-{
-    m_Timer->stop();
-}
-
 void NetSpeedHelper::SetMemInfo()
 {
     static char8_t m_szMemStr[4];
@@ -211,7 +197,21 @@ void NetSpeedHelper::SetNetInfo()
     m_RecvBytes = recv;
     m_SendBytes = send;
 }
+
 #endif
+
+void NetSpeedHelper::StartTimer()
+{
+    m_RecvBytes = 0;
+    m_SendBytes = 0;
+    m_Timer->start();
+}
+
+void NetSpeedHelper::StopTimer()
+{
+    m_Timer->stop();
+}
+
 
 void NetSpeedHelper::GetSysInfo()
 {

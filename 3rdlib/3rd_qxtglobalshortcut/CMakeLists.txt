@@ -17,10 +17,13 @@ add_definitions(-DQT_NO_DEBUG_OUTPUT -DNO_WARN_X86_INTRINSICS)
 include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}
 )
-
-find_package(QT NAMES Qt5 COMPONENTS Core Gui Widgets X11Extras REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Widgets X11Extras REQUIRED)
-
+if(WIN32)
+    find_package(QT NAMES Qt5 COMPONENTS Core Gui Widgets REQUIRED)
+    find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Widgets REQUIRED)
+elseif(UNIX)
+    find_package(QT NAMES Qt5 COMPONENTS Core Gui Widgets X11Extras REQUIRED)
+    find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Widgets X11Extras REQUIRED)
+endif()
 # set(CMAKE_BUILD_TYPE RELEASE)
 
 add_library(3rd_qxtglobalshortcut

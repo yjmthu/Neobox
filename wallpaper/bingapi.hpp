@@ -56,7 +56,7 @@ public:
         ptr->push_back(jsTemp->find(u8"urlbase")->second.getValueString() + u8"_UHD.jpg");
         return ptr;
     }
-    virtual void Dislike(const std::string& img) {
+    virtual void Dislike(const std::filesystem::path& img) override {
         //
     }
     virtual void SetCurDir(const std::string& str) {

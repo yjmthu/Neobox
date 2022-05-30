@@ -43,7 +43,7 @@ public:
         ptr->push_back(str);
         return ptr;
     }
-    virtual void Dislike(const std::string& img) {}
+    virtual void Dislike(const std::filesystem::path& img) override {}
     virtual void SetCurDir(const std::string& str) {}
     virtual const void* GetDataByName(const char* key) const {
         if (!strcmp(key, "m_Setting")) {

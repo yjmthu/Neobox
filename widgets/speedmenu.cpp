@@ -34,7 +34,6 @@
 #include <QShowEvent>
 
 #include <thread>
-#include <unistd.h>
 
 void SpeedMenu::showEvent(QShowEvent *event)
 {

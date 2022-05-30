@@ -56,8 +56,8 @@ public:
     virtual bool LoadSetting() = 0;
     virtual bool WriteDefaultSetting() = 0;
     virtual ImageInfoEx GetNext() = 0;
-    virtual void Dislike(const std::string& img) = 0;
-    virtual void SetCurDir(const std::string& str) {}
+    virtual void Dislike(const std::filesystem::path& img) = 0;
+    virtual void SetCurDir(const std::filesystem::path& str) {}
     virtual const void* GetDataByName(const char* key) const {
         return nullptr;
     }

@@ -3,6 +3,11 @@
 
 #include <QObject>
 #include <string>
+#ifdef _WIN32
+// #include <Windows.h>
+#include <winsock2.h>
+#include <iphlpapi.h> // Include for PIP_ADAPTER_ADDRESSES
+#endif
 
 class NetSpeedHelper: public QObject
 {

@@ -5,8 +5,26 @@ project(Neobox VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
-add_compile_options(-std=c++20)
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
+# add_compile_options(-std=c++20)
+
+
+if (MSVC)
+    # add_definitions(-DUNICODE -D_UNICODE)
+    add_compile_options("/utf-8")
+endif ()
+
+if (WIN32)
+    if (MSVC_VERSION GREATER_EQUAL "1900")
+        include(CheckCXXCompilerFlag)
+        CHECK_CXX_COMPILER_FLAG("/std:c++latest" _cpp_latest_flag_supported)
+        if (_cpp_latest_flag_supported)
+            add_compile_options("/std:c++latest")
+        endif()
+    endif()
+elseif(UNIX)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
+endif()
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -15,7 +33,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 # SET(CMAKE_BUILD_TYPE "Debug")
-SET(CMAKE_BUILD_TYPE "Release")
+# SET(CMAKE_BUILD_TYPE "Release")
 
 find_package(QT NAMES Qt5 COMPONENTS Widgets REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
@@ -24,9 +42,18 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
 
 set(YJSON_DIR ${CMAKE_SOURCE_DIR}/../YJson)
 
-include_directories(
-    ${YJSON_DIR}
-)
+if(WIN32)
+    include_directories(
+        ${YJSON_DIR}
+        C:/MSVC2022/leptonica-1.82.0/include
+        C:/MSVC2022/OpenSSL/OpenSSL-Win64/include
+        C:/MSVC2022/tesseract/include
+    )
+elseif(UNIX)
+    include_directories(
+        ${YJSON_DIR}
+    )
+endif()
 
 add_subdirectory(${YJSON_DIR} yjson)
 add_subdirectory(3rdlib/3rd_qxtglobalshortcut 3rd_qxtglobalshortcut)

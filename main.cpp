@@ -9,7 +9,6 @@
 #include <QSharedMemory>
 #include <QMessageBox>
 #include <QDebug>
-#include <unistd.h>
 #include <iostream>
 
 inline void DoExit(ExitCode m_ExitCode) {

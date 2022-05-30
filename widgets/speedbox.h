@@ -2,6 +2,9 @@
 #define SPEEDBOX_H
 
 #include <QWidget>
+#include <QColor>
+#include <QFont>
+#include <array>
 
 class SpeedBox : public QWidget
 {

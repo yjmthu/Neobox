@@ -3,6 +3,7 @@
 
 #include <regex>
 #include <filesystem>
+#include <algorithm>
 
 namespace WallClass {
 
@@ -64,17 +65,12 @@ public:
         m_Data->toFile(m_DataPath);
         return ptr;
     }
-    virtual void Dislike(const std::string& img) override {
-#if _WIN32
-        auto i = std::find(img.rbegin(), img.rend(), '\\').base();
-#else
-        auto i = std::find(img.rbegin(), img.rend(), '/').base();
-#endif
-        if (i > img.begin() && i < img.end()) {
-            std::u8string m_FileName(i, img.end());
+    virtual void Dislike(const std::filesystem::path& img) override {
+        if (img.has_filename()) {
+            std::u8string m_FileName(img.filename().u8string());
             if (m_FileName.size() == 20 && 
-                std::equal(m_FileName.begin(), m_FileName.begin()+10, "wallhaven-") &&
-                    (std::equal(m_FileName.end()-4, m_FileName.end(), ".jpg") || std::equal(m_FileName.end()-4, m_FileName.end(), ".png")) &&
+                std::equal(m_FileName.begin(), m_FileName.begin()+10, u8"wallhaven-") &&
+                    (std::equal(m_FileName.end()-4, m_FileName.end(), u8".jpg") || std::equal(m_FileName.end()-4, m_FileName.end(), u8".png")) &&
                 std::find_if(m_FileName.begin()+10, m_FileName.end()-4, [](char c)->bool{return !isalnum(c);}) == m_FileName.end()-4)
             {
                     m_Data->find(u8"Unused")->second.removeByValA(m_FileName);
@@ -97,7 +93,7 @@ public:
         GetApiPathUrl();
         m_NeedDownUrl = NeedGetImageUrl();
     }
-    virtual void SetCurDir(const std::string& str) override {
+    virtual void SetCurDir(const std::filesystem::path& str) override {
         m_ImageDir = str;
         m_Setting->find(m_Setting->find(u8"WallhavenCurrent")->second.getValueString())->second.find(u8"Directory")->second.setText(str);
         m_Setting->toFile(m_SettingPath);
@@ -175,7 +171,7 @@ private:
         auto& m_BlackArray = m_Data->find(u8"Blacklist")->second;
         if (std::equal(m_ImageUrl.begin(), m_ImageUrl.begin()+4, "/api")) {
             for (size_t i=5*(GetInt()-1) + 1, n=i+5; i < n; ++i) {
-                std::string url(std::string_view((const char *)m_ImageUrl.begin().base(), m_ImageUrl.size()));
+                std::string url(std::string_view(reinterpret_cast<const char *>(m_ImageUrl.data()), m_ImageUrl.size()));
                 url += "&page=" + std::to_string(i);
                 auto res = clt.Get(url.c_str());
                 if (res->status != 200) break;
@@ -194,14 +190,14 @@ private:
              const std::basic_regex<char8_t> pattern(u8"<li><figure.*?data-wallpaper-id=\"(\\w{6})\"");
              const auto& blackList = m_BlackArray.getArray();
              auto cmp = [](const YJson& i, const std::u8string& name)->bool { return i.getValueString().find(name) != std::u8string::npos;};
-             std::regex_iterator<const char8_t*, char8_t> end;
+             std::regex_iterator<std::u8string_view::const_iterator> end;
              for (size_t i=5*(GetInt()-1) + 1, n=i+5; i < n; ++i) {
-                std::string url(std::string_view((const char *)m_ImageUrl.begin().base(), m_ImageUrl.size()));
+                std::string url(std::string_view(reinterpret_cast<const char *>(m_ImageUrl.data()), m_ImageUrl.size()));
                 if (i!=1) url += "&page=" + std::to_string(i);
                 // std::cout << url << std::endl;
                 auto res = clt.Get(reinterpret_cast<const char *>(url.c_str()));
                 if (res->status != 200) break;
-                const std::u8string_view data((char8_t*)res->body.begin().base(), res->body.size());
+                const std::u8string_view data(reinterpret_cast<char8_t*>(res->body.data()), res->body.size());
                 std::regex_iterator iter(data.cbegin(), data.cend(), pattern);
                 while (iter != end) {
                     const auto& i = iter->str(1);
