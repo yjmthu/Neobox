@@ -3,134 +3,50 @@ cmake_minimum_required(VERSION 3.5)
 project(Neobox VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
-# add_compile_options(-std=c++20)
-
 
 if (MSVC)
     # add_definitions(-DUNICODE -D_UNICODE)
     add_compile_options("/utf-8")
 endif ()
 
-if (WIN32)
-    if (MSVC_VERSION GREATER_EQUAL "1900")
-        include(CheckCXXCompilerFlag)
-        CHECK_CXX_COMPILER_FLAG("/std:c++latest" _cpp_latest_flag_supported)
-        if (_cpp_latest_flag_supported)
-            add_compile_options("/std:c++latest")
-        endif()
-    endif()
-elseif(UNIX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
-endif()
-
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-
 # SET(CMAKE_BUILD_TYPE "Debug")
-# SET(CMAKE_BUILD_TYPE "Release")
-
-find_package(QT NAMES Qt5 COMPONENTS Widgets REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
-# set_property(TARGET Qt5::Core PROPERTY INTERFACE_COMPILE_FEATURES "")
-# add_compile_options("-std=c++1z")
-
-set(YJSON_DIR ${CMAKE_SOURCE_DIR}/../YJson)
+SET(CMAKE_BUILD_TYPE "Release")
 
 if(WIN32)
     include_directories(
-        ${YJSON_DIR}
         C:/MSVC2022/leptonica-1.82.0/include
         C:/MSVC2022/OpenSSL/OpenSSL-Win64/include
         C:/MSVC2022/tesseract/include
     )
-elseif(UNIX)
-    include_directories(
-        ${YJSON_DIR}
-    )
 endif()
 
-add_subdirectory(${YJSON_DIR} yjson)
-add_subdirectory(3rdlib/3rd_qxtglobalshortcut 3rd_qxtglobalshortcut)
+set(M_YJSON_DIR ${CMAKE_SOURCE_DIR}/../YJson)
+set(M_THIRD_PART_LIB_DIR ${CMAKE_SOURCE_DIR}/3rdlib)
 
-set(QRC_SOURCE_FILES recourses.qrc)
+include_directories(${M_YJSON_DIR}/include)
+include_directories(${M_THIRD_PART_LIB_DIR}/3rd_qxtglobalshortcut/include)
+include_directories(${M_THIRD_PART_LIB_DIR}/httplib)
+include_directories(wallpaper/include)
+include_directories(translate/include)
+include_directories(widgets/include)
+include_directories(core/include)
 
-set(PROJECT_SOURCES
-        main.cpp
+add_subdirectory(${M_YJSON_DIR} yjson)
+add_subdirectory(${M_THIRD_PART_LIB_DIR}/3rd_qxtglobalshortcut 3rd_qxtglobalshortcut)
+add_subdirectory(wallpaper)
+add_subdirectory(translate)
+add_subdirectory(core)
+add_subdirectory(widgets)
+add_subdirectory(tests)
 
-        widgets/speedapp.cpp
-        widgets/speedapp.h
-        widgets/speedbox.cpp
-        widgets/speedbox.h
-        widgets/speedmenu.cpp
-        widgets/speedmenu.h
-        widgets/pathdialog.cpp
-        widgets/pathdialog.h
-        widgets/screenfetch.cpp
-        widgets/screenfetch.h
+# add_executable(Neobox 
+#     master.cpp
+#     ${COLYOO_QT_RESOURCES}
+# )
 
-        wallpaper/apiclass.cpp
-        wallpaper/apiclass.hpp
-        wallpaper/wallpaper.cpp
-        wallpaper/wallpaper.h
-
-        core/appcode.hpp
-        core/netspeedhelper.cpp
-        core/netspeedhelper.h
-
-        translate/translater.cpp
-        translate/translater.h
-        translate/text.cpp
-        translate/text.h
-)
-
-qt5_add_resources(QRC_FILES ${QRC_SOURCE_FILES})
-SOURCE_GROUP("Resource Files" FILES ${QRC_SOURCE_FILES})
-
-if(ANDROID)
-    add_library(Neobox SHARED
-        ${PROJECT_SOURCES}
-        ${QRC_FILES}
-    )
-else()
-    add_executable(Neobox
-        ${PROJECT_SOURCES}
-        ${QRC_FILES}
-    )
-endif()
-
-if (WIN32)
-    target_link_libraries(Neobox PRIVATE
-        3rd_qxtglobalshortcut
-        yjson
-        Qt${QT_VERSION_MAJOR}::Widgets
-        libssl
-        libcrypto
-        lept
-        tesseract
-    )
-elseif (UNIX)
-    target_link_libraries(Neobox PRIVATE
-        3rd_qxtglobalshortcut
-        yjson
-        Qt${QT_VERSION_MAJOR}::Widgets
-        pthread
-        ssl
-        crypto
-        lept
-        tesseract
-    )
-endif()
-
-set_target_properties(Neobox PROPERTIES
-    MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
-    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
-    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
-)
-
-target_compile_features(Neobox PRIVATE cxx_std_20)
+# target_link_libraries(Neobox PUBLIC
+#     wallpaper
+#     core
+#     translate
+#     widgets
+# )
