@@ -115,10 +115,18 @@ void SpeedMenu::SetupConntects()
     connect(m_Actions+5, &QAction::triggered, qApp,
             std::bind(&QDesktopServices::openUrl, QUrl::fromLocalFile(qApp->applicationDirPath())));
     connect(m_Actions+6, &QAction::triggered, this, [](){
-            QTimer::singleShot(500, std::bind(::system, "shutdown -h now"));
+#ifdef WIN32
+        QTimer::singleShot(500, std::bind(::system, "shutdown -s -t 0"));
+#else
+        QTimer::singleShot(500, std::bind(::system, "shutdown -h now"));
+#endif
         });
     connect(m_Actions+7, &QAction::triggered, this, [](){
-            QTimer::singleShot(500, std::bind(::system, "shutdown -r now"));
+#ifdef WIN32
+        QTimer::singleShot(500, std::bind(::system, "shutdown -r -t 0"));
+#else
+        QTimer::singleShot(500, std::bind(::system, "shutdown -r now"));
+#endif
         });
     connect(m_Actions+8, &QAction::triggered, qApp, &QApplication::quit);
 }
