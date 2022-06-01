@@ -9,6 +9,18 @@ include_directories(include)
 
 if(UNIX)
     find_package(Qt5 COMPONENTS Core Widgets X11Extras REQUIRED)
+    set(EXTRE_SRC_FILES
+        include/x11info.h
+        src/qxtglobalshortcut_x11.cpp
+        src/qxtwindowsystem_x11.cpp
+        src/x11info.cpp
+    )
+elseif(WIN32)
+    find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
+    set(EXTRE_SRC_FILES
+        include/qxtwindowsystem.h
+        src/qxtglobalshortcut_win.cpp
+    )
 endif()
 
 add_library(3rd_qxtglobalshortcut
@@ -17,10 +29,7 @@ add_library(3rd_qxtglobalshortcut
     include/qxtglobalshortcut_p.h
     src/qxtglobal.cpp
     src/qxtglobalshortcut.cpp
-    include/x11info.h
-    src/qxtglobalshortcut_x11.cpp
-    src/qxtwindowsystem_x11.cpp
-    src/x11info.cpp
+    ${EXTRE_SRC_FILES}
 )
 
 target_compile_definitions(3rd_qxtglobalshortcut PUBLIC
@@ -39,12 +48,9 @@ elseif(UNIX)
         # cairo
     )
 elseif(WIN32)
-    target_sources(3rd_qxtglobalshortcut PUBLIC
-        src/qxtglobalshortcut_win.cpp
-        src/qxtwindowsystem_win.cpp
-    )
-
     target_link_libraries(3rd_qxtglobalshortcut PUBLIC
         User32
+        Qt::Core
+        Qt::Widgets
     )
 endif()

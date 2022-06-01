@@ -41,6 +41,10 @@ extern const char* m_szClobalSettingFile;
 
 void SpeedMenu::showEvent(QShowEvent *event)
 {
+#ifdef WIN32
+    m_AutoStartApp->setChecked(
+        !QSettings(QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"), QSettings::NativeFormat).value("Neobox").toString().compare(QDir::toNativeSeparators(qApp->applicationFilePath())));
+#else
     QString m_AutoStartFile = QStandardPaths::writableLocation(QStandardPaths::HomeLocation)+"/.config/autostart/Neobox.desktop";
     if (!QFile::exists(m_AutoStartFile)) {
         m_AutoStartApp->setChecked(false);
@@ -51,6 +55,7 @@ void SpeedMenu::showEvent(QShowEvent *event)
         m_AutoStartApp->setChecked(str.indexOf(qApp->applicationFilePath()) != -1);
         m_Setting.endGroup();
     }
+#endif
     if (event)
         event->accept();
 }
@@ -168,6 +173,15 @@ void SpeedMenu::SetupSettingMenu()
     m_AutoStartApp = m_pAppSettingMenu->addAction("开机自启");
     m_AutoStartApp->setCheckable(true);
     connect(m_AutoStartApp, &QAction::triggered, this, [](bool checked) {
+#ifdef WIN32
+        QSettings reg(
+            QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"),
+            QSettings::NativeFormat);
+        if (checked)
+            reg.setValue("Neobox", QDir::toNativeSeparators(qApp->applicationFilePath()));
+        else
+            reg.remove("Neobox");
+#else
         QString configLocation = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + "/.config";
         QString desktopFileName = configLocation + "/autostart/Neobox.desktop";
         QString iconFileName = configLocation + "/Neobox/Neobox.ico";
@@ -189,6 +203,7 @@ void SpeedMenu::SetupSettingMenu()
         } else {
             QFile::remove(desktopFileName);
         }
+#endif // WIN32
     });
     auto ptr = m_pAppSettingMenu->addAction("显示界面");
     ptr->setCheckable(true);

@@ -1,5 +1,6 @@
 ﻿#include <string>
 #include <vector>
+#include <sstream>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -8,7 +9,7 @@
 template<typename _Char, typename _Ty>
 void GetCmdOutput(const char* cmd, _Ty& result, int rows = -1)
 {
-	STARTUPINFO si = { 0 };
+	STARTUPINFOA si = { 0 };
 	PROCESS_INFORMATION pi = { 0 };
 	char m_buffer[1024] = { 0 };
 	DWORD ReadNum = 0;
@@ -21,12 +22,12 @@ void GetCmdOutput(const char* cmd, _Ty& result, int rows = -1)
 	BOOL bRet = CreatePipe(&hRead, &hWrite, &sa, 0);
 	if (bRet == TRUE) {
 	} else {
-		return {};
+		return;
 	}
 	HANDLE hTemp = GetStdHandle(STD_OUTPUT_HANDLE);
 	SetStdHandle(STD_OUTPUT_HANDLE, hWrite);
 
-	GetStartupInfo(&si);
+	GetStartupInfoA(&si);
 	si.cb = sizeof(STARTUPINFO);
 	si.wShowWindow = SW_HIDE;
 	si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
@@ -41,17 +42,19 @@ void GetCmdOutput(const char* cmd, _Ty& result, int rows = -1)
 		// std::cout << "create pop failed: " << GetLastError() << std::endl;
 	}
 	CloseHandle(hWrite);
+	std::ostringstream ssi;
+	std::istringstream sso;
+	sso.tie(&ssi);
 	while (ReadFile(hRead, m_buffer, 1024, &ReadNum, NULL))
 	{
 		m_buffer[ReadNum] = '\0';
-		if (!result.back().empty() && result.back().back() == '\n') {
-			if (!--rows) return;
-			result.emplace_back(m_buffer);
-		} else {
-			result.back().append(m_buffer);
-		}
+		ssi.write(m_buffer, ReadNum);
 	}
-	return 0;
+	std::string temp;
+	while (std::getline(sso, temp)) {
+		result.emplace_back(temp.begin(), temp.end());
+	}
+	return;
 }
 #elif defined __linux__
 

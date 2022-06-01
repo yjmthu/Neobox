@@ -32,7 +32,10 @@ class WallBase {
 protected:
     std::filesystem::path m_HomePicLocation;
     std::filesystem::path m_ImageDir;
-    inline void InitBase() { if (!LoadSetting()) WriteDefaultSetting(); }
+    inline void InitBase() {
+        if (!LoadSetting())
+            WriteDefaultSetting();
+    }
 public:
     static WallBase* GetNewInstance(const std::filesystem::path& picHome, int type);
     inline WallBase(const std::filesystem::path& pichome)

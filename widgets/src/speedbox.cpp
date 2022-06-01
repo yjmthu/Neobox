@@ -20,7 +20,7 @@
 #include <QTimer>
 
 extern std::unique_ptr<YJson> m_GlobalSetting;
-extern const char m_szClobalSettingFile[];
+extern const char* m_szClobalSettingFile;
 
 void SpeedBox::mousePressEvent(QMouseEvent *event)
 {

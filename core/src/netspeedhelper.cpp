@@ -19,7 +19,7 @@ void formatSpped(std::u8string& str, uint64_t dw, bool up_down)
     // https://unicode-table.com/en/2192/
     static char units[] = "\221\223BKMGTPN\342\206\222 %0.1Lf B";
     static char8_t temp[20];
-    long double DW = dw;
+    double DW = static_cast<double>(dw);
     size_t the_unit = 2;
     while (DW >= 1000) {
         DW /= 1024;
@@ -36,21 +36,17 @@ void formatSpped(std::u8string& str, uint64_t dw, bool up_down)
 
 NetSpeedHelper::~NetSpeedHelper()
 {
-    m_Timer->stop();
     HeapFree(GetProcessHeap(), 0, piaa);
     HeapFree(GetProcessHeap(), 0, mi);
 }
 
-NetSpeedHelper::NetSpeedHelper(QObject* parent) :
-    QObject(parent), m_Timer(new QTimer(this))
+void NetSpeedHelper::SetMemInfo()
 {
-    char8_t m_szMemStr[4];
-    connect(m_Timer, &QTimer::timeout, dynamic_cast<SpeedBox*>(parent), &SpeedBox::OnTimer);
-    m_Timer->start(1000);                                    //开始检测网速和内存
-    MEMORYSTATUS ms;
+    static char m_szMemStr[4];
+    static MEMORYSTATUS ms;
     GlobalMemoryStatus(&ms);
-    sprintf(reinterpret_cast<char*>(m_szMemStr), "%d", static_cast<uint16_t>(ms.dwMemoryLoad));
-    m_SysInfo[0] = m_szMemStr;
+    sprintf(m_szMemStr, "%d", static_cast<uint16_t>(ms.dwMemoryLoad));
+    m_SysInfo[0] = reinterpret_cast<char8_t*>(m_szMemStr);
 }
 
 void NetSpeedHelper::SetNetInfo()
@@ -104,11 +100,6 @@ void NetSpeedHelper::SetNetInfo()
 }
 
 #elif defined(__linux__)
-NetSpeedHelper::NetSpeedHelper()
-{
-    // connect(m_Timer, &QTimer::timeout, dynamic_cast<SpeedBox*>(parent), &SpeedBox::OnTimer);
-    // m_Timer->start(1000);                                    //  开始检测网速和内存
-}
 
 NetSpeedHelper::~NetSpeedHelper()
 {
@@ -167,7 +158,6 @@ void NetSpeedHelper::ClearData()
 {
     m_RecvBytes = 0;
     m_SendBytes = 0;
-    // m_Timer->start();
 }
 
 void NetSpeedHelper::GetSysInfo()

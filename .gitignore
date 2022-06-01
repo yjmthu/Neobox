@@ -13,6 +13,7 @@
 *.o
 Makefile
 build/
+out/
 .vscode/
 .cache/
 .vs/

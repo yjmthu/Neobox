@@ -23,7 +23,7 @@ private:
 public:
     virtual bool LoadSetting() override {
         if (!std::filesystem::exists(m_SettingPath))
-            return true;
+            return false;
         try {
             m_Setting = new YJson(m_SettingPath, YJson::UTF8);
             return true;
@@ -154,10 +154,10 @@ private:
             ptr.append(std::get<3>(i), std::get<2>(i));
             item.append((m_HomePicLocation / std::get<0>(i)).u8string(), u8"Directory");
         }
-        m_Setting->append(std::get<0>(*paramLIst.begin()), u8"WallhavenCurrent");
+        m_Setting->append(std::get<0>(*paramLIst.begin()), u8"WallhavenCurrent"sv);
         m_Setting->append(1, u8"PageNumber");
-        m_Setting->toFile(m_SettingPath);
         m_Setting->append(YJson::Null, u8"ApiKey");
+        m_Setting->toFile(m_SettingPath);
 
         // std::cout << "My default json file is: \n" << *m_Setting << std::endl;
         return true;
@@ -187,20 +187,20 @@ private:
                 }
             }
         } else { // wallhaven-6ozrgw.png
-             const std::basic_regex<char8_t> pattern(u8"<li><figure.*?data-wallpaper-id=\"(\\w{6})\"");
+             const std::regex pattern("<li><figure.*?data-wallpaper-id=\"(\\w{6})\"");
              const auto& blackList = m_BlackArray.getArray();
-             auto cmp = [](const YJson& i, const std::u8string& name)->bool { return i.getValueString().find(name) != std::u8string::npos;};
-             std::regex_iterator<std::u8string_view::const_iterator> end;
+             auto cmp = [](const YJson& i, const std::u8string_view& name)->bool { return i.getValueString().find(name) != std::u8string::npos;};
+             std::sregex_iterator end;
              for (size_t i=5*(GetInt()-1) + 1, n=i+5; i < n; ++i) {
                 std::string url(std::string_view(reinterpret_cast<const char *>(m_ImageUrl.data()), m_ImageUrl.size()));
                 if (i!=1) url += "&page=" + std::to_string(i);
                 // std::cout << url << std::endl;
-                auto res = clt.Get(reinterpret_cast<const char *>(url.c_str()));
+                auto res = clt.Get(url.c_str());
                 if (res->status != 200) break;
-                const std::u8string_view data(reinterpret_cast<char8_t*>(res->body.data()), res->body.size());
-                std::regex_iterator iter(data.cbegin(), data.cend(), pattern);
+                std::sregex_iterator iter(res->body.begin(), res->body.end(), pattern);
                 while (iter != end) {
-                    const auto& i = iter->str(1);
+                    const auto& i_ = iter->str(1);
+                    std::u8string_view i(reinterpret_cast<const char8_t*>(i_.data()), i_.size());
                     if (std::find_if(blackList.begin(), blackList.end(), 
                         std::bind(cmp, std::placeholders::_1, std::ref(i))) == blackList.end() && 
                         std::find_if(

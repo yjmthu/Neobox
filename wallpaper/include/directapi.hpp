@@ -35,7 +35,7 @@ public:
         m_ApiUrl = u8"https://source.unsplash.com";
         m_ApiPath = u8"/random/2500x1600";
         m_ImageDir = m_HomePicLocation / u8"随机壁纸";
-        m_ImageNameFormat = u8"\%F \%T.jpg";
+        m_ImageNameFormat = u8"%F %T.jpg";
         m_Setting = new YJson(YJson::O {
             { u8"ApiUrl"sv, u8"Unsplash"sv },
             { u8"ApiData"sv, YJson::O {

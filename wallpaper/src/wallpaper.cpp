@@ -2,6 +2,11 @@
 #include <sysapi.h>
 #include <timer.h>
 
+#ifdef _WIN32
+#include <wininet.h>
+#endif // _WIN32
+
+
 extern std::unique_ptr<YJson> m_GlobalSetting;
 extern const char* m_szClobalSettingFile;
 
@@ -77,11 +82,15 @@ bool Wallpaper::SetWallpaper(const std::filesystem::path& imagePath)
     static auto m_DesktopType = GetDesktop();
     if (!std::filesystem::exists(imagePath)) return false;
 #if defined (_WIN32)
-    wxCStrData str = imagePath.c_str();
+#ifdef  UNICODE
+    std::wstring str = imagePath.wstring();
+#else
+    std::string str = imagePath.string();
+#endif //  UNICDOE
     return ::SystemParametersInfo(
         SPI_SETDESKWALLPAPER,
         UINT(0),
-        const_cast<TCHAR*>(static_cast<const TCHAR*>(str)),
+        const_cast<TCHAR*>(str.c_str()),
         SPIF_SENDCHANGE | SPIF_UPDATEINIFILE
     );
 #elif defined (__linux__)

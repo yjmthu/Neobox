@@ -5,10 +5,6 @@ project(widgets VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if (MSVC)
-    add_compile_options("/utf-8")
-    add_compile_options("/std:c++latest")
-endif ()
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -17,19 +13,9 @@ set(CMAKE_AUTOUIC ON)
 
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 
-if(WIN32)
-    include_directories(
-        C:/MSVC2022/leptonica-1.82.0/include
-        C:/MSVC2022/OpenSSL/OpenSSL-Win64/include
-        C:/MSVC2022/tesseract/include
-    )
-endif()
-
 include_directories(include)
 
-# qt5_add_resources(COLYOO_QT_RESOURCES resources.qrc)
-
-add_executable(widgets
+add_executable(widgets WIN32
     include/mainloop.h
     include/speedapp.h
     include/speedbox.h
@@ -46,20 +32,19 @@ add_executable(widgets
 )
 
 set(M_STATIC_LIBS
+    3rd_qxtglobalshortcut
     core
     wallpaper
     yjson
     Qt5::Widgets
-    lept
-    tesseract
     translate
 )
 
 if (WIN32)
     target_link_libraries(widgets PRIVATE
         ${M_STATIC_LIBS}
-        libssl
-        libcrypto
+        libssl_static
+        libcrypto_static
     )
 elseif (UNIX)
     target_link_libraries(widgets PRIVATE

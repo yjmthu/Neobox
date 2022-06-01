@@ -7,3 +7,10 @@ add_library(core STATIC
     src/sysapi.cpp
     src/timer.cpp
 )
+
+if(WIN32)
+    target_link_libraries(
+        core
+        Iphlpapi
+    )
+endif()

@@ -16,10 +16,10 @@ public:
     virtual bool LoadSetting() override {
         m_ApiUrl = u8"https://cn.bing.com";
         m_ImageDir = m_HomePicLocation / u8"必应壁纸";
-        m_ImageNameFormat = u8"\%s \%Y\%m\%d.jpg";
+        m_ImageNameFormat = u8"%s %Y%m%d.jpg";
         if (std::filesystem::exists(m_SettingPath)) {
             m_Setting = new YJson(m_SettingPath, YJson::UTF8);
-            if (m_Setting->find(u8"today")->second.getValueString() == GetToday(u8"\%Y\%m\%d")) {
+            if (m_Setting->find(u8"today")->second.getValueString() == GetToday(u8"%Y%m%d")) {
                 m_ImageDir = m_Setting->find(u8"imgdir")->second.getValueString();
                 m_ImageNameFormat = m_Setting->find(u8"imgfmt")->second.getValueString();
                 return true;
@@ -39,7 +39,7 @@ public:
         if (res->status != 200) return false;
         m_Setting = new YJson;
         m_Setting->parse(res->body);
-        m_Setting->append(GetToday(u8"\%Y\%m\%d"), u8"today");
+        m_Setting->append(GetToday(u8"%Y%m%d"), u8"today");
         m_Setting->append(m_ImageDir, u8"imgdir");
         m_Setting->append(m_ImageNameFormat, u8"imgfmt");
         m_Setting->toFile(m_SettingPath);
@@ -79,7 +79,7 @@ private:
     }
     std::u8string GetImageName(YJson& imgInfo) {
         std::u8string str(m_ImageNameFormat.begin(), m_ImageNameFormat.end());
-        auto pos = str.find(u8"\%s");
+        auto pos = str.find(u8"%s");
         if (pos != std::string::npos) {
             std::u8string temp =  imgInfo.find(u8"copyright")->second.getValueString();
             temp.erase(temp.find(u8" (© "));

@@ -62,7 +62,6 @@ VarBox::~VarBox()
 
 void VarBox::GetSetting()
 {
-    std::cout << "------" << QFile::exists(":/jsons/Setting.json") << std::endl;
     if (!std::filesystem::exists(m_szClobalSettingFile)) {
         QFile::copy(":/jsons/Setting.json", m_szClobalSettingFile);
         QFile::setPermissions(m_szClobalSettingFile, QFileDevice::ReadUser | QFileDevice::WriteUser);

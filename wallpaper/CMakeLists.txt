@@ -7,9 +7,21 @@ add_library(wallpaper STATIC
     src/wallpaper.cpp
 )
 
+if(WIN32)
+    set(SSL_LIBS
+        libssl_static
+        libcrypto_static
+        Wininet
+    )
+elseif(UNIX)
+    set(SSL_LIBS
+        ssl
+        crypto
+    )
+endif()
+
 target_link_libraries( wallpaper
     yjson
     core
-    ssl
-    crypto
+    ${SSL_LIBS}
 )
