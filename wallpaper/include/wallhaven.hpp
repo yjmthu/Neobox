@@ -13,11 +13,8 @@ private:
         using namespace std::literals;
         httplib::Client clt("https://wallhaven.cc");
         str = u8"/api/v1/w/"s + str;
-        // std::cout << str << std::endl;
         auto res = clt.Get(reinterpret_cast<const char*>(str.c_str()));
-        YJson js;
-        js.parse(res->body);
-        // std::cout << js;
+        YJson js(res->body.begin(), res->body.end());
         str = js[u8"data"].second[u8"path"].second.getValueString().substr(31);
     }
 public:
@@ -175,8 +172,7 @@ private:
                 url += "&page=" + std::to_string(i);
                 auto res = clt.Get(url.c_str());
                 if (res->status != 200) break;
-                YJson root; 
-                root.parse(res->body);
+                YJson root(res->body.begin(), res->body.end());
                 YJson& data = root[u8"data"sv].second;
                 for (auto& i: data.getArray()) {
                     std::u8string name = i.find(u8"path")->second.getValueString().substr(31);

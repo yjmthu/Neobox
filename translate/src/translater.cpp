@@ -123,8 +123,9 @@ void Translater::GetReply(const QString& text)
 {
     using namespace std::literals;
     static YJson param = YJson::O { { u8"doctype"sv, u8"json"sv }, { u8"i"sv, YJson::String } };
-
-    param[u8"i"sv].second.setText(GetU8String(text.toUtf8()));
+    httplib::Client clt("http://fanyi.youdao.com"s);
+    QByteArray&& array = text.toUtf8();
+    param[u8"i"sv].second.setText(array.cbegin(), array.cend());
     bool isChinese;
     if (m_BtnGroup->checkedId() == 0) {
         auto uNum = text.front().unicode();
@@ -133,23 +134,21 @@ void Translater::GetReply(const QString& text)
         isChinese = m_BtnGroup->checkedId() == 1;
     }
     param[u8"type"sv].second = isChinese?u8"ZH_CN2EN"sv:u8"EN2ZH_CN"sv;
-    httplib::Client clt(u8"http://fanyi.youdao.com"s);
     std::u8string url = param.urlEncode(u8"/translate?"sv);
     // std::cout << "http://fanyi.youdao.com"s << url << std::endl;
-    auto res = clt.Get(url);
+    auto res = clt.Get(reinterpret_cast<const char*>(url.c_str()));
     if (res->status != 200) {
         m_TextTo->setPlainText(QStringLiteral("网络开小差了~"));
         return;
     }
-    const std::string& body = res->body;
-    auto ptr = YJson::Parse(body);
-    if (!ptr->isObject() || ptr->find(u8"errorCode")->second != 0) {
-        m_TextTo->setPlainText(QString::fromUtf8(body.data(), body.size()));
+    auto json = YJson(res->body.cbegin(), res->body.cend());
+    if (!json.isObject() || json.find(u8"errorCode"sv)->second != 0) {
+        m_TextTo->setPlainText(QString::fromUtf8(res->body.data(), res->body.size()));
         return;
     }
     m_TextTo->clear();
     if (isChinese) {
-        for (auto& i: ptr->find(u8"translateResult"sv)->second.getArray()) {
+        for (auto& i: json.find(u8"translateResult"sv)->second.getArray()) {
             std::u8string tempStr;
             for (auto& j: i.getArray()) {
                 tempStr.append(j[u8"tgt"sv].second.getValueString());
@@ -159,7 +158,7 @@ void Translater::GetReply(const QString& text)
             m_TextTo->appendPlainText(QString::fromUtf8(reinterpret_cast<const char*>(tempStr.data()), tempStr.size()));
         }
     } else {
-        for (auto& i: ptr->find(u8"translateResult"sv)->second.getArray()) {
+        for (auto& i: json.find(u8"translateResult"sv)->second.getArray()) {
             std::u8string tempStr;
             for (auto& j: i.getArray()) {
                 tempStr.append(j[u8"tgt"sv].second.getValueString());
@@ -167,7 +166,7 @@ void Translater::GetReply(const QString& text)
             m_TextTo->appendPlainText(QString::fromUtf8(reinterpret_cast<const char*>(tempStr.data()), tempStr.size()));
         }
     }
-}
+ }
 
 void Translater::IntelligentShow()
 {

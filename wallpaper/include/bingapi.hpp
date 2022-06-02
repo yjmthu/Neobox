@@ -34,11 +34,10 @@ public:
     virtual bool WriteDefaultSetting() override {
         // https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8
 
-        httplib::Client clt(m_ApiUrl);
+        httplib::Client clt(std::string(m_ApiUrl.begin(), m_ApiUrl.end()));
         auto res = clt.Get("/HPImageArchive.aspx?format=js&idx=0&n=8");
         if (res->status != 200) return false;
-        m_Setting = new YJson;
-        m_Setting->parse(res->body);
+        m_Setting = new YJson(res->body.begin(), res->body.end());
         m_Setting->append(GetToday(u8"%Y%m%d"), u8"today");
         m_Setting->append(m_ImageDir, u8"imgdir");
         m_Setting->append(m_ImageNameFormat, u8"imgfmt");

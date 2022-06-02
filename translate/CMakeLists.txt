@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt5 COMPONENTS Widgets REQUIRED)
+find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
 
 if(WIN32)
     if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
@@ -42,6 +42,7 @@ add_library(translate STATIC
 )
 
 target_link_libraries(translate PRIVATE
+    Qt::Core
     3rd_qxtglobalshortcut
     ${tesseract}
 )

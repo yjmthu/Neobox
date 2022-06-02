@@ -26,14 +26,14 @@ bool Wallpaper::DownloadImage(const ImageInfoEx& imageInfo)
     }
     if (imageInfo->size() != 3) return false;
     try {
-    httplib::Client clt(imageInfo->at(1));
+    httplib::Client clt(std::string(imageInfo->at(1).begin(), imageInfo->at(1).end()));
     std::ofstream file(std::filesystem::path(imageInfo->front()), std::ios::binary | std::ios::out);
     if (!file.is_open()) return false;
     auto m_fHandleData = [&file](const char* data, size_t length) {
         file.write(data, length);
         return true;
     };
-    auto res = clt.Get(imageInfo->at(2), m_fHandleData);
+    auto res = clt.Get(reinterpret_cast<const char*>(imageInfo->at(2).c_str()), m_fHandleData);
 label:
     if (res->status == 200) {
         file.close();
@@ -41,7 +41,7 @@ label:
     } else if (res->status == 301 || res->status == 302) {
         file.seekp(std::ios::beg);
         clt.set_follow_location(true);
-        res = clt.Get(imageInfo->at(2), m_fHandleData);
+        res = clt.Get(reinterpret_cast<const char*>(imageInfo->at(2).c_str()), m_fHandleData);
         goto label;
     } else {
         file.close();
