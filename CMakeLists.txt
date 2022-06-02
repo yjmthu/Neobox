@@ -5,10 +5,12 @@ project(Neobox VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 
 if (MSVC)
-    add_definitions(-DUNICODE -D_UNICODE)
+    add_definitions(-DUNICODE -D_UNICODE -D_CRT_SECURE_NO_WARNINGS=1)
     add_compile_options("/utf-8")
-    add_compile_options("/std:c++latest")
+    # add_compile_options("/std:c++latest")
 endif ()
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # SET(CMAKE_BUILD_TYPE "Debug")
 # SET(CMAKE_BUILD_TYPE "Release")

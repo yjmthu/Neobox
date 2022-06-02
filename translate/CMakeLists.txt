@@ -6,13 +6,23 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 
 if(WIN32)
-    set(tesseract
-        zlibstatic
-        libpng16_static
-        tiff
-        leptonica-1.82.0
-        tesseract51
-    )
+    if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+        set(tesseract
+            zlibstatic
+            libpng16_static
+            tiff
+            leptonica-1.82.0
+            tesseract51d
+        )
+    elseif(${CMAKE_BUILD_TYPE} STREQUAL "Release")
+        set(tesseract
+            zlibstatic
+            libpng16_static
+            tiff
+            leptonica-1.82.0
+            tesseract51
+        )
+    endif()
     include_directories(${LEPTONICA_INCLUDE_DIRS})
 elseif(UNIX)
     set(tesseract

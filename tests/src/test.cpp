@@ -4,7 +4,11 @@
 
 int main() {
     std::vector<std::string> data;
+#if __linux__
     GetCmdOutput<char>("./tests/main", data);
+#else
+    GetCmdOutput<char>("./build/tests/Debug/test_main.exe", data);
+#endif
     for (auto& i: data) {
         for (auto j: i) {
             std::cout << int(j) << ' ';

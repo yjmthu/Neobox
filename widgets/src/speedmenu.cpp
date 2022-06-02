@@ -380,7 +380,7 @@ void SpeedMenu::SetAdditionalMenu()
                     });
                     for (auto& j: i->second.find(u8"Parameter")->second.getObject()) {
                         m_TableWidget.setItem(index, 0,  new QTableWidgetItem(
-                            QString::fromUtf8(reinterpret_cast<const char*>(j.first.data(), j.first.size()))));
+                            QString::fromUtf8(reinterpret_cast<const char*>(j.first.data()), j.first.size())));
                         if (j.second.isNumber()) {
                             m_TableWidget.setItem(index++, 1, new QTableWidgetItem(QString::number(j.second.getValueInt())));
                         } else {

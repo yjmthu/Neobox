@@ -66,11 +66,10 @@ void NetSpeedHelper::SetMemInfo()
 
 void NetSpeedHelper::SetNetInfo()
 {
-    static unsigned char iGetAddressTime = 10;  // 10秒一次获取网卡信息
-    static DWORD m_last_in_bytes = 0 /* 总上一秒下载字节 */,  m_last_out_bytes = 0 /* 总上一秒上传字节 */;
+    static unsigned char iGetAddressTime = 10;
+    static DWORD m_last_in_bytes = 0,  m_last_out_bytes = 0;
 
-    if (iGetAddressTime == 10)        // 10秒更新
-    {
+    if (iGetAddressTime == 10) {
         DWORD dwIPSize = 0;
         if (GetAdaptersAddresses(AF_INET, 0, 0, piaa, &dwIPSize) == ERROR_BUFFER_OVERFLOW)
         {
@@ -107,8 +106,8 @@ void NetSpeedHelper::SetNetInfo()
     }
 
     if (m_last_in_bytes) {
-        formatSpped(m_SysInfo[1], m_out_bytes - m_last_out_bytes, false);
-        formatSpped(m_SysInfo[2], m_in_bytes - m_last_in_bytes, true);
+        formatSpped<false>(m_SysInfo[1], m_out_bytes - m_last_out_bytes);
+        formatSpped<true>(m_SysInfo[2], m_in_bytes - m_last_in_bytes);
     }
     m_last_out_bytes = m_out_bytes;
     m_last_in_bytes = m_in_bytes;

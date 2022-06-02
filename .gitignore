@@ -12,9 +12,9 @@
 *.d
 *.o
 Makefile
-build/
-out/
+build
+out
 3rdlib/YJson
-.vscode/
-.cache/
-.vs/
+.vscode
+.cache
+.vs
