@@ -1,6 +1,6 @@
 #include "translater.h"
 
-#include <httplib.hpp>
+#include <httplib.h>
 #include <qxtglobalshortcut.h>
 #include <sysapi.h>
 

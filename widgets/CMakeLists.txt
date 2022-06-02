@@ -31,7 +31,7 @@ add_executable(widgets WIN32
     resources.qrc
 )
 
-set(M_STATIC_LIBS
+target_link_libraries(widgets PRIVATE
     3rd_qxtglobalshortcut
     core
     wallpaper
@@ -40,19 +40,9 @@ set(M_STATIC_LIBS
     translate
 )
 
-if (WIN32)
+if (UNIX)
     target_link_libraries(widgets PRIVATE
-        ${M_STATIC_LIBS}
-        libssl_static
-        libcrypto_static
-    )
-elseif (UNIX)
-    target_link_libraries(widgets PRIVATE
-        ${M_STATIC_LIBS}
         pthread
-        ssl
-        crypto
     )
 endif()
 
-# target_compile_features(widgets PRIVATE cxx_std_20)

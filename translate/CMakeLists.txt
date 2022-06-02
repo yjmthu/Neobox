@@ -44,5 +44,6 @@ add_library(translate STATIC
 target_link_libraries(translate PRIVATE
     Qt::Core
     3rd_qxtglobalshortcut
+    httplib
     ${tesseract}
 )

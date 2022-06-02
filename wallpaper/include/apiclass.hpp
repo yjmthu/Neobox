@@ -1,10 +1,7 @@
 #ifndef APICLASS_H
 #define APICLASS_H
 
-#define BOOST_SPIRIT_THREADSAFE
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
+#include "wallpaper.h"
 
 #include <stdio.h>
 #include <time.h>
@@ -15,13 +12,7 @@
 #include <filesystem>
 #include <system_error>
 
-#ifndef CPPHTTPLIB_OPENSSL_SUPPORT
-#define CPPHTTPLIB_OPENSSL_SUPPORT
-#endif
-
-#include "wallpaper.h"
-#include <httplib.hpp>
-
+#include <httplib.h>
 #include <yjson.h>
 
 namespace WallClass {
