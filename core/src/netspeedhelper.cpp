@@ -6,7 +6,10 @@
 #include <algorithm>
 #include <string>
 #include <sstream>
+#include <fstream>
+#include <regex>
 #include <list>
+#include <iostream>
 
 using namespace std::literals;
 
@@ -14,22 +17,34 @@ using namespace std::literals;
 #include <iphlpapi.h>
 #endif
 
-void formatSpped(std::u8string& str, uint64_t dw, bool up_down)
+constexpr std::string __get__(bool i) {
+    return i ? "\342\206\223"s: "\342\206\221"s;
+} 
+
+template <bool A>
+void formatSpped(std::u8string& str, double dw)
 {
     // https://unicode-table.com/en/2192/
-    static char units[] = "\221\223BKMGTPN\342\206\222 %0.1Lf B";
-    static char8_t temp[20];
-    double DW = static_cast<double>(dw);
-    size_t the_unit = 2;
-    while (DW >= 1000) {
-        DW /= 1024;
-        ++the_unit;
+    using namespace std::literals;
+    constexpr std::string_view prex = A? "\342\206\223 "sv: "\342\206\223 "sv;
+    constexpr std::string_view units = "BKMGTPN"sv;
+    std::string_view::const_iterator iter = units.cbegin();
+    while (dw >= 1000) {
+        dw /= 1024;
+        ++iter;
     }
-    if (the_unit > 8) the_unit = 8;
-    units[11] = units[up_down];
-    units[20] = units[the_unit];
-    sprintf(reinterpret_cast<char*>(temp), units+9, DW);
-    str = temp;
+    if (iter == units.end()) iter = units.end() - 1;
+    std::ostringstream ss;
+    ss.precision(1);
+    ss << prex << std::fixed << dw << ' ' << *iter;
+    std::string&& temp = ss.str();
+    str.assign(temp.begin(), temp.end());
+}
+
+NetSpeedHelper::NetSpeedHelper()
+    : m_RecvBytes(0)
+    , m_SendBytes(0)
+{
 }
 
 #ifdef _WIN32
@@ -101,52 +116,50 @@ void NetSpeedHelper::SetNetInfo()
 
 #elif defined(__linux__)
 
-NetSpeedHelper::~NetSpeedHelper()
-{
-    // delete m_Timer;
-}
-
 void NetSpeedHelper::SetMemInfo()
 {
-    static char8_t m_szMemStr[4];
-    std::list<std::string> result;
-    GetCmdOutput<char>("free -m", result);
-    result.pop_front();
-    uint64_t m_NumberBuffer;
+    using namespace std::literals;
+    uint8_t result = 0;
+    uint64_t buffer;
+    std::string str;
+    std::ifstream fs("/proc/meminfo"s);
 
     std::array<double, 2> ary{ 0, 0};
-    for (auto& str: result)
-    {
-        std::istringstream ss(str);
-        ss >> str;
-        for (size_t i=0; i<2; ++i) {
-            ss >> m_NumberBuffer;
-            ary[i] += m_NumberBuffer;
+    while ((result != 2) && !fs.eof()) {
+        fs >> str >> buffer;
+        if (str == "MemTotal:"sv) {
+            ary[0] += buffer;
+            ++result;
+        } else if (str == "MemAvailable:"sv) {
+            ary[1] += buffer;
+            ++result;
         }
+        fs >> str;
     }
-    sprintf(reinterpret_cast<char*>(m_szMemStr), "%d", static_cast<uint16_t>(ary[1]/ary[0]*100));
-    m_SysInfo[0] = m_szMemStr;
+    fs.close();
+    std::string&& temp = std::to_string(100 - static_cast<uint8_t>(ary[1]/ary[0]*100));
+    m_SysInfo[0].assign(temp.begin(), temp.end());
 }
 
 void NetSpeedHelper::SetNetInfo()
 {
     uint64_t recv=0, send=0, buffer;
-    std::list<std::string> result;
-    GetCmdOutput<char>("cat /proc/net/dev", result);
-    result.pop_front();
-    result.pop_front();
-    for (auto& str: result) {
-        std::istringstream ss(str);
-        ss >> str;
+    std::ifstream fs("/proc/net/dev"s);
+    std::string str;
+    std::getline(fs, str);
+    std::getline(fs, str);
+    while (std::getline(fs, str)) {
+        fs >> str;
         for (size_t i=0; i < 9; ++i) {
-            ss >> buffer;
+            fs >> buffer;
             if (i == 0) recv += buffer;
             else if (i == 8) send += buffer;
         }
     }
+    fs.close();
     if (m_RecvBytes) {
-        formatSpped(m_SysInfo[1], send - m_SendBytes, false);
-        formatSpped(m_SysInfo[2], recv - m_RecvBytes, true);
+        formatSpped<false>(m_SysInfo[1], send - m_SendBytes);
+        formatSpped<true>(m_SysInfo[2], recv - m_RecvBytes);
     }
     m_RecvBytes = recv;
     m_SendBytes = send;

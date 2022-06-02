@@ -8,4 +8,3 @@ fi
 
 cd $BUILD_DIR
 ninja
-./Neobox &

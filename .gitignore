@@ -14,7 +14,7 @@
 Makefile
 build/
 out/
-3rdlib/yjson
+3rdlib/YJson
 .vscode/
 .cache/
 .vs/

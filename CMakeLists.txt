@@ -31,7 +31,7 @@ endif()
 
 set(M_THIRD_PART_LIB_DIR ${CMAKE_SOURCE_DIR}/3rdlib)
 
-include_directories(${M_THIRD_PART_LIB_DIR}/yjson/include)
+include_directories(${M_THIRD_PART_LIB_DIR}/YJson/include)
 include_directories(${M_THIRD_PART_LIB_DIR}/3rd_qxtglobalshortcut/include)
 include_directories(${M_THIRD_PART_LIB_DIR}/httplib)
 include_directories(wallpaper/include)
@@ -39,7 +39,7 @@ include_directories(translate/include)
 include_directories(widgets/include)
 include_directories(core/include)
 
-add_subdirectory(${M_THIRD_PART_LIB_DIR}/yjson)
+add_subdirectory(${M_THIRD_PART_LIB_DIR}/YJson)
 add_subdirectory(${M_THIRD_PART_LIB_DIR}/3rd_qxtglobalshortcut)
 add_subdirectory(wallpaper)
 add_subdirectory(translate)

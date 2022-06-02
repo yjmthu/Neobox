@@ -70,8 +70,7 @@ void GetCmdOutput(const char* cmd, _Ty& result, int rows = -1)
 			if (!result.back().empty() && result.back().back() == '\n') {
 				if (!--rows) return;
 				result.emplace_back(m_buffer);
-			}
-			else {
+			} else {
 				result.back().append(m_buffer);
 			}
 		}

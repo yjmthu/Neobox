@@ -11,7 +11,10 @@
 class NetSpeedHelper
 {
 public:
+    explicit NetSpeedHelper();
+#ifdef WIN32
     ~NetSpeedHelper();
+#endif
     void GetSysInfo();
     std::u8string m_SysInfo[3] { u8"0", u8"\u2191 0.0 B", u8"\u2193 0.0 B" };
     void ClearData();

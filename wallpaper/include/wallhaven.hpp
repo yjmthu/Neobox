@@ -192,7 +192,7 @@ private:
              auto cmp = [](const YJson& i, const std::u8string_view& name)->bool { return i.getValueString().find(name) != std::u8string::npos;};
              std::sregex_iterator end;
              for (size_t i=5*(GetInt()-1) + 1, n=i+5; i < n; ++i) {
-                std::string url(std::string_view(reinterpret_cast<const char *>(m_ImageUrl.data()), m_ImageUrl.size()));
+                std::string url(m_ImageUrl.begin(), m_ImageUrl.end());
                 if (i!=1) url += "&page=" + std::to_string(i);
                 // std::cout << url << std::endl;
                 auto res = clt.Get(url.c_str());
