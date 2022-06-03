@@ -1,8 +1,8 @@
-#!/bin/sh
+#!/bin/zsh
 
 SCRIPT_DIR=$(cd $(dirname $0);pwd)
 BUILD_DIR="${SCRIPT_DIR}/build"
-CMAKE_BUILD_TYPE=" "
+CMAKE_BUILD_TYPE="Release"
 cd ${SCRIPT_DIR}
 
 if [ ! -f "CMakeLists.txt" ]; then
@@ -10,13 +10,18 @@ if [ ! -f "CMakeLists.txt" ]; then
     exit 1
 fi
 
-if [ $# -ne 1 ]; then
+if [ $# -gt 0 ]; then
+    echo $#
+    for ((i=1; i<=$#; i+=1)); do
+        echo $($i)
+    done
+        echo "---------------"
     rm -rf ${BUILD_DIR}
-    if [ "$1" == "-r" ]; then
-        CMAKE_BUILD_TYPE=" -DCMAKE_BUILD_TYPE=Release "
+    if [ "$1" = "-r" ]; then
+        CMAKE_BUILD_TYPE="Release"
         echo "Release Build."
-    elif [ "$1" == '-d' ]; then
-        CMAKE_BUILD_TYPE=" -DCMAKE_BUILD_TYPE=Debug "
+    elif [ "$1" = '-d' ]; then
+        CMAKE_BUILD_TYPE="Debug"
         echo "Debug Build."
     fi
 else
@@ -29,18 +34,21 @@ fi
 
 cd ${BUILD_DIR}
 
-if [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
-    echo "linux"
-    cmake${CMAKE_BUILD_TYPE}-G Ninja -S ..
+if [ "$(expr substr $(uname -s) 1 5)" = "Linux" ]; then
+    echo "================== linux ===================="
+    cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -G Ninja -S ..
     ninja
+    if [ -f "${BUILD_DIR}/widgets/widgets" ]; then
+        ${BUILD_DIR}/widgets/widgets &
+    fi
 else
-    echo "windows"
-    VS_2022="C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build"
-    VS_2022_X64="${VS_2022}\vcvars64.bat"
-    VS_2022_X64_X86="${VS_2022}\vcvarsamd64_x86.bat"
-    VS_2022_X86="${VS_2022}\vcvars32.bat"
-    VS_2022_X86_X64="${VS_2022}\vcvarsx86_amd64.bat"
-    VS_NOW="\"${VS_2022_X64}\" & set CC=cl & set CXX=cl & cmake${CMAKE_BUILD_TYPE}-G Ninja -S .. & ninja"
+    echo "================== windows =================="
+    VS_2022="C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build"
+    VS_2022_X64="${VS_2022}\\vcvars64.bat"
+    VS_2022_X64_X86="${VS_2022}\\vcvarsamd64_x86.bat"
+    VS_2022_X86="${VS_2022}\\vcvars32.bat"
+    VS_2022_X86_X64="${VS_2022}\\vcvarsx86_amd64.bat"
+    VS_NOW="\"${VS_2022_X64}\" & set CC=cl & set CXX=cl & cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -G Ninja -S .. & ninja"
     echo ${VS_NOW}
     cmd.exe /c "${VS_NOW}"
     if [ -f "${BUILD_DIR}/widgets/widgets.exe" ]; then

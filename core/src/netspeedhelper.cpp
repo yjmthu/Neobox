@@ -26,7 +26,7 @@ void formatSpped(std::u8string& str, double dw)
 {
     // https://unicode-table.com/en/2192/
     using namespace std::literals;
-    constexpr std::string_view prex = A? "\342\206\223 "sv: "\342\206\223 "sv;
+    constexpr std::string_view prex = A? "\342\206\223 "sv: "\342\206\221 "sv;
     constexpr std::string_view units = "BKMGTPN"sv;
     std::string_view::const_iterator iter = units.cbegin();
     while (dw >= 1000) {
