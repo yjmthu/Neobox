@@ -86,7 +86,11 @@ void TextDlg::ParsePicture(void* image)
 
     tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
     // Initialize tesseract-ocr with English, without specifying tessdata path
-    if (api->Init(NULL, "chi_sim+eng")) {
+#ifdef WIN32
+    if (api->Init("C:\\Program Files\\Tesseract-OCR\\tessdata", "chi_sim+eng")) {
+#elif defined __linux__
+if (api->Init(NULL, "chi_sim+eng")) {
+#endif
         QMessageBox::critical(nullptr, "错误", "Could not initialize tesseract.");
         return;
     }
