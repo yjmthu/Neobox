@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
+add_definitions(-DCPPHTTPLIB_OPENSSL_SUPPORT)
+
 include_directories(include)
 
 add_library(httplib STATIC

@@ -42,8 +42,6 @@ public:
     int GetImageType();
     bool SetImageType(int index);
     const void* GetDataByName(const char* key) const;
-    int GetInt() const;
-    std::u8string GetString() const;
     static constexpr char m_szWallScript[16] { "SetWallpaper.sh" };
 private:
     class YJson*const m_Setting;

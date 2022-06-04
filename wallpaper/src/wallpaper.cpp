@@ -9,6 +9,7 @@
 
 extern std::unique_ptr<YJson> m_GlobalSetting;
 extern const char* m_szClobalSettingFile;
+extern void ShowMessage(const std::u8string& title, const std::u8string& text, int type=0);
 
 constexpr char Wallpaper::m_szWallScript[];
 
@@ -145,7 +146,6 @@ Wallpaper::Wallpaper(const std::filesystem::path& picHome)
     , m_PicHomeDir(picHome)
     , m_Timer(new Timer)
 {
-    //auto& m_Setting = m_VarBox->;
     SetImageType(m_Setting->find(u8"ImageType")->second.getValueInt());
     m_KeepChange = m_Setting->find(u8"AutoChange")->second.isTrue();
     if (m_KeepChange) {
@@ -154,7 +154,6 @@ Wallpaper::Wallpaper(const std::filesystem::path& picHome)
     }
     ReadSettings();
     if (m_Setting->find(u8"FirstChange")->second.isTrue()) {
-        // COUT("=======BEGIN1=======");
         WallBase::m_IsWorking = true;
         std::thread([this](){
            for (int i=0; i<30; i++) {
@@ -201,39 +200,41 @@ bool Wallpaper::IsNextAvailable()
 void Wallpaper::SetSlot(int type)
 {
     using namespace std::literals;
-    if (!WallBase::m_IsWorking) {
-        WallBase::m_IsWorking = true;
-        std::thread([this, type](){
-            switch (type) {
-            case -1:
-                SetPrevious();
-                break;
-            case 0:
-                RemoveCurrent();
-                break;
-            case 1:
-                SetNext();
-                break;
-            case 2:
-                m_Wallpaper->Update(false);
-                WallBase::m_IsWorking = false;
-                return;
-            case 3:
-                m_Wallpaper->Update(true);
-                WallBase::m_IsWorking = false;
-                return;
-            default:
-                break;
-            }
-            WriteSettings();
-            WallBase::m_IsWorking = false;
-            if (m_KeepChange) {
-                m_Timer->Expire();
-                m_Timer->StartTimer(m_Setting->find(u8"TimeInterval")->second.getValueInt(),
-                    std::bind(&Wallpaper::SetSlot, this, 1));
-            }
-        }).detach();
+    if (WallBase::m_IsWorking) {
+        ShowMessage(u8"提示", u8"后台正忙，请稍后！");
+        return;
     }
+    WallBase::m_IsWorking = true;
+    std::thread([this, type](){
+        switch (type) {
+        case -1:
+            SetPrevious();
+            break;
+        case 0:
+            RemoveCurrent();
+            break;
+        case 1:
+            SetNext();
+            break;
+        case 2:
+            m_Wallpaper->Update(false);
+            WallBase::m_IsWorking = false;
+            return;
+        case 3:
+            m_Wallpaper->Update(true);
+            WallBase::m_IsWorking = false;
+            return;
+        default:
+            break;
+        }
+        WriteSettings();
+        WallBase::m_IsWorking = false;
+        if (m_KeepChange) {
+            m_Timer->Expire();
+            m_Timer->StartTimer(m_Setting->find(u8"TimeInterval")->second.getValueInt(),
+                std::bind(&Wallpaper::SetSlot, this, 1));
+        }
+    }).detach();
 }
 
 const std::filesystem::path& Wallpaper::GetImageDir() const
@@ -284,7 +285,6 @@ bool Wallpaper::SetNext()
 
 bool Wallpaper::SetPrevious()
 {
-    std::cout << "=====PREV======\n";
     if (m_PrevImgs.empty()) {
         m_PrevAvailable = false;
     } else {
@@ -304,7 +304,7 @@ bool Wallpaper::SetPrevious()
 bool Wallpaper::IsImageFile(const std::filesystem::path& filesName)
 {
     // BMP, PNG, GIF, JPG
-    std::regex pattern(".*\\.(jpg|bmp|gif|jpeg|png)$");
+    std::regex pattern(".*\\.(jpg|bmp|gif|jpeg|png)$", std::regex::icase);
     return std::regex_match(filesName.string(), pattern);
 }
 
@@ -377,8 +377,8 @@ void Wallpaper::SetAutoChange(bool flag)
 {
     m_Setting->find(u8"AutoChange")->second.setValue(flag);
     m_GlobalSetting->toFile(m_szClobalSettingFile);
+    m_Timer->Expire();
     if ((m_KeepChange = flag)) {
-        m_Timer->Expire();
         m_Timer->StartTimer(m_Setting->find(u8"TimeInterval")->second.getValueInt(),
             std::bind(&Wallpaper::SetSlot, this, 1));
     }
@@ -429,16 +429,6 @@ bool Wallpaper::SetImageType(int index)
 const void* Wallpaper::GetDataByName(const char* key) const
 {
     return m_Wallpaper->GetDataByName(key);
-}
-
-int Wallpaper::GetInt() const
-{
-    return m_Wallpaper->GetInt();
-}
-
-std::u8string Wallpaper::GetString() const
-{
-    return m_Wallpaper->GetString();
 }
 
 bool Wallpaper::IsWorking()

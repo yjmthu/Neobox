@@ -69,6 +69,28 @@ public:
         data[u8"Directory"].second.setText(m_ImageDir.u8string());
         m_Setting->toFile(m_SettingPath);
     }
+
+    virtual const void* GetDataByName(const char* key) const override {
+        if (!strcmp(key, "m_Setting")) {
+            return &m_Setting;
+        // } else if (!strcmp(key, "m_Data")) {
+        //     return &m_Data;
+        // } else if (!strcmp(key, "m_ImageUrl")) {
+        //     return &m_ImageUrl;
+        } else {
+            return nullptr;
+        }
+    }
+
+    virtual void Update(bool update) override {
+        using namespace std::literals;
+        auto& data = m_Setting->find(u8"ApiData"sv)->second.find(m_Setting->find(u8"ApiUrl"sv)->second.getValueString())->second;
+        m_ApiUrl = data[u8"Url"sv].second.getValueString();
+        m_ImageDir = data[u8"Directory"].second.getValueString();
+        m_ApiPath = data[u8"Paths"sv].second[data[u8"CurPath"sv].second.getValueInt()].getValueString();
+        m_ImageNameFormat = data[u8"ImageNameFormat"sv].second.getValueString();
+        m_Setting->toFile(m_SettingPath);
+    }
 private:
     std::u8string m_ApiUrl;
     std::u8string m_ApiPath;

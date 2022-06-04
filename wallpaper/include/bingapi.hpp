@@ -6,22 +6,27 @@ class BingApi: public WallBase {
 public:
     explicit BingApi(const std::filesystem::path& picHome)
         : WallBase(picHome)
+        , m_ImageNameFormat(u8"%s %Y%m%d.jpg")
+        , m_Mft(u8"zh-CN")
         , m_Setting(nullptr)
     {
+        m_ImageDir = m_HomePicLocation / u8"必应壁纸";
         InitBase();
     }
     virtual ~BingApi() {
         delete m_Setting;
     }
     virtual bool LoadSetting() override {
-        m_ApiUrl = u8"https://cn.bing.com";
-        m_ImageDir = m_HomePicLocation / u8"必应壁纸";
-        m_ImageNameFormat = u8"%s %Y%m%d.jpg";
         if (std::filesystem::exists(m_SettingPath)) {
             m_Setting = new YJson(m_SettingPath, YJson::UTF8);
-            if (m_Setting->find(u8"today")->second.getValueString() == GetToday(u8"%Y%m%d")) {
+            if (m_Setting->find(u8"today")->second.getValueString() == GetToday("%Y%m%d")) {
                 m_ImageDir = m_Setting->find(u8"imgdir")->second.getValueString();
                 m_ImageNameFormat = m_Setting->find(u8"imgfmt")->second.getValueString();
+                if (m_Setting->find(u8"mkt") == m_Setting->endO()) {
+                    (*m_Setting)[u8"mkt"].second.setText(m_Mft);
+                } else {
+                    m_Mft = m_Setting->find(u8"mkt")->second.getValueString();
+                }
                 return true;
             } else {
                 delete m_Setting;
@@ -34,23 +39,26 @@ public:
     virtual bool WriteDefaultSetting() override {
         // https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8
 
-        httplib::Client clt(std::string(m_ApiUrl.begin(), m_ApiUrl.end()));
-        auto res = clt.Get("/HPImageArchive.aspx?format=js&idx=0&n=8");
+        std::string path("/HPImageArchive.aspx?format=js&idx=0&n=8&mkt=");
+        path += std::string(m_Mft.begin(), m_Mft.end());
+        httplib::Client clt(m_ApiUrl);
+        auto res = clt.Get(path.c_str());
         if (res->status != 200) return false;
         m_Setting = new YJson(res->body.begin(), res->body.end());
-        m_Setting->append(GetToday(u8"%Y%m%d"), u8"today");
+        m_Setting->append(GetToday("%Y%m%d"), u8"today");
         m_Setting->append(m_ImageDir, u8"imgdir");
         m_Setting->append(m_ImageNameFormat, u8"imgfmt");
+        m_Setting->append(m_Mft, u8"mkt");
         m_Setting->toFile(m_SettingPath);
         return true;
     }
     virtual ImageInfoEx GetNext() override {
-        // https://www.bing.com/th?id=OHR.Yellowstone150_ZH-CN0551084440_UHD.jpg
+        // https://www.bing.com/th?id=OHR.Yellowstone150_ZH-CN055下这个接口含义，直接看后面的请求参数1084440_UHD.jpg
 
         auto jsTemp = m_Setting->find(u8"images")->second.find(m_CurImageIndex);
         ImageInfoEx ptr(new std::vector<std::u8string>);
         ptr->push_back((m_ImageDir / GetImageName(*jsTemp)).u8string());
-        ptr->push_back(m_ApiUrl);
+        ptr->emplace_back(m_ApiUrl.begin(), m_ApiUrl.end());
         if (++m_CurImageIndex > 7) m_CurImageIndex = 0;
         ptr->push_back(jsTemp->find(u8"urlbase")->second.getValueString() + u8"_UHD.jpg");
         return ptr;
@@ -63,18 +71,37 @@ public:
         m_Setting->find(u8"imgdir")->second.setText(str);
         m_Setting->toFile(m_SettingPath);
     }
+    virtual const void* GetDataByName(const char* key) const override {
+        if (!strcmp(key, "m_Setting")) {
+            return &m_Setting;
+        // } else if (!strcmp(key, "m_Data")) {
+        //     return &m_Data;
+        // } else if (!strcmp(key, "m_ImageUrl")) {
+        //     return &m_ImageUrl;
+        } else {
+            return nullptr;
+        }
+    }
+
+    virtual void Update(bool) override {
+        m_Mft.swap(m_Setting->find(u8"mkt")->second.getValueString());
+        WriteDefaultSetting();
+        return;
+    }
 private:
+    std::u8string m_Mft;
     std::u8string m_ImageNameFormat;
-    std::u8string m_ApiUrl;
+    const std::string m_ApiUrl = "https://global.bing.com";
     const char m_SettingPath[13] { "BingApi.json" };
     YJson* m_Setting;
     unsigned m_CurImageIndex = 0;
-    std::u8string GetToday(const char8_t* fmt) {
+    std::u8string GetToday(const char* fmt) {
         auto t = std::chrono::system_clock::to_time_t(
             std::chrono::system_clock::now());
-        std::basic_stringstream<char8_t> ss;
+        std::stringstream ss;
         ss << std::put_time(std::localtime(&t), fmt);
-        return ss.str();
+        std::string temp(ss.str());
+        return std::u8string(temp.begin(), temp.end());
     }
     std::u8string GetImageName(YJson& imgInfo) {
         std::u8string str(m_ImageNameFormat.begin(), m_ImageNameFormat.end());
@@ -88,7 +115,7 @@ private:
             std::chrono::system_clock::now() - std::chrono::hours(24 * m_CurImageIndex));
         std::stringstream ss;
         ss << std::put_time(std::localtime(&t), (const char *)str.c_str());
-        std::string temp = ss.str();
+        std::string temp(ss.str());
         return std::u8string(temp.begin(), temp.end());
     }
 };

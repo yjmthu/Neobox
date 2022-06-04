@@ -39,6 +39,8 @@
 extern std::unique_ptr<YJson> m_GlobalSetting;
 extern const char* m_szClobalSettingFile;
 
+using namespace std::literals;
+
 void SpeedMenu::showEvent(QShowEvent *event)
 {
 #ifdef WIN32
@@ -133,7 +135,6 @@ void SpeedMenu::SetupConntects()
 
 void SpeedMenu::SetupSettingMenu()
 {
-    using namespace std::literals;
     QMenu *m_pSettingMenu = new QMenu(this);
     auto ptr0 = m_pSettingMenu->addAction("软件设置");
     auto ptr1 = m_pSettingMenu->addAction("壁纸设置");
@@ -310,7 +311,7 @@ void SpeedMenu::SetAdditionalMenu()
                     ac->setChecked(true);
                     int val = QInputDialog::getInt(nullptr, 
                         QStringLiteral("输入页面"), QStringLiteral("页面位置（1~100）："),
-                        m_VarBox->m_Wallpaper->GetInt(),
+                        m_Setting->find(u8"PageNumber")->second.getValueInt(),
                         1, 100);
                     m_Setting->find(u8"WallhavenCurrent")->second.setText(temp);
                     m_Setting->find(u8"PageNumber")->second.setValue(val);
@@ -480,9 +481,56 @@ label:
         break;
     }
     case 1:
-        //
-        //break;
+    {
+        auto* ptr = m_tempMenu->addAction("自动下载");
+        ptr->setCheckable(true);
+        ptr->setChecked(true);
+        ptr = m_tempMenu->addAction("选择地区");
+        connect(ptr, &QAction::triggered, this, [](){
+            std::u8string& str = (*reinterpret_cast<YJson*const*>(m_VarBox->m_Wallpaper->GetDataByName("m_Setting")))->find(u8"mkt")->second.getValueString();
+            QByteArray array(QInputDialog::getText(nullptr, "请输入地区", "地区名称：", QLineEdit::Normal, QString::fromUtf8(reinterpret_cast<const char*>(str.data()), str.size())).toUtf8());
+            if (std::equal(str.begin(), str.end(), array.begin(), array.end())) {
+                QMessageBox::information(nullptr, "出错", "并未修改字符串！");
+                return;
+            }
+            if (!array.isEmpty()) {
+                str.assign(array.begin(), array.end());
+                m_VarBox->m_Wallpaper->SetSlot(2);
+            }
+        });
+        break;
+    }
     case 2:
+    {
+        QActionGroup* group = new QActionGroup(m_tempMenu);
+        YJson *m_Setting = *reinterpret_cast<YJson*const*>(m_VarBox->m_Wallpaper->GetDataByName("m_Setting"));
+        const auto& curType = m_Setting->find(u8"WallhavenCurrent")->second.getValueString();
+        m_tempMenu->addAction("壁纸类型");
+        m_tempMenu->addSeparator();
+        std::u8string_view str = m_Setting->find(u8"ApiUrl"sv)->second.getValueString();
+        for (auto& i: m_Setting->find(u8"ApiData"sv)->second.getObject()) {
+            auto ptr = m_tempMenu->addAction(QString::fromUtf8(reinterpret_cast<const char*>(i.first.data()), i.first.size()));
+            ptr->setCheckable(true);
+            group->addAction(ptr);
+            if (str == i.first) ptr->setChecked(true);
+            connect(ptr, &QAction::triggered, [m_Setting, ptr](){
+                QByteArray array(ptr->text().toUtf8());
+                std::u8string temp(array.begin(), array.end());
+                std::u8string& cur = m_Setting->find(u8"ApiUrl")->second.getValueString();
+                if (cur != temp) {
+                    if (m_VarBox->m_Wallpaper->IsWorking()) {
+                        QMessageBox::warning(nullptr, "出错", "当前正忙！");
+                        return;
+                    }
+                    cur.assign(std::move(temp));
+                    m_VarBox->m_Wallpaper->SetSlot(2);
+                } else {
+                    QMessageBox::information(nullptr, "提示", "当前已经是该类型！");
+                }
+            });
+        }
+        break;
+    }
     case 3:
     case 4:
     default:

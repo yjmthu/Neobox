@@ -10,6 +10,28 @@
 #include <QDebug>
 #include <iostream>
 
+void ShowMessage(const std::u8string& title, const std::u8string& text, int type) {
+    switch (type) {
+    case 0:
+        QMessageBox::information(nullptr, QString::fromUtf8(
+                reinterpret_cast<const char*>(title.data()), title.size()),
+                QString::fromUtf8(reinterpret_cast<const char*>(text.data()), text.size()));
+        break;
+    case 1:
+        QMessageBox::warning(nullptr, QString::fromUtf8(
+                reinterpret_cast<const char*>(title.data()), title.size()),
+                QString::fromUtf8(reinterpret_cast<const char*>(text.data()), text.size()));
+        break;
+    case 2:
+        QMessageBox::critical(nullptr, QString::fromUtf8(
+                reinterpret_cast<const char*>(title.data()), title.size()),
+                QString::fromUtf8(reinterpret_cast<const char*>(text.data()), text.size()));
+        break;
+    default:
+        break;
+    }
+}
+
 inline void DoExit(ExitCode m_ExitCode) {
     switch (m_ExitCode) {
     case ExitCode::RETCODE_NORMAL:

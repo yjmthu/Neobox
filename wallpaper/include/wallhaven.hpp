@@ -99,12 +99,7 @@ public:
         delete m_Data;
         delete m_Setting;
     }
-    virtual std::u8string GetString() const override {
-        return m_Setting->find(u8"WallhavenCurrent")->second.getValueString();
-    }
-    virtual int GetInt() const override {
-        return m_Setting->find(u8"PageNumber")->second.getValueInt();
-    }
+
     virtual const void* GetDataByName(const char* key) const override {
         if (!strcmp(key, "m_Setting")) {
             return &m_Setting;
@@ -166,8 +161,9 @@ private:
         httplib::Client clt("https://wallhaven.cc"s);
         auto& m_Array = m_Data->find(u8"Unused")->second.getArray();
         auto& m_BlackArray = m_Data->find(u8"Blacklist")->second;
+        size_t i = 5*(m_Setting->find(u8"PageNumber")->second.getValueInt()-1) + 1;
         if (std::equal(m_ImageUrl.begin(), m_ImageUrl.begin()+4, "/api")) {
-            for (size_t i=5*(GetInt()-1) + 1, n=i+5; i < n; ++i) {
+            for (size_t n=i+5; i < n; ++i) {
                 std::string url(std::string_view(reinterpret_cast<const char *>(m_ImageUrl.data()), m_ImageUrl.size()));
                 url += "&page=" + std::to_string(i);
                 auto res = clt.Get(url.c_str());
@@ -187,10 +183,9 @@ private:
              const auto& blackList = m_BlackArray.getArray();
              auto cmp = [](const YJson& i, const std::u8string_view& name)->bool { return i.getValueString().find(name) != std::u8string::npos;};
              std::sregex_iterator end;
-             for (size_t i=5*(GetInt()-1) + 1, n=i+5; i < n; ++i) {
+             for (size_t n=i+5; i < n; ++i) {
                 std::string url(m_ImageUrl.begin(), m_ImageUrl.end());
                 if (i!=1) url += "&page=" + std::to_string(i);
-                // std::cout << url << std::endl;
                 auto res = clt.Get(url.c_str());
                 if (res->status != 200) break;
                 std::sregex_iterator iter(res->body.begin(), res->body.end(), pattern);
