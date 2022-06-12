@@ -144,42 +144,47 @@ void SpeedMenu::SetupConntects() {
 }
 
 void SpeedMenu::SetupSettingMenu() {
+  auto& m_Setting = m_GlobalSetting->find(u8"Wallpaper")->second;
   QMenu* m_pSettingMenu = new QMenu(this);
-  auto ptr0 = m_pSettingMenu->addAction("软件设置");
-  auto ptr1 = m_pSettingMenu->addAction("壁纸设置");
-  auto ptr2 = m_pSettingMenu->addAction("工具设置");
+  QMenu* m_pWallpaperMenu = new QMenu(m_pSettingMenu);
+  QMenu* m_pAppSettingMenu = new QMenu(m_pSettingMenu);
+  QMenu* m_pAboutMenu = new QMenu(m_pSettingMenu);
+  auto ptr = m_pSettingMenu->addAction("软件设置");
+  ptr->setMenu(m_pAppSettingMenu);
+
+  ptr = m_pSettingMenu->addAction("壁纸设置");
+  ptr->setMenu(m_pWallpaperMenu);
+  ptr = m_pWallpaperMenu->addAction("类型选择");
+  SetupImageType(m_pWallpaperMenu, ptr);
+  ptr = m_pWallpaperMenu->addAction("首次更换");
+  ptr->setCheckable(true);
+  ptr->setChecked(m_Setting.find(u8"FirstChange")->second.isTrue());
+  connect(ptr, &QAction::triggered,
+          std::bind(&Wallpaper::SetFirstChange, m_VarBox->m_Wallpaper,
+                    std::placeholders::_1));
+  ptr = m_pWallpaperMenu->addAction("自动更换");
+  ptr->setCheckable(true);
+  ptr->setChecked(m_Setting.find(u8"AutoChange")->second.isTrue());
+  connect(ptr, &QAction::triggered,
+          std::bind(&Wallpaper::SetAutoChange, m_VarBox->m_Wallpaper,
+                    std::placeholders::_1));
+
+  ptr = m_pSettingMenu->addAction("工具设置");
+  ptr = m_pSettingMenu->addAction("关于软件");
+  ptr->setMenu(m_pAboutMenu);
+  m_pAboutMenu->addAction("版本信息");
+  m_pAboutMenu->addAction("检查更新");
+
   m_pSettingMenu->addSeparator();
   connect(m_pSettingMenu->addAction("打开配置"), &QAction::triggered, qApp,
           std::bind(&QDesktopServices::openUrl,
                     QUrl::fromLocalFile(QDir::currentPath())));
-  QMenu* m_pWallpaperMenu = new QMenu(m_pSettingMenu);
-  QMenu* m_pAppSettingMenu = new QMenu(m_pSettingMenu);
-  auto ptr3 = m_pWallpaperMenu->addAction("类型选择");
-  auto ptr4 = m_pWallpaperMenu->addAction("首次更换");
-  auto ptr5 = m_pWallpaperMenu->addAction("自动更换");
   connect(
       m_pWallpaperMenu->addAction("打开路径"), &QAction::triggered, this, []() {
         QDesktopServices::openUrl(QUrl::fromLocalFile(QString::fromStdU16String(
             m_VarBox->m_Wallpaper->GetImageDir().u16string())));
       });
-  auto ptr6 = m_pWallpaperMenu->addAction("设置路径");
-  auto ptr7 = m_pWallpaperMenu->addAction("时间间隔");
-  m_AdditionalAction = m_pWallpaperMenu->addAction("附加设置");
-  ptr0->setMenu(m_pAppSettingMenu);
-  ptr1->setMenu(m_pWallpaperMenu);
-  m_Actions->setMenu(m_pSettingMenu);
-  ptr4->setCheckable(true);
-  ptr5->setCheckable(true);
-  auto& m_Setting = m_GlobalSetting->find(u8"Wallpaper")->second;
-  ptr4->setChecked(m_Setting.find(u8"FirstChange")->second.isTrue());
-  ptr5->setChecked(m_Setting.find(u8"AutoChange")->second.isTrue());
-  connect(ptr4, &QAction::triggered,
-          std::bind(&Wallpaper::SetFirstChange, m_VarBox->m_Wallpaper,
-                    std::placeholders::_1));
-  connect(ptr5, &QAction::triggered,
-          std::bind(&Wallpaper::SetAutoChange, m_VarBox->m_Wallpaper,
-                    std::placeholders::_1));
-  connect(ptr6, &QAction::triggered, this, []() {
+  connect(m_pWallpaperMenu->addAction("设置路径"), &QAction::triggered, this, []() {
     auto i = QFileDialog::getExistingDirectory(
         nullptr, "选择文件夹",
         QString::fromStdU16String(
@@ -189,13 +194,14 @@ void SpeedMenu::SetupSettingMenu() {
       m_VarBox->m_Wallpaper->SetCurDir(i.toStdU16String());
     }
   });
-  connect(ptr7, &QAction::triggered, this, []() {
+  connect(m_pWallpaperMenu->addAction("时间间隔"), &QAction::triggered, this, []() {
     int val = QInputDialog::getInt(nullptr, "输入时间", "时间间隔（分钟）：",
                                    m_VarBox->m_Wallpaper->GetTimeInterval(), 5,
                                    std::numeric_limits<int>::max());
     m_VarBox->m_Wallpaper->SetTimeInterval(val);
   });
-  SetupImageType(m_pWallpaperMenu, ptr3);
+  m_AdditionalAction = m_pWallpaperMenu->addAction("附加设置");
+  m_Actions->setMenu(m_pSettingMenu);
   SetAdditionalMenu();
 
   m_AutoStartApp = m_pAppSettingMenu->addAction("开机自启");
@@ -237,7 +243,7 @@ void SpeedMenu::SetupSettingMenu() {
         }
 #endif  // WIN32
   });
-  auto ptr = m_pAppSettingMenu->addAction("显示界面");
+  ptr = m_pAppSettingMenu->addAction("显示界面");
   ptr->setCheckable(true);
   ptr->setChecked(m_GlobalSetting->find(u8"FormGlobal")
                       ->second[u8"ShowForm"]

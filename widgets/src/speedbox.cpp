@@ -1,5 +1,6 @@
 #include "speedbox.h"
 
+#include <appcode.hpp>
 #include <netspeedhelper.h>
 #include <translater.h>
 #include <wallpaper.h>
@@ -14,10 +15,16 @@
 #include <QPropertyAnimation>
 #include <QScreen>
 #include <QTimer>
-#include <appcode.hpp>
 
 #include "speedapp.h"
 #include "speedmenu.h"
+
+// #ifdef __linux__
+// #include <QX11Info>
+// #include <X11/Xlib.h>
+// #include <X11/Xatom.h>
+// #endif
+
 
 extern std::unique_ptr<YJson> m_GlobalSetting;
 extern const char* m_szClobalSettingFile;
@@ -280,6 +287,14 @@ SpeedBox::SpeedBox(QWidget* parent)
       m_Animation(new QPropertyAnimation(this)),
       m_NetSpeedHelper(new NetSpeedHelper),
       m_Timer(new QTimer) {
+// #ifdef __linux__
+//   unsigned long _data = 0xFFFFFFFF;
+//   XChangeProperty(QX11Info::display(), winId(),
+//       XInternAtom(QX11Info::display(), "_NET_WM_DESKTOP", false),
+//       XA_CARDINAL, 32, PropModeReplace,
+//       reinterpret_cast<unsigned char*>(&_data),
+//       1);
+// #endif
   QRect geo = QGuiApplication::primaryScreen()->geometry();
   *const_cast<int*>(&m_ScreenWidth) = geo.width();
   *const_cast<int*>(&m_ScreenHeight) = geo.height();
@@ -307,7 +322,7 @@ void SpeedBox::SetupUi() {
   setAttribute(Qt::WA_TranslucentBackground);
   setMaximumSize(m_Width, m_Height);
   setToolTip("行動是治癒恐懼的良藥，而猶豫、拖延將不斷滋養恐懼");
-  setCursor(Qt::CursorShape::PointingHandCursor);
+  setCursor(Qt::PointingHandCursor);
   setAcceptDrops(true);
   ReadPosition();
   GetBackGroundColor();
