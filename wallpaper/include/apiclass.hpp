@@ -1,7 +1,6 @@
 #ifndef APICLASS_H
 #define APICLASS_H
 
-#include <httplib.h>
 #include <stdio.h>
 #include <time.h>
 #include <yjson.h>

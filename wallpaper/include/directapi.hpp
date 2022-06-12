@@ -1,4 +1,5 @@
 ﻿#include "apiclass.hpp"
+#include <httplib.h>
 
 namespace WallClass {
 

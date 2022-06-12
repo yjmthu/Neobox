@@ -17,25 +17,25 @@ void ShowMessage(const std::u8string& title, const std::u8string& text,
       QMessageBox::information(
           nullptr,
           QString::fromUtf8(reinterpret_cast<const char*>(title.data()),
-                            title.size()),
+                            static_cast<int>(title.size())),
           QString::fromUtf8(reinterpret_cast<const char*>(text.data()),
-                            text.size()));
+                            static_cast<int>(text.size())));
       break;
     case 1:
       QMessageBox::warning(
           nullptr,
           QString::fromUtf8(reinterpret_cast<const char*>(title.data()),
-                            title.size()),
+                            static_cast<int>(title.size())),
           QString::fromUtf8(reinterpret_cast<const char*>(text.data()),
-                            text.size()));
+                            static_cast<int>(text.size())));
       break;
     case 2:
       QMessageBox::critical(
           nullptr,
           QString::fromUtf8(reinterpret_cast<const char*>(title.data()),
-                            title.size()),
+                            static_cast<int>(title.size())),
           QString::fromUtf8(reinterpret_cast<const char*>(text.data()),
-                            text.size()));
+                            static_cast<int>(text.size())));
       break;
     default:
       break;

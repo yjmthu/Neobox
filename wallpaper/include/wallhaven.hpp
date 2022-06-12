@@ -2,8 +2,9 @@
 #include <filesystem>
 #include <regex>
 
-#include "apiclass.hpp"
-#include "yjson.h"
+#include <httplib.h>
+#include <apiclass.hpp>
+#include <yjson.h>
 
 namespace WallClass {
 

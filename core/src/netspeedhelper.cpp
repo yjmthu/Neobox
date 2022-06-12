@@ -14,14 +14,6 @@
 
 using namespace std::literals;
 
-#ifdef _WIN32
-#include <iphlpapi.h>
-#endif
-
-constexpr std::string __get__(bool i) {
-  return i ? "\342\206\223"s : "\342\206\221"s;
-}
-
 template <bool A>
 void formatSpped(std::u8string& str, double dw) {
   // https://unicode-table.com/en/2192/

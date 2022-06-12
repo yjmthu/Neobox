@@ -102,7 +102,8 @@ void SpeedMenu::UpdateStyle() {
     if (!_fileStream.is_open()) return;
     std::string _str(_fileSize, 0);
     _fileStream.read(_str.data(), _fileSize);
-    setStyleSheet(QString::fromUtf8(_str.data(), _str.size()));
+    setStyleSheet(QString::fromUtf8(_str.data(), 
+    static_cast<int>(_str.size())));
   }
 }
 
@@ -317,8 +318,8 @@ void SpeedMenu::SetupSettingMenu() {
 }
 
 void SpeedMenu::SetupImageType(QMenu* parent, QAction* ac) {
-  size_t index = 0;
-  static size_t type = m_GlobalSetting->find(u8"Wallpaper")
+  int index = 0;
+  static int type = m_GlobalSetting->find(u8"Wallpaper")
                            ->second.find(u8"ImageType")
                            ->second.getValueInt();
   QMenu* mu = new QMenu(parent);
@@ -367,7 +368,7 @@ void SpeedMenu::SetAdditionalMenu() {
       for (auto i = _jjk.begin(); i != _jjk.end(); ++i) {
         const std::u8string_view temp = i->first;
         auto ac = m_tempMenu->addAction(QString::fromUtf8(
-            reinterpret_cast<const char*>(i->first.data()), i->first.size()));
+            reinterpret_cast<const char*>(i->first.data()), static_cast<int>(i->first.size())));
         ac->setCheckable(true);
         ac->setChecked(i->first == curType);
         group->addAction(ac);
@@ -403,7 +404,7 @@ void SpeedMenu::SetAdditionalMenu() {
                 label->setText(QStringLiteral("类型名称"));
                 lineEdit->setText(QString::fromUtf8(
                     reinterpret_cast<const char*>(i->first.data()),
-                    i->first.size()));
+                    static_cast<int>(i->first.size())));
                 hlayout1.addWidget(label);
                 hlayout1.addWidget(lineEdit);
                 dlg.setLayout(vlayout);
@@ -438,10 +439,10 @@ void SpeedMenu::SetAdditionalMenu() {
                       int row = m_TableWidget.rowCount();
                       YJson js(YJson::Object);
                       for (int i = 0; i < row; ++i) {
-                        std::u8string&& key = GetU8String(
-                            m_TableWidget.item(i, 0)->text().toUtf8());
-                        std::u8string&& val = GetU8String(
-                            m_TableWidget.item(i, 1)->text().toUtf8());
+                        QByteArray _tmp = m_TableWidget.item(i, 0)->text().toUtf8();
+                        std::u8string key(_tmp.begin(), _tmp.end());
+                        _tmp = m_TableWidget.item(i, 1)->text().toUtf8();
+                        std::u8string val(_tmp.begin(), _tmp.end());
                         if (key.empty() || val.empty()) {
                           continue;
                         } else {
@@ -470,7 +471,7 @@ void SpeedMenu::SetAdditionalMenu() {
                       index, 0,
                       new QTableWidgetItem(QString::fromUtf8(
                           reinterpret_cast<const char*>(j.first.data()),
-                          j.first.size())));
+                          static_cast<int>(j.first.size()))));
                   if (j.second.isNumber()) {
                     m_TableWidget.setItem(index++, 1,
                                           new QTableWidgetItem(QString::number(
@@ -481,7 +482,7 @@ void SpeedMenu::SetAdditionalMenu() {
                         index++, 1,
                         new QTableWidgetItem(QString::fromUtf8(
                             reinterpret_cast<const char*>(str.data()),
-                            str.size())));
+                            static_cast<int>(str.size()))));
                   }
                 }
                 dlg.exec();
@@ -620,7 +621,7 @@ void SpeedMenu::SetAdditionalMenu() {
             QInputDialog::getText(
                 nullptr, "请输入地区", "地区名称：", QLineEdit::Normal,
                 QString::fromUtf8(reinterpret_cast<const char*>(str.data()),
-                                  str.size()))
+                                  static_cast<int>(str.size())))
                 .toUtf8());
         if (std::equal(str.begin(), str.end(), array.begin(), array.end())) {
           QMessageBox::information(nullptr, "出错", "并未修改字符串！");
@@ -641,7 +642,7 @@ void SpeedMenu::SetAdditionalMenu() {
                        [u8"copyrightlink"]
                 .second.getValueString();
         QDesktopServices::openUrl(QString::fromUtf8(
-            reinterpret_cast<const char*>(_link.data()), _link.size()));
+            reinterpret_cast<const char*>(_link.data()), static_cast<int>(_link.size())));
       });
       break;
     }
@@ -649,7 +650,7 @@ void SpeedMenu::SetAdditionalMenu() {
       QActionGroup* group = new QActionGroup(m_tempMenu);
       YJson* m_Setting = *reinterpret_cast<YJson* const*>(
           m_VarBox->m_Wallpaper->GetDataByName("m_Setting"));
-      const auto& curType =
+      [[maybe_unused]] const auto& curType =
           m_Setting->find(u8"WallhavenCurrent")->second.getValueString();
       m_tempMenu->addAction("壁纸类型");
       m_tempMenu->addSeparator();
@@ -657,7 +658,8 @@ void SpeedMenu::SetAdditionalMenu() {
           m_Setting->find(u8"ApiUrl"sv)->second.getValueString();
       for (auto& i : m_Setting->find(u8"ApiData"sv)->second.getObject()) {
         auto ptr = m_tempMenu->addAction(QString::fromUtf8(
-            reinterpret_cast<const char*>(i.first.data()), i.first.size()));
+            reinterpret_cast<const char*>(i.first.data()),
+            static_cast<int>(i.first.size())));
         ptr->setCheckable(true);
         group->addAction(ptr);
         if (str == i.first) ptr->setChecked(true);

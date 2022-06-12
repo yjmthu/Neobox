@@ -21,6 +21,15 @@ int main() {
     const std::regex _pattern("^.*\\.(cpp|c|h|hpp|cc)$");
     return std::regex_match(_path.string(), _pattern);
   };
+  auto _isInWhiteList = [](const std::filesystem::path& _path) {
+    const auto _patterns = { "^.*build$", "^.*out$", "^.*\\.git" };
+    std::string str =_path.string();
+    for (auto& i: _patterns) {
+      if (std::regex_match(str, std::regex(i)))
+        return true;
+    }
+    return false;
+  };
   std::queue<std::filesystem::path> _stack;
   _stack.push(std::move(_folderPath));
   while (!_stack.empty()) {
@@ -29,7 +38,8 @@ int main() {
     for (auto& iter : std::filesystem::directory_iterator(_tmpFolderPath)) {
       const auto& _path = iter.path();
       if (std::filesystem::is_directory(iter.status())) {
-        _stack.push(_path);
+        if (!_isInWhiteList(_path))
+          _stack.push(_path);
         continue;
       } else if (std::filesystem::is_regular_file(iter.status())) {
         if (_isImageFile(_path)) {

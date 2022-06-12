@@ -1,14 +1,16 @@
 ﻿#include "apiclass.hpp"
 
+#include <httplib.h>
+
 namespace WallClass {
 
 class BingApi : public WallBase {
  public:
   explicit BingApi(const std::filesystem::path& picHome)
       : WallBase(picHome),
-        m_ApiUrl("https://global.bing.com"),
-        m_ImageNameFormat(u8"%s %Y%m%d.jpg"),
         m_Mft(u8"zh-CN"),
+        m_ImageNameFormat(u8"%s %Y%m%d.jpg"),
+        m_ApiUrl("https://global.bing.com"),
         m_Setting(nullptr),
         m_CurImageIndex(0) {
     m_ImageDir = m_HomePicLocation / u8"必应壁纸";

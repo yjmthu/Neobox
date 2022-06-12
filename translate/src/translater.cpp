@@ -137,7 +137,8 @@ void Translater::GetReply(const QString& text) {
   auto json = YJson(res->body.cbegin(), res->body.cend());
   if (!json.isObject() || json.find(u8"errorCode"sv)->second != 0) {
     m_TextTo->setPlainText(
-        QString::fromUtf8(res->body.data(), res->body.size()));
+        QString::fromUtf8(res->body.data(),
+        static_cast<int>(res->body.size())));
     return;
   }
   m_TextTo->clear();
@@ -150,7 +151,8 @@ void Translater::GetReply(const QString& text) {
       }
       if (!tempStr.empty()) tempStr.pop_back();
       m_TextTo->appendPlainText(QString::fromUtf8(
-          reinterpret_cast<const char*>(tempStr.data()), tempStr.size()));
+          reinterpret_cast<const char*>(tempStr.data()),
+          static_cast<int>(tempStr.size())));
     }
   } else {
     for (auto& i : json.find(u8"translateResult"sv)->second.getArray()) {
@@ -159,7 +161,8 @@ void Translater::GetReply(const QString& text) {
         tempStr.append(j[u8"tgt"sv].second.getValueString());
       }
       m_TextTo->appendPlainText(QString::fromUtf8(
-          reinterpret_cast<const char*>(tempStr.data()), tempStr.size()));
+          reinterpret_cast<const char*>(tempStr.data()),
+          static_cast<int>(tempStr.size())));
     }
   }
 }

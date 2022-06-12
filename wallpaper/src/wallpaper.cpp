@@ -1,10 +1,12 @@
+#include <httplib.h>
 #include <sysapi.h>
 #include <timer.h>
 
 #include <ranges>
 #include <unordered_set>
+#include <regex>
 
-#include "apiclass.hpp"
+#include <apiclass.hpp>
 
 #ifdef _WIN32
 #include <wininet.h>
@@ -93,7 +95,7 @@ Wallpaper::Desktop Wallpaper::GetDesktop() {
 }
 
 bool Wallpaper::SetWallpaper(const std::filesystem::path& imagePath) {
-  static auto m_DesktopType = GetDesktop();
+  [[maybe_unused]] static auto m_DesktopType = GetDesktop();
   if (!std::filesystem::exists(imagePath)) return false;
 #if defined(_WIN32)
 #ifdef UNICODE

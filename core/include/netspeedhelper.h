@@ -3,9 +3,9 @@
 
 #include <string>
 #ifdef _WIN32
-#include <Iphlpapi.h>
-#include <Windows.h>
 #include <Winsock2.h>
+// #include <Windows.h>
+#include <Iphlpapi.h>
 #endif
 
 class NetSpeedHelper {
