@@ -9,7 +9,7 @@
         "ShowForm": true
     },
     "FormUi": {
-        "BkColor": [0, 0, 0, 250],
+        "BkColor": [85, 0, 127, 150],
         "MemUseage": {
             "font-family": "Carattere",
             "font-size": 20, 

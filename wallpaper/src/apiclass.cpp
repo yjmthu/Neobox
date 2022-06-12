@@ -1,24 +1,29 @@
-﻿#include "wallhaven.hpp"
+﻿#include <unordered_set>
+
 #include "bingapi.hpp"
-#include "scriptoutput.hpp"
-#include "native.hpp"
 #include "directapi.hpp"
+#include "native.hpp"
+#include "scriptoutput.hpp"
+#include "wallhaven.hpp"
 
-bool WallBase::m_IsWorking = false;
+std::unordered_set<std::filesystem::path> m_UsingFiles;
 
-WallBase* WallBase::GetNewInstance(const std::filesystem::path& picHome, int type) {
-    switch (type) {
+std::atomic_bool WallBase::m_IsWorking = false;
+
+WallBase* WallBase::GetNewInstance(const std::filesystem::path& picHome,
+                                   int type) {
+  switch (type) {
     case 0:
-        return new WallClass::Wallhaven(picHome);
+      return new WallClass::Wallhaven(picHome);
     case 1:
-        return new WallClass::BingApi(picHome);
+      return new WallClass::BingApi(picHome);
     case 2:
-        return new WallClass::DirectApi(picHome);
+      return new WallClass::DirectApi(picHome);
     case 3:
-        return new WallClass::Native(picHome);
+      return new WallClass::Native(picHome);
     case 4:
-        return new WallClass::ScriptOutput(picHome);
+      return new WallClass::ScriptOutput(picHome);
     default:
-        return nullptr;
-    }
+      return nullptr;
+  }
 }

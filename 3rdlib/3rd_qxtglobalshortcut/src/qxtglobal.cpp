@@ -15,7 +15,8 @@
 **       names of its contributors may be used to endorse or promote products
 **       derived from this software without specific prior written permission.
 **
-** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+*AND
 ** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 ** WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 ** DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
@@ -80,10 +81,7 @@
 
     \sa QXT_VERSION_STR
  */
-const char * qxtVersion()
-{
-    return QXT_VERSION_STR;
-}
+const char* qxtVersion() { return QXT_VERSION_STR; }
 
 /*!
 \headerfile <QxtPimpl>
@@ -171,7 +169,7 @@ void MyTestPrivate::doQuux() {
 \endcode
 */
 
-/*! 
+/*!
  * \macro QXT_DECLARE_PRIVATE(PUB)
  * \relates <QxtPimpl>
  * Declares that a public class has a related private class.
@@ -185,7 +183,8 @@ void MyTestPrivate::doQuux() {
  * \relates <QxtPimpl>
  * Declares that a private class has a related public class named \a PUB.
  *
- * This may be put anywhere in the declaration of the private class. The parameter is the name of the public class.
+ * This may be put anywhere in the declaration of the private class. The
+ * parameter is the name of the public class.
  */
 
 /*!

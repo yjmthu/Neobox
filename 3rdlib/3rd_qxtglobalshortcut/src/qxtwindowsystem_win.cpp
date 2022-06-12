@@ -15,7 +15,8 @@
 **       names of its contributors may be used to endorse or promote products
 **       derived from this software without specific prior written permission.
 **
-** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+*AND
 ** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 ** WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 ** DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
@@ -32,96 +33,76 @@
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0500
 #endif
+#include <qglobal.h>  // QT_WA
 #include <qt_windows.h>
-#include <qglobal.h> // QT_WA
 
 static WindowList qxt_Windows;
 
-BOOL CALLBACK qxt_EnumWindowsProc(HWND hwnd, LPARAM lParam)
-{
-    Q_UNUSED(lParam);
-    if (::IsWindowVisible(hwnd))
-        qxt_Windows += (WId)hwnd;
-    return true;
+BOOL CALLBACK qxt_EnumWindowsProc(HWND hwnd, LPARAM lParam) {
+  Q_UNUSED(lParam);
+  if (::IsWindowVisible(hwnd)) qxt_Windows += (WId)hwnd;
+  return true;
 }
 
-WindowList QxtWindowSystem::windows()
-{
-    qxt_Windows.clear();
-    HDESK hdesk = ::OpenInputDesktop(0, false, DESKTOP_READOBJECTS);
-    ::EnumDesktopWindows(hdesk, qxt_EnumWindowsProc, 0);
-    ::CloseDesktop(hdesk);
-    return qxt_Windows;
+WindowList QxtWindowSystem::windows() {
+  qxt_Windows.clear();
+  HDESK hdesk = ::OpenInputDesktop(0, false, DESKTOP_READOBJECTS);
+  ::EnumDesktopWindows(hdesk, qxt_EnumWindowsProc, 0);
+  ::CloseDesktop(hdesk);
+  return qxt_Windows;
 }
 
-WId QxtWindowSystem::activeWindow()
-{
-    return (WId)::GetForegroundWindow();
-}
+WId QxtWindowSystem::activeWindow() { return (WId)::GetForegroundWindow(); }
 
-WId QxtWindowSystem::findWindow(const QString& title)
-{
-#if QT_VERSION < QT_VERSION_CHECK(5,0,0)
-    QT_WA({
-        return (WId)::FindWindow(NULL, (TCHAR*)title.utf16());
-    }, {
-        return (WId)::FindWindowA(NULL, title.toLocal8Bit());
-    });
+WId QxtWindowSystem::findWindow(const QString& title) {
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+  QT_WA({ return (WId)::FindWindow(NULL, (TCHAR*)title.utf16()); },
+        { return (WId)::FindWindowA(NULL, title.toLocal8Bit()); });
 #else
-    return (WId)::FindWindow(NULL, (TCHAR*)title.utf16());
+  return (WId)::FindWindow(NULL, (TCHAR*)title.utf16());
 #endif
 }
 
-WId QxtWindowSystem::windowAt(const QPoint& pos)
-{
-    POINT pt;
-    pt.x = pos.x();
-    pt.y = pos.y();
-    return (WId)::WindowFromPoint(pt);
+WId QxtWindowSystem::windowAt(const QPoint& pos) {
+  POINT pt;
+  pt.x = pos.x();
+  pt.y = pos.y();
+  return (WId)::WindowFromPoint(pt);
 }
 
-QString QxtWindowSystem::windowTitle(WId window)
-{
-    QString title;
-    int len = ::GetWindowTextLength((HWND)window);
-    if (len >= 0)
-    {
-        TCHAR* buf = new TCHAR[len+1];
-        len = ::GetWindowText((HWND)window, buf, len+1);
-#if QT_VERSION < QT_VERSION_CHECK(5,0,0)
-        QT_WA({
-            title = QString::fromUtf16((const ushort*)buf, len);
-        }, {
-            title = QString::fromLocal8Bit((const char*)buf, len);
-        });
+QString QxtWindowSystem::windowTitle(WId window) {
+  QString title;
+  int len = ::GetWindowTextLength((HWND)window);
+  if (len >= 0) {
+    TCHAR* buf = new TCHAR[len + 1];
+    len = ::GetWindowText((HWND)window, buf, len + 1);
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    QT_WA({ title = QString::fromUtf16((const ushort*)buf, len); },
+          { title = QString::fromLocal8Bit((const char*)buf, len); });
 #else
-            title = QString::fromUtf16((const ushort*)buf, len);
+    title = QString::fromUtf16((const ushort*)buf, len);
 #endif
-        delete[] buf;
-    }
-    return title;
+    delete[] buf;
+  }
+  return title;
 }
 
-QRect QxtWindowSystem::windowGeometry(WId window)
-{
-    RECT rc;
-    QRect rect;
-    if (::GetWindowRect((HWND)window, &rc))
-    {
-        rect.setTop(rc.top);
-        rect.setBottom(rc.bottom);
-        rect.setLeft(rc.left);
-        rect.setRight(rc.right);
-    }
-    return rect;
+QRect QxtWindowSystem::windowGeometry(WId window) {
+  RECT rc;
+  QRect rect;
+  if (::GetWindowRect((HWND)window, &rc)) {
+    rect.setTop(rc.top);
+    rect.setBottom(rc.bottom);
+    rect.setLeft(rc.left);
+    rect.setRight(rc.right);
+  }
+  return rect;
 }
 
-uint QxtWindowSystem::idleTime()
-{
-    uint idle = -1;
-    LASTINPUTINFO info;
-    info.cbSize = sizeof(LASTINPUTINFO);
-    if (::GetLastInputInfo(&info))
-        idle = ::GetTickCount() - info.dwTime;
-    return idle;
+uint QxtWindowSystem::idleTime() {
+  uint idle = -1;
+  LASTINPUTINFO info;
+  info.cbSize = sizeof(LASTINPUTINFO);
+  if (::GetLastInputInfo(&info)) idle = ::GetTickCount() - info.dwTime;
+  return idle;
 }

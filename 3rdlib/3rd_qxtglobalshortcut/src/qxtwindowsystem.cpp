@@ -15,7 +15,8 @@
 **       names of its contributors may be used to endorse or promote products
 **       derived from this software without specific prior written permission.
 **
-** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+*AND
 ** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 ** WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 ** DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
@@ -34,10 +35,11 @@
 /*!
     \class QxtWindowSystem
     \inmodule QxtWidgets
-    \brief The QxtWindowSystem class provides means for accessing native windows.
+    \brief The QxtWindowSystem class provides means for accessing native
+   windows.
 
-    \bold {Note:} The underlying window system might or might not allow one to alter
-    states of windows belonging to other processes.
+    \bold {Note:} The underlying window system might or might not allow one to
+   alter states of windows belonging to other processes.
 
     \warning QxtWindowSystem is portable in principle, but be careful while
     using it since you are probably about to do something non-portable.
@@ -47,10 +49,12 @@
     class NativeWindow : public QWidget {
         public:
             NativeWindow(WId wid) {
-                QWidget::create(wid, false, false); // window, initializeWindow, destroyOldWindow
+                QWidget::create(wid, false, false); // window, initializeWindow,
+   destroyOldWindow
             }
             ~NativeWindow() {
-                QWidget::destroy(false, false); // destroyWindow, destroySubWindows
+                QWidget::destroy(false, false); // destroyWindow,
+   destroySubWindows
             }
     };
     \endcode
@@ -59,8 +63,8 @@
     WindowList windows = QxtWindowSystem::windows();
     QStringList titles = QxtWindowSystem::windowTitles();
     bool ok = false;
-    QString title = QInputDialog::getItem(0, "Choose Window", "Choose a window to be hid:", titles, 0, false, &ok);
-    if (ok)
+    QString title = QInputDialog::getItem(0, "Choose Window", "Choose a window
+   to be hid:", titles, 0, false, &ok); if (ok)
     {
         int index = titles.indexOf(title);
         if (index != -1)
@@ -93,7 +97,8 @@
 /*!
     \fn QxtWindowSystem::findWindow(const QString& title)
 
-    Returns the native window system identifier of the window if any with given \a title.
+    Returns the native window system identifier of the window if any with given
+   \a title.
 
     Example usage:
     \code
@@ -143,11 +148,10 @@
     in milliseconds.
  */
 
-QStringList QxtWindowSystem::windowTitles()
-{
-    WindowList windows = QxtWindowSystem::windows();
-    QStringList titles;
-    foreach(WId window, windows)
+QStringList QxtWindowSystem::windowTitles() {
+  WindowList windows = QxtWindowSystem::windows();
+  QStringList titles;
+  foreach (WId window, windows)
     titles += QxtWindowSystem::windowTitle(window);
-    return titles;
+  return titles;
 }

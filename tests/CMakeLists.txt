@@ -6,6 +6,10 @@ add_executable(test_sys
     src/main.cpp
 )
 
+add_executable(format
+    src/format.cpp
+)
+
 target_link_libraries(
     test_sys
     yjson

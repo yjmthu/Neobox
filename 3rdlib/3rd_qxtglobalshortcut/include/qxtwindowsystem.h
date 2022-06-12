@@ -15,7 +15,8 @@
 **       names of its contributors may be used to endorse or promote products
 **       derived from this software without specific prior written permission.
 **
-** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+*AND
 ** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 ** WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 ** DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
@@ -32,22 +33,22 @@
 #define QXTWINDOWSYSTEM_H
 
 #include <QWidget>
+
 #include "qxtglobal.h"
 
 typedef QList<WId> WindowList;
 
-class /*QXT_GUI_EXPORT*/ QxtWindowSystem
-{
-public:
-    static WindowList windows();
-    static WId activeWindow();
-    static WId findWindow(const QString& title);
-    static WId windowAt(const QPoint& pos);
-    static QString windowTitle(WId window);
-    static QStringList windowTitles();
-    static QRect windowGeometry(WId window);
+class /*QXT_GUI_EXPORT*/ QxtWindowSystem {
+ public:
+  static WindowList windows();
+  static WId activeWindow();
+  static WId findWindow(const QString& title);
+  static WId windowAt(const QPoint& pos);
+  static QString windowTitle(WId window);
+  static QStringList windowTitles();
+  static QRect windowGeometry(WId window);
 
-    static uint idleTime();
+  static uint idleTime();
 };
 
-#endif // QXTWINDOWSYSTEM_H
+#endif  // QXTWINDOWSYSTEM_H

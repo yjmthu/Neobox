@@ -15,7 +15,8 @@
 **       names of its contributors may be used to endorse or promote products
 **       derived from this software without specific prior written permission.
 **
-** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+*AND
 ** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 ** WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 ** DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
@@ -31,170 +32,159 @@
 
 #include <qt_windows.h>
 
-
-#if QT_VERSION < QT_VERSION_CHECK(5,0,0)
-bool QxtGlobalShortcutPrivate::eventFilter(void* message)
-{
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+bool QxtGlobalShortcutPrivate::eventFilter(void* message) {
 #else
-bool QxtGlobalShortcutPrivate::nativeEventFilter(const QByteArray & eventType,
-    void * message, long * result)
-{
-    Q_UNUSED(eventType);
-    Q_UNUSED(result);
+bool QxtGlobalShortcutPrivate::nativeEventFilter(const QByteArray& eventType,
+                                                 void* message, long* result) {
+  Q_UNUSED(eventType);
+  Q_UNUSED(result);
 #endif
-    MSG* msg = static_cast<MSG*>(message);
-    if (msg->message == WM_HOTKEY)
-    {
-        const quint32 keycode = HIWORD(msg->lParam);
-        const quint32 modifiers = LOWORD(msg->lParam);
-        activateShortcut(keycode, modifiers);
-    }
+  MSG* msg = static_cast<MSG*>(message);
+  if (msg->message == WM_HOTKEY) {
+    const quint32 keycode = HIWORD(msg->lParam);
+    const quint32 modifiers = LOWORD(msg->lParam);
+    activateShortcut(keycode, modifiers);
+  }
 
-#if QT_VERSION < QT_VERSION_CHECK(5,0,0)
-    return prevEventFilter ? prevEventFilter(message) : false;
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+  return prevEventFilter ? prevEventFilter(message) : false;
 #else
-	return false;
+  return false;
 #endif
 }
 
-
-quint32 QxtGlobalShortcutPrivate::nativeModifiers(Qt::KeyboardModifiers modifiers)
-{
-    // MOD_ALT, MOD_CONTROL, (MOD_KEYUP), MOD_SHIFT, MOD_WIN
-    quint32 native = 0;
-    if (modifiers & Qt::ShiftModifier)
-        native |= MOD_SHIFT;
-    if (modifiers & Qt::ControlModifier)
-        native |= MOD_CONTROL;
-    if (modifiers & Qt::AltModifier)
-        native |= MOD_ALT;
-    if (modifiers & Qt::MetaModifier)
-        native |= MOD_WIN;
-    // TODO: resolve these?
-    //if (modifiers & Qt::KeypadModifier)
-    //if (modifiers & Qt::GroupSwitchModifier)
-    return native;
+quint32 QxtGlobalShortcutPrivate::nativeModifiers(
+    Qt::KeyboardModifiers modifiers) {
+  // MOD_ALT, MOD_CONTROL, (MOD_KEYUP), MOD_SHIFT, MOD_WIN
+  quint32 native = 0;
+  if (modifiers & Qt::ShiftModifier) native |= MOD_SHIFT;
+  if (modifiers & Qt::ControlModifier) native |= MOD_CONTROL;
+  if (modifiers & Qt::AltModifier) native |= MOD_ALT;
+  if (modifiers & Qt::MetaModifier) native |= MOD_WIN;
+  // TODO: resolve these?
+  // if (modifiers & Qt::KeypadModifier)
+  // if (modifiers & Qt::GroupSwitchModifier)
+  return native;
 }
 
-quint32 QxtGlobalShortcutPrivate::nativeKeycode(Qt::Key key)
-{
-    switch (key)
-    {
+quint32 QxtGlobalShortcutPrivate::nativeKeycode(Qt::Key key) {
+  switch (key) {
     case Qt::Key_Escape:
-        return VK_ESCAPE;
+      return VK_ESCAPE;
     case Qt::Key_Tab:
     case Qt::Key_Backtab:
-        return VK_TAB;
+      return VK_TAB;
     case Qt::Key_Backspace:
-        return VK_BACK;
+      return VK_BACK;
     case Qt::Key_Return:
     case Qt::Key_Enter:
-        return VK_RETURN;
+      return VK_RETURN;
     case Qt::Key_Insert:
-        return VK_INSERT;
+      return VK_INSERT;
     case Qt::Key_Delete:
-        return VK_DELETE;
+      return VK_DELETE;
     case Qt::Key_Pause:
-        return VK_PAUSE;
+      return VK_PAUSE;
     case Qt::Key_Print:
-        return VK_PRINT;
+      return VK_PRINT;
     case Qt::Key_Clear:
-        return VK_CLEAR;
+      return VK_CLEAR;
     case Qt::Key_Home:
-        return VK_HOME;
+      return VK_HOME;
     case Qt::Key_End:
-        return VK_END;
+      return VK_END;
     case Qt::Key_Left:
-        return VK_LEFT;
+      return VK_LEFT;
     case Qt::Key_Up:
-        return VK_UP;
+      return VK_UP;
     case Qt::Key_Right:
-        return VK_RIGHT;
+      return VK_RIGHT;
     case Qt::Key_Down:
-        return VK_DOWN;
+      return VK_DOWN;
     case Qt::Key_PageUp:
-        return VK_PRIOR;
+      return VK_PRIOR;
     case Qt::Key_PageDown:
-        return VK_NEXT;
+      return VK_NEXT;
     case Qt::Key_F1:
-        return VK_F1;
+      return VK_F1;
     case Qt::Key_F2:
-        return VK_F2;
+      return VK_F2;
     case Qt::Key_F3:
-        return VK_F3;
+      return VK_F3;
     case Qt::Key_F4:
-        return VK_F4;
+      return VK_F4;
     case Qt::Key_F5:
-        return VK_F5;
+      return VK_F5;
     case Qt::Key_F6:
-        return VK_F6;
+      return VK_F6;
     case Qt::Key_F7:
-        return VK_F7;
+      return VK_F7;
     case Qt::Key_F8:
-        return VK_F8;
+      return VK_F8;
     case Qt::Key_F9:
-        return VK_F9;
+      return VK_F9;
     case Qt::Key_F10:
-        return VK_F10;
+      return VK_F10;
     case Qt::Key_F11:
-        return VK_F11;
+      return VK_F11;
     case Qt::Key_F12:
-        return VK_F12;
+      return VK_F12;
     case Qt::Key_F13:
-        return VK_F13;
+      return VK_F13;
     case Qt::Key_F14:
-        return VK_F14;
+      return VK_F14;
     case Qt::Key_F15:
-        return VK_F15;
+      return VK_F15;
     case Qt::Key_F16:
-        return VK_F16;
+      return VK_F16;
     case Qt::Key_F17:
-        return VK_F17;
+      return VK_F17;
     case Qt::Key_F18:
-        return VK_F18;
+      return VK_F18;
     case Qt::Key_F19:
-        return VK_F19;
+      return VK_F19;
     case Qt::Key_F20:
-        return VK_F20;
+      return VK_F20;
     case Qt::Key_F21:
-        return VK_F21;
+      return VK_F21;
     case Qt::Key_F22:
-        return VK_F22;
+      return VK_F22;
     case Qt::Key_F23:
-        return VK_F23;
+      return VK_F23;
     case Qt::Key_F24:
-        return VK_F24;
+      return VK_F24;
     case Qt::Key_Space:
-        return VK_SPACE;
+      return VK_SPACE;
     case Qt::Key_Asterisk:
-        return VK_MULTIPLY;
+      return VK_MULTIPLY;
     case Qt::Key_Plus:
-        return VK_ADD;
+      return VK_ADD;
     case Qt::Key_Comma:
-        return VK_SEPARATOR;
+      return VK_SEPARATOR;
     case Qt::Key_Minus:
-        return VK_SUBTRACT;
+      return VK_SUBTRACT;
     case Qt::Key_Slash:
-        return VK_DIVIDE;
+      return VK_DIVIDE;
     case Qt::Key_MediaNext:
-        return VK_MEDIA_NEXT_TRACK;
+      return VK_MEDIA_NEXT_TRACK;
     case Qt::Key_MediaPrevious:
-        return VK_MEDIA_PREV_TRACK;
+      return VK_MEDIA_PREV_TRACK;
     case Qt::Key_MediaPlay:
-        return VK_MEDIA_PLAY_PAUSE;
+      return VK_MEDIA_PLAY_PAUSE;
     case Qt::Key_MediaStop:
-        return VK_MEDIA_STOP;
-        // couldn't find those in VK_*
-        //case Qt::Key_MediaLast:
-        //case Qt::Key_MediaRecord:
+      return VK_MEDIA_STOP;
+      // couldn't find those in VK_*
+      // case Qt::Key_MediaLast:
+      // case Qt::Key_MediaRecord:
     case Qt::Key_VolumeDown:
-        return VK_VOLUME_DOWN;
+      return VK_VOLUME_DOWN;
     case Qt::Key_VolumeUp:
-        return VK_VOLUME_UP;
+      return VK_VOLUME_UP;
     case Qt::Key_VolumeMute:
-        return VK_VOLUME_MUTE;
+      return VK_VOLUME_MUTE;
 
-        // numbers
+      // numbers
     case Qt::Key_0:
     case Qt::Key_1:
     case Qt::Key_2:
@@ -205,9 +195,9 @@ quint32 QxtGlobalShortcutPrivate::nativeKeycode(Qt::Key key)
     case Qt::Key_7:
     case Qt::Key_8:
     case Qt::Key_9:
-        return key;
+      return key;
 
-        // letters
+      // letters
     case Qt::Key_A:
     case Qt::Key_B:
     case Qt::Key_C:
@@ -234,19 +224,19 @@ quint32 QxtGlobalShortcutPrivate::nativeKeycode(Qt::Key key)
     case Qt::Key_X:
     case Qt::Key_Y:
     case Qt::Key_Z:
-        return key;
+      return key;
 
     default:
-        return 0;
-    }
+      return 0;
+  }
 }
 
-bool QxtGlobalShortcutPrivate::registerShortcut(quint32 nativeKey, quint32 nativeMods)
-{
-    return RegisterHotKey(0, nativeMods ^ nativeKey, nativeMods, nativeKey);
+bool QxtGlobalShortcutPrivate::registerShortcut(quint32 nativeKey,
+                                                quint32 nativeMods) {
+  return RegisterHotKey(0, nativeMods ^ nativeKey, nativeMods, nativeKey);
 }
 
-bool QxtGlobalShortcutPrivate::unregisterShortcut(quint32 nativeKey, quint32 nativeMods)
-{
-    return UnregisterHotKey(0, nativeMods ^ nativeKey);
+bool QxtGlobalShortcutPrivate::unregisterShortcut(quint32 nativeKey,
+                                                  quint32 nativeMods) {
+  return UnregisterHotKey(0, nativeMods ^ nativeKey);
 }

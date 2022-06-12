@@ -1,109 +1,102 @@
 #include "text.h"
 
-#include "translater.h"
-
-#include <speedapp.h>
-#include <screenfetch.h>
-
-#include <filesystem>
-
-#include <tesseract/baseapi.h>
 #include <leptonica/allheaders.h>
+#include <screenfetch.h>
+#include <speedapp.h>
+#include <tesseract/baseapi.h>
 
-#include <QString>
-#include <QThread>
 #include <QApplication>
+#include <QButtonGroup>
 #include <QClipboard>
+#include <QHBoxLayout>
 #include <QMessageBox>
 #include <QPlainTextEdit>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
 #include <QPushButton>
-#include <QButtonGroup>
+#include <QString>
+#include <QThread>
+#include <QVBoxLayout>
+#include <filesystem>
+
+#include "translater.h"
 
 TextDlg::TextDlg(void* image)
-    : QDialog()
-    , m_TextEdit(new QPlainTextEdit(this))
-{
-    setWindowFlags(Qt::WindowStaysOnTopHint);
-    setAttribute(Qt::WA_DeleteOnClose);
-    setWindowTitle("识别结果");
-    using namespace std::literals;
+    : QDialog(), m_TextEdit(new QPlainTextEdit(this)) {
+  setWindowFlags(Qt::WindowStaysOnTopHint);
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle("识别结果");
+  using namespace std::literals;
 
-    auto vbx = new QVBoxLayout(this);
-    vbx->addWidget(m_TextEdit);
-    QPushButton* btCut = new QPushButton(this);
-    btCut->setText("截图");
-    connect(btCut, &QPushButton::clicked, this, [this](){
-        hide();
-        QThread::sleep(1);
-        ScreenFetch getscreen;
-        getscreen.exec();
-        void* image = getscreen.m_Picture;
-        if (image)
-            ParsePicture(image);
-        show();
-    });
-    QPushButton* btCopy = new QPushButton(this);
-    btCopy->setText("复制");
-    connect(btCopy, &QPushButton::clicked, this, [this](){
-        QClipboard *clipboard = QApplication::clipboard();
-        clipboard->setText(m_TextEdit->toPlainText());
-    });
-    QPushButton* btTransWord = new QPushButton(this);
-    btTransWord->setText("词译");
-    QPushButton* btTransText = new QPushButton(this);
-    btTransText->setText("文译");
-    connect(btTransText, &QPushButton::clicked, this, [this](){
-        m_VarBox->m_Translater->Translate(m_TextEdit->toPlainText());
-    });
-    auto hbx = new QHBoxLayout;
-    hbx->addWidget(btCut);
-    hbx->addWidget(btCopy);
-    hbx->addWidget(btTransWord);
-    hbx->addWidget(btTransText);
-    vbx->addLayout(hbx);
-    
-    ParsePicture(image);
+  auto vbx = new QVBoxLayout(this);
+  vbx->addWidget(m_TextEdit);
+  QPushButton* btCut = new QPushButton(this);
+  btCut->setText("截图");
+  connect(btCut, &QPushButton::clicked, this, [this]() {
+    hide();
+    QThread::sleep(1);
+    ScreenFetch getscreen;
+    getscreen.exec();
+    void* image = getscreen.m_Picture;
+    if (image) ParsePicture(image);
+    show();
+  });
+  QPushButton* btCopy = new QPushButton(this);
+  btCopy->setText("复制");
+  connect(btCopy, &QPushButton::clicked, this, [this]() {
+    QClipboard* clipboard = QApplication::clipboard();
+    clipboard->setText(m_TextEdit->toPlainText());
+  });
+  QPushButton* btTransWord = new QPushButton(this);
+  btTransWord->setText("词译");
+  QPushButton* btTransText = new QPushButton(this);
+  btTransText->setText("文译");
+  connect(btTransText, &QPushButton::clicked, this, [this]() {
+    m_VarBox->m_Translater->Translate(m_TextEdit->toPlainText());
+  });
+  auto hbx = new QHBoxLayout;
+  hbx->addWidget(btCut);
+  hbx->addWidget(btCopy);
+  hbx->addWidget(btTransWord);
+  hbx->addWidget(btTransText);
+  vbx->addLayout(hbx);
+
+  ParsePicture(image);
 }
 
-inline QString RemoveExtraSpaces(const char* str)
-{
-    QString result(str);
-    QRegExp pattern("([\u4e00-\u9fff]) ([\u4e00-\u9fff])");
-    result.replace(pattern, QStringLiteral("\\1\\2"));
-    result.replace(pattern, QStringLiteral("\\1\\2"));
-    result.replace("\n\n", "\n");
-    return result;
+inline QString RemoveExtraSpaces(const char* str) {
+  QString result(str);
+  QRegExp pattern("([\u4e00-\u9fff]) ([\u4e00-\u9fff])");
+  result.replace(pattern, QStringLiteral("\\1\\2"));
+  result.replace(pattern, QStringLiteral("\\1\\2"));
+  result.replace("\n\n", "\n");
+  return result;
 }
 
-void TextDlg::ParsePicture(void* image)
-{
-    using namespace std::literals;
-    if (!image) return;
-    Pix* pix = reinterpret_cast<Pix*>(image);
-    char *outText;
+void TextDlg::ParsePicture(void* image) {
+  using namespace std::literals;
+  if (!image) return;
+  Pix* pix = reinterpret_cast<Pix*>(image);
+  char* outText;
 
-    tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
+  tesseract::TessBaseAPI* api = new tesseract::TessBaseAPI();
 #ifdef WIN32
-    if (api->Init("C:\\Program Files\\Tesseract-OCR\\tessdata", "chi_sim+eng")) {
+  if (api->Init("C:\\Program Files\\Tesseract-OCR\\tessdata", "chi_sim+eng")) {
 #elif defined __linux__
-    if (api->Init(NULL, "chi_sim+eng")) {
+  if (api->Init(NULL, "chi_sim+eng")) {
 #endif
-        QMessageBox::critical(nullptr, "错误", "Could not initialize tesseract.");
-        return;
-    }
+    QMessageBox::critical(nullptr, "错误", "Could not initialize tesseract.");
+    return;
+  }
 
-    // Pix *image = pixRead("screenfetch.jpg");
-    api->SetImage(pix);
-    // Get OCR result
-    outText = api->GetUTF8Text();
-    // printf("OCR output:\n%s", outText);
-    m_TextEdit->setPlainText(RemoveExtraSpaces(outText));
+  // Pix *image = pixRead("screenfetch.jpg");
+  api->SetImage(pix);
+  // Get OCR result
+  outText = api->GetUTF8Text();
+  // printf("OCR output:\n%s", outText);
+  m_TextEdit->setPlainText(RemoveExtraSpaces(outText));
 
-    // Destroy used object and release memory
-    api->End();
-    delete api;
-    delete [] outText;
-    pixDestroy(&pix);
+  // Destroy used object and release memory
+  api->End();
+  delete api;
+  delete[] outText;
+  pixDestroy(&pix);
 }

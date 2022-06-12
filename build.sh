@@ -11,15 +11,16 @@ if [ ! -f "CMakeLists.txt" ]; then
 fi
 
 if [ $# -gt 0 ]; then
-    echo $#
-    for ((i=1; i<=$#; i+=1)); do
+    for ((i=1; i<$#; i+=1)); do
         echo $($i)
     done
         echo "---------------"
-    rm -rf ${BUILD_DIR}
     if [ "$1" = "-r" ]; then
         CMAKE_BUILD_TYPE="Release"
         echo "Release Build."
+    elif [ "$1" = '-k' ]; then
+        CMAKE_BUILD_TYPE="$(cat .tmp.txt)"
+        echo "${CMAKE_BUILD_TYPE} Build."
     elif [ "$1" = '-d' ]; then
         CMAKE_BUILD_TYPE="Debug"
         echo "Debug Build."
@@ -27,6 +28,12 @@ if [ $# -gt 0 ]; then
 else
     echo "Build Only."
 fi
+
+if [ "$(cat .tmp.txt)" != "$CMAKE_BUILD_TYPE" ]; then
+    rm -rf ${BUILD_DIR}
+fi
+
+echo "$CMAKE_BUILD_TYPE" > .tmp.txt
 
 if [ ! -d "${BUILD_DIR}" ]; then
     mkdir ${BUILD_DIR}
