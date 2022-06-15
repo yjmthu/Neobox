@@ -10,16 +10,17 @@ class VarBox : public QObject {
   VarBox();
   ~VarBox();
   class Wallpaper* m_Wallpaper;
+  class QQuickView* m_SpeedBox;
   class QSystemTrayIcon* m_Tray;
   class SpeedMenu* m_Menu;
   class Translater* m_Translater;
 
  private:
-  class SpeedBox* m_SpeedBox;
   class QTimer* m_Timer;
   friend class SpeedMenu;
   void GetSetting();
   void LoadFonts();
+  void GetSpeedBox();
 };
 
 extern VarBox* m_VarBox;

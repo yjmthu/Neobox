@@ -2,11 +2,10 @@
 #include <sysapi.h>
 #include <timer.h>
 
-#include <ranges>
-#include <unordered_set>
-#include <regex>
-
 #include <apiclass.hpp>
+#include <ranges>
+#include <regex>
+#include <unordered_set>
 
 #ifdef _WIN32
 #include <wininet.h>

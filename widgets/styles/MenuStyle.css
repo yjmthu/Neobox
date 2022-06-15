@@ -1,0 +1,19 @@
+QMenu {
+  background-color: white;
+  padding: 5px;
+  border-radius: 3px;
+}
+
+QMenu::item {
+  border-radius: 3px;
+  font-size: 10pt;
+  color: black;
+  font-family: "FZKai-Z03";
+  padding: 4px 20px 4px 10px;
+  margin: 2px 1px;
+}
+
+QMenu::item::selected{
+  background-color: rgb(236, 236, 236);
+}
+

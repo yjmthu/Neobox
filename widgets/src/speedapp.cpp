@@ -3,6 +3,7 @@
 #include <translater.h>
 #include <wallpaper.h>
 #include <yjson.h>
+#include <appcode.hpp>
 
 #include <QDir>
 #include <QFontDatabase>
@@ -10,6 +11,10 @@
 #include <QStandardPaths>
 #include <QSystemTrayIcon>
 #include <QTimer>
+#include <QQuickView>
+#include <QQmlEngine>
+#include <QQmlContext>
+#include <QBitmap>
 #include <filesystem>
 
 #include "speedbox.h"
@@ -25,7 +30,7 @@ inline void MessageBox(const std::u8string& msg) {
   QMessageBox::information(nullptr, "Notice", str);
 }
 
-VarBox::VarBox() : QObject() {
+VarBox::VarBox() : QObject(), m_SpeedBox(nullptr) {
   m_VarBox = this;
   LoadFonts();
   QDir dir(QStandardPaths::writableLocation(QStandardPaths::HomeLocation));
@@ -40,12 +45,11 @@ VarBox::VarBox() : QObject() {
   m_Timer = new QTimer;
   m_Timer->setSingleShot(true);
   m_Wallpaper = new Wallpaper(std::u8string(picHome.begin(), picHome.end()));
+  GetSpeedBox();
   m_Menu = new SpeedMenu;  // Must before SpeedBox;
-  m_SpeedBox = new SpeedBox;
   m_Menu->showEvent(nullptr);
   m_Tray->setContextMenu(m_Menu);
   m_Tray->setIcon(QIcon(QStringLiteral(":/icons/speedbox.ico")));
-  m_SpeedBox->SetupUi();
   m_Tray->show();
   if (m_GlobalSetting->find(u8"FormGlobal")
           ->second[u8"ShowForm"]
@@ -84,4 +88,26 @@ void VarBox::LoadFonts() {
       QStringLiteral(":/fonts/Nickainley-Normal-small.ttf"));
   QFontDatabase::addApplicationFont(
       QStringLiteral(":/fonts/Carattere-Regular-small.ttf"));
+}
+
+
+void VarBox::GetSpeedBox()
+{
+  qmlRegisterType<SpeedBox>("MySpeedBox", 1, 0, "SpeedBox");
+  m_SpeedBox = new QQuickView;
+  m_SpeedBox->rootContext()->setContextProperty("mainwindow", m_SpeedBox);
+  m_SpeedBox->setFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
+  m_SpeedBox->setColor(QColor(Qt::transparent));
+  m_SpeedBox->setResizeMode(QQuickView::SizeRootObjectToView);
+  // m_SpeedBox->setSource(QUrl(QStringLiteral("qrc:/qmls/floating_window.qml")));
+  m_SpeedBox->setSource(QUrl(QStringLiteral("floating_window.qml")));
+  m_SpeedBox->setCursor(Qt::PointingHandCursor);
+  connect(m_SpeedBox->engine(), &QQmlEngine::quit, this, [](){
+      qApp->exit(static_cast<int>(
+                     ExitCode::RETCODE_RESTART));
+  });
+  // m_SpeedBox->setAcceptDrops(true);
+  
+  m_SpeedBox->show();
+
 }

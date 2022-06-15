@@ -22,9 +22,6 @@ class SpeedMenu : public QMenu {
  private slots:
   void ScreenShot();
   void UpdateStyle();
- signals:
-  void ChangeBoxColor(QColor col);
-  void ChangeBoxAlpha(int alpha);
 };
 
 #endif  // SPEEDMENU_H

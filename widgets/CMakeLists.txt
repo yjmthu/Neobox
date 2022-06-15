@@ -11,7 +11,11 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 
-find_package(Qt5 COMPONENTS Widgets REQUIRED)
+find_package(Qt5 COMPONENTS Widgets Quick REQUIRED)
+if (UNIX AND NOT MACOS)
+  # Find KDE modules
+  find_package(KF5WindowSystem REQUIRED)
+endif()
 
 include_directories(include)
 
@@ -37,12 +41,17 @@ target_link_libraries(widgets PRIVATE
     wallpaper
     yjson
     Qt5::Widgets
+    Qt5::Quick
     translate
 )
 
 if (UNIX)
     target_link_libraries(widgets PRIVATE
         pthread
+        # KF5::CoreAddons
+        # KF5::I18n
+        # KF5::WidgetsAddons
+        KF5::WindowSystem
     )
 endif()
 
