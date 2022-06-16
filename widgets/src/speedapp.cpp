@@ -26,7 +26,8 @@ extern const char* m_szClobalSettingFile;
 
 inline void MessageBox(const std::u8string& msg) {
   QString str(
-      QString::fromUtf8(reinterpret_cast<const char*>(msg.data()), msg.size()));
+      QString::fromUtf8(reinterpret_cast<const char*>(msg.data()), 
+      static_cast<int>(msg.size())));
   QMessageBox::information(nullptr, "Notice", str);
 }
 
@@ -99,8 +100,8 @@ void VarBox::GetSpeedBox()
   m_SpeedBox->setFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
   m_SpeedBox->setColor(QColor(Qt::transparent));
   m_SpeedBox->setResizeMode(QQuickView::SizeRootObjectToView);
-  // m_SpeedBox->setSource(QUrl(QStringLiteral("qrc:/qmls/floating_window.qml")));
-  m_SpeedBox->setSource(QUrl(QStringLiteral("floating_window.qml")));
+  m_SpeedBox->setSource(QUrl(QStringLiteral("qrc:/qmls/FloatingWindow.qml")));
+  // m_SpeedBox->setSource(QUrl(QStringLiteral("FloatingWindow.qml")));
   m_SpeedBox->setCursor(Qt::PointingHandCursor);
   connect(m_SpeedBox->engine(), &QQmlEngine::quit, this, [](){
       qApp->exit(static_cast<int>(

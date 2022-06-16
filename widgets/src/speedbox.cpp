@@ -3,7 +3,9 @@
 #include <netspeedhelper.h>
 
 #include <QQuickView>
+#ifdef __linux__
 #include <KWindowEffects>
+#endif
 
 #include "speedapp.h"
 #include "speedmenu.h"
@@ -37,6 +39,7 @@ void SpeedBox::showMenu(int x, int y)
 
 void SpeedBox::setRoundRect(int x, int y, int w, int h, int r, bool set)
 {
+#ifdef __linux__
   if (!set) {
     KWindowEffects::enableBlurBehind(m_VarBox->m_SpeedBox, false);
     return;
@@ -61,6 +64,7 @@ void SpeedBox::setRoundRect(int x, int y, int w, int h, int r, bool set)
   // bottom right
   corner.moveBottomRight(rect.bottomRight());
   region += QRegion(corner, QRegion::Ellipse);
-  
+
   KWindowEffects::enableBlurBehind(m_VarBox->m_SpeedBox, true, region);
+#endif
 }

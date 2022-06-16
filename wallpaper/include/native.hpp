@@ -1,6 +1,7 @@
 ﻿#include "apiclass.hpp"
 
 #include <set>
+#include <numeric>
 
 namespace WallClass {
 

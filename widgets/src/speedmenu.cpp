@@ -33,7 +33,8 @@
 #include <QUrl>
 #include <QVBoxLayout>
 #include <QtQuick>
-#include <KWindowEffects>
+
+// #include <KWindowEffects>
 
 extern std::unique_ptr<YJson> m_GlobalSetting;
 extern const char* m_szClobalSettingFile;
@@ -283,7 +284,7 @@ void SpeedMenu::SetupSettingMenu() {
   ptr->setMenu(m_Menu);
   QActionGroup* m_Group = new QActionGroup(m_Menu);
   m_Group->setExclusive(true);
-  std::array m_Strs = {"存储占用", "上传速度", "下载速度"};
+  const char* m_Strs[] {"存储占用", "上传速度", "下载速度"};
   for (int i = 0, j = m_VarBox->m_SpeedBox->findChild<QObject*>("rect")->property("textindex").toInt(); i < 3; ++i) {
     ptr = m_Menu->addAction(m_Strs[i]);
     ptr->setCheckable(true);
@@ -322,7 +323,7 @@ void SpeedMenu::SetupSettingMenu() {
           });
   connect(m_pAppSettingMenu->addAction("重启软件"), &QAction::triggered, this,
           []() { qApp->exit(static_cast<int>(ExitCode::RETCODE_RESTART)); });
-  connect(m_pAppSettingMenu->addAction("背景颜色"), &QAction::triggered, this, [this]() {
+  connect(m_pAppSettingMenu->addAction("背景颜色"), &QAction::triggered, this, []() {
     auto ptr = m_VarBox->m_SpeedBox->findChild<QObject*>("rect");
     QColor col(ptr->property("color").toString());
     int alpha = col.alpha();
@@ -332,7 +333,7 @@ void SpeedMenu::SetupSettingMenu() {
       ptr->setProperty("color", col.name(QColor::HexArgb));
     }
   });
-  connect(m_pAppSettingMenu->addAction("背景透明"), &QAction::triggered, this, [this]() {
+  connect(m_pAppSettingMenu->addAction("背景透明"), &QAction::triggered, this, []() {
     auto ptr = m_VarBox->m_SpeedBox->findChild<QObject*>("rect");
     QColor col = QColor(ptr->property("color").toString());
     col.setAlpha(
@@ -344,7 +345,7 @@ void SpeedMenu::SetupSettingMenu() {
   ptr = m_pAppSettingMenu->addAction("背景模糊");
   ptr->setCheckable(true);
   ptr->setChecked(m_VarBox->m_SpeedBox->findChild<QObject*>("settings")->property("blur").toBool());
-  connect(ptr, &QAction::triggered, this, [this](bool checked) {
+  connect(ptr, &QAction::triggered, this, [](bool checked) {
     m_VarBox->m_SpeedBox->findChild<QObject*>("settings")->setProperty("blur", checked);
   });
 }

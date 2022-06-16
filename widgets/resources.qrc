@@ -8,6 +8,6 @@
         <file>scripts/SetWallpaper.sh</file>
         <file>jsons/Setting.json</file>
         <file>styles/MenuStyle.css</file>
-        <file>qmls/floating_window.qml</file>
+        <file>qmls/FloatingWindow.qml</file>
     </qresource>
 </RCC>
