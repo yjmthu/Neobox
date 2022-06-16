@@ -37,6 +37,10 @@ void SpeedBox::showMenu(int x, int y)
 
 void SpeedBox::setRoundRect(int x, int y, int w, int h, int r, bool set)
 {
+  if (!set) {
+    KWindowEffects::enableBlurBehind(m_VarBox->m_SpeedBox, false);
+    return;
+  }
   QRegion region;
   QRect rect(x, y, w, h);
   region += rect.adjusted(r, 0, -r, 0);
@@ -58,5 +62,5 @@ void SpeedBox::setRoundRect(int x, int y, int w, int h, int r, bool set)
   corner.moveBottomRight(rect.bottomRight());
   region += QRegion(corner, QRegion::Ellipse);
   
-  KWindowEffects::enableBlurBehind(m_VarBox->m_SpeedBox, set, region);
+  KWindowEffects::enableBlurBehind(m_VarBox->m_SpeedBox, true, region);
 }

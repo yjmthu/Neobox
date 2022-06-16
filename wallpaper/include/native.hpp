@@ -1,5 +1,7 @@
 ﻿#include "apiclass.hpp"
 
+#include <set>
+
 namespace WallClass {
 
 class Native : public WallBase {
@@ -18,6 +20,45 @@ class Native : public WallBase {
     return m_iCount;
   }
 
+  bool GetFileList() {
+    size_t m_Toltal = GetFileCount(), m_Index = 0;
+    if (!m_Toltal) return false;
+    std::vector<size_t> numbers;
+    if (m_Toltal < 50) {
+      numbers.resize(m_Toltal);
+      std::iota(numbers.begin(), numbers.end(), 0);
+    } else {
+      std::set<size_t> already;
+      std::mt19937 g(std::random_device{}());
+      auto pf = std::uniform_int_distribution<size_t>(0, m_Toltal - 1);
+      for (int i = 0; i < 50; ++i) {
+        auto temp = pf(g);
+        while (already.find(temp) != already.end())
+          temp = pf(g);
+        already.insert(temp);
+        numbers.push_back(temp);
+      }
+      std::sort(numbers.begin(), numbers.end());
+    }
+
+    auto target = numbers.cbegin();
+    for (auto& iter : std::filesystem::directory_iterator(m_ImageDir)) {
+      std::filesystem::path path = iter.path();
+      if (!std::filesystem::is_directory(iter.status()) &&
+          Wallpaper::IsImageFile(path)) {
+        if (*target == m_Index) {
+          m_FileList.emplace_back(path.u8string());
+          ++target;
+        }
+        ++m_Index;
+      }
+    }
+
+    std::mt19937 g(std::random_device{}());
+    std::shuffle(m_FileList.begin(), m_FileList.end(), g);
+    return true;
+  }
+
  public:
   explicit Native(const std::filesystem::path& picHome) : WallBase(picHome) {
     InitBase();
@@ -25,54 +66,16 @@ class Native : public WallBase {
   virtual ~Native() { delete m_Setting; }
   virtual ImageInfoEx GetNext() override {
     ImageInfoEx ptr(new std::vector<std::u8string>);
-    if (!std::filesystem::exists(m_ImageDir) ||
-        !std::filesystem::is_directory(m_ImageDir))
+
+    while (!m_FileList.empty() && !std::filesystem::exists(m_FileList.back())) {
+      m_FileList.pop_back();
+    }
+
+    if (m_FileList.empty() && !GetFileList())
       return ptr;
 
-    size_t m_Toltal = GetFileCount(), m_Index = 0, m_ToGet;
-    while (!m_RandomQue.empty()) {
-      if (m_RandomQue.back() < m_Toltal) {
-        m_ToGet = m_RandomQue.back();
-        m_RandomQue.pop_back();
-        break;
-      }
-    }
-
-    if (m_RandomQue.empty()) {
-      if (m_Toltal < 20) {
-        for (int i = 0; i < m_Toltal; i++) m_RandomQue.push_back(i);
-        std::random_device rd;
-        std::mt19937 g(rd());
-        std::shuffle(m_RandomQue.begin(), m_RandomQue.end(), g);
-      } else {
-        std::mt19937 generator(std::random_device{}());
-        auto pf = std::uniform_int_distribution<size_t>(0, m_Toltal - 1);
-        for (int i = 0; i < 20; ++i) {
-          auto temp = pf(generator);
-          if (std::find(m_RandomQue.begin(), m_RandomQue.end(), temp) !=
-              m_RandomQue.end())
-            temp = pf(generator);
-          m_RandomQue.push_back(temp);
-        }
-        std::cout << std::endl;
-      }
-      m_ToGet = m_RandomQue.back();
-      m_RandomQue.pop_back();
-    }
-
-    if (!m_Toltal) return ptr;
-
-    for (auto& iter : std::filesystem::directory_iterator(m_ImageDir)) {
-      if (!std::filesystem::is_directory(iter.status())) {
-        const auto& path = iter.path();
-        if (Wallpaper::IsImageFile(path)) {
-          if (m_Index++ == m_ToGet) {
-            ptr->push_back(path.u8string());
-            break;
-          }
-        }
-      }
-    }
+    ptr->push_back(std::move(m_FileList.back()));
+    m_FileList.pop_back();
     return ptr;
   }
   virtual bool LoadSetting() override {
@@ -99,7 +102,7 @@ class Native : public WallBase {
     auto& li = m_Setting->find(u8"imgdirs")->second;
     li.beginA()->setText(str);
     m_Setting->toFile(m_SettingPath);
-    m_RandomQue.clear();
+    m_FileList.clear();
   }
   virtual const void* GetDataByName(const char* key) const override {
     if (!strcmp(key, "m_Setting")) {
@@ -112,7 +115,7 @@ class Native : public WallBase {
  private:
   const char m_SettingPath[12]{"Native.json"};
   YJson* m_Setting;
-  std::vector<size_t> m_RandomQue;
+  std::vector<std::u8string> m_FileList;
 };
 
 }  // namespace WallClass

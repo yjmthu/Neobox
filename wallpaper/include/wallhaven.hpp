@@ -46,21 +46,26 @@ class Wallhaven : public WallBase {
     auto& val = m_Data->find(u8"Unused")->second;
     if (val.emptyA()) {
       YJson::swap(val, m_Data->find(u8"Used")->second);
+      if (val.emptyA()) {
+        std::cout << "No Url\n";
+        return ptr;
+      } else {
+        std::vector<std::u8string> temp;
+        for (auto&i : val.getArray()) {
+          temp.emplace_back(std::move(i.getValueString()));
+        }
+        std::mt19937 g(std::random_device{}());
+        std::shuffle(temp.begin(), temp.end(), g);
+        val.assignA(std::move(temp).begin(), std::move(temp).end());
+      }
     }
-    if (val.emptyA()) {
-      std::cout << "No Url\n";
-      return ptr;
-    }
-    std::mt19937 generator(std::random_device{}());
-    auto choice = val.find(
-        std::uniform_int_distribution<size_t>(0, val.sizeA() - 1)(generator));
-    std::u8string& name = choice->getValueString();
+    std::u8string name = val.backA().getValueString();
     if (name.length() == 6) IsPngFile(name);
     ptr->emplace_back((m_ImageDir / name).u8string());
     ptr->emplace_back(u8"https://w.wallhaven.cc"sv);
     ptr->emplace_back(u8"/full/"s + name.substr(10, 2) + u8"/"s + name);
     m_Data->find(u8"Used")->second.append(name);
-    val.remove(choice);
+    val.popBackA();
     m_Data->toFile(m_DataPath);
     return ptr;
   }
@@ -167,7 +172,8 @@ class Wallhaven : public WallBase {
     std::cout << "Get next url\n";
     size_t m_TotalDownload = 0;
     httplib::Client clt("https://wallhaven.cc"s);
-    auto& m_Array = m_Data->find(u8"Unused")->second.getArray();
+    // auto& m_Array = m_Data->find(u8"Unused")->second.getArray();
+    std::vector<std::u8string> m_Array;
     auto& m_BlackArray = m_Data->find(u8"Blacklist")->second;
     size_t i =
         5 * (m_Setting->find(u8"PageNumber")->second.getValueInt() - 1) + 1;
@@ -221,6 +227,12 @@ class Wallhaven : public WallBase {
         }
       }
     }
+    if (m_TotalDownload) {
+      std::mt19937 g(std::random_device{}());
+      std::shuffle(m_Array.begin(), m_Array.end(), g);
+      m_Data->find(u8"Unused")->second.assignA(m_Array.begin(), m_Array.end());
+    }
+
     m_Data->toFile(m_DataPath);
     return m_TotalDownload;
   }

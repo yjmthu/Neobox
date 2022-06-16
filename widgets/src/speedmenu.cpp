@@ -176,16 +176,16 @@ void SpeedMenu::SetupSettingMenu() {
   m_pToolsMenu->addAction("截图识字");
   m_pToolsMenu->addAction("单词翻译");
   m_pToolsMenu->addAction("句段翻译");
-  connect(m_pToolsMenu->addAction("测试接口"), &QAction::triggered, this, [](){
-      QDialog dlg;
-      dlg.setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
-      dlg.setAttribute(Qt::WA_TranslucentBackground);
-      QFrame frame(&dlg);
-      frame.setGeometry(0,0,dlg.width(), dlg.height());
-      dlg.setStyleSheet("background-color:rgba(100,100,100,100);");
-      KWindowEffects::enableBlurBehind(dlg.winId());
-      dlg.exec();
-  });
+  // connect(m_pToolsMenu->addAction("测试接口"), &QAction::triggered, this, [](){
+  //     QDialog dlg;
+  //     dlg.setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
+  //     dlg.setAttribute(Qt::WA_TranslucentBackground);
+  //     QFrame frame(&dlg);
+  //     frame.setGeometry(0,0,dlg.width(), dlg.height());
+  //     dlg.setStyleSheet("background-color:rgba(100,100,100,100);");
+  //     KWindowEffects::enableBlurBehind(dlg.winId());
+  //     dlg.exec();
+  // });
 
   ptr = m_pSettingMenu->addAction("关于软件");
   ptr->setMenu(m_pAboutMenu);
