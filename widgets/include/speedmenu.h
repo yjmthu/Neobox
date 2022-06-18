@@ -1,27 +1,33 @@
 #ifndef SPEEDMENU_H
 #define SPEEDMENU_H
 
-#include <QMenu>
+#include <QObject>
 
-class SpeedMenu : public QMenu {
+class SpeedMenu : public QObject {
   Q_OBJECT
+  Q_PROPERTY(bool appAutoStart READ appAutoStart)
+
  public:
-  void showEvent(QShowEvent* event) override;
-  explicit SpeedMenu(QWidget* parent = nullptr);
+  explicit SpeedMenu();
   ~SpeedMenu();
+  Q_INVOKABLE bool toolOcrEnableScreenShotCut(const QString& keys, bool enable);
+  Q_INVOKABLE static void appShutdownComputer();
+  Q_INVOKABLE static void appRestartComputer();
+  Q_INVOKABLE static void appOpenDir(const QString& path);
+  Q_INVOKABLE void wallpaperGetNext();
+  Q_INVOKABLE void wallpaperGetPrev();
+  Q_INVOKABLE void wallpaperRemoveCurrent();
 
  private:
-  QAction* m_Actions;
-  QAction* m_AdditionalAction;
-  QAction* m_AutoStartApp;
-  void SetupUi();
-  void SetupConntects();
-  void SetupSettingMenu();
-  void SetupImageType(QMenu* parent, QAction* ac);
-  void SetAdditionalMenu();
+  class Wallpaper* m_Wallpaper;
+
+ private:
+  bool appAutoStart();
+
+ public slots:
+  Q_INVOKABLE void toolOcrGetScreenShotCut();
+
  private slots:
-  void ScreenShot();
-  void UpdateStyle();
 };
 
 #endif  // SPEEDMENU_H

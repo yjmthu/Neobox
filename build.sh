@@ -10,6 +10,10 @@ if [ ! -f "CMakeLists.txt" ]; then
     exit 1
 fi
 
+if [ ! -f ".tmp.txt" ]; then
+    echo "$CMAKE_BUILD_TYPE" > .tmp.txt
+fi
+
 if [ $# -gt 0 ]; then
     for ((i=1; i<$#; i+=1)); do
         echo $($i)
@@ -26,6 +30,7 @@ if [ $# -gt 0 ]; then
         echo "Debug Build."
     fi
 else
+    CMAKE_BUILD_TYPE="$(cat .tmp.txt)"
     echo "Build Only."
 fi
 
@@ -45,8 +50,8 @@ if [ "$(expr substr $(uname -s) 1 5)" = "Linux" ]; then
     echo "================== linux ===================="
     cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -G Ninja -S ..
     ninja
-    if [ -f "${BUILD_DIR}/widgets/widgets" ]; then
-        ${BUILD_DIR}/widgets/widgets &
+    if [ -f "${BUILD_DIR}/widgets/Neobox" ]; then
+        ${BUILD_DIR}/widgets/Neobox &
     fi
 else
     echo "================== windows =================="
@@ -58,7 +63,7 @@ else
     VS_NOW="\"${VS_2022_X64}\" & set CC=cl & set CXX=cl & cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -G Ninja -S .. & ninja"
     echo ${VS_NOW}
     cmd.exe /c "${VS_NOW}"
-    if [ -f "${BUILD_DIR}/widgets/widgets.exe" ]; then
-        ${BUILD_DIR}/widgets/widgets.exe &
+    if [ -f "${BUILD_DIR}/widgets/Neobox.exe" ]; then
+        ${BUILD_DIR}/widgets/Neobox.exe &
     fi
 fi

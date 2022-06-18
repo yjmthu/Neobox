@@ -51,7 +51,7 @@ class Wallhaven : public WallBase {
         return ptr;
       } else {
         std::vector<std::u8string> temp;
-        for (auto&i : val.getArray()) {
+        for (auto& i : val.getArray()) {
           temp.emplace_back(std::move(i.getValueString()));
         }
         std::mt19937 g(std::random_device{}());

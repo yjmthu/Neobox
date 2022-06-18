@@ -1,7 +1,7 @@
-﻿#include "apiclass.hpp"
-
+﻿#include <numeric>
 #include <set>
-#include <numeric>
+
+#include "apiclass.hpp"
 
 namespace WallClass {
 
@@ -34,8 +34,7 @@ class Native : public WallBase {
       auto pf = std::uniform_int_distribution<size_t>(0, m_Toltal - 1);
       for (int i = 0; i < 50; ++i) {
         auto temp = pf(g);
-        while (already.find(temp) != already.end())
-          temp = pf(g);
+        while (already.find(temp) != already.end()) temp = pf(g);
         already.insert(temp);
         numbers.push_back(temp);
       }
@@ -72,8 +71,7 @@ class Native : public WallBase {
       m_FileList.pop_back();
     }
 
-    if (m_FileList.empty() && !GetFileList())
-      return ptr;
+    if (m_FileList.empty() && !GetFileList()) return ptr;
 
     ptr->push_back(std::move(m_FileList.back()));
     m_FileList.pop_back();

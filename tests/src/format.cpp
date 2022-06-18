@@ -18,7 +18,7 @@ int main() {
     return 0;
   }
   auto _isImageFile = [](const std::filesystem::path& _path) {
-    const std::regex _pattern("^.*\\.(cpp|c|h|hpp|cc)$");
+    const std::regex _pattern("^.*\\.(cpp|c|h|hpp|cc|qml)$");
     return std::regex_match(_path.string(), _pattern);
   };
   auto _isInWhiteList = [](const std::filesystem::path& _path) {

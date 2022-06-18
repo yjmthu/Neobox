@@ -19,14 +19,13 @@ endif()
 
 include_directories(include)
 
-add_executable(widgets WIN32
-    include/mainloop.h
+add_executable(Neobox WIN32
     include/speedapp.h
     include/speedbox.h
     include/speedmenu.h
     include/pathdialog.h
     include/screenfetch.h
-    src/mainloop.cpp
+    src/main.cpp
     src/speedapp.cpp
     src/speedbox.cpp
     src/speedmenu.cpp
@@ -35,18 +34,18 @@ add_executable(widgets WIN32
     resources.qrc
 )
 
-target_link_libraries(widgets PRIVATE
+target_link_libraries(Neobox PRIVATE
     3rd_qxtglobalshortcut
     core
     wallpaper
     yjson
-    Qt5::Widgets
-    Qt5::Quick
+    Qt::Widgets
+    Qt::Quick
     translate
 )
 
 if (UNIX)
-    target_link_libraries(widgets PRIVATE
+  target_link_libraries(Neobox PRIVATE
         pthread
         # KF5::CoreAddons
         # KF5::I18n

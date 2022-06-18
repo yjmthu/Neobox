@@ -9,5 +9,8 @@
         <file>jsons/Setting.json</file>
         <file>styles/MenuStyle.css</file>
         <file>qmls/FloatingWindow.qml</file>
+        <file>qmls/MainMenu.qml</file>
+        <file>qmls/SystemTray.qml</file>
+        <file>qmls/NeoMenuItem.qml</file>
     </qresource>
 </RCC>

@@ -7,9 +7,6 @@
 #include <text.h>
 #include <wallpaper.h>
 #include <yjson.h>
-#include <appcode.hpp>
-#include <regex>
-#include <thread>
 
 #include <QActionGroup>
 #include <QColorDialog>
@@ -33,6 +30,9 @@
 #include <QUrl>
 #include <QVBoxLayout>
 #include <QtQuick>
+#include <appcode.hpp>
+#include <regex>
+#include <thread>
 
 // #include <KWindowEffects>
 
@@ -41,9 +41,18 @@ extern const char* m_szClobalSettingFile;
 
 using namespace std::literals;
 
-void SpeedMenu::showEvent(QShowEvent* event) {
+SpeedMenu::SpeedMenu() : QObject(nullptr) {
+  auto picHome = QDir::toNativeSeparators(QStandardPaths::writableLocation(
+                                              QStandardPaths::PicturesLocation))
+                     .toUtf8();
+  m_Wallpaper = new Wallpaper(std::u8string(picHome.begin(), picHome.end()));
+}
+
+SpeedMenu::~SpeedMenu() { delete m_Wallpaper; }
+
+bool SpeedMenu::appAutoStart() {
 #ifdef WIN32
-  m_AutoStartApp->setChecked(
+  return
       !QSettings(QStringLiteral(
                      "HKEY_CURRENT_"
                      "USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"),
@@ -56,95 +65,69 @@ void SpeedMenu::showEvent(QShowEvent* event) {
       QStandardPaths::writableLocation(QStandardPaths::HomeLocation) +
       "/.config/autostart/Neobox.desktop";
   if (!QFile::exists(m_AutoStartFile)) {
-    m_AutoStartApp->setChecked(false);
+    return false;
   } else {
     QSettings m_Setting(m_AutoStartFile, QSettings::IniFormat);
     m_Setting.beginGroup("Desktop Entry");
     QString str = m_Setting.value("Exec", "null").toString();
-    m_AutoStartApp->setChecked(str.indexOf(qApp->applicationFilePath()) != -1);
     m_Setting.endGroup();
+    return str.indexOf(qApp->applicationFilePath()) != -1;
   }
 #endif
-  if (event) event->accept();
 }
 
-SpeedMenu::SpeedMenu(QWidget* parent)
-    : QMenu(parent), m_Actions(new QAction[9]) {
-  SetupUi();
-  SetupConntects();
-}
-
-SpeedMenu::~SpeedMenu() { delete[] m_Actions; }
-
-void SpeedMenu::SetupUi() {
-  constexpr char8_t lst[9][13] = {u8"软件设置", u8"文字识别", u8"上一张图",
-                                  u8"下一张图", u8"不看此图", u8"打开目录",
-                                  u8"快速关机", u8"快捷重启", u8"本次退出"};
-  for (int i = 0; i < 9; ++i) {
-    m_Actions[i].setText(
-        QString::fromUtf8(reinterpret_cast<const char*>(lst[i]), 12));
-    addAction(m_Actions + i);
-  }
-  SetupSettingMenu();
-  UpdateStyle();
-}
-
-void SpeedMenu::ScreenShot() {
+void SpeedMenu::toolOcrGetScreenShotCut() {
   ScreenFetch getscreen;
   getscreen.exec();
   void* image = getscreen.m_Picture;
   if (image) (new TextDlg(image))->show();
 }
 
-void SpeedMenu::UpdateStyle() {
-  const auto styleFilePath{QStringLiteral("MenuStyle.css")};
-  if (!QFile::exists(styleFilePath)) {
-    QFile::copy(":/styles/MenuStyle.css", styleFilePath);
-    QFile::setPermissions(styleFilePath, QFileDevice::ReadUser);
-  }
-  QFile _file(styleFilePath);
-  _file.open(QIODevice::ReadOnly);
-  if (!_file.isOpen()) return;
-  setStyleSheet(QString::fromUtf8(_file.readAll()));
-  _file.close();
+void SpeedMenu::appShutdownComputer() {
+#ifdef WIN32
+  QTimer::singleShot(500, std::bind(::system, "shutdown -s -t 0"));
+#else
+  QTimer::singleShot(500, std::bind(::system, "shutdown -h now"));
+#endif
 }
 
-void SpeedMenu::SetupConntects() {
-  connect(m_Actions + 1, &QAction::triggered, this, &SpeedMenu::ScreenShot);
-
-  QxtGlobalShortcut* shotCut = new QxtGlobalShortcut(this);
-  if (shotCut->setShortcut(QKeySequence("Shift+A"))) {
-    connect(shotCut, &QxtGlobalShortcut::activated, this,
-            &SpeedMenu::ScreenShot);
-  } else {
-    std::cout << "Can't regist Shift+A\n";
-  }
-
-  connect(m_Actions + 2, &QAction::triggered, qApp,
-          std::bind(&Wallpaper::SetSlot, m_VarBox->m_Wallpaper, -1));
-  connect(m_Actions + 3, &QAction::triggered, qApp,
-          std::bind(&Wallpaper::SetSlot, m_VarBox->m_Wallpaper, 1));
-  connect(m_Actions + 4, &QAction::triggered, qApp,
-          std::bind(&Wallpaper::SetSlot, m_VarBox->m_Wallpaper, 0));
-  connect(m_Actions + 5, &QAction::triggered, qApp,
-          std::bind(&QDesktopServices::openUrl,
-                    QUrl::fromLocalFile(qApp->applicationDirPath())));
-  connect(m_Actions + 6, &QAction::triggered, this, []() {
+void SpeedMenu::appRestartComputer() {
 #ifdef WIN32
-    QTimer::singleShot(500, std::bind(::system, "shutdown -s -t 0"));
+  QTimer::singleShot(500, std::bind(::system, "shutdown -r -t 0"));
 #else
-        QTimer::singleShot(500, std::bind(::system, "shutdown -h now"));
+  QTimer::singleShot(500, std::bind(::system, "shutdown -r now"));
 #endif
-  });
-  connect(m_Actions + 7, &QAction::triggered, this, [](){
-#ifdef WIN32
-    QTimer::singleShot(500, std::bind(::system, "shutdown -r -t 0"));
-#else
-        QTimer::singleShot(500, std::bind(::system, "shutdown -r now"));
-#endif
-  });
-  connect(m_Actions + 8, &QAction::triggered, qApp, &QApplication::quit);
 }
+
+void SpeedMenu::appOpenDir(const QString& path) {
+  QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+}
+
+void SpeedMenu::wallpaperGetNext() { m_Wallpaper->SetSlot(1); }
+
+void SpeedMenu::wallpaperGetPrev() { m_Wallpaper->SetSlot(-1); }
+
+void SpeedMenu::wallpaperRemoveCurrent() { m_Wallpaper->SetSlot(0); }
+
+bool SpeedMenu::toolOcrEnableScreenShotCut(const QString& keys, bool enable) {
+  QxtGlobalShortcut* shotCut = nullptr;
+  if (enable) {
+    if (shotCut) return true;
+    QxtGlobalShortcut* shotCut = new QxtGlobalShortcut(this);
+    if (shotCut->setShortcut(QKeySequence(keys))) {
+      connect(shotCut, &QxtGlobalShortcut::activated, this,
+              &SpeedMenu::toolOcrGetScreenShotCut);
+      return true;
+    } else {
+      std::cout << "Can't regist Shift+A\n";
+    }
+  }
+  delete shotCut;
+  shotCut = nullptr;
+  return false;
+}
+
+#if 0
 
 void SpeedMenu::SetupSettingMenu() {
   auto& m_Setting = m_GlobalSetting->find(u8"Wallpaper")->second;
@@ -724,3 +707,4 @@ void SpeedMenu::SetAdditionalMenu() {
       break;
   }
 }
+#endif

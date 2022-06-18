@@ -1,7 +1,6 @@
 #ifndef SPEEDAPP_H
 #define SPEEDAPP_H
 
-#include <QApplication>
 #include <QObject>
 
 class VarBox : public QObject {
@@ -9,18 +8,11 @@ class VarBox : public QObject {
  public:
   VarBox();
   ~VarBox();
-  class Wallpaper* m_Wallpaper;
-  class QQuickView* m_SpeedBox;
-  class QSystemTrayIcon* m_Tray;
-  class SpeedMenu* m_Menu;
-  class Translater* m_Translater;
 
  private:
-  class QTimer* m_Timer;
-  friend class SpeedMenu;
-  void GetSetting();
+  void LoadSettings();
   void LoadFonts();
-  void GetSpeedBox();
+  void LoadQmlFiles();
 };
 
 extern VarBox* m_VarBox;

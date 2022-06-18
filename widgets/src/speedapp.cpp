@@ -3,18 +3,18 @@
 #include <translater.h>
 #include <wallpaper.h>
 #include <yjson.h>
-#include <appcode.hpp>
 
+#include <QBitmap>
 #include <QDir>
 #include <QFontDatabase>
 #include <QMessageBox>
+#include <QQmlContext>
+#include <QQmlEngine>
+#include <QQuickView>
 #include <QStandardPaths>
 #include <QSystemTrayIcon>
 #include <QTimer>
-#include <QQuickView>
-#include <QQmlEngine>
-#include <QQmlContext>
-#include <QBitmap>
+#include <appcode.hpp>
 #include <filesystem>
 
 #include "speedbox.h"
@@ -25,51 +25,26 @@ extern std::unique_ptr<YJson> m_GlobalSetting;
 extern const char* m_szClobalSettingFile;
 
 inline void MessageBox(const std::u8string& msg) {
-  QString str(
-      QString::fromUtf8(reinterpret_cast<const char*>(msg.data()), 
-      static_cast<int>(msg.size())));
+  QString str(QString::fromUtf8(reinterpret_cast<const char*>(msg.data()),
+                                static_cast<int>(msg.size())));
   QMessageBox::information(nullptr, "Notice", str);
 }
 
-VarBox::VarBox() : QObject(), m_SpeedBox(nullptr) {
+VarBox::VarBox() : QObject() {
   m_VarBox = this;
   LoadFonts();
   QDir dir(QStandardPaths::writableLocation(QStandardPaths::HomeLocation));
   constexpr char relPath[] = ".config/Neobox";
   if (dir.exists(relPath) || dir.mkpath(relPath)) dir.cd(relPath);
   QDir::setCurrent(dir.absolutePath());
-  auto picHome = QDir::toNativeSeparators(QStandardPaths::writableLocation(
-                                              QStandardPaths::PicturesLocation))
-                     .toUtf8();
-  GetSetting();
-  m_Tray = new QSystemTrayIcon;
-  m_Timer = new QTimer;
-  m_Timer->setSingleShot(true);
-  m_Wallpaper = new Wallpaper(std::u8string(picHome.begin(), picHome.end()));
-  GetSpeedBox();
-  m_Menu = new SpeedMenu;  // Must before SpeedBox;
-  m_Menu->showEvent(nullptr);
-  m_Tray->setContextMenu(m_Menu);
-  m_Tray->setIcon(QIcon(QStringLiteral(":/icons/speedbox.ico")));
-  m_Tray->show();
-  if (m_GlobalSetting->find(u8"FormGlobal")
-          ->second[u8"ShowForm"]
-          .second.isTrue())
-    m_SpeedBox->show();
-  m_Translater = new Translater;
-  QObject::connect(m_Tray, &QSystemTrayIcon::activated, m_Translater,
-                   &Translater::IntelligentShow);
+  LoadSettings();
+  LoadQmlFiles();
 }
 
 VarBox::~VarBox() {
-  delete m_Translater;
-  delete m_Menu;
-  delete m_SpeedBox;
-  delete m_Wallpaper;
-  delete m_Tray;
 }
 
-void VarBox::GetSetting() {
+void VarBox::LoadSettings() {
   if (!std::filesystem::exists(m_szClobalSettingFile)) {
     QFile::copy(":/jsons/Setting.json", m_szClobalSettingFile);
     QFile::setPermissions(m_szClobalSettingFile,
@@ -91,24 +66,28 @@ void VarBox::LoadFonts() {
       QStringLiteral(":/fonts/Carattere-Regular-small.ttf"));
 }
 
+void VarBox::LoadQmlFiles() {
+  QString prefix(":/");
+  if (!std::filesystem::exists("qmls")) {
+    std::filesystem::create_directory("qmls");
+  }
+  auto lst = { "qmls/FloatingWindow.qml", "qmls/MainMenu.qml", "qmls/NeoMenuItem.qml", "qmls/SystemTray.qml" };
+  for (const auto& i: lst) {
+    if (!QFile::exists(i)) {
+      QFile::copy(prefix + i, i);
+      QFile::setPermissions(i, QFileDevice::ReadUser);
+    }
+  }
+}
 
-void VarBox::GetSpeedBox()
-{
-  qmlRegisterType<SpeedBox>("MySpeedBox", 1, 0, "SpeedBox");
+#if 0
+void VarBox::GetSpeedBox() {
+  qmlRegisterType<SpeedBox>("Neobox", 1, 0, "SpeedBox");
+  qmlRegisterType<SpeedMenu>("Neobox", 1, 0, "SpeedMenu");
   m_SpeedBox = new QQuickView;
   m_SpeedBox->rootContext()->setContextProperty("mainwindow", m_SpeedBox);
-  m_SpeedBox->setFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
-  m_SpeedBox->setColor(QColor(Qt::transparent));
-  m_SpeedBox->setResizeMode(QQuickView::SizeRootObjectToView);
-  m_SpeedBox->setSource(QUrl(QStringLiteral("qrc:/qmls/FloatingWindow.qml")));
-  // m_SpeedBox->setSource(QUrl(QStringLiteral("FloatingWindow.qml")));
-  m_SpeedBox->setCursor(Qt::PointingHandCursor);
-  connect(m_SpeedBox->engine(), &QQmlEngine::quit, this, [](){
-      qApp->exit(static_cast<int>(
-                     ExitCode::RETCODE_RESTART));
-  });
   // m_SpeedBox->setAcceptDrops(true);
-  
-  m_SpeedBox->show();
 
+  m_SpeedBox->show();
 }
+#endif

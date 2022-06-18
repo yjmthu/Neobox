@@ -49,9 +49,9 @@ TextDlg::TextDlg(void* image)
   btTransWord->setText("词译");
   QPushButton* btTransText = new QPushButton(this);
   btTransText->setText("文译");
-  connect(btTransText, &QPushButton::clicked, this, [this]() {
-    m_VarBox->m_Translater->Translate(m_TextEdit->toPlainText());
-  });
+  // connect(btTransText, &QPushButton::clicked, this, [this]() {
+  //   m_VarBox->m_Translater->Translate(m_TextEdit->toPlainText());
+  // });
   auto hbx = new QHBoxLayout;
   hbx->addWidget(btCut);
   hbx->addWidget(btCopy);

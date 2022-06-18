@@ -9,7 +9,7 @@ include_directories(include)
 
 if(UNIX)
     find_package(Qt5 COMPONENTS Core Widgets X11Extras REQUIRED)
-    set(EXTRE_SRC_FILES
+    set(EXTRE_SRC_FILES 
         include/x11info.h
         src/qxtglobalshortcut_x11.cpp
         src/qxtwindowsystem_x11.cpp

@@ -10,38 +10,28 @@
 #include "speedapp.h"
 #include "speedmenu.h"
 
-SpeedBox::SpeedBox()
-    : QObject(nullptr)
-    , m_NetSpeedHelper(new NetSpeedHelper)
-{
-}
+SpeedBox::SpeedBox(QObject* parent) : QObject(parent), m_NetSpeedHelper(new NetSpeedHelper) {}
 
-SpeedBox::~SpeedBox() {
-  delete m_NetSpeedHelper;
-}
+SpeedBox::~SpeedBox() { delete m_NetSpeedHelper; }
 
 void SpeedBox::updateInfo() {
   const char* li[] = {"MemUseage", "NetUpSpeed", "NetDownSpeed"};
   m_NetSpeedHelper->GetSysInfo();
-  QObject *label = nullptr;
-  for (size_t i=0; i<3; ++i) {
-    label = m_VarBox->m_SpeedBox->findChild<QObject*>(li[i]);
-    label->setProperty("text", QString::fromUtf8(
-      reinterpret_cast<const char*>(m_NetSpeedHelper->m_SysInfo[i].data()),
-      static_cast<int>(m_NetSpeedHelper->m_SysInfo[i].size())));
+  QObject* label = nullptr;
+  for (size_t i = 0; i < 3; ++i) {
+    label = parent()->findChild<QObject*>(li[i]);
+    label->setProperty(
+        "text", QString::fromUtf8(
+                    reinterpret_cast<const char*>(
+                        m_NetSpeedHelper->m_SysInfo[i].data()),
+                    static_cast<int>(m_NetSpeedHelper->m_SysInfo[i].size())));
   }
 }
 
-void SpeedBox::showMenu(int x, int y)
-{
-  m_VarBox->m_Menu->popup(QPoint(x, y));
-}
-
-void SpeedBox::setRoundRect(int x, int y, int w, int h, int r, bool set)
-{
+void SpeedBox::setRoundRect(int x, int y, int w, int h, int r, bool set) {
 #ifdef __linux__
   if (!set) {
-    KWindowEffects::enableBlurBehind(m_VarBox->m_SpeedBox, false);
+    KWindowEffects::enableBlurBehind(qobject_cast<QWindow*>(parent()->parent()), false);
     return;
   }
   QRegion region;
@@ -50,7 +40,7 @@ void SpeedBox::setRoundRect(int x, int y, int w, int h, int r, bool set)
   region += rect.adjusted(0, r, 0, -r);
 
   // top left
-  QRect corner(rect.topLeft(), QSize(r*2, r*2));
+  QRect corner(rect.topLeft(), QSize(r * 2, r * 2));
   region += QRegion(corner, QRegion::Ellipse);
 
   // top right
@@ -65,6 +55,6 @@ void SpeedBox::setRoundRect(int x, int y, int w, int h, int r, bool set)
   corner.moveBottomRight(rect.bottomRight());
   region += QRegion(corner, QRegion::Ellipse);
 
-  KWindowEffects::enableBlurBehind(m_VarBox->m_SpeedBox, true, region);
+  KWindowEffects::enableBlurBehind(qobject_cast<QWindow*>(parent()->parent()), true, region);
 #endif
 }
