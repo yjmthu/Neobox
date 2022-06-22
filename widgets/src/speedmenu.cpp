@@ -76,6 +76,93 @@ bool SpeedMenu::appAutoStart() {
 #endif
 }
 
+void SpeedMenu::appSetAutoStart(bool start) {
+
+#ifdef WIN32
+  QSettings reg(
+      QStringLiteral(
+          "HKEY_CURRENT_"
+          "USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"),
+      QSettings::NativeFormat);
+  if (checked)
+    reg.setValue("Neobox",
+                 QDir::toNativeSeparators(qApp->applicationFilePath()));
+  else
+    reg.remove("Neobox");
+#else
+  QString configLocation = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + "/.config";
+  std::filesystem::path desktopFolderName = (configLocation + "/autostart").toStdU16String();
+  if (!std::filesystem::exists(desktopFolderName))
+    std::filesystem::create_directory(desktopFolderName);
+  QString iconFileName = configLocation + "/Neobox/Neobox.ico";
+  if (start) {
+      if (!QFile::exists(iconFileName)) {
+          QFile::copy(":/icons/speedbox.ico", iconFileName);
+          QFile::setPermissions(iconFileName, QFileDevice::ReadUser);
+      }
+      std::ofstream file(desktopFolderName / "Neobox.desktop"s, std::ios::binary | std::ios::out);
+      file << "[Desktop Entry]"sv << std::endl
+           << "Name=Neobox" << std::endl
+           << "Comment=A powerful wallpaper tool." << std::endl
+           << "Icon=" << iconFileName.toStdString() << std::endl
+           << "Exec=sh -c \"(sleep 3 && exec \'"
+           << qApp->applicationFilePath().toStdString() << "\' -b)\"" << std::endl
+           << "Categories=System" << std::endl
+           << "Terminal=false" << std::endl
+           << "Type=Application" << std::endl;
+      file.close();
+  } else if (std::filesystem::exists(desktopFolderName /= "Neobox.desktop"s)) {
+      std::filesystem::remove(desktopFolderName);
+  }
+#endif  // WIN32
+  emit appAutoStartChanged();
+}
+
+int SpeedMenu::wallpaperType() const {
+  return m_Wallpaper->GetImageType();
+}
+
+void SpeedMenu::wallpaperSetType(int type) {
+  if (type == m_Wallpaper->GetImageType()) return;
+  emit wallpaperTypeChanged(m_Wallpaper->SetImageType(type));
+}
+
+int SpeedMenu::wallpaperTimeInterval() const {
+  return m_Wallpaper->GetTimeInterval();
+}
+
+void SpeedMenu::wallpaperSetTimeInterval(int minute) {
+  m_Wallpaper->SetTimeInterval(minute);
+  emit wallpaperTimeIntervalChanged();
+}
+
+QString SpeedMenu::wallpaperDir() const {
+  return QString::fromStdU16String(m_Wallpaper->GetImageDir().u16string());
+}
+
+void SpeedMenu::wallpaperSetDir(const QString& str) {
+  m_Wallpaper->SetCurDir(str.toStdU16String());
+  emit wallpaperDirChanged();
+}
+
+bool SpeedMenu::wallpaperAutoChange() const {
+  return m_Wallpaper->GetAutoChange();
+}
+
+void SpeedMenu::wallpaperSetAutoChange(bool val) {
+  m_Wallpaper->SetAutoChange(val);
+  emit wallpaperAutoChangeChanged();
+}
+
+bool SpeedMenu::wallpaperFirstChange() const {
+  return m_Wallpaper->GetFirstCHange();
+}
+
+void SpeedMenu::wallpaperSetFirstChange(bool val) {
+  m_Wallpaper->SetFirstChange(val);
+  emit wallpaperFirstChangeChanged();
+}
+
 void SpeedMenu::toolOcrGetScreenShotCut() {
   ScreenFetch getscreen;
   getscreen.exec();
@@ -101,6 +188,14 @@ void SpeedMenu::appRestartComputer() {
 
 void SpeedMenu::appOpenDir(const QString& path) {
   QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+}
+
+void SpeedMenu::appOpenAppDir() {
+  QDesktopServices::openUrl(QUrl::fromLocalFile(qApp->applicationDirPath()));
+}
+
+void SpeedMenu::appOpenCfgDir() {
+  QDesktopServices::openUrl(QUrl::fromLocalFile(QDir::currentPath()));
 }
 
 void SpeedMenu::wallpaperGetNext() { m_Wallpaper->SetSlot(1); }
@@ -177,9 +272,6 @@ void SpeedMenu::SetupSettingMenu() {
   m_pAboutMenu->addAction("检查更新");
 
   m_pSettingMenu->addSeparator();
-  connect(m_pSettingMenu->addAction("打开配置"), &QAction::triggered, qApp,
-          std::bind(&QDesktopServices::openUrl,
-                    QUrl::fromLocalFile(QDir::currentPath())));
   connect(
       m_pWallpaperMenu->addAction("打开路径"), &QAction::triggered, this, []() {
         QDesktopServices::openUrl(QUrl::fromLocalFile(QString::fromStdU16String(
@@ -210,43 +302,6 @@ void SpeedMenu::SetupSettingMenu() {
 
   m_AutoStartApp = m_pAppSettingMenu->addAction("开机自启");
   m_AutoStartApp->setCheckable(true);
-  connect(m_AutoStartApp, &QAction::triggered, this, [](bool checked) {
-#ifdef WIN32
-    QSettings reg(
-        QStringLiteral(
-            "HKEY_CURRENT_"
-            "USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"),
-        QSettings::NativeFormat);
-    if (checked)
-      reg.setValue("Neobox",
-                   QDir::toNativeSeparators(qApp->applicationFilePath()));
-    else
-      reg.remove("Neobox");
-#else
-        QString configLocation = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + "/.config";
-        QString desktopFileName = configLocation + "/autostart/Neobox.desktop";
-        QString iconFileName = configLocation + "/Neobox/Neobox.ico";
-        if (checked) {
-            if (!QFile::exists(iconFileName)) {
-                QFile::copy(":/icons/speedbox.ico", iconFileName);
-                QFile::setPermissions(iconFileName, QFileDevice::ReadUser);
-            }
-            std::ofstream file(desktopFileName.toLocal8Bit(), std::ios::binary | std::ios::out);
-            file << "[Desktop Entry]"sv << std::endl
-                 << "Name=Neobox" << std::endl
-                 << "Comment=A powerful wallpaper tool." << std::endl
-                 << "Icon=" << iconFileName.toStdString() << std::endl
-                 << "Exec=sh -c \"(sleep 3 && exec \'"
-                 << qApp->applicationFilePath().toStdString() << "\' -b)\"" << std::endl
-                 << "Categories=System" << std::endl
-                 << "Terminal=false" << std::endl
-                 << "Type=Application" << std::endl;
-            file.close();
-        } else {
-            QFile::remove(desktopFileName);
-        }
-#endif  // WIN32
-  });
   ptr = m_pAppSettingMenu->addAction("显示界面");
   ptr->setCheckable(true);
   ptr->setChecked(m_GlobalSetting->find(u8"FormGlobal")

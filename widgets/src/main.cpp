@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
   QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
   QApplication a(argc, argv);
-  // a.setQuitOnLastWindowClosed(false);  // 防止QFileDialog被当成最主窗口导致程序结束
+  a.setQuitOnLastWindowClosed(false);  // 防止QFileDialog被当成最主窗口导致程序结束
   VarBox box;
   QQmlApplicationEngine engine;
   qmlRegisterType<SpeedMenu>("Neobox", 1, 0, "SpeedMenu");

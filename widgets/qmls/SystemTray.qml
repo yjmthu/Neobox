@@ -5,4 +5,5 @@ SystemTrayIcon {
   visible: true
   icon.source: "qrc:/icons/speedbox.ico"
   tooltip: qsTr("犹豫是治愈恐惧的良药")
+
 }

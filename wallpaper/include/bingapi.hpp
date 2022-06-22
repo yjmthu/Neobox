@@ -18,7 +18,7 @@ class BingApi : public WallBase {
   }
   virtual ~BingApi() { delete m_Setting; }
   virtual bool LoadSetting() override {
-    if (std::filesystem::exists(m_SettingPath)) {
+    if (std::filesystem::exists(m_SettingPath) && std::filesystem::file_size(m_SettingPath)) {
       m_Setting = new YJson(m_SettingPath, YJson::UTF8);
       if (m_Setting->find(u8"today")->second.getValueString() ==
           GetToday("%Y%m%d")) {

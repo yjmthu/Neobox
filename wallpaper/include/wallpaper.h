@@ -36,15 +36,25 @@ class Wallpaper {
   bool IsNextAvailable();
   void SetSlot(int type);
   const std::filesystem::path& GetImageDir() const;
-  int GetTimeInterval() const;
+
+  bool SetImageType(int type);
+  inline int GetImageType() const { return m_ImageType; }
+  void SetFirstChange(bool val);
+  inline bool GetFirstCHange() const { return m_FirstChange; }
   void SetTimeInterval(int minute);
-  int GetImageType();
-  bool SetImageType(int index);
+  inline int GetTimeInterval() const { return m_TimeInterval; }
+  void SetAutoChange(bool val);
+  inline bool GetAutoChange() const { return m_AutoChange; }
+
   const void* GetDataByName(const char* key) const;
   static constexpr char m_szWallScript[16]{"SetWallpaper.sh"};
 
  private:
-  class YJson* const m_Setting;
+  int m_ImageType;
+  int m_TimeInterval;
+  bool m_AutoChange;
+  bool m_FirstChange;
+
   class WallBase* m_Wallpaper;
   std::queue<class WallBase*> m_Jobs;
   std::deque<std::filesystem::path> m_PrevImgs;
@@ -52,12 +62,9 @@ class Wallpaper {
   std::filesystem::path m_CurImage;
   bool m_PrevAvailable;
   bool m_NextAvailable;
-  bool m_KeepChange;
 
  public:
   static Desktop GetDesktop();
-  void SetAutoChange(bool flag);
-  void SetFirstChange(bool flag);
   void SetCurDir(const std::filesystem::path& str);
   void StartTimer(bool start);
   std::filesystem::path m_PicHomeDir;

@@ -15,17 +15,22 @@ SpeedBox::SpeedBox(QObject* parent) : QObject(parent), m_NetSpeedHelper(new NetS
 SpeedBox::~SpeedBox() { delete m_NetSpeedHelper; }
 
 void SpeedBox::updateInfo() {
-  const char* li[] = {"MemUseage", "NetUpSpeed", "NetDownSpeed"};
   m_NetSpeedHelper->GetSysInfo();
-  QObject* label = nullptr;
-  for (size_t i = 0; i < 3; ++i) {
-    label = parent()->findChild<QObject*>(li[i]);
-    label->setProperty(
-        "text", QString::fromUtf8(
-                    reinterpret_cast<const char*>(
-                        m_NetSpeedHelper->m_SysInfo[i].data()),
-                    static_cast<int>(m_NetSpeedHelper->m_SysInfo[i].size())));
-  }
+  emit memUseageChanged();
+  emit netUpSpeedChanged();
+  emit netDownSpeedChanged();
+}
+
+int SpeedBox::memUseage() const {
+  return std::get<0>(m_NetSpeedHelper->m_SysInfo);
+}
+
+double SpeedBox::netUpSpeed() const {
+  return static_cast<double>(std::get<1>(m_NetSpeedHelper->m_SysInfo));
+}
+
+double SpeedBox::netDownSpeed() const {
+  return static_cast<double>(std::get<2>(m_NetSpeedHelper->m_SysInfo));
 }
 
 void SpeedBox::setRoundRect(int x, int y, int w, int h, int r, bool set) {

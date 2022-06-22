@@ -33,7 +33,10 @@ void formatSpped(std::u8string& str, double dw) {
   str.assign(temp.begin(), temp.end());
 }
 
-NetSpeedHelper::NetSpeedHelper() : m_RecvBytes(0), m_SendBytes(0) {}
+NetSpeedHelper::NetSpeedHelper()
+  : m_SysInfo({0, 0, 0})
+  , m_RecvBytes(0),
+  m_SendBytes(0) {}
 
 #ifdef _WIN32
 
@@ -46,8 +49,9 @@ void NetSpeedHelper::SetMemInfo() {
   static char m_szMemStr[4];
   static MEMORYSTATUS ms;
   GlobalMemoryStatus(&ms);
-  sprintf(m_szMemStr, "%d", static_cast<uint16_t>(ms.dwMemoryLoad));
-  m_SysInfo[0] = reinterpret_cast<char8_t*>(m_szMemStr);
+  // sprintf(m_szMemStr, "%d", static_cast<uint16_t>(ms.dwMemoryLoad));
+  // m_SysInfo[0] = reinterpret_cast<char8_t*>(m_szMemStr);
+  std::get<0>(m_SysInfo) = ms.dwMemoryLoad;
 }
 
 void NetSpeedHelper::SetNetInfo() {
@@ -91,8 +95,8 @@ void NetSpeedHelper::SetNetInfo() {
   }
 
   if (m_last_in_bytes) {
-    formatSpped<false>(m_SysInfo[1], m_out_bytes - m_last_out_bytes);
-    formatSpped<true>(m_SysInfo[2], m_in_bytes - m_last_in_bytes);
+    std::get<1>(m_SysInfo) = m_out_bytes - m_last_out_bytes;
+    std::get<2>(m_SysInfo) = m_in_bytes - m_last_in_bytes;
   }
   m_last_out_bytes = m_out_bytes;
   m_last_in_bytes = m_in_bytes;
@@ -120,9 +124,10 @@ void NetSpeedHelper::SetMemInfo() {
     fs >> str;
   }
   fs.close();
-  std::string&& temp =
-      std::to_string(100 - static_cast<uint8_t>(ary[1] / ary[0] * 100));
-  m_SysInfo[0].assign(temp.begin(), temp.end());
+  // std::string&& temp =
+  //     std::to_string(100 - static_cast<uint8_t>(ary[1] / ary[0] * 100));
+  // m_SysInfo[0].assign(temp.begin(), temp.end());
+  std::get<0>(m_SysInfo) = 100 - static_cast<uint64_t>(ary[1] / ary[0] * 100);
 }
 
 void NetSpeedHelper::SetNetInfo() {
@@ -143,8 +148,10 @@ void NetSpeedHelper::SetNetInfo() {
   }
   fs.close();
   if (m_RecvBytes) {
-    formatSpped<false>(m_SysInfo[1], send - m_SendBytes);
-    formatSpped<true>(m_SysInfo[2], recv - m_RecvBytes);
+    // std::cout << send << ' ' << recv << '\n';
+    // std::cout << std::get<1>(m_SysInfo) << ' ' << std::get<2>(m_SysInfo) << '\n';
+    std::get<1>(m_SysInfo) = send - m_SendBytes;
+    std::get<2>(m_SysInfo) = recv - m_RecvBytes;
   }
   m_RecvBytes = recv;
   m_SendBytes = send;

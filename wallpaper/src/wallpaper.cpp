@@ -13,8 +13,6 @@
 
 extern std::unordered_set<std::filesystem::path> m_UsingFiles;
 
-extern std::unique_ptr<YJson> m_GlobalSetting;
-extern const char* m_szClobalSettingFile;
 extern void ShowMessage(const std::u8string& title, const std::u8string& text,
                         int type = 0);
 
@@ -153,33 +151,15 @@ bool Wallpaper::IsOnline() {
 }
 
 Wallpaper::Wallpaper(const std::filesystem::path& picHome)
-    : m_Setting(&m_GlobalSetting->find(u8"Wallpaper")->second),
+    : m_ImageType(-1),
+      m_TimeInterval(15),
+      m_AutoChange(false),
+      m_FirstChange(false),
       m_Wallpaper(nullptr),
       m_PrevAvailable(false),
       m_NextAvailable(true),
       m_PicHomeDir(picHome),
       m_Timer(new Timer) {
-  SetImageType(m_Setting->find(u8"ImageType")->second.getValueInt());
-  m_KeepChange = m_Setting->find(u8"AutoChange")->second.isTrue();
-  if (m_KeepChange) {
-    m_Timer->StartTimer(m_Setting->find(u8"TimeInterval")->second.getValueInt(),
-                        std::bind(&Wallpaper::SetSlot, this, 1));
-  }
-  ReadSettings();
-  if (m_Setting->find(u8"FirstChange")->second.isTrue()) {
-    WallBase::m_IsWorking = true;
-    std::thread([this]() {
-      for (int i = 0; i < 30; i++) {
-        if (IsOnline()) break;
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-      }
-      if (IsOnline()) {
-        SetNext();
-        WriteSettings();
-      }
-      WallBase::m_IsWorking = false;
-    }).detach();
-  }
 }
 
 Wallpaper::~Wallpaper() {
@@ -243,11 +223,9 @@ void Wallpaper::SetSlot(int type) {
     }
     WriteSettings();
     WallBase::m_IsWorking = false;
-    if (m_KeepChange) {
+    if (m_AutoChange) {
       m_Timer->Expire();
-      m_Timer->StartTimer(
-          m_Setting->find(u8"TimeInterval")->second.getValueInt(),
-          std::bind(&Wallpaper::SetSlot, this, 1));
+      m_Timer->StartTimer(m_TimeInterval, std::bind(&Wallpaper::SetSlot, this, 1));
     }
   }).detach();
 }
@@ -256,19 +234,12 @@ const std::filesystem::path& Wallpaper::GetImageDir() const {
   return m_Wallpaper->GetImageDir();
 }
 
-int Wallpaper::GetTimeInterval() const {
-  return m_Setting->find(u8"TimeInterval")->second.getValueInt();
-}
-
 void Wallpaper::SetTimeInterval(int minute) {
-  m_Setting->find(u8"TimeInterval")->second.setValue((double)minute);
-  m_GlobalSetting->toFile(m_szClobalSettingFile);
+  m_TimeInterval = minute;
   m_Timer->Expire();
-  if (m_KeepChange) {
-    m_Timer->Expire();
-    m_Timer->StartTimer(m_Setting->find(u8"TimeInterval")->second.getValueInt(),
-                        std::bind(&Wallpaper::SetSlot, this, 1));
-  }
+  if (!m_AutoChange) return;
+  m_Timer->Expire();
+  m_Timer->StartTimer(m_TimeInterval, std::bind(&Wallpaper::SetSlot, this, 1));
 }
 
 bool Wallpaper::SetNext() {
@@ -376,18 +347,17 @@ void Wallpaper::WriteSettings() {
 }
 
 void Wallpaper::SetAutoChange(bool flag) {
-  m_Setting->find(u8"AutoChange")->second.setValue(flag);
-  m_GlobalSetting->toFile(m_szClobalSettingFile);
   m_Timer->Expire();
-  if ((m_KeepChange = flag)) {
-    m_Timer->StartTimer(m_Setting->find(u8"TimeInterval")->second.getValueInt(),
-                        std::bind(&Wallpaper::SetSlot, this, 1));
+  if ((m_AutoChange = flag)) {
+    m_Timer->StartTimer(m_TimeInterval, std::bind(&Wallpaper::SetSlot, this, 1));
   }
 }
 
 void Wallpaper::SetFirstChange(bool flag) {
-  m_Setting->find(u8"FirstChange")->second.setValue(flag);
-  m_GlobalSetting->toFile(m_szClobalSettingFile);
+  if ((m_FirstChange = flag)) {
+    SetSlot(1);
+  } else {
+  }
 }
 
 void Wallpaper::SetCurDir(const std::filesystem::path& str) {
@@ -395,11 +365,8 @@ void Wallpaper::SetCurDir(const std::filesystem::path& str) {
   m_Wallpaper->SetCurDir(str);
 }
 
-int Wallpaper::GetImageType() {
-  return m_Setting->find(u8"ImageType")->second.getValueInt();
-}
-
 bool Wallpaper::SetImageType(int index) {
+  m_ImageType = index;
   if (WallBase::m_IsWorking) {
     m_Jobs.push(m_Wallpaper);
     m_Wallpaper = nullptr;
@@ -407,8 +374,6 @@ bool Wallpaper::SetImageType(int index) {
     delete m_Wallpaper;
   }
   m_Wallpaper = WallBase::GetNewInstance(m_PicHomeDir, index);
-  m_Setting->find(u8"ImageType")->second.setValue((int)index);
-  m_GlobalSetting->toFile(m_szClobalSettingFile);
   if (index == 1) return true;
   std::thread([this]() {
     std::this_thread::sleep_for(std::chrono::seconds(1));

@@ -15,10 +15,16 @@ Window {
   height: 42
   flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
 
+  function hideMenu() {
+    mainmenu.hide()
+  }
+
   onActiveChanged: {
-    if (!active) {
-      mainmenu.visible = false;
-    }
+    if (!active) hideMenu()
+  }
+
+  onActiveFocusItemChanged: {
+    if (!activeFocusItem) hideMenu()
   }
 
   onWidthChanged: rect.width = width
@@ -37,31 +43,46 @@ Window {
         onTriggered: Qt.quit()
       }
       MenuItem {
-        text: qsTr("Hide")
+        text: mainwindow.visible ? qsTr("Hide") : qsTr("Show")
+        onTriggered: mainwindow.visible = !mainwindow.visible
       }
     }
   }
 
   Rectangle {
-    id: rect
+    id: mainrect
     x: 0
     y: 0
-    width: parent.width
-    height: parent.height
+    width: mainwindow.width
+    height: mainwindow.height
     objectName: qsTr("rect")
     property int textindex: 0
-    color: qsTr("#9655007f")
+    color: qsTr("#33333377")
     radius: 3
 
     Text {
       id: memUseage
-      objectName: qsTr("MemUseage")
       x: 6
       y: 6
-      color: qsTr("#ffff00")
+      color: mGradient()
       font.family: qsTr("Carattere")
       font.pointSize: 20
-      text: qsTr("0")
+      text: speedBox.memUseage.toString()
+
+      function mGradient() {
+        var tmp = speedBox.memUseage;
+        if (tmp <= 10) {
+          return "#00FFFF"
+        } else if (tmp <= 40) {
+          return "#0077FF"
+        } else if (tmp <= 70) {
+          return "#FF0000"
+        } else if (tmp <= 90) {
+          return "#FF0033"
+        } else {
+          return "#FF00FF"
+        }
+      }
 
       Settings {
         fileName: qsTr("UiSetting.ini")
@@ -76,14 +97,24 @@ Window {
 
     Text {
       id: netUpSpeed
-      objectName: qsTr("NetUpSpeed")
       x: 34
       y: 4
       color: qsTr("#FAAA23")
       font.family: qsTr("Nickainley Normal")
       font.bold: true
       font.pointSize: 10
-      text: qsTr("\u2191 0.0 B")
+      text: formatSpeed()
+
+      function formatSpeed() {
+        var value = speedBox.netUpSpeed
+        var units = [ 'B', 'K', 'M', 'G', 'T', 'P', 'N' ]
+        let unit = 0
+        while (value >= 1024) {
+          value /= 1024
+          ++unit
+        }
+        return "\u2191 " + value.toFixed(1) + " " + units[unit]
+      }
 
       Settings {
         fileName: qsTr("UiSetting.ini")
@@ -98,14 +129,24 @@ Window {
 
     Text {
       id: netDownSpeed
-      objectName: qsTr("NetDownSpeed")
       x: 34
       y: 24
       color: qsTr("#8CF01E")
       font.family: qsTr("Nickainley Normal")
       font.bold: true
       font.pointSize: 10
-      text: qsTr("\u2193 0.0 B")
+      text: formatSpeed()
+
+      function formatSpeed() {
+        var value = speedBox.netDownSpeed
+        var units = [ 'B', 'K', 'M', 'G', 'T', 'P', 'N' ]
+        let unit = 0
+        while (value >= 1024) {
+          value /= 1024
+          ++unit
+        }
+        return "\u2193 " + value.toFixed(1) + " " + units[unit]
+      }
 
       Settings {
         fileName: qsTr("UiSetting.ini")
@@ -133,11 +174,11 @@ Window {
             mainmenu.y -= mainmenu.height
           if (mainmenu.x + mainmenu.width > Screen.desktopAvailableWidth)
             mainmenu.x = Screen.desktopAvailableWidth - mainmenu.width
-          mainmenu.visible = true
+          mainmenu.show()
         } else if (mouse.button === Qt.MidButton) {
           Qt.exit(1073)
         } else if (mouse.button === Qt.LeftButton) {
-          mainmenu.visible = false
+          mainmenu.hide()
         }
       }
       property point clickPos: "0,0"
@@ -146,14 +187,14 @@ Window {
       }
 
       onEntered: {
-        if (rect.x != 0) {
+        if (parent.x != 0) {
           animation.property = qsTr("x")
           animation.to = 0
-          animation.duration = rect.width
-        } else if (rect.y != 0) {
+          animation.duration = parent.width
+        } else if (parent.y != 0) {
           animation.property = qsTr("y")
           animation.to = 0
-          animation.duration = rect.height
+          animation.duration = parent.height
         } else {
           return
         }
@@ -208,7 +249,7 @@ Window {
 
     PropertyAnimation {
       id: animation
-      target: rect
+      target: mainrect
       // onFinished: {
       //     console.log("pos is (", mainwindow.x, ", ", mainwindow.y, ")")
       // }
@@ -227,40 +268,37 @@ Window {
       repeat: true
       running: true
       onTriggered: {
-          speedBox.updateInfo()
+        speedBox.updateInfo()
       }
     }
 
-    Component.onCompleted: {
-      refreshBlur()
-    }
+    onXChanged: rectSettings.refreshBlur()
+    onYChanged: rectSettings.refreshBlur()
+    onRadiusChanged: rectSettings.refreshBlur()
 
-    function refreshBlur() {
-      if (settings.blur) {
-        speedBox.setRoundRect(x, y, width, height, radius, true)
-      }
-    }
-
-    onXChanged: refreshBlur()
-    onYChanged: refreshBlur()
-    onRadiusChanged: refreshBlur()
-
-
-    Settings {
+    property Settings rectSettings: Settings {
       fileName: qsTr("UiSetting.ini")
       category: qsTr("Neobox")
 
-      property alias x: rect.x
-      property alias y: rect.y
-      property alias color: rect.color
-      property alias radius: rect.radius
+      property alias x: mainrect.x
+      property alias y: mainrect.y
+      property alias radius: mainrect.radius
+      property alias color: mainrect.color
+
+      function refreshBlur() {
+        if (settings.blur) {
+          speedBox.setRoundRect(x, y, width, height, radius, true)
+        } else {
+          speedBox.setRoundRect(0,0,0,0,0,false)
+        }
+      }
+      Component.onCompleted: {
+        refreshBlur()
+      }
     }
-
   }
-
   
-  Settings {
-    id: settings
+  property Settings settings: Settings {
     objectName: "settings"
     fileName: qsTr("UiSetting.ini")
 
@@ -269,11 +307,14 @@ Window {
     property alias y: mainwindow.y
     property alias width: mainwindow.width
     property alias height: mainwindow.height
-    property alias textindex: rect.textindex
+    property alias textindex: mainrect.textindex
 
     onBlurChanged: {
-      speedBox.setRoundRect(rect.x, rect.y, rect.width, rect.height, rect.radius, blur)
+      mainrect.rectSettings.refreshBlur()
+      // speedBox.setRoundRect(mainrect.x, mainrect.y, mainrect.width, mainrect.height, mainrect.radius, blur)
     }
   }
+
+  property alias mainrect: mainrect
 
 }
