@@ -5,12 +5,18 @@
 
 class SpeedMenu : public QObject {
   Q_OBJECT
-  Q_PROPERTY(bool appAutoStart READ appAutoStart WRITE appSetAutoStart NOTIFY appAutoStartChanged)
-  Q_PROPERTY(int wallpaperType READ wallpaperType WRITE wallpaperSetType NOTIFY wallpaperTypeChanged)
-  Q_PROPERTY(int wallpaperTimeInterval READ wallpaperTimeInterval WRITE wallpaperSetTimeInterval NOTIFY wallpaperTimeIntervalChanged)
-  Q_PROPERTY(QString wallpaperDir READ wallpaperDir WRITE wallpaperSetDir NOTIFY wallpaperDirChanged)
-  Q_PROPERTY(bool wallpaperAutoChange READ wallpaperAutoChange WRITE wallpaperSetAutoChange NOTIFY wallpaperAutoChangeChanged)
-  Q_PROPERTY(bool wallpaperFirstChange READ wallpaperFirstChange WRITE wallpaperSetFirstChange NOTIFY wallpaperFirstChangeChanged)
+  Q_PROPERTY(bool appAutoStart READ appAutoStart WRITE appSetAutoStart NOTIFY
+                 appAutoStartChanged)
+  Q_PROPERTY(int wallpaperType READ wallpaperType WRITE wallpaperSetType NOTIFY
+                 wallpaperTypeChanged)
+  Q_PROPERTY(int wallpaperTimeInterval READ wallpaperTimeInterval WRITE
+                 wallpaperSetTimeInterval NOTIFY wallpaperTimeIntervalChanged)
+  Q_PROPERTY(QString wallpaperDir READ wallpaperDir WRITE wallpaperSetDir NOTIFY
+                 wallpaperDirChanged)
+  Q_PROPERTY(bool wallpaperAutoChange READ wallpaperAutoChange WRITE
+                 wallpaperSetAutoChange NOTIFY wallpaperAutoChangeChanged)
+  Q_PROPERTY(bool wallpaperFirstChange READ wallpaperFirstChange WRITE
+                 wallpaperSetFirstChange NOTIFY wallpaperFirstChangeChanged)
 
  public:
   explicit SpeedMenu();
@@ -24,6 +30,11 @@ class SpeedMenu : public QObject {
   Q_INVOKABLE void wallpaperGetNext();
   Q_INVOKABLE void wallpaperGetPrev();
   Q_INVOKABLE void wallpaperRemoveCurrent();
+  Q_INVOKABLE void wallpaperUndoDelete();
+  Q_INVOKABLE void wallpaperClearJunk();
+  Q_INVOKABLE QString wallpaperGetCurJson() const;
+  Q_INVOKABLE void wallpaperSetCurJson(const QString& str);
+  Q_INVOKABLE void toolOcrGetScreenShotCut();
 
  private:
   class Wallpaper* m_Wallpaper;
@@ -41,9 +52,6 @@ class SpeedMenu : public QObject {
   void wallpaperSetAutoChange(bool val);
   bool wallpaperFirstChange() const;
   void wallpaperSetFirstChange(bool val);
-
- public slots:
-  Q_INVOKABLE void toolOcrGetScreenShotCut();
 
  private slots:
  signals:

@@ -12,7 +12,7 @@ class SpeedBox : public QObject {
   Q_PROPERTY(double netDownSpeed READ netDownSpeed NOTIFY netDownSpeedChanged)
 
  public:
-  SpeedBox(QObject* parent=nullptr);
+  SpeedBox(QObject* parent = nullptr);
   ~SpeedBox();
   Q_INVOKABLE void updateInfo();
   Q_INVOKABLE void setRoundRect(int x, int y, int w, int h, int r, bool set);

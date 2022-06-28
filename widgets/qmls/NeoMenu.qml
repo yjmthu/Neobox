@@ -14,6 +14,7 @@ Window {
   default property alias content: layout.children
   property alias curItem: layout.curItem
   property alias checkedChild: layout.checkedChild
+  property alias m_contentItem: control.contentItem
 
   function show() {
     visible = true

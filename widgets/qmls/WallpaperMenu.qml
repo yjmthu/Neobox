@@ -71,7 +71,7 @@ NeoMenuSuperItem {
       if (component.status === Component.Ready) {
         let obj = component.createObject(temp, {
           "minVal": 5,
-          "value": 15
+          "value": wallpaperSetting.wallpaperTimeInterval
         })
         // obj.closing.connect(
         //   function componentDestroy(object) {
@@ -79,8 +79,8 @@ NeoMenuSuperItem {
         //   }
         // )
         obj.finished.connect(
-          function (text) {
-            console.log("1234: ", text)
+          function (timeInterval) {
+            wallpaperSetting.wallpaperTimeInterval = timeInterval
           }
         )
         obj.visible = true
@@ -94,11 +94,12 @@ NeoMenuSuperItem {
   }
   NeoMenuItem {
     text: qsTr("清理垃圾")
-  }
-  NeoMenuSuperItem {
-    text: qsTr("附加设置")
-    NeoMenuItem {
-      text: qsTr("地理位置")
+    onTriggered: {
+      wallpaperMenu.speedMenu.wallpaperClearJunk();
     }
+  }
+
+  WWallhaven {
+    text: qsTr("更多设置")
   }
 }

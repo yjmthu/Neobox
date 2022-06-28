@@ -34,9 +34,7 @@ void formatSpped(std::u8string& str, double dw) {
 }
 
 NetSpeedHelper::NetSpeedHelper()
-  : m_SysInfo({0, 0, 0})
-  , m_RecvBytes(0),
-  m_SendBytes(0) {}
+    : m_SysInfo({0, 0, 0}), m_RecvBytes(0), m_SendBytes(0) {}
 
 #ifdef _WIN32
 
@@ -149,7 +147,8 @@ void NetSpeedHelper::SetNetInfo() {
   fs.close();
   if (m_RecvBytes) {
     // std::cout << send << ' ' << recv << '\n';
-    // std::cout << std::get<1>(m_SysInfo) << ' ' << std::get<2>(m_SysInfo) << '\n';
+    // std::cout << std::get<1>(m_SysInfo) << ' ' << std::get<2>(m_SysInfo) <<
+    // '\n';
     std::get<1>(m_SysInfo) = send - m_SendBytes;
     std::get<2>(m_SysInfo) = recv - m_RecvBytes;
   }

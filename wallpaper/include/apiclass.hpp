@@ -43,8 +43,8 @@ class WallBase {
   virtual ImageInfoEx GetNext() = 0;
   virtual void Dislike(const std::filesystem::path& img) = 0;
   virtual void SetCurDir(const std::filesystem::path& str) = 0;
-  virtual const void* GetDataByName(const char* key) const { return nullptr; }
-  virtual void Update(bool update) {}
+  virtual std::u8string GetJson() const;
+  virtual void SetJson(const std::u8string& str) {}
 
  private:
   friend class Wallpaper;

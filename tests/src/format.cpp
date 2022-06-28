@@ -1,3 +1,4 @@
+#include <array>
 #include <filesystem>
 #include <iostream>
 #include <queue>
@@ -18,11 +19,15 @@ int main() {
     return 0;
   }
   auto _isImageFile = [](const std::filesystem::path& _path) {
-    const std::regex _pattern("^.*\\.(cpp|c|h|hpp|cc|qml)$");
+    const std::regex _pattern("^.*\\.(cpp|c|h|hpp|cc)$");
     return std::regex_match(_path.string(), _pattern);
   };
-  auto _isInWhiteList = [](const std::filesystem::path& _path) {
-    const auto _patterns = {"^.*build$", "^.*out$", "^.*\\.git"};
+  std::array<std::string, 7> _patterns = {"build", "out",  "\\.git",  "env",
+                                          "glad",  "glfw", "freetype"};
+  for (auto& i : _patterns) {
+    i = "^.*" + i + "$";
+  }
+  auto _isInWhiteList = [&_patterns](const std::filesystem::path& _path) {
     std::string str = _path.string();
     for (auto& i : _patterns) {
       if (std::regex_match(str, std::regex(i))) return true;

@@ -27,7 +27,7 @@ Window {
             fill: parent
             margins: 2
           }
-          inputMask: "99999"
+          // inputMask: "99999"
           focus: true
           Component.onCompleted: {
             text = dialog.value.toString()
@@ -40,7 +40,9 @@ Window {
         text: qsTr("确认")
         onClicked: {
           dialog.close()
-          emit: finished(textInput.text)
+          let reault = parseInt(textInput.text)
+          if (minVal <= reault && reault <= maxVal)
+            emit: finished(textInput.text)
         }
       }
       Button {

@@ -81,8 +81,4 @@ Button {
     mainwindow.hideMenu()
     emit: triggered()
   }
-
-  Component.onCompleted: {
-    index = parent.curItem++
-  }
 }

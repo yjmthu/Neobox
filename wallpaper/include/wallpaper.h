@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <list>
 #include <memory>
 #include <queue>
 #include <stack>
@@ -16,7 +17,9 @@ typedef std::shared_ptr<std::vector<std::u8string>> ImageInfoEx;
 class Wallpaper {
  private:
   void ReadSettings();
-  void WriteSettings();
+  void WriteSettings() const;
+  void AppendBlackList(const std::filesystem::path& path);
+  void WriteBlackList() const;
 
  public:
   enum class Desktop { WIN, KDE, DDE, GNOME, XFCE, UNKNOWN };
@@ -29,6 +32,8 @@ class Wallpaper {
   static bool IsWorking();
   bool SetNext();
   bool SetPrevious();
+  bool UndoDelete();
+  bool ClearJunk();
   bool SetDropFile(const std::filesystem::path& filePath);
   inline const std::filesystem::path GetCurIamge() const { return m_CurImage; }
   bool RemoveCurrent();
@@ -59,6 +64,8 @@ class Wallpaper {
   std::queue<class WallBase*> m_Jobs;
   std::deque<std::filesystem::path> m_PrevImgs;
   std::stack<std::filesystem::path> m_NextImgs;
+  std::list<std::pair<std::filesystem::path, std::filesystem::path>>
+      m_BlackList;
   std::filesystem::path m_CurImage;
   bool m_PrevAvailable;
   bool m_NextAvailable;

@@ -18,7 +18,8 @@ class BingApi : public WallBase {
   }
   virtual ~BingApi() { delete m_Setting; }
   virtual bool LoadSetting() override {
-    if (std::filesystem::exists(m_SettingPath) && std::filesystem::file_size(m_SettingPath)) {
+    if (std::filesystem::exists(m_SettingPath) &&
+        std::filesystem::file_size(m_SettingPath)) {
       m_Setting = new YJson(m_SettingPath, YJson::UTF8);
       if (m_Setting->find(u8"today")->second.getValueString() ==
           GetToday("%Y%m%d")) {
@@ -75,17 +76,6 @@ class BingApi : public WallBase {
     m_ImageDir = str;
     m_Setting->find(u8"imgdir")->second.setText(str);
     m_Setting->toFile(m_SettingPath);
-  }
-  virtual const void* GetDataByName(const char* key) const override {
-    if (!strcmp(key, "m_Setting")) {
-      return &m_Setting;
-      // } else if (!strcmp(key, "m_Data")) {
-      //     return &m_Data;
-      // } else if (!strcmp(key, "m_ImageUrl")) {
-      //     return &m_ImageUrl;
-    } else {
-      return nullptr;
-    }
   }
 
   virtual void Update(bool) override {

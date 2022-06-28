@@ -16,7 +16,8 @@ class NetSpeedHelper {
   ~NetSpeedHelper();
 #endif
   void GetSysInfo();
-  std::tuple<int, uint64_t, uint64_t> m_SysInfo; //[3]{u8"0", u8"\u2191 0.0 B", u8"\u2193 0.0 B"};
+  std::tuple<int, uint64_t, uint64_t>
+      m_SysInfo;  //[3]{u8"0", u8"\u2191 0.0 B", u8"\u2193 0.0 B"};
   void ClearData();
 
  private:

@@ -73,18 +73,6 @@ class DirectApi : public WallBase {
     m_Setting->toFile(m_SettingPath);
   }
 
-  virtual const void* GetDataByName(const char* key) const override {
-    if (!strcmp(key, "m_Setting")) {
-      return &m_Setting;
-      // } else if (!strcmp(key, "m_Data")) {
-      //     return &m_Data;
-      // } else if (!strcmp(key, "m_ImageUrl")) {
-      //     return &m_ImageUrl;
-    } else {
-      return nullptr;
-    }
-  }
-
   virtual void Update(bool update) override {
     using namespace std::literals;
     auto& data =

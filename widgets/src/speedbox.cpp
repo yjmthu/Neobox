@@ -10,7 +10,8 @@
 #include "speedapp.h"
 #include "speedmenu.h"
 
-SpeedBox::SpeedBox(QObject* parent) : QObject(parent), m_NetSpeedHelper(new NetSpeedHelper) {}
+SpeedBox::SpeedBox(QObject* parent)
+    : QObject(parent), m_NetSpeedHelper(new NetSpeedHelper) {}
 
 SpeedBox::~SpeedBox() { delete m_NetSpeedHelper; }
 
@@ -36,7 +37,8 @@ double SpeedBox::netDownSpeed() const {
 void SpeedBox::setRoundRect(int x, int y, int w, int h, int r, bool set) {
 #ifdef __linux__
   if (!set) {
-    KWindowEffects::enableBlurBehind(qobject_cast<QWindow*>(parent()->parent()), false);
+    KWindowEffects::enableBlurBehind(qobject_cast<QWindow*>(parent()->parent()),
+                                     false);
     return;
   }
   QRegion region;
@@ -60,6 +62,7 @@ void SpeedBox::setRoundRect(int x, int y, int w, int h, int r, bool set) {
   corner.moveBottomRight(rect.bottomRight());
   region += QRegion(corner, QRegion::Ellipse);
 
-  KWindowEffects::enableBlurBehind(qobject_cast<QWindow*>(parent()->parent()), true, region);
+  KWindowEffects::enableBlurBehind(qobject_cast<QWindow*>(parent()->parent()),
+                                   true, region);
 #endif
 }

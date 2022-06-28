@@ -11,16 +11,8 @@ NeoMenu {
   NeoMenuSuperItem {
     text: qsTr("软件设置")
 
-    NeoMenuSuperItem {
-      text: qsTr("基本设置")
-
-      NeoMenuCheckableItem {
-        text: qsTr("开机自启")
-        checked: wallpaperMenu.speedMenu.appAutoStart
-        onTriggered: {
-          wallpaperMenu.speedMenu.appAutoStart = checked
-        }
-      }
+    SettingMenu {
+      id: settingMenu
     }
     UiMenu {
       id: uiMenu
@@ -28,8 +20,39 @@ NeoMenu {
     WallpaperMenu {
       id: wallpaperMenu
     }
-    NeoMenuItem {
+    NeoMenuSuperItem {
       text: qsTr("插件设置")
+      NeoMenuSuperItem {
+        text: qsTr("翻译设置")
+        property Settings settings: Settings {
+          fileName: qsTr("Neobox.ini")
+          category: qsTr("Translate")
+          property alias translateEnableGlobalShortcut: itemTranslateEnableGlobalShortcut.checked
+        }
+        NeoMenuCheckableItem {
+          id: itemTranslateEnableGlobalShortcut
+          checked: false
+          text: qsTr("注册热键")
+          property string shortcut: "Shift+A"
+          onTriggered: {
+            if (checked) {
+              if (!wallpaperMenu.speedMenu.toolOcrEnableScreenShotCut(shortcut, true))
+                checked = false
+            } else {
+              wallpaperMenu.speedMenu.toolOcrEnableScreenShotCut(shortcut, false)
+            }
+          }
+          onShortcutChanged: {
+            if (checked) wallpaperMenu.toolOcrEnableScreenShotCut(shortcut, true)
+          }
+          Component.onCompleted: {
+            wallpaperMenu.speedMenu.toolOcrEnableScreenShotCut(shortcut, true)
+          }
+          Component.onDestruction: {
+            wallpaperMenu.speedMenu.toolOcrEnableScreenShotCut(shortcut, false)
+          }
+        }
+      }
     }
     NeoMenuItem {
       text: qsTr("关于软件")
@@ -39,7 +62,7 @@ NeoMenu {
   NeoMenuItem {
     text: qsTr("文字识别")
     onTriggered: {
-      SpeedMenu.toolOcrGetScreenShotCut()
+      wallpaperMenu.speedMenu.toolOcrGetScreenShotCut()
     }
   }
 
@@ -68,7 +91,14 @@ NeoMenu {
     }
 
     NeoMenuItem {
-      text: qsTr("撤销不看")
+      text: qsTr("收藏图片")
+    }
+
+    NeoMenuItem {
+      text: qsTr("撤销删除")
+      onTriggered: {
+        wallpaperMenu.speedMenu.wallpaperUndoDelete();
+      }
     }
   }
 

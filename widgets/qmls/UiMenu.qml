@@ -34,26 +34,39 @@ NeoMenuSuperItem {
         colorDialog.visible = true
       }
     }
-    NeoMenuItem {
-      text: qsTr("不透明度")
-    }
+
     NeoMenuItem {
       text: qsTr("界面大小")
     }
     NeoMenuSuperItem {
       text: qsTr("窗口属性")
       exclusive: true
+      onCheckedChildChanged: {
+        mainwindow.settings.flag = checkedChild
+      }
       NeoMenuCheckableItem {
         text: qsTr("顶部")
+        onCheckedChanged: {
+          if (!checked) return
+          mainwindow.flags = Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
+        }
       }
       NeoMenuCheckableItem {
         text: qsTr("普通")
+        onCheckedChanged: {
+          if (!checked) return
+          mainwindow.flags = Qt.FramelessWindowHint | Qt.Tool
+        }
       }
       NeoMenuCheckableItem {
         text: qsTr("底部")
+        onCheckedChanged: {
+          if (!checked) return
+          mainwindow.flags = Qt.FramelessWindowHint | Qt.WindowStaysOnBottomHint | Qt.Tool
+        }
       }
       Component.onCompleted: {
-        checkedChild = 0;
+        checkedChild = mainwindow.settings.flag;
       }
     }
   }

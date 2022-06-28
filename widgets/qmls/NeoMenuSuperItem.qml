@@ -9,6 +9,8 @@ NeoMenuItem {
   backText: "›"
   property alias exclusive: settings.exclusive
   property alias checkedChild: settings.checkedChild
+  property alias curItem: settings.curItem
+  property alias m_contentItem: settings.m_contentItem
 
   NeoMenu {
     id: settings

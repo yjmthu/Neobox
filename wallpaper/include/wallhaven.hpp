@@ -110,27 +110,19 @@ class Wallhaven : public WallBase {
     delete m_Setting;
   }
 
-  virtual const void* GetDataByName(const char* key) const override {
-    if (!strcmp(key, "m_Setting")) {
-      return &m_Setting;
-    } else if (!strcmp(key, "m_Data")) {
-      return &m_Data;
-    } else if (!strcmp(key, "m_ImageUrl")) {
-      return &m_ImageUrl;
-    } else {
-      return nullptr;
-    }
-  }
-  virtual void Update(bool update) override {
+  virtual void SetJson(const std::u8string& str) override {
+    delete m_Setting;
+    m_Setting = new YJson(str.begin(), str.end());
     m_Setting->toFile(m_SettingPath);
-    if (update) {
-      GetApiPathUrl();
-      m_Data->find(u8"Api")->second.setText(m_ImageUrl);
-      m_Data->find(u8"Used")->second.clearA();
-      m_Data->find(u8"Unused")->second.clearA();
-      std::cout << "Need DownloadUrl\n";
-      m_NeedDownUrl = true;
-    }
+    GetApiPathUrl();
+    m_Data->find(u8"Api")->second.setText(m_ImageUrl);
+    m_Data->find(u8"Used")->second.clearA();
+    m_Data->find(u8"Unused")->second.clearA();
+    m_NeedDownUrl = true;
+  }
+
+  virtual std::u8string GetJson() const override {
+    return m_Setting->toU8String(false);
   }
 
  private:

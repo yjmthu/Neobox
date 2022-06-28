@@ -160,6 +160,7 @@ Wallpaper::Wallpaper(const std::filesystem::path& picHome)
       m_NextAvailable(true),
       m_PicHomeDir(picHome),
       m_Timer(new Timer) {
+  ReadSettings();
 }
 
 Wallpaper::~Wallpaper() {
@@ -225,7 +226,8 @@ void Wallpaper::SetSlot(int type) {
     WallBase::m_IsWorking = false;
     if (m_AutoChange) {
       m_Timer->Expire();
-      m_Timer->StartTimer(m_TimeInterval, std::bind(&Wallpaper::SetSlot, this, 1));
+      m_Timer->StartTimer(m_TimeInterval,
+                          std::bind(&Wallpaper::SetSlot, this, 1));
     }
   }).detach();
 }
@@ -281,6 +283,35 @@ bool Wallpaper::SetPrevious() {
   return false;
 }
 
+bool Wallpaper::UndoDelete() {
+  if (m_BlackList.empty()) return false;
+  auto& back = m_BlackList.back();
+  if (!back.second.has_parent_path()) {
+    m_BlackList.pop_back();
+    WriteBlackList();
+    return false;
+  }
+  auto parent_path = back.second.parent_path();
+  if (!std::filesystem::exists(parent_path)) {
+    std::filesystem::create_directories(parent_path);
+  }
+  std::filesystem::rename(back.first, back.second);
+  m_PrevImgs.push_back(m_CurImage);
+  SetWallpaper(m_CurImage = std::move(back.second));
+  m_BlackList.pop_back();
+  WriteBlackList();
+  return true;
+}
+
+bool Wallpaper::ClearJunk() {
+  constexpr char8_t junk[] = u8"junk";
+  if (std::filesystem::exists(junk)) std::filesystem::remove_all(junk);
+  if (std::filesystem::exists("Blacklist.txt"))
+    std::filesystem::remove("Blacklist.txt");
+  m_BlackList.clear();
+  return false;
+}
+
 bool Wallpaper::IsImageFile(const std::filesystem::path& filesName) {
   // BMP, PNG, GIF, JPG
   std::regex pattern(".*\\.(jpg|bmp|gif|jpeg|png)$", std::regex::icase);
@@ -302,14 +333,13 @@ bool Wallpaper::RemoveCurrent() {
   if (m_NextImgs.empty()) {
     if (!SetNext()) return false;
     if (std::filesystem::exists(m_PrevImgs.back()))
-      std::filesystem::remove(m_PrevImgs.back());
+      AppendBlackList(m_PrevImgs.back());
     m_Wallpaper->Dislike(m_PrevImgs.back());
     m_PrevImgs.pop_back();
     return true;
   } else {
     if (SetWallpaper(m_NextImgs.top())) {
-      if (std::filesystem::exists(m_CurImage))
-        std::filesystem::remove(m_CurImage);
+      if (std::filesystem::exists(m_CurImage)) AppendBlackList(m_CurImage);
       m_CurImage = m_NextImgs.top();
       m_NextImgs.pop();
       return true;
@@ -323,18 +353,27 @@ bool Wallpaper::RemoveCurrent() {
 
 void Wallpaper::ReadSettings() {
   std::ifstream file("History.txt", std::ios::in);
-  if (!file.is_open()) return;
-  std::string temp;
-  if (std::getline(file, temp)) {
-    m_CurImage = temp;
-    while (std::getline(file, temp)) {
-      m_PrevImgs.emplace_front(temp);
+  if (file.is_open()) {
+    std::string temp;
+    if (std::getline(file, temp)) {
+      m_CurImage = temp;
+      while (std::getline(file, temp)) {
+        m_PrevImgs.emplace_front(temp);
+      }
     }
+    file.close();
   }
-  file.close();
+  file.open("Blacklist.txt", std::ios::in);
+  if (file.is_open()) {
+    std::string key, val;
+    while (std::getline(file, key) && std::getline(file, val)) {
+      m_BlackList.emplace_back(key, val);
+    }
+    file.close();
+  }
 }
 
-void Wallpaper::WriteSettings() {
+void Wallpaper::WriteSettings() const {
   int m_CountLimit = 100;
   std::ofstream file("History.txt", std::ios::out);
   if (!file.is_open()) return;
@@ -346,10 +385,33 @@ void Wallpaper::WriteSettings() {
   file.close();
 }
 
+void Wallpaper::AppendBlackList(const std::filesystem::path& path) {
+  constexpr char8_t junk[] = u8"junk";
+  if (!std::filesystem::exists(junk)) {
+    std::filesystem::create_directory(junk);
+  }
+  auto& back = m_BlackList.emplace_back(junk / path.filename(), path);
+  std::filesystem::rename(back.second, back.first);
+
+  std::ofstream file("Blacklist.txt", std::ios::app);
+  if (!file.is_open()) return;
+  file << back.first.string() << std::endl << back.second.string() << std::endl;
+}
+
+void Wallpaper::WriteBlackList() const {
+  std::ofstream file("Blacklist.txt", std::ios::out);
+  if (!file.is_open()) return;
+  for (auto& i : m_BlackList) {
+    file << i.first.string() << std::endl << i.second.string() << std::endl;
+  }
+  file.close();
+}
+
 void Wallpaper::SetAutoChange(bool flag) {
   m_Timer->Expire();
   if ((m_AutoChange = flag)) {
-    m_Timer->StartTimer(m_TimeInterval, std::bind(&Wallpaper::SetSlot, this, 1));
+    m_Timer->StartTimer(m_TimeInterval,
+                        std::bind(&Wallpaper::SetSlot, this, 1));
   }
 }
 
@@ -384,10 +446,6 @@ bool Wallpaper::SetImageType(int index) {
     delete ptr;
   }).detach();
   return true;
-}
-
-const void* Wallpaper::GetDataByName(const char* key) const {
-  return m_Wallpaper->GetDataByName(key);
 }
 
 bool Wallpaper::IsWorking() { return WallBase::m_IsWorking; }

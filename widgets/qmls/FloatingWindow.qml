@@ -71,13 +71,15 @@ Window {
 
       function mGradient() {
         var tmp = speedBox.memUseage;
-        if (tmp <= 10) {
-          return "#00FFFF"
-        } else if (tmp <= 40) {
+        if (tmp < 15) {
           return "#0077FF"
-        } else if (tmp <= 70) {
+        } else if (tmp < 30) {
+          return "#00FFFF"
+        } else if (tmp < 50) {
+          return "#FFFF00"
+        } else if (tmp < 70) {
           return "#FF0000"
-        } else if (tmp <= 90) {
+        } else if (tmp < 90) {
           return "#FF0033"
         } else {
           return "#FF00FF"
@@ -113,7 +115,7 @@ Window {
           value /= 1024
           ++unit
         }
-        return "\u2191 " + value.toFixed(1) + " " + units[unit]
+        return "↑ " + value.toFixed(1) + " " + units[unit]
       }
 
       Settings {
@@ -145,7 +147,7 @@ Window {
           value /= 1024
           ++unit
         }
-        return "\u2193 " + value.toFixed(1) + " " + units[unit]
+        return "↓ " + value.toFixed(1) + " " + units[unit]
       }
 
       Settings {
@@ -181,7 +183,7 @@ Window {
           mainmenu.hide()
         }
       }
-      property point clickPos: "0,0"
+      property point clickPos: Qt.point(0, 0)
       onPressed: {
         clickPos = Qt.point(mouseX, mouseY)
       }
@@ -303,6 +305,7 @@ Window {
     fileName: qsTr("UiSetting.ini")
 
     property bool blur: true
+    property int flag: 0
     property alias x: mainwindow.x
     property alias y: mainwindow.y
     property alias width: mainwindow.width

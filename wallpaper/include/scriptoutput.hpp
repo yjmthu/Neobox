@@ -46,17 +46,6 @@ class ScriptOutput : public WallBase {
   }
   virtual void Dislike(const std::filesystem::path& img) override {}
   virtual void SetCurDir(const std::filesystem::path& str) override {}
-  virtual const void* GetDataByName(const char* key) const override {
-    if (!strcmp(key, "m_Setting")) {
-      return &m_Setting;
-    } else if (!strcmp(key, "m_Command")) {
-      return &m_Command;
-    } else if (!strcmp(key, "m_ArgList")) {
-      return &m_ArgList;
-    } else {
-      return nullptr;
-    }
-  }
 
  private:
   const char m_SettingPath[19]{"ScriptCommand.json"};

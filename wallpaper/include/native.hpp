@@ -103,13 +103,6 @@ class Native : public WallBase {
     m_Setting->toFile(m_SettingPath);
     m_FileList.clear();
   }
-  virtual const void* GetDataByName(const char* key) const override {
-    if (!strcmp(key, "m_Setting")) {
-      return &m_Setting;
-    } else {
-      return nullptr;
-    }
-  }
 
  private:
   const char m_SettingPath[12]{"Native.json"};

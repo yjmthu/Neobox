@@ -41,8 +41,7 @@ VarBox::VarBox() : QObject() {
   LoadQmlFiles();
 }
 
-VarBox::~VarBox() {
-}
+VarBox::~VarBox() {}
 
 void VarBox::LoadSettings() {
   if (!std::filesystem::exists(m_szClobalSettingFile)) {
@@ -71,8 +70,9 @@ void VarBox::LoadQmlFiles() {
   if (!std::filesystem::exists("qmls")) {
     std::filesystem::create_directory("qmls");
   }
-  auto lst = { "qmls/FloatingWindow.qml", "qmls/MainMenu.qml", "qmls/NeoMenuItem.qml", "qmls/SystemTray.qml" };
-  for (const auto& i: lst) {
+  auto lst = {"qmls/FloatingWindow.qml", "qmls/MainMenu.qml",
+              "qmls/NeoMenuItem.qml", "qmls/SystemTray.qml"};
+  for (const auto& i : lst) {
     if (!QFile::exists(i)) {
       QFile::copy(prefix + i, i);
       QFile::setPermissions(i, QFileDevice::ReadUser);
