@@ -78,10 +78,19 @@ class BingApi : public WallBase {
     m_Setting->toFile(m_SettingPath);
   }
 
-  virtual void Update(bool) override {
+  virtual void SetJson(const std::u8string& str) override {
+    delete m_Setting;
+    m_Setting = new YJson(str.begin(), str.end());
+    m_Setting->toFile(m_SettingPath);
+
+    // 等待重写
     m_Mft.swap(m_Setting->find(u8"mkt")->second.getValueString());
     WriteDefaultSetting();
     return;
+  }
+
+  virtual std::u8string GetJson() const override {
+    return m_Setting->toU8String(false);
   }
 
  private:

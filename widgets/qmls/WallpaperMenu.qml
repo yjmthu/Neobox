@@ -17,6 +17,10 @@ NeoMenuSuperItem {
     property alias wallpaperFirstChange: speedMenu.wallpaperFirstChange
     property alias wallpaperAutoChange: speedMenu.wallpaperAutoChange
     property alias wallpaperTimeInterval: speedMenu.wallpaperTimeInterval
+    Component.onCompleted: {
+      moreOptions.m_JsonText = speedMenu.wallpaperGetCurJson()
+      moreOptions.initLayout()
+    }
   }
 
   NeoMenuSuperItem {
@@ -100,6 +104,10 @@ NeoMenuSuperItem {
   }
 
   WWallhaven {
+    id: moreOptions
     text: qsTr("更多设置")
+    onUpdateJson: {
+      speedMenu.wallpaperSetCurJson(m_JsonText)
+    }
   }
 }

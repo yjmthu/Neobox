@@ -211,14 +211,6 @@ void Wallpaper::SetSlot(int type) {
       case 1:
         SetNext();
         break;
-      case 2:
-        m_Wallpaper->Update(false);
-        WallBase::m_IsWorking = false;
-        return;
-      case 3:
-        m_Wallpaper->Update(true);
-        WallBase::m_IsWorking = false;
-        return;
       default:
         break;
     }
@@ -449,3 +441,9 @@ bool Wallpaper::SetImageType(int index) {
 }
 
 bool Wallpaper::IsWorking() { return WallBase::m_IsWorking; }
+
+// attention: thread maybe working!
+
+std::u8string Wallpaper::GetJson() const { return m_Wallpaper->GetJson(); }
+
+void Wallpaper::SetJson(const std::u8string& str) { m_Wallpaper->SetJson(str); }

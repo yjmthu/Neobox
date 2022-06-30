@@ -73,7 +73,9 @@ class DirectApi : public WallBase {
     m_Setting->toFile(m_SettingPath);
   }
 
-  virtual void Update(bool update) override {
+  virtual void SetJson(const std::u8string& str) override {
+    delete m_Setting;
+    m_Setting = new YJson(str.begin(), str.end());
     using namespace std::literals;
     auto& data =
         m_Setting->find(u8"ApiData"sv)
@@ -87,6 +89,10 @@ class DirectApi : public WallBase {
                     .getValueString();
     m_ImageNameFormat = data[u8"ImageNameFormat"sv].second.getValueString();
     m_Setting->toFile(m_SettingPath);
+  }
+
+  virtual std::u8string GetJson() const override {
+    return m_Setting->toU8String(false);
   }
 
  private:

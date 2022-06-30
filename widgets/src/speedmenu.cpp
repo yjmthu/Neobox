@@ -18,8 +18,6 @@
 #include <QHeaderView>
 #include <QInputDialog>
 #include <QLabel>
-#include <QMessageBox>
-#include <QProcess>
 #include <QPushButton>
 #include <QSettings>
 #include <QShowEvent>
@@ -168,9 +166,13 @@ void SpeedMenu::wallpaperUndoDelete() { m_Wallpaper->UndoDelete(); }
 void SpeedMenu::wallpaperClearJunk() { m_Wallpaper->ClearJunk(); }
 
 QString SpeedMenu::wallpaperGetCurJson() const {
+  std::u8string&& str = m_Wallpaper->GetJson();
+  return QString::fromUtf8(reinterpret_cast<const char*>(str.data()), str.size());
 }
 
 void SpeedMenu::wallpaperSetCurJson(const QString& str) {
+  QByteArray&& array = str.toUtf8();
+  m_Wallpaper->SetJson(std::u8string(array.begin(), array.end()));
 }
 
 void SpeedMenu::toolOcrGetScreenShotCut() {

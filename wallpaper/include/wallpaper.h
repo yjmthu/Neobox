@@ -51,7 +51,9 @@ class Wallpaper {
   void SetAutoChange(bool val);
   inline bool GetAutoChange() const { return m_AutoChange; }
 
-  const void* GetDataByName(const char* key) const;
+  void SetJson(const std::u8string& str);
+  std::u8string GetJson() const;
+
   static constexpr char m_szWallScript[16]{"SetWallpaper.sh"};
 
  private:

@@ -47,6 +47,16 @@ class ScriptOutput : public WallBase {
   virtual void Dislike(const std::filesystem::path& img) override {}
   virtual void SetCurDir(const std::filesystem::path& str) override {}
 
+  virtual std::u8string GetJson() const override {
+    return m_Setting->toU8String();
+  }
+
+  virtual void SetJson(const std::u8string& str) override {
+    delete m_Setting;
+    m_Setting = new YJson(str.begin(), str.end());
+    m_Setting->toFile(m_SettingPath);
+  }
+
  private:
   const char m_SettingPath[19]{"ScriptCommand.json"};
   YJson* m_Setting;
