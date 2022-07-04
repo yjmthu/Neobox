@@ -7,6 +7,7 @@ import Neobox 1.0
 
 NeoMenu {
   id: mainmenu
+  property alias speedMenu: wallpaperMenu.speedMenu;
 
   NeoMenuSuperItem {
     text: qsTr("软件设置")

@@ -47,9 +47,6 @@ target_link_libraries(Neobox PRIVATE
 if (UNIX)
   target_link_libraries(Neobox PRIVATE
         pthread
-        # KF5::CoreAddons
-        # KF5::I18n
-        # KF5::WidgetsAddons
         KF5::WindowSystem
     )
 endif()

@@ -26,7 +26,7 @@ class BingApi : public WallBase {
         m_ImageDir = m_Setting->find(u8"imgdir")->second.getValueString();
         m_ImageNameFormat =
             m_Setting->find(u8"imgfmt")->second.getValueString();
-        m_CurImageIndex = m_Setting->find(u8"index")->second.getValueInt();
+        // m_CurImageIndex = m_Setting->find(u8"index")->second.getValueInt();
         m_Mft = m_Setting->find(u8"mkt")->second.getValueString();
         return true;
       } else {
@@ -44,13 +44,13 @@ class BingApi : public WallBase {
     path += std::string(m_Mft.begin(), m_Mft.end());
     httplib::Client clt(m_ApiUrl);
     auto res = clt.Get(path.c_str());
-    if (res->status != 200) return false;
+    if (!res || res->status != 200) return false;
     m_Setting = new YJson(res->body.begin(), res->body.end());
     m_Setting->append(GetToday("%Y%m%d"), u8"today");
     m_Setting->append(m_ImageDir, u8"imgdir");
     m_Setting->append(m_ImageNameFormat, u8"imgfmt");
     m_Setting->append(m_Mft, u8"mkt");
-    m_Setting->append(static_cast<int>(m_CurImageIndex), u8"index");
+    // m_Setting->append(static_cast<int>(m_CurImageIndex), u8"index");
     m_Setting->toFile(m_SettingPath);
     return true;
   }
@@ -64,9 +64,9 @@ class BingApi : public WallBase {
     if (++m_CurImageIndex > 7) m_CurImageIndex = 0;
     ptr->push_back(jsTemp->find(u8"urlbase")->second.getValueString() +
                    u8"_UHD.jpg");
-    m_Setting->find(u8"index")->second.setValue(
-        static_cast<int>(m_CurImageIndex));
-    m_Setting->toFile(m_SettingPath);
+    // m_Setting->find(u8"index")->second.setValue(
+    //     static_cast<int>(m_CurImageIndex));
+    // m_Setting->toFile(m_SettingPath);
     return ptr;
   }
   virtual void Dislike(const std::filesystem::path& img) override {

@@ -175,6 +175,19 @@ void SpeedMenu::wallpaperSetCurJson(const QString& str) {
   m_Wallpaper->SetJson(std::u8string(array.begin(), array.end()));
 }
 
+void SpeedMenu::wallpaperSetDrop(const QString& str) {
+  QByteArray&& array = str.toUtf8();
+  YJson urls(array.begin(), array.end());
+  std::deque<std::filesystem::path> paths;
+  for (const auto& i: urls.getArray()) {
+    auto& temp = i.getValueString();
+    std::filesystem::path path(std::u8string(temp.begin()+7, temp.end()));
+    if (Wallpaper::IsImageFile(path))
+      paths.emplace_front(std::move(path));
+  }
+  if (!paths.empty()) m_Wallpaper->SetDropFile(std::move(paths));
+}
+
 void SpeedMenu::toolOcrGetScreenShotCut() {
   ScreenFetch getscreen;
   getscreen.exec();

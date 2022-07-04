@@ -45,11 +45,11 @@ bool Wallpaper::DownloadImage(const ImageInfoEx& imageInfo) {
     auto res = clt.Get(reinterpret_cast<const char*>(imageInfo->at(2).c_str()),
                        m_fHandleData);
   label:
-    if (res->status == 200) {
+    if (res && res->status == 200) {
       m_UsingFiles.erase(imageInfo->front());
       file.close();
       return true;
-    } else if (res->status == 301 || res->status == 302) {
+    } else if (res && (res->status == 301 || res->status == 302)) {
       file.seekp(std::ios::beg);
       clt.set_follow_location(true);
       res = clt.Get(reinterpret_cast<const char*>(imageInfo->at(2).c_str()),
@@ -117,7 +117,7 @@ bool Wallpaper::SetWallpaper(const std::filesystem::path& imagePath) {
       Old deepin:
       std::string m_sCmd ("gsettings set
       com.deepin.wrap.gnome.desktop.background picture-uri \"");
-  */
+      */
       // xrandr|grep 'connected primary'|awk '{print $1}' ======> eDP
       sstr << "dbus-send --dest=com.deepin.daemon.Appearance "
               "/com/deepin/daemon/Appearance --print-reply "
@@ -135,20 +135,30 @@ bool Wallpaper::SetWallpaper(const std::filesystem::path& imagePath) {
 #endif
 }
 
+#if 0
 bool Wallpaper::IsOnline() {
 #ifdef _WIN32
   DWORD flags;
   return InternetGetConnectedState(&flags, 0);
+#elif 0
+  std::vector<std::string> result;
+  GetCmdOutput<char>("ping www.baidu.com -c 2", result);
+  if (result.size() < 2) return false;
+  auto& data = result.end()[-2];
+  auto first = data.find("received");
+  if (first == std::string::npos) return false;
+  first += 10;
+  auto last = data.find("%", first);
+  auto&& lostPacket = data.substr(first, last - first);
+  std::cout << data << std::endl << "lostPacket: " << lostPacket << std::endl;
+  return !std::atoi(lostPacket.c_str());
 #else
-  httplib::Client cli("http://www.msftconnecttest.com");
-  try {
-    auto res = cli.Get("/connecttest.txt");
-    return res->status == 200;
-  } catch (...) {
-    return false;
-  }
+  httplib::Client clt("https://www.baidu.com");
+  auto res = clt.Get("/");
+  return res && res->status == 200;
 #endif
 }
+#endif
 
 Wallpaper::Wallpaper(const std::filesystem::path& picHome)
     : m_ImageType(-1),
@@ -156,8 +166,6 @@ Wallpaper::Wallpaper(const std::filesystem::path& picHome)
       m_AutoChange(false),
       m_FirstChange(false),
       m_Wallpaper(nullptr),
-      m_PrevAvailable(false),
-      m_NextAvailable(true),
       m_PicHomeDir(picHome),
       m_Timer(new Timer) {
   ReadSettings();
@@ -176,21 +184,6 @@ Wallpaper::~Wallpaper() {
                               std::filesystem::exists)) {
     std::filesystem::remove(i);
   }
-}
-
-bool Wallpaper::IsPrevAvailable() {
-  while (!m_PrevImgs.empty()) {
-    if (std::filesystem::exists(m_PrevImgs.back())) return true;
-    m_PrevImgs.pop_back();
-  }
-  return false;
-}
-
-bool Wallpaper::IsNextAvailable() {
-  // if (setOnline)
-  return IsOnline();
-  // else
-  ;
 }
 
 void Wallpaper::SetSlot(int type) {
@@ -259,9 +252,7 @@ bool Wallpaper::SetNext() {
 }
 
 bool Wallpaper::SetPrevious() {
-  if (m_PrevImgs.empty()) {
-    m_PrevAvailable = false;
-  } else {
+  if (!m_PrevImgs.empty()) {
     if (SetWallpaper(m_PrevImgs.back())) {
       m_NextImgs.push(m_CurImage);
       m_CurImage = m_PrevImgs.back();
@@ -310,13 +301,12 @@ bool Wallpaper::IsImageFile(const std::filesystem::path& filesName) {
   return std::regex_match(filesName.string(), pattern);
 }
 
-bool Wallpaper::SetDropFile(const std::filesystem::path& filePath) {
+bool Wallpaper::SetDropFile(std::deque<std::filesystem::path>&& paths) {
   if (WallBase::m_IsWorking) return false;
-  if (!IsImageFile(filePath)) return false;
   WallBase::m_IsWorking = true;
-  if (!SetWallpaper(filePath)) return WallBase::m_IsWorking = false;
-  if (!m_CurImage.empty()) m_PrevImgs.push_back(m_CurImage);
-  m_CurImage = filePath;
+  for (auto& i: paths)
+    m_NextImgs.push(std::move(i));
+  SetNext();
   WallBase::m_IsWorking = false;
   return true;
 }

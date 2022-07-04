@@ -18,7 +18,7 @@ NeoMenuSuperItem {
     property alias wallpaperAutoChange: speedMenu.wallpaperAutoChange
     property alias wallpaperTimeInterval: speedMenu.wallpaperTimeInterval
     Component.onCompleted: {
-      moreOptions.m_JsonText = speedMenu.wallpaperGetCurJson()
+      moreOptions.m_Json = JSON.parse(speedMenu.wallpaperGetCurJson())
       moreOptions.initLayout()
     }
   }
@@ -107,7 +107,7 @@ NeoMenuSuperItem {
     id: moreOptions
     text: qsTr("更多设置")
     onUpdateJson: {
-      speedMenu.wallpaperSetCurJson(m_JsonText)
+      speedMenu.wallpaperSetCurJson(JSON.stringify(m_Json))
     }
   }
 }

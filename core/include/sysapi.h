@@ -75,14 +75,9 @@ void GetCmdOutput(const char* cmd, _Ty& result, int rows = -1) {
   } else {
     // std::cout << "cmd error" << std::endl;
   }
+  for (auto& i: result) {
+    if (!i.empty() && i.back() == '\n') i.pop_back();
+  }
 }
 #endif
 
-inline std::string GetStdString(const std::u8string& str) {
-  return std::string(str.begin(), str.end());
-}
-
-template <typename _Ty>
-inline std::u8string GetU8String(const _Ty& str) {
-  return std::u8string(str.begin(), str.end());
-}

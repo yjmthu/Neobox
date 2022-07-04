@@ -28,17 +28,14 @@ class Wallpaper {
   static bool DownloadImage(const ImageInfoEx& imageInfo);
   static bool SetWallpaper(const std::filesystem::path& imagePath);
   static bool IsImageFile(const std::filesystem::path& fileName);
-  static bool IsOnline();
   static bool IsWorking();
   bool SetNext();
   bool SetPrevious();
   bool UndoDelete();
   bool ClearJunk();
-  bool SetDropFile(const std::filesystem::path& filePath);
+  bool SetDropFile(std::deque<std::filesystem::path>&& paths);
   inline const std::filesystem::path GetCurIamge() const { return m_CurImage; }
   bool RemoveCurrent();
-  bool IsPrevAvailable();
-  bool IsNextAvailable();
   void SetSlot(int type);
   const std::filesystem::path& GetImageDir() const;
 
@@ -69,8 +66,6 @@ class Wallpaper {
   std::list<std::pair<std::filesystem::path, std::filesystem::path>>
       m_BlackList;
   std::filesystem::path m_CurImage;
-  bool m_PrevAvailable;
-  bool m_NextAvailable;
 
  public:
   static Desktop GetDesktop();

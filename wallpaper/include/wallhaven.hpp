@@ -10,13 +10,16 @@ namespace WallClass {
 
 class Wallhaven : public WallBase {
  private:
-  static void IsPngFile(std::u8string& str) {
+  static bool IsPngFile(std::u8string& str) {
+    // if (!Wallpaper::IsOnline()) return false;
     using namespace std::literals;
     httplib::Client clt("https://wallhaven.cc");
     str = u8"/api/v1/w/"s + str;
     auto res = clt.Get(reinterpret_cast<const char*>(str.c_str()));
+    if (!res || res->status != 200) return false;
     YJson js(res->body.begin(), res->body.end());
     str = js[u8"data"].second[u8"path"].second.getValueString().substr(31);
+    return true;
   }
 
  public:
@@ -60,7 +63,10 @@ class Wallhaven : public WallBase {
       }
     }
     std::u8string name = val.backA().getValueString();
-    if (name.length() == 6) IsPngFile(name);
+    if (name.length() == 6) {
+      if (!IsPngFile(name))
+        return ptr;
+    }
     ptr->emplace_back((m_ImageDir / name).u8string());
     ptr->emplace_back(u8"https://w.wallhaven.cc"sv);
     ptr->emplace_back(u8"/full/"s + name.substr(10, 2) + u8"/"s + name);
@@ -176,7 +182,7 @@ class Wallhaven : public WallBase {
                              m_ImageUrl.size()));
         url += "&page=" + std::to_string(i);
         auto res = clt.Get(url.c_str());
-        if (res->status != 200) break;
+        if (!res || res->status != 200) break;
         YJson root(res->body.begin(), res->body.end());
         YJson& data = root[u8"data"sv].second;
         for (auto& i : data.getArray()) {
@@ -199,7 +205,7 @@ class Wallhaven : public WallBase {
         std::string url(m_ImageUrl.begin(), m_ImageUrl.end());
         if (i != 1) url += "&page=" + std::to_string(i);
         auto res = clt.Get(url.c_str());
-        if (res->status != 200) break;
+        if (!res || res->status != 200) break;
         std::sregex_iterator iter(res->body.begin(), res->body.end(), pattern);
         while (iter != end) {
           const auto& i_ = iter->str(1);

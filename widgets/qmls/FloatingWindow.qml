@@ -247,6 +247,15 @@ Window {
         }
       }
 
+      DropArea {
+        anchors.fill: parent;
+        onDropped: {
+          if (drop.hasUrls) {
+            mainmenu.speedMenu.wallpaperSetDrop(JSON.stringify(drop.urls))
+          }
+        }
+      }
+
     }
 
     PropertyAnimation {
