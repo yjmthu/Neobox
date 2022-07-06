@@ -7,8 +7,17 @@ import Neobox 1.0
 
 NeoMenu {
   id: mainmenu
-  property alias speedMenu: wallpaperMenu.speedMenu;
-
+  property SpeedMenu speedMenu: SpeedMenu {
+    id: speedMenu
+    property Settings settings: Settings {
+      fileName: qsTr("Neobox.ini")
+      category: qsTr("Wallpaper")
+      property alias wallpaperType: speedMenu.wallpaperType
+      property alias wallpaperFirstChange: speedMenu.wallpaperFirstChange
+      property alias wallpaperAutoChange: speedMenu.wallpaperAutoChange
+      property alias wallpaperTimeInterval: speedMenu.wallpaperTimeInterval
+    }
+  }
   NeoMenuSuperItem {
     text: qsTr("软件设置")
 
@@ -20,6 +29,8 @@ NeoMenu {
     }
     WallpaperMenu {
       id: wallpaperMenu
+      text: qsTr("壁纸设置")
+      speedMenu: speedMenu
     }
     NeoMenuSuperItem {
       text: qsTr("插件设置")
@@ -37,20 +48,20 @@ NeoMenu {
           property string shortcut: "Shift+A"
           onTriggered: {
             if (checked) {
-              if (!wallpaperMenu.speedMenu.toolOcrEnableScreenShotCut(shortcut, true))
+              if (!speedMenu.toolOcrEnableScreenShotCut(shortcut, true))
                 checked = false
             } else {
-              wallpaperMenu.speedMenu.toolOcrEnableScreenShotCut(shortcut, false)
+              speedMenu.toolOcrEnableScreenShotCut(shortcut, false)
             }
           }
           onShortcutChanged: {
             if (checked) wallpaperMenu.toolOcrEnableScreenShotCut(shortcut, true)
           }
           Component.onCompleted: {
-            wallpaperMenu.speedMenu.toolOcrEnableScreenShotCut(shortcut, true)
+            speedMenu.toolOcrEnableScreenShotCut(shortcut, true)
           }
           Component.onDestruction: {
-            wallpaperMenu.speedMenu.toolOcrEnableScreenShotCut(shortcut, false)
+            speedMenu.toolOcrEnableScreenShotCut(shortcut, false)
           }
         }
       }
@@ -63,7 +74,7 @@ NeoMenu {
   NeoMenuItem {
     text: qsTr("文字识别")
     onTriggered: {
-      wallpaperMenu.speedMenu.toolOcrGetScreenShotCut()
+      speedMenu.toolOcrGetScreenShotCut()
     }
   }
 
@@ -73,21 +84,21 @@ NeoMenu {
     NeoMenuItem {
       text: qsTr("上一张图")
       onTriggered: {
-        wallpaperMenu.speedMenu.wallpaperGetPrev()
+        speedMenu.wallpaperGetPrev()
       }
     }
 
     NeoMenuItem {
       text: qsTr("下一张图")
       onTriggered: {
-        wallpaperMenu.speedMenu.wallpaperGetNext()
+        speedMenu.wallpaperGetNext()
       }
     }
 
     NeoMenuItem {
       text: qsTr("不看此图")
       onTriggered: {
-        wallpaperMenu.speedMenu.wallpaperRemoveCurrent()
+        speedMenu.wallpaperRemoveCurrent()
       }
     }
 
@@ -98,7 +109,7 @@ NeoMenu {
     NeoMenuItem {
       text: qsTr("撤销删除")
       onTriggered: {
-        wallpaperMenu.speedMenu.wallpaperUndoDelete();
+        speedMenu.wallpaperUndoDelete();
       }
     }
   }
@@ -109,21 +120,21 @@ NeoMenu {
     NeoMenuItem {
       text: qsTr("程序目录")
       onTriggered: {
-        wallpaperMenu.speedMenu.appOpenAppDir()
+        speedMenu.appOpenAppDir()
       }
     }
 
     NeoMenuItem {
       text: qsTr("配置目录")
       onTriggered: {
-        wallpaperMenu.speedMenu.appOpenCfgDir()
+        speedMenu.appOpenCfgDir()
       }
     }
 
     NeoMenuItem {
       text: qsTr("壁纸目录")
       onTriggered: {
-        wallpaperMenu.speedMenu.appOpenDir(wallpaperMenu.speedMenu.wallpaperDir)
+        speedMenu.appOpenDir(speedMenu.wallpaperDir)
       }
     }
   }
@@ -131,14 +142,14 @@ NeoMenu {
   NeoMenuItem {
     text: qsTr("快速关机")
     onTriggered: {
-      wallpaperMenu.speedMenu.appShutdownComputer()
+      speedMenu.appShutdownComputer()
     }
   }
 
   NeoMenuItem {
     text: qsTr("快捷重启")
     onTriggered: {
-      wallpaperMenu.speedMenu.appRestartComputer()
+      speedMenu.appRestartComputer()
     }
   }
 
@@ -147,7 +158,6 @@ NeoMenu {
     onTriggered: {
       Qt.quit()
     }
-
   }
 }
 

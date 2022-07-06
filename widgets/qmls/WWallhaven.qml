@@ -7,16 +7,9 @@ import Qt.labs.qmlmodels 1.0
 NeoMenuSuperItem {
   id: control
   property var m_Json: []
-  signal updateJson()
-  function initLayout() {
-    let paperData = m_Json.WallhavenApi
-    let tmpIndex = 0
-    m_contentItem.children = []
-    for (let item in paperData) {
-      var obj = m_component.createObject(m_contentItem, {"index": tmpIndex, "text": item, "checked": (m_Json.WallhavenCurrent === item)})
-      content.push(obj)
-      ++tmpIndex;
-    }
+  property var speedMenu
+  function updateJson() {
+    speedMenu.wallpaperSetCurJson(JSON.stringify(m_Json))
   }
   property Component m_component: Component {
     NeoMenuSuperItem {
@@ -87,4 +80,17 @@ NeoMenuSuperItem {
       }
     }
   }
+
+  function initLayout() {
+    let paperData = m_Json.WallhavenApi
+    let tmpIndex = 0
+    m_contentItem.children = []
+    for (let item in paperData) {
+      var obj = m_component.createObject(m_contentItem, {"index": tmpIndex, "text": item, "checked": (m_Json.WallhavenCurrent === item)})
+      content.push(obj)
+      ++tmpIndex;
+    }
+  }
+
+  Component.onCompleted: initLayout()
 }

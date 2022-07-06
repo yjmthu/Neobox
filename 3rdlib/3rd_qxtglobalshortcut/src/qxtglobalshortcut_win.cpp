@@ -33,10 +33,15 @@
 #include <qt_windows.h>
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-bool QxtGlobalShortcutPrivate::eventFilter(void* message) {
+bool
+QxtGlobalShortcutPrivate::eventFilter(void* message)
+{
 #else
-bool QxtGlobalShortcutPrivate::nativeEventFilter(const QByteArray& eventType,
-                                                 void* message, long* result) {
+bool
+QxtGlobalShortcutPrivate::nativeEventFilter(const QByteArray& eventType,
+                                            void* message,
+                                            long* result)
+{
   Q_UNUSED(eventType);
   Q_UNUSED(result);
 #endif
@@ -54,21 +59,28 @@ bool QxtGlobalShortcutPrivate::nativeEventFilter(const QByteArray& eventType,
 #endif
 }
 
-quint32 QxtGlobalShortcutPrivate::nativeModifiers(
-    Qt::KeyboardModifiers modifiers) {
+quint32
+QxtGlobalShortcutPrivate::nativeModifiers(Qt::KeyboardModifiers modifiers)
+{
   // MOD_ALT, MOD_CONTROL, (MOD_KEYUP), MOD_SHIFT, MOD_WIN
   quint32 native = 0;
-  if (modifiers & Qt::ShiftModifier) native |= MOD_SHIFT;
-  if (modifiers & Qt::ControlModifier) native |= MOD_CONTROL;
-  if (modifiers & Qt::AltModifier) native |= MOD_ALT;
-  if (modifiers & Qt::MetaModifier) native |= MOD_WIN;
+  if (modifiers & Qt::ShiftModifier)
+    native |= MOD_SHIFT;
+  if (modifiers & Qt::ControlModifier)
+    native |= MOD_CONTROL;
+  if (modifiers & Qt::AltModifier)
+    native |= MOD_ALT;
+  if (modifiers & Qt::MetaModifier)
+    native |= MOD_WIN;
   // TODO: resolve these?
   // if (modifiers & Qt::KeypadModifier)
   // if (modifiers & Qt::GroupSwitchModifier)
   return native;
 }
 
-quint32 QxtGlobalShortcutPrivate::nativeKeycode(Qt::Key key) {
+quint32
+QxtGlobalShortcutPrivate::nativeKeycode(Qt::Key key)
+{
   switch (key) {
     case Qt::Key_Escape:
       return VK_ESCAPE;
@@ -231,12 +243,16 @@ quint32 QxtGlobalShortcutPrivate::nativeKeycode(Qt::Key key) {
   }
 }
 
-bool QxtGlobalShortcutPrivate::registerShortcut(quint32 nativeKey,
-                                                quint32 nativeMods) {
+bool
+QxtGlobalShortcutPrivate::registerShortcut(quint32 nativeKey,
+                                           quint32 nativeMods)
+{
   return RegisterHotKey(0, nativeMods ^ nativeKey, nativeMods, nativeKey);
 }
 
-bool QxtGlobalShortcutPrivate::unregisterShortcut(quint32 nativeKey,
-                                                  quint32 nativeMods) {
+bool
+QxtGlobalShortcutPrivate::unregisterShortcut(quint32 nativeKey,
+                                             quint32 nativeMods)
+{
   return UnregisterHotKey(0, nativeMods ^ nativeKey);
 }

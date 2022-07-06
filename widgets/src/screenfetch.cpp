@@ -10,7 +10,9 @@
 #include <QScreen>
 #include <iostream>
 
-Pix* QImage2Pix(const QImage&& image) {
+Pix*
+QImage2Pix(const QImage&& image)
+{
   Pix* pix;
   int width = image.width();
   int height = image.height();
@@ -62,12 +64,13 @@ Pix* QImage2Pix(const QImage&& image) {
 }
 
 ScreenFetch::ScreenFetch()
-    : QDialog(nullptr),
-      m_Picture(nullptr),
-      m_IsTrackingMouse(false),
-      m_Pixmap(QGuiApplication::primaryScreen()->grabWindow(
-          QApplication::desktop()->winId())),
-      m_TextRect(0, 0, 0, 0) {
+  : QDialog(nullptr)
+  , m_Picture(nullptr)
+  , m_IsTrackingMouse(false)
+  , m_Pixmap(QGuiApplication::primaryScreen()->grabWindow(
+      QApplication::desktop()->winId()))
+  , m_TextRect(0, 0, 0, 0)
+{
   setWindowFlags(Qt::WindowStaysOnTopHint);
   setAttribute(Qt::WA_TranslucentBackground);
   setWindowState(windowState() ^ Qt::WindowFullScreen);
@@ -75,7 +78,9 @@ ScreenFetch::ScreenFetch()
 
 ScreenFetch::~ScreenFetch() {}
 
-void ScreenFetch::paintEvent(QPaintEvent* event) {
+void
+ScreenFetch::paintEvent(QPaintEvent* event)
+{
   QPainter painter;
   painter.begin(this);
   QBrush brush;
@@ -92,7 +97,9 @@ void ScreenFetch::paintEvent(QPaintEvent* event) {
   event->accept();
 }
 
-void ScreenFetch::keyPressEvent(QKeyEvent* event) {
+void
+ScreenFetch::keyPressEvent(QKeyEvent* event)
+{
   switch (event->key()) {
     case Qt::Key_K:
     case Qt::Key_Up:
@@ -123,18 +130,21 @@ void ScreenFetch::keyPressEvent(QKeyEvent* event) {
   event->accept();
 }
 
-void ScreenFetch::mousePressEvent(QMouseEvent* event) {
+void
+ScreenFetch::mousePressEvent(QMouseEvent* event)
+{
   if (event->button() == Qt::LeftButton) {
     if (m_IsTrackingMouse) {
       m_IsTrackingMouse = false;
       auto screen = QGuiApplication::primaryScreen();
       if (m_TextRect.width() && m_TextRect.height()) {
         double scale =
-            (double)m_Pixmap.height() / (double)screen->geometry().height();
-        m_Picture = QImage2Pix(m_Pixmap.toImage().copy(QRect(
-            (double)m_TextRect.left() * scale, (double)m_TextRect.top() * scale,
-            (double)m_TextRect.width() * scale,
-            (double)m_TextRect.height() * scale)));
+          (double)m_Pixmap.height() / (double)screen->geometry().height();
+        m_Picture = QImage2Pix(
+          m_Pixmap.toImage().copy(QRect((double)m_TextRect.left() * scale,
+                                        (double)m_TextRect.top() * scale,
+                                        (double)m_TextRect.width() * scale,
+                                        (double)m_TextRect.height() * scale)));
       } else {
         m_Picture = QImage2Pix(m_Pixmap.toImage());
       }
@@ -149,7 +159,9 @@ void ScreenFetch::mousePressEvent(QMouseEvent* event) {
   event->accept();
 }
 
-void ScreenFetch::mouseMoveEvent(QMouseEvent* event) {
+void
+ScreenFetch::mouseMoveEvent(QMouseEvent* event)
+{
   if (event->buttons() == Qt::MiddleButton) {
     m_TextRect.moveTo(event->pos() -
                       QPoint(m_TextRect.width(), m_TextRect.height()));

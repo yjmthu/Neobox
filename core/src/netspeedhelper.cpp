@@ -14,8 +14,10 @@
 
 using namespace std::literals;
 
-template <bool A>
-void formatSpped(std::u8string& str, double dw) {
+template<bool A>
+void
+formatSpped(std::u8string& str, double dw)
+{
   // https://unicode-table.com/en/2192/
   using namespace std::literals;
   constexpr std::string_view prex = A ? "\342\206\223 "sv : "\342\206\221 "sv;
@@ -25,7 +27,8 @@ void formatSpped(std::u8string& str, double dw) {
     dw /= 1024;
     ++iter;
   }
-  if (iter == units.end()) iter = units.end() - 1;
+  if (iter == units.end())
+    iter = units.end() - 1;
   std::ostringstream ss;
   ss.precision(1);
   ss << prex << std::fixed << dw << ' ' << *iter;
@@ -34,16 +37,23 @@ void formatSpped(std::u8string& str, double dw) {
 }
 
 NetSpeedHelper::NetSpeedHelper()
-    : m_SysInfo({0, 0, 0}), m_RecvBytes(0), m_SendBytes(0) {}
+  : m_SysInfo({ 0, 0, 0 })
+  , m_RecvBytes(0)
+  , m_SendBytes(0)
+{
+}
 
 #ifdef _WIN32
 
-NetSpeedHelper::~NetSpeedHelper() {
+NetSpeedHelper::~NetSpeedHelper()
+{
   HeapFree(GetProcessHeap(), 0, piaa);
   HeapFree(GetProcessHeap(), 0, mi);
 }
 
-void NetSpeedHelper::SetMemInfo() {
+void
+NetSpeedHelper::SetMemInfo()
+{
   static char m_szMemStr[4];
   static MEMORYSTATUS ms;
   GlobalMemoryStatus(&ms);
@@ -52,7 +62,9 @@ void NetSpeedHelper::SetMemInfo() {
   std::get<0>(m_SysInfo) = ms.dwMemoryLoad;
 }
 
-void NetSpeedHelper::SetNetInfo() {
+void
+NetSpeedHelper::SetNetInfo()
+{
   static unsigned char iGetAddressTime = 10;
   static DWORD m_last_in_bytes = 0, m_last_out_bytes = 0;
 
@@ -61,8 +73,8 @@ void NetSpeedHelper::SetNetInfo() {
     if (GetAdaptersAddresses(AF_INET, 0, 0, piaa, &dwIPSize) ==
         ERROR_BUFFER_OVERFLOW) {
       HeapFree(GetProcessHeap(), 0, piaa);
-      piaa = (PIP_ADAPTER_ADDRESSES)HeapAlloc(GetProcessHeap(),
-                                              HEAP_ZERO_MEMORY, dwIPSize);
+      piaa = (PIP_ADAPTER_ADDRESSES)HeapAlloc(
+        GetProcessHeap(), HEAP_ZERO_MEMORY, dwIPSize);
       GetAdaptersAddresses(AF_INET, 0, 0, piaa, &dwIPSize);
     }
     iGetAddressTime = 0;
@@ -102,14 +114,16 @@ void NetSpeedHelper::SetNetInfo() {
 
 #elif defined(__linux__)
 
-void NetSpeedHelper::SetMemInfo() {
+void
+NetSpeedHelper::SetMemInfo()
+{
   using namespace std::literals;
   uint8_t result = 0;
   uint64_t buffer;
   std::string str;
   std::ifstream fs("/proc/meminfo"s);
 
-  std::array<double, 2> ary{0, 0};
+  std::array<double, 2> ary{ 0, 0 };
   while ((result != 2) && !fs.eof()) {
     fs >> str >> buffer;
     if (str == "MemTotal:"sv) {
@@ -128,7 +142,9 @@ void NetSpeedHelper::SetMemInfo() {
   std::get<0>(m_SysInfo) = 100 - static_cast<uint64_t>(ary[1] / ary[0] * 100);
 }
 
-void NetSpeedHelper::SetNetInfo() {
+void
+NetSpeedHelper::SetNetInfo()
+{
   uint64_t recv = 0, send = 0, buffer;
   std::ifstream fs("/proc/net/dev"s);
   std::string str;
@@ -158,12 +174,16 @@ void NetSpeedHelper::SetNetInfo() {
 
 #endif
 
-void NetSpeedHelper::ClearData() {
+void
+NetSpeedHelper::ClearData()
+{
   m_RecvBytes = 0;
   m_SendBytes = 0;
 }
 
-void NetSpeedHelper::GetSysInfo() {
+void
+NetSpeedHelper::GetSysInfo()
+{
   SetMemInfo();
   SetNetInfo();
 }

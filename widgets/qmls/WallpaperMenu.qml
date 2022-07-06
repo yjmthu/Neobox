@@ -1,90 +1,90 @@
 import QtQuick 2.0
-import Qt.labs.settings 1.0
 import Neobox 1.0
 
 NeoMenuSuperItem {
   id: wallpaperMenu
-  text: qsTr("壁纸设置")
-  property SpeedMenu speedMenu: SpeedMenu {
-    id: speedMenu
-  }
-
-  property Settings settings: Settings {
-    id: wallpaperSetting
-    fileName: qsTr("Neobox.ini")
-    category: qsTr("Wallpaper")
-    property alias wallpaperType: speedMenu.wallpaperType
-    property alias wallpaperFirstChange: speedMenu.wallpaperFirstChange
-    property alias wallpaperAutoChange: speedMenu.wallpaperAutoChange
-    property alias wallpaperTimeInterval: speedMenu.wallpaperTimeInterval
-    Component.onCompleted: {
-      moreOptions.m_Json = JSON.parse(speedMenu.wallpaperGetCurJson())
-      moreOptions.initLayout()
-    }
-  }
+  property var speedMenu
+  property var moreOptions
 
   NeoMenuSuperItem {
     text: qsTr("类型选择")
     exclusive: true
-    checkedChild: wallpaperSetting.wallpaperType
+    checkedChild: speedMenu.wallpaperType
 
     onCheckedChildChanged: {
-      wallpaperSetting.wallpaperType = checkedChild
+      if (speedMenu.wallpaperType != checkedChild) {
+        speedMenu.wallpaperType = checkedChild
+      }
     }
 
     NeoMenuCheckableItem {
       text: qsTr("壁纸天堂")
+      onTriggered: {
+        wallpaperMenu.changeWallpaperType(index)
+      }
     }
     NeoMenuCheckableItem {
       text: qsTr("必应壁纸")
+      onTriggered: {
+        wallpaperMenu.changeWallpaperType(index)
+      }
     }
     NeoMenuCheckableItem {
       text: qsTr("直链壁纸")
+      onTriggered: {
+        wallpaperMenu.changeWallpaperType(index)
+      }
     }
     NeoMenuCheckableItem {
       text: qsTr("本地壁纸")
+      onTriggered: {
+        wallpaperMenu.changeWallpaperType(index)
+      }
     }
     NeoMenuCheckableItem {
       text: qsTr("脚本输出")
+      onTriggered: {
+        wallpaperMenu.changeWallpaperType(index)
+      }
+    }
+    NeoMenuCheckableItem {
+      text: qsTr("收藏夹")
+      onTriggered: {
+        wallpaperMenu.changeWallpaperType(index)
+      }
     }
   }
   NeoMenuCheckableItem {
     text: qsTr("自动更换")
     Component.onCompleted: {
-      checked = wallpaperSetting.wallpaperAutoChange
+      checked = speedMenu.wallpaperAutoChange
     }
     onTriggered: {
-      wallpaperSetting.wallpaperAutoChange = checked
+      speedMenu.wallpaperAutoChange = checked
     }
   }
   NeoMenuCheckableItem {
     text: qsTr("首次更换")
     Component.onCompleted: {
-      checked = wallpaperSetting.wallpaperFirstChange
+      checked = speedMenu.wallpaperFirstChange
     }
     onTriggered: {
-      wallpaperSetting.wallpaperFirstChange = checked
+      speedMenu.wallpaperFirstChange = checked
     }
   }
   NeoMenuItem {
     id: temp
     text: qsTr("时间间隔")
     onTriggered: {
-      console.log("时间间隔")
       var component = Qt.createComponent("IntDialog.qml")
       if (component.status === Component.Ready) {
         let obj = component.createObject(temp, {
-          "minVal": 5,
-          "value": wallpaperSetting.wallpaperTimeInterval
+          minVal: 5,
+          value: speedMenu.wallpaperTimeInterval
         })
-        // obj.closing.connect(
-        //   function componentDestroy(object) {
-        //     object.destroy()
-        //   }
-        // )
         obj.finished.connect(
           function (timeInterval) {
-            wallpaperSetting.wallpaperTimeInterval = timeInterval
+            speedMenu.wallpaperTimeInterval = timeInterval
           }
         )
         obj.visible = true
@@ -95,6 +95,9 @@ NeoMenuSuperItem {
   }
   NeoMenuItem {
     text: qsTr("存储位置")
+    onTriggered: {
+      wallpaperMenu.speedMenu.appOpenDir(wallpaperMenu.speedMenu.wallpaperDir)
+    }
   }
   NeoMenuItem {
     text: qsTr("清理垃圾")
@@ -102,12 +105,41 @@ NeoMenuSuperItem {
       wallpaperMenu.speedMenu.wallpaperClearJunk();
     }
   }
-
-  WWallhaven {
-    id: moreOptions
+  NeoMenuItem {
     text: qsTr("更多设置")
-    onUpdateJson: {
-      speedMenu.wallpaperSetCurJson(JSON.stringify(m_Json))
+  }
+
+  Component.onCompleted: {
+    changeWallpaperType(wallpaperMenu.speedMenu.wallpaperType)
+  }
+  function changeWallpaperType(typeIndex) {
+    --content.length
+    var component
+    switch (typeIndex) {
+    case 0:
+      component = Qt.createComponent("WWallhaven.qml")
+      break
+    case 1:
+      component = Qt.createComponent("WBing.qml")
+      break
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    default:
+      break;
+    }
+    if (component.status == Component.Ready) {
+      moreOptions = component.createObject(m_contentItem, 
+      {
+        text: qsTr("更多设置"),
+        index: m_contentItem.children.length,
+        m_Json: JSON.parse(wallpaperMenu.speedMenu.wallpaperGetCurJson()),
+        speedMenu: wallpaperMenu.speedMenu
+      });
+      content.push(moreOptions);
+    } else if (component.status == Component.Error) {
+      console.log("Error loading component:", component.errorString())
     }
   }
 }

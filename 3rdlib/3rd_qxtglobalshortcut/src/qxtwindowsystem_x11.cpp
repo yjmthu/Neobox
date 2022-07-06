@@ -35,7 +35,9 @@
 #include <QLibrary>
 #include <QX11Info>
 
-static WindowList qxt_getWindows(Atom prop) {
+static WindowList
+qxt_getWindows(Atom prop)
+{
   WindowList res;
   Atom type = 0;
   int format = 0;
@@ -43,26 +45,41 @@ static WindowList qxt_getWindows(Atom prop) {
   ulong count, after;
   Display* display = QX11Info::display();
   Window window = QX11Info::appRootWindow();
-  if (XGetWindowProperty(display, window, prop, 0, 1024 * sizeof(Window) / 4,
-                         False, AnyPropertyType, &type, &format, &count, &after,
+  if (XGetWindowProperty(display,
+                         window,
+                         prop,
+                         0,
+                         1024 * sizeof(Window) / 4,
+                         False,
+                         AnyPropertyType,
+                         &type,
+                         &format,
+                         &count,
+                         &after,
                          &data) == Success) {
     Window* list = reinterpret_cast<Window*>(data);
-    for (uint i = 0; i < count; ++i) res += list[i];
-    if (data) XFree(data);
+    for (uint i = 0; i < count; ++i)
+      res += list[i];
+    if (data)
+      XFree(data);
   }
   return res;
 }
 
-WindowList QxtWindowSystem::windows() {
+WindowList
+QxtWindowSystem::windows()
+{
   static Atom net_clients = 0;
   if (!net_clients)
     net_clients =
-        XInternAtom(QX11Info::display(), "_NET_CLIENT_LIST_STACKING", True);
+      XInternAtom(QX11Info::display(), "_NET_CLIENT_LIST_STACKING", True);
 
   return qxt_getWindows(net_clients);
 }
 
-WId QxtWindowSystem::activeWindow() {
+WId
+QxtWindowSystem::activeWindow()
+{
   static Atom net_active = 0;
   if (!net_active)
     net_active = XInternAtom(QX11Info::display(), "_NET_ACTIVE_WINDOW", True);
@@ -70,7 +87,9 @@ WId QxtWindowSystem::activeWindow() {
   return qxt_getWindows(net_active).value(0);
 }
 
-WId QxtWindowSystem::findWindow(const QString& title) {
+WId
+QxtWindowSystem::findWindow(const QString& title)
+{
   Window result = 0;
   WindowList list = windows();
   foreach (const Window& wid, list) {
@@ -82,7 +101,9 @@ WId QxtWindowSystem::findWindow(const QString& title) {
   return result;
 }
 
-WId QxtWindowSystem::windowAt(const QPoint& pos) {
+WId
+QxtWindowSystem::windowAt(const QPoint& pos)
+{
   Window result = 0;
   WindowList list = windows();
   for (int i = list.size() - 1; i >= 0; --i) {
@@ -95,22 +116,27 @@ WId QxtWindowSystem::windowAt(const QPoint& pos) {
   return result;
 }
 
-QString QxtWindowSystem::windowTitle(WId window) {
+QString
+QxtWindowSystem::windowTitle(WId window)
+{
   QString name;
   char* str = 0;
   if (XFetchName(QX11Info::display(), window, &str))
     name = QString::fromLatin1(str);
-  if (str) XFree(str);
+  if (str)
+    XFree(str);
   return name;
 }
 
-QRect QxtWindowSystem::windowGeometry(WId window) {
+QRect
+QxtWindowSystem::windowGeometry(WId window)
+{
   int x, y;
   uint width, height, border, depth;
   Window root, child;
   Display* display = QX11Info::display();
-  XGetGeometry(display, window, &root, &x, &y, &width, &height, &border,
-               &depth);
+  XGetGeometry(
+    display, window, &root, &x, &y, &width, &height, &border, &depth);
   XTranslateCoordinates(display, window, root, x, y, &x, &y, &child);
 
   static Atom net_frame = 0;
@@ -122,20 +148,31 @@ QRect QxtWindowSystem::windowGeometry(WId window) {
   int format = 0;
   uchar* data = 0;
   ulong count, after;
-  if (XGetWindowProperty(display, window, net_frame, 0, 4, False,
-                         AnyPropertyType, &type, &format, &count, &after,
+  if (XGetWindowProperty(display,
+                         window,
+                         net_frame,
+                         0,
+                         4,
+                         False,
+                         AnyPropertyType,
+                         &type,
+                         &format,
+                         &count,
+                         &after,
                          &data) == Success) {
     // _NET_FRAME_EXTENTS, left, right, top, bottom, CARDINAL[4]/32
     if (count == 4) {
       long* extents = reinterpret_cast<long*>(data);
       rect.adjust(-extents[0], -extents[2], extents[1], extents[3]);
     }
-    if (data) XFree(data);
+    if (data)
+      XFree(data);
   }
   return rect;
 }
 
-typedef struct {
+typedef struct
+{
   Window window; /* screen saver window - may not exist */
   int state;     /* ScreenSaverOff, ScreenSaverOn, ScreenSaverDisabled*/
   int kind;      /* ScreenSaverBlanked, ...Internal, ...External */
@@ -145,21 +182,24 @@ typedef struct {
 } XScreenSaverInfo;
 
 typedef XScreenSaverInfo* (*XScreenSaverAllocInfo)();
-typedef Status (*XScreenSaverQueryInfo)(Display* display, Drawable drawable,
+typedef Status (*XScreenSaverQueryInfo)(Display* display,
+                                        Drawable drawable,
                                         XScreenSaverInfo* info);
 
 static XScreenSaverAllocInfo _xScreenSaverAllocInfo = 0;
 static XScreenSaverQueryInfo _xScreenSaverQueryInfo = 0;
 
-uint QxtWindowSystem::idleTime() {
+uint
+QxtWindowSystem::idleTime()
+{
   static bool xssResolved = false;
   if (!xssResolved) {
     QLibrary xssLib(QLatin1String("Xss"), 1);
     if (xssLib.load()) {
       _xScreenSaverAllocInfo =
-          (XScreenSaverAllocInfo)xssLib.resolve("XScreenSaverAllocInfo");
+        (XScreenSaverAllocInfo)xssLib.resolve("XScreenSaverAllocInfo");
       _xScreenSaverQueryInfo =
-          (XScreenSaverQueryInfo)xssLib.resolve("XScreenSaverQueryInfo");
+        (XScreenSaverQueryInfo)xssLib.resolve("XScreenSaverQueryInfo");
       xssResolved = true;
     }
   }
@@ -171,7 +211,8 @@ uint QxtWindowSystem::idleTime() {
     unsigned long rootWindow = (unsigned long)QX11Info::appRootWindow(screen);
     _xScreenSaverQueryInfo(QX11Info::display(), (Drawable)rootWindow, info);
     idle = info->idle;
-    if (info) XFree(info);
+    if (info)
+      XFree(info);
   }
   return idle;
 }

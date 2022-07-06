@@ -9,8 +9,9 @@
 #include <mutex>
 #include <thread>
 
-class Timer {
- public:
+class Timer
+{
+public:
   Timer();
   Timer(const Timer& t);
   ~Timer();
@@ -18,11 +19,11 @@ class Timer {
   void ResetTime(uint32_t mini, const std::function<void()>& task);
   void Expire();
 
- private:
+private:
   std::atomic<bool> expired_;
   std::atomic<bool> try_to_expire_;
   std::mutex mutex_;
   std::condition_variable expired_cond_;
 };
 
-#endif  // TIMER_H
+#endif // TIMER_H

@@ -43,33 +43,49 @@ static QHash<Identifier, quint32> keyIDs;
 static quint32 hotKeySerial = 0;
 static bool qxt_mac_handler_installed = false;
 
-OSStatus qxt_mac_handle_hot_key(EventHandlerCallRef nextHandler, EventRef event,
-                                void* data) {
+OSStatus
+qxt_mac_handle_hot_key(EventHandlerCallRef nextHandler,
+                       EventRef event,
+                       void* data)
+{
   Q_UNUSED(nextHandler);
   Q_UNUSED(data);
   if (GetEventClass(event) == kEventClassKeyboard &&
       GetEventKind(event) == kEventHotKeyPressed) {
     EventHotKeyID keyID;
-    GetEventParameter(event, kEventParamDirectObject, typeEventHotKeyID, NULL,
-                      sizeof(keyID), NULL, &keyID);
+    GetEventParameter(event,
+                      kEventParamDirectObject,
+                      typeEventHotKeyID,
+                      NULL,
+                      sizeof(keyID),
+                      NULL,
+                      &keyID);
     Identifier id = keyIDs.key(keyID.id);
     QxtGlobalShortcutPrivate::activateShortcut(id.second, id.first);
   }
   return noErr;
 }
 
-quint32 QxtGlobalShortcutPrivate::nativeModifiers(
-    Qt::KeyboardModifiers modifiers) {
+quint32
+QxtGlobalShortcutPrivate::nativeModifiers(Qt::KeyboardModifiers modifiers)
+{
   quint32 native = 0;
-  if (modifiers & Qt::ShiftModifier) native |= shiftKey;
-  if (modifiers & Qt::ControlModifier) native |= cmdKey;
-  if (modifiers & Qt::AltModifier) native |= optionKey;
-  if (modifiers & Qt::MetaModifier) native |= controlKey;
-  if (modifiers & Qt::KeypadModifier) native |= kEventKeyModifierNumLockMask;
+  if (modifiers & Qt::ShiftModifier)
+    native |= shiftKey;
+  if (modifiers & Qt::ControlModifier)
+    native |= cmdKey;
+  if (modifiers & Qt::AltModifier)
+    native |= optionKey;
+  if (modifiers & Qt::MetaModifier)
+    native |= controlKey;
+  if (modifiers & Qt::KeypadModifier)
+    native |= kEventKeyModifierNumLockMask;
   return native;
 }
 
-quint32 QxtGlobalShortcutPrivate::nativeKeycode(Qt::Key key) {
+quint32
+QxtGlobalShortcutPrivate::nativeKeycode(Qt::Key key)
+{
   UTF16Char ch;
   // Constants found in NSEvent.h from AppKit.framework
   switch (key) {
@@ -174,15 +190,17 @@ quint32 QxtGlobalShortcutPrivate::nativeKeycode(Qt::Key key) {
   CFDataRef currentLayoutData;
   TISInputSourceRef currentKeyboard = TISCopyCurrentKeyboardInputSource();
 
-  if (currentKeyboard == NULL) return 0;
+  if (currentKeyboard == NULL)
+    return 0;
 
   currentLayoutData = (CFDataRef)TISGetInputSourceProperty(
-      currentKeyboard, kTISPropertyUnicodeKeyLayoutData);
+    currentKeyboard, kTISPropertyUnicodeKeyLayoutData);
   CFRelease(currentKeyboard);
-  if (currentLayoutData == NULL) return 0;
+  if (currentLayoutData == NULL)
+    return 0;
 
   UCKeyboardLayout* header =
-      (UCKeyboardLayout*)CFDataGetBytePtr(currentLayoutData);
+    (UCKeyboardLayout*)CFDataGetBytePtr(currentLayoutData);
   UCKeyboardTypeHeader* table = header->keyboardTypeList;
 
   uint8_t* data = (uint8_t*)header;
@@ -191,39 +209,43 @@ quint32 QxtGlobalShortcutPrivate::nativeKeycode(Qt::Key key) {
     UCKeyStateRecordsIndex* stateRec = 0;
     if (table[i].keyStateRecordsIndexOffset != 0) {
       stateRec = reinterpret_cast<UCKeyStateRecordsIndex*>(
-          data + table[i].keyStateRecordsIndexOffset);
+        data + table[i].keyStateRecordsIndexOffset);
       if (stateRec->keyStateRecordsIndexFormat != kUCKeyStateRecordsIndexFormat)
         stateRec = 0;
     }
 
     UCKeyToCharTableIndex* charTable = reinterpret_cast<UCKeyToCharTableIndex*>(
-        data + table[i].keyToCharTableIndexOffset);
+      data + table[i].keyToCharTableIndexOffset);
     if (charTable->keyToCharTableIndexFormat != kUCKeyToCharTableIndexFormat)
       continue;
 
     for (quint32 j = 0; j < charTable->keyToCharTableCount; j++) {
       UCKeyOutput* keyToChar = reinterpret_cast<UCKeyOutput*>(
-          data + charTable->keyToCharTableOffsets[j]);
+        data + charTable->keyToCharTableOffsets[j]);
       for (quint32 k = 0; k < charTable->keyToCharTableSize; k++) {
         if (keyToChar[k] & kUCKeyOutputTestForIndexMask) {
           long idx = keyToChar[k] & kUCKeyOutputGetIndexMask;
           if (stateRec && idx < stateRec->keyStateRecordCount) {
             UCKeyStateRecord* rec = reinterpret_cast<UCKeyStateRecord*>(
-                data + stateRec->keyStateRecordOffsets[idx]);
-            if (rec->stateZeroCharData == ch) return k;
+              data + stateRec->keyStateRecordOffsets[idx]);
+            if (rec->stateZeroCharData == ch)
+              return k;
           }
         } else if (!(keyToChar[k] & kUCKeyOutputSequenceIndexMask) &&
                    keyToChar[k] < 0xFFFE) {
-          if (keyToChar[k] == ch) return k;
+          if (keyToChar[k] == ch)
+            return k;
         }
-      }  // for k
-    }    // for j
-  }      // for i
+      } // for k
+    }   // for j
+  }     // for i
   return 0;
 }
 
-bool QxtGlobalShortcutPrivate::registerShortcut(quint32 nativeKey,
-                                                quint32 nativeMods) {
+bool
+QxtGlobalShortcutPrivate::registerShortcut(quint32 nativeKey,
+                                           quint32 nativeMods)
+{
   if (!qxt_mac_handler_installed) {
     EventTypeSpec t;
     t.eventClass = kEventClassKeyboard;
@@ -236,8 +258,8 @@ bool QxtGlobalShortcutPrivate::registerShortcut(quint32 nativeKey,
   keyID.id = ++hotKeySerial;
 
   EventHotKeyRef ref = 0;
-  bool rv = !RegisterEventHotKey(nativeKey, nativeMods, keyID,
-                                 GetApplicationEventTarget(), 0, &ref);
+  bool rv = !RegisterEventHotKey(
+    nativeKey, nativeMods, keyID, GetApplicationEventTarget(), 0, &ref);
   if (rv) {
     keyIDs.insert(Identifier(nativeMods, nativeKey), keyID.id);
     keyRefs.insert(keyID.id, ref);
@@ -245,10 +267,13 @@ bool QxtGlobalShortcutPrivate::registerShortcut(quint32 nativeKey,
   return rv;
 }
 
-bool QxtGlobalShortcutPrivate::unregisterShortcut(quint32 nativeKey,
-                                                  quint32 nativeMods) {
+bool
+QxtGlobalShortcutPrivate::unregisterShortcut(quint32 nativeKey,
+                                             quint32 nativeMods)
+{
   Identifier id(nativeMods, nativeKey);
-  if (!keyIDs.contains(id)) return false;
+  if (!keyIDs.contains(id))
+    return false;
 
   EventHotKeyRef ref = keyRefs.take(keyIDs[id]);
   keyIDs.remove(id);

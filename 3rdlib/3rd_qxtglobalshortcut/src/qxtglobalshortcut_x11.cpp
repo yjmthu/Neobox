@@ -45,15 +45,17 @@
 namespace {
 
 const QVector<quint32> maskModifiers =
-    QVector<quint32>() << 0 << Mod2Mask << LockMask << (Mod2Mask | LockMask);
+  QVector<quint32>() << 0 << Mod2Mask << LockMask << (Mod2Mask | LockMask);
 
-typedef int (*X11ErrorHandler)(Display *display, XErrorEvent *event);
+typedef int (*X11ErrorHandler)(Display* display, XErrorEvent* event);
 
-class QxtX11ErrorHandler {
- public:
+class QxtX11ErrorHandler
+{
+public:
   static bool error;
 
-  static int qxtX11ErrorHandler(Display *display, XErrorEvent *event) {
+  static int qxtX11ErrorHandler(Display* display, XErrorEvent* event)
+  {
     Q_UNUSED(display);
     switch (event->error_code) {
       case BadAccess:
@@ -70,22 +72,25 @@ class QxtX11ErrorHandler {
     return 0;
   }
 
-  QxtX11ErrorHandler() {
+  QxtX11ErrorHandler()
+  {
     error = false;
     m_previousErrorHandler = XSetErrorHandler(qxtX11ErrorHandler);
   }
 
   ~QxtX11ErrorHandler() { XSetErrorHandler(m_previousErrorHandler); }
 
- private:
+private:
   X11ErrorHandler m_previousErrorHandler;
 };
 
 bool QxtX11ErrorHandler::error = false;
 
-class QxtX11Data {
- public:
-  QxtX11Data() {
+class QxtX11Data
+{
+public:
+  QxtX11Data()
+  {
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
     m_display = QX11Info::display();
 #else
@@ -94,21 +99,34 @@ class QxtX11Data {
 #endif
   }
 
-  bool isValid() { return m_display != 0; }
+  bool isValid()
+  {
+    return m_display != 0;
+  }
 
-  Display *display() {
+  Display* display()
+  {
     Q_ASSERT(isValid());
     return m_display;
   }
 
-  Window rootWindow() { return DefaultRootWindow(display()); }
+  Window rootWindow()
+  {
+    return DefaultRootWindow(display());
+  }
 
-  bool grabKey(quint32 keycode, quint32 modifiers, Window window) {
+  bool grabKey(quint32 keycode, quint32 modifiers, Window window)
+  {
     QxtX11ErrorHandler errorHandler;
 
     for (int i = 0; !errorHandler.error && i < maskModifiers.size(); ++i) {
-      XGrabKey(display(), keycode, modifiers | maskModifiers[i], window, True,
-               GrabModeAsync, GrabModeAsync);
+      XGrabKey(display(),
+               keycode,
+               modifiers | maskModifiers[i],
+               window,
+               True,
+               GrabModeAsync,
+               GrabModeAsync);
     }
 
     if (errorHandler.error) {
@@ -119,7 +137,8 @@ class QxtX11Data {
     return true;
   }
 
-  bool ungrabKey(quint32 keycode, quint32 modifiers, Window window) {
+  bool ungrabKey(quint32 keycode, quint32 modifiers, Window window)
+  {
     QxtX11ErrorHandler errorHandler;
 
     foreach (quint32 maskMods, maskModifiers) {
@@ -129,43 +148,52 @@ class QxtX11Data {
     return !errorHandler.error;
   }
 
- private:
-  Display *m_display;
+private:
+  Display* m_display;
 };
 
-}  // namespace
+} // namespace
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-bool QxtGlobalShortcutPrivate::eventFilter(void *message) {
-  XEvent *event = static_cast<XEvent *>(message);
+bool
+QxtGlobalShortcutPrivate::eventFilter(void* message)
+{
+  XEvent* event = static_cast<XEvent*>(message);
   if (event->type == KeyPress) {
-    XKeyEvent *key = reinterpret_cast<XKeyEvent *>(event);
+    XKeyEvent* key = reinterpret_cast<XKeyEvent*>(event);
     unsigned int keycode = key->keycode;
     unsigned int keystate = key->state;
 #else
-bool QxtGlobalShortcutPrivate::nativeEventFilter(const QByteArray &eventType,
-                                                 void *message, long *result) {
+bool
+QxtGlobalShortcutPrivate::nativeEventFilter(const QByteArray& eventType,
+                                            void* message,
+                                            long* result)
+{
   Q_UNUSED(result);
 
-  xcb_key_press_event_t *kev = 0;
+  xcb_key_press_event_t* kev = 0;
   if (eventType == "xcb_generic_event_t") {
-    xcb_generic_event_t *ev = static_cast<xcb_generic_event_t *>(message);
+    xcb_generic_event_t* ev = static_cast<xcb_generic_event_t*>(message);
     if ((ev->response_type & 127) == XCB_KEY_PRESS)
-      kev = static_cast<xcb_key_press_event_t *>(message);
+      kev = static_cast<xcb_key_press_event_t*>(message);
   }
 
   if (kev != 0) {
     unsigned int keycode = kev->detail;
     unsigned int keystate = 0;
-    if (kev->state & XCB_MOD_MASK_1) keystate |= Mod1Mask;
-    if (kev->state & XCB_MOD_MASK_CONTROL) keystate |= ControlMask;
-    if (kev->state & XCB_MOD_MASK_4) keystate |= Mod4Mask;
-    if (kev->state & XCB_MOD_MASK_SHIFT) keystate |= ShiftMask;
+    if (kev->state & XCB_MOD_MASK_1)
+      keystate |= Mod1Mask;
+    if (kev->state & XCB_MOD_MASK_CONTROL)
+      keystate |= ControlMask;
+    if (kev->state & XCB_MOD_MASK_4)
+      keystate |= Mod4Mask;
+    if (kev->state & XCB_MOD_MASK_SHIFT)
+      keystate |= ShiftMask;
 #endif
-    activateShortcut(
-        keycode,
-        // Mod1Mask == Alt, Mod4Mask == Meta
-        keystate & (ShiftMask | ControlMask | Mod1Mask | Mod4Mask));
+    activateShortcut(keycode,
+                     // Mod1Mask == Alt, Mod4Mask == Meta
+                     keystate &
+                       (ShiftMask | ControlMask | Mod1Mask | Mod4Mask));
   }
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
   return prevEventFilter ? prevEventFilter(message) : false;
@@ -174,15 +202,20 @@ bool QxtGlobalShortcutPrivate::nativeEventFilter(const QByteArray &eventType,
 #endif
 }
 
-quint32 QxtGlobalShortcutPrivate::nativeModifiers(
-    Qt::KeyboardModifiers modifiers) {
+quint32
+QxtGlobalShortcutPrivate::nativeModifiers(Qt::KeyboardModifiers modifiers)
+{
   // ShiftMask, LockMask, ControlMask, Mod1Mask, Mod2Mask, Mod3Mask, Mod4Mask,
   // and Mod5Mask
   quint32 native = 0;
-  if (modifiers & Qt::ShiftModifier) native |= ShiftMask;
-  if (modifiers & Qt::ControlModifier) native |= ControlMask;
-  if (modifiers & Qt::AltModifier) native |= Mod1Mask;
-  if (modifiers & Qt::MetaModifier) native |= Mod4Mask;
+  if (modifiers & Qt::ShiftModifier)
+    native |= ShiftMask;
+  if (modifiers & Qt::ControlModifier)
+    native |= ControlMask;
+  if (modifiers & Qt::AltModifier)
+    native |= Mod1Mask;
+  if (modifiers & Qt::MetaModifier)
+    native |= Mod4Mask;
 
   // TODO: resolve these?
   // if (modifiers & Qt::MetaModifier)
@@ -191,25 +224,33 @@ quint32 QxtGlobalShortcutPrivate::nativeModifiers(
   return native;
 }
 
-quint32 QxtGlobalShortcutPrivate::nativeKeycode(Qt::Key key) {
+quint32
+QxtGlobalShortcutPrivate::nativeKeycode(Qt::Key key)
+{
   QxtX11Data x11;
-  if (!x11.isValid()) return 0;
+  if (!x11.isValid())
+    return 0;
 
   KeySym keysym =
-      XStringToKeysym(QKeySequence(key).toString().toLatin1().data());
-  if (keysym == NoSymbol) keysym = static_cast<ushort>(key);
+    XStringToKeysym(QKeySequence(key).toString().toLatin1().data());
+  if (keysym == NoSymbol)
+    keysym = static_cast<ushort>(key);
 
   return XKeysymToKeycode(x11.display(), keysym);
 }
 
-bool QxtGlobalShortcutPrivate::registerShortcut(quint32 nativeKey,
-                                                quint32 nativeMods) {
+bool
+QxtGlobalShortcutPrivate::registerShortcut(quint32 nativeKey,
+                                           quint32 nativeMods)
+{
   QxtX11Data x11;
   return x11.isValid() && x11.grabKey(nativeKey, nativeMods, x11.rootWindow());
 }
 
-bool QxtGlobalShortcutPrivate::unregisterShortcut(quint32 nativeKey,
-                                                  quint32 nativeMods) {
+bool
+QxtGlobalShortcutPrivate::unregisterShortcut(quint32 nativeKey,
+                                             quint32 nativeMods)
+{
   QxtX11Data x11;
   return x11.isValid() &&
          x11.ungrabKey(nativeKey, nativeMods, x11.rootWindow());

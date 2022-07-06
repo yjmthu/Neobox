@@ -148,7 +148,9 @@
     in milliseconds.
  */
 
-QStringList QxtWindowSystem::windowTitles() {
+QStringList
+QxtWindowSystem::windowTitles()
+{
   WindowList windows = QxtWindowSystem::windows();
   QStringList titles;
   foreach (WId window, windows)

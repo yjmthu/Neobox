@@ -81,7 +81,11 @@
 
     \sa QXT_VERSION_STR
  */
-const char* qxtVersion() { return QXT_VERSION_STR; }
+const char*
+qxtVersion()
+{
+  return QXT_VERSION_STR;
+}
 
 /*!
 \headerfile <QxtPimpl>

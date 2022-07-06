@@ -2,18 +2,26 @@
 
 #include <stdint.h>
 
-Timer::Timer() : expired_(true), try_to_expire_(false) {}
+Timer::Timer()
+  : expired_(true)
+  , try_to_expire_(false)
+{
+}
 
-Timer::Timer(const Timer& t) {
+Timer::Timer(const Timer& t)
+{
   expired_ = t.expired_.load();
   try_to_expire_ = t.try_to_expire_.load();
 }
-Timer::~Timer() {
+Timer::~Timer()
+{
   Expire();
   //      std::cout << "timer destructed!" << std::endl;
 }
 
-void Timer::StartTimer(uint32_t interval, std::function<void()> task) {
+void
+Timer::StartTimer(uint32_t interval, std::function<void()> task)
+{
   if (expired_ == false) {
     //          std::cout << "timer is currently running, please expire it
     //          first..." << std::endl;
@@ -24,7 +32,8 @@ void Timer::StartTimer(uint32_t interval, std::function<void()> task) {
     auto temp = interval;
     while (temp--) {
       for (char i = 0; i < 60; ++i) {
-        if (try_to_expire_) goto label;
+        if (try_to_expire_)
+          goto label;
         std::this_thread::sleep_for(std::chrono::seconds(1));
       }
     }
@@ -39,12 +48,16 @@ void Timer::StartTimer(uint32_t interval, std::function<void()> task) {
   }).detach();
 }
 
-void Timer::ResetTime(uint32_t mini, const std::function<void()>& task) {
+void
+Timer::ResetTime(uint32_t mini, const std::function<void()>& task)
+{
   Expire();
   StartTimer(mini, task);
 }
 
-void Timer::Expire() {
+void
+Timer::Expire()
+{
   if (expired_) {
     return;
   }

@@ -10,8 +10,9 @@ std::unordered_set<std::filesystem::path> m_UsingFiles;
 
 std::atomic_bool WallBase::m_IsWorking = false;
 
-WallBase* WallBase::GetNewInstance(const std::filesystem::path& picHome,
-                                   int type) {
+WallBase*
+WallBase::GetNewInstance(const std::filesystem::path& picHome, int type)
+{
   switch (type) {
     case 0:
       return new WallClass::Wallhaven(picHome);

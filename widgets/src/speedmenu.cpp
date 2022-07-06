@@ -39,16 +39,23 @@ extern const char* m_szClobalSettingFile;
 
 using namespace std::literals;
 
-SpeedMenu::SpeedMenu() : QObject(nullptr) {
+SpeedMenu::SpeedMenu()
+  : QObject(nullptr)
+{
   auto picHome = QDir::toNativeSeparators(QStandardPaths::writableLocation(
-                                              QStandardPaths::PicturesLocation))
-                     .toUtf8();
+                                            QStandardPaths::PicturesLocation))
+                   .toUtf8();
   m_Wallpaper = new Wallpaper(std::u8string(picHome.begin(), picHome.end()));
 }
 
-SpeedMenu::~SpeedMenu() { delete m_Wallpaper; }
+SpeedMenu::~SpeedMenu()
+{
+  delete m_Wallpaper;
+}
 
-bool SpeedMenu::appAutoStart() {
+bool
+SpeedMenu::appAutoStart()
+{
 #ifdef WIN32
   return
       !QSettings(QStringLiteral(
@@ -60,8 +67,8 @@ bool SpeedMenu::appAutoStart() {
            .compare(QDir::toNativeSeparators(qApp->applicationFilePath())));
 #else
   QString m_AutoStartFile =
-      QStandardPaths::writableLocation(QStandardPaths::HomeLocation) +
-      "/.config/autostart/Neobox.desktop";
+    QStandardPaths::writableLocation(QStandardPaths::HomeLocation) +
+    "/.config/autostart/Neobox.desktop";
   if (!QFile::exists(m_AutoStartFile)) {
     return false;
   } else {
@@ -74,12 +81,14 @@ bool SpeedMenu::appAutoStart() {
 #endif
 }
 
-void SpeedMenu::appSetAutoStart(bool start) {
+void
+SpeedMenu::appSetAutoStart(bool start)
+{
 #ifdef WIN32
   QSettings reg(
-      QStringLiteral("HKEY_CURRENT_"
-                     "USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"),
-      QSettings::NativeFormat);
+    QStringLiteral("HKEY_CURRENT_"
+                   "USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"),
+    QSettings::NativeFormat);
   if (checked)
     reg.setValue("Neobox",
                  QDir::toNativeSeparators(qApp->applicationFilePath()));
@@ -87,10 +96,9 @@ void SpeedMenu::appSetAutoStart(bool start) {
     reg.remove("Neobox");
 #else
   QString configLocation =
-      QStandardPaths::writableLocation(QStandardPaths::HomeLocation) +
-      "/.config";
+    QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + "/.config";
   std::filesystem::path desktopFolderName =
-      (configLocation + "/autostart").toStdU16String();
+    (configLocation + "/autostart").toStdU16String();
   if (!std::filesystem::exists(desktopFolderName))
     std::filesystem::create_directory(desktopFolderName);
   QString iconFileName = configLocation + "/Neobox/Neobox.ico";
@@ -114,88 +122,132 @@ void SpeedMenu::appSetAutoStart(bool start) {
   } else if (std::filesystem::exists(desktopFolderName /= "Neobox.desktop"s)) {
     std::filesystem::remove(desktopFolderName);
   }
-#endif  // WIN32
+#endif // WIN32
   emit appAutoStartChanged();
 }
 
-int SpeedMenu::wallpaperType() const { return m_Wallpaper->GetImageType(); }
+int
+SpeedMenu::wallpaperType() const
+{
+  return m_Wallpaper->GetImageType();
+}
 
-void SpeedMenu::wallpaperSetType(int type) {
-  if (type == m_Wallpaper->GetImageType()) return;
+void
+SpeedMenu::wallpaperSetType(int type)
+{
+  if (type == m_Wallpaper->GetImageType())
+    return;
   emit wallpaperTypeChanged(m_Wallpaper->SetImageType(type));
 }
 
-int SpeedMenu::wallpaperTimeInterval() const {
+int
+SpeedMenu::wallpaperTimeInterval() const
+{
   return m_Wallpaper->GetTimeInterval();
 }
 
-void SpeedMenu::wallpaperSetTimeInterval(int minute) {
+void
+SpeedMenu::wallpaperSetTimeInterval(int minute)
+{
   m_Wallpaper->SetTimeInterval(minute);
   emit wallpaperTimeIntervalChanged();
 }
 
-QString SpeedMenu::wallpaperDir() const {
+QString
+SpeedMenu::wallpaperDir() const
+{
   return QString::fromStdU16String(m_Wallpaper->GetImageDir().u16string());
 }
 
-void SpeedMenu::wallpaperSetDir(const QString& str) {
+void
+SpeedMenu::wallpaperSetDir(const QString& str)
+{
   m_Wallpaper->SetCurDir(str.toStdU16String());
   emit wallpaperDirChanged();
 }
 
-bool SpeedMenu::wallpaperAutoChange() const {
+bool
+SpeedMenu::wallpaperAutoChange() const
+{
   return m_Wallpaper->GetAutoChange();
 }
 
-void SpeedMenu::wallpaperSetAutoChange(bool val) {
+void
+SpeedMenu::wallpaperSetAutoChange(bool val)
+{
   m_Wallpaper->SetAutoChange(val);
   emit wallpaperAutoChangeChanged();
 }
 
-bool SpeedMenu::wallpaperFirstChange() const {
+bool
+SpeedMenu::wallpaperFirstChange() const
+{
   return m_Wallpaper->GetFirstCHange();
 }
 
-void SpeedMenu::wallpaperSetFirstChange(bool val) {
+void
+SpeedMenu::wallpaperSetFirstChange(bool val)
+{
   m_Wallpaper->SetFirstChange(val);
   emit wallpaperFirstChangeChanged();
 }
 
-void SpeedMenu::wallpaperUndoDelete() { m_Wallpaper->UndoDelete(); }
-
-void SpeedMenu::wallpaperClearJunk() { m_Wallpaper->ClearJunk(); }
-
-QString SpeedMenu::wallpaperGetCurJson() const {
-  std::u8string&& str = m_Wallpaper->GetJson();
-  return QString::fromUtf8(reinterpret_cast<const char*>(str.data()), str.size());
+void
+SpeedMenu::wallpaperUndoDelete()
+{
+  m_Wallpaper->UndoDelete();
 }
 
-void SpeedMenu::wallpaperSetCurJson(const QString& str) {
+void
+SpeedMenu::wallpaperClearJunk()
+{
+  m_Wallpaper->ClearJunk();
+}
+
+QString
+SpeedMenu::wallpaperGetCurJson() const
+{
+  std::u8string&& str = m_Wallpaper->GetJson();
+  return QString::fromUtf8(reinterpret_cast<const char*>(str.data()),
+                           str.size());
+}
+
+void
+SpeedMenu::wallpaperSetCurJson(const QString& str)
+{
   QByteArray&& array = str.toUtf8();
   m_Wallpaper->SetJson(std::u8string(array.begin(), array.end()));
 }
 
-void SpeedMenu::wallpaperSetDrop(const QString& str) {
+void
+SpeedMenu::wallpaperSetDrop(const QString& str)
+{
   QByteArray&& array = str.toUtf8();
   YJson urls(array.begin(), array.end());
   std::deque<std::filesystem::path> paths;
-  for (const auto& i: urls.getArray()) {
+  for (const auto& i : urls.getArray()) {
     auto& temp = i.getValueString();
-    std::filesystem::path path(std::u8string(temp.begin()+7, temp.end()));
+    std::filesystem::path path(std::u8string(temp.begin() + 7, temp.end()));
     if (Wallpaper::IsImageFile(path))
       paths.emplace_front(std::move(path));
   }
-  if (!paths.empty()) m_Wallpaper->SetDropFile(std::move(paths));
+  if (!paths.empty())
+    m_Wallpaper->SetDropFile(std::move(paths));
 }
 
-void SpeedMenu::toolOcrGetScreenShotCut() {
+void
+SpeedMenu::toolOcrGetScreenShotCut()
+{
   ScreenFetch getscreen;
   getscreen.exec();
   void* image = getscreen.m_Picture;
-  if (image) (new TextDlg(image))->show();
+  if (image)
+    (new TextDlg(image))->show();
 }
 
-void SpeedMenu::appShutdownComputer() {
+void
+SpeedMenu::appShutdownComputer()
+{
 #ifdef WIN32
   QTimer::singleShot(500, std::bind(::system, "shutdown -s -t 0"));
 #else
@@ -203,7 +255,9 @@ void SpeedMenu::appShutdownComputer() {
 #endif
 }
 
-void SpeedMenu::appRestartComputer() {
+void
+SpeedMenu::appRestartComputer()
+{
 #ifdef WIN32
   QTimer::singleShot(500, std::bind(::system, "shutdown -r -t 0"));
 #else
@@ -211,31 +265,54 @@ void SpeedMenu::appRestartComputer() {
 #endif
 }
 
-void SpeedMenu::appOpenDir(const QString& path) {
+void
+SpeedMenu::appOpenDir(const QString& path)
+{
   QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 }
 
-void SpeedMenu::appOpenAppDir() {
+void
+SpeedMenu::appOpenAppDir()
+{
   QDesktopServices::openUrl(QUrl::fromLocalFile(qApp->applicationDirPath()));
 }
 
-void SpeedMenu::appOpenCfgDir() {
+void
+SpeedMenu::appOpenCfgDir()
+{
   QDesktopServices::openUrl(QUrl::fromLocalFile(QDir::currentPath()));
 }
 
-void SpeedMenu::wallpaperGetNext() { m_Wallpaper->SetSlot(1); }
+void
+SpeedMenu::wallpaperGetNext()
+{
+  m_Wallpaper->SetSlot(1);
+}
 
-void SpeedMenu::wallpaperGetPrev() { m_Wallpaper->SetSlot(-1); }
+void
+SpeedMenu::wallpaperGetPrev()
+{
+  m_Wallpaper->SetSlot(-1);
+}
 
-void SpeedMenu::wallpaperRemoveCurrent() { m_Wallpaper->SetSlot(0); }
+void
+SpeedMenu::wallpaperRemoveCurrent()
+{
+  m_Wallpaper->SetSlot(0);
+}
 
-bool SpeedMenu::toolOcrEnableScreenShotCut(const QString& keys, bool enable) {
+bool
+SpeedMenu::toolOcrEnableScreenShotCut(const QString& keys, bool enable)
+{
   QxtGlobalShortcut* shotCut = nullptr;
   if (enable) {
-    if (shotCut) return true;
+    if (shotCut)
+      return true;
     QxtGlobalShortcut* shotCut = new QxtGlobalShortcut(this);
     if (shotCut->setShortcut(QKeySequence(keys))) {
-      connect(shotCut, &QxtGlobalShortcut::activated, this,
+      connect(shotCut,
+              &QxtGlobalShortcut::activated,
+              this,
               &SpeedMenu::toolOcrGetScreenShotCut);
       return true;
     } else {

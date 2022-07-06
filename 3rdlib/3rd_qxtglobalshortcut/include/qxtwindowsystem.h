@@ -38,8 +38,9 @@
 
 typedef QList<WId> WindowList;
 
-class /*QXT_GUI_EXPORT*/ QxtWindowSystem {
- public:
+class /*QXT_GUI_EXPORT*/ QxtWindowSystem
+{
+public:
   static WindowList windows();
   static WId activeWindow();
   static WId findWindow(const QString& title);
@@ -51,4 +52,4 @@ class /*QXT_GUI_EXPORT*/ QxtWindowSystem {
   static uint idleTime();
 };
 
-#endif  // QXTWINDOWSYSTEM_H
+#endif // QXTWINDOWSYSTEM_H

@@ -19,19 +19,23 @@ namespace WallClass {
 class Wallhaven;
 }
 
-class WallBase {
- protected:
+class WallBase
+{
+protected:
   std::filesystem::path m_HomePicLocation;
   std::filesystem::path m_ImageDir;
-  inline void InitBase() {
-    if (!LoadSetting()) WriteDefaultSetting();
+  inline void InitBase()
+  {
+    if (!LoadSetting())
+      WriteDefaultSetting();
   }
 
- public:
+public:
   static WallBase* GetNewInstance(const std::filesystem::path& picHome,
                                   int type);
   inline WallBase(const std::filesystem::path& pichome)
-      : m_HomePicLocation(pichome / u8"桌面壁纸") {
+    : m_HomePicLocation(pichome / u8"桌面壁纸")
+  {
     if (!std::filesystem::exists(m_HomePicLocation)) {
       std::filesystem::create_directory(m_HomePicLocation);
     }
@@ -46,7 +50,7 @@ class WallBase {
   virtual std::u8string GetJson() const = 0;
   virtual void SetJson(const std::u8string& str) = 0;
 
- private:
+private:
   friend class Wallpaper;
   friend class WallClass::Wallhaven;
   static std::atomic_bool m_IsWorking;

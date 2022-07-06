@@ -3,7 +3,7 @@
 
 #include <QObject>
 
-class WallhavenMenu: public QObject
+class WallhavenMenu : public QObject
 {
   Q_OBJECT
 private:

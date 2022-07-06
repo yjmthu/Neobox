@@ -323,7 +323,6 @@ Window {
 
     onBlurChanged: {
       mainrect.rectSettings.refreshBlur()
-      // speedBox.setRoundRect(mainrect.x, mainrect.y, mainrect.width, mainrect.height, mainrect.radius, blur)
     }
   }
 

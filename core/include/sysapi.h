@@ -6,15 +6,17 @@
 #include <tchar.h>
 #include <windows.h>
 
-template <typename _Char, typename _Ty>
-void GetCmdOutput(const char* cmd, _Ty& result, int rows = -1) {
-  STARTUPINFOA si = {0};
-  PROCESS_INFORMATION pi = {0};
-  char m_buffer[1024] = {0};
+template<typename _Char, typename _Ty>
+void
+GetCmdOutput(const char* cmd, _Ty& result, int rows = -1)
+{
+  STARTUPINFOA si = { 0 };
+  PROCESS_INFORMATION pi = { 0 };
+  char m_buffer[1024] = { 0 };
   DWORD ReadNum = 0;
   HANDLE hRead = NULL;
   HANDLE hWrite = NULL;
-  SECURITY_ATTRIBUTES sa = {0};
+  SECURITY_ATTRIBUTES sa = { 0 };
   sa.nLength = sizeof(sa);
   sa.bInheritHandle = TRUE;
   sa.lpSecurityDescriptor = 0;
@@ -34,8 +36,8 @@ void GetCmdOutput(const char* cmd, _Ty& result, int rows = -1) {
   si.hStdError = hWrite;
   si.hStdOutput = hWrite;
 
-  bRet = CreateProcessA(NULL, (LPSTR)cmd, NULL, NULL, TRUE, NULL, NULL, NULL,
-                        &si, &pi);
+  bRet = CreateProcessA(
+    NULL, (LPSTR)cmd, NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi);
   SetStdHandle(STD_OUTPUT_HANDLE, hTemp);
   if (bRet == TRUE) {
   } else {
@@ -57,15 +59,18 @@ void GetCmdOutput(const char* cmd, _Ty& result, int rows = -1) {
 }
 #elif defined __linux__
 
-template <typename _Char, typename _Ty>
-void GetCmdOutput(const char* cmd, _Ty& result, int rows = -1) {
+template<typename _Char, typename _Ty>
+void
+GetCmdOutput(const char* cmd, _Ty& result, int rows = -1)
+{
   _Char m_buffer[1024];
   FILE* ptr;
   result.emplace_back();
   if ((ptr = popen(cmd, "r"))) {
     while (fgets((char*)m_buffer, 1024, ptr)) {
       if (!result.back().empty() && result.back().back() == '\n') {
-        if (!--rows) return;
+        if (!--rows)
+          return;
         result.emplace_back(m_buffer);
       } else {
         result.back().append(m_buffer);
@@ -75,9 +80,9 @@ void GetCmdOutput(const char* cmd, _Ty& result, int rows = -1) {
   } else {
     // std::cout << "cmd error" << std::endl;
   }
-  for (auto& i: result) {
-    if (!i.empty() && i.back() == '\n') i.pop_back();
+  for (auto& i : result) {
+    if (!i.empty() && i.back() == '\n')
+      i.pop_back();
   }
 }
 #endif
-

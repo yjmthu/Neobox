@@ -20,7 +20,9 @@
 #include "translater.h"
 
 TextDlg::TextDlg(void* image)
-    : QDialog(), m_TextEdit(new QPlainTextEdit(this)) {
+  : QDialog()
+  , m_TextEdit(new QPlainTextEdit(this))
+{
   setWindowFlags(Qt::WindowStaysOnTopHint);
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle("识别结果");
@@ -36,7 +38,8 @@ TextDlg::TextDlg(void* image)
     ScreenFetch getscreen;
     getscreen.exec();
     void* image = getscreen.m_Picture;
-    if (image) ParsePicture(image);
+    if (image)
+      ParsePicture(image);
     show();
   });
   QPushButton* btCopy = new QPushButton(this);
@@ -62,7 +65,9 @@ TextDlg::TextDlg(void* image)
   ParsePicture(image);
 }
 
-inline QString RemoveExtraSpaces(const char* str) {
+inline QString
+RemoveExtraSpaces(const char* str)
+{
   QString result(str);
   QRegExp pattern("([\u4e00-\u9fff]) ([\u4e00-\u9fff])");
   result.replace(pattern, QStringLiteral("\\1\\2"));
@@ -71,9 +76,12 @@ inline QString RemoveExtraSpaces(const char* str) {
   return result;
 }
 
-void TextDlg::ParsePicture(void* image) {
+void
+TextDlg::ParsePicture(void* image)
+{
   using namespace std::literals;
-  if (!image) return;
+  if (!image)
+    return;
   Pix* pix = reinterpret_cast<Pix*>(image);
   char* outText;
 

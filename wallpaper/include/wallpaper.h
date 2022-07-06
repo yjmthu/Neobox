@@ -14,15 +14,24 @@
 
 typedef std::shared_ptr<std::vector<std::u8string>> ImageInfoEx;
 
-class Wallpaper {
- private:
+class Wallpaper
+{
+private:
   void ReadSettings();
   void WriteSettings() const;
   void AppendBlackList(const std::filesystem::path& path);
   void WriteBlackList() const;
 
- public:
-  enum class Desktop { WIN, KDE, DDE, GNOME, XFCE, UNKNOWN };
+public:
+  enum class Desktop
+  {
+    WIN,
+    KDE,
+    DDE,
+    GNOME,
+    XFCE,
+    UNKNOWN
+  };
   explicit Wallpaper(const std::filesystem::path& picHome);
   virtual ~Wallpaper();
   static bool DownloadImage(const ImageInfoEx& imageInfo);
@@ -51,9 +60,9 @@ class Wallpaper {
   void SetJson(const std::u8string& str);
   std::u8string GetJson() const;
 
-  static constexpr char m_szWallScript[16]{"SetWallpaper.sh"};
+  static constexpr char m_szWallScript[16]{ "SetWallpaper.sh" };
 
- private:
+private:
   int m_ImageType;
   int m_TimeInterval;
   bool m_AutoChange;
@@ -64,10 +73,10 @@ class Wallpaper {
   std::deque<std::filesystem::path> m_PrevImgs;
   std::stack<std::filesystem::path> m_NextImgs;
   std::list<std::pair<std::filesystem::path, std::filesystem::path>>
-      m_BlackList;
+    m_BlackList;
   std::filesystem::path m_CurImage;
 
- public:
+public:
   static Desktop GetDesktop();
   void SetCurDir(const std::filesystem::path& str);
   void StartTimer(bool start);

@@ -3,13 +3,14 @@
 
 #include <QObject>
 
-class VarBox : public QObject {
+class VarBox : public QObject
+{
   Q_OBJECT
- public:
+public:
   VarBox();
   ~VarBox();
 
- private:
+private:
   void LoadSettings();
   void LoadFonts();
   void LoadQmlFiles();
@@ -17,4 +18,4 @@ class VarBox : public QObject {
 
 extern VarBox* m_VarBox;
 
-#endif  // SPEEDAPP_H
+#endif // SPEEDAPP_H

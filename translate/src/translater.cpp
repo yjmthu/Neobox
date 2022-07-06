@@ -14,18 +14,24 @@
 #include <iostream>
 
 Translater::Translater(QWidget* parent)
-    : QWidget(parent),
-      m_TextFrom(new QPlainTextEdit(this)),
-      m_TextTo(new QPlainTextEdit(this)),
-      m_BtnGroup(new QButtonGroup(this)) {
+  : QWidget(parent)
+  , m_TextFrom(new QPlainTextEdit(this))
+  , m_TextTo(new QPlainTextEdit(this))
+  , m_BtnGroup(new QButtonGroup(this))
+{
   SetupUi();
   m_TextFrom->installEventFilter(this);
   SetupKey();
 }
 
-Translater::~Translater() { delete m_Shortcut; }
+Translater::~Translater()
+{
+  delete m_Shortcut;
+}
 
-void Translater::SetupUi() {
+void
+Translater::SetupUi()
+{
   setWindowTitle("极简翻译");
   setWindowIcon(QIcon(":/icons/speedbox.ico"));
   setWindowFlags(Qt::WindowStaysOnTopHint | Qt::Dialog);
@@ -33,7 +39,7 @@ void Translater::SetupUi() {
   vbx->addWidget(m_TextFrom);
   vbx->addWidget(m_TextTo);
   QHBoxLayout* hbx = new QHBoxLayout;
-  auto lst = {"自动", "汉英", "英汉"};
+  auto lst = { "自动", "汉英", "英汉" };
   int id = 0;
   m_BtnGroup->setExclusive(true);
   for (const auto& i : lst) {
@@ -46,21 +52,28 @@ void Translater::SetupUi() {
   vbx->addLayout(hbx);
   for (id = 0; id < 3; ++id)
     connect(qobject_cast<QCheckBox*>(m_BtnGroup->button(id)),
-            &QCheckBox::clicked, this,
+            &QCheckBox::clicked,
+            this,
             [this]() { GetReply(m_TextFrom->toPlainText()); });
 }
 
-void Translater::SetupKey() {
+void
+Translater::SetupKey()
+{
   m_Shortcut = new QxtGlobalShortcut;
   if (m_Shortcut->setShortcut(QKeySequence("Shift+Z"))) {
-    connect(m_Shortcut, &QxtGlobalShortcut::activated, this,
+    connect(m_Shortcut,
+            &QxtGlobalShortcut::activated,
+            this,
             &Translater::IntelligentShow);
   } else {
     std::cout << "Can't register global shortcut.\n";
   }
 }
 
-void Translater::keyPressEvent(QKeyEvent* event) {
+void
+Translater::keyPressEvent(QKeyEvent* event)
+{
   switch (event->key()) {
     case Qt::Key_Escape:
       hide();
@@ -68,8 +81,8 @@ void Translater::keyPressEvent(QKeyEvent* event) {
     case Qt::Key_Alt:
     case Qt::Key_AltGr:
       qobject_cast<QCheckBox*>(
-          m_BtnGroup->button((m_BtnGroup->checkedId() + 1) % 3))
-          ->setChecked(true);
+        m_BtnGroup->button((m_BtnGroup->checkedId() + 1) % 3))
+        ->setChecked(true);
       break;
     default:
       break;
@@ -77,20 +90,25 @@ void Translater::keyPressEvent(QKeyEvent* event) {
   event->accept();
 }
 
-void Translater::showEvent(QShowEvent* event) {
+void
+Translater::showEvent(QShowEvent* event)
+{
   m_TextFrom->setFocus();
   activateWindow();
   event->accept();
 }
 
-bool Translater::eventFilter(QObject* target, QEvent* event) {
+bool
+Translater::eventFilter(QObject* target, QEvent* event)
+{
   if (target == m_TextFrom) {
     if (event->type() == QEvent::KeyPress) {
       QKeyEvent* k = static_cast<QKeyEvent*>(event);
       if (k->key() == Qt::Key_Return) {
         QString text = m_TextFrom->toPlainText();
         auto cur = m_TextFrom->textCursor();
-        if (text.isEmpty()) goto label;
+        if (text.isEmpty())
+          goto label;
         if (cur.position() >= QTextCursor::Start &&
             text.at(cur.position() - 1) == ' ') {
           cur.deletePreviousChar();
@@ -112,10 +130,12 @@ label:
   return QWidget::eventFilter(target, event);
 }
 
-void Translater::GetReply(const QString& text) {
+void
+Translater::GetReply(const QString& text)
+{
   using namespace std::literals;
   static YJson param =
-      YJson::O{{u8"doctype"sv, u8"json"sv}, {u8"i"sv, YJson::String}};
+    YJson::O{ { u8"doctype"sv, u8"json"sv }, { u8"i"sv, YJson::String } };
   httplib::Client clt("http://fanyi.youdao.com"s);
   QByteArray&& array = text.toUtf8();
   param[u8"i"sv].second.setText(array.cbegin(), array.cend());
@@ -136,8 +156,8 @@ void Translater::GetReply(const QString& text) {
   }
   auto json = YJson(res->body.cbegin(), res->body.cend());
   if (!json.isObject() || json.find(u8"errorCode"sv)->second != 0) {
-    m_TextTo->setPlainText(QString::fromUtf8(
-        res->body.data(), static_cast<int>(res->body.size())));
+    m_TextTo->setPlainText(
+      QString::fromUtf8(res->body.data(), static_cast<int>(res->body.size())));
     return;
   }
   m_TextTo->clear();
@@ -148,10 +168,11 @@ void Translater::GetReply(const QString& text) {
         tempStr.append(j[u8"tgt"sv].second.getValueString());
         tempStr.push_back(' ');
       }
-      if (!tempStr.empty()) tempStr.pop_back();
+      if (!tempStr.empty())
+        tempStr.pop_back();
       m_TextTo->appendPlainText(
-          QString::fromUtf8(reinterpret_cast<const char*>(tempStr.data()),
-                            static_cast<int>(tempStr.size())));
+        QString::fromUtf8(reinterpret_cast<const char*>(tempStr.data()),
+                          static_cast<int>(tempStr.size())));
     }
   } else {
     for (auto& i : json.find(u8"translateResult"sv)->second.getArray()) {
@@ -160,13 +181,15 @@ void Translater::GetReply(const QString& text) {
         tempStr.append(j[u8"tgt"sv].second.getValueString());
       }
       m_TextTo->appendPlainText(
-          QString::fromUtf8(reinterpret_cast<const char*>(tempStr.data()),
-                            static_cast<int>(tempStr.size())));
+        QString::fromUtf8(reinterpret_cast<const char*>(tempStr.data()),
+                          static_cast<int>(tempStr.size())));
     }
   }
 }
 
-void Translater::IntelligentShow() {
+void
+Translater::IntelligentShow()
+{
   if (isVisible()) {
     hide();
   } else {
@@ -174,8 +197,11 @@ void Translater::IntelligentShow() {
   }
 }
 
-void Translater::Translate(const QString& text) {
+void
+Translater::Translate(const QString& text)
+{
   m_TextFrom->setPlainText(text);
-  if (!isVisible()) show();
+  if (!isVisible())
+    show();
   GetReply(text);
 }

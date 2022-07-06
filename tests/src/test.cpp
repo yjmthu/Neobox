@@ -2,7 +2,9 @@
 
 #include <iostream>
 
-int main() {
+int
+main()
+{
   std::vector<std::string> data;
 #if __linux__
   GetCmdOutput<char>("./tests/main", data);

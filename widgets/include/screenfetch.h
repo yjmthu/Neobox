@@ -3,9 +3,10 @@
 
 #include <QDialog>
 
-class ScreenFetch : public QDialog {
+class ScreenFetch : public QDialog
+{
   Q_OBJECT
- protected:
+protected:
   void mousePressEvent(QMouseEvent* event) override;
   void mouseMoveEvent(QMouseEvent* event) override;
   void keyPressEvent(QKeyEvent* event) override;
@@ -13,15 +14,15 @@ class ScreenFetch : public QDialog {
   // void mouseDoubleClickEvent(QMouseEvent* event) override;
   void paintEvent(QPaintEvent* event) override;
 
- public:
+public:
   explicit ScreenFetch();
   ~ScreenFetch();
   void* m_Picture;
 
- private:
+private:
   QPixmap m_Pixmap;
   QRect m_TextRect;
   bool m_IsTrackingMouse;
 };
 
-#endif  // SCREENFETCH_H
+#endif // SCREENFETCH_H

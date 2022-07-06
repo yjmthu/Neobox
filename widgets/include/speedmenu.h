@@ -3,22 +3,23 @@
 
 #include <QObject>
 
-class SpeedMenu : public QObject {
+class SpeedMenu : public QObject
+{
   Q_OBJECT
   Q_PROPERTY(bool appAutoStart READ appAutoStart WRITE appSetAutoStart NOTIFY
-                 appAutoStartChanged)
+               appAutoStartChanged)
   Q_PROPERTY(int wallpaperType READ wallpaperType WRITE wallpaperSetType NOTIFY
-                 wallpaperTypeChanged)
+               wallpaperTypeChanged)
   Q_PROPERTY(int wallpaperTimeInterval READ wallpaperTimeInterval WRITE
-                 wallpaperSetTimeInterval NOTIFY wallpaperTimeIntervalChanged)
+               wallpaperSetTimeInterval NOTIFY wallpaperTimeIntervalChanged)
   Q_PROPERTY(QString wallpaperDir READ wallpaperDir WRITE wallpaperSetDir NOTIFY
-                 wallpaperDirChanged)
+               wallpaperDirChanged)
   Q_PROPERTY(bool wallpaperAutoChange READ wallpaperAutoChange WRITE
-                 wallpaperSetAutoChange NOTIFY wallpaperAutoChangeChanged)
+               wallpaperSetAutoChange NOTIFY wallpaperAutoChangeChanged)
   Q_PROPERTY(bool wallpaperFirstChange READ wallpaperFirstChange WRITE
-                 wallpaperSetFirstChange NOTIFY wallpaperFirstChangeChanged)
+               wallpaperSetFirstChange NOTIFY wallpaperFirstChangeChanged)
 
- public:
+public:
   explicit SpeedMenu();
   ~SpeedMenu();
   Q_INVOKABLE bool toolOcrEnableScreenShotCut(const QString& keys, bool enable);
@@ -37,10 +38,10 @@ class SpeedMenu : public QObject {
   Q_INVOKABLE void wallpaperSetDrop(const QString& str);
   Q_INVOKABLE void toolOcrGetScreenShotCut();
 
- private:
+private:
   class Wallpaper* m_Wallpaper;
 
- private:
+private:
   bool appAutoStart();
   void appSetAutoStart(bool start);
   int wallpaperType() const;
@@ -54,8 +55,8 @@ class SpeedMenu : public QObject {
   bool wallpaperFirstChange() const;
   void wallpaperSetFirstChange(bool val);
 
- private slots:
- signals:
+private slots:
+signals:
   void appAutoStartChanged();
   void wallpaperTypeChanged(bool);
   void wallpaperTimeIntervalChanged();
@@ -64,4 +65,4 @@ class SpeedMenu : public QObject {
   void wallpaperFirstChangeChanged();
 };
 
-#endif  // SPEEDMENU_H
+#endif // SPEEDMENU_H

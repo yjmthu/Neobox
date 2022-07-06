@@ -33,18 +33,23 @@
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0500
 #endif
-#include <qglobal.h>  // QT_WA
+#include <qglobal.h> // QT_WA
 #include <qt_windows.h>
 
 static WindowList qxt_Windows;
 
-BOOL CALLBACK qxt_EnumWindowsProc(HWND hwnd, LPARAM lParam) {
+BOOL CALLBACK
+qxt_EnumWindowsProc(HWND hwnd, LPARAM lParam)
+{
   Q_UNUSED(lParam);
-  if (::IsWindowVisible(hwnd)) qxt_Windows += (WId)hwnd;
+  if (::IsWindowVisible(hwnd))
+    qxt_Windows += (WId)hwnd;
   return true;
 }
 
-WindowList QxtWindowSystem::windows() {
+WindowList
+QxtWindowSystem::windows()
+{
   qxt_Windows.clear();
   HDESK hdesk = ::OpenInputDesktop(0, false, DESKTOP_READOBJECTS);
   ::EnumDesktopWindows(hdesk, qxt_EnumWindowsProc, 0);
@@ -52,9 +57,15 @@ WindowList QxtWindowSystem::windows() {
   return qxt_Windows;
 }
 
-WId QxtWindowSystem::activeWindow() { return (WId)::GetForegroundWindow(); }
+WId
+QxtWindowSystem::activeWindow()
+{
+  return (WId)::GetForegroundWindow();
+}
 
-WId QxtWindowSystem::findWindow(const QString& title) {
+WId
+QxtWindowSystem::findWindow(const QString& title)
+{
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
   QT_WA({ return (WId)::FindWindow(NULL, (TCHAR*)title.utf16()); },
         { return (WId)::FindWindowA(NULL, title.toLocal8Bit()); });
@@ -63,14 +74,18 @@ WId QxtWindowSystem::findWindow(const QString& title) {
 #endif
 }
 
-WId QxtWindowSystem::windowAt(const QPoint& pos) {
+WId
+QxtWindowSystem::windowAt(const QPoint& pos)
+{
   POINT pt;
   pt.x = pos.x();
   pt.y = pos.y();
   return (WId)::WindowFromPoint(pt);
 }
 
-QString QxtWindowSystem::windowTitle(WId window) {
+QString
+QxtWindowSystem::windowTitle(WId window)
+{
   QString title;
   int len = ::GetWindowTextLength((HWND)window);
   if (len >= 0) {
@@ -87,7 +102,9 @@ QString QxtWindowSystem::windowTitle(WId window) {
   return title;
 }
 
-QRect QxtWindowSystem::windowGeometry(WId window) {
+QRect
+QxtWindowSystem::windowGeometry(WId window)
+{
   RECT rc;
   QRect rect;
   if (::GetWindowRect((HWND)window, &rc)) {
@@ -99,10 +116,13 @@ QRect QxtWindowSystem::windowGeometry(WId window) {
   return rect;
 }
 
-uint QxtWindowSystem::idleTime() {
+uint
+QxtWindowSystem::idleTime()
+{
   uint idle = -1;
   LASTINPUTINFO info;
   info.cbSize = sizeof(LASTINPUTINFO);
-  if (::GetLastInputInfo(&info)) idle = ::GetTickCount() - info.dwTime;
+  if (::GetLastInputInfo(&info))
+    idle = ::GetTickCount() - info.dwTime;
   return idle;
 }

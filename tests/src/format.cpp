@@ -5,7 +5,9 @@
 #include <regex>
 #include <string>
 
-int main() {
+int
+main()
+{
   std::string _folderStr;
   std::cout << "Please enter the folder path:\n";
   std::getline(std::cin, _folderStr);
@@ -22,15 +24,16 @@ int main() {
     const std::regex _pattern("^.*\\.(cpp|c|h|hpp|cc)$");
     return std::regex_match(_path.string(), _pattern);
   };
-  std::array<std::string, 7> _patterns = {"build", "out",  "\\.git",  "env",
-                                          "glad",  "glfw", "freetype"};
+  std::array<std::string, 7> _patterns = { "build", "out",  "\\.git",  "env",
+                                           "glad",  "glfw", "freetype" };
   for (auto& i : _patterns) {
     i = "^.*" + i + "$";
   }
   auto _isInWhiteList = [&_patterns](const std::filesystem::path& _path) {
     std::string str = _path.string();
     for (auto& i : _patterns) {
-      if (std::regex_match(str, std::regex(i))) return true;
+      if (std::regex_match(str, std::regex(i)))
+        return true;
     }
     return false;
   };
@@ -42,12 +45,13 @@ int main() {
     for (auto& iter : std::filesystem::directory_iterator(_tmpFolderPath)) {
       const auto& _path = iter.path();
       if (std::filesystem::is_directory(iter.status())) {
-        if (!_isInWhiteList(_path)) _stack.push(_path);
+        if (!_isInWhiteList(_path))
+          _stack.push(_path);
         continue;
       } else if (std::filesystem::is_regular_file(iter.status())) {
         if (_isImageFile(_path)) {
           std::cout << "Format file " << _path << std::endl;
-          std::string _command = "clang-format --style=google -i ";
+          std::string _command = "clang-format --style=mozilla -i ";
           _command.append(_path.string());
           system(_command.c_str());
         }
