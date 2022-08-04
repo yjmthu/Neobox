@@ -40,6 +40,8 @@ public:
   {
     // remove(img.c_str());
   }
+  virtual void UndoDislike(const std::filesystem::path& path) override {
+  }
   virtual bool WriteDefaultSetting() override
   {
     using namespace std::literals;
@@ -102,7 +104,7 @@ public:
 
   virtual std::u8string GetJson() const override
   {
-    return m_Setting->toU8String(false);
+    return m_Setting->toString(false);
   }
 
 private:

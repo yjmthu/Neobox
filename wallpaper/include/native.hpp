@@ -107,6 +107,7 @@ public:
     return true;
   }
   virtual void Dislike(const std::filesystem::path& img) override {}
+  virtual void UndoDislike(const std::filesystem::path& path) override {}
   virtual void SetCurDir(const std::filesystem::path& str) override
   {
     m_ImageDir = str;
@@ -118,7 +119,7 @@ public:
 
   virtual std::u8string GetJson() const override
   {
-    return m_Setting->toU8String(false);
+    return m_Setting->toString(false);
   }
 
   virtual void SetJson(const std::u8string& str) override

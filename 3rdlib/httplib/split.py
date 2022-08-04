@@ -8,25 +8,14 @@ import sys
 
 border = '// ----------------------------------------------------------------------------'
 
-args_parser = argparse.ArgumentParser(description=__doc__)
-args_parser.add_argument(
-    "-e", "--extension", help="extension of the implementation file (default: cc)",
-    default="cc"
-)
-args_parser.add_argument(
-    "-o", "--out", help="where to write the files (default: out)", default="out"
-)
-args = args_parser.parse_args()
-
 cur_dir = os.path.dirname(sys.argv[0])
 lib_name = 'httplib'
-header_name = './' + lib_name + '.h'
-source_name = './' + lib_name + '.' + args.extension
+source_name = './src/' + lib_name + '.' + '.cpp'
 # get the input file
-in_file = cur_dir + header_name
+in_file = './' + lib_name + '.h'
 # get the output file
-h_out = args.out + header_name
-cc_out = args.out + source_name
+h_out = './include/' + lib_name + '.h'
+cc_out = './src/' + lib_name + '.' + '.cpp'
 
 # if the modification time of the out file is after the in file,
 # don't split (as it is already finished)
@@ -42,13 +31,8 @@ if do_split:
         lines = f.readlines()
 
     python_version = sys.version_info[0]
-    if python_version < 3:
-        os.makedirs(args.out)
-    else:
-        os.makedirs(args.out, exist_ok=True)
 
     in_implementation = False
-    cc_out = args.out + source_name
     with open(h_out, 'w') as fh, open(cc_out, 'w') as fc:
         fc.write('#include "httplib.h"\n')
         fc.write('namespace httplib {\n')

@@ -46,6 +46,7 @@ public:
   virtual bool WriteDefaultSetting() = 0;
   virtual ImageInfoEx GetNext() = 0;
   virtual void Dislike(const std::filesystem::path& img) = 0;
+  virtual void UndoDislike(const std::filesystem::path& path) = 0;
   virtual void SetCurDir(const std::filesystem::path& str) = 0;
   virtual std::u8string GetJson() const = 0;
   virtual void SetJson(const std::u8string& str) = 0;

@@ -38,6 +38,7 @@ public:
   static bool SetWallpaper(const std::filesystem::path& imagePath);
   static bool IsImageFile(const std::filesystem::path& fileName);
   static bool IsWorking();
+  static bool IsOnline();
   bool SetNext();
   bool SetPrevious();
   bool UndoDelete();

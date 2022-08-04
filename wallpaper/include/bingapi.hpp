@@ -56,6 +56,7 @@ public:
     m_Setting->append(m_ImageNameFormat, u8"imgfmt");
     m_Setting->append(m_Mft, u8"mkt");
     m_Setting->append(static_cast<int>(m_CurImageIndex), u8"index");
+    m_Setting->append(false, u8"auto-download");
     m_Setting->toFile(m_SettingPath);
     return true;
   }
@@ -79,6 +80,10 @@ public:
   {
     //
   }
+  virtual void UndoDislike(const std::filesystem::path& path) override
+  {
+    //
+  }
   virtual void SetCurDir(const std::filesystem::path& str) override
   {
     m_ImageDir = str;
@@ -94,13 +99,12 @@ public:
 
     // 等待重写
     m_Mft.swap(m_Setting->find(u8"mkt")->second.getValueString());
-    WriteDefaultSetting();
     return;
   }
 
   virtual std::u8string GetJson() const override
   {
-    return m_Setting->toU8String(false);
+    return m_Setting->toString(false);
   }
 
 private:

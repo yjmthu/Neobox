@@ -162,7 +162,8 @@ SpeedMenu::wallpaperDir() const
 void
 SpeedMenu::wallpaperSetDir(const QString& str)
 {
-  m_Wallpaper->SetCurDir(str.toStdU16String());
+  QByteArray&& array = str.toUtf8();
+  m_Wallpaper->SetCurDir(std::u8string(array.begin() + 7, array.end()));
   emit wallpaperDirChanged();
 }
 
@@ -210,6 +211,12 @@ SpeedMenu::wallpaperGetCurJson() const
   std::u8string&& str = m_Wallpaper->GetJson();
   return QString::fromUtf8(reinterpret_cast<const char*>(str.data()),
                            str.size());
+}
+
+QString SpeedMenu::wallpaperGetCurWallpaper() const
+{
+  const std::u8string& str = m_Wallpaper->GetCurIamge().u8string();
+  return QString::fromUtf8(reinterpret_cast<const char*>(str.data()), static_cast<int>(str.size()));
 }
 
 void
@@ -325,200 +332,6 @@ SpeedMenu::toolOcrEnableScreenShotCut(const QString& keys, bool enable)
 }
 
 #if 0
-
-void SpeedMenu::SetupSettingMenu() {
-  auto& m_Setting = m_GlobalSetting->find(u8"Wallpaper")->second;
-  QMenu* m_pSettingMenu = new QMenu(this);
-  QMenu* m_pWallpaperMenu = new QMenu(m_pSettingMenu);
-  QMenu* m_pToolsMenu = new QMenu(m_pSettingMenu);
-  QMenu* m_pAppSettingMenu = new QMenu(m_pSettingMenu);
-  QMenu* m_pAboutMenu = new QMenu(m_pSettingMenu);
-  auto ptr = m_pSettingMenu->addAction("软件设置");
-  ptr->setMenu(m_pAppSettingMenu);
-
-  ptr = m_pSettingMenu->addAction("壁纸设置");
-  ptr->setMenu(m_pWallpaperMenu);
-  ptr = m_pWallpaperMenu->addAction("类型选择");
-  SetupImageType(m_pWallpaperMenu, ptr);
-  ptr = m_pWallpaperMenu->addAction("首次更换");
-  ptr->setCheckable(true);
-  ptr->setChecked(m_Setting.find(u8"FirstChange")->second.isTrue());
-  connect(ptr, &QAction::triggered,
-          std::bind(&Wallpaper::SetFirstChange, m_VarBox->m_Wallpaper,
-                    std::placeholders::_1));
-  ptr = m_pWallpaperMenu->addAction("自动更换");
-  ptr->setCheckable(true);
-  ptr->setChecked(m_Setting.find(u8"AutoChange")->second.isTrue());
-  connect(ptr, &QAction::triggered,
-          std::bind(&Wallpaper::SetAutoChange, m_VarBox->m_Wallpaper,
-                    std::placeholders::_1));
-
-  m_pSettingMenu->addAction("工具设置")->setMenu(m_pToolsMenu);
-  m_pToolsMenu->addAction("截图识字");
-  m_pToolsMenu->addAction("单词翻译");
-  m_pToolsMenu->addAction("句段翻译");
-  // connect(m_pToolsMenu->addAction("测试接口"), &QAction::triggered, this, [](){
-  //     QDialog dlg;
-  //     dlg.setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
-  //     dlg.setAttribute(Qt::WA_TranslucentBackground);
-  //     QFrame frame(&dlg);
-  //     frame.setGeometry(0,0,dlg.width(), dlg.height());
-  //     dlg.setStyleSheet("background-color:rgba(100,100,100,100);");
-  //     KWindowEffects::enableBlurBehind(dlg.winId());
-  //     dlg.exec();
-  // });
-
-  ptr = m_pSettingMenu->addAction("关于软件");
-  ptr->setMenu(m_pAboutMenu);
-  m_pAboutMenu->addAction("版本信息");
-  m_pAboutMenu->addAction("检查更新");
-
-  m_pSettingMenu->addSeparator();
-  connect(
-      m_pWallpaperMenu->addAction("打开路径"), &QAction::triggered, this, []() {
-        QDesktopServices::openUrl(QUrl::fromLocalFile(QString::fromStdU16String(
-            m_VarBox->m_Wallpaper->GetImageDir().u16string())));
-      });
-  connect(m_pWallpaperMenu->addAction("设置路径"), &QAction::triggered, this,
-          []() {
-            auto i = QFileDialog::getExistingDirectory(
-                nullptr, "选择文件夹",
-                QString::fromStdU16String(
-                    m_VarBox->m_Wallpaper->GetImageDir().u16string()),
-                QFileDialog::ShowDirsOnly);
-            if (!i.isEmpty()) {
-              m_VarBox->m_Wallpaper->SetCurDir(i.toStdU16String());
-            }
-          });
-  connect(m_pWallpaperMenu->addAction("时间间隔"), &QAction::triggered, this,
-          []() {
-            int val =
-                QInputDialog::getInt(nullptr, "输入时间", "时间间隔（分钟）：",
-                                     m_VarBox->m_Wallpaper->GetTimeInterval(),
-                                     5, std::numeric_limits<int>::max());
-            m_VarBox->m_Wallpaper->SetTimeInterval(val);
-          });
-  m_AdditionalAction = m_pWallpaperMenu->addAction("附加设置");
-  m_Actions->setMenu(m_pSettingMenu);
-  SetAdditionalMenu();
-
-  m_AutoStartApp = m_pAppSettingMenu->addAction("开机自启");
-  m_AutoStartApp->setCheckable(true);
-  ptr = m_pAppSettingMenu->addAction("显示界面");
-  ptr->setCheckable(true);
-  ptr->setChecked(m_GlobalSetting->find(u8"FormGlobal")
-                      ->second[u8"ShowForm"]
-                      .second.isTrue());
-  connect(ptr, &QAction::triggered, this, [](bool checked) {
-    m_GlobalSetting->find(u8"FormGlobal")->second[u8"ShowForm"].second =
-        checked;
-    if (checked) {
-      m_VarBox->m_SpeedBox->show();
-    } else {
-      m_VarBox->m_SpeedBox->hide();
-    }
-    m_GlobalSetting->toFile(m_szClobalSettingFile);
-  });
-  ptr = m_pAppSettingMenu->addAction("修改界面");
-  QMenu* m_Menu = new QMenu(this);
-  ptr->setMenu(m_Menu);
-  QActionGroup* m_Group = new QActionGroup(m_Menu);
-  m_Group->setExclusive(true);
-  const char* m_Strs[] {"存储占用", "上传速度", "下载速度"};
-  for (int i = 0, j = m_VarBox->m_SpeedBox->findChild<QObject*>("rect")->property("textindex").toInt(); i < 3; ++i) {
-    ptr = m_Menu->addAction(m_Strs[i]);
-    ptr->setCheckable(true);
-    ptr->setChecked(i == j);
-    m_Group->addAction(ptr);
-    connect(ptr, &QAction::triggered, this, [i]() { m_VarBox->m_SpeedBox->findChild<QObject*>("rect")->setProperty("textindex", i); });
-  }
-  m_Menu->addSeparator();
-  static const char* li[] = {"MemUseage", "NetUpSpeed", "NetDownSpeed"};
-  connect(m_Menu->addAction("修改颜色"), &QAction::triggered, this, []() {
-    auto ptr = m_VarBox->m_SpeedBox->findChild<QObject*>("rect");
-    int index = ptr->property("textindex").toInt();
-    ptr = ptr->findChild<QObject*>(li[index]);
-    QColor col(ptr->property("color").toString());
-    int alpha = col.alpha();
-    col = QColorDialog::getColor(col);
-    if (col.isValid()) {
-      col.setAlpha(alpha);
-      ptr->setProperty("color", col.name(QColor::HexArgb));
-    }
-  });
-  connect(m_Menu->addAction("修改字体"), &QAction::triggered, this, []() {
-    auto ptr = m_VarBox->m_SpeedBox->findChild<QObject*>("rect");
-    int index = ptr->property("textindex").toInt();
-    ptr = ptr->findChild<QObject*>(li[index]);
-    bool ok;
-    auto _font = QFontDialog::getFont(&ok, ptr->property("font").value<QFont>());
-    if (ok) ptr->setProperty("font", _font);
-  });
-
-  connect(m_pAppSettingMenu->addAction("更新菜单"), &QAction::triggered, this,
-          &SpeedMenu::UpdateStyle);
-  connect(m_pAppSettingMenu->addAction("还原位置"), &QAction::triggered, this,
-          []() {
-            m_VarBox->m_SpeedBox->setPosition(100, 100);
-          });
-  connect(m_pAppSettingMenu->addAction("重启软件"), &QAction::triggered, this,
-          []() { qApp->exit(static_cast<int>(ExitCode::RETCODE_RESTART)); });
-  connect(m_pAppSettingMenu->addAction("背景颜色"), &QAction::triggered, this, []() {
-    auto ptr = m_VarBox->m_SpeedBox->findChild<QObject*>("rect");
-    QColor col(ptr->property("color").toString());
-    int alpha = col.alpha();
-    col = QColorDialog::getColor(col, nullptr, "选择颜色");
-    if (col.isValid()) {
-      col.setAlpha(alpha);
-      ptr->setProperty("color", col.name(QColor::HexArgb));
-    }
-  });
-  connect(m_pAppSettingMenu->addAction("背景透明"), &QAction::triggered, this, []() {
-    auto ptr = m_VarBox->m_SpeedBox->findChild<QObject*>("rect");
-    QColor col = QColor(ptr->property("color").toString());
-    col.setAlpha(
-        QInputDialog::getInt(nullptr, QStringLiteral("请输入不透明度"),
-                             QStringLiteral("整数(1~255)"),
-                             col.alpha(), 0, 255));
-    ptr->setProperty("color", col.name(QColor::HexArgb));
-  });
-  ptr = m_pAppSettingMenu->addAction("背景模糊");
-  ptr->setCheckable(true);
-  ptr->setChecked(m_VarBox->m_SpeedBox->findChild<QObject*>("settings")->property("blur").toBool());
-  connect(ptr, &QAction::triggered, this, [](bool checked) {
-    m_VarBox->m_SpeedBox->findChild<QObject*>("settings")->setProperty("blur", checked);
-  });
-}
-
-void SpeedMenu::SetupImageType(QMenu* parent, QAction* ac) {
-  int index = 0;
-  static int type = m_GlobalSetting->find(u8"Wallpaper")
-                        ->second.find(u8"ImageType")
-                        ->second.getValueInt();
-  QMenu* mu = new QMenu(parent);
-
-  auto acGroup = new QActionGroup(this);
-  acGroup->setExclusive(true);
-  for (const auto& i :
-       {"壁纸天堂", "必应壁纸", "直链网址", "本地壁纸", "脚本输出"}) {
-    auto ptr = mu->addAction(i);
-    ptr->setCheckable(true);
-    acGroup->addAction(ptr);
-    ptr->setChecked(index == type);
-    connect(ptr, &QAction::triggered, this, [index, this]() {
-      if (m_VarBox->m_Wallpaper->IsWorking() &&
-          QMessageBox::question(nullptr, QStringLiteral("提示"),
-                                QStringLiteral("当前正忙，是否强制继续？")) !=
-              QMessageBox::Yes) {
-        return;
-      }
-      m_VarBox->m_Wallpaper->SetImageType(index);
-      SetAdditionalMenu();
-    });
-    ++index;
-  }
-  ac->setMenu(mu);
-}
 
 void SpeedMenu::SetAdditionalMenu() {
   static QMenu* m_Menus = nullptr;

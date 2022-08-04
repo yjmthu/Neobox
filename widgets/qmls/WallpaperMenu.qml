@@ -1,4 +1,5 @@
 import QtQuick 2.0
+import Qt.labs.platform 1.0
 import Neobox 1.0
 
 NeoMenuSuperItem {
@@ -9,49 +10,36 @@ NeoMenuSuperItem {
   NeoMenuSuperItem {
     text: qsTr("类型选择")
     exclusive: true
-    checkedChild: speedMenu.wallpaperType
 
     onCheckedChildChanged: {
       if (speedMenu.wallpaperType != checkedChild) {
         speedMenu.wallpaperType = checkedChild
+        wallpaperMenu.changeWallpaperType(checkedChild)
       }
     }
 
     NeoMenuCheckableItem {
       text: qsTr("壁纸天堂")
       onTriggered: {
-        wallpaperMenu.changeWallpaperType(index)
       }
     }
     NeoMenuCheckableItem {
       text: qsTr("必应壁纸")
-      onTriggered: {
-        wallpaperMenu.changeWallpaperType(index)
-      }
     }
     NeoMenuCheckableItem {
       text: qsTr("直链壁纸")
-      onTriggered: {
-        wallpaperMenu.changeWallpaperType(index)
-      }
     }
     NeoMenuCheckableItem {
       text: qsTr("本地壁纸")
-      onTriggered: {
-        wallpaperMenu.changeWallpaperType(index)
-      }
     }
     NeoMenuCheckableItem {
       text: qsTr("脚本输出")
-      onTriggered: {
-        wallpaperMenu.changeWallpaperType(index)
-      }
     }
     NeoMenuCheckableItem {
       text: qsTr("收藏夹")
-      onTriggered: {
-        wallpaperMenu.changeWallpaperType(index)
-      }
+    }
+    Component.onCompleted: {
+      checkedChild = speedMenu.wallpaperType
     }
   }
   NeoMenuCheckableItem {
@@ -96,7 +84,15 @@ NeoMenuSuperItem {
   NeoMenuItem {
     text: qsTr("存储位置")
     onTriggered: {
-      wallpaperMenu.speedMenu.appOpenDir(wallpaperMenu.speedMenu.wallpaperDir)
+      m_FolderDialog.currentFolder = speedMenu.wallpaperDir
+      m_FolderDialog.open()
+    }
+    property FolderDialog m_FolderDialog: FolderDialog {
+      title: qsTr("选择文件")
+      options: FolderDialog.ShowDirsOnly
+      onAccepted: {
+        speedMenu.wallpaperDir = folder
+      }
     }
   }
   NeoMenuItem {
@@ -127,7 +123,7 @@ NeoMenuSuperItem {
     case 4:
     case 5:
     default:
-      break;
+      return
     }
     if (component.status == Component.Ready) {
       moreOptions = component.createObject(m_contentItem, 
@@ -137,7 +133,7 @@ NeoMenuSuperItem {
         m_Json: JSON.parse(wallpaperMenu.speedMenu.wallpaperGetCurJson()),
         speedMenu: wallpaperMenu.speedMenu
       });
-      content.push(moreOptions);
+      content.push(moreOptions)
     } else if (component.status == Component.Error) {
       console.log("Error loading component:", component.errorString())
     }

@@ -5,7 +5,7 @@ add_definitions(-DCPPHTTPLIB_OPENSSL_SUPPORT)
 include_directories(include)
 
 add_library(httplib STATIC
-    src/httplib.cc
+    src/httplib.cpp
 )
 
 if(WIN32)

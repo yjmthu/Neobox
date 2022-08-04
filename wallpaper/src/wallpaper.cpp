@@ -150,7 +150,6 @@ Wallpaper::SetWallpaper(const std::filesystem::path& imagePath)
 #endif
 }
 
-#if 0
 bool Wallpaper::IsOnline() {
 #ifdef _WIN32
   DWORD flags;
@@ -173,7 +172,6 @@ bool Wallpaper::IsOnline() {
   return res && res->status == 200;
 #endif
 }
-#endif
 
 Wallpaper::Wallpaper(const std::filesystem::path& picHome)
   : m_ImageType(-1)
@@ -313,9 +311,11 @@ Wallpaper::UndoDelete()
     std::filesystem::create_directories(parent_path);
   }
   std::filesystem::rename(back.first, back.second);
+  if (!SetWallpaper(m_CurImage = std::move(back.second)))
+    return false;
   m_PrevImgs.push_back(m_CurImage);
-  SetWallpaper(m_CurImage = std::move(back.second));
   m_BlackList.pop_back();
+  m_Wallpaper->UndoDislike(m_CurImage);
   WriteBlackList();
   return true;
 }
@@ -368,6 +368,7 @@ Wallpaper::RemoveCurrent()
     if (SetWallpaper(m_NextImgs.top())) {
       if (std::filesystem::exists(m_CurImage))
         AppendBlackList(m_CurImage);
+      m_Wallpaper->Dislike(m_CurImage);
       m_CurImage = m_NextImgs.top();
       m_NextImgs.pop();
       return true;
@@ -470,9 +471,8 @@ Wallpaper::SetFirstChange(bool flag)
 void
 Wallpaper::SetCurDir(const std::filesystem::path& str)
 {
-  if (!std::filesystem::exists(str))
-    std::filesystem::create_directory(str);
-  m_Wallpaper->SetCurDir(str);
+  if (std::filesystem::exists(str) || std::filesystem::create_directory(str))
+    m_Wallpaper->SetCurDir(str);
 }
 
 bool
@@ -489,8 +489,16 @@ Wallpaper::SetImageType(int index)
   if (index == 1)
     return true;
   std::thread([this]() {
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    for (int i=0; i<60; ++i) {
+      if (Wallpaper::IsOnline()) break;
+      std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+    if (!Wallpaper::IsOnline()) return;
+
     WallBase* ptr = WallBase::GetNewInstance(m_PicHomeDir, 1);
+    const std::u8string& jstr = ptr->GetJson();
+    YJson tmp(jstr.begin(), jstr.end());
+    if (!tmp[u8"auto-download"].second.isTrue()) return;
     for (int i = 0; i < 7; ++i) {
       Wallpaper::DownloadImage(ptr->GetNext());
     }

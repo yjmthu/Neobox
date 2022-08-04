@@ -22,10 +22,6 @@ NeoMenuSuperItem {
         showAlphaChannel: true
         onAccepted: {
           mainwindow.mainrect.rectSettings.color = color
-          visible = false
-        }
-        onRejected: {
-          visible = false
         }
       }
       onTriggered: {
@@ -73,6 +69,7 @@ NeoMenuSuperItem {
   NeoMenuSuperItem {
     text: qsTr("界面文字")
     NeoMenuSuperItem {
+      id: textCtl
       text: qsTr("文字选择")
       exclusive: true
       NeoMenuCheckableItem {
@@ -90,12 +87,33 @@ NeoMenuSuperItem {
     }
     NeoMenuItem {
       text: qsTr("文字颜色")
+      onTriggered: {
+        m_ColorDialog.currentColor = mainwindow.getTextCtl(textCtl.checkedChild).color
+        m_ColorDialog.open()
+      }
+
+      property ColorDialog m_ColorDialog: ColorDialog {
+        title: qsTr("选择颜色")
+        
+        onAccepted: {
+          mainwindow.getTextCtl(textCtl.checkedChild).color = color
+        }
+      }
     }
     NeoMenuItem {
-      text: qsTr("字体大小")
-    }
-    NeoMenuItem {
-      text: qsTr("字体颜色")
+      text: qsTr("字体家族")
+      onTriggered: {
+        m_FontDialog.currentFont = mainwindow.getTextCtl(textCtl.checkedChild).font
+        m_FontDialog.open()
+      }
+
+      property FontDialog m_FontDialog: FontDialog {
+        title: qsTr("选择字体")
+
+        onAccepted: {
+          mainwindow.getTextCtl(textCtl.checkedChild).font = font
+        }
+      }
     }
   }
 }

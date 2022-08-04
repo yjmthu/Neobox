@@ -52,11 +52,12 @@ public:
     return ptr;
   }
   virtual void Dislike(const std::filesystem::path& img) override {}
+  virtual void UndoDislike(const std::filesystem::path& img) override {}
   virtual void SetCurDir(const std::filesystem::path& str) override {}
 
   virtual std::u8string GetJson() const override
   {
-    return m_Setting->toU8String();
+    return m_Setting->toString();
   }
 
   virtual void SetJson(const std::u8string& str) override

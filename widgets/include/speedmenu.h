@@ -34,6 +34,7 @@ public:
   Q_INVOKABLE void wallpaperUndoDelete();
   Q_INVOKABLE void wallpaperClearJunk();
   Q_INVOKABLE QString wallpaperGetCurJson() const;
+  Q_INVOKABLE QString wallpaperGetCurWallpaper() const;
   Q_INVOKABLE void wallpaperSetCurJson(const QString& str);
   Q_INVOKABLE void wallpaperSetDrop(const QString& str);
   Q_INVOKABLE void toolOcrGetScreenShotCut();

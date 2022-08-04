@@ -58,6 +58,7 @@ public:
       YJson::swap(val, m_Data->find(u8"Used")->second);
       if (val.emptyA()) {
         std::cout << "No Url\n";
+        m_NeedDownUrl = true;
         return ptr;
       } else {
         std::vector<std::u8string> temp;
@@ -106,6 +107,20 @@ public:
       throw std::errc::not_a_directory;
     }
   }
+  virtual void UndoDislike(const std::filesystem::path& path) override {
+    if (path.has_filename()) {
+      std::string m_FileName(path.filename().string());
+      std::smatch m_MatchResult;
+      std::regex pattern("^wallhaven-[0-9a-z]{6}\\.(png|jpg)$", std::regex::icase);
+      if (std::regex_match(m_FileName, m_MatchResult, pattern)) {
+        std::string&& str = m_MatchResult.str();
+        std::u8string u8str(str.begin(), str.end());
+        m_Data->find(u8"Blacklist")->second.removeByValA(u8str);
+        m_Data->find(u8"Used")->second.append(u8str);
+        m_Data->toFile(m_DataPath);
+      }
+    }
+  }
   explicit Wallhaven(const std::filesystem::path& picHome)
     : WallBase(picHome)
     , m_Setting(nullptr)
@@ -144,7 +159,7 @@ public:
 
   virtual std::u8string GetJson() const override
   {
-    return m_Setting->toU8String(false);
+    return m_Setting->toString(false);
   }
 
 private:
@@ -197,20 +212,21 @@ private:
       for (size_t n = i + 5; i < n; ++i) {
         std::string url(std::string_view(
           reinterpret_cast<const char*>(m_ImageUrl.data()), m_ImageUrl.size()));
-        url += "&page=" + std::to_string(i);
+        if (i != 1) url += "&page=" + std::to_string(i);
         std::cout << "https://wallhaven.cc" << url << std::endl;
         auto res = clt.Get(url.c_str());
-        if (!res || res->status != 200)
-          break;
+        if (!res || res->status != 200) { break; }
         YJson root(res->body.begin(), res->body.end());
         YJson& data = root[u8"data"sv].second;
         for (auto& i : data.getArray()) {
           std::u8string name =
             i.find(u8"path")->second.getValueString().substr(31);
+          std::cout << (const char*)name.c_str() << ' ';
           if (m_BlackArray.findByValA(name) == m_BlackArray.endA()) {
             m_Array.emplace_back(name);
             ++m_TotalDownload;
           }
+          std::cout << std::endl;
         }
       }
     } else { // wallhaven-6ozrgw.png

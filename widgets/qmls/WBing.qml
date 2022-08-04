@@ -25,10 +25,23 @@ NeoMenuSuperItem {
       console.log("Error loading component:", component.errorString())
     }
   }
+  NeoMenuCheckableItem {
+    id: autoDownload
+    text: qsTr("自动下载")
+
+    onTriggered: {
+      if (checked) {
+        m_Json["auto-download"] = true
+      } else {
+        m_Json["auto-download"] = false
+      }
+      updateJson()
+    }
+  }
   NeoMenuItem {
     text: qsTr("图片格式")
     onTriggered: {
-      getText(m_Json.imgfmt, "图片名称格式：", function(txt){
+      getText(m_Json.imgfmt, "图片名称格式：", function(txt) {
 
         if (txt != m_Json.imgfmt) {
           m_Json.imgfmt = txt
@@ -58,6 +71,14 @@ NeoMenuSuperItem {
     text: qsTr("首页测试")
     onTriggered: {
       Qt.openUrlExternally("https://www.bing.com" + m_Json.images[m_Json.index].quiz)
+    }
+  }
+
+  Component.onCompleted: {
+    if (m_Json["auto-download"] == undefined) {
+      autoDownload.checked = false
+    } else {
+      autoDownload.checked = m_Json["auto-download"]
     }
   }
 }
