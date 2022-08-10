@@ -20,9 +20,9 @@ Window {
   }
 
   function getTextCtl(index) {
-    if (index == 0) return memUseage
-    if (index == 1) return netUpSpeed
-    if (index == 2) return netDownSpeed
+    if (index === 0) return memUseage
+    if (index === 1) return netUpSpeed
+    if (index === 2) return netDownSpeed
     return null
   }
 

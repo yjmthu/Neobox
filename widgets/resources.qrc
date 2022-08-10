@@ -9,8 +9,19 @@
         <file>jsons/Setting.json</file>
         <file>styles/MenuStyle.css</file>
         <file>qmls/FloatingWindow.qml</file>
-        <file>qmls/MainMenu.qml</file>
-        <file>qmls/SystemTray.qml</file>
+		<file>qmls/IntDialog.qml</file>
+		<file>qmls/MainMenu.qml</file>
+		<file>qmls/NeoMenu.qml</file>
+	    <file>qmls/NeoMenuCheckableItem.qml</file>
         <file>qmls/NeoMenuItem.qml</file>
+        <file>qmls/NeoMenuSeparator.qml</file>
+        <file>qmls/NeoMenuSuperItem.qml</file>
+	    <file>qmls/SettingMenu.qml</file>
+	    <file>qmls/SystemTray.qml</file>
+        <file>qmls/TextDialog.qml</file>
+        <file>qmls/UiMenu.qml</file>
+	    <file>qmls/WallpaperMenu.qml</file>
+        <file>qmls/WBing.qml</file>
+		<file>qmls/WWallhaven.qml</file>
     </qresource>
 </RCC>

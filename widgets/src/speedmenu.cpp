@@ -64,7 +64,7 @@ SpeedMenu::appAutoStart()
                  QSettings::NativeFormat)
            .value("Neobox")
            .toString()
-           .compare(QDir::toNativeSeparators(qApp->applicationFilePath())));
+           .compare(QDir::toNativeSeparators(qApp->applicationFilePath()));
 #else
   QString m_AutoStartFile =
     QStandardPaths::writableLocation(QStandardPaths::HomeLocation) +
@@ -89,7 +89,7 @@ SpeedMenu::appSetAutoStart(bool start)
     QStringLiteral("HKEY_CURRENT_"
                    "USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"),
     QSettings::NativeFormat);
-  if (checked)
+  if (start)
     reg.setValue("Neobox",
                  QDir::toNativeSeparators(qApp->applicationFilePath()));
   else
@@ -210,7 +210,7 @@ SpeedMenu::wallpaperGetCurJson() const
 {
   std::u8string&& str = m_Wallpaper->GetJson();
   return QString::fromUtf8(reinterpret_cast<const char*>(str.data()),
-                           str.size());
+      static_cast<int>(str.size()));
 }
 
 QString SpeedMenu::wallpaperGetCurWallpaper() const
@@ -234,7 +234,11 @@ SpeedMenu::wallpaperSetDrop(const QString& str)
   std::deque<std::filesystem::path> paths;
   for (const auto& i : urls.getArray()) {
     auto& temp = i.getValueString();
+#ifdef _WIN32
+    std::filesystem::path path(std::u8string(temp.begin() + 8, temp.end()));
+#elif defined _linux_
     std::filesystem::path path(std::u8string(temp.begin() + 7, temp.end()));
+#endif
     if (Wallpaper::IsImageFile(path))
       paths.emplace_front(std::move(path));
   }

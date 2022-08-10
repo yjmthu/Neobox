@@ -74,7 +74,8 @@ Button {
     elide: Text.ElideRight
     color: control.down ? "blue" : "black"
     font.pointSize: 10
-    font.family: "FZKai-Z03"
+    // font.family: "FZKai-Z03"
+    font.family: "方正楷体简体"
   }
 
   onClicked: {

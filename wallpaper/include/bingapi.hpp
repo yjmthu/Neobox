@@ -62,7 +62,7 @@ public:
   }
   virtual ImageInfoEx GetNext() override
   {
-    // https://www.bing.com/th?id=OHR.Yellowstone150_ZH-CN055下这个接口含义，直接看后面的请求参数1084440_UHD.jpg
+    // https://www.bing.com/th?id=OHR.Yellowstone150_ZH-CN055 下这个接口含义，直接看后面的请求参数1084440_UHD.jpg
 
     auto jsTemp = m_Setting->find(u8"images")->second.find(m_CurImageIndex);
     ImageInfoEx ptr(new std::vector<std::u8string>);

@@ -120,6 +120,11 @@ private:
       std::localtime(&t),
       reinterpret_cast<const char*>(m_ImageNameFormat.c_str()));
     std::string&& str = ss.str();
+    for (auto& i: str) {
+        if (i == ':') {
+            i = '-';
+        }
+    }
     return std::u8string(str.begin(), str.end());
   }
   YJson* m_Setting;

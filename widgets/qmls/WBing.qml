@@ -13,7 +13,7 @@ NeoMenuSuperItem {
   }
   function getText(curText, hintText, func) {
     var component = Qt.createComponent("TextDialog.qml")
-    if (component.status == Component.Ready) {
+    if (component.status === Component.Ready) {
       var window = component.createObject(m_contentItem, 
       {
         currentText: curText,
@@ -21,7 +21,7 @@ NeoMenuSuperItem {
         finished: func
       });
       window.visible = true
-    } else if (component.status == Component.Error) {
+    } else if (component.status === Component.Error) {
       console.log("Error loading component:", component.errorString())
     }
   }
@@ -43,7 +43,7 @@ NeoMenuSuperItem {
     onTriggered: {
       getText(m_Json.imgfmt, "图片名称格式：", function(txt) {
 
-        if (txt != m_Json.imgfmt) {
+        if (txt !== m_Json.imgfmt) {
           m_Json.imgfmt = txt
           updateJson()
         }
@@ -54,7 +54,7 @@ NeoMenuSuperItem {
     text: qsTr("地区选择")
     onTriggered: {
       getText(m_Json.mkt, "地区：", function(txt){
-        if (txt != m_Json.mkt) {
+        if (txt !== m_Json.mkt) {
           m_Json.mkt = txt
           updateJson()
         }
@@ -75,7 +75,7 @@ NeoMenuSuperItem {
   }
 
   Component.onCompleted: {
-    if (m_Json["auto-download"] == undefined) {
+    if (m_Json["auto-download"] === undefined) {
       autoDownload.checked = false
     } else {
       autoDownload.checked = m_Json["auto-download"]

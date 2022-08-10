@@ -54,11 +54,8 @@ NetSpeedHelper::~NetSpeedHelper()
 void
 NetSpeedHelper::SetMemInfo()
 {
-  static char m_szMemStr[4];
   static MEMORYSTATUS ms;
   GlobalMemoryStatus(&ms);
-  // sprintf(m_szMemStr, "%d", static_cast<uint16_t>(ms.dwMemoryLoad));
-  // m_SysInfo[0] = reinterpret_cast<char8_t*>(m_szMemStr);
   std::get<0>(m_SysInfo) = ms.dwMemoryLoad;
 }
 

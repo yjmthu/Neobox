@@ -80,7 +80,7 @@ main(int argc, char* argv[])
   QQmlApplicationEngine engine;
   qmlRegisterType<SpeedMenu>("Neobox", 1, 0, "SpeedMenu");
   qmlRegisterType<SpeedBox>("Neobox", 1, 0, "SpeedBox");
-  engine.load(QUrl(QStringLiteral("qmls/FloatingWindow.qml")));
+  engine.load(QUrl(QStringLiteral("qrc:/qmls/FloatingWindow.qml")));
   int ret = a.exec();
   m_SharedMemory.detach();
   DoExit(static_cast<ExitCode>(ret));

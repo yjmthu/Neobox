@@ -21,66 +21,56 @@ ShowMessage(const std::u8string& title,
 constexpr char Wallpaper::m_szWallScript[];
 
 bool
-Wallpaper::DownloadImage(const ImageInfoEx& imageInfo)
+Wallpaper::DownloadImage(const ImageInfoEx imageInfo)
 {
+  namespace fs = std::filesystem;
   if (imageInfo->empty())
     return false;
-  auto dir =
-    imageInfo->front().substr(0,
-                              imageInfo->front().find_last_of(
-                                std::filesystem::path::preferred_separator));
-  if (!std::filesystem::exists(dir))
-    std::filesystem::create_directories(dir);
-  if (std::filesystem::exists(imageInfo->front())) {
-    if (!std::filesystem::file_size(imageInfo->front()))
-      std::filesystem::remove(imageInfo->front());
+
+  const auto& m_sFilePath = imageInfo->front();
+  auto dir = fs::path(m_sFilePath).parent_path();
+  if (!fs::exists(dir))
+    fs::create_directories(dir);
+  if (fs::exists(m_sFilePath)) {
+    if (!fs::file_size(m_sFilePath))
+      fs::remove(m_sFilePath);
     else
       return true;
   }
-  if (imageInfo->size() != 3)
+  if (imageInfo->size() != 3) {
     return false;
-  try {
-    httplib::Client clt(
-      std::string(imageInfo->at(1).begin(), imageInfo->at(1).end()));
-    std::ofstream file(std::filesystem::path(imageInfo->front()),
-                       std::ios::binary | std::ios::out);
-    if (!file.is_open())
-      return false;
-    m_UsingFiles.emplace(imageInfo->front());
-    auto m_fHandleData = [&file](const char* data, size_t length) {
-      file.write(data, length);
-      return true;
-    };
-    auto res = clt.Get(reinterpret_cast<const char*>(imageInfo->at(2).c_str()),
-                       m_fHandleData);
-  label:
+  }
+
+  httplib::Client clt(
+    std::string(imageInfo->at(1).begin(), imageInfo->at(1).end()));
+  std::ofstream file(fs::path(m_sFilePath),
+                   std::ios::binary | std::ios::out);
+  if (!file.is_open())
+    return false;
+  m_UsingFiles.emplace(m_sFilePath);
+  auto res = clt.Get(reinterpret_cast<const char*>(imageInfo->at(2).c_str()));
+  while (true) {
     if (res && res->status == 200) {
-      m_UsingFiles.erase(imageInfo->front());
+      file.write(res->body.data(), res->body.size());
+      m_UsingFiles.erase(m_sFilePath);
       file.close();
       return true;
     } else if (res && (res->status == 301 || res->status == 302)) {
-      file.seekp(std::ios::beg);
       clt.set_follow_location(true);
-      res = clt.Get(reinterpret_cast<const char*>(imageInfo->at(2).c_str()),
-                    m_fHandleData);
-      goto label;
+      res = clt.Get(reinterpret_cast<const char*>(imageInfo->at(2).c_str()));
+      continue;
     } else {
-      m_UsingFiles.erase(imageInfo->front());
+      m_UsingFiles.erase(m_sFilePath);
       file.close();
-      if (std::filesystem::exists(imageInfo->front()))
-        std::filesystem::remove(imageInfo->front());
+      if (fs::exists(m_sFilePath))
+        fs::remove(m_sFilePath);
       return false;
     }
-  } catch (...) {
-    ShowMessage(u8"网络错误",
-                u8"从：" + imageInfo->at(1) + imageInfo->at(2) +
-                  u8"\n下载文件：" + imageInfo->front() + u8"\n发生错误。");
-    return false;
   }
+  return false;
 }
 
-Wallpaper::Desktop
-Wallpaper::GetDesktop()
+Wallpaper::Desktop Wallpaper::GetDesktop()
 {
 #if defined(_WIN32)
   return Desktop::WIN;
@@ -102,8 +92,7 @@ Wallpaper::GetDesktop()
 #endif
 }
 
-bool
-Wallpaper::SetWallpaper(const std::filesystem::path& imagePath)
+bool Wallpaper::SetWallpaper(const std::filesystem::path& imagePath)
 {
   [[maybe_unused]] static auto m_DesktopType = GetDesktop();
   if (!std::filesystem::exists(imagePath))
@@ -201,8 +190,7 @@ Wallpaper::~Wallpaper()
   }
 }
 
-void
-Wallpaper::SetSlot(int type)
+void Wallpaper::SetSlot(int type)
 {
   using namespace std::literals;
   if (WallBase::m_IsWorking) {
@@ -234,8 +222,7 @@ Wallpaper::SetSlot(int type)
   }).detach();
 }
 
-const std::filesystem::path&
-Wallpaper::GetImageDir() const
+const std::filesystem::path& Wallpaper::GetImageDir() const
 {
   return m_Wallpaper->GetImageDir();
 }

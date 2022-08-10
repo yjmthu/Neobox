@@ -5,6 +5,8 @@
 #include <QQuickView>
 #ifdef __linux__
 #include <KWindowEffects>
+#elif defined _WIN32
+#include <sysapi.h>
 #endif
 
 #include "speedapp.h"
@@ -80,5 +82,7 @@ SpeedBox::setRoundRect(int x, int y, int w, int h, int r, bool set)
 
   KWindowEffects::enableBlurBehind(
     qobject_cast<QWindow*>(parent()->parent()), true, region);
+#elif defined _WIN32
+  enableBlurBehind((HWND)qobject_cast<QWindow*>(parent()->parent())->winId(), 100, set);
 #endif
 }

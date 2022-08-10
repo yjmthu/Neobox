@@ -20,6 +20,7 @@ if(WIN32)
         C:/MSVC2022/OpenSSL/OpenSSL-Win64/include
         C:/MSVC2022/leptonica-1.82.0/include
         C:/MSVC2022/tesseract-5.1.0/include
+        C:/MSVC2022/Boost/x64/include/boost-1_79
     )
     link_directories(
         C:/MSVC2022/OpenSSL/OpenSSL-Win64/lib
@@ -28,27 +29,27 @@ if(WIN32)
         C:/MSVC2022/tiff-4.4.0/libtiff/Release
         C:/MSVC2022/leptonica-1.82.0/src/Release
         C:/MSVC2022/tesseract-5.1.0/lib
+        C:/MSVC2022/Boost/x64/lib
     )
 endif()
 
 set(M_THIRD_PART_LIB_DIR ${CMAKE_SOURCE_DIR}/3rdlib)
 
-include_directories(${M_THIRD_PART_LIB_DIR}/httplib/include)
 include_directories(${M_THIRD_PART_LIB_DIR}/YJson/include)
 include_directories(${M_THIRD_PART_LIB_DIR}/3rd_qxtglobalshortcut/include)
-include_directories(${M_THIRD_PART_LIB_DIR}/httplib)
 include_directories(wallpaper/include)
 include_directories(translate/include)
 include_directories(widgets/include)
 include_directories(core/include)
+include_directories(network/include)
 include_directories(update/include)
 
-add_subdirectory(${M_THIRD_PART_LIB_DIR}/httplib)
 add_subdirectory(${M_THIRD_PART_LIB_DIR}/YJson)
 add_subdirectory(${M_THIRD_PART_LIB_DIR}/3rd_qxtglobalshortcut)
 add_subdirectory(wallpaper)
 add_subdirectory(translate)
 add_subdirectory(core)
 add_subdirectory(widgets)
+add_subdirectory(network)
 add_subdirectory(update)
 add_subdirectory(tests)

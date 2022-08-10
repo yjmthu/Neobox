@@ -34,7 +34,7 @@ public:
   };
   explicit Wallpaper(const std::filesystem::path& picHome);
   virtual ~Wallpaper();
-  static bool DownloadImage(const ImageInfoEx& imageInfo);
+  static bool DownloadImage(const ImageInfoEx imageInfo);
   static bool SetWallpaper(const std::filesystem::path& imagePath);
   static bool IsImageFile(const std::filesystem::path& fileName);
   static bool IsWorking();

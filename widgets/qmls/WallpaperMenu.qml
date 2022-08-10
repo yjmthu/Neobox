@@ -12,7 +12,7 @@ NeoMenuSuperItem {
     exclusive: true
 
     onCheckedChildChanged: {
-      if (speedMenu.wallpaperType != checkedChild) {
+      if (speedMenu.wallpaperType !== checkedChild) {
         speedMenu.wallpaperType = checkedChild
         wallpaperMenu.changeWallpaperType(checkedChild)
       }
@@ -125,7 +125,7 @@ NeoMenuSuperItem {
     default:
       return
     }
-    if (component.status == Component.Ready) {
+    if (component.status === Component.Ready) {
       moreOptions = component.createObject(m_contentItem, 
       {
         text: qsTr("更多设置"),
@@ -134,7 +134,7 @@ NeoMenuSuperItem {
         speedMenu: wallpaperMenu.speedMenu
       });
       content.push(moreOptions)
-    } else if (component.status == Component.Error) {
+    } else if (component.status === Component.Error) {
       console.log("Error loading component:", component.errorString())
     }
   }
