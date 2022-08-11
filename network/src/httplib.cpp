@@ -104,7 +104,7 @@ namespace httplib {
 
     std::istream is(&response);
     is.unsetf(std::ios_base::skipws);
-    res->data.append(std::istream_iterator<char>(is), std::istream_iterator<char>());
+    res->body.append(std::istream_iterator<char>(is), std::istream_iterator<char>());
   }
 
   HttpGet::HttpGet() {
@@ -140,7 +140,38 @@ namespace httplib {
     return res;
   }
 
-  HttpPost::HttpPost() {
+  HttpPost::HttpPost(const std::string& body) {
+    req.body = body;
+  }
+
+  const HttpResponse* HttpPost::Post(const std::string& url) {
+    using boost::asio::ip::tcp;
+    if (res) {
+      delete res;
+      res = nullptr;
+    }
+
+    boost::asio::io_service ioService;
+  
+    tcp::resolver resolver(ioService);
+    tcp::resolver::query query(req.domain, "http");
+    tcp::resolver::iterator iter = resolver.resolve(query);
+    
+    tcp::socket socket(ioService);
+    boost::asio::connect(socket, iter);
+
+    ParseUrl(url);
+    boost::asio::streambuf request;
+    std::ostream ostr(&request);
+    BuildPost(ostr, req.body);
+
+    boost::asio::streambuf response;
+    boost::asio::write(socket, request);
+    boost::asio::read_until(socket, response, "\r\n");
+
+    ReadResponse(response);
+
+    return res;
   }
 
 }

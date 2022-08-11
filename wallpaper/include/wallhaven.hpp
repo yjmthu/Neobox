@@ -76,8 +76,7 @@ public:
         return ptr;
     }
     ptr->emplace_back((m_ImageDir / name).u8string());
-    ptr->emplace_back(u8"https://w.wallhaven.cc"sv);
-    ptr->emplace_back(u8"/full/"s + name.substr(10, 2) + u8"/"s + name);
+    ptr->emplace_back(u8"https://w.wallhaven.cc/full/"s + name.substr(10, 2) + u8"/"s + name);
     m_Data->find(u8"Used")->second.append(name);
     val.popBackA();
     m_Data->toFile(m_DataPath);

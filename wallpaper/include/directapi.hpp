@@ -34,7 +34,7 @@ public:
   virtual ImageInfoEx GetNext() override
   {
     return ImageInfoEx(new std::vector<std::u8string>{
-      (m_ImageDir / GetImageName()).u8string(), m_ApiUrl, m_ApiPath });
+      (m_ImageDir / GetImageName()).u8string(), m_ApiUrl + m_ApiPath });
   }
   virtual void Dislike(const std::filesystem::path& img) override
   {

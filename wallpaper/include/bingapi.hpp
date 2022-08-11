@@ -44,12 +44,15 @@ public:
   {
     // https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8
 
-    std::string path("/HPImageArchive.aspx?format=js&idx=0&n=8&mkt=");
-    path += std::string(m_Mft.begin(), m_Mft.end());
-    httplib::Client clt(m_ApiUrl);
-    auto res = clt.Get(path.c_str());
+    std::u8string path(u8"/HPImageArchive.aspx?format=js&idx=0&n=8&mkt=");
+    path += m_Mft;
+
+    httplib::HttpGet clt;
+    auto res = clt.Get(m_ApiUrl + path);
+
     if (!res || res->status != 200)
       return false;
+
     m_Setting = new YJson(res->body.begin(), res->body.end());
     m_Setting->append(GetToday("%Y%m%d"), u8"today");
     m_Setting->append(m_ImageDir, u8"imgdir");
@@ -68,7 +71,7 @@ public:
     ImageInfoEx ptr(new std::vector<std::u8string>);
     ptr->push_back((m_ImageDir / GetImageName(*jsTemp)).u8string());
     ptr->emplace_back(m_ApiUrl.begin(), m_ApiUrl.end());
-    ptr->push_back(jsTemp->find(u8"urlbase")->second.getValueString() +
+    ptr->back().append(jsTemp->find(u8"urlbase")->second.getValueString() +
                    u8"_UHD.jpg");
     (*m_Setting)[u8"index"].second.setValue(
         static_cast<int>(m_CurImageIndex));
@@ -110,7 +113,7 @@ public:
 private:
   std::u8string m_Mft;
   std::u8string m_ImageNameFormat;
-  const std::string m_ApiUrl;
+  const std::u8string m_ApiUrl;
   const char m_SettingPath[13]{ "BingApi.json" };
   YJson* m_Setting;
   unsigned m_CurImageIndex;
