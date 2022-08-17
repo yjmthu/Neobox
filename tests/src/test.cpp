@@ -2,23 +2,24 @@
 
 #include <iostream>
 
-int
-main()
+int main()
 {
-  std::vector<std::string> data;
+    std::vector<std::string> data;
 #if __linux__
-  GetCmdOutput<char>("./tests/main", data);
+    GetCmdOutput<char>("./tests/main", data);
 #else
-  GetCmdOutput<char>("./build/tests/Debug/test_main.exe", data);
+    GetCmdOutput<char>("./build/tests/Debug/test_main.exe", data);
 #endif
-  for (auto& i : data) {
-    for (auto j : i) {
-      std::cout << int(j) << ' ';
+    for (auto &i : data)
+    {
+        for (auto j : i)
+        {
+            std::cout << int(j) << ' ';
+        }
+        std::cout << std::endl;
     }
-    std::cout << std::endl;
-  }
-  std::cout << "\\r: " << int('\r') << " \\n: " << int('\n') << std::endl;
-  return 0;
+    std::cout << "\\r: " << int('\r') << " \\n: " << int('\n') << std::endl;
+    return 0;
 }
 
 /*

@@ -5,12 +5,12 @@
 
 class TextDlg : public QDialog
 {
-public:
-  explicit TextDlg(void* image);
+  public:
+    explicit TextDlg(void *image);
 
-private:
-  class QPlainTextEdit* m_TextEdit;
-  void ParsePicture(void* image);
+  private:
+    class QPlainTextEdit *m_TextEdit;
+    void ParsePicture(void *image);
 };
 
 #endif // TEXT_H

@@ -1,27 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
 <RCC>
     <qresource prefix="/">
         <file>fonts/Carattere-Regular-small.ttf</file>
         <file>fonts/FangZhengKaiTiJianTi-1.ttf</file>
         <file>fonts/Nickainley-Normal-small.ttf</file>
         <file>icons/speedbox.ico</file>
-        <file>scripts/Neobox.desktop</file>
-        <file>scripts/SetWallpaper.sh</file>
         <file>jsons/Setting.json</file>
-        <file>styles/MenuStyle.css</file>
         <file>qmls/FloatingWindow.qml</file>
-		<file>qmls/IntDialog.qml</file>
-		<file>qmls/MainMenu.qml</file>
-		<file>qmls/NeoMenu.qml</file>
-	    <file>qmls/NeoMenuCheckableItem.qml</file>
+        <file>qmls/IntDialog.qml</file>
+        <file>qmls/MainMenu.qml</file>
+        <file>qmls/NeoMenu.qml</file>
+        <file>qmls/NeoMenuCheckableItem.qml</file>
         <file>qmls/NeoMenuItem.qml</file>
         <file>qmls/NeoMenuSeparator.qml</file>
         <file>qmls/NeoMenuSuperItem.qml</file>
-	    <file>qmls/SettingMenu.qml</file>
-	    <file>qmls/SystemTray.qml</file>
+        <file>qmls/SettingMenu.qml</file>
+        <file>qmls/SystemTray.qml</file>
         <file>qmls/TextDialog.qml</file>
         <file>qmls/UiMenu.qml</file>
-	    <file>qmls/WallpaperMenu.qml</file>
+        <file>qmls/WallpaperMenu.qml</file>
         <file>qmls/WBing.qml</file>
-		<file>qmls/WWallhaven.qml</file>
+        <file>qmls/WWallhaven.qml</file>
+        <file>scripts/Neobox.desktop</file>
+        <file>scripts/SetWallpaper.sh</file>
+        <file>styles/MenuStyle.css</file>
     </qresource>
 </RCC>

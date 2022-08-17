@@ -11,25 +11,24 @@
 
 class NetSpeedHelper
 {
-public:
-  explicit NetSpeedHelper();
+  public:
+    explicit NetSpeedHelper();
 #ifdef WIN32
-  ~NetSpeedHelper();
+    ~NetSpeedHelper();
 #endif
-  void GetSysInfo();
-  std::tuple<int, uint64_t, uint64_t>
-    m_SysInfo; //[3]{u8"0", u8"\u2191 0.0 B", u8"\u2193 0.0 B"};
-  void ClearData();
+    void GetSysInfo();
+    std::tuple<int, uint64_t, uint64_t> m_SysInfo; //[3]{u8"0", u8"\u2191 0.0 B", u8"\u2193 0.0 B"};
+    void ClearData();
 
-private:
-  uint64_t m_RecvBytes, m_SendBytes;
+  private:
+    uint64_t m_RecvBytes, m_SendBytes;
 #ifdef _WIN32
-  PIP_ADAPTER_ADDRESSES piaa = nullptr; // Network Card
-  MIB_IFTABLE* mi = nullptr;            // Network Speed
+    PIP_ADAPTER_ADDRESSES piaa = nullptr; // Network Card
+    MIB_IFTABLE *mi = nullptr;            // Network Speed
 #endif
-  class QTimer* m_Timer;
-  void SetMemInfo();
-  void SetNetInfo();
+    class QTimer *m_Timer;
+    void SetMemInfo();
+    void SetNetInfo();
 };
 
 #endif // NETSPEEDHELPER_H

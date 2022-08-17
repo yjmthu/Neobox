@@ -70,7 +70,7 @@ Window {
     Text {
       id: memUseage
       x: 6
-      y: 6
+      y: 2
       color: mGradient()
       font.family: qsTr("Carattere")
       font.pointSize: 20
@@ -200,10 +200,16 @@ Window {
           animation.property = qsTr("x")
           animation.to = 0
           animation.duration = parent.width
+          if (mainwindow.settings.blur) {
+            // speedBox.setRoundRect(x, y, width, height, radius, true)
+          }
         } else if (parent.y != 0) {
           animation.property = qsTr("y")
           animation.to = 0
           animation.duration = parent.height
+          if (mainwindow.settings.blur) {
+            // speedBox.setRoundRect(x, y, width, height, radius, true)
+          }
         } else {
           return
         }
@@ -211,7 +217,7 @@ Window {
       }
 
       onExited: {
-        var delta = 1
+        var delta = 10
         if (mainwindow.x <= 0) {
           animation.property = qsTr("x")
           animation_w.property = qsTr("x")
@@ -219,6 +225,9 @@ Window {
           animation_w.duration = width
           animation.to = delta - width
           animation_w.to = 0
+          if (mainwindow.settings.blur) {
+            // speedBox.setRoundRect(0,0,0,0,0,false)
+          }
         } else if (mainwindow.x + mainwindow.width >= Screen.desktopAvailableWidth) {
           animation.property = qsTr("x")
           animation_w.property = qsTr("x")
@@ -226,6 +235,9 @@ Window {
           animation_w.duration = width
           animation.to = width - delta
           animation_w.to = Screen.desktopAvailableWidth - width
+          if (mainwindow.settings.blur) {
+            // speedBox.setRoundRect(0,0,0,0,0,false)
+          }
         } else if (mainwindow.y <= 0) {
           animation.property = qsTr("y")
           animation_w.property = qsTr("y")
@@ -233,6 +245,9 @@ Window {
           animation_w.duration = height
           animation.to = delta - height
           animation_w.to = 0
+          if (mainwindow.settings.blur) {
+            // speedBox.setRoundRect(0,0,0,0,0,false)
+          }
         } else if (mainwindow.y + mainwindow.height >= Screen.height) {
           animation.property = qsTr("y")
           animation_w.property = qsTr("y")
@@ -240,6 +255,9 @@ Window {
           animation_w.duration = height
           animation.to = height - delta
           animation_w.to = Screen.height - height
+          if (mainwindow.settings.blur) {
+            // speedBox.setRoundRect(0,0,0,0,0,false)
+          }
         } else {
           return
         }

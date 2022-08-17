@@ -94,7 +94,7 @@ NeoMenuSuperItem {
 
       property ColorDialog m_ColorDialog: ColorDialog {
         title: qsTr("选择颜色")
-        
+
         onAccepted: {
           mainwindow.getTextCtl(textCtl.checkedChild).color = color
         }

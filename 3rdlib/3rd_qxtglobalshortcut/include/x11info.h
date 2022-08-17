@@ -27,22 +27,22 @@ typedef struct xcb_connection_t xcb_connection_t;
 
 class X11Info
 {
-  static Display* _display;
+    static Display *_display;
 #ifdef HAVE_QT5
-  static xcb_connection_t* _xcb;
+    static xcb_connection_t *_xcb;
 #endif
-  static int _xcbPreferredScreen;
+    static int _xcbPreferredScreen;
 
-public:
-  static Display* display();
-  static unsigned long appRootWindow(int screen = -1);
-  static int appScreen();
+  public:
+    static Display *display();
+    static unsigned long appRootWindow(int screen = -1);
+    static int appScreen();
 #ifdef HAVE_QT5
-  static xcb_connection_t* xcbConnection();
-  static inline int xcbPreferredScreen()
-  {
-    return _xcbPreferredScreen;
-  }
+    static xcb_connection_t *xcbConnection();
+    static inline int xcbPreferredScreen()
+    {
+        return _xcbPreferredScreen;
+    }
 #endif
 };
 

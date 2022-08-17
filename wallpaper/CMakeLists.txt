@@ -8,7 +8,7 @@ add_library(wallpaper STATIC
 )
 
 target_link_libraries( wallpaper
-    httplib
+    network
     yjson
     core
 )

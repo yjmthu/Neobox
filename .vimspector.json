@@ -4,7 +4,7 @@
       "adapter": "vscode-cpptools",
       "configuration": {
         "request": "launch",
-        "program": "./build/widgets/Neobox",
+        "program": "./build/tests/http.exe",
         "cwd": "${workspaceFolder}",
         "args": [ ],
         "environment": [ ],

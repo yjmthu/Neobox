@@ -5,10 +5,10 @@
 
 class WallhavenMenu : public QObject
 {
-  Q_OBJECT
-private:
-public:
-  WallhavenMenu();
+    Q_OBJECT
+  private:
+  public:
+    WallhavenMenu();
 };
 
 #endif // MENUS_H

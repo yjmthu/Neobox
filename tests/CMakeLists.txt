@@ -10,10 +10,17 @@ add_executable(format
     src/format.cpp
 )
 
-target_link_libraries(
-    test_sys
+add_executable(http
+    src/http.cpp
+)
+
+target_link_libraries(test_sys
     yjson
     core
+)
+
+target_link_libraries(http
+    network
 )
 
 add_executable(test_main
