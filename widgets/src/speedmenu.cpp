@@ -152,7 +152,11 @@ QString SpeedMenu::wallpaperDir() const
 void SpeedMenu::wallpaperSetDir(const QString &str)
 {
     QByteArray &&array = str.toUtf8();
+#ifdef _WIN32
+    m_Wallpaper->SetCurDir(std::u8string(array.begin() + 8, array.end()));
+#else
     m_Wallpaper->SetCurDir(std::u8string(array.begin() + 7, array.end()));
+#endif
     emit wallpaperDirChanged();
 }
 

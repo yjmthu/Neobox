@@ -213,15 +213,12 @@ class Wallhaven : public WallBase
         std::vector<std::u8string> m_Array;
         auto &m_BlackArray = m_Data->find(u8"Blacklist")->second;
         size_t i = 5 * (m_Setting->find(u8"PageNumber")->second.getValueInt() - 1) + 1;
-        if (std::equal(m_ImageUrl.begin(), m_ImageUrl.begin() + 4, "/api"))
+        if (m_ImageUrl.substr(20, 4) == u8"/api")
         {
             for (size_t n = i + 5; i < n; ++i)
             {
-                std::string url(std::string_view(reinterpret_cast<const char *>(m_ImageUrl.data()), m_ImageUrl.size()));
-                if (i != 1)
-                    url += "&page=" + std::to_string(i);
-                std::cout << "https://wallhaven.cc" << url << std::endl;
-                auto res = clt.Get("https://wallhaven.cc"s + url);
+                const std::string url(m_ImageUrl.begin(), m_ImageUrl.end());
+                auto res = clt.Get(i == 1? url: url+"&page=" + std::to_string(i));
                 if (!res || res->status != 200)
                 {
                     break;
@@ -231,13 +228,11 @@ class Wallhaven : public WallBase
                 for (auto &i : data.getArray())
                 {
                     std::u8string name = i.find(u8"path")->second.getValueString().substr(31);
-                    std::cout << (const char *)name.c_str() << ' ';
                     if (m_BlackArray.findByValA(name) == m_BlackArray.endA())
                     {
                         m_Array.emplace_back(name);
                         ++m_TotalDownload;
                     }
-                    std::cout << std::endl;
                 }
             }
         }
@@ -251,10 +246,8 @@ class Wallhaven : public WallBase
             std::sregex_iterator end;
             for (size_t n = i + 5; i < n; ++i)
             {
-                std::string url(m_ImageUrl.begin(), m_ImageUrl.end());
-                if (i != 1)
-                    url += "&page=" + std::to_string(i);
-                auto res = clt.Get("https://wallhaven.cc"s + url);
+                const std::string url(m_ImageUrl.begin(), m_ImageUrl.end());
+                auto res = clt.Get(i == 1? url: url+"&page=" + std::to_string(i));
                 if (!res || res->status != 200)
                     break;
                 std::sregex_iterator iter(res->body.begin(), res->body.end(), pattern);
@@ -294,7 +287,7 @@ class Wallhaven : public WallBase
         auto &param = val[u8"Parameter"].second;
         if (param.isObject())
         {
-            m_ImageUrl = param.urlEncode(u8"/api/v1/search?"sv);
+            m_ImageUrl = param.urlEncode(u8"https://wallhaven.cc/api/v1/search?"sv);
         }
         else if (param.isString())
         {

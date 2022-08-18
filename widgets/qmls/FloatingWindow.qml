@@ -195,29 +195,66 @@ Window {
         clickPos = Qt.point(mouseX, mouseY)
       }
 
-      onEntered: {
+      onEntered: if (Qt.platform.os === "windows") {
+        if (mainwindow.x <= 0) {
+          animation_w.property = qsTr("x")
+          animation_w.to = 0
+          animation_w.duration = parent.width
+        } else if (mainwindow.x + width >= Screen.desktopAvailableWidth) {
+          animation_w.property = qsTr("x")
+          animation_w.to = Screen.desktopAvailableWidth - width
+          animation_w.duration = parent.width
+        } else if (mainwindow.y <= 0) {
+          animation_w.property = qsTr("y")
+          animation_w.to = 0
+          animation_w.duration = parent.height
+        } else if (mainwindow.y + height >= Screen.desktopAvailableHeight) {
+          animation_w.property = qsTr("y")
+          animation_w.to = Screen.desktopAvailableHeight - height
+          animation_w.duration = parent.height
+        } else {
+          return
+        }
+        animation_w.running = true
+      } else {
         if (parent.x != 0) {
           animation.property = qsTr("x")
           animation.to = 0
           animation.duration = parent.width
-          if (mainwindow.settings.blur) {
-            // speedBox.setRoundRect(x, y, width, height, radius, true)
-          }
         } else if (parent.y != 0) {
           animation.property = qsTr("y")
           animation.to = 0
           animation.duration = parent.height
-          if (mainwindow.settings.blur) {
-            // speedBox.setRoundRect(x, y, width, height, radius, true)
-          }
         } else {
           return
         }
         animation.running = true
       }
 
-      onExited: {
-        var delta = 10
+      onExited: if (Qt.platform.os === "windows") {
+        var delta = 3
+        if (mainwindow.x <= 0) {
+          animation_w.property = qsTr("x")
+          animation_w.duration = width
+          animation_w.to = delta - width
+        } else if (mainwindow.x + mainwindow.width >= Screen.desktopAvailableWidth) {
+          animation_w.property = qsTr("x")
+          animation_w.duration = width
+          animation_w.to = Screen.desktopAvailableWidth - delta
+        } else if (mainwindow.y <= 0) {
+          animation_w.property = qsTr("y")
+          animation_w.duration = height
+          animation_w.to = delta - height
+        } else if (mainwindow.y + mainwindow.height >= Screen.desktopAvailableHeight) {
+          animation_w.property = qsTr("y")
+          animation_w.duration = height
+          animation_w.to = Screen.desktopAvailableHeight - delta
+        } else {
+          return
+        }
+        animation_w.running = true
+      } else {
+        var delta = 3
         if (mainwindow.x <= 0) {
           animation.property = qsTr("x")
           animation_w.property = qsTr("x")
@@ -225,9 +262,6 @@ Window {
           animation_w.duration = width
           animation.to = delta - width
           animation_w.to = 0
-          if (mainwindow.settings.blur) {
-            // speedBox.setRoundRect(0,0,0,0,0,false)
-          }
         } else if (mainwindow.x + mainwindow.width >= Screen.desktopAvailableWidth) {
           animation.property = qsTr("x")
           animation_w.property = qsTr("x")
@@ -235,9 +269,6 @@ Window {
           animation_w.duration = width
           animation.to = width - delta
           animation_w.to = Screen.desktopAvailableWidth - width
-          if (mainwindow.settings.blur) {
-            // speedBox.setRoundRect(0,0,0,0,0,false)
-          }
         } else if (mainwindow.y <= 0) {
           animation.property = qsTr("y")
           animation_w.property = qsTr("y")
@@ -245,19 +276,13 @@ Window {
           animation_w.duration = height
           animation.to = delta - height
           animation_w.to = 0
-          if (mainwindow.settings.blur) {
-            // speedBox.setRoundRect(0,0,0,0,0,false)
-          }
-        } else if (mainwindow.y + mainwindow.height >= Screen.height) {
+        } else if (mainwindow.y + mainwindow.height >= Screen.desktopAvailableHeight) {
           animation.property = qsTr("y")
           animation_w.property = qsTr("y")
           animation.duration = height
           animation_w.duration = height
           animation.to = height - delta
-          animation_w.to = Screen.height - height
-          if (mainwindow.settings.blur) {
-            // speedBox.setRoundRect(0,0,0,0,0,false)
-          }
+          animation_w.to = Screen.desktopAvailableHeight - height
         } else {
           return
         }
