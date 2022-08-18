@@ -190,7 +190,7 @@ void SpeedMenu::wallpaperClearJunk()
 
 QString SpeedMenu::wallpaperGetCurJson() const
 {
-    std::u8string &&str = m_Wallpaper->GetJson();
+    std::u8string&& str = m_Wallpaper->GetJson();
     return QString::fromUtf8(reinterpret_cast<const char *>(str.data()), static_cast<int>(str.size()));
 }
 

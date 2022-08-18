@@ -126,11 +126,12 @@ NeoMenuSuperItem {
       return
     }
     if (component.status === Component.Ready) {
+      var curJson = wallpaperMenu.speedMenu.wallpaperGetCurJson()
       moreOptions = component.createObject(m_contentItem, 
       {
         text: qsTr("更多设置"),
         index: m_contentItem.children.length,
-        m_Json: JSON.parse(wallpaperMenu.speedMenu.wallpaperGetCurJson()),
+        m_Json: JSON.parse(curJson),
         speedMenu: wallpaperMenu.speedMenu
       });
       content.push(moreOptions)

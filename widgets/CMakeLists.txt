@@ -19,7 +19,7 @@ endif()
 
 include_directories(include)
 
-add_executable(Neobox WIN32
+set(SRC_LIST
     include/speedapp.h
     include/speedbox.h
     include/speedmenu.h
@@ -33,6 +33,17 @@ add_executable(Neobox WIN32
     src/screenfetch.cpp
     resources.qrc
 )
+
+if (WIN32)
+  # add_executable(Neobox
+  add_executable(Neobox WIN32
+    ${SRC_LIST}
+  )
+elseif (UNIX)
+  add_executable(Neobox
+    ${SRC_LIST}
+  )
+endif()
 
 target_link_libraries(Neobox PRIVATE
     3rd_qxtglobalshortcut

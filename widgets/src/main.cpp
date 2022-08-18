@@ -13,6 +13,10 @@
 #include <appcode.hpp>
 #include <iostream>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 void ShowMessage(const std::u8string &title, const std::u8string &text, int type)
 {
     switch (type)
@@ -57,11 +61,15 @@ int main(int argc, char *argv[])
     m_SharedMemory.setKey(QStringLiteral("__NeoboxMutex__"));
     if (m_SharedMemory.attach() || !m_SharedMemory.create(1)) // 防止多次打开
         return 0;
+#ifdef _WIN32
+    SetConsoleOutputCP(65001);
+#endif
         // 控制图片缩放质量
 #if (QT_VERSION_MAJOR < 6)
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
+
     QApplication a(argc, argv);
     a.setQuitOnLastWindowClosed(false); // 防止QFileDialog被当成最主窗口导致程序结束
     VarBox box;
