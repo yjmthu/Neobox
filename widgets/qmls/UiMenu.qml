@@ -84,6 +84,9 @@ NeoMenuSuperItem {
       Component.onCompleted: {
         checkedChild = 0;
       }
+      onCheckedChildChanged: {
+        mainwindow.checkedChild = checkedChild
+      }
     }
     NeoMenuItem {
       text: qsTr("文字颜色")

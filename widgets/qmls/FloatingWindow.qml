@@ -15,6 +15,8 @@ Window {
   height: 42
   flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
 
+  property int checkedChild: 0
+
   function hideMenu() {
     mainmenu.hide()
   }
@@ -60,6 +62,8 @@ Window {
     id: mainrect
     x: 0
     y: 0
+    focus: true
+    Keys.enabled: true
     width: mainwindow.width
     height: mainwindow.height
     objectName: qsTr("rect")
@@ -232,7 +236,7 @@ Window {
       }
 
       onExited: if (Qt.platform.os === "windows") {
-        var delta = 3
+        let delta = 3
         if (mainwindow.x <= 0) {
           animation_w.property = qsTr("x")
           animation_w.duration = width
@@ -254,7 +258,7 @@ Window {
         }
         animation_w.running = true
       } else {
-        var delta = 3
+        let delta = 3
         if (mainwindow.x <= 0) {
           animation.property = qsTr("x")
           animation_w.property = qsTr("x")
@@ -308,12 +312,50 @@ Window {
 
     }
 
+    property bool shiftDown: false
+    
+    Keys.onPressed: {
+      if (mainwindow.checkedChild < 0 || mainwindow.checkedChild > 2)
+        return
+      let obj = mainwindow.checkedChild == 0 ? memUseage : (mainwindow.checkedChild == 1 ? netUpSpeed : netDownSpeed)
+      switch(event.key)
+      {
+      case Qt.Key_Up:
+        if (shiftDown) --obj.y
+        event.accepted=true
+        break
+      case Qt.Key_Down:
+        if (shiftDown) ++obj.y
+        event.accepted=true
+        break
+      case Qt.Key_Left:
+        if (shiftDown) --obj.x
+        event.accepted=true
+        break
+      case Qt.Key_Right:
+        if (shiftDown) ++obj.x
+        event.accepted=true
+        break
+      case Qt.Key_Shift:
+        shiftDown = true
+        event.accepted=true
+        break
+      }
+    }
+
+    Keys.onReleased: {
+      switch(event.key)
+      {
+      case Qt.Key_Shift:
+        shiftDown = true
+        event.accepted=true
+        break
+      }
+    }
+
     PropertyAnimation {
       id: animation
       target: mainrect
-      // onFinished: {
-      //     console.log("pos is (", mainwindow.x, ", ", mainwindow.y, ")")
-      // }
     }
 
     PropertyAnimation {
