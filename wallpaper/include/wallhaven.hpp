@@ -218,7 +218,7 @@ class Wallhaven : public WallBase
             for (size_t n = i + 5; i < n; ++i)
             {
                 const std::string url(m_ImageUrl.begin(), m_ImageUrl.end());
-                auto res = clt.Get(i == 1? url: url+"&page=" + std::to_string(i));
+                auto res = clt.Get(i == 1 ? url : url + "&page=" + std::to_string(i));
                 if (!res || res->status != 200)
                 {
                     break;
@@ -247,7 +247,7 @@ class Wallhaven : public WallBase
             for (size_t n = i + 5; i < n; ++i)
             {
                 const std::string url(m_ImageUrl.begin(), m_ImageUrl.end());
-                auto res = clt.Get(i == 1? url: url+"&page=" + std::to_string(i));
+                auto res = clt.Get(i == 1 ? url : url + "&page=" + std::to_string(i));
                 if (!res || res->status != 200)
                     break;
                 std::sregex_iterator iter(res->body.begin(), res->body.end(), pattern);

@@ -14,6 +14,7 @@
         <file>qmls/NeoMenuItem.qml</file>
         <file>qmls/NeoMenuSeparator.qml</file>
         <file>qmls/NeoMenuSuperItem.qml</file>
+        <file>qmls/ScreenFetch.qml</file>
         <file>qmls/SettingMenu.qml</file>
         <file>qmls/SystemTray.qml</file>
         <file>qmls/TextDialog.qml</file>

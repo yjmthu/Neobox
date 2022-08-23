@@ -12,15 +12,12 @@ endif ()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# SET(CMAKE_BUILD_TYPE "Debug")
-# SET(CMAKE_BUILD_TYPE "Release")
-
 if(WIN32)
     include_directories(
         C:/MSVC2022/OpenSSL/OpenSSL-Win64/include
         C:/MSVC2022/leptonica-1.82.0/include
         C:/MSVC2022/tesseract-5.1.0/include
-        C:/MSVC2022/Boost/x64/include/boost-1_79
+        C:/MSVC2022/boost_1_80_0/include/boost-1_80
     )
     link_directories(
         C:/MSVC2022/OpenSSL/OpenSSL-Win64/lib
@@ -29,7 +26,7 @@ if(WIN32)
         C:/MSVC2022/tiff-4.4.0/libtiff/Release
         C:/MSVC2022/leptonica-1.82.0/src/Release
         C:/MSVC2022/tesseract-5.1.0/lib
-        C:/MSVC2022/Boost/x64/lib
+        # C:/MSVC2022/boost_1_80_0/lib
     )
 endif()
 

@@ -100,7 +100,7 @@ BOOL GetWindowCompositionAttribute(HWND hWnd, ACCENT_POLICY *accent)
             ACCENT_POLICY acc[2];
             data.Attrib = WCA_ACCENT_POLICY;
             data.pvData = acc;
-            data.cbData = sizeof ACCENT_POLICY * 2;
+            data.cbData = sizeof(ACCENT_POLICY) * 2;
             ret = getWindowCompositionAttribute(hWnd, &data);
         }
     }

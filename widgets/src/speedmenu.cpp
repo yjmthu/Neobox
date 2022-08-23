@@ -3,11 +3,14 @@
 #include <speedapp.h>
 #include <speedbox.h>
 #include <speedmenu.h>
+#include <pixmapimage.h>
 #include <sysapi.h>
 #include <text.h>
 #include <wallpaper.h>
 #include <yjson.h>
 
+#include <QApplication>
+#include <QDesktopWidget>
 #include <QActionGroup>
 #include <QColorDialog>
 #include <QDesktopServices>
@@ -31,11 +34,6 @@
 #include <appcode.hpp>
 #include <regex>
 #include <thread>
-
-// #include <KWindowEffects>
-
-extern std::unique_ptr<YJson> m_GlobalSetting;
-extern const char *m_szClobalSettingFile;
 
 using namespace std::literals;
 
@@ -194,7 +192,7 @@ void SpeedMenu::wallpaperClearJunk()
 
 QString SpeedMenu::wallpaperGetCurJson() const
 {
-    std::u8string&& str = m_Wallpaper->GetJson();
+    std::u8string &&str = m_Wallpaper->GetJson();
     return QString::fromUtf8(reinterpret_cast<const char *>(str.data()), static_cast<int>(str.size()));
 }
 
@@ -308,6 +306,14 @@ bool SpeedMenu::toolOcrEnableScreenShotCut(const QString &keys, bool enable)
     delete shotCut;
     shotCut = nullptr;
     return false;
+}
+
+QObject* SpeedMenu::toolOcrGrabScreen()
+{
+  PixmapContainer* pc = new PixmapContainer;
+  pc->m_Image = QGuiApplication::primaryScreen()->grabWindow(QApplication::desktop()->winId()).toImage();
+  QQmlEngine::setObjectOwnership(pc, QQmlEngine::JavaScriptOwnership);
+  return pc;
 }
 
 #if 0

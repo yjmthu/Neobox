@@ -3,6 +3,7 @@ import QtQuick.Controls 2.12
 import QtQuick.Window 2.12
 import QtQuick.Layouts 1.15
 import Qt.labs.settings 1.0
+import Qt.labs.platform 1.0
 import Neobox 1.0
 
 NeoMenu {
@@ -40,7 +41,27 @@ NeoMenu {
           fileName: qsTr("Neobox.ini")
           category: qsTr("Translate")
           property alias translateEnableGlobalShortcut: itemTranslateEnableGlobalShortcut.checked
+          property alias translateSourceDataFolder: itemTranslateSourceDataFolder.translateSourceDataFolder
         }
+
+        NeoMenuItem {
+          id: itemTranslateSourceDataFolder
+          text:qsTr("资源路径")
+          property string translateSourceDataFolder: qsTr(".")
+
+          onTriggered: {
+            m_FolderDialog.currentFolder = translateSourceDataFolder
+          }
+
+          property FolderDialog m_FolderDialog: FolderDialog {
+            title: qsTr("选择文件")
+            options: FolderDialog.ShowDirsOnly
+            onAccepted: {
+              parent.translateSourceDataFolder = folder
+            }
+          }
+        }
+
         NeoMenuCheckableItem {
           id: itemTranslateEnableGlobalShortcut
           checked: false
@@ -62,6 +83,18 @@ NeoMenu {
           }
           Component.onDestruction: {
             speedMenu.toolOcrEnableScreenShotCut(shortcut, false)
+          }
+        }
+
+        NeoMenuItem {
+          text: qsTr("测试功能")
+
+          onTriggered: {
+            m_ScreenFetch.setBackgroundImage(speedMenu.toolOcrGrabScreen())
+            m_ScreenFetch.visibility = Window.FullScreen
+          }
+
+          property ScreenFetch m_ScreenFetch: ScreenFetch {
           }
         }
       }

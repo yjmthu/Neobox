@@ -1,9 +1,10 @@
 #include "text.h"
 
 #include <leptonica/allheaders.h>
+#include <tesseract/baseapi.h>
+
 #include <screenfetch.h>
 #include <speedapp.h>
-#include <tesseract/baseapi.h>
 
 #include <QApplication>
 #include <QButtonGroup>
@@ -16,8 +17,6 @@
 #include <QThread>
 #include <QVBoxLayout>
 #include <filesystem>
-
-#include "translater.h"
 
 TextDlg::TextDlg(void *image) : QDialog(), m_TextEdit(new QPlainTextEdit(this))
 {

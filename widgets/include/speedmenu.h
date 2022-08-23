@@ -35,6 +35,7 @@ class SpeedMenu : public QObject
     Q_INVOKABLE void wallpaperSetCurJson(const QString &str);
     Q_INVOKABLE void wallpaperSetDrop(const QString &str);
     Q_INVOKABLE void toolOcrGetScreenShotCut();
+    Q_INVOKABLE static QObject* toolOcrGrabScreen();
 
   private:
     class Wallpaper *m_Wallpaper;

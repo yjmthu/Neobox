@@ -25,20 +25,27 @@ set(SRC_LIST
     include/speedmenu.h
     include/pathdialog.h
     include/screenfetch.h
+    include/pixmapimage.h
     src/main.cpp
     src/speedapp.cpp
     src/speedbox.cpp
     src/speedmenu.cpp
     src/pathdialog.cpp
     src/screenfetch.cpp
+    src/pixmapimage.cpp
     resources.qrc
 )
 
 if (WIN32)
-  # add_executable(Neobox
-  add_executable(Neobox WIN32
-    ${SRC_LIST}
-  )
+  if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    add_executable(Neobox
+      ${SRC_LIST}
+    )
+  else()
+    add_executable(Neobox WIN32
+      ${SRC_LIST}
+    )
+  endif()
 elseif (UNIX)
   add_executable(Neobox
     ${SRC_LIST}

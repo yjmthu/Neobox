@@ -1,17 +1,18 @@
 #include <speedapp.h>
 #include <speedbox.h>
 #include <speedmenu.h>
+#include <pixmapimage.h>
 
+#include <QAbstractNativeEventFilter>
 #include <QApplication>
 #include <QDebug>
-#include <QWindow>
 #include <QDir>
 #include <QMessageBox>
 #include <QProcess>
 #include <QQmlApplicationEngine>
 #include <QSharedMemory>
 #include <QStandardPaths>
-#include <QAbstractNativeEventFilter>
+#include <QWindow>
 #include <appcode.hpp>
 #include <iostream>
 
@@ -19,15 +20,14 @@
 #include <windows.h>
 class NativeEventFilter : public QAbstractNativeEventFilter
 {
-private:
-  const int MSG_APPBAR_MSGID = 2731;
-  QWindow* const m_pForm;
-public:
-    NativeEventFilter(QWindow * form):
-      QAbstractNativeEventFilter(),
-      m_pForm(form)
+  private:
+    const int MSG_APPBAR_MSGID = 2731;
+    QWindow *const m_pForm;
+
+  public:
+    NativeEventFilter(QWindow *form) : QAbstractNativeEventFilter(), m_pForm(form)
     {
-        static APPBARDATA abd { 0,0,0,0,{0,0,0,0},0 };
+        static APPBARDATA abd{0, 0, 0, 0, {0, 0, 0, 0}, 0};
         abd.cbSize = sizeof(APPBARDATA);
         abd.hWnd = (HWND)m_pForm->winId();
         abd.uCallbackMessage = MSG_APPBAR_MSGID;
@@ -35,10 +35,10 @@ public:
     }
     virtual bool nativeEventFilter(const QByteArray &eventType, void *message, long *result) Q_DECL_OVERRIDE
     {
-        MSG* pMsg = reinterpret_cast<MSG*>(message);
+        MSG *pMsg = reinterpret_cast<MSG *>(message);
         if (MSG_APPBAR_MSGID == pMsg->message)
         {
-          switch ((UINT)pMsg->wParam)
+            switch ((UINT)pMsg->wParam)
             {
             case ABN_FULLSCREENAPP:
                 if (TRUE == (BOOL)(pMsg->lParam))
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 #ifdef _WIN32
     SetConsoleOutputCP(65001);
 #endif
-        // 控制图片缩放质量
+    // 控制图片缩放质量
 #if (QT_VERSION_MAJOR < 6)
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
@@ -112,13 +112,15 @@ int main(int argc, char *argv[])
     a.setQuitOnLastWindowClosed(false); // 防止QFileDialog被当成最主窗口导致程序结束
     VarBox box;
     QQmlApplicationEngine engine;
+    qmlRegisterType<PixmapContainer>("Neobox", 1, 0, "PixmapContainer");
+    qmlRegisterType<PixmapImage>("Neobox", 1, 0, "PixmapImage");
     qmlRegisterType<SpeedMenu>("Neobox", 1, 0, "SpeedMenu");
     qmlRegisterType<SpeedBox>("Neobox", 1, 0, "SpeedBox");
     engine.load(QUrl(QStringLiteral("qrc:/qmls/FloatingWindow.qml")));
 
 #ifdef _WIN32
     auto rootObjects = engine.rootObjects();
-    NativeEventFilter nativeEventFilter(qobject_cast<QWindow*>(rootObjects.front()));
+    NativeEventFilter nativeEventFilter(qobject_cast<QWindow *>(rootObjects.front()));
     a.installNativeEventFilter(&nativeEventFilter);
 #endif
     int ret = a.exec();

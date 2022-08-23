@@ -10,7 +10,7 @@
 #include <QScreen>
 #include <iostream>
 
-Pix *QImage2Pix(const QImage &&image)
+static Pix *QImage2Pix(const QImage &&image)
 {
     Pix *pix;
     int width = image.width();
@@ -70,8 +70,9 @@ Pix *QImage2Pix(const QImage &&image)
 }
 
 ScreenFetch::ScreenFetch()
-    : QDialog(nullptr), m_Picture(nullptr), m_IsTrackingMouse(false),
-      m_Pixmap(QGuiApplication::primaryScreen()->grabWindow(QApplication::desktop()->winId())), m_TextRect(0, 0, 0, 0)
+    : QDialog(nullptr), m_Picture(nullptr),
+      m_Pixmap(QGuiApplication::primaryScreen()->grabWindow(QApplication::desktop()->winId())), m_TextRect(0, 0, 0, 0),
+      m_IsTrackingMouse(false)
 {
     setWindowFlags(Qt::WindowStaysOnTopHint);
     setAttribute(Qt::WA_TranslucentBackground);
