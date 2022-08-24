@@ -11,25 +11,8 @@
 
 #include <QApplication>
 #include <QDesktopWidget>
-#include <QActionGroup>
-#include <QColorDialog>
-#include <QDesktopServices>
 #include <QDir>
-#include <QFileDialog>
-#include <QFontDialog>
-#include <QHBoxLayout>
-#include <QHeaderView>
-#include <QInputDialog>
-#include <QLabel>
-#include <QPushButton>
-#include <QSettings>
-#include <QShowEvent>
 #include <QStandardPaths>
-#include <QTableWidget>
-#include <QTextStream>
-#include <QTimer>
-#include <QUrl>
-#include <QVBoxLayout>
 #include <QtQuick>
 #include <appcode.hpp>
 #include <regex>

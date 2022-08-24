@@ -50,10 +50,10 @@ Window {
       onReleased: {
         if (mouse.button == Qt.LeftButton) {
           backbody.close()
-          let text = pixmapImage.getText(
+          backbody.grabFinished(pixmapImage.getText(
             parent.m_TextLeft, parent.m_TextTop,
             parent.m_TextWidth, parent.m_TextHeight
-          )
+          ))
         }
       }
 

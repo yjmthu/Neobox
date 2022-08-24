@@ -51,6 +51,7 @@ NeoMenu {
 
           onTriggered: {
             m_FolderDialog.currentFolder = translateSourceDataFolder
+            m_FolderDialog.visible = true
           }
 
           property FolderDialog m_FolderDialog: FolderDialog {
@@ -95,6 +96,21 @@ NeoMenu {
           }
 
           property ScreenFetch m_ScreenFetch: ScreenFetch {
+            onGrabFinished: function (str) {
+              textEdit.text = str
+              textWindow.visible = true
+            }
+
+            property Window textWindow: Window {
+              title: qsTr("翻译结果")
+
+              TextEdit {
+                id: textEdit
+                anchors.fill: parent
+                wrapMode: TextEdit.Wrap
+                font.pointSize: 13
+              }
+            }
           }
         }
       }
