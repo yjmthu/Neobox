@@ -1,4 +1,5 @@
-﻿#include <sysapi.h>
+﻿#include <string>
+#include <sysapi.h>
 
 #include "apiclass.hpp"
 
@@ -43,14 +44,29 @@ class ScriptOutput : public WallBase
         if (m_Command.empty())
             return ptr;
         std::vector<std::u8string> result;
-        std::u8string cmd = GetCommandWithArg();
-        GetCmdOutput<char8_t>((const char *)cmd.c_str(), result, 1);
-        auto &str = result.front();
-        while (!str.empty() && '\n' == str.back())
+#ifdef _WIN32
+#ifdef UNICODE
+        std::wstring wcmd = Utf82WideString(GetCommandWithArg());
+        std::vector<std::wstring> wresult;
+        GetCmdOutput(wcmd.c_str(), wresult);
+        for (auto &i : wresult)
         {
-            str.pop_back();
+            result.emplace_back(Wide2Utf8String(i));
         }
-        // std::cout << "[ " << str << " ]" << std::endl;
+#else
+        std::string ccmd = Utf82AnsiString(GetCommandWithArg());
+        std::vector<std::string> cresult;
+        GetCmdOutput(ccmd.c_str(), cresult);
+        for (auto &i : wresult)
+        {
+            result.emplace_back(Ansi2Utf8String(i));
+        }
+#endif
+#elif def __linux__
+        auto cmd = GetCommandWithArg();
+        GetCmdOutput(reinterpret_cast<const char *>(cmd.c_str()), result);
+#endif
+        auto &str = result.front();
         if (str.empty())
             return ptr;
         ptr->push_back(str);
@@ -85,7 +101,6 @@ class ScriptOutput : public WallBase
     std::vector<std::u8string> m_ArgList;
     std::u8string GetCommandWithArg() const
     {
-        // if (m_Command.empty()) return "";
         std::u8string cmd;
         auto check = [&cmd](const std::u8string &str) {
             if (!strchr("\"\'", str.front()) && str.find(' ') != std::u8string::npos)

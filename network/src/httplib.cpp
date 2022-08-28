@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <httplib.h>
 
+#include <boost/asio.hpp>
 #include <boost/system.hpp>
 
 #include <iostream>

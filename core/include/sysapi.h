@@ -1,4 +1,8 @@
-﻿#include <sstream>
+﻿#include <algorithm>
+#include <cstdio>
+#include <iostream>
+#include <regex>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -6,97 +10,118 @@
 #include <tchar.h>
 #include <windows.h>
 
-template <typename _Char, typename _Ty> void GetCmdOutput(const char *cmd, _Ty &result, int rows = -1)
+inline std::wstring Utf82WideString(const std::u8string &u8Str)
 {
-    STARTUPINFOA si = {0};
-    PROCESS_INFORMATION pi = {0};
-    char m_buffer[1024] = {0};
-    DWORD ReadNum = 0;
-    HANDLE hRead = NULL;
-    HANDLE hWrite = NULL;
-    SECURITY_ATTRIBUTES sa = {0};
-    sa.nLength = sizeof(sa);
-    sa.bInheritHandle = TRUE;
-    sa.lpSecurityDescriptor = 0;
-    BOOL bRet = CreatePipe(&hRead, &hWrite, &sa, 0);
-    if (bRet == TRUE)
+    int nWideCount =
+        MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<const char *>(u8Str.data()), (int)u8Str.size(), NULL, 0);
+    if (nWideCount == 0)
     {
+        return std::wstring();
     }
-    else
-    {
-        return;
-    }
-    HANDLE hTemp = GetStdHandle(STD_OUTPUT_HANDLE);
-    SetStdHandle(STD_OUTPUT_HANDLE, hWrite);
+    std::wstring strResult(nWideCount, 0);
+    MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<const char *>(u8Str.data()), (int)u8Str.size(), strResult.data(),
+                        nWideCount);
+    return strResult;
+}
 
-    GetStartupInfoA(&si);
-    si.cb = sizeof(STARTUPINFO);
-    si.wShowWindow = SW_HIDE;
-    si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
-    // si.hStdInput = hRead;
-    si.hStdError = hWrite;
-    si.hStdOutput = hWrite;
+inline std::u8string Wide2Utf8String(const std::wstring &wStr)
+{
+    //获取所需缓冲区大小
+    int nU8Count = WideCharToMultiByte(CP_UTF8, 0, wStr.data(), (int)wStr.size(), NULL, 0, NULL, NULL);
+    if (nU8Count == 0)
+    {
+        return std::u8string();
+    }
+    std::u8string strResult(nU8Count, 0);
+    WideCharToMultiByte(CP_UTF8, 0, wStr.data(), (int)wStr.size(), reinterpret_cast<char *>(strResult.data()), nU8Count,
+                        NULL, NULL);
+    return strResult;
+}
 
-    bRet = CreateProcessA(NULL, (LPSTR)cmd, NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi);
-    SetStdHandle(STD_OUTPUT_HANDLE, hTemp);
-    if (bRet == TRUE)
+inline std::wstring Ansi2WideString(const std::string &ansiStr)
+{
+    int nWideCount = MultiByteToWideChar(CP_ACP, 0, ansiStr.data(), (int)ansiStr.size(), NULL, 0);
+    if (nWideCount == 0)
     {
+        return std::wstring();
     }
-    else
+    std::wstring strResult(nWideCount, 0);
+    MultiByteToWideChar(CP_ACP, 0, ansiStr.data(), (int)ansiStr.size(), strResult.data(), nWideCount);
+    return strResult;
+}
+
+inline std::string Wide2AnsiString(const std::wstring &wStr)
+{
+    //获取所需缓冲区大小
+    int nAnsiCount = WideCharToMultiByte(CP_ACP, 0, wStr.data(), (int)wStr.size(), NULL, 0, NULL, NULL);
+    if (nAnsiCount == 0)
     {
-        // std::cout << "create pop failed: " << GetLastError() << std::endl;
+        return std::string();
     }
-    CloseHandle(hWrite);
-    std::ostringstream ssi;
-    std::istringstream sso;
-    sso.tie(&ssi);
-    while (ReadFile(hRead, m_buffer, 1024, &ReadNum, NULL))
+    std::string strResult(nAnsiCount, 0);
+    WideCharToMultiByte(CP_ACP, 0, wStr.data(), (int)wStr.size(), strResult.data(), nAnsiCount, NULL, NULL);
+    return strResult;
+}
+
+inline std::string Utf82AnsiString(const std::u8string &u8Str)
+{
+    return Wide2AnsiString(Utf82WideString(u8Str));
+}
+
+inline std::u8string Ansi2Utf8String(const std::string &ansiStr)
+{
+    return Wide2Utf8String(Ansi2WideString(ansiStr));
+}
+
+template <typename _Ty> void GetCmdOutput(LPCTSTR cmd, _Ty &result)
+{
+    TCHAR buffer[1024];
+    FILE *fp;
+    std::basic_stringstream<TCHAR> stream;
+#ifdef UNICODE
+    if ((fp = _wpopen(cmd, L"r")))
     {
-        m_buffer[ReadNum] = '\0';
-        ssi.write(m_buffer, ReadNum);
-    }
-    std::string temp;
-    while (std::getline(sso, temp))
+        while (std::fgetws(buffer, 1024, fp))
+        {
+#else
+    if ((fp = _popen(cmd, "r")))
     {
-        result.emplace_back(temp.begin(), temp.end());
+        while (std::fgets(buffer, 1024, fp))
+        {
+#endif
+            stream << buffer;
+        }
+        _pclose(fp);
     }
-    return;
+    std::basic_string<TCHAR> str;
+    while (std::getline(stream, str))
+    {
+        result.emplace_back(std::move(str));
+    }
 }
 
 bool enableBlurBehind(HWND winId, DWORD color, bool enable);
 
-#elif defined __linux__
+#elif def __linux__
 
-template <typename _Char, typename _Ty> void GetCmdOutput(const char *cmd, _Ty &result, int rows = -1)
+template <typename _Char, typename _Ty> void GetCmdOutput(const char *cmd, _Ty &result)
 {
-    _Char m_buffer[1024];
+    char buffer[1024];
     FILE *ptr;
     result.emplace_back();
+    std::stringstream stream;
     if ((ptr = popen(cmd, "r")))
     {
-        while (fgets((char *)m_buffer, 1024, ptr))
+        while (fgets((char *)buffer, 1024, ptr))
         {
-            if (!result.back().empty() && result.back().back() == '\n')
-            {
-                if (!--rows)
-                    return;
-                result.emplace_back(m_buffer);
-            }
-            else
-            {
-                result.back().append(m_buffer);
-            }
+            stream << buffer;
         }
         pclose(ptr);
     }
-    else
+    std::string str;
+    while (std::getline(stream, str))
     {
-        // std::cout << "cmd error" << std::endl;
-    }
-    for (auto &i : result)
-    {
-        if (!i.empty() && i.back() == '\n')
-            i.pop_back();
+        result.emplace_back(str.begin(), str.end());
     }
 }
 #endif

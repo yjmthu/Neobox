@@ -3,7 +3,9 @@
 
 #include <algorithm>
 #include <apiclass.hpp>
+#include <array>
 #include <filesystem>
+#include <functional>
 #include <regex>
 
 namespace WallClass

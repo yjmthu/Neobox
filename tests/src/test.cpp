@@ -1,24 +1,20 @@
-﻿#include <sysapi.h>
-
-#include <iostream>
+﻿#include <iostream>
+#include <string>
+#include <sysapi.h>
 
 int main()
 {
-    std::vector<std::string> data;
-#if __linux__
-    GetCmdOutput<char>("./tests/main", data);
-#else
-    GetCmdOutput<char>("./build/tests/Debug/test_main.exe", data);
-#endif
-    for (auto &i : data)
+    std::vector<std::basic_string<TCHAR>> data;
+    GetCmdOutput(TEXT(".\\build-dbg\\tests\\mains.exe"), data);
+    std::cout << data.size() << std::endl;
+    for (auto i : data)
     {
-        for (auto j : i)
-        {
-            std::cout << int(j) << ' ';
-        }
-        std::cout << std::endl;
+#ifdef UNICODE
+        std::wcout << i << std::endl;
+#else
+        std::cout << i << std::endl;
+#endif
     }
-    std::cout << "\\r: " << int('\r') << " \\n: " << int('\n') << std::endl;
     return 0;
 }
 

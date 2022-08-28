@@ -5,9 +5,6 @@
 #include <map>
 #include <string>
 
-#include <boost/asio.hpp>
-#include <boost/system.hpp>
-
 namespace httplib
 {
 
@@ -46,8 +43,6 @@ class HttpBase
 
     template <typename _TcpTy> void WriteRequest(_TcpTy &socket);
     template <typename _TcpTy> void ReadResponse(_TcpTy &socket);
-
-    // virtual void handle_connect(const boost::system::error_code& error) = 0;
 };
 
 class HttpGet : public HttpBase

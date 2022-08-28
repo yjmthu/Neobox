@@ -1,6 +1,4 @@
-#include "speedapp.h"
-
-#include <translater.h>
+#include <varbox.h>
 #include <wallpaper.h>
 #include <yjson.h>
 
@@ -17,12 +15,7 @@
 #include <appcode.hpp>
 #include <filesystem>
 
-#include "speedbox.h"
-#include "speedmenu.h"
-
 VarBox *m_VarBox = nullptr;
-extern std::unique_ptr<YJson> m_GlobalSetting;
-extern const char *m_szClobalSettingFile;
 
 inline void MessageBox(const std::u8string &msg)
 {
@@ -49,17 +42,14 @@ VarBox::~VarBox()
 
 void VarBox::LoadSettings()
 {
-    if (!std::filesystem::exists(m_szClobalSettingFile))
-    {
-        QFile::copy(":/jsons/Setting.json", m_szClobalSettingFile);
-        QFile::setPermissions(m_szClobalSettingFile, QFileDevice::ReadUser | QFileDevice::WriteUser);
-    }
-    m_GlobalSetting = std::make_unique<YJson>(m_szClobalSettingFile, YJson::UTF8);
+#ifdef _WIN32
+#elif def __linux__
     if (!std::filesystem::exists(Wallpaper::m_szWallScript))
     {
         QFile::copy(":/scripts/SetWallpaper.sh", Wallpaper::m_szWallScript);
         QFile::setPermissions(Wallpaper::m_szWallScript, QFileDevice::ReadUser | QFileDevice::Permission::ExeUser);
     }
+#endif
 }
 
 void VarBox::LoadFonts()
@@ -85,15 +75,3 @@ void VarBox::LoadQmlFiles()
         }
     }
 }
-
-#if 0
-void VarBox::GetSpeedBox() {
-  qmlRegisterType<SpeedBox>("Neobox", 1, 0, "SpeedBox");
-  qmlRegisterType<SpeedMenu>("Neobox", 1, 0, "SpeedMenu");
-  m_SpeedBox = new QQuickView;
-  m_SpeedBox->rootContext()->setContextProperty("mainwindow", m_SpeedBox);
-  // m_SpeedBox->setAcceptDrops(true);
-
-  m_SpeedBox->show();
-}
-#endif

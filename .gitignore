@@ -13,6 +13,8 @@
 *.o
 Makefile
 build
+build-rel
+build-dbg
 out
 3rdlib/YJson
 .vscode

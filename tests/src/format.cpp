@@ -7,6 +7,7 @@
 
 int main()
 {
+    using namespace std::literals;
     std::string _folderStr;
     std::cout << "Please enter the folder path:\n";
     std::getline(std::cin, _folderStr);
@@ -25,7 +26,8 @@ int main()
         const std::regex _pattern("^.*\\.(cpp|c|h|hpp|cc)$");
         return std::regex_match(_path.string(), _pattern);
     };
-    std::array<std::string, 7> _patterns = {"build", "out", "\\.git", "env", "glad", "glfw", "freetype"};
+    std::array _patterns = {"build-rel"s, "build"s, "build-dbg"s, "out"s,     "\\.git"s,
+                            "env"s,       "glad"s,  "glfw"s,      "freetype"s};
     for (auto &i : _patterns)
     {
         i = "^.*" + i + "$";

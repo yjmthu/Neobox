@@ -8,8 +8,8 @@ Window {
   id: mainmenu
   flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
   color: "transparent"
-  width: 90
-  height: content.length * 30
+  width: 108
+  height: content.length * 36
   property bool exclusive: false
   default property alias content: layout.children
   property alias curItem: layout.curItem

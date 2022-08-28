@@ -1,6 +1,5 @@
-#include "speedbox.h"
-
 #include <netspeedhelper.h>
+#include <speedbox.h>
 
 #include <QQuickView>
 #ifdef __linux__
@@ -8,9 +7,6 @@
 #elif defined _WIN32
 #include <sysapi.h>
 #endif
-
-#include "speedapp.h"
-#include "speedmenu.h"
 
 SpeedBox::SpeedBox(QObject *parent) : QObject(parent), m_NetSpeedHelper(new NetSpeedHelper)
 {

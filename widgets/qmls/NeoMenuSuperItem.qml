@@ -29,6 +29,8 @@ NeoMenuItem {
     if (settings.x + settings.width > Screen.desktopAvailableWidth)
       settings.x = parent.mainX - settings.width
     settings.y = parent.mainY + y
+    if (settings.y + settings.height > Screen.desktopAvailableHeight)
+      settings.y = Screen.desktopAvailableHeight - settings.height
     show()
   }
 

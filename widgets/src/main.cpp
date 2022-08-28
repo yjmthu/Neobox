@@ -1,12 +1,11 @@
-#include <speedapp.h>
+#include <pixmapimage.h>
 #include <speedbox.h>
 #include <speedmenu.h>
-#include <pixmapimage.h>
+#include <varbox.h>
 
 #include <QAbstractNativeEventFilter>
-#include <QApplication>
-#include <QDebug>
 #include <QDir>
+#include <QGuiApplication>
 #include <QMessageBox>
 #include <QProcess>
 #include <QQmlApplicationEngine>
@@ -79,6 +78,14 @@ void ShowMessage(const std::u8string &title, const std::u8string &text, int type
     }
 }
 
+inline void RegisterQmlTypes()
+{
+    qmlRegisterType<PixmapContainer>("Neobox", 1, 0, "PixmapContainer");
+    qmlRegisterType<PixmapImage>("Neobox", 1, 0, "PixmapImage");
+    qmlRegisterType<SpeedMenu>("Neobox", 1, 0, "SpeedMenu");
+    qmlRegisterType<SpeedBox>("Neobox", 1, 0, "SpeedBox");
+}
+
 inline void DoExit(ExitCode m_ExitCode)
 {
     switch (m_ExitCode)
@@ -104,18 +111,15 @@ int main(int argc, char *argv[])
 #endif
     // 控制图片缩放质量
 #if (QT_VERSION_MAJOR < 6)
-    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-    QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+    QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QGuiApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
 
-    QApplication a(argc, argv);
+    QGuiApplication a(argc, argv);
     a.setQuitOnLastWindowClosed(false); // 防止QFileDialog被当成最主窗口导致程序结束
     VarBox box;
     QQmlApplicationEngine engine;
-    qmlRegisterType<PixmapContainer>("Neobox", 1, 0, "PixmapContainer");
-    qmlRegisterType<PixmapImage>("Neobox", 1, 0, "PixmapImage");
-    qmlRegisterType<SpeedMenu>("Neobox", 1, 0, "SpeedMenu");
-    qmlRegisterType<SpeedBox>("Neobox", 1, 0, "SpeedBox");
+    RegisterQmlTypes();
     engine.load(QUrl(QStringLiteral("qrc:/qmls/FloatingWindow.qml")));
 
 #ifdef _WIN32

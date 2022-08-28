@@ -1,18 +1,19 @@
 cmake_minimum_required(VERSION 3.10)
 
 project(widgets VERSION 0.1 LANGUAGES CXX)
-
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
+# set(CMAKE_CXX_STANDARD 20)
+# set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-
 find_package(Qt5 COMPONENTS Widgets Quick REQUIRED)
-if (UNIX AND NOT MACOS)
+find_package(Leptonica CONFIG REQUIRED)
+find_package(Tesseract CONFIG REQUIRED)
+
+if(WIN32)
+elseif (UNIX AND NOT MACOS)
   # Find KDE modules
   find_package(KF5WindowSystem REQUIRED)
 endif()
@@ -20,36 +21,26 @@ endif()
 include_directories(include)
 
 set(SRC_LIST
-    include/speedapp.h
+    include/varbox.h
     include/speedbox.h
     include/speedmenu.h
-    include/pathdialog.h
-    include/screenfetch.h
     include/pixmapimage.h
     src/main.cpp
-    src/speedapp.cpp
+    src/varbox.cpp
     src/speedbox.cpp
     src/speedmenu.cpp
-    src/pathdialog.cpp
-    src/screenfetch.cpp
     src/pixmapimage.cpp
     resources.qrc
 )
 
 if (WIN32)
-  if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    add_executable(Neobox
-      ${SRC_LIST}
-    )
-  else()
     add_executable(Neobox WIN32
       ${SRC_LIST}
     )
-  endif()
 elseif (UNIX)
-  add_executable(Neobox
-    ${SRC_LIST}
-  )
+    add_executable(Neobox
+      ${SRC_LIST}
+    )
 endif()
 
 target_link_libraries(Neobox PRIVATE
@@ -59,7 +50,8 @@ target_link_libraries(Neobox PRIVATE
     yjson
     Qt::Widgets
     Qt::Quick
-    translate
+    leptonica
+    Tesseract::libtesseract
 )
 
 if (UNIX)

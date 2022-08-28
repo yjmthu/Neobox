@@ -1,11 +1,12 @@
 #include <pixmapimage.h>
 
 #include <QGuiApplication>
-#include <QApplication>
 #include <QQmlEngine>
 
 #include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
+
+extern void ShowMessage(const std::u8string &title, const std::u8string &text, int type = 0);
 
 static Pix *QImage2Pix(const QImage &&image)
 {
@@ -76,57 +77,60 @@ inline QString RemoveExtraSpaces(const char *str)
     return result;
 }
 
-PixmapContainer::PixmapContainer(QObject* parent)
-  :QObject(parent)
+PixmapContainer::PixmapContainer(QObject *parent) : QObject(parent)
 {
 }
 
-PixmapImage::PixmapImage(QQuickItem *parent):
-  QQuickPaintedItem(parent)
+PixmapImage::PixmapImage(QQuickItem *parent) : QQuickPaintedItem(parent)
 {
 }
 
 void PixmapImage::setImage(QObject *pixmap)
 {
-  PixmapContainer* pc = qobject_cast<PixmapContainer*>(pixmap);
-  Q_ASSERT(pc);
-  m_Image = std::move(pc->m_Image);
-  update();
-  pc->deleteLater();
+    PixmapContainer *pc = qobject_cast<PixmapContainer *>(pixmap);
+    Q_ASSERT(pc);
+    m_Image = std::move(pc->m_Image);
+    update();
+    pc->deleteLater();
 }
 
-QString PixmapImage::getText(int x, int y, int w, int h) const
+QString PixmapImage::getText(const QString &dataPath, int x, int y, int w, int h) const
 {
-  Pix* pix = QImage2Pix(m_Image.copy(x, y, w, h));
+    Pix *pix = QImage2Pix(m_Image.copy(x, y, w, h));
 
-  tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
+    tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
+    const auto &array = dataPath.toLocal8Bit();
 #ifdef _WIN32
-  if (api->Init("tessdata", "chi_sim+eng"))
-  {
-#elif defined __linux__
-  if (api->Init(NULL, "chi_sim+eng"))
-  {
+    char *file = new char[array.size() - 7];
+    std::copy(array.begin() + 8, array.end(), file);
+    file[array.size() - 8] = '\0';
+#else
+    char *file = new char[array.size() - 6];
+    std::copy(array.begin() + 7, array.end(), file);
+    file[array.size() - 7] = '\0';
 #endif
-      // ShowMessage("错误", "Could not initialize tesseract.");
-      return QString();
-  }
+    if (api->Init(file, "chi_sim+eng"))
+    {
+        ShowMessage(u8"错误", u8"Could not initialize tesseract.");
+        return QString();
+    }
 
-  // Pix *image = pixRead("screenfetch.jpg");
-  api->SetImage(pix);
-  // Get OCR result
-  char *outText = api->GetUTF8Text();
-  QString text = RemoveExtraSpaces(outText);
+    // Pix *image = pixRead("screenfetch.jpg");
+    api->SetImage(pix);
+    // Get OCR result
+    char *outText = api->GetUTF8Text();
+    QString text = RemoveExtraSpaces(outText);
 
-  // Destroy used object and release memory
-  api->End();
-  delete api;
-  delete[] outText;
-  pixDestroy(&pix);
+    // Destroy used object and release memory
+    api->End();
+    delete api;
+    delete[] outText;
+    pixDestroy(&pix);
 
-  return text;
+    return text;
 }
 
 void PixmapImage::paint(QPainter *painter)
 {
-  painter->drawImage(0, 0, m_Image);
+    painter->drawImage(0, 0, m_Image);
 }

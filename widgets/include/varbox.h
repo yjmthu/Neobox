@@ -1,5 +1,5 @@
-#ifndef SPEEDAPP_H
-#define SPEEDAPP_H
+#ifndef VARBOX_H
+#define VARBOX_H
 
 #include <QObject>
 
@@ -18,4 +18,4 @@ class VarBox : public QObject
 
 extern VarBox *m_VarBox;
 
-#endif // SPEEDAPP_H
+#endif
