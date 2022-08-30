@@ -1,7 +1,7 @@
 ﻿#include <numeric>
 #include <set>
 
-#include "apiclass.hpp"
+#include "wallbase.h"
 
 namespace WallClass
 {
@@ -114,13 +114,13 @@ class Native : public WallBase
         m_Setting->toFile(m_SettingPath);
         return true;
     }
-    virtual void Dislike(const std::filesystem::path &img) override
+    virtual void Dislike(const std::u8string &img) override
     {
     }
-    virtual void UndoDislike(const std::filesystem::path &path) override
+    virtual void UndoDislike(const std::u8string &path) override
     {
     }
-    virtual void SetCurDir(const std::filesystem::path &str) override
+    virtual void SetCurDir(const std::u8string &str) override
     {
         m_ImageDir = str;
         auto &li = m_Setting->find(u8"imgdirs")->second;

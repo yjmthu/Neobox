@@ -5,7 +5,7 @@
 
 #include <QAbstractNativeEventFilter>
 #include <QDir>
-#include <QGuiApplication>
+#include <QApplication>
 #include <QMessageBox>
 #include <QProcess>
 #include <QQmlApplicationEngine>
@@ -111,11 +111,11 @@ int main(int argc, char *argv[])
 #endif
     // 控制图片缩放质量
 #if (QT_VERSION_MAJOR < 6)
-    QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-    QGuiApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
 
-    QGuiApplication a(argc, argv);
+    QApplication a(argc, argv);
     a.setQuitOnLastWindowClosed(false); // 防止QFileDialog被当成最主窗口导致程序结束
     VarBox box;
     QQmlApplicationEngine engine;

@@ -4,7 +4,7 @@
       "adapter": "CodeLLDB",
       "configuration": {
         "request": "launch",
-        "program": "./build-dbg/tests/tests.exe",
+        "program": "./build-dbg/widgets/Neobox.exe",
         "cwd": "${workspaceFolder}",
         "args": [ ],
         "environment": [ ],

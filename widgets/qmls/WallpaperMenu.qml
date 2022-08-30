@@ -39,6 +39,8 @@ NeoMenuSuperItem {
       text: qsTr("收藏夹")
     }
     Component.onCompleted: {
+      if (speedMenu.wallpaperType == -1)
+        speedMenu.wallpaperType = 0
       checkedChild = speedMenu.wallpaperType
     }
   }

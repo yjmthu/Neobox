@@ -1,81 +1,37 @@
 #ifndef HTTPLIB_H
 #define HTTPLIB_H
 
-#include <iostream>
-#include <map>
-#include <string>
+#include <filesystem>
+#include <xstring>
 
-namespace httplib
+namespace HttpLib {
+long Get(const char* url, std::u8string& data);
+inline long Get(const std::u8string& url, std::u8string& data)
 {
-
-struct HttpRequest
+    return Get(reinterpret_cast<const char*>(url.c_str()), data);
+}
+inline long Get(const std::string& url, std::u8string& data)
 {
-    int port;
-    std::string domain;
-    std::string path;
-    std::string body;
-    std::map<std::string, std::string> headers;
-};
-
-struct HttpResponse
+    return Get(url.c_str(), data);
+}
+long Get(const char* url, std::filesystem::path data);
+inline long Get(const std::u8string& url, std::filesystem::path data)
 {
-    int status;
-    std::string httpVersion;
-    std::string statusMessage;
-    std::string location;
-    std::string body;
-    std::map<std::string, std::string> headers;
-};
-
-class HttpBase
+    return Get(reinterpret_cast<const char*>(url.c_str()), data);
+}
+inline long Get(const std::string& url, std::filesystem::path data)
 {
-  public:
-    HttpBase();
-    ~HttpBase();
-    bool SetFollowLocation(bool follow);
-
-  protected:
-    HttpRequest req;
-    HttpResponse *res;
-
-    bool ParseUrl(const std::string &url);
-    void BuildPost(std::ostream &stream, const std::string &data);
-
-    template <typename _TcpTy> void WriteRequest(_TcpTy &socket);
-    template <typename _TcpTy> void ReadResponse(_TcpTy &socket);
-};
-
-class HttpGet : public HttpBase
+    return Get(url.c_str(), data);
+}
+long Gets(const char* url, std::filesystem::path data);
+inline long Gets(const std::u8string& url, std::filesystem::path data)
 {
-  public:
-    HttpGet();
-    // ~HttpGet();
-    const HttpResponse *Get(const std::string &url);
-    inline const HttpResponse *Get(const std::u8string &url)
-    {
-        return Get(std::string(url.begin(), url.end()));
-    }
-
-  private:
-    int timeOut = 3000;
-    void GetHttp();
-    void GetHttps();
-};
-
-class HttpPost : public HttpBase
+    return Gets(reinterpret_cast<const char*>(url.c_str()), data);
+}
+inline long Gets(const std::string& url, std::filesystem::path data)
 {
-  public:
-    HttpPost(const std::string &body);
-    // ~HttpPost();
-    const HttpResponse *Post(const std::string &url);
-    inline const HttpResponse *Post(const std::u8string &url)
-    {
-        return Post(std::string(url.begin(), url.end()));
-    }
-
-  private:
-};
-
-} // namespace httplib
+    return Gets(url.c_str(), data);
+}
+}
 
 #endif

@@ -161,6 +161,19 @@ NeoMenu {
 
         NeoMenuItem {
             text: qsTr("收藏图片")
+
+            onTriggered: {
+                speedMenu.wallpaperSetFavotite();
+            }
+        }
+
+
+        NeoMenuItem {
+            text: qsTr("撤销收藏")
+
+            onTriggered: {
+                speedMenu.wallpaperUnSetFavotite();
+            }
         }
 
         NeoMenuItem {

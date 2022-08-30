@@ -1,6 +1,6 @@
 ﻿#include <httplib.h>
 
-#include "apiclass.hpp"
+#include "wallbase.h"
 
 namespace WallClass
 {
@@ -48,14 +48,12 @@ class BingApi : public WallBase
         std::u8string path(u8"/HPImageArchive.aspx?format=js&idx=0&n=8&mkt=");
         path += m_Mft;
 
-        httplib::HttpGet clt;
-        auto res = clt.Get(m_ApiUrl + path);
+        std::u8string body;
 
-        if (!res || res->status != 200)
+        if (HttpLib::Get(m_ApiUrl + path, body) != 200)
             return false;
 
-        std::cout << res->body << std::endl;
-        m_Setting = new YJson(res->body.begin(), res->body.end());
+        m_Setting = new YJson(body.begin(), body.end());
         m_Setting->append(GetToday("%Y%m%d"), u8"today");
         m_Setting->append(m_ImageDir, u8"imgdir");
         m_Setting->append(m_ImageNameFormat, u8"imgfmt");
@@ -81,15 +79,15 @@ class BingApi : public WallBase
             m_CurImageIndex = 0;
         return ptr;
     }
-    virtual void Dislike(const std::filesystem::path &img) override
+    virtual void Dislike(const std::u8string &img) override
     {
         //
     }
-    virtual void UndoDislike(const std::filesystem::path &path) override
+    virtual void UndoDislike(const std::u8string &path) override
     {
         //
     }
-    virtual void SetCurDir(const std::filesystem::path &str) override
+    virtual void SetCurDir(const std::u8string &str) override
     {
         m_ImageDir = str;
         m_Setting->find(u8"imgdir")->second.setText(str);

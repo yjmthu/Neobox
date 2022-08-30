@@ -1,6 +1,6 @@
 ﻿#include <httplib.h>
 
-#include "apiclass.hpp"
+#include "wallbase.h"
 
 namespace WallClass
 {
@@ -34,11 +34,11 @@ class DirectApi : public WallBase
         return ImageInfoEx(
             new std::vector<std::u8string>{(m_ImageDir / GetImageName()).u8string(), m_ApiUrl + m_ApiPath});
     }
-    virtual void Dislike(const std::filesystem::path &img) override
+    virtual void Dislike(const std::u8string &img) override
     {
         // remove(img.c_str());
     }
-    virtual void UndoDislike(const std::filesystem::path &path) override
+    virtual void UndoDislike(const std::u8string &path) override
     {
     }
     virtual bool WriteDefaultSetting() override
@@ -66,13 +66,13 @@ class DirectApi : public WallBase
         m_Setting->toFile(m_SettingPath);
         return true;
     }
-    virtual void SetCurDir(const std::filesystem::path &str) override
+    virtual void SetCurDir(const std::u8string &sImgPath) override
     {
         using namespace std::literals;
         auto &data =
             m_Setting->find(u8"ApiData"sv)->second.find(m_Setting->find(u8"ApiUrl"sv)->second.getValueString())->second;
-        m_ImageDir = str;
-        data[u8"Directory"].second.setText(m_ImageDir.u8string());
+        m_ImageDir = sImgPath;
+        data[u8"Directory"].second.setText(sImgPath);
         m_Setting->toFile(m_SettingPath);
     }
 
@@ -106,12 +106,7 @@ class DirectApi : public WallBase
         ss << std::put_time(std::localtime(&t), reinterpret_cast<const char *>(m_ImageNameFormat.c_str()));
         std::string &&str = ss.str();
         for (auto &i : str)
-        {
-            if (i == ':')
-            {
-                i = '-';
-            }
-        }
+            if (i == ':') i = '-';
         return std::u8string(str.begin(), str.end());
     }
     YJson *m_Setting;

@@ -171,6 +171,16 @@ void SpeedMenu::wallpaperClearJunk()
     m_Wallpaper->ClearJunk();
 }
 
+void SpeedMenu::wallpaperSetFavotite()
+{
+    m_Wallpaper->SetFavorite();
+}
+
+void SpeedMenu::wallpaperUnSetFavotite()
+{
+    m_Wallpaper->UnSetFavorite();
+}
+
 QString SpeedMenu::wallpaperGetCurJson() const
 {
     std::u8string &&str = m_Wallpaper->GetJson();

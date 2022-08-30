@@ -2,7 +2,7 @@
 #include <sysapi.h>
 #include <timer.h>
 
-#include <apiclass.hpp>
+#include <wallbase.h>
 #include <ranges>
 #include <regex>
 #include <unordered_set>
@@ -39,37 +39,18 @@ bool Wallpaper::DownloadImage(const ImageInfoEx imageInfo)
         return false;
     }
 
-    httplib::HttpGet clt;
-    std::ofstream file(fs::path(m_sFilePath), std::ios::binary | std::ios::out);
-    if (!file.is_open())
-        return false;
     m_UsingFiles.emplace(m_sFilePath);
-    auto res = clt.Get(imageInfo->at(1));
-    while (true)
+    int res = HttpLib::Gets(imageInfo->at(1), m_sFilePath);
+    if (res == 200)
     {
-        if (res && res->status == 200)
-        {
-            file.write(res->body.data(), res->body.size());
-            m_UsingFiles.erase(m_sFilePath);
-            file.close();
-            return true;
-        }
-        else if (res && (res->status == 301 || res->status == 302))
-        {
-            clt.SetFollowLocation(true);
-            res = clt.Get(imageInfo->at(1));
-            continue;
-        }
-        else
-        {
-            m_UsingFiles.erase(m_sFilePath);
-            file.close();
-            if (fs::exists(m_sFilePath))
-                fs::remove(m_sFilePath);
-            return false;
-        }
+        m_UsingFiles.erase(m_sFilePath);
+        return true;
+    } else {
+        if (fs::exists(m_sFilePath))
+            fs::remove(m_sFilePath);
+        m_UsingFiles.erase(m_sFilePath);
+        return false;
     }
-    return false;
 }
 
 Wallpaper::Desktop Wallpaper::GetDesktop()
@@ -176,8 +157,7 @@ bool Wallpaper::IsOnline()
 }
 
 Wallpaper::Wallpaper(const std::filesystem::path &picHome)
-    : m_ImageType(-1), m_TimeInterval(15), m_AutoChange(false), m_FirstChange(false), m_Wallpaper(nullptr),
-      m_PicHomeDir(picHome), m_Timer(new Timer)
+    :m_PicHomeDir(picHome), m_Timer(new Timer), m_ImageType(-1), m_TimeInterval(15), m_AutoChange(false), m_FirstChange(false), m_Wallpaper(nullptr), m_Favorites(WallBase::GetNewInstance(picHome, WallClass::FAVORITE))
 {
     ReadSettings();
 }
@@ -186,6 +166,8 @@ Wallpaper::~Wallpaper()
 {
     delete m_Timer;
     delete m_Wallpaper;
+    if (m_Wallpaper != m_Favorites)
+        delete m_Favorites;
     while (!m_Jobs.empty())
     {
         delete m_Jobs.front();
@@ -320,7 +302,7 @@ bool Wallpaper::UndoDelete()
         return false;
     m_PrevImgs.push_back(m_CurImage);
     m_BlackList.pop_back();
-    m_Wallpaper->UndoDislike(m_CurImage);
+    m_Wallpaper->UndoDislike(m_CurImage.u8string());
     WriteBlackList();
     return true;
 }
@@ -334,6 +316,18 @@ bool Wallpaper::ClearJunk()
         std::filesystem::remove("Blacklist.txt");
     m_BlackList.clear();
     return false;
+}
+
+bool Wallpaper::SetFavorite()
+{
+    m_Favorites->UndoDislike(m_CurImage.u8string());
+    return true;
+}
+
+bool Wallpaper::UnSetFavorite()
+{
+    m_Favorites->Dislike(m_CurImage.u8string());
+    return true;
 }
 
 bool Wallpaper::IsImageFile(const std::filesystem::path &filesName)
@@ -363,7 +357,7 @@ bool Wallpaper::RemoveCurrent()
             return false;
         if (std::filesystem::exists(m_PrevImgs.back()))
             AppendBlackList(m_PrevImgs.back());
-        m_Wallpaper->Dislike(m_PrevImgs.back());
+        m_Wallpaper->Dislike(m_PrevImgs.back().u8string());
         m_PrevImgs.pop_back();
         return true;
     }
@@ -373,7 +367,7 @@ bool Wallpaper::RemoveCurrent()
         {
             if (std::filesystem::exists(m_CurImage))
                 AppendBlackList(m_CurImage);
-            m_Wallpaper->Dislike(m_CurImage);
+            m_Wallpaper->Dislike(m_CurImage.u8string());
             m_CurImage = m_NextImgs.top();
             m_NextImgs.pop();
             return true;
@@ -483,13 +477,13 @@ void Wallpaper::SetFirstChange(bool flag)
 void Wallpaper::SetCurDir(const std::filesystem::path &str)
 {
     if (std::filesystem::exists(str) || std::filesystem::create_directory(str))
-        m_Wallpaper->SetCurDir(str);
+        m_Wallpaper->SetCurDir(str.u8string());
 }
 
 bool Wallpaper::SetImageType(int index)
 {
     m_ImageType = index;
-    if (WallBase::m_IsWorking)
+    if (WallBase::m_IsWorking && m_ImageType != WallClass::WALLHAVEN)
     {
         m_Jobs.push(m_Wallpaper);
         m_Wallpaper = nullptr;

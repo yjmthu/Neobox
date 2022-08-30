@@ -3,7 +3,7 @@
 
 #include "wallpaper.h"
 #include <algorithm>
-#include <apiclass.hpp>
+#include <wallbase.h>
 #include <filesystem>
 #include <vector>
 #include <xstring>
@@ -73,41 +73,44 @@ class Favorite : public WallBase
         return ptr;
     }
 
-    void Dislike(const std::filesystem::path &img) override
+    void Dislike(const std::u8string& sImgPath) override
     {
         auto ptr = &m_Data->find(u8"Used")->second;
-        auto iter = ptr->findByValA(img.u8string());
+        auto iter = ptr->findByValA(sImgPath);
         iter->remove(iter);
         ptr = &m_Data->find(u8"Unused")->second;
-        iter = ptr->findByValA(img.u8string());
+        iter = ptr->findByValA(sImgPath);
         ptr->remove(iter);
-        m_Data->toFile(img);
+        m_Data->toFile(sImgPath);
     }
 
-    void UndoDislike(const std::filesystem::path &path) override
+    void UndoDislike(const std::u8string &sImgPath) override
     {
-        m_Data->find(u8"Used")->second.append(path.u8string());
+        m_Data->find(u8"Used")->second.append(sImgPath);
         m_Data->toFile(m_DataPath);
     }
 
     std::u8string GetJson() const override
     {
-        return m_Data->find(u8"Used")->second.toString(false);
+        return m_Data->find(u8"Unused")->second.toString(false);
     }
 
     void SetJson(const std::u8string &str) override
     {
-        m_Data->find(u8"Used")->second = YJson(str.begin(), str.end());
+        m_Data->find(u8"Unused")->second = YJson(str.begin(), str.end());
         m_Data->toFile(m_DataPath);
     }
 
-    void SetCurDir(const std::filesystem::path &str) override
+    void SetCurDir(const std::u8string &str) override
     {
     }
 
     explicit Favorite(const std::filesystem::path &picHome) : WallBase(picHome), m_Data(nullptr)
     {
         InitBase();
+    }
+    ~Favorite() {
+        delete m_Data;
     }
 };
 } // namespace WallClass

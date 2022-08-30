@@ -43,6 +43,8 @@ class Wallpaper
     bool SetPrevious();
     bool UndoDelete();
     bool ClearJunk();
+    bool SetFavorite();
+    bool UnSetFavorite();
     bool SetDropFile(std::deque<std::filesystem::path> &&paths);
     inline const std::filesystem::path GetCurIamge() const
     {
@@ -78,6 +80,13 @@ class Wallpaper
 
     static constexpr char m_szWallScript[16]{"SetWallpaper.sh"};
 
+  public:
+    static Desktop GetDesktop();
+    void SetCurDir(const std::filesystem::path &str);
+    void StartTimer(bool start);
+    std::filesystem::path m_PicHomeDir;
+    class Timer *m_Timer;
+
   private:
     int m_ImageType;
     int m_TimeInterval;
@@ -85,18 +94,13 @@ class Wallpaper
     bool m_FirstChange;
 
     class WallBase *m_Wallpaper;
+    class WallBase *m_Favorites;
     std::queue<class WallBase *> m_Jobs;
     std::deque<std::filesystem::path> m_PrevImgs;
     std::stack<std::filesystem::path> m_NextImgs;
     std::list<std::pair<std::filesystem::path, std::filesystem::path>> m_BlackList;
     std::filesystem::path m_CurImage;
 
-  public:
-    static Desktop GetDesktop();
-    void SetCurDir(const std::filesystem::path &str);
-    void StartTimer(bool start);
-    std::filesystem::path m_PicHomeDir;
-    class Timer *m_Timer;
 };
 
 #endif

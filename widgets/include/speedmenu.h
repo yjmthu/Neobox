@@ -30,6 +30,8 @@ class SpeedMenu : public QObject
     Q_INVOKABLE void wallpaperRemoveCurrent();
     Q_INVOKABLE void wallpaperUndoDelete();
     Q_INVOKABLE void wallpaperClearJunk();
+    Q_INVOKABLE void wallpaperSetFavotite();
+    Q_INVOKABLE void wallpaperUnSetFavotite();
     Q_INVOKABLE QString wallpaperGetCurJson() const;
     Q_INVOKABLE QString wallpaperGetCurWallpaper() const;
     Q_INVOKABLE void wallpaperSetCurJson(const QString &str);

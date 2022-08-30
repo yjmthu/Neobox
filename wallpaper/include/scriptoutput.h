@@ -1,7 +1,7 @@
 ﻿#include <string>
 #include <sysapi.h>
 
-#include "apiclass.hpp"
+#include "wallbase.h"
 
 namespace WallClass
 {
@@ -72,13 +72,13 @@ class ScriptOutput : public WallBase
         ptr->push_back(str);
         return ptr;
     }
-    virtual void Dislike(const std::filesystem::path &img) override
+    virtual void Dislike(const std::u8string &img) override
     {
     }
-    virtual void UndoDislike(const std::filesystem::path &img) override
+    virtual void UndoDislike(const std::u8string &img) override
     {
     }
-    virtual void SetCurDir(const std::filesystem::path &str) override
+    virtual void SetCurDir(const std::u8string &str) override
     {
     }
 

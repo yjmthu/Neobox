@@ -1,8 +1,9 @@
 ﻿#include <httplib.h>
+#include <xstring>
 #include <yjson.h>
 
 #include <algorithm>
-#include <apiclass.hpp>
+#include <wallbase.h>
 #include <array>
 #include <filesystem>
 #include <functional>
@@ -18,11 +19,10 @@ class Wallhaven : public WallBase
     {
         // if (!Wallpaper::IsOnline()) return false;
         using namespace std::literals;
-        httplib::HttpGet clt;
-        auto res = clt.Get(u8"https://wallhaven.cc/api/v1/w/"s + str);
-        if (!res || res->status != 200)
+        std::u8string body;
+        if (HttpLib::Get(u8"https://wallhaven.cc/api/v1/w/"s + str, body) != 200)
             return false;
-        YJson js(res->body.begin(), res->body.end());
+        YJson js(body.begin(), body.end());
         str = js[u8"data"].second[u8"path"].second.getValueString().substr(31);
         return true;
     }
@@ -94,8 +94,9 @@ class Wallhaven : public WallBase
         m_Data->toFile(m_DataPath);
         return ptr;
     }
-    virtual void Dislike(const std::filesystem::path &img) override
+    virtual void Dislike(const std::u8string &sImgPath) override
     {
+        std::filesystem::path img = sImgPath;
         if (img.has_filename())
         {
             std::u8string m_FileName(img.filename().u8string());
@@ -120,8 +121,9 @@ class Wallhaven : public WallBase
             throw std::errc::not_a_directory;
         }
     }
-    virtual void UndoDislike(const std::filesystem::path &path) override
+    virtual void UndoDislike(const std::u8string &sImgPath) override
     {
+        std::filesystem::path path = sImgPath;
         if (path.has_filename())
         {
             std::string m_FileName(path.filename().string());
@@ -143,7 +145,7 @@ class Wallhaven : public WallBase
         GetApiPathUrl();
         m_NeedDownUrl = NeedGetImageUrl();
     }
-    virtual void SetCurDir(const std::filesystem::path &str) override
+    virtual void SetCurDir(const std::u8string &str) override
     {
         m_ImageDir = str;
         m_Setting->find(m_Setting->find(u8"WallhavenCurrent")->second.getValueString())
@@ -210,22 +212,19 @@ class Wallhaven : public WallBase
         using namespace std::literals;
         std::cout << "Get next url\n";
         size_t m_TotalDownload = 0;
-        httplib::HttpGet clt;
         // auto& m_Array = m_Data->find(u8"Unused")->second.getArray();
         std::vector<std::u8string> m_Array;
         auto &m_BlackArray = m_Data->find(u8"Blacklist")->second;
         size_t i = 5 * (m_Setting->find(u8"PageNumber")->second.getValueInt() - 1) + 1;
+        const std::string url(m_ImageUrl.begin(), m_ImageUrl.end());
         if (m_ImageUrl.substr(20, 4) == u8"/api")
         {
             for (size_t n = i + 5; i < n; ++i)
             {
-                const std::string url(m_ImageUrl.begin(), m_ImageUrl.end());
-                auto res = clt.Get(i == 1 ? url : url + "&page=" + std::to_string(i));
-                if (!res || res->status != 200)
-                {
-                    break;
-                }
-                YJson root(res->body.begin(), res->body.end());
+                std::u8string body;
+                int res = HttpLib::Get((i == 1 ? url : url + "&page=" + std::to_string(i)), body);
+                if (res != 200) break;
+                YJson root(body.begin(), body.end());
                 YJson &data = root[u8"data"sv].second;
                 for (auto &i : data.getArray())
                 {
@@ -245,14 +244,15 @@ class Wallhaven : public WallBase
             auto cmp = [](const YJson &i, const std::u8string_view &name) -> bool {
                 return i.getValueString().find(name) != std::u8string::npos;
             };
-            std::sregex_iterator end;
+            std::cregex_iterator end;
             for (size_t n = i + 5; i < n; ++i)
             {
-                const std::string url(m_ImageUrl.begin(), m_ImageUrl.end());
-                auto res = clt.Get(i == 1 ? url : url + "&page=" + std::to_string(i));
-                if (!res || res->status != 200)
+                std::u8string body;
+                auto res = HttpLib::Get((i == 1 ? url : url + "&page=" + std::to_string(i)), body);
+                if (res != 200)
                     break;
-                std::sregex_iterator iter(res->body.begin(), res->body.end(), pattern);
+                std::cregex_iterator iter(reinterpret_cast<const char*>(body.data()),
+                        reinterpret_cast<const char*>(body.data())+body.size(), pattern);
                 while (iter != end)
                 {
                     const auto &i_ = iter->str(1);
