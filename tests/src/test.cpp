@@ -1,21 +1,19 @@
-﻿#include <iostream>
+﻿#include <sysapi.h>
+#include <iostream>
 #include <string>
-#include <sysapi.h>
 
-int main()
-{
-    std::vector<std::basic_string<TCHAR>> data;
-    GetCmdOutput(TEXT(".\\build-dbg\\tests\\mains.exe"), data);
-    std::cout << data.size() << std::endl;
-    for (auto i : data)
-    {
+int main() {
+  std::vector<std::basic_string<TCHAR>> data;
+  GetCmdOutput(TEXT(".\\build-dbg\\tests\\mains.exe"), data);
+  std::cout << data.size() << std::endl;
+  for (auto i : data) {
 #ifdef UNICODE
-        std::wcout << i << std::endl;
+    std::wcout << i << std::endl;
 #else
-        std::cout << i << std::endl;
+    std::cout << i << std::endl;
 #endif
-    }
-    return 0;
+  }
+  return 0;
 }
 
 /*

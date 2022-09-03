@@ -1,32 +1,35 @@
 #ifndef SPEEDBOX_H
 #define SPEEDBOX_H
 
-#include <QObject>
+#include <QWidget>
 
-class SpeedBox : public QObject
-{
-    Q_OBJECT
-    //  void dragEnterEvent(QDragEnterEvent* event) override;
-    //  void dropEvent(QDropEvent* event) override;
-    Q_PROPERTY(int memUseage READ memUseage NOTIFY memUseageChanged)
-    Q_PROPERTY(double netUpSpeed READ netUpSpeed NOTIFY netUpSpeedChanged)
-    Q_PROPERTY(double netDownSpeed READ netDownSpeed NOTIFY netDownSpeedChanged)
+#include <netspeedhelper.h>
 
-  public:
-    SpeedBox(QObject *parent = nullptr);
-    ~SpeedBox();
-    Q_INVOKABLE void updateInfo();
-    Q_INVOKABLE void setRoundRect(int x, int y, int w, int h, int r, bool set);
-    int memUseage() const;
-    double netUpSpeed() const;
-    double netDownSpeed() const;
+class SpeedBox : public QWidget {
+ private:
+  QPoint m_ConstPos;
+  class QWidget* m_CentralWidget;
+  NetSpeedHelper m_NetSpeedHelper;
+  class QLabel* m_TextMemUseage;
+  class QLabel* m_TextUploadSpeed;
+  class QLabel* m_TextDownLoadSpeed;
+  class QTimer* m_Timer;
+  class NeoMenu* m_MainMenu;
 
-  private:
-    friend class SpeedMenu;
-    class NetSpeedHelper *m_NetSpeedHelper;
-  signals:
-    void memUseageChanged();
-    void netUpSpeedChanged();
-    void netDownSpeedChanged();
+ protected:
+  void mousePressEvent(QMouseEvent* event) override;
+  void mouseReleaseEvent(QMouseEvent* event) override;
+  void mouseMoveEvent(QMouseEvent* event) override;
+
+ public:
+  explicit SpeedBox(QWidget* parent = nullptr);
+  ~SpeedBox();
+
+ private:
+  void SetWindowMode();
+  void SetBaseLayout();
+  void UpdateTextContent();
+  void SetStyleSheet();
 };
-#endif // SPEEDBOX_H
+
+#endif

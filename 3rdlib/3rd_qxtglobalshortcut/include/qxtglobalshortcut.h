@@ -17,14 +17,16 @@
 **
 ** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 *AND
-** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+*IMPLIED
 ** WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 ** DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
 ** DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 ** (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 ** LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ** ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-** (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+** (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+*THIS
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **
 ** <http://libqxt.org>  <foundation@libqxt.org>
@@ -34,33 +36,31 @@
 
 #include <QKeySequence>
 #include <QObject>
-
 #include "qxtglobal.h"
 class QxtGlobalShortcutPrivate;
 
-class QXT_GUI_EXPORT QxtGlobalShortcut : public QObject
-{
-    Q_OBJECT
-    QXT_DECLARE_PRIVATE(QxtGlobalShortcut)
-    Q_PROPERTY(bool enabled READ isEnabled WRITE setEnabled)
-    Q_PROPERTY(QKeySequence shortcut READ shortcut WRITE setShortcut)
+class QXT_GUI_EXPORT QxtGlobalShortcut : public QObject {
+  Q_OBJECT
+  QXT_DECLARE_PRIVATE(QxtGlobalShortcut)
+  Q_PROPERTY(bool enabled READ isEnabled WRITE setEnabled)
+  Q_PROPERTY(QKeySequence shortcut READ shortcut WRITE setShortcut)
 
-  public:
-    explicit QxtGlobalShortcut(QObject *parent = 0);
-    explicit QxtGlobalShortcut(const QKeySequence &shortcut, QObject *parent = 0);
-    virtual ~QxtGlobalShortcut();
+ public:
+  explicit QxtGlobalShortcut(QObject* parent = 0);
+  explicit QxtGlobalShortcut(const QKeySequence& shortcut, QObject* parent = 0);
+  virtual ~QxtGlobalShortcut();
 
-    QKeySequence shortcut() const;
-    bool setShortcut(const QKeySequence &shortcut);
+  QKeySequence shortcut() const;
+  bool setShortcut(const QKeySequence& shortcut);
 
-    bool isEnabled() const;
+  bool isEnabled() const;
 
-  public Q_SLOTS:
-    void setEnabled(bool enabled = true);
-    void setDisabled(bool disabled = true);
+ public Q_SLOTS:
+  void setEnabled(bool enabled = true);
+  void setDisabled(bool disabled = true);
 
-  Q_SIGNALS:
-    void activated();
+ Q_SIGNALS:
+  void activated();
 };
 
-#endif // QXTGLOBALSHORTCUT_H
+#endif  // QXTGLOBALSHORTCUT_H

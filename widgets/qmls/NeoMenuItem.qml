@@ -7,9 +7,9 @@ Button {
     rightPadding: 14
     topPadding: 4
     bottomPadding: 4
-    signal hovered
-    signal triggered
-    property int index
+    signal hovereds()
+    signal triggered()
+    property int index: -1
     property bool haveCihld: false
     property alias frontText: frontTextCtl.text
     property alias backText: backTextCtl.text
@@ -23,7 +23,7 @@ Button {
 
     background: Rectangle {
         radius: 4
-        color: qsTr("white")
+        color: "white"
         MouseArea {
             hoverEnabled: true
             acceptedButtons: Qt.NoButton
@@ -31,7 +31,7 @@ Button {
             onEntered: {
                 parent.color = "#EDEDED"
                 parent.parent.parent.changeChild(index)
-                emit: hovered()
+                emit: control.hovereds()
             }
             onExited: {
                 parent.color = "white"

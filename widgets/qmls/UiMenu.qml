@@ -1,5 +1,5 @@
 import QtQuick 2.2
-import QtQuick.Dialogs 1.3
+// import QtQuick.Dialogs 1.3
 
 NeoMenuSuperItem {
     text: qsTr("外观设置")
@@ -17,18 +17,18 @@ NeoMenuSuperItem {
         }
         NeoMenuItem {
             text: qsTr("背景颜色")
-            property ColorDialog colorDialog: ColorDialog {
-                title: "Please choose a color"
-                showAlphaChannel: true
-                onAccepted: {
-                    mainwindow.mainrect.rectSettings.color = color
-                }
-            }
-            onTriggered: {
-                var temp = mainwindow.mainrect.rectSettings
-                colorDialog.currentColor = temp.color
-                colorDialog.visible = true
-            }
+//            property ColorDialog colorDialog: ColorDialog {
+//                title: "Please choose a color"
+//                showAlphaChannel: true
+//                onAccepted: {
+//                    mainwindow.mainrect.rectSettings.color = color
+//                }
+//            }
+//            onTriggered: {
+//                var temp = mainwindow.mainrect.rectSettings
+//                colorDialog.currentColor = temp.color
+//                colorDialog.visible = true
+//            }
         }
 
         NeoMenuItem {
@@ -97,35 +97,35 @@ NeoMenuSuperItem {
         }
         NeoMenuItem {
             text: qsTr("文字颜色")
-            onTriggered: {
-                m_ColorDialog.currentColor = mainwindow.getTextCtl(
-                            textCtl.checkedChild).color
-                m_ColorDialog.open()
-            }
+//            onTriggered: {
+//                m_ColorDialog.currentColor = mainwindow.getTextCtl(
+//                            textCtl.checkedChild).color
+//                m_ColorDialog.open()
+//            }
 
-            property ColorDialog m_ColorDialog: ColorDialog {
-                title: qsTr("选择颜色")
+//            property ColorDialog m_ColorDialog: ColorDialog {
+//                title: qsTr("选择颜色")
 
-                onAccepted: {
-                    mainwindow.getTextCtl(textCtl.checkedChild).color = color
-                }
-            }
+//                onAccepted: {
+//                    mainwindow.getTextCtl(textCtl.checkedChild).color = color
+//                }
+//            }
         }
         NeoMenuItem {
             text: qsTr("字体家族")
-            onTriggered: {
-                m_FontDialog.currentFont = mainwindow.getTextCtl(
-                            textCtl.checkedChild).font
-                m_FontDialog.open()
-            }
+//            onTriggered: {
+//                m_FontDialog.currentFont = mainwindow.getTextCtl(
+//                            textCtl.checkedChild).font
+//                m_FontDialog.open()
+//            }
 
-            property FontDialog m_FontDialog: FontDialog {
-                title: qsTr("选择字体")
+//            property FontDialog m_FontDialog: FontDialog {
+//                title: qsTr("选择字体")
 
-                onAccepted: {
-                    mainwindow.getTextCtl(textCtl.checkedChild).font = font
-                }
-            }
+//                onAccepted: {
+//                    mainwindow.getTextCtl(textCtl.checkedChild).font = font
+//                }
+//            }
         }
     }
 }

@@ -1,3 +1,27 @@
+QWidget#center{
+    background-color:#33333377;
+    border-radius:2px;
+}
+
+QLabel#memUse{
+    color:#00FFFF;
+    font-size:17pt;
+    font-family:Carattere;
+    font-weight:bold;
+}
+
+QLabel#netUp{
+    color:#FAAA23;
+    font-family:Nickainley;
+    font-weight:bold;
+}
+
+QLabel#netDown{
+    color:#8CF01E;
+    font-family:Nickainley;
+    font-weight:bold;
+}
+
 QMenu {
   background-color: white;
   padding: 5px;
@@ -8,7 +32,7 @@ QMenu::item {
   border-radius: 3px;
   font-size: 10pt;
   color: black;
-  font-family: "FZKai-Z03";
+  font-family: "楷体";
   padding: 4px 20px 4px 10px;
   margin: 2px 1px;
 }
@@ -16,4 +40,3 @@ QMenu::item {
 QMenu::item::selected{
   background-color: rgb(236, 236, 236);
 }
-

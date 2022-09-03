@@ -1,38 +1,41 @@
 {
-    "Wallpaper": {
-        "AutoChange": false,
-        "FirstChange": false,
-        "TimeInterval": 30,
-        "ImageType": 0
+  "Wallpaper": {
+    "AutoChange": false,
+    "FirstChange": false,
+    "TimeInterval": 30,
+    "ImageType": 0
+  },
+  "FormGlobal": {
+    "ShowForm": true,
+    "Position": [ 100, 100 ],
+    "ShowTrayIcon": false,
+    "ToolTip": "行動是治癒恐懼的良藥，而猶豫、拖延將不斷滋養恐懼"
+  },
+  "FormUi": {
+    "BkColor": [85, 0, 127, 150],
+    "MemUseage": {
+      "font-family": "Carattere",
+      "font-size": 20, 
+      "color": "#FFFF00",
+      "bold": true,
+      "italic": false,
+      "pos": [6, 29]
     },
-    "FormGlobal": {
-        "ShowForm": true
+    "NetUpSpeed":  {
+      "font-family": "Nickainley Normal",
+      "font-size": 10, 
+      "color": "#FAAA23",
+      "bold": true,
+      "italic": false,
+      "pos": [32, 16]
     },
-    "FormUi": {
-        "BkColor": [85, 0, 127, 150],
-        "MemUseage": {
-            "font-family": "Carattere",
-            "font-size": 20, 
-            "color": "#FFFF00",
-            "bold": true,
-            "italic": false,
-            "pos": [6, 29]
-        },
-        "NetUpSpeed":  {
-            "font-family": "Nickainley Normal",
-            "font-size": 10, 
-            "color": "#FAAA23",
-            "bold": true,
-            "italic": false,
-            "pos": [32, 16]
-        },
-        "NetDownSpeed": {
-            "font-family": "Nickainley Normal",
-            "font-size": 10, 
-            "color": "#8CF01E",
-            "bold": true,
-            "italic": false,
-            "pos": [32, 36]
-        }
+    "NetDownSpeed": {
+      "font-family": "Nickainley Normal",
+      "font-size": 10, 
+      "color": "#8CF01E",
+      "bold": true,
+      "italic": false,
+      "pos": [32, 36]
     }
+  }
 }

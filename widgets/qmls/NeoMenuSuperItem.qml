@@ -24,7 +24,7 @@ NeoMenuItem {
     settings.hide()
   }
 
-  onHovered: {
+  onHovereds: {
     settings.x = parent.mainWidth + x + parent.mainX
     if (settings.x + settings.width > Screen.desktopAvailableWidth)
       settings.x = parent.mainX - settings.width

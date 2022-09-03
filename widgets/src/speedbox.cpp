@@ -1,76 +1,124 @@
-#include <netspeedhelper.h>
+#include <QApplication>
+#include <QFile>
+#include <QFrame>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QMouseEvent>
+#include <QTimer>
+#include <QVBoxLayout>
+
+#include <neomenu.h>
 #include <speedbox.h>
+#include <varbox.h>
+#include <yjson.h>
 
-#include <QQuickView>
-#ifdef __linux__
-#include <KWindowEffects>
-#elif defined _WIN32
-#include <sysapi.h>
-#endif
-
-SpeedBox::SpeedBox(QObject *parent) : QObject(parent), m_NetSpeedHelper(new NetSpeedHelper)
-{
+SpeedBox::SpeedBox(QWidget* parent)
+    : QWidget(parent,
+              Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool),
+      m_CentralWidget(new QWidget(this)),
+      m_TextMemUseage(new QLabel),
+      m_TextUploadSpeed(new QLabel),
+      m_TextDownLoadSpeed(new QLabel),
+      m_Timer(new QTimer(this)),
+      m_MainMenu(new NeoMenu(this)) {
+  SetWindowMode();
+  SetBaseLayout();
+  SetStyleSheet();
+  UpdateTextContent();
+  connect(m_Timer, &QTimer::timeout, this, [this]() {
+    m_NetSpeedHelper.GetSysInfo();
+    UpdateTextContent();
+  });
+  m_Timer->start(1000);
 }
 
-SpeedBox::~SpeedBox()
-{
-    delete m_NetSpeedHelper;
+SpeedBox::~SpeedBox() {
+  m_Timer->stop();
+  // delete m_MainMenu;
+  delete m_TextDownLoadSpeed;
+  delete m_TextUploadSpeed;
+  delete m_TextMemUseage;
+  delete m_CentralWidget;
 }
 
-void SpeedBox::updateInfo()
-{
-    m_NetSpeedHelper->GetSysInfo();
-    emit memUseageChanged();
-    emit netUpSpeedChanged();
-    emit netDownSpeedChanged();
+void SpeedBox::SetWindowMode() {
+  setAttribute(Qt::WA_TranslucentBackground);
+  setMinimumSize(100, 40);
+  setMaximumSize(100, 40);
+  m_CentralWidget->setMinimumSize(100, 40);
+  m_CentralWidget->setMaximumSize(100, 40);
+  m_CentralWidget->setObjectName("center");
+  m_TextMemUseage->setObjectName("memUse");
+  m_TextDownLoadSpeed->setObjectName("netDown");
+  m_TextUploadSpeed->setObjectName("netUp");
+  m_TextMemUseage->setMinimumWidth(26);
+  m_TextMemUseage->setMaximumWidth(26);
+  const auto& array =
+      VarBox::GetSettings(u8"FormGlobal")[u8"Position"].second.getArray();
+  move(array.front().getValueInt(), array.back().getValueInt());
 }
 
-int SpeedBox::memUseage() const
-{
-    return std::get<0>(m_NetSpeedHelper->m_SysInfo);
+void SpeedBox::SetStyleSheet() {
+  QFile fStyle(QStringLiteral(":/styles/MenuStyle.css"));
+  if (fStyle.open(QIODevice::ReadOnly)) {
+    QByteArray&& array = fStyle.readAll();
+    setStyleSheet(array);
+    fStyle.close();
+  }
+  setCursor(Qt::PointingHandCursor);
+  std::u8string& toolTip =
+      VarBox::GetSettings(u8"FormGlobal")[u8"ToolTip"].second.getValueString();
+  setToolTip(QString::fromUtf8(toolTip.data(), toolTip.size()));
 }
 
-double SpeedBox::netUpSpeed() const
-{
-    return static_cast<double>(std::get<1>(m_NetSpeedHelper->m_SysInfo));
+void SpeedBox::SetBaseLayout() {
+  QHBoxLayout* hout = new QHBoxLayout(m_CentralWidget);
+  QVBoxLayout* vout = new QVBoxLayout;
+  hout->setContentsMargins(6, 4, 4, 0);
+  hout->setSpacing(0);
+  vout->setSpacing(0);
+  hout->addWidget(m_TextMemUseage);
+  vout->addWidget(m_TextUploadSpeed);
+  vout->addWidget(m_TextDownLoadSpeed);
+  hout->addLayout(vout);
+  m_CentralWidget->setLayout(hout);
+  m_CentralWidget->move(0, 0);
 }
 
-double SpeedBox::netDownSpeed() const
-{
-    return static_cast<double>(std::get<2>(m_NetSpeedHelper->m_SysInfo));
+void SpeedBox::UpdateTextContent() {
+  m_TextMemUseage->setText(
+      QString::number(std::get<0>(m_NetSpeedHelper.m_SysInfo)));
+  m_TextUploadSpeed->setText(
+      QString::fromStdWString(m_NetSpeedHelper.FormatSpped(
+          std::get<1>(m_NetSpeedHelper.m_SysInfo), true)));
+  m_TextDownLoadSpeed->setText(
+      QString::fromStdWString(m_NetSpeedHelper.FormatSpped(
+          std::get<2>(m_NetSpeedHelper.m_SysInfo), false)));
 }
 
-void SpeedBox::setRoundRect(int x, int y, int w, int h, int r, bool set)
-{
-#ifdef __linux__
-    if (!set)
-    {
-        KWindowEffects::enableBlurBehind(qobject_cast<QWindow *>(parent()->parent()), false);
-        return;
-    }
-    QRegion region;
-    QRect rect(x, y, w, h);
-    region += rect.adjusted(r, 0, -r, 0);
-    region += rect.adjusted(0, r, 0, -r);
+void SpeedBox::mouseMoveEvent(QMouseEvent* event) {
+  if (event->buttons() == Qt::LeftButton) {
+    move(pos() + event->pos() - m_ConstPos);
+  }
+}
 
-    // top left
-    QRect corner(rect.topLeft(), QSize(r * 2, r * 2));
-    region += QRegion(corner, QRegion::Ellipse);
+void SpeedBox::mousePressEvent(QMouseEvent* event) {
+  if (event->button() == Qt::LeftButton) {
+    m_ConstPos = event->pos();
+    setMouseTracking(true);
+  } else if (event->button() == Qt::RightButton) {
+    m_MainMenu->popup(pos() + event->pos());
+  } else if (event->button() == Qt::MiddleButton) {
+    qApp->quit();
+  }
+}
 
-    // top right
-    corner.moveTopRight(rect.topRight());
-    region += QRegion(corner, QRegion::Ellipse);
-
-    // bottom left
-    corner.moveBottomLeft(rect.bottomLeft());
-    region += QRegion(corner, QRegion::Ellipse);
-
-    // bottom right
-    corner.moveBottomRight(rect.bottomRight());
-    region += QRegion(corner, QRegion::Ellipse);
-
-    KWindowEffects::enableBlurBehind(qobject_cast<QWindow *>(parent()->parent()), true, region);
-#elif defined _WIN32
-    enableBlurBehind((HWND)qobject_cast<QWindow *>(parent()->parent())->winId(), 100, set);
-#endif
+void SpeedBox::mouseReleaseEvent(QMouseEvent* event) {
+  if (event->button() == Qt::LeftButton) {
+    setMouseTracking(false);
+    auto& array =
+        VarBox::GetSettings(u8"FormGlobal")[u8"Position"].second.getArray();
+    array = YJson::A{x(), y()};
+    VarBox::WriteSettings();
+  }
 }

@@ -1,21 +1,17 @@
 #ifndef VARBOX_H
 #define VARBOX_H
 
-#include <QObject>
+class VarBox {
+ public:
+  explicit VarBox();
+  ~VarBox();
+  static class YJson& GetSettings(const char8_t* key);
+  static void WriteSettings();
 
-class VarBox : public QObject
-{
-    Q_OBJECT
-  public:
-    VarBox();
-    ~VarBox();
-
-  private:
-    void LoadSettings();
-    void LoadFonts();
-    void LoadQmlFiles();
+ private:
+  void LoadFonts() const;
+  void LoadJsons();
+  void MakeDirs();
 };
-
-extern VarBox *m_VarBox;
 
 #endif

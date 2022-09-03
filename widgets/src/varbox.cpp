@@ -1,77 +1,74 @@
 #include <varbox.h>
-#include <wallpaper.h>
 #include <yjson.h>
 
-#include <QBitmap>
+#include <QApplication>
 #include <QDir>
 #include <QFontDatabase>
 #include <QMessageBox>
-#include <QQmlContext>
-#include <QQmlEngine>
-#include <QQuickView>
 #include <QStandardPaths>
-#include <QSystemTrayIcon>
-#include <QTimer>
-#include <appcode.hpp>
-#include <filesystem>
 
-VarBox *m_VarBox = nullptr;
+#include <memory>
 
-inline void MessageBox(const std::u8string &msg)
-{
-    QString str(QString::fromUtf8(reinterpret_cast<const char *>(msg.data()), static_cast<int>(msg.size())));
-    QMessageBox::information(nullptr, "Notice", str);
+void ShowMessage(const std::u8string& title,
+                 const std::u8string& text,
+                 int type = 0) {
+  QMessageBox::information(nullptr,
+                           QString::fromUtf8(title.data(), title.size()),
+                           QString::fromUtf8(text.data(), text.size()));
 }
 
-VarBox::VarBox() : QObject()
-{
-    m_VarBox = this;
-    LoadFonts();
-    QDir dir(QStandardPaths::writableLocation(QStandardPaths::HomeLocation));
-    constexpr char relPath[] = ".config/Neobox";
-    if (dir.exists(relPath) || dir.mkpath(relPath))
-        dir.cd(relPath);
+VarBox::VarBox() {
+  MakeDirs();
+  LoadFonts();
+  LoadJsons();
+}
+
+VarBox::~VarBox() {}
+
+YJson& VarBox::GetSettings(const char8_t* key) {
+  const char szFileName[] = "Settings.json";
+  static std::unique_ptr<YJson> m_Settings;
+  if (!m_Settings) {
+    if (QFile::exists(szFileName)) {
+      m_Settings = std::make_unique<YJson>(szFileName, YJson::UTF8);
+      m_Settings->toFile(szFileName);
+    } else {
+      QFile fJson(QStringLiteral(":/jsons/setting.json"));
+      fJson.open(QIODevice::ReadOnly);
+      QByteArray array = fJson.readAll();
+      m_Settings = std::make_unique<YJson>(array.begin(), array.end());
+      fJson.close();
+    }
+  }
+  return key ? m_Settings->find(key)->second : *m_Settings;
+}
+
+void VarBox::WriteSettings() {
+  VarBox::GetSettings(nullptr).toFile("Settings.json");
+}
+
+void VarBox::LoadFonts() const {
+  QFontDatabase::addApplicationFont(
+      QStringLiteral(":/fonts/Nickainley-Normal-small.ttf"));
+  QFontDatabase::addApplicationFont(
+      QStringLiteral(":/fonts/Carattere-Regular-small.ttf"));
+}
+
+void VarBox::LoadJsons() {}
+
+void VarBox::MakeDirs() {
+  QDir dir(QStandardPaths::writableLocation(QStandardPaths::HomeLocation));
+  constexpr char relPath[] = ".config/Neobox";
+  if (dir.exists(relPath) || dir.mkpath(relPath)) {
+    dir.cd(relPath);
     QDir::setCurrent(dir.absolutePath());
-    LoadSettings();
-    LoadQmlFiles();
-}
-
-VarBox::~VarBox()
-{
-}
-
-void VarBox::LoadSettings()
-{
-#ifdef _WIN32
-#elif def __linux__
-    if (!std::filesystem::exists(Wallpaper::m_szWallScript))
-    {
-        QFile::copy(":/scripts/SetWallpaper.sh", Wallpaper::m_szWallScript);
-        QFile::setPermissions(Wallpaper::m_szWallScript, QFileDevice::ReadUser | QFileDevice::Permission::ExeUser);
-    }
-#endif
-}
-
-void VarBox::LoadFonts()
-{
-    QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/Nickainley-Normal-small.ttf"));
-    QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/Carattere-Regular-small.ttf"));
-}
-
-void VarBox::LoadQmlFiles()
-{
-    QString prefix(":/");
-    if (!std::filesystem::exists("qmls"))
-    {
-        std::filesystem::create_directory("qmls");
-    }
-    auto lst = {"qmls/FloatingWindow.qml", "qmls/MainMenu.qml", "qmls/NeoMenuItem.qml", "qmls/SystemTray.qml"};
-    for (const auto &i : lst)
-    {
-        if (!QFile::exists(i))
-        {
-            QFile::copy(prefix + i, i);
-            QFile::setPermissions(i, QFileDevice::ReadUser);
-        }
-    }
+  } else {
+    qApp->quit();
+    return;
+  }
+  auto lst = {"junck", "qmls"};
+  for (auto i : lst) {
+    if (!dir.exists(i))
+      dir.mkdir(i);
+  }
 }

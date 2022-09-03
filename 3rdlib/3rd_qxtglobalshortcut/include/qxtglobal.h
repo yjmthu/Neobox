@@ -17,14 +17,16 @@
 **
 ** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 *AND
-** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+*IMPLIED
 ** WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 ** DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
 ** DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 ** (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 ** LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ** ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-** (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+** (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+*THIS
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **
 ** <http://libqxt.org>  <foundation@libqxt.org>
@@ -42,7 +44,7 @@
 
 #ifndef QXT_NO_MACROS
 
-#endif // QXT_NO_MACROS
+#endif  // QXT_NO_MACROS
 
 //--------------------------export macros------------------------------
 
@@ -56,7 +58,7 @@
 #endif
 #else
 #define QXT_CORE_EXPORT
-#endif // BUILD_QXT_CORE
+#endif  // BUILD_QXT_CORE
 
 #if !defined(QXT_STATIC) && !defined(QXT_DOXYGEN_RUN)
 #if defined(BUILD_QXT_GUI)
@@ -66,7 +68,7 @@
 #endif
 #else
 #define QXT_GUI_EXPORT
-#endif // BUILD_QXT_GUI
+#endif  // BUILD_QXT_GUI
 
 #if !defined(QXT_STATIC) && !defined(QXT_DOXYGEN_RUN)
 #if defined(BUILD_QXT_NETWORK)
@@ -76,7 +78,7 @@
 #endif
 #else
 #define QXT_NETWORK_EXPORT
-#endif // BUILD_QXT_NETWORK
+#endif  // BUILD_QXT_NETWORK
 
 #if !defined(QXT_STATIC) && !defined(QXT_DOXYGEN_RUN)
 #if defined(BUILD_QXT_SQL)
@@ -86,7 +88,7 @@
 #endif
 #else
 #define QXT_SQL_EXPORT
-#endif // BUILD_QXT_SQL
+#endif  // BUILD_QXT_SQL
 
 #if !defined(QXT_STATIC) && !defined(QXT_DOXYGEN_RUN)
 #if defined(BUILD_QXT_WEB)
@@ -96,7 +98,7 @@
 #endif
 #else
 #define QXT_WEB_EXPORT
-#endif // BUILD_QXT_WEB
+#endif  // BUILD_QXT_WEB
 
 #if !defined(QXT_STATIC) && !defined(QXT_DOXYGEN_RUN)
 #if defined(BUILD_QXT_BERKELEY)
@@ -106,7 +108,7 @@
 #endif
 #else
 #define QXT_BERKELEY_EXPORT
-#endif // BUILD_QXT_BERKELEY
+#endif  // BUILD_QXT_BERKELEY
 
 #if !defined(QXT_STATIC) && !defined(QXT_DOXYGEN_RUN)
 #if defined(BUILD_QXT_ZEROCONF)
@@ -116,14 +118,16 @@
 #endif
 #else
 #define QXT_ZEROCONF_EXPORT
-#endif // QXT_ZEROCONF_EXPORT
+#endif  // QXT_ZEROCONF_EXPORT
 
-#if defined(BUILD_QXT_CORE) || defined(BUILD_QXT_GUI) || defined(BUILD_QXT_SQL) || defined(BUILD_QXT_NETWORK) ||       \
-    defined(BUILD_QXT_WEB) || defined(BUILD_QXT_BERKELEY) || defined(BUILD_QXT_ZEROCONF)
+#if defined(BUILD_QXT_CORE) || defined(BUILD_QXT_GUI) ||     \
+    defined(BUILD_QXT_SQL) || defined(BUILD_QXT_NETWORK) ||  \
+    defined(BUILD_QXT_WEB) || defined(BUILD_QXT_BERKELEY) || \
+    defined(BUILD_QXT_ZEROCONF)
 #define BUILD_QXT
 #endif
 
-QXT_CORE_EXPORT const char *qxtVersion();
+QXT_CORE_EXPORT const char* qxtVersion();
 
 #ifndef QT_BEGIN_NAMESPACE
 #define QT_BEGIN_NAMESPACE
@@ -149,90 +153,48 @@ QXT_CORE_EXPORT const char *qxtVersion();
 ** this file shall be copyright (C) 2006-2008 by Adam Higerd.
 ****************************************************************************/
 
-#define QXT_DECLARE_PRIVATE(PUB)                                                                                       \
-    friend class PUB##Private;                                                                                         \
-    QxtPrivateInterface<PUB, PUB##Private> qxt_d;
+#define QXT_DECLARE_PRIVATE(PUB) \
+  friend class PUB##Private;     \
+  QxtPrivateInterface<PUB, PUB##Private> qxt_d;
 #define QXT_DECLARE_PUBLIC(PUB) friend class PUB;
 #define QXT_INIT_PRIVATE(PUB) qxt_d.setPublic(this);
-#define QXT_D(PUB) PUB##Private &d = qxt_d()
-#define QXT_P(PUB) PUB &p = qxt_p()
+#define QXT_D(PUB) PUB##Private& d = qxt_d()
+#define QXT_P(PUB) PUB& p = qxt_p()
 
-template <typename PUB> class QxtPrivate
-{
-  public:
-    virtual ~QxtPrivate()
-    {
-    }
-    inline void QXT_setPublic(PUB *pub)
-    {
-        qxt_p_ptr = pub;
-    }
+template <typename PUB>
+class QxtPrivate {
+ public:
+  virtual ~QxtPrivate() {}
+  inline void QXT_setPublic(PUB* pub) { qxt_p_ptr = pub; }
 
-  protected:
-    inline PUB &qxt_p()
-    {
-        return *qxt_p_ptr;
-    }
-    inline const PUB &qxt_p() const
-    {
-        return *qxt_p_ptr;
-    }
-    inline PUB *qxt_ptr()
-    {
-        return qxt_p_ptr;
-    }
-    inline const PUB *qxt_ptr() const
-    {
-        return qxt_p_ptr;
-    }
+ protected:
+  inline PUB& qxt_p() { return *qxt_p_ptr; }
+  inline const PUB& qxt_p() const { return *qxt_p_ptr; }
+  inline PUB* qxt_ptr() { return qxt_p_ptr; }
+  inline const PUB* qxt_ptr() const { return qxt_p_ptr; }
 
-  private:
-    PUB *qxt_p_ptr;
+ private:
+  PUB* qxt_p_ptr;
 };
 
-template <typename PUB, typename PVT> class QxtPrivateInterface
-{
-    friend class QxtPrivate<PUB>;
+template <typename PUB, typename PVT>
+class QxtPrivateInterface {
+  friend class QxtPrivate<PUB>;
 
-  public:
-    QxtPrivateInterface()
-    {
-        pvt = new PVT;
-    }
-    ~QxtPrivateInterface()
-    {
-        delete pvt;
-    }
+ public:
+  QxtPrivateInterface() { pvt = new PVT; }
+  ~QxtPrivateInterface() { delete pvt; }
 
-    inline void setPublic(PUB *pub)
-    {
-        pvt->QXT_setPublic(pub);
-    }
-    inline PVT &operator()()
-    {
-        return *static_cast<PVT *>(pvt);
-    }
-    inline const PVT &operator()() const
-    {
-        return *static_cast<PVT *>(pvt);
-    }
-    inline PVT *operator->()
-    {
-        return static_cast<PVT *>(pvt);
-    }
-    inline const PVT *operator->() const
-    {
-        return static_cast<PVT *>(pvt);
-    }
+  inline void setPublic(PUB* pub) { pvt->QXT_setPublic(pub); }
+  inline PVT& operator()() { return *static_cast<PVT*>(pvt); }
+  inline const PVT& operator()() const { return *static_cast<PVT*>(pvt); }
+  inline PVT* operator->() { return static_cast<PVT*>(pvt); }
+  inline const PVT* operator->() const { return static_cast<PVT*>(pvt); }
 
-  private:
-    QxtPrivateInterface(const QxtPrivateInterface &)
-    {
-    }
-    QxtPrivateInterface &operator=(const QxtPrivateInterface &)
-    {
-    }
-    QxtPrivate<PUB> *pvt;
+ private:
+  QxtPrivateInterface(const QxtPrivateInterface&) {}
+  QxtPrivateInterface& operator=(const QxtPrivateInterface&) {}
+  QxtPrivate<PUB>* pvt;
 };
 
-#endif // QXT_GLOBAL
+#endif  // QXT_GLOBAL

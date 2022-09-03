@@ -3,12 +3,24 @@
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_definitions(-DQT_NO_DEBUG_OUTPUT -DNO_WARN_X86_INTRINSICS)
+add_definitions(-DBUILD_QXT_CORE -DBUILD_QXT_GUI)
+
+
+if(WIN32)
+    find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
+else()
+    find_package(Qt5 COMPONENTS Core Widgets X11Extras REQUIRED)
+endif()
 
 include_directories(include)
 
-if(UNIX)
-    find_package(Qt5 COMPONENTS Core Widgets X11Extras REQUIRED)
+if(MACOS)
+    set(EXTRE_SRC_FILES
+        include/qxtwindowsystem_mac.h
+        src/qxtglobalshortcut_mac.cpp
+        src/qxtglobalshortcut_mac.cpp
+    )
+elseif(UNIX)
     set(EXTRE_SRC_FILES 
         include/x11info.h
         src/qxtglobalshortcut_x11.cpp
@@ -16,9 +28,8 @@ if(UNIX)
         src/x11info.cpp
     )
 elseif(WIN32)
-    find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
     set(EXTRE_SRC_FILES
-        include/qxtwindowsystem.h
+        src/qxtwindowsystem_win.cpp
         src/qxtglobalshortcut_win.cpp
     )
 endif()
@@ -26,15 +37,9 @@ endif()
 add_library(3rd_qxtglobalshortcut
     include/qxtglobal.h
     include/qxtglobalshortcut.h
-    include/qxtglobalshortcut_p.h
     src/qxtglobal.cpp
     src/qxtglobalshortcut.cpp
     ${EXTRE_SRC_FILES}
-)
-
-target_compile_definitions(3rd_qxtglobalshortcut PUBLIC
-    BUILD_QXT_CORE
-    BUILD_QXT_GUI
 )
 
 if(MACOS)

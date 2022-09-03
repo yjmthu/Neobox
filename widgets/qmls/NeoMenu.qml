@@ -2,7 +2,7 @@ import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.15
 import QtQuick.Window 2.12
-import QtGraphicalEffects 1.15
+// import QtGraphicalEffects 1.15
 
 Window {
   id: mainmenu
@@ -86,14 +86,14 @@ Window {
 
   }
 
-  DropShadow {
-    anchors.fill: parent
-    horizontalOffset: 3
-    verticalOffset: 3
-    radius: 9.0
-    samples: 16
-    color: "#90000000"
-    source: control
-  }
+//  DropShadow {
+//    anchors.fill: parent
+//    horizontalOffset: 3
+//    verticalOffset: 3
+//    radius: 9.0
+//    samples: 16
+//    color: "#90000000"
+//    source: control
+//  }
 
 }

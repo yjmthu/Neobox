@@ -1,4 +1,4 @@
-import os
+import os, json
 import xml.dom.minidom as minidom
 
 if __name__ == '__main__':
@@ -18,4 +18,6 @@ if __name__ == '__main__':
             rootElement.appendChild(element)
     with open('resources.qrc', 'w', encoding='utf-8') as f:
         dom.writexml(f, addindent='    ', newl='\n', encoding='utf-8')
+    with open("jsons/qml.json", "w", encoding="utf-8") as f:
+        json.dump(os.listdir("qmls"), f)
 

@@ -1,0 +1,139 @@
+{
+  "设置中心": {
+    "type": "Group",
+    "children": {
+      "软件设置": {
+        "type": "Group",
+        "children": {
+          "开机自启": {
+            "type": "Checkable",
+            "function": "AppAutoSatrt"
+          }
+        }
+      },
+      "壁纸设置": {
+        "type": "Group",
+        "children": {
+          "类型选择": {
+            "type": "ExclusiveGroup",
+            "range": [0, -1],
+            "function": "WallpaperType",
+            "children": {
+              "壁纸天堂": { "type": "GroupItem", "function": "WallpaperType", "index": 0 },
+              "必应壁纸": { "type": "GroupItem", "function": "WallpaperType", "index": 1 },
+              "直链壁纸": { "type": "GroupItem", "function": "WallpaperType", "index": 2 },
+              "本地壁纸": { "type": "GroupItem", "function": "WallpaperType", "index": 3 },
+              "脚本输出": { "type": "GroupItem", "function": "WallpaperType", "index": 4 },
+              "收藏喜欢": { "type": "GroupItem", "function": "WallpaperType", "index": 5 }
+            }
+          },
+          "自动更换": {
+            "type": "Checkable",
+            "function": "WallpaperAutoChange"
+          },
+          "首次更换": {
+            "type": "Checkable",
+            "function": "WallpaperInitChange"
+          },
+          "时间间隔": {
+            "type": "Normal",
+            "function": "WallpaperTimeInterval"
+          },
+          "存储位置": {
+            "type": "Normal",
+            "function": "WallpaperDir"
+          }
+        }
+      },
+      "插件设置": {
+        "type": "Group",
+        "children":{
+        }
+      },
+      "系统设置": {
+        "type": "Group",
+        "children": {
+          "右键复制": {
+            "type": "Normal",
+            "function": "AppWbsite"
+          }
+        }
+      },
+      "其他设置": {
+        "type": "Group",
+        "children": {
+          "关于软件": {
+            "type": "Normal",
+            "function": "AppWbsite"
+          }
+        }
+      }
+    }
+  },
+  "截图翻译": {
+    "type": "Normal",
+    "function": "ToolOcrGetScreen"
+  },
+  "壁纸切换": {
+    "type": "Group",
+    "children": {
+      "上一张图": {
+        "type": "Normal",
+        "function": "WallpaperPrev"
+      },
+      "下一张图": {
+        "type": "Normal",
+        "function": "WallpaperNext"
+      },
+      "不看此图": {
+        "type": "Normal",
+        "function": "WallpaperDislike"
+      },
+      "撤销删除": {
+        "type": "Normal",
+        "function": "WallpaperUndoDislike"
+      },
+      "收藏图片": {
+        "type": "Normal",
+        "function": "WallpaperCollect"
+      },
+      "取消收藏": {
+        "type": "Normal",
+        "function": "WallpaperUndoCollect"
+      }
+    }
+  },
+  "打开位置": {
+    "type":"Group",
+    "children": {
+      "程序目录": {
+        "type": "Normal",
+        "function": "AppOpenExeDir"
+      },
+      "配置目录": {
+        "type": "Normal",
+        "function": "AppOpenConfigDir"
+      },
+      "壁纸目录": {
+        "type": "Normal",
+        "function": "AppOpenWallpaperDir"
+      }
+    }
+  },
+  "开机自启": {
+    "type": "Checkable",
+    "function": "AppAutoSatrt"
+  },
+  "快速关机": {
+    "type": "Normal",
+    "function": "SystemShutdown"
+  },
+  "快捷重启": {
+    "type": "Normal",
+    "function": "SystemRestart"
+  },
+  "退出软件": {
+    "type":"Normal",
+    "function": "AppQuit"
+  }
+}

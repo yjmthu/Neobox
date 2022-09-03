@@ -1,11 +1,13 @@
-<?xml version="1.0" encoding="utf-8"?>
 <RCC>
     <qresource prefix="/">
         <file>fonts/Carattere-Regular-small.ttf</file>
         <file>fonts/FangZhengKaiTiJianTi-1.ttf</file>
         <file>fonts/Nickainley-Normal-small.ttf</file>
+        <file>icons/copy.ico</file>
         <file>icons/speedbox.ico</file>
-        <file>jsons/Setting.json</file>
+        <file>jsons/menucontent.json</file>
+        <file>jsons/qml.json</file>
+        <file>jsons/setting.json</file>
         <file>qmls/FloatingWindow.qml</file>
         <file>qmls/IntDialog.qml</file>
         <file>qmls/MainMenu.qml</file>

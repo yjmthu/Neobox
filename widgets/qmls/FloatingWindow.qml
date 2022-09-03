@@ -1,7 +1,7 @@
 import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Window 2.12
-import QtGraphicalEffects 1.15
+// import QtGraphicalEffects 1.5
 import Qt.labs.settings 1.0
 import Qt.labs.platform 1.1
 
@@ -10,7 +10,7 @@ import Neobox 1.0
 Window {
     id: mainwindow
     visible: true
-    color: qsTr("transparent")
+    color: "transparent"
     width: 100
     height: 42
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
@@ -73,7 +73,7 @@ Window {
         height: mainwindow.height
         objectName: qsTr("rect")
         property int textindex: 0
-        color: qsTr("#33333377")
+        color: "#33333377"
         radius: 3
 
         Text {
@@ -117,7 +117,7 @@ Window {
             id: netUpSpeed
             x: 34
             y: 4
-            color: qsTr("#FAAA23")
+            color: "#FAAA23"
             font.family: qsTr("Nickainley Normal")
             font.bold: true
             font.pointSize: 10
@@ -149,7 +149,7 @@ Window {
             id: netDownSpeed
             x: 34
             y: 24
-            color: qsTr("#8CF01E")
+            color: "#8CF01E"
             font.family: qsTr("Nickainley Normal")
             font.bold: true
             font.pointSize: 10
