@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <RCC>
     <qresource prefix="/">
         <file>fonts/Carattere-Regular-small.ttf</file>
@@ -6,24 +7,8 @@
         <file>icons/copy.ico</file>
         <file>icons/speedbox.ico</file>
         <file>jsons/menucontent.json</file>
-        <file>jsons/qml.json</file>
+        <file>jsons/resources.json</file>
         <file>jsons/setting.json</file>
-        <file>qmls/FloatingWindow.qml</file>
-        <file>qmls/IntDialog.qml</file>
-        <file>qmls/MainMenu.qml</file>
-        <file>qmls/NeoMenu.qml</file>
-        <file>qmls/NeoMenuCheckableItem.qml</file>
-        <file>qmls/NeoMenuItem.qml</file>
-        <file>qmls/NeoMenuSeparator.qml</file>
-        <file>qmls/NeoMenuSuperItem.qml</file>
-        <file>qmls/ScreenFetch.qml</file>
-        <file>qmls/SettingMenu.qml</file>
-        <file>qmls/SystemTray.qml</file>
-        <file>qmls/TextDialog.qml</file>
-        <file>qmls/UiMenu.qml</file>
-        <file>qmls/WallpaperMenu.qml</file>
-        <file>qmls/WBing.qml</file>
-        <file>qmls/WWallhaven.qml</file>
         <file>scripts/Neobox.desktop</file>
         <file>scripts/SetWallpaper.sh</file>
         <file>styles/MenuStyle.css</file>

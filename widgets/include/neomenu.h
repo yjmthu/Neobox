@@ -18,7 +18,6 @@ class NeoMenu : public QMenu {
   std::map<std::u8string, std::pair<FuncChecked, FuncCheck>> m_FuncCheckMap;
   std::map<std::u8string, std::pair<FuncItemChecked, FuncItemCheck>>
       m_FuncItemCheckMap;
-  class Wallpaper* m_Wallpaper;
 
   void InitWallpaper();
   void InitFunctionMap();
@@ -28,6 +27,7 @@ class NeoMenu : public QMenu {
  public:
   explicit NeoMenu(QWidget* parent = nullptr);
   ~NeoMenu();
+  class Wallpaper*const m_Wallpaper;
 };
 
 #endif

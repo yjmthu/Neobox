@@ -19,12 +19,35 @@
             "range": [0, -1],
             "function": "WallpaperType",
             "children": {
-              "壁纸天堂": { "type": "GroupItem", "function": "WallpaperType", "index": 0 },
-              "必应壁纸": { "type": "GroupItem", "function": "WallpaperType", "index": 1 },
-              "直链壁纸": { "type": "GroupItem", "function": "WallpaperType", "index": 2 },
-              "本地壁纸": { "type": "GroupItem", "function": "WallpaperType", "index": 3 },
-              "脚本输出": { "type": "GroupItem", "function": "WallpaperType", "index": 4 },
-              "收藏喜欢": { "type": "GroupItem", "function": "WallpaperType", "index": 5 }
+              "壁纸天堂": {
+                "type": "GroupItem", 
+                "function": "WallpaperType", 
+                "index": 0
+              },
+              "必应壁纸": {
+                "type": "GroupItem",
+                "function": "WallpaperType",
+                "index": 1 
+              },
+              "直链壁纸": {
+                "type": "GroupItem",
+                "function": "WallpaperType",
+                "index": 2
+              },
+              "本地壁纸": {
+                "type": "GroupItem",
+                "function": "WallpaperType",
+                "index": 3 },
+              "脚本输出": {
+                "type": "GroupItem",
+                "function": "WallpaperType",
+                "index": 4
+              },
+              "收藏喜欢": {
+                "type": "GroupItem",
+                "function": "WallpaperType",
+                "index": 5
+              }
             }
           },
           "自动更换": {
@@ -42,6 +65,10 @@
           "存储位置": {
             "type": "Normal",
             "function": "WallpaperDir"
+          },
+          "清理垃圾": {
+            "type": "Normal",
+            "function": "WallpaperClean"
           }
         }
       },
@@ -54,8 +81,8 @@
         "type": "Group",
         "children": {
           "右键复制": {
-            "type": "Normal",
-            "function": "AppWbsite"
+            "type": "Checkable",
+            "function": "OtherSetDesktopRightMenu"
           }
         }
       },

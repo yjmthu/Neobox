@@ -20,6 +20,9 @@ class Wallpaper {
   void WriteSettings() const;
   void AppendBlackList(const std::filesystem::path& path);
   void WriteBlackList() const;
+  bool SetNext();
+  bool SetPrevious();
+  bool RemoveCurrent();
 
  public:
   enum class Desktop { WIN, KDE, DDE, GNOME, XFCE, UNKNOWN };
@@ -30,15 +33,12 @@ class Wallpaper {
   static bool IsImageFile(const std::filesystem::path& fileName);
   static bool IsWorking();
   static bool IsOnline();
-  bool SetNext();
-  bool SetPrevious();
   bool UndoDelete();
   bool ClearJunk();
   bool SetFavorite();
   bool UnSetFavorite();
   bool SetDropFile(std::deque<std::filesystem::path>&& paths);
   inline const std::filesystem::path GetCurIamge() const { return m_CurImage; }
-  bool RemoveCurrent();
   void SetSlot(int type);
   const std::filesystem::path& GetImageDir() const;
 

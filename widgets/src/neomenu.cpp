@@ -14,6 +14,7 @@
 #include <QInputDialog>
 #include <QStandardPaths>
 #include <QUrl>
+#include <QMessageBox>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -22,8 +23,7 @@
 #endif
 
 NeoMenu::NeoMenu(QWidget* parent) : QMenu(parent), m_Wallpaper(new Wallpaper) {
-  // setWindowFlags(Qt::FramelessWindowHint);
-  // setAttribute(Qt::WA_TranslucentBackground, true);
+  setAttribute(Qt::WA_TranslucentBackground, true);
   InitWallpaper();
   InitFunctionMap();
   QFile fJson(QStringLiteral(":/jsons/menucontent.json"));
@@ -68,9 +68,9 @@ void NeoMenu::InitFunctionMap() {
        std::bind(QDesktopServices::openUrl,
                  QUrl::fromLocalFile(QDir::currentPath()))},
       {u8"ToolOcrGetScreen", []() {}},
-      {u8"WallpaperPrev", std::bind(&Wallpaper::SetPrevious, m_Wallpaper)},
-      {u8"WallpaperNext", std::bind(&Wallpaper::SetNext, m_Wallpaper)},
-      {u8"WallpaperDislike", std::bind(&Wallpaper::RemoveCurrent, m_Wallpaper)},
+      {u8"WallpaperPrev", std::bind(&Wallpaper::SetSlot, m_Wallpaper, -1)},
+      {u8"WallpaperNext", std::bind(&Wallpaper::SetSlot, m_Wallpaper, 1)},
+      {u8"WallpaperDislike", std::bind(&Wallpaper::SetSlot, m_Wallpaper, 0)},
       {u8"WallpaperUndoDislike",
        std::bind(&Wallpaper::UndoDelete, m_Wallpaper)},
       {u8"WallpaperCollect", std::bind(&Wallpaper::SetFavorite, m_Wallpaper)},
@@ -96,6 +96,7 @@ void NeoMenu::InitFunctionMap() {
            VarBox::WriteSettings();
          }
        }},
+      {u8"WallpaperClean", std::bind(&Wallpaper::ClearJunk, m_Wallpaper)},
       {u8"AppWbsite", std::bind(QDesktopServices::openUrl,
                                 QUrl("https://www.github.com/yjmthu/Neobox"))}};
 
@@ -124,6 +125,54 @@ void NeoMenu::InitFunctionMap() {
           return GetExeFullPath() ==
                  RegReadString(HKEY_CURRENT_USER, pPath, L"Neobox");
         }}},
+      {u8"OtherSetDesktopRightMenu",
+       {[](bool checked){
+          /*
+        QStringLiteral("mshta vbscript:clipboarddata.setdata(\"text\",\"%%1\")(close)")
+           */
+          constexpr auto prefix = L"Software\\Classes\\{}\\shell";
+          const std::initializer_list<std::pair<std::wstring, wchar_t>> lst = {
+            {L"*", L'1'}, {L"Directory", L'V'}, {L"Directory\\Background", L'1'}};
+          constexpr auto command = L"mshta vbscript:clipboarddata.setdata(\"text\",\"%{}\")(close)";
+          if (checked) {
+            for (const auto& [param1, param2]: lst) {
+              HKEY hKey = nullptr;
+              std::wstring wsSubKey = std::format(prefix, param1) + L"\\Neobox";
+              std::wstring cmdstr = std::format(command, param2);
+              std::wstring wsIconFileName = std::filesystem::absolute("icons/copy.ico").wstring();
+              if (RegCreateKeyW(HKEY_CURRENT_USER, wsSubKey.c_str(), &hKey) != ERROR_SUCCESS) {
+                return;
+              }
+              RegSetValueW(hKey, L"command", REG_SZ, cmdstr.c_str(), 0);
+              RegSetValueW(hKey, nullptr, REG_SZ, L"复制路径", 0);
+              RegSetValueExW(hKey, L"Icon", 0, REG_SZ, reinterpret_cast<const BYTE*>(wsIconFileName.data()), (DWORD)wsIconFileName.size()*sizeof(wchar_t));
+              RegCloseKey(hKey);
+            }
+          } else {
+            for (const auto& [param1, param2]: lst) {
+              HKEY hKey = nullptr;
+              std::wstring wsSubKey = std::format(prefix, param1);
+              if (RegOpenKeyExW(HKEY_CURRENT_USER, wsSubKey.c_str(), 0, KEY_WRITE, &hKey) != ERROR_SUCCESS) {
+                continue;
+              }
+              RegDeleteTreeW(hKey, L"Neobox");
+              RegCloseKey(hKey);
+            }
+          }
+        },
+        []()->bool{
+          constexpr auto prefix = L"Software\\Classes\\{}\\shell";
+          const auto lst = { L"*", L"Directory", L"Directory\\Background" };
+          for (const auto& i: lst) {
+            std::wstring wsSubKey = std::format(prefix, i);
+            HKEY hKey = nullptr;
+            if (RegOpenKeyExW(HKEY_CURRENT_USER, wsSubKey.c_str(), 0, KEY_READ, &hKey) != ERROR_SUCCESS) {
+              QMessageBox::information(nullptr, "1", QString::fromStdWString(wsSubKey));
+              return false;
+            }
+            RegCloseKey(hKey);
+          }
+          return true;}}},
       {u8"WallpaperAutoChange",
        {[this](bool checked) {
           m_Wallpaper->SetAutoChange(checked);

@@ -12,6 +12,7 @@ class VarBox {
   void LoadFonts() const;
   void LoadJsons();
   void MakeDirs();
+  void CopyFiles() const;
 };
 
 #endif

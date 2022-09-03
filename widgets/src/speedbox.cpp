@@ -6,11 +6,18 @@
 #include <QMouseEvent>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <QMimeData>
+#include <QMessageBox>
 
 #include <neomenu.h>
 #include <speedbox.h>
 #include <varbox.h>
 #include <yjson.h>
+#include <wallpaper.h>
+#include <appcode.hpp>
+
+#include <filesystem>
+#include <ranges>
 
 SpeedBox::SpeedBox(QWidget* parent)
     : QWidget(parent,
@@ -43,6 +50,7 @@ SpeedBox::~SpeedBox() {
 
 void SpeedBox::SetWindowMode() {
   setAttribute(Qt::WA_TranslucentBackground);
+  setAcceptDrops(true);
   setMinimumSize(100, 40);
   setMaximumSize(100, 40);
   m_CentralWidget->setMinimumSize(100, 40);
@@ -59,7 +67,7 @@ void SpeedBox::SetWindowMode() {
 }
 
 void SpeedBox::SetStyleSheet() {
-  QFile fStyle(QStringLiteral(":/styles/MenuStyle.css"));
+  QFile fStyle(QStringLiteral("styles/MenuStyle.css"));
   if (fStyle.open(QIODevice::ReadOnly)) {
     QByteArray&& array = fStyle.readAll();
     setStyleSheet(array);
@@ -109,16 +117,34 @@ void SpeedBox::mousePressEvent(QMouseEvent* event) {
   } else if (event->button() == Qt::RightButton) {
     m_MainMenu->popup(pos() + event->pos());
   } else if (event->button() == Qt::MiddleButton) {
-    qApp->quit();
+    qApp->exit((int)ExitCode::RETCODE_RESTART);
   }
 }
 
 void SpeedBox::mouseReleaseEvent(QMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
     setMouseTracking(false);
-    auto& array =
-        VarBox::GetSettings(u8"FormGlobal")[u8"Position"].second.getArray();
-    array = YJson::A{x(), y()};
+    VarBox::GetSettings(u8"FormGlobal")[u8"Position"].second.getArray()
+      = YJson::A{x(), y()};
     VarBox::WriteSettings();
+  }
+}
+
+void SpeedBox::dragEnterEvent(QDragEnterEvent* event)
+{
+  if(event->mimeData()->hasUrls())
+    event->acceptProposedAction();
+  else
+    event->ignore();
+}
+
+void SpeedBox::dropEvent(QDropEvent* event)
+{
+  namespace fs = std::filesystem;
+  if (event->mimeData()->hasUrls())
+  {
+    auto urls = event->mimeData()->urls() | std::views::transform([](const QUrl& i){
+        return fs::path(i.toLocalFile().toStdWString());});
+    m_MainMenu->m_Wallpaper->SetDropFile(std::deque<fs::path>(urls.begin(), urls.end()));
   }
 }

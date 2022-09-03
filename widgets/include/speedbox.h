@@ -20,6 +20,8 @@ class SpeedBox : public QWidget {
   void mousePressEvent(QMouseEvent* event) override;
   void mouseReleaseEvent(QMouseEvent* event) override;
   void mouseMoveEvent(QMouseEvent* event) override;
+  void dragEnterEvent(QDragEnterEvent *event) override;
+  void dropEvent(QDropEvent *event) override;
 
  public:
   explicit SpeedBox(QWidget* parent = nullptr);

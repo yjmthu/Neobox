@@ -8,6 +8,7 @@
 #include <QStandardPaths>
 
 #include <memory>
+#include <ranges>
 
 void ShowMessage(const std::u8string& title,
                  const std::u8string& text,
@@ -19,6 +20,7 @@ void ShowMessage(const std::u8string& title,
 
 VarBox::VarBox() {
   MakeDirs();
+  CopyFiles();
   LoadFonts();
   LoadJsons();
 }
@@ -66,9 +68,39 @@ void VarBox::MakeDirs() {
     qApp->quit();
     return;
   }
-  auto lst = {"junck", "qmls"};
+  auto lst = {"junk", "qmls", "resource", "tessdata"};
   for (auto i : lst) {
     if (!dir.exists(i))
       dir.mkdir(i);
+  }
+}
+
+void VarBox::CopyFiles() const
+{
+  namespace fs = std::filesystem;
+  QFile jsFile(QStringLiteral(":/jsons/resources.json"));
+  if (!jsFile.open(QIODevice::ReadOnly)) {
+    QMessageBox::critical(nullptr, "错误", "不能读取资源文件");
+    qApp->quit();
+    return;
+  }
+
+  QByteArray data = jsFile.readAll();
+  YJson jsResource(data.begin(), data.end());
+  jsFile.close();
+
+  for (const auto& [i, j]: jsResource.getObject())
+  {
+    if (!fs::exists(i)) fs::create_directory(i);
+    auto&& qFiles = j.getArray() | std::views::transform([](const YJson& k){
+        auto str = k.getValueString();
+        return QString::fromUtf8(str.data(), str.size());
+        });
+    for (auto&& k: qFiles) {
+      if (!QFile::exists(k)) {
+        QFile::copy(":/"+k, k);
+        QFile::setPermissions(k, QFile::ReadUser | QFile::WriteUser);
+      }
+    }
   }
 }

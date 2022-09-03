@@ -325,9 +325,14 @@ bool Wallpaper::SetDropFile(std::deque<std::filesystem::path>&& paths) {
   if (WallBase::m_IsWorking)
     return false;
   WallBase::m_IsWorking = true;
-  for (auto& i : paths)
+  auto&& lst = paths | std::views::filter(Wallpaper::IsImageFile);
+  for (auto& i : lst) {
     m_NextImgs.push(std::move(i));
-  SetNext();
+  }
+  if (!lst.empty()) {
+    SetNext();
+    WriteSettings();
+  }
   WallBase::m_IsWorking = false;
   return true;
 }
