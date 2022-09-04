@@ -6,6 +6,7 @@ class VarBox {
   explicit VarBox();
   ~VarBox();
   static class YJson& GetSettings(const char8_t* key);
+  static class SpeedBox* GetSpeedBox();
   static void WriteSettings();
 
  private:

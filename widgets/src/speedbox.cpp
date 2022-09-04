@@ -3,18 +3,19 @@
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMessageBox>
+#include <QMimeData>
 #include <QMouseEvent>
 #include <QTimer>
 #include <QVBoxLayout>
-#include <QMimeData>
-#include <QMessageBox>
 
 #include <neomenu.h>
 #include <speedbox.h>
 #include <varbox.h>
-#include <yjson.h>
 #include <wallpaper.h>
+#include <yjson.h>
 #include <appcode.hpp>
+#include <netspeedhelper.h>
 
 #include <filesystem>
 #include <ranges>
@@ -27,6 +28,7 @@ SpeedBox::SpeedBox(QWidget* parent)
     : QWidget(parent,
               Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool),
       m_CentralWidget(new QWidget(this)),
+      m_NetSpeedHelper(new NetSpeedHelper),
       m_TextMemUseage(new QLabel),
       m_TextUploadSpeed(new QLabel),
       m_TextDownLoadSpeed(new QLabel),
@@ -38,7 +40,7 @@ SpeedBox::SpeedBox(QWidget* parent)
   SetHideFullScreen();
   UpdateTextContent();
   connect(m_Timer, &QTimer::timeout, this, [this]() {
-    m_NetSpeedHelper.GetSysInfo();
+    m_NetSpeedHelper->GetSysInfo();
     UpdateTextContent();
   });
   m_Timer->start(1000);
@@ -50,7 +52,15 @@ SpeedBox::~SpeedBox() {
   delete m_TextDownLoadSpeed;
   delete m_TextUploadSpeed;
   delete m_TextMemUseage;
+  delete m_NetSpeedHelper;
   delete m_CentralWidget;
+}
+
+void SpeedBox::Show() {
+  show();
+  // QTimer::singleShot(1000, this, [this](){
+      m_MainMenu->SetFormColorEffect();
+  // });
 }
 
 void SpeedBox::SetWindowMode() {
@@ -88,7 +98,7 @@ void SpeedBox::SetStyleSheet() {
 void SpeedBox::SetBaseLayout() {
   QHBoxLayout* hout = new QHBoxLayout(m_CentralWidget);
   QVBoxLayout* vout = new QVBoxLayout;
-  hout->setContentsMargins(6, 4, 4, 0);
+  hout->setContentsMargins(0, 0, 0, 0);
   hout->setSpacing(0);
   vout->setSpacing(0);
   hout->addWidget(m_TextMemUseage);
@@ -101,22 +111,21 @@ void SpeedBox::SetBaseLayout() {
 
 void SpeedBox::UpdateTextContent() {
   m_TextMemUseage->setText(
-      QString::number(std::get<0>(m_NetSpeedHelper.m_SysInfo)));
+      QString::number(std::get<0>(m_NetSpeedHelper->m_SysInfo)));
   m_TextUploadSpeed->setText(
-      QString::fromStdWString(m_NetSpeedHelper.FormatSpped(
-          std::get<1>(m_NetSpeedHelper.m_SysInfo), true)));
+      QString::fromStdWString(m_NetSpeedHelper->FormatSpped(
+          std::get<1>(m_NetSpeedHelper->m_SysInfo), true)));
   m_TextDownLoadSpeed->setText(
-      QString::fromStdWString(m_NetSpeedHelper.FormatSpped(
-          std::get<2>(m_NetSpeedHelper.m_SysInfo), false)));
+      QString::fromStdWString(m_NetSpeedHelper->FormatSpped(
+          std::get<2>(m_NetSpeedHelper->m_SysInfo), false)));
 }
 
-void SpeedBox::SetHideFullScreen()
-{
-    static APPBARDATA abd { 0 };
-    abd.cbSize = sizeof(APPBARDATA);
-    abd.hWnd = reinterpret_cast<HWND>(winId());
-    abd.uCallbackMessage = static_cast<UINT>(MsgCode::MSG_APPBAR_MSGID);
-    SHAppBarMessage(ABM_NEW, &abd);
+void SpeedBox::SetHideFullScreen() {
+  static APPBARDATA abd{0};
+  abd.cbSize = sizeof(APPBARDATA);
+  abd.hWnd = reinterpret_cast<HWND>(winId());
+  abd.uCallbackMessage = static_cast<UINT>(MsgCode::MSG_APPBAR_MSGID);
+  SHAppBarMessage(ABM_NEW, &abd);
 }
 
 void SpeedBox::mouseMoveEvent(QMouseEvent* event) {
@@ -139,48 +148,47 @@ void SpeedBox::mousePressEvent(QMouseEvent* event) {
 void SpeedBox::mouseReleaseEvent(QMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
     setMouseTracking(false);
-    VarBox::GetSettings(u8"FormGlobal")[u8"Position"].second.getArray()
-      = YJson::A{x(), y()};
+    VarBox::GetSettings(u8"FormGlobal")[u8"Position"].second.getArray() =
+        YJson::A{x(), y()};
     VarBox::WriteSettings();
   }
 }
 
-void SpeedBox::dragEnterEvent(QDragEnterEvent* event)
-{
-  if(event->mimeData()->hasUrls())
+void SpeedBox::dragEnterEvent(QDragEnterEvent* event) {
+  if (event->mimeData()->hasUrls())
     event->acceptProposedAction();
   else
     event->ignore();
 }
 
-void SpeedBox::dropEvent(QDropEvent* event)
-{
+void SpeedBox::dropEvent(QDropEvent* event) {
   namespace fs = std::filesystem;
-  if (event->mimeData()->hasUrls())
-  {
-    auto urls = event->mimeData()->urls() | std::views::transform([](const QUrl& i){
-        return fs::path(i.toLocalFile().toStdWString());});
-    m_MainMenu->m_Wallpaper->SetDropFile(std::deque<fs::path>(urls.begin(), urls.end()));
+  if (event->mimeData()->hasUrls()) {
+    auto urls =
+        event->mimeData()->urls() | std::views::transform([](const QUrl& i) {
+          return fs::path(i.toLocalFile().toStdWString());
+        });
+    m_MainMenu->m_Wallpaper->SetDropFile(
+        std::deque<fs::path>(urls.begin(), urls.end()));
   }
 }
 
-bool SpeedBox::nativeEvent(const QByteArray &eventType, void *message, qintptr *result)
-{
-    MSG *msg = static_cast<MSG*>(message);
+bool SpeedBox::nativeEvent(const QByteArray& eventType,
+                           void* message,
+                           qintptr* result) {
+  MSG* msg = static_cast<MSG*>(message);
 
-    if (MsgCode::MSG_APPBAR_MSGID == static_cast<MsgCode>(msg->message))
-    {
-        switch ((UINT)msg->wParam)
-        {
-        case ABN_FULLSCREENAPP:
-            if (msg->lParam)
-                hide();
-            else
-                show();
-            return true;
-        default:
-            break;
-        }
+  if (MsgCode::MSG_APPBAR_MSGID == static_cast<MsgCode>(msg->message)) {
+    switch ((UINT)msg->wParam) {
+      case ABN_FULLSCREENAPP:
+        if (msg->lParam)
+          hide();
+        else
+          show();
+        return true;
+      default:
+        break;
     }
-    return false;
+  }
+  return false;
 }

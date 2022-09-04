@@ -8,6 +8,42 @@
           "开机自启": {
             "type": "Checkable",
             "function": "AppAutoSatrt"
+          },
+          "窗口效果": {
+            "type": "ExclusiveGroup",
+            "function": "AppFormEffect",
+            "range": [0, -1],
+            "children": {
+              "普通效果": {
+                "type": "GroupItem",
+                "function": "AppFormEffect",
+                "index": 0
+              },
+              "渐变效果": {
+                "type": "GroupItem",
+                "function": "AppFormEffect",
+                "index": 1
+              },
+              "透明效果": {
+                "type": "GroupItem",
+                "function": "AppFormEffect",
+                "index": 2
+              },
+              "磨砂效果": {
+                "type": "GroupItem",
+                "function": "AppFormEffect",
+                "index": 3
+              },
+              "亚克力效果": {
+                "type": "GroupItem",
+                "function": "AppFormEffect",
+                "index": 4
+              }
+            }
+          },
+          "背景颜色": {
+            "type": "Normal",
+            "function": "AppFormBackground"
           }
         }
       },

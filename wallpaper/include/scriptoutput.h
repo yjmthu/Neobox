@@ -64,7 +64,7 @@ class ScriptOutput : public WallBase {
     return m_Setting;
   }
 
-  void SetJson() override {
+  void SetJson(bool update) override {
     m_Setting->toFile(m_SettingPath);
   }
 
@@ -93,4 +93,3 @@ class ScriptOutput : public WallBase {
     return cmd;
   }
 };
-

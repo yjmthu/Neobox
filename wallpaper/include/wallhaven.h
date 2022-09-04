@@ -136,13 +136,15 @@ class Wallhaven : public WallBase {
     delete m_Setting;
   }
 
-  void SetJson() override {
+  void SetJson(bool update) override {
     m_Setting->toFile(m_SettingPath);
+    if (!update)
+      return;
     GetApiPathUrl();
     m_Data->find(u8"Api")->second.setText(m_ImageUrl);
     m_Data->find(u8"Used")->second.clearA();
     m_Data->find(u8"Unused")->second.clearA();
-    m_NeedDownUrl = true;
+    m_NeedDownUrl = update;
   }
 
   YJson* GetJson() override { return m_Setting; }
@@ -324,4 +326,3 @@ class Wallhaven : public WallBase {
   std::u8string m_ImageUrl;
   bool m_NeedDownUrl;
 };
-

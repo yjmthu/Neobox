@@ -83,13 +83,9 @@ class Favorite : public WallBase {
     m_Data->toFile(m_DataPath);
   }
 
-  YJson* GetJson() override {
-    return &m_Data->find(u8"Unused")->second;
-  }
+  YJson* GetJson() override { return &m_Data->find(u8"Unused")->second; }
 
-  void SetJson() override {
-    m_Data->toFile(m_DataPath);
-  }
+  void SetJson(bool update) override { m_Data->toFile(m_DataPath); }
 
   void SetCurDir(const std::u8string& str) override {}
 

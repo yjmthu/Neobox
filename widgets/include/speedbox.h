@@ -3,13 +3,12 @@
 
 #include <QWidget>
 
-#include <netspeedhelper.h>
 
 class SpeedBox : public QWidget {
  private:
   QPoint m_ConstPos;
   class QWidget* m_CentralWidget;
-  NetSpeedHelper m_NetSpeedHelper;
+  class NetSpeedHelper* m_NetSpeedHelper;
   class QLabel* m_TextMemUseage;
   class QLabel* m_TextUploadSpeed;
   class QLabel* m_TextDownLoadSpeed;
@@ -20,13 +19,16 @@ class SpeedBox : public QWidget {
   void mousePressEvent(QMouseEvent* event) override;
   void mouseReleaseEvent(QMouseEvent* event) override;
   void mouseMoveEvent(QMouseEvent* event) override;
-  void dragEnterEvent(QDragEnterEvent *event) override;
-  void dropEvent(QDropEvent *event) override;
-  bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
+  void dragEnterEvent(QDragEnterEvent* event) override;
+  void dropEvent(QDropEvent* event) override;
+  bool nativeEvent(const QByteArray& eventType,
+                   void* message,
+                   qintptr* result) override;
 
  public:
   explicit SpeedBox(QWidget* parent = nullptr);
   ~SpeedBox();
+  void Show();
 
  private:
   void SetWindowMode();

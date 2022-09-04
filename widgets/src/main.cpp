@@ -9,8 +9,8 @@ int main(int argc, char* argv[]) {
   QApplication a(argc, argv);
   a.setQuitOnLastWindowClosed(false);
   VarBox var;
-  SpeedBox box;
-  box.show();
+  SpeedBox* box = VarBox::GetSpeedBox();
+  box->Show();
   if (a.exec() == (int)ExitCode::RETCODE_RESTART) {
     QProcess::startDetached(a.applicationFilePath(), QStringList());
   }

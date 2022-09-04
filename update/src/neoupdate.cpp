@@ -18,9 +18,9 @@ NeoUpdate::~NeoUpdate() {}
 void NeoUpdate::GetPlatform() {
 #ifdef __linux__
   m_Platform = Platfrom::LINUX;
-#elif define(WIN64)
-  m_Platform = Platfrom::WINx64;
-#elif define(WIN32)
+#elif defined (_WIN64)
+  m_Platform = Platfrom::WIN;
+#elif defined (_WIN32)
 #else
 #endif
 }

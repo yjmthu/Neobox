@@ -1,5 +1,6 @@
 #include <varbox.h>
 #include <yjson.h>
+#include <speedbox.h>
 
 #include <QApplication>
 #include <QDir>
@@ -45,6 +46,13 @@ YJson& VarBox::GetSettings(const char8_t* key) {
   return key ? m_Settings->find(key)->second : *m_Settings;
 }
 
+SpeedBox* VarBox::GetSpeedBox()
+{
+  static std::unique_ptr<SpeedBox> box;
+  if (!box) box = std::make_unique<SpeedBox>();
+  return box.get();
+}
+
 void VarBox::WriteSettings() {
   VarBox::GetSettings(nullptr).toFile("Settings.json");
 }
@@ -75,8 +83,7 @@ void VarBox::MakeDirs() {
   }
 }
 
-void VarBox::CopyFiles() const
-{
+void VarBox::CopyFiles() const {
   namespace fs = std::filesystem;
   QFile jsFile(QStringLiteral(":/jsons/resources.json"));
   if (!jsFile.open(QIODevice::ReadOnly)) {
@@ -89,16 +96,16 @@ void VarBox::CopyFiles() const
   YJson jsResource(data.begin(), data.end());
   jsFile.close();
 
-  for (const auto& [i, j]: jsResource.getObject())
-  {
-    if (!fs::exists(i)) fs::create_directory(i);
-    auto&& qFiles = j.getArray() | std::views::transform([](const YJson& k){
-        auto str = k.getValueString();
-        return QString::fromUtf8(str.data(), str.size());
-        });
-    for (auto&& k: qFiles) {
+  for (const auto& [i, j] : jsResource.getObject()) {
+    if (!fs::exists(i))
+      fs::create_directory(i);
+    auto&& qFiles = j.getArray() | std::views::transform([](const YJson& k) {
+                      auto str = k.getValueString();
+                      return QString::fromUtf8(str.data(), str.size());
+                    });
+    for (auto&& k : qFiles) {
       if (!QFile::exists(k)) {
-        QFile::copy(":/"+k, k);
+        QFile::copy(":/" + k, k);
         QFile::setPermissions(k, QFile::ReadUser | QFile::WriteUser);
       }
     }

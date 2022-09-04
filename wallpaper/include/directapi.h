@@ -69,7 +69,7 @@ class DirectApi : public WallBase {
     m_Setting->toFile(m_SettingPath);
   }
 
-  void SetJson() override {
+  void SetJson(bool update) override {
     using namespace std::literals;
     auto& data =
         m_Setting->find(u8"ApiData"sv)
@@ -106,4 +106,3 @@ class DirectApi : public WallBase {
   YJson* m_Setting;
   const char m_SettingPath[13]{"ApiFile.json"};
 };
-

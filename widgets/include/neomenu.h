@@ -17,17 +17,22 @@ class NeoMenu : public QMenu {
   std::map<std::u8string, std::pair<FuncChecked, FuncCheck>> m_FuncCheckMap;
   std::map<std::u8string, std::pair<FuncItemChecked, FuncItemCheck>>
       m_FuncItemCheckMap;
-  std::map<std::u8string, QMenu *> m_ExMenus;
+  std::map<std::u8string, QMenu*> m_ExMenus;
 
   void InitFunctionMap();
   void GetMenuContent(QMenu* parent, class YJson const& data);
   bool ChooseFolder(QString title, QString& folder);
   void LoadWallpaperExmenu();
+  void WallhavenParams(QAction* action);
 
  public:
   explicit NeoMenu(QWidget* parent = nullptr);
   ~NeoMenu();
-  class Wallpaper*const m_Wallpaper;
+  class Wallpaper* const m_Wallpaper;
+  inline void SetFormColorEffect() {
+    const auto& [fSetEffetc, fGetEffect] = m_FuncItemCheckMap[u8"AppFormEffect"];
+    fSetEffetc(fGetEffect());
+  }
 };
 
 #endif

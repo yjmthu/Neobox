@@ -103,9 +103,22 @@ bool RegWriteString(HKEY dwSubKey,
                     LPCWSTR pPath,
                     LPCWSTR pKeyName,
                     std::wstring& data);
+
 bool RegRemoveValue(HKEY dwSubKey, LPCWSTR pPath, LPCWSTR pKeyName);
 
-bool enableBlurBehind(HWND winId, DWORD color, bool enable);
+enum ACCENT_STATE {
+  ACCENT_DISABLED,
+  ACCENT_ENABLE_GRADIENT,
+  ACCENT_ENABLE_TRANSPARENTGRADIENT,
+  ACCENT_ENABLE_BLURBEHIND,
+  ACCENT_ENABLE_ACRYLICBLURBEHIND,
+  ACCENT_INVALID_STATE
+};
+
+
+BOOL SetWindowCompositionAttribute(HWND hWnd,
+                                   ACCENT_STATE mode,
+                                   DWORD GradientColor);
 
 #elif def __linux__
 

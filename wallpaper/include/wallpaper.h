@@ -12,8 +12,8 @@
 #include <string>
 #include <vector>
 
-#include <yjson.h>
 #include <wallbase.h>
+#include <yjson.h>
 
 class Wallpaper {
  private:
@@ -27,7 +27,7 @@ class Wallpaper {
 
  public:
   enum class Desktop { WIN, KDE, DDE, GNOME, XFCE, UNKNOWN };
-  explicit Wallpaper(class YJson* settings, void(*callback)(void));
+  explicit Wallpaper(class YJson* settings, void (*callback)(void));
   virtual ~Wallpaper();
   static bool DownloadImage(const ImageInfoEx imageInfo);
   static bool SetWallpaper(const std::filesystem::path& imagePath);
@@ -45,16 +45,20 @@ class Wallpaper {
 
   bool SetImageType(int type);
   inline int GetImageType() const {
-    return m_Settings->find(u8"ImageType")->second.getValueInt(); }
+    return m_Settings->find(u8"ImageType")->second.getValueInt();
+  }
   void SetFirstChange(bool val);
   inline bool GetFirstChange() const {
-    return m_Settings->find(u8"FirstChange")->second.isTrue(); }
+    return m_Settings->find(u8"FirstChange")->second.isTrue();
+  }
   void SetTimeInterval(int minute);
   inline int GetTimeInterval() const {
-    return m_Settings->find(u8"TimeInterval")->second.getValueInt(); }
+    return m_Settings->find(u8"TimeInterval")->second.getValueInt();
+  }
   void SetAutoChange(bool val);
   inline bool GetAutoChange() const {
-    return m_Settings->find(u8"AutoChange")->second.isTrue(); }
+    return m_Settings->find(u8"AutoChange")->second.isTrue();
+  }
 
   static constexpr char m_szWallScript[16]{"SetWallpaper.sh"};
 

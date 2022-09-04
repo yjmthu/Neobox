@@ -9,6 +9,8 @@
     "ShowForm": true,
     "Position": [ 100, 100 ],
     "ShowTrayIcon": false,
+    "ColorEffect": 0,
+    "BackgroundColorRgba": [51, 51, 119, 204],
     "ToolTip": "行動是治癒恐懼的良藥，而猶豫、拖延將不斷滋養恐懼"
   },
   "Tools": {

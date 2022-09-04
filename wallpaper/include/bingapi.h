@@ -79,7 +79,7 @@ class BingApi : public WallBase {
     m_Setting->toFile(m_SettingPath);
   }
 
-  virtual void SetJson() override {
+  virtual void SetJson(bool update) override {
     m_Setting->toFile(m_SettingPath);
 
     // 等待重写
@@ -87,9 +87,7 @@ class BingApi : public WallBase {
     return;
   }
 
-  virtual YJson* GetJson() override {
-    return m_Setting;
-  }
+  virtual YJson* GetJson() override { return m_Setting; }
 
  private:
   std::u8string m_Mft;
@@ -123,4 +121,3 @@ class BingApi : public WallBase {
     return std::u8string(temp.begin(), temp.end());
   }
 };
-

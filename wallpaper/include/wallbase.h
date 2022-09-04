@@ -43,7 +43,7 @@ class WallBase {
   virtual void UndoDislike(const std::u8string& sImgPath);
   virtual void SetCurDir(const std::u8string& sImgDir);
   virtual YJson* GetJson() = 0;
-  virtual void SetJson() = 0;
+  virtual void SetJson(bool update) = 0;
 
  private:
   friend class Wallpaper;

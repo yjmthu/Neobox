@@ -106,13 +106,10 @@ class Native : public WallBase {
 
   YJson* GetJson() override { return m_Setting; }
 
-  void SetJson() override {
-    m_Setting->toFile(m_SettingPath);
-  }
+  void SetJson(bool update) override { m_Setting->toFile(m_SettingPath); }
 
  private:
   const char m_SettingPath[12]{"Native.json"};
   YJson* m_Setting;
   std::vector<std::u8string> m_FileList;
 };
-

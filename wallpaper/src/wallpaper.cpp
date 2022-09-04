@@ -159,12 +159,12 @@ bool Wallpaper::IsOnline() {
 #endif
 }
 
-Wallpaper::Wallpaper(YJson* settings, void(*callback)(void))
+Wallpaper::Wallpaper(YJson* settings, void (*callback)(void))
     : m_PicHomeDir(GetSpecialFolderPath(CSIDL_MYPICTURES)),
-      m_Timer(new Timer),
+      m_Wallpaper(nullptr),
       m_Settings(settings),
       m_SettingsCallback(callback),
-      m_Wallpaper(nullptr),
+      m_Timer(new Timer),
       m_Favorites(WallBase::GetNewInstance(m_PicHomeDir, WallBase::FAVORITE)) {
   ReadSettings();
   SetImageType(GetImageType());
@@ -447,7 +447,8 @@ void Wallpaper::SetFirstChange(bool flag) {
     jsFirstChange.setValue(flag);
     m_SettingsCallback();
   }
-  if (flag) SetSlot(1);
+  if (flag)
+    SetSlot(1);
 }
 
 void Wallpaper::SetCurDir(const std::filesystem::path& str) {
@@ -480,7 +481,8 @@ bool Wallpaper::SetImageType(int index) {
     if (!Wallpaper::IsOnline())
       return;
 
-    std::unique_ptr<WallBase> ptr(WallBase::GetNewInstance(m_PicHomeDir, WallBase::BINGAPI));
+    std::unique_ptr<WallBase> ptr(
+        WallBase::GetNewInstance(m_PicHomeDir, WallBase::BINGAPI));
     if (!ptr->GetJson()->find(u8"auto-download")->second.isTrue()) {
       return;
     }
@@ -496,4 +498,3 @@ bool Wallpaper::IsWorking() {
 }
 
 // attention: thread maybe working!
-

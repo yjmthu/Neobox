@@ -1,34 +1,28 @@
 #include <translate.h>
 
-#include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QPushButton>
 #include <QPlainTextEdit>
+#include <QPushButton>
+#include <QVBoxLayout>
 
 Translate::Translate(QWidget* parent)
-  : QDialog(parent),
-    m_TextFrom(new QPlainTextEdit),
-    m_TextTo(new QPlainTextEdit)
-{
+    : QDialog(parent),
+      m_TextFrom(new QPlainTextEdit),
+      m_TextTo(new QPlainTextEdit) {
   setWindowTitle(QStringLiteral("极简翻译"));
-  QVBoxLayout *pvLayout = new QVBoxLayout(this);
+  QVBoxLayout* pvLayout = new QVBoxLayout(this);
   pvLayout->addWidget(m_TextFrom);
   pvLayout->addWidget(m_TextTo);
 }
 
-Translate::~Translate()
-{
+Translate::~Translate() {
   delete m_TextFrom;
   delete m_TextTo;
 }
 
-void Translate::Show(const QString &text)
-{
+void Translate::Show(const QString& text) {
   m_TextFrom->setPlainText(text);
   exec();
 }
 
-void Translate::GetResultData()
-{
-}
-
+void Translate::GetResultData() {}
