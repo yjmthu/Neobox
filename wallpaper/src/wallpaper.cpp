@@ -2,7 +2,7 @@
 #include <sysapi.h>
 #include <timer.h>
 
-#include <wallbase.h>
+#include <wallpaper.h>
 #include <ranges>
 #include <regex>
 #include <unordered_set>
@@ -159,16 +159,17 @@ bool Wallpaper::IsOnline() {
 #endif
 }
 
-Wallpaper::Wallpaper()
+Wallpaper::Wallpaper(YJson* settings, void(*callback)(void))
     : m_PicHomeDir(GetSpecialFolderPath(CSIDL_MYPICTURES)),
       m_Timer(new Timer),
-      m_ImageType(-1),
-      m_TimeInterval(15),
-      m_AutoChange(false),
-      m_FirstChange(false),
+      m_Settings(settings),
+      m_SettingsCallback(callback),
       m_Wallpaper(nullptr),
-      m_Favorites(WallBase::GetNewInstance(m_PicHomeDir, WallClass::FAVORITE)) {
+      m_Favorites(WallBase::GetNewInstance(m_PicHomeDir, WallBase::FAVORITE)) {
   ReadSettings();
+  SetImageType(GetImageType());
+  SetTimeInterval(GetTimeInterval());
+  SetFirstChange(GetFirstChange());
 }
 
 Wallpaper::~Wallpaper() {
@@ -211,9 +212,9 @@ void Wallpaper::SetSlot(int type) {
     }
     WriteSettings();
     WallBase::m_IsWorking = false;
-    if (m_AutoChange) {
+    if (GetAutoChange()) {
       m_Timer->Expire();
-      m_Timer->StartTimer(m_TimeInterval,
+      m_Timer->StartTimer(GetTimeInterval(),
                           std::bind(&Wallpaper::SetSlot, this, 1));
     }
   }).detach();
@@ -224,12 +225,16 @@ const std::filesystem::path& Wallpaper::GetImageDir() const {
 }
 
 void Wallpaper::SetTimeInterval(int minute) {
-  m_TimeInterval = minute;
+  auto& jsTimeInterval = m_Settings->find(u8"TimeInterval")->second;
+  if (jsTimeInterval.getValueInt() != minute) {
+    jsTimeInterval.setValue(minute);
+    m_SettingsCallback();
+  }
   m_Timer->Expire();
-  if (!m_AutoChange)
+  if (!GetAutoChange())
     return;
   m_Timer->Expire();
-  m_Timer->StartTimer(m_TimeInterval, std::bind(&Wallpaper::SetSlot, this, 1));
+  m_Timer->StartTimer(minute, std::bind(&Wallpaper::SetSlot, this, 1));
 }
 
 bool Wallpaper::SetNext() {
@@ -425,17 +430,24 @@ void Wallpaper::WriteBlackList() const {
 
 void Wallpaper::SetAutoChange(bool flag) {
   m_Timer->Expire();
-  if ((m_AutoChange = flag)) {
-    m_Timer->StartTimer(m_TimeInterval,
+  auto& jsAutoChange = m_Settings->find(u8"AutoChange")->second;
+  if (jsAutoChange.isTrue() != flag) {
+    jsAutoChange.setValue(flag);
+    m_SettingsCallback();
+  }
+  if (flag) {
+    m_Timer->StartTimer(GetTimeInterval(),
                         std::bind(&Wallpaper::SetSlot, this, 1));
   }
 }
 
 void Wallpaper::SetFirstChange(bool flag) {
-  if ((m_FirstChange = flag)) {
-    SetSlot(1);
-  } else {
+  auto& jsFirstChange = m_Settings->find(u8"FirstChange")->second;
+  if (jsFirstChange.isTrue() != flag) {
+    jsFirstChange.setValue(flag);
+    m_SettingsCallback();
   }
+  if (flag) SetSlot(1);
 }
 
 void Wallpaper::SetCurDir(const std::filesystem::path& str) {
@@ -444,15 +456,20 @@ void Wallpaper::SetCurDir(const std::filesystem::path& str) {
 }
 
 bool Wallpaper::SetImageType(int index) {
-  m_ImageType = index;
-  if (WallBase::m_IsWorking && m_ImageType != WallClass::FAVORITE) {
+  auto& jsImageType = m_Settings->find(u8"ImageType")->second;
+  if (jsImageType.getValueInt() != index) {
+    jsImageType.setValue(index);
+    m_SettingsCallback();
+  }
+
+  if (WallBase::m_IsWorking && index != WallBase::FAVORITE) {
     m_Jobs.push(m_Wallpaper);
     m_Wallpaper = nullptr;
   } else {
     delete m_Wallpaper;
   }
   m_Wallpaper = WallBase::GetNewInstance(m_PicHomeDir, index);
-  if (index == 1)
+  if (index == WallBase::BINGAPI)
     return true;
   std::thread([this]() {
     for (int i = 0; i < 60; ++i) {
@@ -463,15 +480,13 @@ bool Wallpaper::SetImageType(int index) {
     if (!Wallpaper::IsOnline())
       return;
 
-    WallBase* ptr = WallBase::GetNewInstance(m_PicHomeDir, 1);
-    const std::u8string& jstr = ptr->GetJson();
-    YJson tmp(jstr.begin(), jstr.end());
-    if (!tmp[u8"auto-download"].second.isTrue())
+    std::unique_ptr<WallBase> ptr(WallBase::GetNewInstance(m_PicHomeDir, WallBase::BINGAPI));
+    if (!ptr->GetJson()->find(u8"auto-download")->second.isTrue()) {
       return;
+    }
     for (int i = 0; i < 7; ++i) {
       Wallpaper::DownloadImage(ptr->GetNext());
     }
-    delete ptr;
   }).detach();
   return true;
 }
@@ -482,10 +497,3 @@ bool Wallpaper::IsWorking() {
 
 // attention: thread maybe working!
 
-std::u8string Wallpaper::GetJson() const {
-  return m_Wallpaper->GetJson();
-}
-
-void Wallpaper::SetJson(const std::u8string& str) {
-  m_Wallpaper->SetJson(str);
-}

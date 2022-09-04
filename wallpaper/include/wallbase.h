@@ -13,12 +13,7 @@
 #include <string>
 #include <system_error>
 
-#include "wallpaper.h"
-
-namespace WallClass {
-enum { WALLHAVEN = 0, BINGAPI, DIRECTAPI, NATIVE, SCRIPTOUTPUT, FAVORITE };
-
-}  // namespace WallClass
+typedef std::shared_ptr<std::vector<std::u8string>> ImageInfoEx;
 
 class WallBase {
  protected:
@@ -30,6 +25,7 @@ class WallBase {
   }
 
  public:
+  enum { WALLHAVEN = 0, BINGAPI, DIRECTAPI, NATIVE, SCRIPTOUTPUT, FAVORITE };
   static WallBase* GetNewInstance(const std::filesystem::path& picHome,
                                   int type);
   inline WallBase(const std::filesystem::path& pichome)
@@ -46,8 +42,8 @@ class WallBase {
   virtual void Dislike(const std::u8string& sImgPath);
   virtual void UndoDislike(const std::u8string& sImgPath);
   virtual void SetCurDir(const std::u8string& sImgDir);
-  virtual std::u8string GetJson() const = 0;
-  virtual void SetJson(const std::u8string& str) = 0;
+  virtual YJson* GetJson() = 0;
+  virtual void SetJson() = 0;
 
  private:
   friend class Wallpaper;

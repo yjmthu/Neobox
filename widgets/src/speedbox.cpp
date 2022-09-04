@@ -19,6 +19,10 @@
 #include <filesystem>
 #include <ranges>
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 SpeedBox::SpeedBox(QWidget* parent)
     : QWidget(parent,
               Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool),
@@ -31,6 +35,7 @@ SpeedBox::SpeedBox(QWidget* parent)
   SetWindowMode();
   SetBaseLayout();
   SetStyleSheet();
+  SetHideFullScreen();
   UpdateTextContent();
   connect(m_Timer, &QTimer::timeout, this, [this]() {
     m_NetSpeedHelper.GetSysInfo();
@@ -73,6 +78,7 @@ void SpeedBox::SetStyleSheet() {
     setStyleSheet(array);
     fStyle.close();
   }
+  setWindowIcon(QIcon(":/icons/speedbox.ico"));
   setCursor(Qt::PointingHandCursor);
   std::u8string& toolTip =
       VarBox::GetSettings(u8"FormGlobal")[u8"ToolTip"].second.getValueString();
@@ -102,6 +108,15 @@ void SpeedBox::UpdateTextContent() {
   m_TextDownLoadSpeed->setText(
       QString::fromStdWString(m_NetSpeedHelper.FormatSpped(
           std::get<2>(m_NetSpeedHelper.m_SysInfo), false)));
+}
+
+void SpeedBox::SetHideFullScreen()
+{
+    static APPBARDATA abd { 0 };
+    abd.cbSize = sizeof(APPBARDATA);
+    abd.hWnd = reinterpret_cast<HWND>(winId());
+    abd.uCallbackMessage = static_cast<UINT>(MsgCode::MSG_APPBAR_MSGID);
+    SHAppBarMessage(ABM_NEW, &abd);
 }
 
 void SpeedBox::mouseMoveEvent(QMouseEvent* event) {
@@ -147,4 +162,25 @@ void SpeedBox::dropEvent(QDropEvent* event)
         return fs::path(i.toLocalFile().toStdWString());});
     m_MainMenu->m_Wallpaper->SetDropFile(std::deque<fs::path>(urls.begin(), urls.end()));
   }
+}
+
+bool SpeedBox::nativeEvent(const QByteArray &eventType, void *message, qintptr *result)
+{
+    MSG *msg = static_cast<MSG*>(message);
+
+    if (MsgCode::MSG_APPBAR_MSGID == static_cast<MsgCode>(msg->message))
+    {
+        switch ((UINT)msg->wParam)
+        {
+        case ABN_FULLSCREENAPP:
+            if (msg->lParam)
+                hide();
+            else
+                show();
+            return true;
+        default:
+            break;
+        }
+    }
+    return false;
 }

@@ -2,8 +2,6 @@
 
 #include "wallbase.h"
 
-namespace WallClass {
-
 class BingApi : public WallBase {
  public:
   explicit BingApi(const std::filesystem::path& picHome)
@@ -81,9 +79,7 @@ class BingApi : public WallBase {
     m_Setting->toFile(m_SettingPath);
   }
 
-  virtual void SetJson(const std::u8string& str) override {
-    delete m_Setting;
-    m_Setting = new YJson(str.begin(), str.end());
+  virtual void SetJson() override {
     m_Setting->toFile(m_SettingPath);
 
     // 等待重写
@@ -91,8 +87,8 @@ class BingApi : public WallBase {
     return;
   }
 
-  virtual std::u8string GetJson() const override {
-    return m_Setting->toString(false);
+  virtual YJson* GetJson() override {
+    return m_Setting;
   }
 
  private:
@@ -127,4 +123,4 @@ class BingApi : public WallBase {
     return std::u8string(temp.begin(), temp.end());
   }
 };
-}  // namespace WallClass
+

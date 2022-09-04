@@ -7,6 +7,7 @@
 
 int main(int argc, char* argv[]) {
   QApplication a(argc, argv);
+  a.setQuitOnLastWindowClosed(false);
   VarBox var;
   SpeedBox box;
   box.show();

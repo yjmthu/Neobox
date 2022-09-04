@@ -12,7 +12,8 @@
 #include <string>
 #include <vector>
 
-typedef std::shared_ptr<std::vector<std::u8string>> ImageInfoEx;
+#include <yjson.h>
+#include <wallbase.h>
 
 class Wallpaper {
  private:
@@ -26,7 +27,7 @@ class Wallpaper {
 
  public:
   enum class Desktop { WIN, KDE, DDE, GNOME, XFCE, UNKNOWN };
-  explicit Wallpaper();
+  explicit Wallpaper(class YJson* settings, void(*callback)(void));
   virtual ~Wallpaper();
   static bool DownloadImage(const ImageInfoEx imageInfo);
   static bool SetWallpaper(const std::filesystem::path& imagePath);
@@ -43,16 +44,17 @@ class Wallpaper {
   const std::filesystem::path& GetImageDir() const;
 
   bool SetImageType(int type);
-  inline int GetImageType() const { return m_ImageType; }
+  inline int GetImageType() const {
+    return m_Settings->find(u8"ImageType")->second.getValueInt(); }
   void SetFirstChange(bool val);
-  inline bool GetFirstCHange() const { return m_FirstChange; }
+  inline bool GetFirstChange() const {
+    return m_Settings->find(u8"FirstChange")->second.isTrue(); }
   void SetTimeInterval(int minute);
-  inline int GetTimeInterval() const { return m_TimeInterval; }
+  inline int GetTimeInterval() const {
+    return m_Settings->find(u8"TimeInterval")->second.getValueInt(); }
   void SetAutoChange(bool val);
-  inline bool GetAutoChange() const { return m_AutoChange; }
-
-  void SetJson(const std::u8string& str);
-  std::u8string GetJson() const;
+  inline bool GetAutoChange() const {
+    return m_Settings->find(u8"AutoChange")->second.isTrue(); }
 
   static constexpr char m_szWallScript[16]{"SetWallpaper.sh"};
 
@@ -61,15 +63,13 @@ class Wallpaper {
   void SetCurDir(const std::filesystem::path& str);
   void StartTimer(bool start);
   std::filesystem::path m_PicHomeDir;
-  class Timer* m_Timer;
+  class WallBase* m_Wallpaper;
 
  private:
-  int m_ImageType;
-  int m_TimeInterval;
-  bool m_AutoChange;
-  bool m_FirstChange;
+  YJson* const m_Settings;
+  void (*m_SettingsCallback)(void);
 
-  class WallBase* m_Wallpaper;
+  class Timer* m_Timer;
   class WallBase* m_Favorites;
   std::queue<class WallBase*> m_Jobs;
   std::deque<std::filesystem::path> m_PrevImgs;

@@ -3,8 +3,6 @@
 
 #include "wallbase.h"
 
-namespace WallClass {
-
 class Native : public WallBase {
  private:
   size_t GetFileCount() {
@@ -106,14 +104,10 @@ class Native : public WallBase {
     m_FileList.clear();
   }
 
-  std::u8string GetJson() const override { return m_Setting->toString(false); }
+  YJson* GetJson() override { return m_Setting; }
 
-  void SetJson(const std::u8string& str) override {
-    delete m_Setting;
-    m_Setting = new YJson(str.begin(), str.end());
+  void SetJson() override {
     m_Setting->toFile(m_SettingPath);
-    //
-    //
   }
 
  private:
@@ -122,4 +116,3 @@ class Native : public WallBase {
   std::vector<std::u8string> m_FileList;
 };
 
-}  // namespace WallClass

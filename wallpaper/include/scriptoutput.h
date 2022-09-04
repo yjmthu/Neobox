@@ -3,8 +3,6 @@
 
 #include "wallbase.h"
 
-namespace WallClass {
-
 class ScriptOutput : public WallBase {
  public:
   explicit ScriptOutput(const std::filesystem::path& picHome)
@@ -62,13 +60,11 @@ class ScriptOutput : public WallBase {
     return ptr;
   }
 
-  std::u8string GetJson() const override {
-    return m_Setting->toString();
+  YJson* GetJson() override {
+    return m_Setting;
   }
 
-  void SetJson(const std::u8string& str) override {
-    delete m_Setting;
-    m_Setting = new YJson(str.begin(), str.end());
+  void SetJson() override {
     m_Setting->toFile(m_SettingPath);
   }
 
@@ -98,4 +94,3 @@ class ScriptOutput : public WallBase {
   }
 };
 
-}  // namespace WallClass

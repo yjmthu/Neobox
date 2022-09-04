@@ -11,6 +11,10 @@
     "ShowTrayIcon": false,
     "ToolTip": "行動是治癒恐懼的良藥，而猶豫、拖延將不斷滋養恐懼"
   },
+  "Tools": {
+    "Ocr.TessdataDir": "tessdata",
+    "Ocr.Languages": ["chi_sim", "eng"]
+  },
   "FormUi": {
     "BkColor": [85, 0, 127, 150],
     "MemUseage": {

@@ -8,7 +8,6 @@
 #include <xstring>
 #include "wallpaper.h"
 
-namespace WallClass {
 class Favorite : public WallBase {
  private:
   const char m_DataPath[14]{"Favorite.json"};
@@ -84,12 +83,11 @@ class Favorite : public WallBase {
     m_Data->toFile(m_DataPath);
   }
 
-  std::u8string GetJson() const override {
-    return m_Data->find(u8"Unused")->second.toString(false);
+  YJson* GetJson() override {
+    return &m_Data->find(u8"Unused")->second;
   }
 
-  void SetJson(const std::u8string& str) override {
-    m_Data->find(u8"Unused")->second = YJson(str.begin(), str.end());
+  void SetJson() override {
     m_Data->toFile(m_DataPath);
   }
 
@@ -101,6 +99,5 @@ class Favorite : public WallBase {
   }
   ~Favorite() { delete m_Data; }
 };
-}  // namespace WallClass
 
 #endif

@@ -19,7 +19,9 @@ set(SRC_LIST
     src/varbox.cpp
     src/speedbox.cpp
     src/neomenu.cpp
-    # src/pixmapimage.cpp
+    src/screenfetch.cpp
+    src/qimage2text.cpp
+    src/translate.cpp
     resources.qrc
 )
 

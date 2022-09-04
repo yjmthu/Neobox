@@ -13,19 +13,19 @@ std::atomic_bool WallBase::m_IsWorking = false;
 
 WallBase* WallBase::GetNewInstance(const std::filesystem::path& picHome,
                                    int type) {
-  static WallBase* pFavorite = new WallClass::Favorite(picHome);
+  static WallBase* pFavorite = new Favorite(picHome);
   switch (type) {
-    case WallClass::WALLHAVEN:
-      return new WallClass::Wallhaven(picHome);
-    case WallClass::BINGAPI:
-      return new WallClass::BingApi(picHome);
-    case WallClass::DIRECTAPI:
-      return new WallClass::DirectApi(picHome);
-    case WallClass::NATIVE:
-      return new WallClass::Native(picHome);
-    case WallClass::SCRIPTOUTPUT:
-      return new WallClass::ScriptOutput(picHome);
-    case WallClass::FAVORITE:
+    case WALLHAVEN:
+      return new Wallhaven(picHome);
+    case BINGAPI:
+      return new BingApi(picHome);
+    case DIRECTAPI:
+      return new DirectApi(picHome);
+    case NATIVE:
+      return new Native(picHome);
+    case SCRIPTOUTPUT:
+      return new ScriptOutput(picHome);
+    case FAVORITE:
       return pFavorite;
     default:
       return nullptr;

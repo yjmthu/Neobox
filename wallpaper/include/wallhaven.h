@@ -9,8 +9,6 @@
 #include <functional>
 #include <regex>
 
-namespace WallClass {
-
 class Wallhaven : public WallBase {
  private:
   static bool IsPngFile(std::u8string& str) {
@@ -138,9 +136,7 @@ class Wallhaven : public WallBase {
     delete m_Setting;
   }
 
-  void SetJson(const std::u8string& str) override {
-    delete m_Setting;
-    m_Setting = new YJson(str.begin(), str.end());
+  void SetJson() override {
     m_Setting->toFile(m_SettingPath);
     GetApiPathUrl();
     m_Data->find(u8"Api")->second.setText(m_ImageUrl);
@@ -149,7 +145,7 @@ class Wallhaven : public WallBase {
     m_NeedDownUrl = true;
   }
 
-  std::u8string GetJson() const override { return m_Setting->toString(false); }
+  YJson* GetJson() override { return m_Setting; }
 
  private:
   bool WriteDefaultSetting() override {
@@ -328,4 +324,4 @@ class Wallhaven : public WallBase {
   std::u8string m_ImageUrl;
   bool m_NeedDownUrl;
 };
-}  // namespace WallClass
+

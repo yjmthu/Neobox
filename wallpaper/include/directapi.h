@@ -2,8 +2,6 @@
 
 #include "wallbase.h"
 
-namespace WallClass {
-
 class DirectApi : public WallBase {
  public:
   explicit DirectApi(const std::filesystem::path& picHome) : WallBase(picHome) {
@@ -71,9 +69,7 @@ class DirectApi : public WallBase {
     m_Setting->toFile(m_SettingPath);
   }
 
-  void SetJson(const std::u8string& str) override {
-    delete m_Setting;
-    m_Setting = new YJson(str.begin(), str.end());
+  void SetJson() override {
     using namespace std::literals;
     auto& data =
         m_Setting->find(u8"ApiData"sv)
@@ -89,7 +85,7 @@ class DirectApi : public WallBase {
     m_Setting->toFile(m_SettingPath);
   }
 
-  std::u8string GetJson() const override { return m_Setting->toString(false); }
+  YJson* GetJson() override { return m_Setting; }
 
  private:
   std::u8string m_ApiUrl;
@@ -110,4 +106,4 @@ class DirectApi : public WallBase {
   YJson* m_Setting;
   const char m_SettingPath[13]{"ApiFile.json"};
 };
-}  // namespace WallClass
+

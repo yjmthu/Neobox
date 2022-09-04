@@ -69,6 +69,10 @@
           "清理垃圾": {
             "type": "Normal",
             "function": "WallpaperClean"
+          },
+          "更多设置": {
+            "type": "VarGroup",
+            "name": "Wallpaper"
           }
         }
       },

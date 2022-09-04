@@ -22,6 +22,7 @@ class SpeedBox : public QWidget {
   void mouseMoveEvent(QMouseEvent* event) override;
   void dragEnterEvent(QDragEnterEvent *event) override;
   void dropEvent(QDropEvent *event) override;
+  bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 
  public:
   explicit SpeedBox(QWidget* parent = nullptr);
@@ -32,6 +33,7 @@ class SpeedBox : public QWidget {
   void SetBaseLayout();
   void UpdateTextContent();
   void SetStyleSheet();
+  void SetHideFullScreen();
 };
 
 #endif
