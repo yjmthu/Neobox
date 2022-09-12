@@ -13,11 +13,15 @@ class NeoMenu : public QMenu {
   using FuncItemCheck = std::function<int()>;
 
  private:
+  class Shortcut* m_Shortcut;
   std::map<std::u8string, std::function<void(void)>> m_FuncNormalMap;
   std::map<std::u8string, std::pair<FuncChecked, FuncCheck>> m_FuncCheckMap;
   std::map<std::u8string, std::pair<FuncItemChecked, FuncItemCheck>>
       m_FuncItemCheckMap;
   std::map<std::u8string, QMenu*> m_ExMenus;
+
+  friend class SpeedBox;
+  class TranslateDlg* m_TranslateDlg;
 
   void InitFunctionMap();
   void GetMenuContent(QMenu* parent, class YJson const& data);

@@ -3,7 +3,6 @@
 
 #include <QWidget>
 
-
 class SpeedBox : public QWidget {
  private:
   QPoint m_ConstPos;
@@ -19,6 +18,7 @@ class SpeedBox : public QWidget {
   void mousePressEvent(QMouseEvent* event) override;
   void mouseReleaseEvent(QMouseEvent* event) override;
   void mouseMoveEvent(QMouseEvent* event) override;
+  void mouseDoubleClickEvent(QMouseEvent *event) override;
   void dragEnterEvent(QDragEnterEvent* event) override;
   void dropEvent(QDropEvent* event) override;
   bool nativeEvent(const QByteArray& eventType,

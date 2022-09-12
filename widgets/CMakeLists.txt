@@ -15,14 +15,15 @@ endif()
 include_directories(include)
 
 set(SRC_LIST
-    src/main.cpp
-    src/varbox.cpp
-    src/speedbox.cpp
-    src/neomenu.cpp
-    src/screenfetch.cpp
-    src/qimage2text.cpp
-    src/translate.cpp
-    resources.qrc
+  src/main.cpp
+  src/varbox.cpp
+  src/speedbox.cpp
+  src/neomenu.cpp
+  src/shortcut.cpp
+  src/screenfetch.cpp
+  src/qimage2text.cpp
+  src/translatedlg.cpp
+  resources.qrc
 )
 
 set(CMAKE_AUTORCC ON)
@@ -32,19 +33,20 @@ qt_add_executable(Neobox WIN32
 )
 
 target_link_libraries(Neobox PRIVATE
-    core
-    wallpaper
-    yjson
-    leptonica
-    Tesseract::libtesseract
-    Qt6::Core
-    Qt6::Widgets
+  core
+  wallpaper
+  yjson
+  leptonica
+  translate
+  Tesseract::libtesseract
+  Qt6::Core
+  Qt6::Widgets
 )
 
 if (UNIX)
   target_link_libraries(Neobox PRIVATE
-        pthread
-        KF5::WindowSystem
-    )
+    pthread
+    KF5::WindowSystem
+  )
 endif()
 

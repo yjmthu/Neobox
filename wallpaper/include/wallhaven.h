@@ -3,6 +3,7 @@
 #include <xstring>
 
 #include <wallbase.h>
+#include <wallpaper.h>
 #include <algorithm>
 #include <array>
 #include <filesystem>
@@ -28,7 +29,7 @@ class Wallhaven : public WallBase {
       return false;
     try {
       m_Setting = new YJson(m_SettingPath, YJson::UTF8);
-      return true;
+      return m_InitOk = true;
     } catch (...) {
       return false;
     }
@@ -40,10 +41,9 @@ class Wallhaven : public WallBase {
     ImageInfoEx ptr(new std::vector<std::u8string>);
 
     if (m_NeedDownUrl) {
-      std::cout << "Start Download Url\n"sv;
+      if (!Wallpaper::IsOnline()) return ptr;
       size_t t = DownloadUrl();
       m_NeedDownUrl = false;
-      std::cout << t << " Urls Are Downloaded\n"sv;
       if (!t)
         return ptr;
     }

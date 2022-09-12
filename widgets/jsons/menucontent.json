@@ -115,6 +115,28 @@
       "插件设置": {
         "type": "Group",
         "children":{
+          "翻译设置": {
+            "type": "Group",
+            "children": {
+              "数据位置": {
+                "type": "Normal",
+                "function": "ToolOcrDataPath"
+              },
+              "系统热键": {
+                "type": "Group",
+                "children": {
+                  "热键名称": {
+                    "type": "Normal",
+                    "function": "ToolTransShortcut"
+                  },
+                  "注册热键": {
+                    "type": "Checkable",
+                    "function": "ToolTransRegistKey"
+                  }
+                }
+              }
+            }
+          }
         }
       },
       "系统设置": {
@@ -137,9 +159,18 @@
       }
     }
   },
-  "截图翻译": {
-    "type": "Normal",
-    "function": "ToolOcrGetScreen"
+  "翻译功能": {
+    "type": "Group",
+    "children": {
+      "翻译窗口": {
+        "type": "Normal",
+        "function": "ToolTransShowDlg"
+      },
+      "截图翻译": {
+        "type": "Normal",
+        "function": "ToolOcrGetScreen"
+      }
+    }
   },
   "壁纸切换": {
     "type": "Group",

@@ -1,5 +1,6 @@
 ﻿#include <httplib.h>
 
+#include <wallpaper.h>
 #include "wallbase.h"
 
 class BingApi : public WallBase {
@@ -7,7 +8,7 @@ class BingApi : public WallBase {
   explicit BingApi(const std::filesystem::path& picHome)
       : WallBase(picHome),
         m_Mft(u8"zh-CN"),
-        m_ImageNameFormat(u8"%s %Y%m%d.jpg"),
+        m_ImageNameFormat(u8"%Y%m%d %s.jpg"),
         m_ApiUrl(u8"https://global.bing.com"),
         m_Setting(nullptr),
         m_CurImageIndex(0) {
@@ -27,7 +28,7 @@ class BingApi : public WallBase {
         // m_CurImageIndex =
         // m_Setting->find(u8"index")->second.getValueInt();
         m_Mft = m_Setting->find(u8"mkt")->second.getValueString();
-        return true;
+        return m_InitOk = true;
       } else {
         delete m_Setting;
         m_Setting = nullptr;
@@ -37,6 +38,7 @@ class BingApi : public WallBase {
     return false;
   }
   virtual bool WriteDefaultSetting() override {
+    if (!Wallpaper::IsOnline()) return false;
     // https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8
 
     std::u8string path(u8"/HPImageArchive.aspx?format=js&idx=0&n=8&mkt=");
@@ -55,14 +57,21 @@ class BingApi : public WallBase {
     m_Setting->append(static_cast<int>(m_CurImageIndex), u8"index");
     m_Setting->append(false, u8"auto-download");
     m_Setting->toFile(m_SettingPath);
-    return true;
+    return m_InitOk = true;
   }
   virtual ImageInfoEx GetNext() override {
     // https://www.bing.com/th?id=OHR.Yellowstone150_ZH-CN055
     // 下这个接口含义，直接看后面的请求参数1084440_UHD.jpg
 
-    auto jsTemp = m_Setting->find(u8"images")->second.find(m_CurImageIndex);
     ImageInfoEx ptr(new std::vector<std::u8string>);
+    if (!m_InitOk) {
+      if (!Wallpaper::IsOnline())
+        return ptr;
+      else
+        WriteDefaultSetting();
+    }
+
+    auto jsTemp = m_Setting->find(u8"images")->second.find(m_CurImageIndex);
     ptr->push_back((m_ImageDir / GetImageName(*jsTemp)).u8string());
     ptr->emplace_back(m_ApiUrl.begin(), m_ApiUrl.end());
     ptr->back().append(jsTemp->find(u8"urlbase")->second.getValueString() +
@@ -83,7 +92,8 @@ class BingApi : public WallBase {
     m_Setting->toFile(m_SettingPath);
 
     // 等待重写
-    m_Mft.swap(m_Setting->find(u8"mkt")->second.getValueString());
+    m_Mft = m_Setting->find(u8"mkt")->second.getValueString();
+    m_ImageNameFormat = m_Setting->find(u8"imgfmt")->second.getValueString();
     return;
   }
 

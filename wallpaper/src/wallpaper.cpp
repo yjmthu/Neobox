@@ -19,10 +19,9 @@ extern void ShowMessage(const std::u8string& title,
                         int type = 0);
 
 std::wstring GetSpecialFolderPath(int type) {
-  wchar_t buffer[MAX_PATH];
-  std::wstring result;
-  SHGetSpecialFolderPathW(nullptr, buffer, type, TRUE);
-  result = buffer;
+  std::wstring result(MAX_PATH, 0);
+  SHGetSpecialFolderPathW(nullptr, result.data(), type, TRUE);
+  result.erase(result.find(L'\0'));
   return result;
 }
 
@@ -47,6 +46,7 @@ bool Wallpaper::DownloadImage(const ImageInfoEx imageInfo) {
     return false;
   }
 
+  if (!IsOnline()) return false;
   m_UsingFiles.emplace(m_sFilePath);
   int res = HttpLib::Gets(imageInfo->at(1), m_sFilePath);
   if (res == 200) {
@@ -94,11 +94,7 @@ bool Wallpaper::SetWallpaper(const std::filesystem::path& imagePath) {
     return false;
   }
 #if defined(_WIN32)
-#ifdef UNICODE
   std::wstring str = imagePath.wstring();
-#else
-  std::string str = imagePath.string();
-#endif  //  UNICDOE
   return ::SystemParametersInfoW(SPI_SETDESKWALLPAPER, UINT(0),
                                  const_cast<WCHAR*>(str.c_str()),
                                  SPIF_SENDCHANGE | SPIF_UPDATEINIFILE);
@@ -124,12 +120,11 @@ bool Wallpaper::SetWallpaper(const std::filesystem::path& imagePath) {
               "string:\"eDP\" string:\"file://";
       break;
     default:
-      std::cout << "不支持的桌面类型；\n";
+      std::cerr << "不支持的桌面类型；\n";
       return false;
   }
   sstr << imagePath;
   std::string m_sCmd = sstr.str();
-  std::cout << imagePath << std::endl << m_sCmd << std::endl;
   return system(m_sCmd.c_str()) == 0;
 #endif
 }

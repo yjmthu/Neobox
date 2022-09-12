@@ -14,34 +14,36 @@
     "ToolTip": "行動是治癒恐懼的良藥，而猶豫、拖延將不斷滋養恐懼"
   },
   "Tools": {
+    "Translate.RegisterHotKey": true,
+    "Translate.Shortcut": "Shift+Z",
     "Ocr.TessdataDir": "tessdata",
     "Ocr.Languages": ["chi_sim", "eng"]
   },
   "FormUi": {
     "BkColor": [85, 0, 127, 150],
-    "MemUseage": {
-      "font-family": "Carattere",
-      "font-size": 20, 
-      "color": "#FFFF00",
-      "bold": true,
-      "italic": false,
-      "pos": [6, 29]
+    "memUse": {
+      "FontFamily": "Carattere",
+      "FontSize": 20, 
+      "Color": "#FFFF00",
+      "Bold": true,
+      "Italic": false,
+      "Pos": [4, 8]
     },
-    "NetUpSpeed":  {
-      "font-family": "Nickainley Normal",
-      "font-size": 10, 
-      "color": "#FAAA23",
-      "bold": true,
-      "italic": false,
-      "pos": [32, 16]
+    "netUp":  {
+      "FontFamily": "Nickainley Normal",
+      "FontSize": 10, 
+      "Color": "#FAAA23",
+      "Bold": true,
+      "Italic": false,
+      "Pos": [34, 6]
     },
-    "NetDownSpeed": {
-      "font-family": "Nickainley Normal",
-      "font-size": 10, 
-      "color": "#8CF01E",
-      "bold": true,
-      "italic": false,
-      "pos": [32, 36]
+    "netDown": {
+      "FontFamily": "Nickainley Normal",
+      "FontSize": 10, 
+      "Color": "#8CF01E",
+      "Bold": true,
+      "Italic": false,
+      "Pos": [34, 22]
     }
   }
 }

@@ -16,9 +16,12 @@
 #include <yjson.h>
 #include <appcode.hpp>
 #include <netspeedhelper.h>
+#include <translatedlg.h>
+#include <shortcut.h>
 
 #include <filesystem>
 #include <ranges>
+#include <array>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -29,11 +32,12 @@ SpeedBox::SpeedBox(QWidget* parent)
               Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool),
       m_CentralWidget(new QWidget(this)),
       m_NetSpeedHelper(new NetSpeedHelper),
-      m_TextMemUseage(new QLabel),
-      m_TextUploadSpeed(new QLabel),
-      m_TextDownLoadSpeed(new QLabel),
+      m_TextMemUseage(new QLabel(m_CentralWidget)),
+      m_TextUploadSpeed(new QLabel(m_CentralWidget)),
+      m_TextDownLoadSpeed(new QLabel(m_CentralWidget)),
       m_Timer(new QTimer(this)),
-      m_MainMenu(new NeoMenu(this)) {
+      m_MainMenu(nullptr)
+{
   SetWindowMode();
   SetBaseLayout();
   SetStyleSheet();
@@ -48,19 +52,20 @@ SpeedBox::SpeedBox(QWidget* parent)
 
 SpeedBox::~SpeedBox() {
   m_Timer->stop();
-  // delete m_MainMenu;
-  delete m_TextDownLoadSpeed;
-  delete m_TextUploadSpeed;
-  delete m_TextMemUseage;
   delete m_NetSpeedHelper;
-  delete m_CentralWidget;
 }
 
 void SpeedBox::Show() {
   show();
-  // QTimer::singleShot(1000, this, [this](){
-      m_MainMenu->SetFormColorEffect();
-  // });
+
+  /*
+   * Notice
+   * m_MainMenu should be construct after SpeedBox isShown.
+   */
+  if (!m_MainMenu) {
+    m_MainMenu = new NeoMenu(this);  // must be this, not m_CentralWidget.
+    m_MainMenu->SetFormColorEffect();
+  }
 }
 
 void SpeedBox::SetWindowMode() {
@@ -74,8 +79,9 @@ void SpeedBox::SetWindowMode() {
   m_TextMemUseage->setObjectName("memUse");
   m_TextDownLoadSpeed->setObjectName("netDown");
   m_TextUploadSpeed->setObjectName("netUp");
-  m_TextMemUseage->setMinimumWidth(26);
-  m_TextMemUseage->setMaximumWidth(26);
+  m_TextMemUseage->setMinimumWidth(30);
+  m_TextUploadSpeed->setMinimumWidth(60);
+  m_TextDownLoadSpeed->setMinimumWidth(60);
   const auto& array =
       VarBox::GetSettings(u8"FormGlobal")[u8"Position"].second.getArray();
   move(array.front().getValueInt(), array.back().getValueInt());
@@ -84,8 +90,7 @@ void SpeedBox::SetWindowMode() {
 void SpeedBox::SetStyleSheet() {
   QFile fStyle(QStringLiteral("styles/MenuStyle.css"));
   if (fStyle.open(QIODevice::ReadOnly)) {
-    QByteArray&& array = fStyle.readAll();
-    setStyleSheet(array);
+    setStyleSheet(fStyle.readAll());
     fStyle.close();
   }
   setWindowIcon(QIcon(":/icons/speedbox.ico"));
@@ -96,17 +101,18 @@ void SpeedBox::SetStyleSheet() {
 }
 
 void SpeedBox::SetBaseLayout() {
-  QHBoxLayout* hout = new QHBoxLayout(m_CentralWidget);
-  QVBoxLayout* vout = new QVBoxLayout;
-  hout->setContentsMargins(0, 0, 0, 0);
-  hout->setSpacing(0);
-  vout->setSpacing(0);
-  hout->addWidget(m_TextMemUseage);
-  vout->addWidget(m_TextUploadSpeed);
-  vout->addWidget(m_TextDownLoadSpeed);
-  hout->addLayout(vout);
-  m_CentralWidget->setLayout(hout);
-  m_CentralWidget->move(0, 0);
+  YJson& jsFormUi = VarBox::GetSettings(u8"FormUi");
+  QByteArray qByteName;
+  std::array<QLabel*, 3> labels = {
+    m_TextMemUseage, m_TextUploadSpeed, m_TextDownLoadSpeed
+  };
+  for (auto label: labels) {
+    qByteName = label->objectName().toUtf8();
+    YJson& temp = jsFormUi[std::u8string(qByteName.begin(), qByteName.end())].second;
+    const auto& jsPos = temp[u8"Pos"].second.getArray();
+    label->move(jsPos.front().getValueInt(), jsPos.back().getValueInt());
+    // 
+  }
 }
 
 void SpeedBox::UpdateTextContent() {
@@ -131,6 +137,9 @@ void SpeedBox::SetHideFullScreen() {
 void SpeedBox::mouseMoveEvent(QMouseEvent* event) {
   if (event->buttons() == Qt::LeftButton) {
     move(pos() + event->pos() - m_ConstPos);
+    if (m_MainMenu->m_TranslateDlg->isVisible()) {
+      m_MainMenu->m_TranslateDlg->hide();
+    }
   }
 }
 
@@ -154,6 +163,16 @@ void SpeedBox::mouseReleaseEvent(QMouseEvent* event) {
   }
 }
 
+void SpeedBox::mouseDoubleClickEvent(QMouseEvent *event)
+{
+  if (m_MainMenu->m_TranslateDlg->isVisible()) {
+    m_MainMenu->m_TranslateDlg->hide();
+  } else {
+    m_MainMenu->m_TranslateDlg->Show(frameGeometry());
+  }
+  event->accept();
+}
+
 void SpeedBox::dragEnterEvent(QDragEnterEvent* event) {
   if (event->mimeData()->hasUrls())
     event->acceptProposedAction();
@@ -170,6 +189,9 @@ void SpeedBox::dropEvent(QDropEvent* event) {
         });
     m_MainMenu->m_Wallpaper->SetDropFile(
         std::deque<fs::path>(urls.begin(), urls.end()));
+    event->accept();
+  } else {
+    event->ignore();
   }
 }
 
@@ -189,6 +211,13 @@ bool SpeedBox::nativeEvent(const QByteArray& eventType,
       default:
         break;
     }
+  } else if (WM_HOTKEY == msg->message) {
+    /*
+     * idHotKey = wParam;          
+     * Modifiers = (UINT) LOWORD(lParam);
+     * uVirtKey = (UINT) HIWORD(lParam);
+     */
+    m_MainMenu->m_Shortcut->CallFunction(msg->wParam);
   }
   return false;
 }

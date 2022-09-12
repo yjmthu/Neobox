@@ -1,11 +1,12 @@
 #include <neomenu.h>
 #include <screenfetch.h>
 #include <sysapi.h>
-#include <translate.h>
+#include <translatedlg.h>
 #include <varbox.h>
 #include <wallpaper.h>
 #include <yjson.h>
 #include <speedbox.h>
+#include <shortcut.h>
 
 #include <map>
 #include <regex>
@@ -40,8 +41,11 @@ extern QString QImage2Text(const QImage& qImage);
 
 NeoMenu::NeoMenu(QWidget* parent)
     : QMenu(parent),
+      m_Shortcut(new Shortcut(this->parent())),
+      m_TranslateDlg(new TranslateDlg(this)),
       m_Wallpaper(new Wallpaper(&VarBox::GetSettings(u8"Wallpaper"),
-                                &VarBox::WriteSettings)) {
+                                &VarBox::WriteSettings))
+{
   setAttribute(Qt::WA_TranslucentBackground, true);
   InitFunctionMap();
   QFile fJson(QStringLiteral(":/jsons/menucontent.json"));
@@ -53,6 +57,7 @@ NeoMenu::NeoMenu(QWidget* parent)
   GetMenuContent(this, YJson(array.begin(), array.end()));
   fJson.close();
 
+  // Maybe after the json file was download.
   LoadWallpaperExmenu();
 }
 
@@ -104,9 +109,20 @@ void NeoMenu::InitFunctionMap() {
          connect(box, &ScreenFetch::destroyed, &loop, &QEventLoop::quit);
          box->showFullScreen();
          loop.exec();
-         Translate translate(this);
-         translate.Show(QImage2Text(image));
+         m_TranslateDlg->Show(qobject_cast<const QWidget*>(parent())->frameGeometry(), QImage2Text(image));
        }},
+      {u8"ToolOcrDataPath",
+        [this](){
+          std::u8string& u8Path = VarBox::GetSettings(u8"Tools")[u8"Ocr.TessdataDir"].second.getValueString();
+          QByteArray folder = QFileDialog::getExistingDirectory(this, "请选择Tessdata数据文件存放位置", QString::fromUtf8(u8Path.data(), u8Path.size())).toUtf8();
+          std::u8string u8NewPath = std::filesystem::path(std::u8string(folder.begin(), folder.end())).u8string();
+          if (!u8NewPath.empty() && u8NewPath != u8Path) {
+            u8Path.swap(u8NewPath);
+            VarBox::WriteSettings();
+          }
+        }
+      },
+      {u8"ToolTransShowDlg", [this](){m_TranslateDlg->Show(qobject_cast<const QWidget*>(parent())->frameGeometry());}},
       {u8"WallpaperPrev", std::bind(&Wallpaper::SetSlot, m_Wallpaper, -1)},
       {u8"WallpaperNext", std::bind(&Wallpaper::SetSlot, m_Wallpaper, 1)},
       {u8"WallpaperDislike", std::bind(&Wallpaper::SetSlot, m_Wallpaper, 0)},
@@ -128,6 +144,7 @@ void NeoMenu::InitFunctionMap() {
          int iNewTime =
              QInputDialog::getInt(this, "输入时间间隔", "时间间隔（分钟）：",
                                   m_Wallpaper->GetTimeInterval(), 5);
+         if (iNewTime < 5) return;
          m_Wallpaper->SetTimeInterval(iNewTime);
        }},
       {u8"WallpaperClean", std::bind(&Wallpaper::ClearJunk, m_Wallpaper)},
@@ -165,7 +182,7 @@ void NeoMenu::InitFunctionMap() {
           const std::initializer_list<std::pair<std::wstring, wchar_t>> lst = {
               {L"*", L'1'},
               {L"Directory", L'V'},
-              {L"Directory\\Background", L'1'}};
+              {L"Directory\\Background", L'V'}};
           constexpr auto command =
               L"mshta vbscript:clipboarddata.setdata(\"text\",\"%{}\")(close)";
           if (checked) {
@@ -223,7 +240,44 @@ void NeoMenu::InitFunctionMap() {
       {u8"WallpaperInitChange",
        {std::bind(&Wallpaper::SetFirstChange, m_Wallpaper,
                   std::placeholders::_1),
-        std::bind(&Wallpaper::GetFirstChange, m_Wallpaper)}}};
+        std::bind(&Wallpaper::GetFirstChange, m_Wallpaper)}},
+      {u8"ToolTransRegistKey", {
+        [this](bool checked){
+          auto& settings = VarBox::GetSettings(u8"Tools");
+          std::u8string& shortcut = settings[u8"Translate.Shortcut"].second.getValueString();
+          QString qsShortcut = QString::fromUtf8(shortcut.data(), shortcut.size());
+          if (checked) {
+            m_Shortcut->RegistHotKey(qsShortcut, [this](){
+              if (m_TranslateDlg->isVisible()) {
+                m_TranslateDlg->hide();
+              } else {
+                m_TranslateDlg->Show(qobject_cast<QWidget*>(parent())->frameGeometry());
+              }
+            });
+          } else {
+            m_Shortcut->UnregistHotKey(qsShortcut);
+          }
+          settings[u8"Translate.RegisterHotKey"].second = checked;
+          VarBox::WriteSettings();
+        },
+        [this]()->bool{
+          auto& settings = VarBox::GetSettings(u8"Tools");
+          bool regist = settings[u8"Translate.RegisterHotKey"].second.isTrue();
+          std::u8string& shortcut = settings[u8"Translate.Shortcut"].second.getValueString();
+          QString qsShortcut = QString::fromUtf8(shortcut.data(), shortcut.size());
+          if (regist && !m_Shortcut->IsKeyRegisted(qsShortcut)) {
+            m_Shortcut->RegistHotKey(qsShortcut, [this](){
+              if (m_TranslateDlg->isVisible()) {
+                m_TranslateDlg->hide();
+              } else {
+                m_TranslateDlg->Show(qobject_cast<QWidget*>(parent())->frameGeometry());
+              }
+            });
+          }
+          return regist;
+        }}
+      }
+  };
 
   m_FuncItemCheckMap = {
     {u8"WallpaperType",
@@ -389,8 +443,45 @@ void NeoMenu::LoadWallpaperExmenu() {
       });
       break;
     }
-    case WallBase::BINGAPI:
-    case WallBase::NATIVE:
+    case WallBase::BINGAPI: {
+      QAction* temp = nullptr;
+      temp = pMainMenu->addAction("名称格式");
+      connect(temp, &QAction::triggered, this, [this, jsExInfo](){
+        auto& u8ImgFmt = jsExInfo->find(u8"imgfmt")->second.getValueString();
+        QString qImgFmt = QString::fromUtf8(u8ImgFmt.data(), u8ImgFmt.size());
+        QByteArray&& qImgFmtNewByte = QInputDialog::getText(this, "图片名称", "输入名称格式", QLineEdit::Normal, qImgFmt).toUtf8();
+        std::u8string u8ImgFmtNew(qImgFmtNewByte.begin(), qImgFmtNewByte.end());
+        if (u8ImgFmtNew.empty() || u8ImgFmtNew == u8ImgFmt) return;
+        u8ImgFmt.swap(u8ImgFmtNew);
+        m_Wallpaper->m_Wallpaper->SetJson(true);
+      });
+      temp = pMainMenu->addAction("地理位置");
+      connect(temp, &QAction::triggered, this, [this, jsExInfo](){
+        auto& u8Mkt = jsExInfo->find(u8"mkt")->second.getValueString();
+        QString qMkt = QString::fromUtf8(u8Mkt.data(), u8Mkt.size());
+        QByteArray&& qMktNewByte = QInputDialog::getText(this, "图片地区", "输入图片所在地区", QLineEdit::Normal, qMkt).toUtf8();
+        std::u8string u8MktNew(qMktNewByte.begin(), qMktNewByte.end());
+        if (u8MktNew.empty() || u8MktNew == u8Mkt) return;
+        u8Mkt.swap(u8MktNew);
+        m_Wallpaper->m_Wallpaper->SetJson(true);
+      });
+      temp = pMainMenu->addAction("自动下载");
+      temp->setCheckable(true);
+      temp->setChecked(jsExInfo->find(u8"auto-download")->second.isTrue());
+      connect(temp, &QAction::triggered, this, [this, jsExInfo](bool checked){
+        jsExInfo->find(u8"auto-download")->second = checked;
+        m_Wallpaper->m_Wallpaper->SetJson(true);
+      });
+      temp = pMainMenu->addAction("关于壁纸");
+      connect(temp, &QAction::triggered, this, [jsExInfo](){
+        size_t index = jsExInfo->find(u8"index")->second.getValueInt();
+        auto link = jsExInfo->find(u8"images")->second[index][u8"copyrightlink"].second.getValueString() + u8"&filters=HpDate:\"20220904_1600\"";
+        QDesktopServices::openUrl(QString::fromUtf8(link.data(), link.size()));
+      });
+      break;
+    }
+    case WallBase::NATIVE: {
+}
     default:
       break;
   }

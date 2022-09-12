@@ -40,6 +40,9 @@ void ScreenFetch::mouseReleaseEvent(QMouseEvent* event) {
                           m_RectSize.x() * kx, m_RectSize.y() * ky);
       close();
     }
+    event->accept();
+  } else {
+    event->ignore();
   }
 }
 
@@ -51,6 +54,7 @@ void ScreenFetch::mouseMoveEvent(QMouseEvent* event) {
   } else {
     m_RectSize = event->pos() - m_LeftTop;
   }
+  event->accept();
   update();
 }
 
@@ -60,4 +64,5 @@ void ScreenFetch::paintEvent(QPaintEvent* event) {
   painter.setPen(Qt::red);
   painter.drawRect(m_LeftTop.x(), m_LeftTop.y(), m_RectSize.x(),
                    m_RectSize.y());
+  event->accept();
 }

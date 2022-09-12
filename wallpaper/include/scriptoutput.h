@@ -1,7 +1,7 @@
 ﻿#include <sysapi.h>
 #include <string>
 
-#include "wallbase.h"
+#include <wallbase.h>
 
 class ScriptOutput : public WallBase {
  public:

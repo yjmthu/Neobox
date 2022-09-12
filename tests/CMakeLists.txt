@@ -26,3 +26,11 @@ target_link_libraries(http
 add_executable(tests
     src/test.cpp
 )
+
+add_executable(translates
+  src/translate.cpp
+)
+
+target_link_libraries(translates PUBLIC
+  translate
+)

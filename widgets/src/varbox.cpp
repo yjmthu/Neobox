@@ -29,7 +29,7 @@ VarBox::VarBox() {
 VarBox::~VarBox() {}
 
 YJson& VarBox::GetSettings(const char8_t* key) {
-  const char szFileName[] = "Settings.json";
+  static const char szFileName[] = "Settings.json";
   static std::unique_ptr<YJson> m_Settings;
   if (!m_Settings) {
     if (QFile::exists(szFileName)) {

@@ -5,8 +5,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <vector>
-#include <xstring>
-#include "wallpaper.h"
+#include <string>
 
 class Favorite : public WallBase {
  private:

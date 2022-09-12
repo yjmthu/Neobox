@@ -7,7 +7,18 @@
 #include <yjson.h>
 #include <ranges>
 
+extern void ShowMessage(const std::u8string& title,
+                        const std::u8string& text,
+                        int type = 0);
+
+inline bool IsBigDuan()
+{
+  const uint16_t s = 1;
+  return *reinterpret_cast<const uint8_t*>(&s);
+}
+
 static PIX* QImage2Pix(const QImage& qImage) {
+  static const bool bIsBigDuan = IsBigDuan();
   if (qImage.isNull())
     return nullptr;
   const int width = qImage.width(), height = qImage.height();
@@ -16,9 +27,16 @@ static PIX* QImage2Pix(const QImage& qImage) {
 
   if (qImage.colorCount()) {
     PIXCMAP* map = pixcmapCreate(8);
-    for (const auto& i : qImage.colorTable()) {
-      auto cols = reinterpret_cast<const uchar*>(&i);
-      pixcmapAddColor(map, cols[1], cols[2], cols[3]);
+    if (bIsBigDuan) {            // b g r a
+      for (const auto& i : qImage.colorTable()) {
+        auto cols = reinterpret_cast<const uchar*>(&i);
+        pixcmapAddColor(map, cols[2], cols[1], cols[0]);
+      }
+    } else {                     // a r g b
+      for (const auto& i : qImage.colorTable()) {
+        auto cols = reinterpret_cast<const uchar*>(&i);
+        pixcmapAddColor(map, cols[1], cols[2], cols[3]);
+      }
     }
     pixSetColormap(pix, map);
   }
@@ -40,10 +58,18 @@ static PIX* QImage2Pix(const QImage& qImage) {
       for (int i = 0; i < height; ++i) {
         auto lines = qImage.scanLine(i);
         l_uint32* lined = start + wpld * i;
-        for (int j = 0; j < width; ++j, lines += 4) {
-          l_uint32 pixel;
-          composeRGBPixel(lines[1], lines[2], lines[3], &pixel);
-          lined[j] = pixel;
+        if (bIsBigDuan) {
+          for (int j = 0; j < width; ++j, lines += 4) {
+            l_uint32 pixel;
+            composeRGBPixel(lines[2], lines[1], lines[0], &pixel);
+            lined[j] = pixel;
+          }
+        } else {
+          for (int j = 0; j < width; ++j, lines += 4) {
+            l_uint32 pixel;
+            composeRGBPixel(lines[1], lines[2], lines[3], &pixel);
+            lined[j] = pixel;
+          }
         }
       }
       break;
@@ -55,10 +81,11 @@ static PIX* QImage2Pix(const QImage& qImage) {
 }
 
 QString QImage2Text(const QImage& qImage) {
+  using namespace std::literals;
   QString result;
   char* outText;
 
-  auto& settings = VarBox::GetSettings(u8"Tools");
+  const auto& settings = VarBox::GetSettings(u8"Tools");
   std::string path = std::filesystem::path(
                          settings[u8"Ocr.TessdataDir"].second.getValueString())
                          .string();
@@ -78,7 +105,7 @@ QString QImage2Text(const QImage& qImage) {
 
   tesseract::TessBaseAPI* api = new tesseract::TessBaseAPI();
   if (api->Init(path.c_str(), languages.data())) {
-    fprintf(stderr, "Could not initialize tesseract.\n");
+    ShowMessage(u8"出错"s, u8"Could not initialize tesseract."s);
     return result;
   }
 

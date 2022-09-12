@@ -1,42 +1,48 @@
-QWidget#center{
-    background-color:#33333377;
-    border-radius:2px;
+QWidget#center {
+  background-color:#33333377;
+  border-radius:2px;
 }
 
-QLabel#memUse{
-    color:#00FFFF;
-    font-size:17pt;
-    font-family:Carattere;
-    font-weight:bold;
+QLabel#memUse {
+  width:26px;
+  color:#00FFFF;
+  font-size:17pt;
+  font-family:Carattere;
+  font-weight:bold;
+  padding-top:2px;
+  padding-left:1px;
 }
 
-QLabel#netUp{
-    color:#FAAA23;
-    font-family:Nickainley;
-    font-weight:bold;
+QLabel#netUp {
+  color:#FAAA23;
+  font-family:Nickainley;
+  font-weight:bold;
+  margin-left:1px;
 }
 
-QLabel#netDown{
-    color:#8CF01E;
-    font-family:Nickainley;
-    font-weight:bold;
+QLabel#netDown {
+  color:#8CF01E;
+  font-family:Nickainley;
+  font-weight:bold;
+  margin-left:1px;
 }
 
 QMenu {
   background-color: white;
-  padding: 5px;
-  border-radius: 3px;
+  padding:5px;
+  border-radius:3px;
 }
 
 QMenu::item {
   border-radius: 3px;
   font-size: 10pt;
   color: black;
-  font-family: "楷体";
+  font-family: "微软雅黑";
   padding: 4px 20px 4px 10px;
   margin: 2px 1px;
 }
 
-QMenu::item::selected{
+QMenu::item::selected {
   background-color: rgb(236, 236, 236);
 }
+

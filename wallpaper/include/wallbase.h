@@ -17,6 +17,7 @@ typedef std::shared_ptr<std::vector<std::u8string>> ImageInfoEx;
 
 class WallBase {
  protected:
+  bool m_InitOk = false;
   std::filesystem::path m_HomePicLocation;
   std::filesystem::path m_ImageDir;
   inline void InitBase() {

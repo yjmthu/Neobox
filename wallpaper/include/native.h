@@ -1,7 +1,8 @@
 ﻿#include <numeric>
 #include <set>
 
-#include "wallbase.h"
+#include <wallbase.h>
+#include <wallpaper.h>
 
 class Native : public WallBase {
  private:

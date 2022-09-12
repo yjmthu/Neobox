@@ -9,8 +9,7 @@ add_library(core STATIC
 )
 
 if(WIN32)
-    target_link_libraries(
-        core
+    target_link_libraries(core
         Iphlpapi
     )
 endif()
