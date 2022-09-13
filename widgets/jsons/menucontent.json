@@ -122,7 +122,7 @@
                 "type": "Normal",
                 "function": "ToolOcrDataPath"
               },
-              "系统热键": {
+              "翻译热键": {
                 "type": "Group",
                 "children": {
                   "热键名称": {
@@ -132,6 +132,19 @@
                   "注册热键": {
                     "type": "Checkable",
                     "function": "ToolTransRegistKey"
+                  }
+                }
+              },
+              "截屏热键": {
+                "type": "Group",
+                "children": {
+                  "热键名称": {
+                    "type": "Normal",
+                    "function": "ToolOcrShortcut"
+                  },
+                  "注册热键": {
+                    "type": "Checkable",
+                    "function": "ToolOcrRegistKey"
                   }
                 }
               }

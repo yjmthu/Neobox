@@ -6,9 +6,8 @@
 int main()
 {
   Translate tran;
-  tran.SetToLanguage(Translate::Lan::ZH_CN);
   SetConsoleOutputCP(65001);
-  auto res = tran.GetResult(u8"Hello");
+  auto res = tran.GetResult(u8"翻译结果");
   if (!res.empty()) {
     std::cout << res;
   } else {

@@ -35,7 +35,7 @@ class DirectApi : public WallBase {
     m_ApiUrl = u8"https://source.unsplash.com";
     m_ApiPath = u8"/random/2500x1600";
     m_ImageDir = m_HomePicLocation / u8"随机壁纸";
-    m_ImageNameFormat = u8"%F %T.jpg";
+    m_ImageNameFormat = u8"{0:%Y-%m-%d} {0:%H%M%S}.jpg";
     m_Setting = new YJson(YJson::O{
         {u8"ApiUrl"sv, u8"Unsplash"sv},
         {u8"ApiData"sv,
@@ -92,16 +92,12 @@ class DirectApi : public WallBase {
   std::u8string m_ApiPath;
   std::u8string m_ImageNameFormat;
   std::u8string GetImageName() {
-    auto t =
-        std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    std::ostringstream ss;
-    ss << std::put_time(std::localtime(&t), reinterpret_cast<const char*>(
-                                                m_ImageNameFormat.c_str()));
-    std::string&& str = ss.str();
-    for (auto& i : str)
-      if (i == ':')
-        i = '-';
-    return std::u8string(str.begin(), str.end());
+    using namespace std::chrono;
+    auto time = floor<seconds>(system_clock::now()); // Exactly in seconds.
+    std::string result = std::vformat(
+        std::string(m_ImageNameFormat.begin(), m_ImageNameFormat.end()),
+        std::make_format_args(time));
+    return std::u8string(result.begin(), result.end());
   }
   YJson* m_Setting;
   const char m_SettingPath[13]{"ApiFile.json"};

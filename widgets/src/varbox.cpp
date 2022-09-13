@@ -14,7 +14,7 @@
 void ShowMessage(const std::u8string& title,
                  const std::u8string& text,
                  int type = 0) {
-  QMessageBox::information(nullptr,
+  QMessageBox::information(VarBox::GetSpeedBox(),
                            QString::fromUtf8(title.data(), title.size()),
                            QString::fromUtf8(text.data(), text.size()));
 }
@@ -48,9 +48,8 @@ YJson& VarBox::GetSettings(const char8_t* key) {
 
 SpeedBox* VarBox::GetSpeedBox()
 {
-  static std::unique_ptr<SpeedBox> box;
-  if (!box) box = std::make_unique<SpeedBox>();
-  return box.get();
+  static SpeedBox* box = new SpeedBox;
+  return box;
 }
 
 void VarBox::WriteSettings() {

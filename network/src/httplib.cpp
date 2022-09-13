@@ -1,10 +1,10 @@
 #include <curl/curl.h>
 #include <curl/header.h>
+
 #include <httplib.h>
 #include <filesystem>
 #include <fstream>
-#include <ios>
-#include <xstring>
+#include <string>
 
 namespace HttpLib {
 
@@ -24,7 +24,7 @@ static size_t WriteString(void* buffer,
   const char8_t *first = reinterpret_cast<const char8_t*>(buffer),
                 *last = first + (size *= nmemb);
   std::u8string& str = *reinterpret_cast<std::u8string*>(userdata);
-  str.insert(str.end(), first, last);
+  str.append(first, last);
   return size;
 }
 

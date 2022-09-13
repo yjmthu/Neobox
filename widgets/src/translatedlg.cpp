@@ -14,9 +14,14 @@
 
 TranslateDlg::TranslateDlg(QWidget* parent)
     : QWidget(parent, Qt::WindowStaysOnTopHint | Qt::Tool),
-      m_TextFrom(new QPlainTextEdit),
-      m_TextTo(new QPlainTextEdit),
-      m_Translate(new Translate)
+      m_TextFrom(new QPlainTextEdit(this)),
+      m_TextTo(new QPlainTextEdit(this)),
+      m_BoxFrom(new QComboBox(this)),
+      m_BoxTo(new QComboBox(this)),
+      m_Translate(new Translate),
+      m_BtnCopyFrom(new QPushButton(m_TextFrom)),
+      m_BtnCopyTo(new QPushButton(m_TextTo)),
+      m_BtnTransMode(new QPushButton(this))
 {
   setWindowTitle(QStringLiteral("极简翻译"));
   QVBoxLayout* pvLayout = new QVBoxLayout(this);
@@ -29,10 +34,25 @@ TranslateDlg::TranslateDlg(QWidget* parent)
   pvLayout->addLayout(phLayout);
   connect(pButtonGet, &QPushButton::clicked, this, std::bind(&TranslateDlg::GetResultData, this));
 
+  m_BtnCopyFrom->setText(QStringLiteral("复制"));
+  m_BtnCopyTo->setText(QStringLiteral("复制"));
+  connect(m_BtnCopyFrom, &QPushButton::clicked, this, [this](){
+    QClipboard *clip = QApplication::clipboard();
+    clip->setText(m_TextFrom->toPlainText());
+    m_BtnCopyFrom->setText(QStringLiteral("成功"));
+  });
+  connect(m_BtnCopyTo, &QPushButton::clicked, this, [this](){
+    QClipboard *clip = QApplication::clipboard();
+    clip->setText(m_TextTo->toPlainText());
+    m_BtnCopyTo->setText(QStringLiteral("成功"));
+  });
+  m_BtnCopyFrom->setObjectName("copyTextFrom");
+  m_BtnCopyTo->setObjectName("copyTextTo");
+  m_BtnCopyFrom->setCursor(Qt::PointingHandCursor);
+  m_BtnCopyTo->setCursor(Qt::PointingHandCursor);
+
   m_TextFrom->installEventFilter(this);
   m_TextTo->installEventFilter(this);
-  // QClipboard *clip = QApplication::clipboard();
-  // clip->setText(m_TextTo->toPlainText());
 }
 
 TranslateDlg::~TranslateDlg() {
@@ -57,13 +77,18 @@ void TranslateDlg::showEvent(QShowEvent *)
   }
   move(x, y);
 
+  m_BtnCopyFrom->move(m_TextFrom->width() - m_BtnCopyFrom->width() - 4, 4);
+  m_BtnCopyTo->move(m_TextTo->width() - m_BtnCopyTo->width() - 4, 4);
+  m_BtnCopyFrom->hide();
+  m_BtnCopyTo->hide();
+
   m_TextFrom->setFocus();
 }
 
 
 bool TranslateDlg::eventFilter(QObject *target, QEvent *event)
 {
-  static bool bShiftDown = false;
+  static bool bShiftDown = false, bCtrlDown = false;
   if (target == m_TextFrom || target == m_TextTo)
   {
     if (event->type() == QEvent::KeyPress)
@@ -80,7 +105,8 @@ bool TranslateDlg::eventFilter(QObject *target, QEvent *event)
             QChar c = m_TextFrom->document()->findBlockByLineNumber(pCursor.blockNumber()).text().back();
             if (c == QChar(' ')) {
               pCursor.deletePreviousChar();
-              pCursor.insertHtml("<br/>");
+              pCursor.insertBlock();
+              // pCursor.insertHtml("<br/>");
               m_TextFrom->setTextCursor(pCursor);
               return true;
             }
@@ -88,44 +114,22 @@ bool TranslateDlg::eventFilter(QObject *target, QEvent *event)
           GetResultData();
           return true;
         }
-        case Qt::Key_AltGr:
-          if (bShiftDown) {
-            int i = m_BoxFrom->currentIndex();
-            if (i == 0) {
-              i = static_cast<int>(Translate::Lan::MAX) - 1;
-            } else {
-              --i;
-            }
-            m_Translate->SetFromLanguage(static_cast<Translate::Lan>(i));
-            m_BoxFrom->setCurrentIndex(i);
-          } else {
-            int i = m_BoxFrom->currentIndex();
-            if (++i == static_cast<int>(Translate::Lan::MAX)) {
-              i = 0;
-            }
-            m_Translate->SetFromLanguage(static_cast<Translate::Lan>(i));
-            m_BoxFrom->setCurrentIndex(i);
-          }
-          return true;
         case Qt::Key_Alt:
-          if (bShiftDown) {
-            int i = m_BoxTo->currentIndex() + 1;
-            if (--i == 0) {
-              i = static_cast<int>(Translate::Lan::MAX) - 1;
-            }
-            m_Translate->SetToLanguage(static_cast<Translate::Lan>(i));
-            m_BoxTo->setCurrentIndex(i - 1);
+          if (int i = m_BoxTo->currentIndex(); bShiftDown) {
+            m_BoxTo->setCurrentIndex(i == 0 ? m_BoxTo->count() - 1: --i);
           } else {
-            int i = m_BoxTo->currentIndex() + 1;
-            if (++i == static_cast<int>(Translate::Lan::MAX)) {
-              i = 1;
-            }
-            m_Translate->SetToLanguage(static_cast<Translate::Lan>(i));
-            m_BoxTo->setCurrentIndex(i - 1);
+            m_BoxTo->setCurrentIndex(++i == m_BoxTo->count() ? 0 : i);
           }
           return true;
         case Qt::Key_Shift:
           bShiftDown = true;
+          return true;
+        case Qt::Key_Control:
+          bCtrlDown = true;
+          return true;
+        case Qt::Key_M:
+          if (bCtrlDown)
+            m_BtnTransMode->setChecked(!m_BtnTransMode->isChecked());
           return true;
         default:
           break;
@@ -135,6 +139,23 @@ bool TranslateDlg::eventFilter(QObject *target, QEvent *event)
       if (keyEvent->key() == Qt::Key_Shift) {
         bShiftDown = false;
         return true;
+      } else if (keyEvent->key() == Qt::Key_Control) {
+        bCtrlDown = false;
+        return true;
+      }
+    } else if (event->type() == QEvent::Enter) {
+      if (target == m_TextFrom) {
+        m_BtnCopyFrom->show();
+      } else {
+        m_BtnCopyTo->show();
+      }
+    } else if (event->type() == QEvent::Leave) {
+      if (target == m_TextFrom) {
+        m_BtnCopyFrom->hide();
+        m_BtnCopyFrom->setText(QStringLiteral("复制"));
+      } else {
+        m_BtnCopyTo->hide();
+        m_BtnCopyTo->setText(QStringLiteral("复制"));
       }
     }
   }
@@ -150,35 +171,84 @@ void TranslateDlg::Show(QRect rect, const QString& text) {
 }
 
 void TranslateDlg::GetResultData() {
+  m_Translate->m_LanPair = { m_BoxFrom->currentIndex(), m_BoxTo->currentIndex() };
   QByteArray array = m_TextFrom->toPlainText().toUtf8();
   auto result = m_Translate->GetResult(std::u8string(array.begin(), array.end()));
-  m_TextTo->setPlainText(QString::fromUtf8(result.data(), result.size()));
+  m_TextTo->clear();
+  if (m_Translate->IsUsingBaidu())
+    m_TextTo->appendPlainText(QString::fromUtf8(result.data(), result.size()));
+  else
+    m_TextTo->appendHtml(QString::fromUtf8(result.data(), result.size()));
+}
+
+void TranslateDlg::ChangeLanguage(int from)
+{
+  static auto lastDict = (Translate::Dict)-1;
+  auto curDict = m_Translate->GetDict();
+  m_BoxTo->clear();
+
+  disconnect(m_BoxFrom, &QComboBox::currentIndexChanged, 0, 0);
+
+  if (curDict == Translate::Dict::Baidu) {
+    auto& vec = m_Translate->m_LanNamesBaidu[from].second;
+    if (curDict != lastDict) {
+      if (m_BoxFrom->count()) m_BoxFrom->clear();
+      for (auto& [i, j]: m_Translate->m_LanNamesBaidu) {
+        const auto& name = m_Translate->m_LanMap[i];
+        const QString&& qsName = QString::fromUtf8(name.data(), name.size());
+        m_BoxFrom->addItem(qsName);
+      }
+    }
+    for (auto& i: vec) {
+      const auto& name = m_Translate->m_LanMap[i];
+      m_BoxTo->addItem(QString::fromUtf8(name.data(), name.size()));
+    }
+  } else if (curDict == Translate::Dict::Youdao) {
+    auto& vec = m_Translate->m_LanNamesYoudao[from].second;
+    if (curDict != lastDict) {
+      if (m_BoxFrom->count()) m_BoxFrom->clear();
+      for (auto& [i, j]: m_Translate->m_LanNamesYoudao) {
+        const auto& name = m_Translate->m_LanMap[i];
+        const QString&& qsName = QString::fromUtf8(name.data(), name.size());
+        m_BoxFrom->addItem(qsName);
+      }
+    }
+    for (auto& i: vec) {
+      const auto& name = m_Translate->m_LanMap[i];
+      m_BoxTo->addItem(QString::fromUtf8(name.data(), name.size()));
+    }
+  }
+
+  connect(m_BoxFrom, &QComboBox::currentIndexChanged, this,
+      std::bind(&TranslateDlg::ChangeLanguage, this, std::placeholders::_1));
+
+  m_Translate->m_LanPair.second = 0;
+  lastDict = curDict;
 }
 
 void TranslateDlg::AddCombbox(QHBoxLayout* layout)
 {
 
-  m_BoxFrom = new QComboBox(this);
-  QStringList lstFrom = { "自动检测", "中文简体", "中文繁体", "英语", "日语", "法语", "俄语" };
-  m_BoxFrom->addItems(lstFrom);
   layout->addWidget(m_BoxFrom);
-
-  m_BoxFrom->setCurrentIndex(static_cast<int>(m_Translate->GetCurFromLanguage()));
-  connect(m_BoxFrom, &QComboBox::currentIndexChanged, this, [this](int index){
-    m_Translate->SetFromLanguage(static_cast<Translate::Lan>(index));
-  });
-
   QLabel *lable = new QLabel(this);
   lable->setText(QStringLiteral("→"));
   layout->addWidget(lable);
-
-  m_BoxTo = new QComboBox(this);
-  QStringList lstTo = { "中文简体", "中文繁体", "英语", "日语", "法语", "俄语" };
-  m_BoxTo->addItems(lstTo);
   layout->addWidget(m_BoxTo);
 
-  m_BoxTo->setCurrentIndex(static_cast<int>(m_Translate->GetCurToLanguage()) - 1);
-  connect(m_BoxTo, &QComboBox::currentIndexChanged, this, [this](int index){
-    m_Translate->SetToLanguage(static_cast<Translate::Lan>(index + 1));
+  m_BtnTransMode->setObjectName(QStringLiteral("btnTransMode"));
+  m_BtnTransMode->setCheckable(true);
+  m_BtnTransMode->setText(QStringLiteral("查词"));
+  layout->addWidget(m_BtnTransMode);
+
+  connect(m_BtnTransMode, &QPushButton::toggled, this, [this](bool checked){
+    if (checked) m_Translate->SetDict(Translate::Dict::Youdao);
+    else m_Translate->SetDict(Translate::Dict::Baidu);
+    ChangeLanguage();
   });
+
+  connect(m_BoxTo, &QComboBox::currentIndexChanged, this, [this](int index){
+    m_Translate->m_LanPair.second = index;
+  });
+
+  ChangeLanguage();
 }

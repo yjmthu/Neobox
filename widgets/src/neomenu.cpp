@@ -122,7 +122,13 @@ void NeoMenu::InitFunctionMap() {
           }
         }
       },
-      {u8"ToolTransShowDlg", [this](){m_TranslateDlg->Show(qobject_cast<const QWidget*>(parent())->frameGeometry());}},
+      {u8"ToolTransShowDlg", [this](){
+        if (m_TranslateDlg->isVisible()) {
+          m_TranslateDlg->hide();
+        } else {
+          m_TranslateDlg->Show(qobject_cast<const QWidget*>(parent())->frameGeometry());
+        }
+      }},
       {u8"WallpaperPrev", std::bind(&Wallpaper::SetSlot, m_Wallpaper, -1)},
       {u8"WallpaperNext", std::bind(&Wallpaper::SetSlot, m_Wallpaper, 1)},
       {u8"WallpaperDislike", std::bind(&Wallpaper::SetSlot, m_Wallpaper, 0)},
@@ -247,13 +253,7 @@ void NeoMenu::InitFunctionMap() {
           std::u8string& shortcut = settings[u8"Translate.Shortcut"].second.getValueString();
           QString qsShortcut = QString::fromUtf8(shortcut.data(), shortcut.size());
           if (checked) {
-            m_Shortcut->RegistHotKey(qsShortcut, [this](){
-              if (m_TranslateDlg->isVisible()) {
-                m_TranslateDlg->hide();
-              } else {
-                m_TranslateDlg->Show(qobject_cast<QWidget*>(parent())->frameGeometry());
-              }
-            });
+            m_Shortcut->RegistHotKey(qsShortcut, m_FuncNormalMap[u8"ToolTransShowDlg"]);
           } else {
             m_Shortcut->UnregistHotKey(qsShortcut);
           }
@@ -266,13 +266,31 @@ void NeoMenu::InitFunctionMap() {
           std::u8string& shortcut = settings[u8"Translate.Shortcut"].second.getValueString();
           QString qsShortcut = QString::fromUtf8(shortcut.data(), shortcut.size());
           if (regist && !m_Shortcut->IsKeyRegisted(qsShortcut)) {
-            m_Shortcut->RegistHotKey(qsShortcut, [this](){
-              if (m_TranslateDlg->isVisible()) {
-                m_TranslateDlg->hide();
-              } else {
-                m_TranslateDlg->Show(qobject_cast<QWidget*>(parent())->frameGeometry());
-              }
-            });
+            m_Shortcut->RegistHotKey(qsShortcut, m_FuncNormalMap[u8"ToolTransShowDlg"]);
+          }
+          return regist;
+        }}
+      },
+      {u8"ToolOcrRegistKey", {
+        [this](bool checked){
+          auto& settings = VarBox::GetSettings(u8"Tools");
+          std::u8string& shortcut = settings[u8"Ocr.Shortcut"].second.getValueString();
+          QString qsShortcut = QString::fromUtf8(shortcut.data(), shortcut.size());
+          if (checked) {
+            m_Shortcut->RegistHotKey(qsShortcut, m_FuncNormalMap[u8"ToolOcrGetScreen"]);
+          } else {
+            m_Shortcut->UnregistHotKey(qsShortcut);
+          }
+          settings[u8"Ocr.RegisterHotKey"].second = checked;
+          VarBox::WriteSettings();
+        },
+        [this]()->bool{
+          auto& settings = VarBox::GetSettings(u8"Tools");
+          bool regist = settings[u8"Ocr.RegisterHotKey"].second.isTrue();
+          std::u8string& shortcut = settings[u8"Ocr.Shortcut"].second.getValueString();
+          QString qsShortcut = QString::fromUtf8(shortcut.data(), shortcut.size());
+          if (regist && !m_Shortcut->IsKeyRegisted(qsShortcut)) {
+            m_Shortcut->RegistHotKey(qsShortcut, m_FuncNormalMap[u8"ToolOcrGetScreen"]);
           }
           return regist;
         }}

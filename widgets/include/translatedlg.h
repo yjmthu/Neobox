@@ -17,7 +17,10 @@ class TranslateDlg : public QWidget {
   class QPlainTextEdit *m_TextFrom, *m_TextTo;
   class QComboBox *m_BoxFrom, *m_BoxTo;
   class Translate* m_Translate;
+  class QPushButton* m_BtnCopyFrom, *m_BtnCopyTo;
+  QPushButton *m_BtnTransMode;
   void AddCombbox(class QHBoxLayout* layout);
+  void ChangeLanguage(int from = 0);
   QRect m_FormRect;
 };
 

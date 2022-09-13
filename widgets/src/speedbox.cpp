@@ -69,7 +69,8 @@ void SpeedBox::Show() {
 }
 
 void SpeedBox::SetWindowMode() {
-  setAttribute(Qt::WA_TranslucentBackground);
+  setAttribute(Qt::WA_TranslucentBackground, true);
+  setAttribute(Qt::WA_DeleteOnClose, true);
   setAcceptDrops(true);
   setMinimumSize(100, 40);
   setMaximumSize(100, 40);

@@ -8,7 +8,7 @@ class BingApi : public WallBase {
   explicit BingApi(const std::filesystem::path& picHome)
       : WallBase(picHome),
         m_Mft(u8"zh-CN"),
-        m_ImageNameFormat(u8"%Y%m%d %s.jpg"),
+        m_ImageNameFormat(u8"{0:%Y-%m-%d} {1}.jpg"),
         m_ApiUrl(u8"https://global.bing.com"),
         m_Setting(nullptr),
         m_CurImageIndex(0) {
@@ -21,7 +21,7 @@ class BingApi : public WallBase {
         std::filesystem::file_size(m_SettingPath)) {
       m_Setting = new YJson(m_SettingPath, YJson::UTF8);
       if (m_Setting->find(u8"today")->second.getValueString() ==
-          GetToday("%Y%m%d")) {
+          GetToday()) {
         m_ImageDir = m_Setting->find(u8"imgdir")->second.getValueString();
         m_ImageNameFormat =
             m_Setting->find(u8"imgfmt")->second.getValueString();
@@ -50,7 +50,7 @@ class BingApi : public WallBase {
       return false;
 
     m_Setting = new YJson(body.begin(), body.end());
-    m_Setting->append(GetToday("%Y%m%d"), u8"today");
+    m_Setting->append(GetToday(), u8"today");
     m_Setting->append(m_ImageDir, u8"imgdir");
     m_Setting->append(m_ImageNameFormat, u8"imgfmt");
     m_Setting->append(m_Mft, u8"mkt");
@@ -106,28 +106,21 @@ class BingApi : public WallBase {
   const char m_SettingPath[13]{"BingApi.json"};
   YJson* m_Setting;
   unsigned m_CurImageIndex;
-  std::u8string GetToday(const char* fmt) {
-    auto t =
-        std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    std::stringstream ss;
-    ss << std::put_time(std::localtime(&t), fmt);
-    std::string temp(ss.str());
-    return std::u8string(temp.begin(), temp.end());
+  std::u8string GetToday() {
+    std::string result = std::format("{0:%Y-%m-%d}", std::chrono::system_clock::now());
+    return std::u8string(result.begin(), result.end());
   }
   std::u8string GetImageName(YJson& imgInfo) {
-    std::u8string str(m_ImageNameFormat.begin(), m_ImageNameFormat.end());
-    auto pos = str.find(u8"%s");
-    if (pos != std::string::npos) {
-      std::u8string temp = imgInfo.find(u8"copyright")->second.getValueString();
-      temp.erase(temp.find(u8" (© "));
-      str.replace(pos, 2, temp);
-    }
-    auto t = std::chrono::system_clock::to_time_t(
-        std::chrono::system_clock::now() -
-        std::chrono::hours(24 * m_CurImageIndex));
-    std::stringstream ss;
-    ss << std::put_time(std::localtime(&t), (const char*)str.c_str());
-    std::string temp(ss.str());
-    return std::u8string(temp.begin(), temp.end());
+    std::string fmt(m_ImageNameFormat.begin(), m_ImageNameFormat.end());
+    std::u8string_view copyright = imgInfo.find(u8"copyright")->second.getValueString();
+    std::string temp(copyright.begin(), copyright.end());
+    temp.erase(temp.find(" (© "));
+    std::string result = std::vformat(
+        fmt, 
+        std::make_format_args(
+          std::chrono::system_clock::now() - std::chrono::days(m_CurImageIndex),
+          temp)
+    );
+    return std::u8string(result.begin(), result.end());
   }
 };

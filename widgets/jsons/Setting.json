@@ -16,6 +16,8 @@
   "Tools": {
     "Translate.RegisterHotKey": true,
     "Translate.Shortcut": "Shift+Z",
+    "Ocr.RegisterHotKey": true,
+    "Ocr.Shortcut": "Shift+A",
     "Ocr.TessdataDir": "tessdata",
     "Ocr.Languages": ["chi_sim", "eng"]
   },
