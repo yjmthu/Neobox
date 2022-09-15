@@ -38,7 +38,7 @@ class BingApi : public WallBase {
     return false;
   }
   virtual bool WriteDefaultSetting() override {
-    if (!Wallpaper::IsOnline()) return false;
+    if (!HttpLib::IsOnline()) return false;
     // https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8
 
     std::u8string path(u8"/HPImageArchive.aspx?format=js&idx=0&n=8&mkt=");
@@ -65,7 +65,7 @@ class BingApi : public WallBase {
 
     ImageInfoEx ptr(new std::vector<std::u8string>);
     if (!m_InitOk) {
-      if (!Wallpaper::IsOnline())
+      if (!HttpLib::IsOnline())
         return ptr;
       else
         WriteDefaultSetting();

@@ -1,12 +1,44 @@
 #include <curl/curl.h>
 #include <curl/header.h>
 
+#ifdef _WIN32
+#include <Shlobj.h>
+#include <wininet.h>
+#endif  // _WIN32
+
 #include <httplib.h>
 #include <filesystem>
 #include <fstream>
 #include <string>
 
 namespace HttpLib {
+
+
+bool IsOnline() {
+#ifdef _WIN32
+  DWORD flags;
+  return InternetGetConnectedState(&flags, 0);
+#elif 0
+  std::vector<std::string> result;
+  GetCmdOutput<char>("ping www.baidu.com -c 2", result);
+  if (result.size() < 2)
+    return false;
+  auto& data = result.end()[-2];
+  auto first = data.find("received");
+  if (first == std::string::npos)
+    return false;
+  first += 10;
+  auto last = data.find("%", first);
+  auto&& lostPacket = data.substr(first, last - first);
+  std::cout << data << std::endl << "lostPacket: " << lostPacket << std::endl;
+  return !std::atoi(lostPacket.c_str());
+#else
+  httplib::Client clt("https://www.baidu.com");
+  auto res = clt.Get("/");
+  return res && res->status == 200;
+#endif
+}
+
 
 static size_t WriteFile(void* buffer,
                         size_t size,

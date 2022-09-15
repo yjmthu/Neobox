@@ -128,9 +128,10 @@ bool TranslateDlg::eventFilter(QObject *target, QEvent *event)
           bCtrlDown = true;
           return true;
         case Qt::Key_M:
-          if (bCtrlDown)
+          if (bCtrlDown) {
             m_BtnTransMode->setChecked(!m_BtnTransMode->isChecked());
-          return true;
+            return true;
+          }
         default:
           break;
       }

@@ -9,7 +9,6 @@
 
 #ifdef _WIN32
 #include <Shlobj.h>
-#include <wininet.h>
 #endif  // _WIN32
 
 extern std::unordered_set<std::filesystem::path> m_UsingFiles;
@@ -46,7 +45,7 @@ bool Wallpaper::DownloadImage(const ImageInfoEx imageInfo) {
     return false;
   }
 
-  if (!IsOnline()) return false;
+  if (!HttpLib::IsOnline()) return false;
   m_UsingFiles.emplace(m_sFilePath);
   int res = HttpLib::Gets(imageInfo->at(1), m_sFilePath);
   if (res == 200) {
@@ -127,31 +126,6 @@ bool Wallpaper::SetWallpaper(const std::filesystem::path& imagePath) {
   sstr << imagePath;
   std::string m_sCmd = sstr.str();
   return system(m_sCmd.c_str()) == 0;
-#endif
-}
-
-bool Wallpaper::IsOnline() {
-#ifdef _WIN32
-  DWORD flags;
-  return InternetGetConnectedState(&flags, 0);
-#elif 0
-  std::vector<std::string> result;
-  GetCmdOutput<char>("ping www.baidu.com -c 2", result);
-  if (result.size() < 2)
-    return false;
-  auto& data = result.end()[-2];
-  auto first = data.find("received");
-  if (first == std::string::npos)
-    return false;
-  first += 10;
-  auto last = data.find("%", first);
-  auto&& lostPacket = data.substr(first, last - first);
-  std::cout << data << std::endl << "lostPacket: " << lostPacket << std::endl;
-  return !std::atoi(lostPacket.c_str());
-#else
-  httplib::Client clt("https://www.baidu.com");
-  auto res = clt.Get("/");
-  return res && res->status == 200;
 #endif
 }
 
@@ -470,11 +444,11 @@ bool Wallpaper::SetImageType(int index) {
     return true;
   std::thread([this]() {
     for (int i = 0; i < 60; ++i) {
-      if (Wallpaper::IsOnline())
+      if (HttpLib::IsOnline())
         break;
       std::this_thread::sleep_for(std::chrono::seconds(1));
     }
-    if (!Wallpaper::IsOnline())
+    if (!HttpLib::IsOnline())
       return;
 
     std::unique_ptr<WallBase> ptr(

@@ -41,7 +41,7 @@ class Wallhaven : public WallBase {
     ImageInfoEx ptr(new std::vector<std::u8string>);
 
     if (m_NeedDownUrl) {
-      if (!Wallpaper::IsOnline()) return ptr;
+      if (!HttpLib::IsOnline()) return ptr;
       size_t t = DownloadUrl();
       m_NeedDownUrl = false;
       if (!t)

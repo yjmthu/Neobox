@@ -15,8 +15,11 @@ Makefile
 build
 build-rel
 build-dbg
+install
 out
 3rdlib/YJson
+compile_commands.json
 .vscode
 .cache
 .vs
+.xmake

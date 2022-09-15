@@ -5,6 +5,8 @@
 #include <xstring>
 
 namespace HttpLib {
+bool IsOnline();
+
 long Get(const char* url, std::u8string& data);
 inline long Get(const std::u8string& url, std::u8string& data) {
   return Get(reinterpret_cast<const char*>(url.c_str()), data);

@@ -33,7 +33,6 @@ class Wallpaper {
   static bool SetWallpaper(const std::filesystem::path& imagePath);
   static bool IsImageFile(const std::filesystem::path& fileName);
   static bool IsWorking();
-  static bool IsOnline();
   bool UndoDelete();
   bool ClearJunk();
   bool SetFavorite();
