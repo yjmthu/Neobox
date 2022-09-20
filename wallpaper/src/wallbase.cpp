@@ -14,11 +14,12 @@ std::atomic_bool WallBase::m_IsWorking = false;
 WallBase* WallBase::GetNewInstance(const std::filesystem::path& picHome,
                                    int type) {
   static WallBase* pFavorite = new Favorite(picHome);
+  static WallBase* pBingApi = new BingApi(picHome);
   switch (type) {
     case WALLHAVEN:
       return new Wallhaven(picHome);
     case BINGAPI:
-      return new BingApi(picHome);
+      return pBingApi;
     case DIRECTAPI:
       return new DirectApi(picHome);
     case NATIVE:

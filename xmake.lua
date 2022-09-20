@@ -1,4 +1,4 @@
-set_languages("cxxlatest")
+set_languages("c++20")
 
 if is_plat("windows") then
   add_defines("UNICODE", "_UNICODE")

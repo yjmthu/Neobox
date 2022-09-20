@@ -74,6 +74,7 @@ class Wallpaper {
 
   class Timer* m_Timer;
   class WallBase* m_Favorites;
+  class WallBase* m_BingWallpaper;
   std::queue<class WallBase*> m_Jobs;
   std::deque<std::filesystem::path> m_PrevImgs;
   std::stack<std::filesystem::path> m_NextImgs;

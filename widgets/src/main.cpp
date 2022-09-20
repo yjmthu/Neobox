@@ -1,11 +1,11 @@
 #include <QApplication>
 #include <QProcess>
 
+#include <appcode.hpp>
 #include <speedbox.h>
 #include <varbox.h>
-#include <appcode.hpp>
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
   a.setQuitOnLastWindowClosed(false);
   VarBox var;
@@ -15,3 +15,4 @@ int main(int argc, char* argv[]) {
   }
   return 0;
 }
+

@@ -339,6 +339,7 @@ void NeoMenu::GetMenuContent(QMenu* parent, const YJson& data) {
       connect(action, &QAction::triggered, this, function);
     } else if (type == u8"Group") {
       QMenu* menu = new QMenu(parent);
+      menu->setAttribute(Qt::WA_TranslucentBackground, true);
       action->setMenu(menu);
       GetMenuContent(menu, j[u8"children"].second);
     } else if (type == u8"Checkable") {
@@ -351,6 +352,7 @@ void NeoMenu::GetMenuContent(QMenu* parent, const YJson& data) {
       const auto& function =
           m_FuncItemCheckMap[j[u8"function"].second.getValueString()].second;
       QMenu* menu = new QMenu(parent);
+      menu->setAttribute(Qt::WA_TranslucentBackground, true);
       action->setMenu(menu);
       const auto& children = j[u8"children"].second;
       GetMenuContent(menu, children);
@@ -382,6 +384,7 @@ void NeoMenu::GetMenuContent(QMenu* parent, const YJson& data) {
               std::bind(function, j[u8"index"].second.getValueInt()));
     } else if (type == u8"VarGroup") {
       QMenu* menu = new QMenu(parent);
+      menu->setAttribute(Qt::WA_TranslucentBackground, true);
       action->setMenu(menu);
       m_ExMenus[j[u8"name"].second.getValueString()] = menu;
     }
@@ -406,6 +409,7 @@ void NeoMenu::LoadWallpaperExmenu() {
             jsExInfo->find(u8"WallhavenCurrent")->second.getValueString());
         group->addAction(action);
         QMenu* pSonMenu = new QMenu(pMainMenu);
+        pSonMenu->setAttribute(Qt::WA_TranslucentBackground, true);
         action->setMenu(pSonMenu);
         temp =
             pSonMenu->addAction(action->isChecked() ? "刷新此项" : "启用此项");

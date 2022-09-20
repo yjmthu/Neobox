@@ -13,7 +13,6 @@
 
 namespace HttpLib {
 
-
 bool IsOnline() {
 #ifdef _WIN32
   DWORD flags;

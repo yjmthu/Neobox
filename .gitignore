@@ -19,6 +19,7 @@ install
 out
 3rdlib/YJson
 compile_commands.json
+.clangd
 .vscode
 .cache
 .vs

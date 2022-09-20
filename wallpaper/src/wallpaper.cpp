@@ -135,7 +135,9 @@ Wallpaper::Wallpaper(YJson* settings, void (*callback)(void))
       m_Settings(settings),
       m_SettingsCallback(callback),
       m_Timer(new Timer),
-      m_Favorites(WallBase::GetNewInstance(m_PicHomeDir, WallBase::FAVORITE)) {
+      m_Favorites(WallBase::GetNewInstance(m_PicHomeDir, WallBase::FAVORITE)),
+      m_BingWallpaper(WallBase::GetNewInstance(m_PicHomeDir, WallBase::BINGAPI))
+{
   ReadSettings();
   SetImageType(GetImageType());
   SetTimeInterval(GetTimeInterval());
@@ -147,6 +149,8 @@ Wallpaper::~Wallpaper() {
   delete m_Wallpaper;
   if (m_Wallpaper != m_Favorites)
     delete m_Favorites;
+  if (m_Wallpaper != m_BingWallpaper)
+    delete m_BingWallpaper;
   while (!m_Jobs.empty()) {
     delete m_Jobs.front();
     m_Jobs.pop();
@@ -433,7 +437,9 @@ bool Wallpaper::SetImageType(int index) {
     m_SettingsCallback();
   }
 
-  if (WallBase::m_IsWorking && index != WallBase::FAVORITE) {
+  if (WallBase::m_IsWorking
+      && index != WallBase::FAVORITE
+      && index != WallBase::BINGAPI) {
     m_Jobs.push(m_Wallpaper);
     m_Wallpaper = nullptr;
   } else {
@@ -443,22 +449,24 @@ bool Wallpaper::SetImageType(int index) {
   if (index == WallBase::BINGAPI)
     return true;
   std::thread([this]() {
+    using namespace std::literals;
     for (int i = 0; i < 60; ++i) {
-      if (HttpLib::IsOnline())
-        break;
-      std::this_thread::sleep_for(std::chrono::seconds(1));
+      std::this_thread::sleep_for(1min);
     }
-    if (!HttpLib::IsOnline())
+    if (!HttpLib::IsOnline() || WallBase::m_IsWorking)
       return;
 
+    WallBase::m_IsWorking = true;
     std::unique_ptr<WallBase> ptr(
         WallBase::GetNewInstance(m_PicHomeDir, WallBase::BINGAPI));
     if (!ptr->GetJson()->find(u8"auto-download")->second.isTrue()) {
+      WallBase::m_IsWorking = false;
       return;
     }
     for (int i = 0; i < 7; ++i) {
       Wallpaper::DownloadImage(ptr->GetNext());
     }
+    WallBase::m_IsWorking = false;
   }).detach();
   return true;
 }
