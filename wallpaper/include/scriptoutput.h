@@ -18,6 +18,13 @@ class ScriptOutput : public WallBase {
                    std::views::transform(
                        [](const YJson& item) { return item.getValueString(); });
       m_ArgList.assign(range.begin(), range.end());
+      if (auto iter = m_Setting->find(u8"imgdir"); iter != m_Setting->endO()) {
+        m_ImageDir = iter->second.getValueString();
+      } else {
+        m_ImageDir = m_HomePicLocation / L"脚本获取";
+        m_Setting->getObject().emplace_back(u8"imgdir"s, m_ImageDir.u8string());
+        m_Setting->toFile(m_SettingPath);
+      }
       return true;
     }
     return false;
@@ -25,10 +32,12 @@ class ScriptOutput : public WallBase {
   bool WriteDefaultSetting() override {
     m_Setting = new YJson(YJson::Object);
     m_Setting->append(m_Command, u8"executeable"s);
+    m_ImageDir = m_HomePicLocation / L"脚本获取";
     auto item = m_Setting->append(YJson::Array, u8"arglist"s);
     for (auto& i: m_ArgList) {
       item->second.append(i);
     }
+    m_Setting->getObject().emplace_back(u8"imgdir"s, m_ImageDir.u8string());
     m_Setting->toFile(m_SettingPath);
     return true;
   }
@@ -71,6 +80,12 @@ class ScriptOutput : public WallBase {
 
   YJson* GetJson() override {
     return m_Setting;
+  }
+
+  void SetCurDir(const std::u8string &sImgDir) override {
+    m_ImageDir = sImgDir;
+    m_Setting->find(u8"imgdir")->second = sImgDir;
+    m_Setting->toFile(m_SettingPath);
   }
 
   void SetJson(bool update) override {

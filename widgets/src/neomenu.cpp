@@ -123,6 +123,26 @@ void NeoMenu::InitFunctionMap() {
              qobject_cast<const QWidget*>(parent())->frameGeometry(),
              QImage2Text(image));
        }},
+      {u8"ToolOcrShortcut",
+        [this](){
+          auto& settings = VarBox::GetSettings(u8"Tools");
+          auto& shortcut = settings[u8"Ocr.Shortcut"].second.getValueString();
+          auto& regist = settings[u8"Ocr.RegisterHotKey"].second;
+          const QString qsShortcut =
+              QString::fromUtf8(shortcut.data(), shortcut.size());
+          const QString qsNewShortcut = QInputDialog::getText(this, QStringLiteral("文字输入"), QStringLiteral("请输入热键组合"), QLineEdit::Normal, qsShortcut);
+          if (qsNewShortcut.isEmpty() || qsNewShortcut == qsShortcut)
+            return;
+          const QByteArray&& array = qsNewShortcut.toUtf8();
+          if (regist.isTrue()) {
+            m_Shortcut->UnregistHotKey(qsShortcut);
+            regist = false;
+            m_CheckableActions[u8"ToolOcrRegistKey"]->setChecked(false);
+          }
+          shortcut.assign(array.begin(), array.end());
+          VarBox::WriteSettings();
+        }
+      },
       {u8"ToolOcrDataPath",
        [this]() {
          std::u8string& u8Path =
@@ -150,6 +170,26 @@ void NeoMenu::InitFunctionMap() {
                qobject_cast<const QWidget*>(parent())->frameGeometry());
          }
        }},
+      {u8"ToolTransShortcut",
+        [this](){
+          auto& settings = VarBox::GetSettings(u8"Tools");
+          auto& shortcut = settings[u8"Translate.Shortcut"].second.getValueString();
+          auto& regist = settings[u8"Translate.RegisterHotKey"].second;
+          const QString qsShortcut =
+              QString::fromUtf8(shortcut.data(), shortcut.size());
+          const QString qsNewShortcut = QInputDialog::getText(this, QStringLiteral("文字输入"), QStringLiteral("请输入热键组合"), QLineEdit::Normal, qsShortcut);
+          if (qsNewShortcut.isEmpty() || qsNewShortcut == qsShortcut)
+            return;
+          const QByteArray&& array = qsNewShortcut.toUtf8();
+          if (regist.isTrue()) {
+            m_Shortcut->UnregistHotKey(qsShortcut);
+            regist = false;
+            m_CheckableActions[u8"ToolTransRegistKey"]->setChecked(false);
+          }
+          shortcut.assign(array.begin(), array.end());
+          VarBox::WriteSettings();
+        }
+      },
       {u8"WallpaperPrev", std::bind(&Wallpaper::SetSlot, m_Wallpaper, -1)},
       {u8"WallpaperNext", std::bind(&Wallpaper::SetSlot, m_Wallpaper, 1)},
       {u8"WallpaperDislike", std::bind(&Wallpaper::SetSlot, m_Wallpaper, 0)},
