@@ -13,7 +13,6 @@ class Favorite : public WallBase {
  private:
   const char m_DataPath[14]{"Favorite.json"};
   YJson* m_Data;
-  fs::path m_ImageDir;
 
  public:
   bool LoadSetting() override {
