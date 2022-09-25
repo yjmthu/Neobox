@@ -12,10 +12,10 @@
 
 #include "sysapi.h"
 
-std::wstring NetSpeedHelper::FormatSpped(uint64_t bytes, bool upload) {
+std::string NetSpeedHelper::FormatSpeed(uint64_t bytes, bool upload) {
   // https://unicode-table.com/en/2192/
-  static const wchar_t units[] = L"BKMGTPN";
-  const wchar_t *first = units, *last = first + 6;
+  static const char units[] = "BKMGTPN";
+  const char *first = units, *last = first + 6;
   double dw = static_cast<double>(bytes);
   while (dw >= 1024) {
     dw /= 1024;
@@ -25,7 +25,7 @@ std::wstring NetSpeedHelper::FormatSpped(uint64_t bytes, bool upload) {
     dw = 0;
     first = last;
   }
-  return std::format(L"{0} {1:.1f} {2:}", (upload ? L'↑' : L'↓'), dw, *first);
+  return std::format("{0} {1:.1f} {2:}", (upload ? "↑" : "↓"), dw, *first);
 }
 
 NetSpeedHelper::NetSpeedHelper()

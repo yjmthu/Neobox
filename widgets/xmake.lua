@@ -1,6 +1,7 @@
 add_requires("leptonica", "tesseract")
 
 target("Neobox")
+  -- add_rules("mode.release", "mode.debug")
   if is_plat("windows") then
     add_cxflags("/Zc:__cplusplus")
   elseif is_os("linux") then
@@ -15,4 +16,3 @@ target("Neobox")
   add_packages("leptonica", "tesseract")
   add_deps("core", "wallpaper", "yjson", "translate")
 target_end()
-

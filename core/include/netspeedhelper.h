@@ -19,7 +19,7 @@ class NetSpeedHelper {
   std::tuple<int, uint64_t, uint64_t> m_SysInfo;
   void ClearData();
 
-  static std::wstring FormatSpped(uint64_t bytes, bool upload);
+  static std::string FormatSpeed(uint64_t bytes, bool upload);
 
  private:
   uint64_t m_RecvBytes, m_SendBytes;

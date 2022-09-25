@@ -10,8 +10,7 @@ const char* m_szClobalSettingFile = "Setting.json";
 
 #ifdef _WIN32
 
-struct WINCOMPATTRDATA
-{
+struct WINCOMPATTRDATA {
   int nAttribute;
   PVOID pData;
   ULONG ulDataSize;
@@ -24,13 +23,11 @@ struct ACCENT_POLICY {
   DWORD AnimationId;
 };
 
-typedef BOOL(WINAPI* pSetWindowCompositionAttribute)(
-    HWND, WINCOMPATTRDATA*);
+typedef BOOL(WINAPI* pSetWindowCompositionAttribute)(HWND, WINCOMPATTRDATA*);
 
 BOOL SetWindowCompositionAttribute(HWND hWnd,
                                    ACCENT_STATE mode,
-                                   DWORD GradientColor)
-{
+                                   DWORD GradientColor) {
   BOOL ret = FALSE;
   HMODULE hUser = GetModuleHandle(L"user32.dll");
   if (hUser) {
@@ -38,16 +35,15 @@ BOOL SetWindowCompositionAttribute(HWND hWnd,
         (pSetWindowCompositionAttribute)GetProcAddress(
             hUser, "SetWindowCompositionAttribute");
     if (setWindowCompositionAttribute) {
-      ACCENT_POLICY policy = { mode, 0, GradientColor, 0};
-      WINCOMPATTRDATA data {19, &policy, sizeof(ACCENT_POLICY) };
+      ACCENT_POLICY policy = {mode, 0, GradientColor, 0};
+      WINCOMPATTRDATA data{19, &policy, sizeof(ACCENT_POLICY)};
       ret = setWindowCompositionAttribute(hWnd, &data);
     }
   }
   return ret;
 }
 
-typedef BOOL(WINAPI* pGetWindowCompositionAttribute)(
-    HWND, WINCOMPATTRDATA*);
+typedef BOOL(WINAPI* pGetWindowCompositionAttribute)(HWND, WINCOMPATTRDATA*);
 
 BOOL GetWindowCompositionAttribute(HWND hWnd, ACCENT_POLICY* accent) {
   BOOL ret = FALSE;
@@ -58,7 +54,7 @@ BOOL GetWindowCompositionAttribute(HWND hWnd, ACCENT_POLICY* accent) {
             hUser, "GetWindowCompositionAttribute");
     if (getWindowCompositionAttribute) {
       ACCENT_POLICY policy[2];
-      WINCOMPATTRDATA data {19, policy, sizeof(ACCENT_POLICY)*2 };
+      WINCOMPATTRDATA data{19, policy, sizeof(ACCENT_POLICY) * 2};
       ret = getWindowCompositionAttribute(hWnd, &data);
     }
   }

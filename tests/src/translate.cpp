@@ -1,10 +1,9 @@
-#include <translate.h>
-#include <iostream>
 #include <sysapi.h>
+#include <translate.h>
 #include <yjson.h>
+#include <iostream>
 
-int main()
-{
+int main() {
   Translate tran;
   SetConsoleOutputCP(65001);
   auto res = tran.GetResult(u8"翻译结果");

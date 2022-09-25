@@ -1,19 +1,38 @@
-﻿#include <numeric>
+﻿#include <functional>
+#include <numeric>
 #include <set>
 
 #include <wallbase.h>
 #include <wallpaper.h>
 
+namespace fs = std::filesystem;
+
+static size_t GetFileCount(fs::path path) {
+  size_t n = 0;
+  for (auto& iter : fs::directory_iterator(path)) {
+    if (fs::is_directory(iter.status())) {
+      n += GetFileCount(iter.path());
+    } else if (Wallpaper::IsImageFile(iter.path())) {
+      ++n;
+    }
+  }
+  return n;
+}
+
 class Native : public WallBase {
  private:
   size_t GetFileCount() {
     size_t m_iCount = 0;
-    if (!std::filesystem::exists(m_ImageDir) ||
-        !std::filesystem::is_directory(m_ImageDir))
+    if (!fs::exists(m_ImageDir) || !fs::is_directory(m_ImageDir))
       return m_iCount;
-    for (auto& iter : std::filesystem::directory_iterator(m_ImageDir)) {
-      if (!std::filesystem::is_directory(iter.status()) &&
-          Wallpaper::IsImageFile(iter.path())) {
+
+    const bool bRecursion = m_Setting->find(u8"recursion")->second.isTrue();
+    for (auto& iter : fs::directory_iterator(m_ImageDir)) {
+      if (fs::is_directory(iter.status())) {
+        if (bRecursion) {
+          m_iCount += ::GetFileCount(iter.path());
+        }
+      } else if (Wallpaper::IsImageFile(iter.path())) {
         ++m_iCount;
       }
     }
@@ -25,14 +44,14 @@ class Native : public WallBase {
     if (!m_Toltal)
       return false;
     std::vector<size_t> numbers;
-    if (m_Toltal < 50) {
+    if (m_Toltal < m_MaxCount) {
       numbers.resize(m_Toltal);
       std::iota(numbers.begin(), numbers.end(), 0);
     } else {
       std::set<size_t> already;
       std::mt19937 g(std::random_device{}());
       auto pf = std::uniform_int_distribution<size_t>(0, m_Toltal - 1);
-      for (int i = 0; i < 50; ++i) {
+      for (int i = 0; i < m_MaxCount; ++i) {
         auto temp = pf(g);
         while (already.find(temp) != already.end())
           temp = pf(g);
@@ -42,11 +61,30 @@ class Native : public WallBase {
       std::sort(numbers.begin(), numbers.end());
     }
 
+    const bool bRecursion = m_Setting->find(u8"recursion")->second.isTrue();
     auto target = numbers.cbegin();
-    for (auto& iter : std::filesystem::directory_iterator(m_ImageDir)) {
-      std::filesystem::path path = iter.path();
-      if (!std::filesystem::is_directory(iter.status()) &&
-          Wallpaper::IsImageFile(path)) {
+    std::function<void(fs::path)> _GetFileList;
+    _GetFileList = [&](fs::path path) {
+      for (auto& iter : fs::directory_iterator(path)) {
+        fs::path path = iter.path();
+        if (fs::is_directory(iter.status())) {
+          _GetFileList(path);
+        } else if (Wallpaper::IsImageFile(path)) {
+          if (*target == m_Index) {
+            m_FileList.emplace_back(path.u8string());
+            ++target;
+          }
+          ++m_Index;
+        }
+      }
+    };
+    for (auto& iter : fs::directory_iterator(m_ImageDir)) {
+      fs::path path = iter.path();
+      if (fs::is_directory(iter.status())) {
+        if (bRecursion) {
+          _GetFileList(path);
+        }
+      } else if (Wallpaper::IsImageFile(path)) {
         if (*target == m_Index) {
           m_FileList.emplace_back(path.u8string());
           ++target;
@@ -56,31 +94,35 @@ class Native : public WallBase {
     }
 
     std::mt19937 g(std::random_device{}());
-    std::shuffle(m_FileList.begin(), m_FileList.end(), g);
+    if (m_Setting->find(u8"random")->second.isTrue()) {
+      std::shuffle(m_FileList.begin(), m_FileList.end(), g);
+    }
     return true;
   }
 
  public:
-  explicit Native(const std::filesystem::path& picHome) : WallBase(picHome) {
-    InitBase();
-  }
+  explicit Native() : WallBase() { InitBase(); }
   ~Native() override { delete m_Setting; }
   ImageInfoEx GetNext() override {
-    ImageInfoEx ptr(new std::vector<std::u8string>);
+    ImageInfoEx ptr(new ImageInfo);
 
-    while (!m_FileList.empty() && !std::filesystem::exists(m_FileList.back())) {
+    while (!m_FileList.empty() && !fs::exists(m_FileList.back())) {
       m_FileList.pop_back();
     }
 
-    if (m_FileList.empty() && !GetFileList())
+    if (m_FileList.empty() && !GetFileList()) {
+      ptr->ErrorMsg = u8"Empty folder with no wallpaper in it.";
+      ptr->ErrorCode = ImageInfo::FileErr;
       return ptr;
+    }
 
-    ptr->push_back(std::move(m_FileList.back()));
+    ptr->ImagePath = std::move(m_FileList.back());
     m_FileList.pop_back();
+    ptr->ErrorCode = ImageInfo::NoErr;
     return ptr;
   }
   bool LoadSetting() override {
-    if (std::filesystem::exists(m_SettingPath)) {
+    if (fs::exists(m_SettingPath)) {
       m_Setting = new YJson(m_SettingPath, YJson::UTF8);
       m_ImageDir =
           m_Setting->find(u8"imgdirs")->second.beginA()->getValueString();
@@ -107,10 +149,14 @@ class Native : public WallBase {
 
   YJson* GetJson() override { return m_Setting; }
 
-  void SetJson(bool update) override { m_Setting->toFile(m_SettingPath); }
+  void SetJson(bool update) override {
+    m_FileList.clear();
+    m_Setting->toFile(m_SettingPath);
+  }
 
  private:
   const char m_SettingPath[12]{"Native.json"};
+  const uint32_t m_MaxCount = 100;
   YJson* m_Setting;
   std::vector<std::u8string> m_FileList;
 };

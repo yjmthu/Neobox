@@ -11,8 +11,7 @@ extern void ShowMessage(const std::u8string& title,
                         const std::u8string& text,
                         int type = 0);
 
-inline bool IsBigDuan()
-{
+inline bool IsBigDuan() {
   const uint16_t s = 1;
   return *reinterpret_cast<const uint8_t*>(&s);
 }
@@ -27,12 +26,12 @@ static PIX* QImage2Pix(const QImage& qImage) {
 
   if (qImage.colorCount()) {
     PIXCMAP* map = pixcmapCreate(8);
-    if (bIsBigDuan) {            // b g r a
+    if (bIsBigDuan) {  // b g r a
       for (const auto& i : qImage.colorTable()) {
         auto cols = reinterpret_cast<const uchar*>(&i);
         pixcmapAddColor(map, cols[2], cols[1], cols[0]);
       }
-    } else {                     // a r g b
+    } else {  // a r g b
       for (const auto& i : qImage.colorTable()) {
         auto cols = reinterpret_cast<const uchar*>(&i);
         pixcmapAddColor(map, cols[1], cols[2], cols[3]);

@@ -10,6 +10,7 @@ ScreenFetch::ScreenFetch(QImage& image, QWidget* parent)
     : QWidget(parent),
       m_Image(image),
       m_bFirstClicked(0),
+      m_bHaveCatchImage(false),
       m_PixMap(QGuiApplication::primaryScreen()->grabWindow()) {
   setWindowFlag(Qt::WindowStaysOnTopHint, true);
   setAttribute(Qt::WA_DeleteOnClose, true);
@@ -38,6 +39,7 @@ void ScreenFetch::mouseReleaseEvent(QMouseEvent* event) {
       double ky = static_cast<double>(temp.height()) / height();
       m_Image = temp.copy(m_LeftTop.x() * kx, m_LeftTop.y() * ky,
                           m_RectSize.x() * kx, m_RectSize.y() * ky);
+      m_bHaveCatchImage = true;
       close();
     }
     event->accept();
@@ -65,4 +67,16 @@ void ScreenFetch::paintEvent(QPaintEvent* event) {
   painter.drawRect(m_LeftTop.x(), m_LeftTop.y(), m_RectSize.x(),
                    m_RectSize.y());
   event->accept();
+}
+
+void ScreenFetch::keyPressEvent(QKeyEvent* event) {
+  switch (event->key()) {
+    case Qt::Key_Escape:
+      event->accept();
+      close();
+      break;
+    default:
+      event->ignore();
+      break;
+  }
 }

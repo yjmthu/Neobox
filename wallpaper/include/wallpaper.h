@@ -65,17 +65,16 @@ class Wallpaper {
   static Desktop GetDesktop();
   void SetCurDir(const std::filesystem::path& str);
   void StartTimer(bool start);
-  std::filesystem::path m_PicHomeDir;
+  // std::filesystem::path m_PicHomeDir;
   class WallBase* m_Wallpaper;
 
  private:
   YJson* const m_Settings;
   void (*m_SettingsCallback)(void);
 
-  class Timer* m_Timer;
-  class WallBase* m_Favorites;
-  class WallBase* m_BingWallpaper;
-  std::queue<class WallBase*> m_Jobs;
+  class Timer* const m_Timer;
+  class WallBase* const m_Favorites;
+  class WallBase* const m_BingWallpaper;
   std::deque<std::filesystem::path> m_PrevImgs;
   std::stack<std::filesystem::path> m_NextImgs;
   std::list<std::pair<std::filesystem::path, std::filesystem::path>>

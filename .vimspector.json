@@ -1,17 +1,21 @@
 {
   "configurations": {
-    "GdbLaunch": {
+    "Launch": {
       "adapter": "CodeLLDB",
+      "filetypes": [ "cpp", "c", "objc", "rust" ],
       "configuration": {
+        "name": "CodeLLDB",
+        "type": "lldb",
         "request": "launch",
-        "program": "./build/windows/x64/debug/Neobox.exe",
-        "cwd": "${workspaceFolder}",
+        "program": "${workspaceFolder}/build/windows/x64/debug/Neobox.exe",
         "args": [ ],
-        "environment": [ ],
+        "env": {
+          "PATH": "${PATH};C:/Qt/6.3.1/msvc2019_64/bin;${workspaceFolder}/install/bin"
+        },
+        "cwd": "${workspaceFolder}",
         "externalConsole": true,
         "MIMode": "lldb"
       }
     }
   }
 }
-

@@ -7,32 +7,24 @@
 #include <regex>
 #include <unordered_set>
 
-#ifdef _WIN32
-#include <Shlobj.h>
-#endif  // _WIN32
-
 extern std::unordered_set<std::filesystem::path> m_UsingFiles;
 
 extern void ShowMessage(const std::u8string& title,
                         const std::u8string& text,
                         int type = 0);
 
-std::wstring GetSpecialFolderPath(int type) {
-  std::wstring result(MAX_PATH, 0);
-  SHGetSpecialFolderPathW(nullptr, result.data(), type, TRUE);
-  result.erase(result.find(L'\0'));
-  return result;
-}
-
 constexpr char Wallpaper::m_szWallScript[];
 
 bool Wallpaper::DownloadImage(const ImageInfoEx imageInfo) {
   namespace fs = std::filesystem;
-  if (imageInfo->empty())
+  if (imageInfo->ErrorCode != ImageInfo::NoErr) {
+    ShowMessage(u8"出错", imageInfo->ErrorMsg);
     return false;
+  }
 
-  const auto& m_sFilePath = imageInfo->front();
-  auto dir = fs::path(m_sFilePath).parent_path();
+  // Check image dir and file.
+  const auto& m_sFilePath = imageInfo->ImagePath;
+  const auto& dir = fs::path(m_sFilePath).parent_path();
   if (!fs::exists(dir))
     fs::create_directories(dir);
   if (fs::exists(m_sFilePath)) {
@@ -41,13 +33,14 @@ bool Wallpaper::DownloadImage(const ImageInfoEx imageInfo) {
     else
       return true;
   }
-  if (imageInfo->size() != 2) {
+  if (imageInfo->ImageUrl.empty()) {
     return false;
   }
 
-  if (!HttpLib::IsOnline()) return false;
+  if (!HttpLib::IsOnline())
+    return false;
   m_UsingFiles.emplace(m_sFilePath);
-  int res = HttpLib::Gets(imageInfo->at(1), m_sFilePath);
+  int res = HttpLib::Gets(imageInfo->ImageUrl, m_sFilePath);
   if (res == 200) {
     m_UsingFiles.erase(m_sFilePath);
     return true;
@@ -55,7 +48,8 @@ bool Wallpaper::DownloadImage(const ImageInfoEx imageInfo) {
     if (fs::exists(m_sFilePath))
       fs::remove(m_sFilePath);
     m_UsingFiles.erase(m_sFilePath);
-    ShowMessage(u8"出错", u8"网络异常或文件不能打开！\n文件名：" + m_sFilePath + u8"\n网址：" + imageInfo->at(1));
+    ShowMessage(u8"出错", u8"网络异常或文件不能打开！\n文件名：" + m_sFilePath +
+                              u8"\n网址：" + imageInfo->ImagePath);
     return false;
   }
 }
@@ -130,14 +124,13 @@ bool Wallpaper::SetWallpaper(const std::filesystem::path& imagePath) {
 }
 
 Wallpaper::Wallpaper(YJson* settings, void (*callback)(void))
-    : m_PicHomeDir(GetSpecialFolderPath(CSIDL_MYPICTURES)),
+    :  // m_PicHomeDir(GetSpecialFolderPath(CSIDL_MYPICTURES)),
       m_Wallpaper(nullptr),
       m_Settings(settings),
       m_SettingsCallback(callback),
       m_Timer(new Timer),
-      m_Favorites(WallBase::GetNewInstance(m_PicHomeDir, WallBase::FAVORITE)),
-      m_BingWallpaper(WallBase::GetNewInstance(m_PicHomeDir, WallBase::BINGAPI))
-{
+      m_Favorites(WallBase::GetNewInstance(WallBase::FAVORITE)),
+      m_BingWallpaper(WallBase::GetNewInstance(WallBase::BINGAPI)) {
   ReadSettings();
   SetImageType(GetImageType());
   SetTimeInterval(GetTimeInterval());
@@ -146,15 +139,7 @@ Wallpaper::Wallpaper(YJson* settings, void (*callback)(void))
 
 Wallpaper::~Wallpaper() {
   delete m_Timer;
-  delete m_Wallpaper;
-  if (m_Wallpaper != m_Favorites)
-    delete m_Favorites;
-  if (m_Wallpaper != m_BingWallpaper)
-    delete m_BingWallpaper;
-  while (!m_Jobs.empty()) {
-    delete m_Jobs.front();
-    m_Jobs.pop();
-  }
+  WallBase::ClearInstatnce();
   for (const auto& i :
        m_UsingFiles |
            std::views::filter((bool (*)(const std::filesystem::path&)) &
@@ -214,13 +199,13 @@ void Wallpaper::SetTimeInterval(int minute) {
 bool Wallpaper::SetNext() {
   if (m_NextImgs.empty()) {
     const ImageInfoEx ptr = m_Wallpaper->GetNext();
-    if (ptr->empty() || !DownloadImage(ptr))
+    if (!DownloadImage(ptr))
       return false;
-    if (!SetWallpaper(ptr->front()))
+    if (!SetWallpaper(ptr->ImagePath))
       return false;
     if (!m_CurImage.empty())
       m_PrevImgs.push_back(m_CurImage);
-    m_CurImage = ptr->front();
+    m_CurImage = ptr->ImagePath;
     return true;
   } else {
     if (SetWallpaper(m_NextImgs.top())) {
@@ -296,8 +281,8 @@ bool Wallpaper::UnSetFavorite() {
 
 bool Wallpaper::IsImageFile(const std::filesystem::path& filesName) {
   // BMP, PNG, GIF, JPG
-  std::regex pattern(".*\\.(jpg|bmp|gif|jpeg|png)$", std::regex::icase);
-  return std::regex_match(filesName.string(), pattern);
+  std::wregex pattern(L".*\\.(jpg|bmp|gif|jpeg|png)$", std::regex::icase);
+  return std::regex_match(filesName.wstring(), pattern);
 }
 
 bool Wallpaper::SetDropFile(std::deque<std::filesystem::path>&& paths) {
@@ -431,40 +416,31 @@ void Wallpaper::SetCurDir(const std::filesystem::path& str) {
 }
 
 bool Wallpaper::SetImageType(int index) {
+  if (WallBase::m_IsWorking) {
+    return false;
+  }
   auto& jsImageType = m_Settings->find(u8"ImageType")->second;
   if (jsImageType.getValueInt() != index) {
     jsImageType.setValue(index);
     m_SettingsCallback();
   }
 
-  if (WallBase::m_IsWorking
-      && index != WallBase::FAVORITE
-      && index != WallBase::BINGAPI) {
-    m_Jobs.push(m_Wallpaper);
-    m_Wallpaper = nullptr;
-  } else {
-    delete m_Wallpaper;
-  }
-  m_Wallpaper = WallBase::GetNewInstance(m_PicHomeDir, index);
+  m_Wallpaper = WallBase::GetNewInstance(index);
   if (index == WallBase::BINGAPI)
     return true;
   std::thread([this]() {
     using namespace std::literals;
-    for (int i = 0; i < 60; ++i) {
-      std::this_thread::sleep_for(1min);
-    }
+    std::this_thread::sleep_for(1min);
     if (!HttpLib::IsOnline() || WallBase::m_IsWorking)
       return;
 
     WallBase::m_IsWorking = true;
-    std::unique_ptr<WallBase> ptr(
-        WallBase::GetNewInstance(m_PicHomeDir, WallBase::BINGAPI));
-    if (!ptr->GetJson()->find(u8"auto-download")->second.isTrue()) {
+    if (!m_BingWallpaper->GetJson()->find(u8"auto-download")->second.isTrue()) {
       WallBase::m_IsWorking = false;
       return;
     }
     for (int i = 0; i < 7; ++i) {
-      Wallpaper::DownloadImage(ptr->GetNext());
+      Wallpaper::DownloadImage(m_BingWallpaper->GetNext());
     }
     WallBase::m_IsWorking = false;
   }).detach();

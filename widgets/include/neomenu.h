@@ -20,6 +20,9 @@ class NeoMenu : public QMenu {
       m_FuncItemCheckMap;
   std::map<std::u8string, QMenu*> m_ExMenus;
 
+  std::map<std::u8string, QActionGroup*> m_ExclusiveGroups;
+  std::map<std::u8string, QAction*> m_CheckableActions;
+
   friend class SpeedBox;
   class TranslateDlg* m_TranslateDlg;
 
@@ -28,13 +31,15 @@ class NeoMenu : public QMenu {
   bool ChooseFolder(QString title, QString& folder);
   void LoadWallpaperExmenu();
   void WallhavenParams(QAction* action);
+  void ScriptApiParams(QAction* action);
 
  public:
   explicit NeoMenu(QWidget* parent = nullptr);
   ~NeoMenu();
   class Wallpaper* const m_Wallpaper;
   inline void SetFormColorEffect() {
-    const auto& [fSetEffetc, fGetEffect] = m_FuncItemCheckMap[u8"AppFormEffect"];
+    const auto& [fSetEffetc, fGetEffect] =
+        m_FuncItemCheckMap[u8"AppFormEffect"];
     fSetEffetc(fGetEffect());
   }
 };

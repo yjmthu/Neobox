@@ -1,12 +1,13 @@
+#include <speedbox.h>
 #include <varbox.h>
 #include <yjson.h>
-#include <speedbox.h>
 
 #include <QApplication>
 #include <QDir>
 #include <QFontDatabase>
 #include <QMessageBox>
 #include <QStandardPaths>
+#include <QTimer>
 
 #include <memory>
 #include <ranges>
@@ -14,9 +15,11 @@
 void ShowMessage(const std::u8string& title,
                  const std::u8string& text,
                  int type = 0) {
-  QMessageBox::information(VarBox::GetSpeedBox(),
-                           QString::fromUtf8(title.data(), title.size()),
-                           QString::fromUtf8(text.data(), text.size()));
+  QTimer::singleShot(50, VarBox::GetSpeedBox(), [=]() {
+    QMessageBox::information(VarBox::GetSpeedBox(),
+                             QString::fromUtf8(title.data(), title.size()),
+                             QString::fromUtf8(text.data(), text.size()));
+  });
 }
 
 VarBox::VarBox() {
@@ -46,8 +49,7 @@ YJson& VarBox::GetSettings(const char8_t* key) {
   return key ? m_Settings->find(key)->second : *m_Settings;
 }
 
-SpeedBox* VarBox::GetSpeedBox()
-{
+SpeedBox* VarBox::GetSpeedBox() {
   static SpeedBox* box = new SpeedBox;
   return box;
 }

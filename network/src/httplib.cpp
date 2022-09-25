@@ -38,7 +38,6 @@ bool IsOnline() {
 #endif
 }
 
-
 static size_t WriteFile(void* buffer,
                         size_t size,
                         size_t nmemb,

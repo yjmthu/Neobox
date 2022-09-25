@@ -38,21 +38,29 @@ class Wallhaven : public WallBase {
     // https://w.wallhaven.cc/full/1k/wallhaven-1kmx19.jpg
     using namespace std::literals;
 
-    ImageInfoEx ptr(new std::vector<std::u8string>);
+    ImageInfoEx ptr(new ImageInfo);
 
     if (m_NeedDownUrl) {
-      if (!HttpLib::IsOnline()) return ptr;
+      if (!HttpLib::IsOnline()) {
+        ptr->ErrorMsg = u8"Bad network connection.";
+        ptr->ErrorCode = ImageInfo::NetErr;
+        return ptr;
+      }
       size_t t = DownloadUrl();
       m_NeedDownUrl = false;
-      if (!t)
+      if (!t) {
+        ptr->ErrorMsg = u8"Bad data has been downloaded.";
+        ptr->ErrorCode = ImageInfo::DataErr;
         return ptr;
+      }
     }
 
     auto& val = m_Data->find(u8"Unused")->second;
     if (val.emptyA()) {
       YJson::swap(val, m_Data->find(u8"Used")->second);
       if (val.emptyA()) {
-        std::cout << "No Url\n";
+        ptr->ErrorMsg = u8"No data has been downloaded.";
+        ptr->ErrorCode = ImageInfo::DataErr;
         m_NeedDownUrl = true;
         return ptr;
       } else {
@@ -67,15 +75,19 @@ class Wallhaven : public WallBase {
     }
     std::u8string name = val.backA().getValueString();
     if (name.length() == 6) {
-      if (!IsPngFile(name))
+      if (!IsPngFile(name)) {
+        ptr->ErrorMsg = u8"Can't get filetype.";
+        ptr->ErrorCode = ImageInfo::NetErr;
         return ptr;
+      }
     }
-    ptr->emplace_back((m_ImageDir / name).u8string());
-    ptr->emplace_back(u8"https://w.wallhaven.cc/full/"s + name.substr(10, 2) +
-                      u8"/"s + name);
+    ptr->ImagePath = (m_ImageDir / name).u8string();
+    ptr->ImageUrl =
+        u8"https://w.wallhaven.cc/full/"s + name.substr(10, 2) + u8"/"s + name;
     m_Data->find(u8"Used")->second.append(name);
     val.popBackA();
     m_Data->toFile(m_DataPath);
+    ptr->ErrorCode = ImageInfo::NoErr;
     return ptr;
   }
   void Dislike(const std::u8string& sImgPath) override {
@@ -117,8 +129,7 @@ class Wallhaven : public WallBase {
       }
     }
   }
-  explicit Wallhaven(const std::filesystem::path& picHome)
-      : WallBase(picHome), m_Setting(nullptr), m_Data(nullptr) {
+  explicit Wallhaven() : WallBase(), m_Setting(nullptr), m_Data(nullptr) {
     InitBase();
     GetApiPathUrl();
     m_NeedDownUrl = NeedGetImageUrl();

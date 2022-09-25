@@ -1,22 +1,21 @@
 ﻿#include <sysapi.h>
+#include <ranges>
 #include <string>
 
 #include <wallbase.h>
 
 class ScriptOutput : public WallBase {
  public:
-  explicit ScriptOutput(const std::filesystem::path& picHome)
-      : WallBase(picHome) {
-    InitBase();
-  }
+  explicit ScriptOutput() : WallBase() { InitBase(); }
   ~ScriptOutput() override {}
   bool LoadSetting() override {
     if (std::filesystem::exists(m_SettingPath)) {
       m_Setting = new YJson(m_SettingPath, YJson::UTF8);
       m_Command = m_Setting->find(u8"executeable")->second.getValueString();
-      for (auto& i : m_Setting->find(u8"arglist")->second.getArray()) {
-        m_ArgList.emplace_back(i.getValueString());
-      }
+      auto range = m_Setting->find(u8"arglist")->second.getArray() |
+                   std::views::transform(
+                       [](const YJson& item) { return item.getValueString(); });
+      m_ArgList.assign(range.begin(), range.end());
       return true;
     }
     return false;
@@ -29,34 +28,39 @@ class ScriptOutput : public WallBase {
     return true;
   }
   ImageInfoEx GetNext() override {
-    ImageInfoEx ptr(new std::vector<std::u8string>);
-    if (m_Command.empty())
+    ImageInfoEx ptr(new ImageInfo);
+    if (m_Command.empty()) {
+      ptr->ErrorMsg = u8"Invalid command to get wallpaper path.";
+      ptr->ErrorCode = ImageInfo::CfgErr;
       return ptr;
-    std::vector<std::u8string> result;
+    }
 #ifdef _WIN32
-#ifdef UNICODE
+    std::vector<std::wstring> result;
     std::wstring wcmd = Utf82WideString(GetCommandWithArg());
-    std::vector<std::wstring> wresult;
-    GetCmdOutput(wcmd.c_str(), wresult);
-    for (auto& i : wresult) {
-      result.emplace_back(Wide2Utf8String(i));
+    GetCmdOutput(wcmd.c_str(), result);
+    if (result.empty()) {
+      ptr->ErrorMsg = u8"Invalid command to get wallpaper path.";
+      ptr->ErrorCode = ImageInfo::CfgErr;
+      return ptr;
     }
-#else
-    std::string ccmd = Utf82AnsiString(GetCommandWithArg());
-    std::vector<std::string> cresult;
-    GetCmdOutput(ccmd.c_str(), cresult);
-    for (auto& i : wresult) {
-      result.emplace_back(Ansi2Utf8String(i));
-    }
-#endif
+    auto str = Wide2Utf8String(result.front());
 #elif def __linux__
+    std::vector<std::u8string> result;
     auto cmd = GetCommandWithArg();
     GetCmdOutput(reinterpret_cast<const char*>(cmd.c_str()), result);
-#endif
+    if (result.empty())
+      ptr->ErrorMsg = u8"Run command with empty output.";
+    ptr->ErrorCode = ImageInfo::RunErr;
+    return ptr;
     auto& str = result.front();
-    if (str.empty())
+#endif
+    if (str.empty()) {
+      ptr->ErrorMsg = u8"Run command with wrong output.";
+      ptr->ErrorCode = ImageInfo::RunErr;
       return ptr;
-    ptr->push_back(str);
+    }
+    ptr->ImagePath = std::move(str);
+    ptr->ErrorCode = ImageInfo::NoErr;
     return ptr;
   }
 
@@ -65,6 +69,12 @@ class ScriptOutput : public WallBase {
   }
 
   void SetJson(bool update) override {
+    m_Command = m_Setting->find(u8"executeable")->second.getValueString();
+    auto range = m_Setting->find(u8"arglist")->second.getArray() |
+                 std::views::transform([](const YJson& item) -> std::u8string {
+                   return item.getValueString();
+                 });
+    m_ArgList.assign(range.begin(), range.end());
     m_Setting->toFile(m_SettingPath);
   }
 

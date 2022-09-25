@@ -71,30 +71,26 @@ inline std::u8string Ansi2Utf8String(const std::string& ansiStr) {
 }
 
 template <typename _Ty>
-void GetCmdOutput(LPCTSTR cmd, _Ty& result) {
-  TCHAR buffer[1024];
+void GetCmdOutput(LPCWSTR cmd, _Ty& result) {
+  constexpr auto bufSize = 1024;
+  WCHAR buffer[bufSize];
   FILE* fp;
-  std::basic_stringstream<TCHAR> stream;
-#ifdef UNICODE
+  std::wstringstream stream;
   if ((fp = _wpopen(cmd, L"r"))) {
-    while (std::fgetws(buffer, 1024, fp)) {
-#else
-  if ((fp = _popen(cmd, "r"))) {
-    while (std::fgets(buffer, 1024, fp)) {
-#endif
+    while (std::fgetws(buffer, bufSize, fp)) {
       stream << buffer;
     }
     _pclose(fp);
   }
-  std::basic_string<TCHAR> str;
+  std::wstring str;
   while (std::getline(stream, str)) {
     result.emplace_back(std::move(str));
   }
 }
 
 inline std::wstring GetExeFullPath() {
-  TCHAR exeFullPath[MAX_PATH];
-  GetModuleFileName(NULL, exeFullPath, MAX_PATH);
+  WCHAR exeFullPath[MAX_PATH];
+  GetModuleFileNameW(NULL, exeFullPath, MAX_PATH);
   return exeFullPath;
 }
 
@@ -114,7 +110,6 @@ enum ACCENT_STATE {
   ACCENT_ENABLE_ACRYLICBLURBEHIND,
   ACCENT_INVALID_STATE
 };
-
 
 BOOL SetWindowCompositionAttribute(HWND hWnd,
                                    ACCENT_STATE mode,

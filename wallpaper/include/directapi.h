@@ -4,9 +4,7 @@
 
 class DirectApi : public WallBase {
  public:
-  explicit DirectApi(const std::filesystem::path& picHome) : WallBase(picHome) {
-    InitBase();
-  }
+  explicit DirectApi() : WallBase() { InitBase(); }
   ~DirectApi() override {}
   bool LoadSetting() override {
     using namespace std::literals;
@@ -27,8 +25,9 @@ class DirectApi : public WallBase {
     return true;
   }
   ImageInfoEx GetNext() override {
-    return ImageInfoEx(new std::vector<std::u8string>{
-        (m_ImageDir / GetImageName()).u8string(), m_ApiUrl + m_ApiPath});
+    return ImageInfoEx(new ImageInfo{(m_ImageDir / GetImageName()).u8string(),
+                                     m_ApiUrl + m_ApiPath, u8"OK",
+                                     ImageInfo::NoErr});
   }
   bool WriteDefaultSetting() override {
     using namespace std::literals;
@@ -93,7 +92,8 @@ class DirectApi : public WallBase {
   std::u8string m_ImageNameFormat;
   std::u8string GetImageName() {
     using namespace std::chrono;
-    auto time = floor<seconds>(system_clock::now()); // Exactly in seconds.
+    auto utc = floor<seconds>(system_clock::now());  // Exactly in seconds.
+    const auto time = current_zone()->to_local(utc);
     std::string result = std::vformat(
         std::string(m_ImageNameFormat.begin(), m_ImageNameFormat.end()),
         std::make_format_args(time));

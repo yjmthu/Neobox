@@ -13,12 +13,20 @@
 #include <string>
 #include <system_error>
 
-typedef std::shared_ptr<std::vector<std::u8string>> ImageInfoEx;
+struct ImageInfo {
+  enum Errors : uint32_t { NoErr, NetErr, FileErr, RunErr, CfgErr, DataErr };
+  std::u8string ImagePath;
+  std::u8string ImageUrl;
+  std::u8string ErrorMsg;
+  uint32_t ErrorCode;
+};
+
+typedef std::shared_ptr<ImageInfo> ImageInfoEx;
 
 class WallBase {
  protected:
   bool m_InitOk = false;
-  std::filesystem::path m_HomePicLocation;
+  static const std::filesystem::path m_HomePicLocation;
   std::filesystem::path m_ImageDir;
   inline void InitBase() {
     if (!LoadSetting())
@@ -27,10 +35,9 @@ class WallBase {
 
  public:
   enum { WALLHAVEN = 0, BINGAPI, DIRECTAPI, NATIVE, SCRIPTOUTPUT, FAVORITE };
-  static WallBase* GetNewInstance(const std::filesystem::path& picHome,
-                                  int type);
-  inline WallBase(const std::filesystem::path& pichome)
-      : m_HomePicLocation(pichome / L"桌面壁纸") {
+  static WallBase* GetNewInstance(int type);
+  static void ClearInstatnce();
+  inline WallBase() {
     if (!std::filesystem::exists(m_HomePicLocation)) {
       std::filesystem::create_directory(m_HomePicLocation);
     }

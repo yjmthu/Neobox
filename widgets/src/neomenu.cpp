@@ -1,27 +1,30 @@
 #include <neomenu.h>
 #include <screenfetch.h>
+#include <shortcut.h>
+#include <speedbox.h>
 #include <sysapi.h>
 #include <translatedlg.h>
 #include <varbox.h>
 #include <wallpaper.h>
 #include <yjson.h>
-#include <speedbox.h>
-#include <shortcut.h>
 
+#include <chrono>
 #include <map>
+#include <ranges>
 #include <regex>
 #include <vector>
-#include <ranges>
 
 #include <QActionGroup>
 #include <QApplication>
+#include <QColorDialog>
 #include <QDesktopServices>
 #include <QEventLoop>
 #include <QFile>
 #include <QFileDialog>
 #include <QHBoxLayout>
 #include <QInputDialog>
-#include <QColorDialog>
+#include <QListWidget>
+#include <QListWidgetItem>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QStandardPaths>
@@ -44,8 +47,7 @@ NeoMenu::NeoMenu(QWidget* parent)
       m_Shortcut(new Shortcut(this->parent())),
       m_TranslateDlg(new TranslateDlg(this)),
       m_Wallpaper(new Wallpaper(&VarBox::GetSettings(u8"Wallpaper"),
-                                &VarBox::WriteSettings))
-{
+                                &VarBox::WriteSettings)) {
   setAttribute(Qt::WA_TranslucentBackground, true);
   InitFunctionMap();
   QFile fJson(QStringLiteral(":/jsons/menucontent.json"));
@@ -84,23 +86,28 @@ void NeoMenu::InitFunctionMap() {
        std::bind(QDesktopServices::openUrl,
                  QUrl::fromLocalFile(QDir::currentPath()))},
       {u8"AppFormBackground",
-        [this](){
-          auto& jsData = VarBox::GetSettings(u8"FormGlobal");
-          int iCurType = jsData[u8"ColorEffect"].second.getValueInt();
-          auto colList = jsData[u8"BackgroundColorRgba"].second.getArray() | std::views::transform([](const YJson& i){return i.getValueInt();});
-          auto colVector = std::vector<int>(colList.begin(), colList.end());
-          const QColor col = QColorDialog::getColor(
-              QColor(colVector[0], colVector[1], colVector[2], colVector[3]),
-              this, "选择颜色", QColorDialog::ShowAlphaChannel);
-          if (!col.isValid()) return;
-          jsData[u8"BackgroundColorRgba"].second.getArray() = { col.red(), col.green(), col.blue(), col.alpha() };
-          VarBox::WriteSettings();
+       [this]() {
+         auto& jsData = VarBox::GetSettings(u8"FormGlobal");
+         int iCurType = jsData[u8"ColorEffect"].second.getValueInt();
+         auto colList = jsData[u8"BackgroundColorRgba"].second.getArray() |
+                        std::views::transform(
+                            [](const YJson& i) { return i.getValueInt(); });
+         auto colVector = std::vector<int>(colList.begin(), colList.end());
+         const QColor col = QColorDialog::getColor(
+             QColor(colVector[0], colVector[1], colVector[2], colVector[3]),
+             this, "选择颜色", QColorDialog::ShowAlphaChannel);
+         if (!col.isValid())
+           return;
+         jsData[u8"BackgroundColorRgba"].second.getArray() = {
+             col.red(), col.green(), col.blue(), col.alpha()};
+         VarBox::WriteSettings();
 
-          HWND hWnd = reinterpret_cast<HWND>(qobject_cast<const QWidget*>(parent())->winId());
-          SetWindowCompositionAttribute(hWnd, static_cast<ACCENT_STATE>(iCurType),
-              qRgba(col.blue(), col.green(), col.red(), col.alpha()));
-        }
-      },
+         HWND hWnd = reinterpret_cast<HWND>(
+             qobject_cast<const QWidget*>(parent())->winId());
+         SetWindowCompositionAttribute(
+             hWnd, static_cast<ACCENT_STATE>(iCurType),
+             qRgba(col.blue(), col.green(), col.red(), col.alpha()));
+       }},
       {u8"ToolOcrGetScreen",
        [this]() {
          QImage image;
@@ -109,26 +116,39 @@ void NeoMenu::InitFunctionMap() {
          connect(box, &ScreenFetch::destroyed, &loop, &QEventLoop::quit);
          box->showFullScreen();
          loop.exec();
-         m_TranslateDlg->Show(qobject_cast<const QWidget*>(parent())->frameGeometry(), QImage2Text(image));
+         if (!box->HaveCatchImage())
+           return;
+         m_TranslateDlg->Show(
+             qobject_cast<const QWidget*>(parent())->frameGeometry(),
+             QImage2Text(image));
        }},
       {u8"ToolOcrDataPath",
-        [this](){
-          std::u8string& u8Path = VarBox::GetSettings(u8"Tools")[u8"Ocr.TessdataDir"].second.getValueString();
-          QByteArray folder = QFileDialog::getExistingDirectory(this, "请选择Tessdata数据文件存放位置", QString::fromUtf8(u8Path.data(), u8Path.size())).toUtf8();
-          std::u8string u8NewPath = std::filesystem::path(std::u8string(folder.begin(), folder.end())).u8string();
-          if (!u8NewPath.empty() && u8NewPath != u8Path) {
-            u8Path.swap(u8NewPath);
-            VarBox::WriteSettings();
-          }
-        }
-      },
-      {u8"ToolTransShowDlg", [this](){
-        if (m_TranslateDlg->isVisible()) {
-          m_TranslateDlg->hide();
-        } else {
-          m_TranslateDlg->Show(qobject_cast<const QWidget*>(parent())->frameGeometry());
-        }
-      }},
+       [this]() {
+         std::u8string& u8Path =
+             VarBox::GetSettings(u8"Tools")[u8"Ocr.TessdataDir"]
+                 .second.getValueString();
+         QByteArray folder =
+             QFileDialog::getExistingDirectory(
+                 this, "请选择Tessdata数据文件存放位置",
+                 QString::fromUtf8(u8Path.data(), u8Path.size()))
+                 .toUtf8();
+         std::u8string u8NewPath =
+             std::filesystem::path(std::u8string(folder.begin(), folder.end()))
+                 .u8string();
+         if (!u8NewPath.empty() && u8NewPath != u8Path) {
+           u8Path.swap(u8NewPath);
+           VarBox::WriteSettings();
+         }
+       }},
+      {u8"ToolTransShowDlg",
+       [this]() {
+         if (m_TranslateDlg->isVisible()) {
+           m_TranslateDlg->hide();
+         } else {
+           m_TranslateDlg->Show(
+               qobject_cast<const QWidget*>(parent())->frameGeometry());
+         }
+       }},
       {u8"WallpaperPrev", std::bind(&Wallpaper::SetSlot, m_Wallpaper, -1)},
       {u8"WallpaperNext", std::bind(&Wallpaper::SetSlot, m_Wallpaper, 1)},
       {u8"WallpaperDislike", std::bind(&Wallpaper::SetSlot, m_Wallpaper, 0)},
@@ -150,7 +170,8 @@ void NeoMenu::InitFunctionMap() {
          int iNewTime =
              QInputDialog::getInt(this, "输入时间间隔", "时间间隔（分钟）：",
                                   m_Wallpaper->GetTimeInterval(), 5);
-         if (iNewTime < 5) return;
+         if (iNewTime < 5)
+           return;
          m_Wallpaper->SetTimeInterval(iNewTime);
        }},
       {u8"WallpaperClean", std::bind(&Wallpaper::ClearJunk, m_Wallpaper)},
@@ -159,7 +180,7 @@ void NeoMenu::InitFunctionMap() {
 
   m_FuncCheckMap = {
       {u8"AppAutoSatrt",
-       {[](bool checked) {
+       {[this](bool checked) {
           wchar_t pPath[] =
               L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
           wchar_t pAppName[] = L"Neobox";
@@ -167,12 +188,12 @@ void NeoMenu::InitFunctionMap() {
           std::wstring wsThatPath =
               RegReadString(HKEY_CURRENT_USER, pPath, pAppName);
           if (wsThatPath != wsThisPath) {
-            if (checked) {
-              RegWriteString(HKEY_CURRENT_USER, pPath, pAppName, wsThisPath);
+            if (checked && !RegWriteString(HKEY_CURRENT_USER, pPath, pAppName, wsThisPath)) {
+              m_CheckableActions[u8"AppAutoSatrt"]->setChecked(false);
             }
           } else {
-            if (!checked) {
-              RegRemoveValue(HKEY_CURRENT_USER, pPath, pAppName);
+            if (!checked && !RegRemoveValue(HKEY_CURRENT_USER, pPath, pAppName)) {
+              m_CheckableActions[u8"AppAutoSatrt"]->setChecked(true);
             }
           }
         },
@@ -247,86 +268,104 @@ void NeoMenu::InitFunctionMap() {
        {std::bind(&Wallpaper::SetFirstChange, m_Wallpaper,
                   std::placeholders::_1),
         std::bind(&Wallpaper::GetFirstChange, m_Wallpaper)}},
-      {u8"ToolTransRegistKey", {
-        [this](bool checked){
+      {u8"ToolTransRegistKey",
+       {[this](bool checked) {
           auto& settings = VarBox::GetSettings(u8"Tools");
-          std::u8string& shortcut = settings[u8"Translate.Shortcut"].second.getValueString();
-          QString qsShortcut = QString::fromUtf8(shortcut.data(), shortcut.size());
+          std::u8string& shortcut =
+              settings[u8"Translate.Shortcut"].second.getValueString();
+          QString qsShortcut =
+              QString::fromUtf8(shortcut.data(), shortcut.size());
           if (checked) {
-            m_Shortcut->RegistHotKey(qsShortcut, m_FuncNormalMap[u8"ToolTransShowDlg"]);
+            m_Shortcut->RegistHotKey(qsShortcut,
+                                     m_FuncNormalMap[u8"ToolTransShowDlg"]);
           } else {
             m_Shortcut->UnregistHotKey(qsShortcut);
           }
           settings[u8"Translate.RegisterHotKey"].second = checked;
           VarBox::WriteSettings();
         },
-        [this]()->bool{
+        [this]() -> bool {
           auto& settings = VarBox::GetSettings(u8"Tools");
           bool regist = settings[u8"Translate.RegisterHotKey"].second.isTrue();
-          std::u8string& shortcut = settings[u8"Translate.Shortcut"].second.getValueString();
-          QString qsShortcut = QString::fromUtf8(shortcut.data(), shortcut.size());
+          std::u8string& shortcut =
+              settings[u8"Translate.Shortcut"].second.getValueString();
+          QString qsShortcut =
+              QString::fromUtf8(shortcut.data(), shortcut.size());
           if (regist && !m_Shortcut->IsKeyRegisted(qsShortcut)) {
-            m_Shortcut->RegistHotKey(qsShortcut, m_FuncNormalMap[u8"ToolTransShowDlg"]);
+            m_Shortcut->RegistHotKey(qsShortcut,
+                                     m_FuncNormalMap[u8"ToolTransShowDlg"]);
           }
           return regist;
-        }}
-      },
-      {u8"ToolOcrRegistKey", {
-        [this](bool checked){
+        }}},
+      {u8"ToolOcrRegistKey",
+       {[this](bool checked) {
           auto& settings = VarBox::GetSettings(u8"Tools");
-          std::u8string& shortcut = settings[u8"Ocr.Shortcut"].second.getValueString();
-          QString qsShortcut = QString::fromUtf8(shortcut.data(), shortcut.size());
+          std::u8string& shortcut =
+              settings[u8"Ocr.Shortcut"].second.getValueString();
+          QString qsShortcut =
+              QString::fromUtf8(shortcut.data(), shortcut.size());
           if (checked) {
-            m_Shortcut->RegistHotKey(qsShortcut, m_FuncNormalMap[u8"ToolOcrGetScreen"]);
+            m_Shortcut->RegistHotKey(qsShortcut,
+                                     m_FuncNormalMap[u8"ToolOcrGetScreen"]);
           } else {
             m_Shortcut->UnregistHotKey(qsShortcut);
           }
           settings[u8"Ocr.RegisterHotKey"].second = checked;
           VarBox::WriteSettings();
         },
-        [this]()->bool{
+        [this]() -> bool {
           auto& settings = VarBox::GetSettings(u8"Tools");
           bool regist = settings[u8"Ocr.RegisterHotKey"].second.isTrue();
-          std::u8string& shortcut = settings[u8"Ocr.Shortcut"].second.getValueString();
-          QString qsShortcut = QString::fromUtf8(shortcut.data(), shortcut.size());
+          std::u8string& shortcut =
+              settings[u8"Ocr.Shortcut"].second.getValueString();
+          QString qsShortcut =
+              QString::fromUtf8(shortcut.data(), shortcut.size());
           if (regist && !m_Shortcut->IsKeyRegisted(qsShortcut)) {
-            m_Shortcut->RegistHotKey(qsShortcut, m_FuncNormalMap[u8"ToolOcrGetScreen"]);
+            m_Shortcut->RegistHotKey(qsShortcut,
+                                     m_FuncNormalMap[u8"ToolOcrGetScreen"]);
           }
           return regist;
-        }}
-      }
-  };
+        }}}};
 
   m_FuncItemCheckMap = {
-    {u8"WallpaperType",
+      {u8"WallpaperType",
        {[this](int type) {
-          m_Wallpaper->SetImageType(type);
-          LoadWallpaperExmenu();
+          const int oldType = m_Wallpaper->GetImageType();
+          if (m_Wallpaper->SetImageType(type)) {
+            LoadWallpaperExmenu();
+          } else {
+            m_ExclusiveGroups[u8"WallpaperType"]->actions().at(oldType)->setChecked(true);
+          }
         },
         std::bind(&Wallpaper::GetImageType, m_Wallpaper)}},
-    {u8"AppFormEffect",
-      {[this](int type) {
-        auto& jsData = VarBox::GetSettings(u8"FormGlobal");
-        int iCurType = jsData[u8"ColorEffect"].second.getValueInt();
-        if (iCurType != type) {
-          jsData[u8"ColorEffect"].second = type;
-          VarBox::WriteSettings();
-        }
-        auto colList = jsData[u8"BackgroundColorRgba"].second.getArray() | std::views::transform([](const YJson& i){return i.getValueInt();});
-        auto colVector = std::vector<int>(colList.begin(), colList.end());
-        HWND hWnd = reinterpret_cast<HWND>(qobject_cast<const QWidget*>(parent())->winId());
-        SetWindowCompositionAttribute(hWnd, static_cast<ACCENT_STATE>(type),
-            qRgba(colVector[2], colVector[1], colVector[0], colVector[3]));
-      }, []()->int{
-        return VarBox::GetSettings(u8"FormGlobal")[u8"ColorEffect"].second.getValueInt();
-      }}
-    }
-  };
+      {u8"AppFormEffect",
+       {[this](int type) {
+          // to do sth if failed.
+          auto& jsData = VarBox::GetSettings(u8"FormGlobal");
+          int iCurType = jsData[u8"ColorEffect"].second.getValueInt();
+          if (iCurType != type) {
+            jsData[u8"ColorEffect"].second = type;
+            VarBox::WriteSettings();
+          }
+          auto colList = jsData[u8"BackgroundColorRgba"].second.getArray() |
+                         std::views::transform(
+                             [](const YJson& i) { return i.getValueInt(); });
+          auto colVector = std::vector<int>(colList.begin(), colList.end());
+          HWND hWnd = reinterpret_cast<HWND>(
+              qobject_cast<const QWidget*>(parent())->winId());
+          SetWindowCompositionAttribute(
+              hWnd, static_cast<ACCENT_STATE>(type),
+              qRgba(colVector[2], colVector[1], colVector[0], colVector[3]));
+        },
+        []() -> int {
+          return VarBox::GetSettings(u8"FormGlobal")[u8"ColorEffect"]
+              .second.getValueInt();
+        }}}};
 }
 
 bool NeoMenu::ChooseFolder(QString title, QString& current) {
   current = QFileDialog::getExistingDirectory(this, title, current);
-  return QDir().exists(current);
+  return !current.isEmpty() && QDir().exists(current);
 }
 
 void NeoMenu::GetMenuContent(QMenu* parent, const YJson& data) {
@@ -343,8 +382,9 @@ void NeoMenu::GetMenuContent(QMenu* parent, const YJson& data) {
       action->setMenu(menu);
       GetMenuContent(menu, j[u8"children"].second);
     } else if (type == u8"Checkable") {
-      const auto& [m, n] =
-          m_FuncCheckMap[j[u8"function"].second.getValueString()];
+      const auto fnName = j[u8"function"].second.getValueString();
+      const auto& [m, n] = m_FuncCheckMap[fnName];
+      m_CheckableActions[fnName] = action;
       action->setCheckable(true);
       action->setChecked(n());
       connect(action, &QAction::triggered, this, m);
@@ -365,6 +405,7 @@ void NeoMenu::GetMenuContent(QMenu* parent, const YJson& data) {
       int index = 0, check = function();
       QActionGroup* group = new QActionGroup(menu);
       group->setExclusive(true);
+      m_ExclusiveGroups[j[u8"function"].second.getValueString()] = group;
 
       for (auto& k : menu->actions()) {
         if (index < first) {
@@ -468,49 +509,140 @@ void NeoMenu::LoadWallpaperExmenu() {
     case WallBase::BINGAPI: {
       QAction* temp = nullptr;
       temp = pMainMenu->addAction("名称格式");
-      connect(temp, &QAction::triggered, this, [this, jsExInfo](){
+      connect(temp, &QAction::triggered, this, [this, jsExInfo]() {
         auto& u8ImgFmt = jsExInfo->find(u8"imgfmt")->second.getValueString();
         QString qImgFmt = QString::fromUtf8(u8ImgFmt.data(), u8ImgFmt.size());
-        QByteArray&& qImgFmtNewByte = QInputDialog::getText(this, "图片名称", "输入名称格式", QLineEdit::Normal, qImgFmt).toUtf8();
+        QByteArray&& qImgFmtNewByte =
+            QInputDialog::getText(this, "图片名称", "输入名称格式",
+                                  QLineEdit::Normal, qImgFmt)
+                .toUtf8();
         std::u8string u8ImgFmtNew(qImgFmtNewByte.begin(), qImgFmtNewByte.end());
-        if (u8ImgFmtNew.empty() || u8ImgFmtNew == u8ImgFmt) return;
+        if (u8ImgFmtNew.empty() || u8ImgFmtNew == u8ImgFmt)
+          return;
         u8ImgFmt.swap(u8ImgFmtNew);
         m_Wallpaper->m_Wallpaper->SetJson(true);
       });
       temp = pMainMenu->addAction("地理位置");
-      connect(temp, &QAction::triggered, this, [this, jsExInfo](){
+      connect(temp, &QAction::triggered, this, [this, jsExInfo]() {
         auto& u8Mkt = jsExInfo->find(u8"mkt")->second.getValueString();
         QString qMkt = QString::fromUtf8(u8Mkt.data(), u8Mkt.size());
-        QByteArray&& qMktNewByte = QInputDialog::getText(this, "图片地区", "输入图片所在地区", QLineEdit::Normal, qMkt).toUtf8();
+        QByteArray&& qMktNewByte =
+            QInputDialog::getText(this, "图片地区", "输入图片所在地区",
+                                  QLineEdit::Normal, qMkt)
+                .toUtf8();
         std::u8string u8MktNew(qMktNewByte.begin(), qMktNewByte.end());
-        if (u8MktNew.empty() || u8MktNew == u8Mkt) return;
+        if (u8MktNew.empty() || u8MktNew == u8Mkt)
+          return;
         u8Mkt.swap(u8MktNew);
         m_Wallpaper->m_Wallpaper->SetJson(true);
       });
       temp = pMainMenu->addAction("自动下载");
       temp->setCheckable(true);
       temp->setChecked(jsExInfo->find(u8"auto-download")->second.isTrue());
-      connect(temp, &QAction::triggered, this, [this, jsExInfo](bool checked){
+      connect(temp, &QAction::triggered, this, [this, jsExInfo](bool checked) {
         jsExInfo->find(u8"auto-download")->second = checked;
         m_Wallpaper->m_Wallpaper->SetJson(true);
       });
       temp = pMainMenu->addAction("关于壁纸");
-      connect(temp, &QAction::triggered, this, [jsExInfo](){
+      connect(temp, &QAction::triggered, this, [jsExInfo]() {
+        using namespace std::chrono;
         size_t index = jsExInfo->find(u8"index")->second.getValueInt();
-        auto link = jsExInfo->find(u8"images")->second[index][u8"copyrightlink"].second.getValueString() + u8"&filters=HpDate:\"20220904_1600\"";
+        const auto time = current_zone()->to_local(system_clock::now());
+        std::string curDate =
+            std::format("&filters=HpDate:\"{0:%Y%m%d}_1600\"", time);
+        std::u8string link = jsExInfo->find(u8"images")
+                                 ->second[index][u8"copyrightlink"]
+                                 .second.getValueString();
+        link.append(curDate.cbegin(), curDate.cend());
         QDesktopServices::openUrl(QString::fromUtf8(link.data(), link.size()));
       });
       break;
     }
     case WallBase::NATIVE: {
-}
+      QAction* temp = pMainMenu->addAction(QStringLiteral("递归遍历"));
+      temp->setCheckable(true);
+      temp->setChecked(jsExInfo->find(u8"recursion")->second.isTrue());
+      connect(temp, &QAction::triggered, this, [this, jsExInfo](bool checked) {
+        jsExInfo->find(u8"recursion")->second = checked;
+        m_Wallpaper->m_Wallpaper->SetJson(true);
+      });
+      temp = pMainMenu->addAction(QStringLiteral("随机抽选"));
+      temp->setCheckable(true);
+      temp->setChecked(jsExInfo->find(u8"random")->second.isTrue());
+      connect(temp, &QAction::triggered, this, [this, jsExInfo](bool checked) {
+        jsExInfo->find(u8"random")->second = checked;
+        m_Wallpaper->m_Wallpaper->SetJson(true);
+      });
+      break;
+    }
+    case WallBase::DIRECTAPI: {
+      std::u8string_view key =
+          jsExInfo->find(u8"ApiUrl")->second.getValueString();
+      QAction* temp = nullptr;
+      QActionGroup* pGroup = new QActionGroup(pMainMenu);
+      for (const auto& [_name, data] :
+           jsExInfo->find(u8"ApiData")->second.getObject()) {
+        std::u8string name = _name;
+        temp =
+            pMainMenu->addAction(QString::fromUtf8(name.data(), name.size()));
+        temp->setCheckable(true);
+        temp->setChecked(name == key);
+        pGroup->addAction(temp);
+
+        QMenu* tempMenu = new QMenu(pMainMenu);
+        temp->setMenu(tempMenu);
+        connect(tempMenu->addAction(QStringLiteral("启用此项")),
+                &QAction::triggered, this, [=]() {
+                  temp->setChecked(true);
+                  jsExInfo->find(u8"ApiUrl")->second = name;
+                  m_Wallpaper->m_Wallpaper->SetJson(true);
+                });
+        tempMenu->addSeparator();
+        QActionGroup* pSonGroup = new QActionGroup(pMainMenu);
+        for (int32_t index = 0, cIndex = data[u8"CurPath"].second.getValueInt();
+             auto& path : data[u8"Paths"].second.getArray()) {
+          std::u8string_view path_view = path.getValueString();
+          temp = tempMenu->addAction(
+              QString::fromUtf8(path_view.data(), path_view.size()));
+          temp->setCheckable(true);
+          pSonGroup->addAction(temp);
+          connect(temp, &QAction::triggered, this, [=](bool checked) {
+            jsExInfo->find(u8"ApiData")
+                ->second[name]
+                .second[u8"CurPath"]
+                .second = index;
+            m_Wallpaper->m_Wallpaper->SetJson(true);
+          });
+          temp->setChecked(cIndex == index++);
+        }
+      }
+      break;
+    }
+    case WallBase::SCRIPTOUTPUT: {
+      QAction* temp = pMainMenu->addAction(QStringLiteral("程序路径"));
+      connect(temp, &QAction::triggered, this, [this, jsExInfo]() {
+        QString fileName = QFileDialog::getOpenFileName(
+            this, "请选择可执行文件", QString(), "*.*");
+        if (fileName.isEmpty() || !QFile::exists(fileName))
+          return;
+        QByteArray array = fileName.toUtf8();
+        jsExInfo->find(u8"executeable")
+            ->second.setText(array.begin(), array.end());
+        m_Wallpaper->m_Wallpaper->SetJson(true);
+      });
+      temp = pMainMenu->addAction(QStringLiteral("参数列表"));
+      ScriptApiParams(temp);
+      break;
+    }
     default:
       break;
   }
-  connect(pMainMenu->addAction("打开位置"), &QAction::triggered, this, [this](){
-      std::wstring args = L"/select, " + m_Wallpaper->GetCurIamge().wstring();
-      ShellExecuteW(nullptr, L"open", L"explorer", args.c_str(), NULL, SW_SHOWNORMAL);
-  });
+  connect(
+      pMainMenu->addAction("打开位置"), &QAction::triggered, this, [this]() {
+        std::wstring args = L"/select, " + m_Wallpaper->GetCurIamge().wstring();
+        ShellExecuteW(nullptr, L"open", L"explorer", args.c_str(), NULL,
+                      SW_SHOWNORMAL);
+      });
 }
 
 void NeoMenu::WallhavenParams(QAction* action) {
@@ -602,4 +734,57 @@ void NeoMenu::WallhavenParams(QAction* action) {
   });
   connect(arButtons[3], &QPushButton::clicked, pTableDlg, &QDialog::close);
   pTableDlg->exec();
+}
+
+void NeoMenu::ScriptApiParams(QAction* action) {
+  connect(action, &QAction::triggered, this, [this]() {
+    QDialog argDlg(this);
+    QVBoxLayout* pVout = new QVBoxLayout(&argDlg);
+    QHBoxLayout* pHout = new QHBoxLayout;
+    QListWidget* pLstWgt = new QListWidget(&argDlg);
+    pVout->addWidget(pLstWgt);
+    std::array arButtons = {
+        new QPushButton(QStringLiteral("添加"), &argDlg),
+        new QPushButton(QStringLiteral("删除"), &argDlg),
+        new QPushButton(QStringLiteral("取消"), &argDlg),
+        new QPushButton(QStringLiteral("确认"), &argDlg),
+    };
+
+    std::for_each(arButtons.begin(), arButtons.end(),
+                  std::bind(&QHBoxLayout::addWidget, pHout,
+                            std::placeholders::_1, 0, Qt::Alignment()));
+
+    auto argview = m_Wallpaper->m_Wallpaper->GetJson()
+                       ->find(u8"arglist")
+                       ->second.getArray() |
+                   std::views::transform([](const YJson& item) {
+                     std::u8string_view str = item.getValueString();
+                     return QString::fromUtf8(str.data(), str.size());
+                   });
+
+    pLstWgt->addItems(QStringList(argview.begin(), argview.end()));
+    pVout->addLayout(pHout);
+
+    connect(arButtons[0], &QPushButton::clicked, pLstWgt, [pLstWgt]() {
+      pLstWgt->insertItem(pLstWgt->currentRow(),
+                          new QListWidgetItem("New Item"));
+    });
+    connect(arButtons[1], &QPushButton::clicked, pLstWgt,
+            [pLstWgt]() { pLstWgt->removeItemWidget(pLstWgt->currentItem()); });
+    connect(arButtons[2], &QPushButton::clicked, &argDlg,
+            [&argDlg]() { argDlg.close(); });
+    connect(arButtons[3], &QPushButton::clicked, &argDlg,
+            [&argDlg, this, pLstWgt]() {
+              std::list<YJson> args;
+              for (int i = 0; i < pLstWgt->count(); ++i) {
+                QByteArray array = pLstWgt->item(i)->text().toUtf8();
+                args.emplace_back(std::u8string(array.begin(), array.end()));
+              }
+              m_Wallpaper->m_Wallpaper->GetJson()
+                  ->find(u8"arglist")
+                  ->second.getArray() = std::move(args);
+              m_Wallpaper->m_Wallpaper->SetJson(true);
+              argDlg.close();
+            });
+  });
 }

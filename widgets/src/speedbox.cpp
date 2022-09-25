@@ -6,22 +6,23 @@
 #include <QMessageBox>
 #include <QMimeData>
 #include <QMouseEvent>
+#include <QPropertyAnimation>
 #include <QTimer>
 #include <QVBoxLayout>
 
 #include <neomenu.h>
+#include <netspeedhelper.h>
+#include <shortcut.h>
 #include <speedbox.h>
+#include <translatedlg.h>
 #include <varbox.h>
 #include <wallpaper.h>
 #include <yjson.h>
 #include <appcode.hpp>
-#include <netspeedhelper.h>
-#include <translatedlg.h>
-#include <shortcut.h>
 
+#include <array>
 #include <filesystem>
 #include <ranges>
-#include <array>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -36,8 +37,8 @@ SpeedBox::SpeedBox(QWidget* parent)
       m_TextUploadSpeed(new QLabel(m_CentralWidget)),
       m_TextDownLoadSpeed(new QLabel(m_CentralWidget)),
       m_Timer(new QTimer(this)),
-      m_MainMenu(nullptr)
-{
+      m_MainMenu(nullptr),
+      m_Animation(new QPropertyAnimation(this, "geometry")) {
   SetWindowMode();
   SetBaseLayout();
   SetStyleSheet();
@@ -62,10 +63,19 @@ void SpeedBox::Show() {
    * Notice
    * m_MainMenu should be construct after SpeedBox isShown.
    */
-  if (!m_MainMenu) {
-    m_MainMenu = new NeoMenu(this);  // must be this, not m_CentralWidget.
-    m_MainMenu->SetFormColorEffect();
-  }
+
+  if (m_MainMenu)
+    return;
+  m_MainMenu = new NeoMenu(this);  // must be this, not m_CentralWidget.
+  m_MainMenu->SetFormColorEffect();
+
+  m_Animation->setDuration(100);
+  m_Animation->setTargetObject(this);
+  connect(m_Animation, &QPropertyAnimation::finished, this, [this]() {
+    VarBox::GetSettings(u8"FormGlobal")[u8"Position"].second.getArray() =
+        YJson::A{x(), y()};
+    VarBox::WriteSettings();
+  });
 }
 
 void SpeedBox::SetWindowMode() {
@@ -81,8 +91,8 @@ void SpeedBox::SetWindowMode() {
   m_TextDownLoadSpeed->setObjectName("netDown");
   m_TextUploadSpeed->setObjectName("netUp");
   m_TextMemUseage->setMinimumWidth(30);
-  m_TextUploadSpeed->setMinimumWidth(60);
-  m_TextDownLoadSpeed->setMinimumWidth(60);
+  m_TextUploadSpeed->setMinimumWidth(65);
+  m_TextDownLoadSpeed->setMinimumWidth(65);
   const auto& array =
       VarBox::GetSettings(u8"FormGlobal")[u8"Position"].second.getArray();
   move(array.front().getValueInt(), array.back().getValueInt());
@@ -104,27 +114,28 @@ void SpeedBox::SetStyleSheet() {
 void SpeedBox::SetBaseLayout() {
   YJson& jsFormUi = VarBox::GetSettings(u8"FormUi");
   QByteArray qByteName;
-  std::array<QLabel*, 3> labels = {
-    m_TextMemUseage, m_TextUploadSpeed, m_TextDownLoadSpeed
-  };
-  for (auto label: labels) {
+  std::array<QLabel*, 3> labels = {m_TextMemUseage, m_TextUploadSpeed,
+                                   m_TextDownLoadSpeed};
+  for (auto label : labels) {
     qByteName = label->objectName().toUtf8();
-    YJson& temp = jsFormUi[std::u8string(qByteName.begin(), qByteName.end())].second;
+    YJson& temp =
+        jsFormUi[std::u8string(qByteName.begin(), qByteName.end())].second;
     const auto& jsPos = temp[u8"Pos"].second.getArray();
     label->move(jsPos.front().getValueInt(), jsPos.back().getValueInt());
-    // 
+    //
   }
 }
 
 void SpeedBox::UpdateTextContent() {
+  static auto qstr = [](const std::string& str) {
+    return QString::fromUtf8(str.data(), str.size());
+  };
   m_TextMemUseage->setText(
       QString::number(std::get<0>(m_NetSpeedHelper->m_SysInfo)));
-  m_TextUploadSpeed->setText(
-      QString::fromStdWString(m_NetSpeedHelper->FormatSpped(
-          std::get<1>(m_NetSpeedHelper->m_SysInfo), true)));
-  m_TextDownLoadSpeed->setText(
-      QString::fromStdWString(m_NetSpeedHelper->FormatSpped(
-          std::get<2>(m_NetSpeedHelper->m_SysInfo), false)));
+  m_TextUploadSpeed->setText(qstr(m_NetSpeedHelper->FormatSpeed(
+      std::get<1>(m_NetSpeedHelper->m_SysInfo), true)));
+  m_TextDownLoadSpeed->setText(qstr(m_NetSpeedHelper->FormatSpeed(
+      std::get<2>(m_NetSpeedHelper->m_SysInfo), false)));
 }
 
 void SpeedBox::SetHideFullScreen() {
@@ -164,8 +175,7 @@ void SpeedBox::mouseReleaseEvent(QMouseEvent* event) {
   }
 }
 
-void SpeedBox::mouseDoubleClickEvent(QMouseEvent *event)
-{
+void SpeedBox::mouseDoubleClickEvent(QMouseEvent* event) {
   if (m_MainMenu->m_TranslateDlg->isVisible()) {
     m_MainMenu->m_TranslateDlg->hide();
   } else {
@@ -214,11 +224,65 @@ bool SpeedBox::nativeEvent(const QByteArray& eventType,
     }
   } else if (WM_HOTKEY == msg->message) {
     /*
-     * idHotKey = wParam;          
+     * idHotKey = wParam;
      * Modifiers = (UINT) LOWORD(lParam);
      * uVirtKey = (UINT) HIWORD(lParam);
      */
     m_MainMenu->m_Shortcut->CallFunction(msg->wParam);
   }
   return false;
+}
+
+constexpr int delta = 1;
+
+void SpeedBox::enterEvent(QEnterEvent* event) {
+  auto rtScreen = QGuiApplication::primaryScreen()->geometry();
+  auto rtForm = this->frameGeometry();
+  m_Animation->setStartValue(rtForm);
+  switch (m_HideSide) {
+    case HideSide::Left:
+      rtForm.moveTo(-delta, rtForm.y());
+      break;
+    case HideSide::Right:
+      rtForm.moveTo(rtScreen.right() - rtForm.width() + delta, rtForm.y());
+      break;
+    case HideSide::Top:
+      rtForm.moveTo(rtForm.x(), -delta);
+      break;
+    case HideSide::Bottom:
+      rtForm.moveTo(rtForm.x(), rtScreen.bottom() - rtForm.height() + delta);
+      break;
+    default:
+      event->ignore();
+      return;
+  }
+  event->accept();
+  m_Animation->setEndValue(rtForm);
+  m_Animation->start();
+}
+
+void SpeedBox::leaveEvent(QEvent* event) {
+  auto rtScreen = QGuiApplication::primaryScreen()->geometry();
+  auto rtForm = this->frameGeometry();
+  m_Animation->setStartValue(rtForm);
+  if (rtForm.right() + delta >= rtScreen.right()) {
+    m_HideSide = HideSide::Right;
+    rtForm.moveTo(rtScreen.right() - delta, rtForm.y());
+  } else if (rtForm.left() - delta <= rtScreen.left()) {
+    m_HideSide = HideSide::Left;
+    rtForm.moveTo(delta - rtForm.width(), rtForm.y());
+  } else if (rtForm.top() - delta <= rtScreen.top()) {
+    m_HideSide = HideSide::Top;
+    rtForm.moveTo(rtForm.x(), delta - rtForm.height());
+  } else if (rtForm.bottom() + delta >= rtScreen.bottom()) {
+    m_HideSide = HideSide::Bottom;
+    rtForm.moveTo(rtForm.x(), rtScreen.bottom() - delta);
+  } else {
+    m_HideSide = HideSide::None;
+    event->ignore();
+    return;
+  }
+  m_Animation->setEndValue(rtForm);
+  m_Animation->start();
+  event->accept();
 }
