@@ -2,7 +2,7 @@
 #include <screenfetch.h>
 #include <shortcut.h>
 #include <speedbox.h>
-#include <sysapi.h>
+#include <systemapi.h>
 #include <translatedlg.h>
 #include <varbox.h>
 #include <wallpaper.h>
@@ -40,6 +40,7 @@
 #else
 #endif
 
+namespace fs = std::filesystem;
 extern QString QImage2Text(const QImage& qImage);
 
 NeoMenu::NeoMenu(QWidget* parent)
@@ -628,8 +629,9 @@ void NeoMenu::LoadWallpaperExmenu() {
         if (fileName.isEmpty() || !QFile::exists(fileName))
           return;
         QByteArray array = fileName.toUtf8();
-        jsExInfo->find(u8"executeable")
-            ->second.setText(array.begin(), array.end());
+        fs::path exe = std::u8string_view(reinterpret_cast<const char8_t*>(array.data()), array.size());
+        exe.make_preferred();
+        jsExInfo->find(u8"executeable")->second = exe.u8string();
         m_Wallpaper->m_Wallpaper->SetJson(true);
       });
       temp = pMainMenu->addAction(QStringLiteral("参数列表"));
@@ -767,12 +769,23 @@ void NeoMenu::ScriptApiParams(QAction* action) {
     pLstWgt->addItems(QStringList(argview.begin(), argview.end()));
     pVout->addLayout(pHout);
 
-    connect(arButtons[0], &QPushButton::clicked, pLstWgt, [pLstWgt]() {
-      pLstWgt->insertItem(pLstWgt->currentRow(),
-                          new QListWidgetItem("New Item"));
+    connect(arButtons[0], &QPushButton::clicked, pLstWgt, [&argDlg, pLstWgt]() {
+      QListWidgetItem *item = new QListWidgetItem("New Item");
+      pLstWgt->insertItem(pLstWgt->currentRow(), item);
+      const QString str = QInputDialog::getText(
+          &argDlg, 
+          QStringLiteral("文字输入"), 
+          QStringLiteral("请输入参数"), 
+          QLineEdit::Normal,
+          item->text());
+      if (!str.isEmpty() && str != item->text())
+        item->setText(str);
     });
-    connect(arButtons[1], &QPushButton::clicked, pLstWgt,
-            [pLstWgt]() { pLstWgt->removeItemWidget(pLstWgt->currentItem()); });
+    connect(arButtons[1], &QPushButton::clicked, pLstWgt, [pLstWgt]() {
+      for (auto item: pLstWgt->selectedItems()) {
+        delete item;
+      }
+    });
     connect(arButtons[2], &QPushButton::clicked, &argDlg,
             [&argDlg]() { argDlg.close(); });
     connect(arButtons[3], &QPushButton::clicked, &argDlg,
@@ -788,5 +801,16 @@ void NeoMenu::ScriptApiParams(QAction* action) {
               m_Wallpaper->m_Wallpaper->SetJson(true);
               argDlg.close();
             });
+    connect(pLstWgt, &QListWidget::itemDoubleClicked, &argDlg, [&argDlg](QListWidgetItem* item){
+      const QString str = QInputDialog::getText(
+          &argDlg, 
+          QStringLiteral("文字输入"), 
+          QStringLiteral("请输入参数"), 
+          QLineEdit::Normal,
+          item->text());
+      if (!str.isEmpty() && str != item->text())
+        item->setText(str);
+    });
+    argDlg.exec();
   });
 }

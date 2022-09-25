@@ -1,13 +1,15 @@
 #include <httplib.h>
-#include <sysapi.h>
-#include <timer.h>
+#include <systemapi.h>
+#include <neotimer.h>
 
 #include <wallpaper.h>
 #include <ranges>
 #include <regex>
 #include <unordered_set>
 
-extern std::unordered_set<std::filesystem::path> m_UsingFiles;
+namespace fs = std::filesystem;
+
+extern std::unordered_set<fs::path> m_UsingFiles;
 
 extern void ShowMessage(const std::u8string& title,
                         const std::u8string& text,
@@ -16,20 +18,20 @@ extern void ShowMessage(const std::u8string& title,
 constexpr char Wallpaper::m_szWallScript[];
 
 bool Wallpaper::DownloadImage(const ImageInfoEx imageInfo) {
-  namespace fs = std::filesystem;
   if (imageInfo->ErrorCode != ImageInfo::NoErr) {
     ShowMessage(u8"出错", imageInfo->ErrorMsg);
     return false;
   }
 
   // Check image dir and file.
-  const auto& m_sFilePath = imageInfo->ImagePath;
-  const auto& dir = fs::path(m_sFilePath).parent_path();
+  const auto& u8FilePath = imageInfo->ImagePath;
+  const auto& dir = fs::path(u8FilePath).parent_path();
+
   if (!fs::exists(dir))
     fs::create_directories(dir);
-  if (fs::exists(m_sFilePath)) {
-    if (!fs::file_size(m_sFilePath))
-      fs::remove(m_sFilePath);
+  if (fs::exists(u8FilePath)) {
+    if (!fs::file_size(u8FilePath))
+      fs::remove(u8FilePath);
     else
       return true;
   }
@@ -39,16 +41,16 @@ bool Wallpaper::DownloadImage(const ImageInfoEx imageInfo) {
 
   if (!HttpLib::IsOnline())
     return false;
-  m_UsingFiles.emplace(m_sFilePath);
-  int res = HttpLib::Gets(imageInfo->ImageUrl, m_sFilePath);
+  m_UsingFiles.emplace(u8FilePath);
+  int res = HttpLib::Gets(imageInfo->ImageUrl, u8FilePath);
   if (res == 200) {
-    m_UsingFiles.erase(m_sFilePath);
+    m_UsingFiles.erase(u8FilePath);
     return true;
   } else {
-    if (fs::exists(m_sFilePath))
-      fs::remove(m_sFilePath);
-    m_UsingFiles.erase(m_sFilePath);
-    ShowMessage(u8"出错", u8"网络异常或文件不能打开！\n文件名：" + m_sFilePath +
+    if (fs::exists(u8FilePath))
+      fs::remove(u8FilePath);
+    m_UsingFiles.erase(u8FilePath);
+    ShowMessage(u8"出错", u8"网络异常或文件不能打开！\n文件名：" + u8FilePath +
                               u8"\n网址：" + imageInfo->ImagePath);
     return false;
   }
@@ -75,16 +77,16 @@ Wallpaper::Desktop Wallpaper::GetDesktop() {
 #endif
 }
 
-bool Wallpaper::SetWallpaper(std::filesystem::path imagePath) {
+bool Wallpaper::SetWallpaper(fs::path imagePath) {
   // use preferred separator to prevent win32 api crash.
   imagePath.make_preferred();
 
   [[maybe_unused]] static auto m_DesktopType = GetDesktop();
-  if (!std::filesystem::exists(imagePath)) {
+  if (!fs::exists(imagePath)) {
     ShowMessage(u8"出错", u8"找不到该文件：" + imagePath.u8string());
     return false;
   }
-  if (std::filesystem::is_directory(imagePath)) {
+  if (fs::is_directory(imagePath)) {
     ShowMessage(u8"出错", u8"要使用的壁纸不是文件：" + imagePath.u8string());
     return false;
   }
@@ -97,7 +99,7 @@ bool Wallpaper::SetWallpaper(std::filesystem::path imagePath) {
   std::ostringstream sstr;
   switch (m_DesktopType) {
     case Desktop::KDE:
-      sstr << std::filesystem::current_path() / m_szWallScript << ' ';
+      sstr << fs::current_path() / m_szWallScript << ' ';
       break;
     case Desktop::GNOME:
       sstr << "gsettings set org.gnome.desktop.background picture-uri \"file:";
@@ -129,7 +131,7 @@ Wallpaper::Wallpaper(YJson* settings, void (*callback)(void))
       m_Wallpaper(nullptr),
       m_Settings(settings),
       m_SettingsCallback(callback),
-      m_Timer(new Timer),
+      m_Timer(new NeoTimer),
       m_Favorites(WallBase::GetNewInstance(WallBase::FAVORITE)),
       m_BingWallpaper(WallBase::GetNewInstance(WallBase::BINGAPI)) {
   ReadSettings();
@@ -141,11 +143,9 @@ Wallpaper::Wallpaper(YJson* settings, void (*callback)(void))
 Wallpaper::~Wallpaper() {
   delete m_Timer;
   WallBase::ClearInstatnce();
-  for (const auto& i :
-       m_UsingFiles |
-           std::views::filter((bool (*)(const std::filesystem::path&)) &
-                              std::filesystem::exists)) {
-    std::filesystem::remove(i);
+  for (const auto& i: m_UsingFiles ) {
+    if (fs::exists(i))
+      fs::remove(i);
   }
 }
 
@@ -180,7 +180,7 @@ void Wallpaper::SetSlot(int type) {
   }).detach();
 }
 
-const std::filesystem::path& Wallpaper::GetImageDir() const {
+const fs::path& Wallpaper::GetImageDir() const {
   return m_Wallpaper->GetImageDir();
 }
 
@@ -242,20 +242,22 @@ bool Wallpaper::SetPrevious() {
 bool Wallpaper::UndoDelete() {
   if (m_BlackList.empty())
     return false;
-  auto& back = m_BlackList.back();
+  const auto& back = m_BlackList.back();
   if (!back.second.has_parent_path()) {
     m_BlackList.pop_back();
     WriteBlackList();
     return false;
   }
   auto parent_path = back.second.parent_path();
-  if (!std::filesystem::exists(parent_path)) {
-    std::filesystem::create_directories(parent_path);
+  if (!fs::exists(parent_path)) {
+    fs::create_directories(parent_path);
   }
-  std::filesystem::rename(back.first, back.second);
-  if (!SetWallpaper(m_CurImage = std::move(back.second)))
+  fs::rename(back.first, back.second);
+  if (!SetWallpaper(back.second))
     return false;
   m_PrevImgs.push_back(m_CurImage);
+  m_CurImage = std::move(back.second);
+  m_CurImage.make_preferred();
   m_BlackList.pop_back();
   m_Wallpaper->UndoDislike(m_CurImage.u8string());
   WriteBlackList();
@@ -264,10 +266,10 @@ bool Wallpaper::UndoDelete() {
 
 bool Wallpaper::ClearJunk() {
   constexpr char8_t junk[] = u8"junk";
-  if (std::filesystem::exists(junk))
-    std::filesystem::remove_all(junk);
-  if (std::filesystem::exists("Blacklist.txt"))
-    std::filesystem::remove("Blacklist.txt");
+  if (fs::exists(junk))
+    fs::remove_all(junk);
+  if (fs::exists("Blacklist.txt"))
+    fs::remove("Blacklist.txt");
   m_BlackList.clear();
   return false;
 }
@@ -282,13 +284,13 @@ bool Wallpaper::UnSetFavorite() {
   return true;
 }
 
-bool Wallpaper::IsImageFile(const std::filesystem::path& filesName) {
+bool Wallpaper::IsImageFile(const fs::path& filesName) {
   // BMP, PNG, GIF, JPG
   std::wregex pattern(L".*\\.(jpg|bmp|gif|jpeg|png)$", std::regex::icase);
   return std::regex_match(filesName.wstring(), pattern);
 }
 
-bool Wallpaper::SetDropFile(std::deque<std::filesystem::path>&& paths) {
+bool Wallpaper::SetDropFile(std::deque<fs::path>&& paths) {
   if (WallBase::m_IsWorking)
     return false;
   WallBase::m_IsWorking = true;
@@ -309,14 +311,14 @@ bool Wallpaper::RemoveCurrent() {
   if (m_NextImgs.empty()) {
     if (!SetNext())
       return false;
-    if (std::filesystem::exists(m_PrevImgs.back()))
+    if (fs::exists(m_PrevImgs.back()))
       AppendBlackList(m_PrevImgs.back());
     m_Wallpaper->Dislike(m_PrevImgs.back().u8string());
     m_PrevImgs.pop_back();
     return true;
   } else {
     if (SetWallpaper(m_NextImgs.top())) {
-      if (std::filesystem::exists(m_CurImage))
+      if (fs::exists(m_CurImage))
         AppendBlackList(m_CurImage);
       m_Wallpaper->Dislike(m_CurImage.u8string());
       m_CurImage = m_NextImgs.top();
@@ -369,13 +371,13 @@ void Wallpaper::WriteSettings() const {
   file.close();
 }
 
-void Wallpaper::AppendBlackList(const std::filesystem::path& path) {
+void Wallpaper::AppendBlackList(const fs::path& path) {
   constexpr char8_t junk[] = u8"junk";
-  if (!std::filesystem::exists(junk)) {
-    std::filesystem::create_directory(junk);
+  if (!fs::exists(junk)) {
+    fs::create_directory(junk);
   }
   auto& back = m_BlackList.emplace_back(junk / path.filename(), path);
-  std::filesystem::rename(back.second, back.first);
+  fs::rename(back.second, back.first);
 
   std::ofstream file("Blacklist.txt", std::ios::app);
   if (!file.is_open())
@@ -416,9 +418,9 @@ void Wallpaper::SetFirstChange(bool flag) {
     SetSlot(1);
 }
 
-void Wallpaper::SetCurDir(std::filesystem::path str) {
+void Wallpaper::SetCurDir(fs::path str) {
   str.make_preferred();
-  if (std::filesystem::exists(str) || std::filesystem::create_directory(str))
+  if (fs::exists(str) || fs::create_directory(str))
     m_Wallpaper->SetCurDir(str.u8string());
 }
 

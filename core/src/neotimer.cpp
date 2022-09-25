@@ -1,19 +1,18 @@
-#include "timer.h"
-
+#include <neotimer.h>
 #include <stdint.h>
 
-Timer::Timer() : expired_(true), try_to_expire_(false) {}
+NeoTimer::NeoTimer() : expired_(true), try_to_expire_(false) {}
 
-Timer::Timer(const Timer& t) {
+NeoTimer::NeoTimer(const NeoTimer& t) {
   expired_ = t.expired_.load();
   try_to_expire_ = t.try_to_expire_.load();
 }
-Timer::~Timer() {
+NeoTimer::~NeoTimer() {
   Expire();
   //      std::cout << "timer destructed!" << std::endl;
 }
 
-void Timer::StartTimer(uint32_t interval, std::function<void()> task) {
+void NeoTimer::StartTimer(uint32_t interval, std::function<void()> task) {
   if (expired_ == false) {
     //          std::cout << "timer is currently running, please expire it
     //          first..." << std::endl;
@@ -40,12 +39,12 @@ void Timer::StartTimer(uint32_t interval, std::function<void()> task) {
   }).detach();
 }
 
-void Timer::ResetTime(uint32_t mini, const std::function<void()>& task) {
+void NeoTimer::ResetTime(uint32_t mini, const std::function<void()>& task) {
   Expire();
   StartTimer(mini, task);
 }
 
-void Timer::Expire() {
+void NeoTimer::Expire() {
   if (expired_) {
     return;
   }

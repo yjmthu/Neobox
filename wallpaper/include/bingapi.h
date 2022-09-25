@@ -4,6 +4,7 @@
 #include "wallbase.h"
 
 namespace chrono = std::chrono;
+namespace fs = std::filesystem;
 
 class BingApi : public WallBase {
  public:
@@ -19,8 +20,8 @@ class BingApi : public WallBase {
   }
   virtual ~BingApi() { delete m_Setting; }
   virtual bool LoadSetting() override {
-    if (std::filesystem::exists(m_SettingPath) &&
-        std::filesystem::file_size(m_SettingPath)) {
+    if (fs::exists(m_SettingPath) &&
+        fs::file_size(m_SettingPath)) {
       m_Setting = new YJson(m_SettingPath, YJson::UTF8);
       if (m_Setting->find(u8"today")->second.getValueString() == GetToday()) {
         m_ImageDir = m_Setting->find(u8"imgdir")->second.getValueString();

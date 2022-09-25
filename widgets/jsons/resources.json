@@ -1,1 +1,1 @@
-{"icons": ["icons/copy.ico", "icons/speedbox.ico"], "styles": ["styles/MenuStyle.css"]}
+{"icons": ["icons/copy.ico", "icons/speedbox.ico"], "styles": ["styles/MenuStyle.css"], "scripts": ["scripts/getpic.py", "scripts/Neobox.desktop", "scripts/SetWallpaper.sh"]}

@@ -1,23 +1,12 @@
 ﻿#include <functional>
 #include <numeric>
 #include <set>
+#include <queue>
 
 #include <wallbase.h>
 #include <wallpaper.h>
 
 namespace fs = std::filesystem;
-
-static size_t GetFileCount(fs::path path) {
-  size_t n = 0;
-  for (auto& iter : fs::directory_iterator(path)) {
-    if (fs::is_directory(iter.status())) {
-      n += GetFileCount(iter.path());
-    } else if (Wallpaper::IsImageFile(iter.path())) {
-      ++n;
-    }
-  }
-  return n;
-}
 
 class Native : public WallBase {
  private:
@@ -27,14 +16,20 @@ class Native : public WallBase {
       return m_iCount;
 
     const bool bRecursion = m_Setting->find(u8"recursion")->second.isTrue();
-    for (auto& iter : fs::directory_iterator(m_ImageDir)) {
-      if (fs::is_directory(iter.status())) {
-        if (bRecursion) {
-          m_iCount += ::GetFileCount(iter.path());
+    std::queue<fs::path> qDirsToWalk;
+    qDirsToWalk.push(m_ImageDir);
+
+    while (!qDirsToWalk.empty()) {
+      for (auto& iter : fs::directory_iterator(qDirsToWalk.front())) {
+        if (fs::is_directory(iter.status())) {
+          if (bRecursion) {
+            qDirsToWalk.push(iter.path());
+          }
+        } else if (Wallpaper::IsImageFile(iter.path())) {
+          ++m_iCount;
         }
-      } else if (Wallpaper::IsImageFile(iter.path())) {
-        ++m_iCount;
       }
+      qDirsToWalk.pop();
     }
     return m_iCount;
   }
@@ -63,12 +58,17 @@ class Native : public WallBase {
 
     const bool bRecursion = m_Setting->find(u8"recursion")->second.isTrue();
     auto target = numbers.cbegin();
-    std::function<void(fs::path)> _GetFileList;
-    _GetFileList = [&](fs::path path) {
-      for (auto& iter : fs::directory_iterator(path)) {
+
+    std::queue<fs::path> qDirsToWalk;
+    qDirsToWalk.push(m_ImageDir);
+
+    while (!qDirsToWalk.empty()) {
+      for (auto& iter : fs::directory_iterator(qDirsToWalk.front())) {
         fs::path path = iter.path();
         if (fs::is_directory(iter.status())) {
-          _GetFileList(path);
+          if (bRecursion) {
+            qDirsToWalk.push(path);
+          }
         } else if (Wallpaper::IsImageFile(path)) {
           if (*target == m_Index) {
             m_FileList.emplace_back(path.u8string());
@@ -77,20 +77,7 @@ class Native : public WallBase {
           ++m_Index;
         }
       }
-    };
-    for (auto& iter : fs::directory_iterator(m_ImageDir)) {
-      fs::path path = iter.path();
-      if (fs::is_directory(iter.status())) {
-        if (bRecursion) {
-          _GetFileList(path);
-        }
-      } else if (Wallpaper::IsImageFile(path)) {
-        if (*target == m_Index) {
-          m_FileList.emplace_back(path.u8string());
-          ++target;
-        }
-        ++m_Index;
-      }
+      qDirsToWalk.pop();
     }
 
     std::mt19937 g(std::random_device{}());

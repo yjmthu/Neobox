@@ -13,6 +13,7 @@ if __name__ == '__main__':
     root.appendChild(rootElement)
     for dirname in dirlist:
         if not os.path.exists(dirname):
+            print(dirname, "not exists.")
             continue
         for file in os.listdir(dirname):
             element = doc.createElement('file')
@@ -21,8 +22,9 @@ if __name__ == '__main__':
     with open('resources.qrc', 'w', encoding='utf-8') as f:
         doc.writexml(f, addindent='    ', newl='\n', encoding='utf-8')
     with open("jsons/resources.json", "w", encoding="utf-8") as f:
-        json.dump({
-            "icons": ["icons/" + i for i in os.listdir("icons")],
-            "styles": ["styles/" + i for i in os.listdir("styles")]
-            }, f)
+        data = dict()
+        for i in [ "icons", "styles", "scripts" ]:
+            data[i] = [ i+"/" + j for j in os.listdir(i) ]
+        json.dump(data, f)
+    print("ok")
 

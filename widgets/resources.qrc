@@ -9,6 +9,7 @@
         <file>jsons/menucontent.json</file>
         <file>jsons/resources.json</file>
         <file>jsons/setting.json</file>
+        <file>scripts/getpic.py</file>
         <file>scripts/Neobox.desktop</file>
         <file>scripts/SetWallpaper.sh</file>
         <file>styles/MenuStyle.css</file>

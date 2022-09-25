@@ -71,21 +71,75 @@ inline std::u8string Ansi2Utf8String(const std::string& ansiStr) {
 }
 
 template <typename _Ty>
-void GetCmdOutput(LPCWSTR cmd, _Ty& result) {
-  constexpr auto bufSize = 1024;
-  WCHAR buffer[bufSize];
-  FILE* fp;
-  std::wstringstream stream;
-  if ((fp = _wpopen(cmd, L"r"))) {
-    while (std::fgetws(buffer, bufSize, fp)) {
-      stream << buffer;
+void GetCmdOutput(std::wstring cmd, _Ty& result) {
+  cmd.push_back(L'\0');
+  constexpr auto bufSize = 256;
+
+  SECURITY_ATTRIBUTES sa = {0};                                              
+  HANDLE hPipRead = NULL, hPipWrite = NULL;                                                
+  sa.nLength = sizeof(SECURITY_ATTRIBUTES);    
+  sa.lpSecurityDescriptor = NULL;    
+  sa.bInheritHandle = TRUE;    
+  if (!CreatePipe(&hPipRead, &hPipWrite, &sa,0))                             
+      return;    
+
+  STARTUPINFO si = { 0 };
+  PROCESS_INFORMATION pi = { 0 };
+  si.cb = sizeof(STARTUPINFO);
+  GetStartupInfo(&si);
+  si.hStdError = hPipWrite;
+  si.hStdOutput = hPipWrite;
+  si.wShowWindow = SW_HIDE;
+  si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+
+  if (CreateProcess(NULL, cmd.data(), NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi))             
+  {
+    char szRecvData[bufSize];
+    DWORD dwRecvSize;
+    std::stringstream stream;
+    std::string str;
+
+    if (NULL != hPipWrite)
+    {
+      CloseHandle(hPipWrite);
+      hPipWrite = NULL;
     }
-    _pclose(fp);
-  }
-  std::wstring str;
-  while (std::getline(stream, str)) {
-    result.emplace_back(std::move(str));
-  }
+
+    while(ReadFile(hPipRead, szRecvData, bufSize, &dwRecvSize, NULL))
+    {
+      stream.write(szRecvData, dwRecvSize);
+    }
+
+    while (std::getline(stream, str)) {
+      if (str.ends_with('\r')) str.pop_back();
+      result.emplace_back(Ansi2WideString(str));
+    }
+  }    
+    
+  if (NULL != hPipRead)
+	{
+		CloseHandle(hPipRead);
+		hPipRead = NULL;
+	}
+
+  if (NULL != hPipWrite)
+	{
+		CloseHandle(hPipWrite);
+		hPipWrite = NULL;
+	}
+
+  if (NULL != pi.hProcess)
+	{
+		CloseHandle(pi.hProcess);
+		pi.hProcess = NULL;
+	}
+
+	if (NULL != pi.hThread)
+	{
+		CloseHandle(pi.hThread);
+		pi.hThread = NULL;
+	}
+
 }
 
 inline std::wstring GetExeFullPath() {

@@ -72,7 +72,7 @@ class Wallpaper {
   YJson* const m_Settings;
   void (*m_SettingsCallback)(void);
 
-  class Timer* const m_Timer;
+  class NeoTimer* const m_Timer;
   class WallBase* const m_Favorites;
   class WallBase* const m_BingWallpaper;
   std::deque<std::filesystem::path> m_PrevImgs;

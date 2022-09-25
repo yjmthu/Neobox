@@ -10,11 +10,9 @@
 #include <regex>
 #include <string>
 
-#include "sysapi.h"
-
 std::string NetSpeedHelper::FormatSpeed(uint64_t bytes, bool upload) {
   // https://unicode-table.com/en/2192/
-  static const char units[] = "BKMGTPN";
+  static constexpr auto units = "BKMGTPN";
   const char *first = units, *last = first + 6;
   double dw = static_cast<double>(bytes);
   while (dw >= 1024) {

@@ -1,17 +1,15 @@
-﻿#include <sysapi.h>
+﻿#include <systemapi.h>
 #include <iostream>
 #include <string>
 
 int main() {
-  std::vector<std::basic_string<TCHAR>> data;
-  GetCmdOutput(TEXT(".\\build-dbg\\tests\\mains.exe"), data);
-  std::cout << data.size() << std::endl;
+  SetConsoleOutputCP(65001);
+  std::vector<std::wstring> data;
+  GetCmdOutput(TEXT("python.exe scripts/getpic.py"), data);
   for (auto i : data) {
-#ifdef UNICODE
-    std::wcout << i << std::endl;
-#else
-    std::cout << i << std::endl;
-#endif
+    auto str = Wide2Utf8String(i);
+    std::cout.write((const char*)str.data(), str.size());
+    std::cout.put('\n');
   }
   return 0;
 }

@@ -9,11 +9,11 @@
 #include <mutex>
 #include <thread>
 
-class Timer {
+class NeoTimer {
  public:
-  Timer();
-  Timer(const Timer& t);
-  ~Timer();
+  NeoTimer();
+  NeoTimer(const NeoTimer& t);
+  ~NeoTimer();
   void StartTimer(uint32_t interval, std::function<void()> task);
   void ResetTime(uint32_t mini, const std::function<void()>& task);
   void Expire();

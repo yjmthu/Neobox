@@ -66,3 +66,4 @@ void WallBase::Dislike(const std::u8string& sImgPath) {}
 void WallBase::UndoDislike(const std::u8string& sImgPath) {}
 
 void WallBase::SetCurDir(const std::u8string& sImgDir) {}
+
