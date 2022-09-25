@@ -75,15 +75,16 @@ Wallpaper::Desktop Wallpaper::GetDesktop() {
 #endif
 }
 
-bool Wallpaper::SetWallpaper(const std::filesystem::path& imagePath) {
+bool Wallpaper::SetWallpaper(std::filesystem::path imagePath) {
+  // use preferred separator to prevent win32 api crash.
+  imagePath.make_preferred();
+
   [[maybe_unused]] static auto m_DesktopType = GetDesktop();
   if (!std::filesystem::exists(imagePath)) {
     ShowMessage(u8"出错", u8"找不到该文件：" + imagePath.u8string());
     return false;
   }
   if (std::filesystem::is_directory(imagePath)) {
-    std::cout << imagePath.wstring().size() << ' '
-              << imagePath.wstring().length();
     ShowMessage(u8"出错", u8"要使用的壁纸不是文件：" + imagePath.u8string());
     return false;
   }
@@ -206,6 +207,7 @@ bool Wallpaper::SetNext() {
     if (!m_CurImage.empty())
       m_PrevImgs.push_back(m_CurImage);
     m_CurImage = ptr->ImagePath;
+    m_CurImage.make_preferred();
     return true;
   } else {
     if (SetWallpaper(m_NextImgs.top())) {
@@ -225,7 +227,8 @@ bool Wallpaper::SetPrevious() {
   if (!m_PrevImgs.empty()) {
     if (SetWallpaper(m_PrevImgs.back())) {
       m_NextImgs.push(m_CurImage);
-      m_CurImage = m_PrevImgs.back();
+      m_CurImage = std::move(m_PrevImgs.back());
+      m_CurImage.make_preferred();
       m_PrevImgs.pop_back();
       return true;
     } else {
@@ -291,6 +294,7 @@ bool Wallpaper::SetDropFile(std::deque<std::filesystem::path>&& paths) {
   WallBase::m_IsWorking = true;
   auto&& lst = paths | std::views::filter(Wallpaper::IsImageFile);
   for (auto& i : lst) {
+    i.make_preferred();
     m_NextImgs.push(std::move(i));
   }
   if (!lst.empty()) {
@@ -316,6 +320,7 @@ bool Wallpaper::RemoveCurrent() {
         AppendBlackList(m_CurImage);
       m_Wallpaper->Dislike(m_CurImage.u8string());
       m_CurImage = m_NextImgs.top();
+      m_CurImage.make_preferred();
       m_NextImgs.pop();
       return true;
     } else {
@@ -332,6 +337,7 @@ void Wallpaper::ReadSettings() {
     std::string temp;
     if (std::getline(file, temp)) {
       m_CurImage = temp;
+      m_CurImage.make_preferred();
       while (std::getline(file, temp)) {
         m_PrevImgs.emplace_front(temp);
       }
@@ -410,7 +416,8 @@ void Wallpaper::SetFirstChange(bool flag) {
     SetSlot(1);
 }
 
-void Wallpaper::SetCurDir(const std::filesystem::path& str) {
+void Wallpaper::SetCurDir(std::filesystem::path str) {
+  str.make_preferred();
   if (std::filesystem::exists(str) || std::filesystem::create_directory(str))
     m_Wallpaper->SetCurDir(str.u8string());
 }

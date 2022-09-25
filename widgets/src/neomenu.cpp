@@ -132,9 +132,9 @@ void NeoMenu::InitFunctionMap() {
                  this, "请选择Tessdata数据文件存放位置",
                  QString::fromUtf8(u8Path.data(), u8Path.size()))
                  .toUtf8();
-         std::u8string u8NewPath =
-             std::filesystem::path(std::u8string(folder.begin(), folder.end()))
-                 .u8string();
+         std::filesystem::path pNewPath = std::u8string(folder.begin(), folder.end());
+         pNewPath.make_preferred();
+         std::u8string u8NewPath = pNewPath.u8string();
          if (!u8NewPath.empty() && u8NewPath != u8Path) {
            u8Path.swap(u8NewPath);
            VarBox::WriteSettings();
@@ -160,7 +160,7 @@ void NeoMenu::InitFunctionMap() {
       {u8"WallpaperDir",
        [this]() {
          QString current =
-             QString::fromStdWString(m_Wallpaper->GetCurIamge().wstring());
+             QString::fromStdWString(m_Wallpaper->GetImageDir().wstring());
          if (!ChooseFolder("选择壁纸文件夹", current))
            return;
          m_Wallpaper->SetCurDir(current.toStdWString());
@@ -473,6 +473,8 @@ void NeoMenu::LoadWallpaperExmenu() {
           std::u8string key(array.begin(), array.end());
           if (ChooseFolder("请选择壁纸存放路径", sCurDir)) {
             std::filesystem::path path = sCurDir.toStdWString();
+            path.make_preferred();
+
             m_Wallpaper->m_Wallpaper->GetJson()
                 ->find(key)
                 ->second[u8"Directory"]

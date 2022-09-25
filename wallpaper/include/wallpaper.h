@@ -30,7 +30,7 @@ class Wallpaper {
   explicit Wallpaper(class YJson* settings, void (*callback)(void));
   virtual ~Wallpaper();
   static bool DownloadImage(const ImageInfoEx imageInfo);
-  static bool SetWallpaper(const std::filesystem::path& imagePath);
+  static bool SetWallpaper(std::filesystem::path imagePath);
   static bool IsImageFile(const std::filesystem::path& fileName);
   static bool IsWorking();
   bool UndoDelete();
@@ -38,7 +38,7 @@ class Wallpaper {
   bool SetFavorite();
   bool UnSetFavorite();
   bool SetDropFile(std::deque<std::filesystem::path>&& paths);
-  inline const std::filesystem::path GetCurIamge() const { return m_CurImage; }
+  inline const std::filesystem::path& GetCurIamge() const { return m_CurImage; }
   void SetSlot(int type);
   const std::filesystem::path& GetImageDir() const;
 
@@ -63,7 +63,7 @@ class Wallpaper {
 
  public:
   static Desktop GetDesktop();
-  void SetCurDir(const std::filesystem::path& str);
+  void SetCurDir(std::filesystem::path str);
   void StartTimer(bool start);
   // std::filesystem::path m_PicHomeDir;
   class WallBase* m_Wallpaper;
