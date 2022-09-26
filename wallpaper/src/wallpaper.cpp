@@ -8,8 +8,9 @@
 #include <unordered_set>
 
 namespace fs = std::filesystem;
+using namespace std::literals;
 
-extern std::unordered_set<fs::path> m_UsingFiles;
+extern std::unordered_set<fs::path> g_UsingFiles;
 
 extern void ShowMessage(const std::u8string& title,
                         const std::u8string& text,
@@ -39,25 +40,27 @@ bool Wallpaper::DownloadImage(const ImageInfoEx imageInfo) {
     return false;
   }
 
-  if (!HttpLib::IsOnline())
+  if (!HttpLib::IsOnline()) {
+    ShowMessage(u8"出错"s, u8"网络异常"s);
     return false;
-  m_UsingFiles.emplace(u8FilePath);
+  }
+  g_UsingFiles.emplace(u8FilePath);
   int res = HttpLib::Gets(imageInfo->ImageUrl, u8FilePath);
   if (res == 200) {
-    m_UsingFiles.erase(u8FilePath);
+    g_UsingFiles.erase(u8FilePath);
     return true;
   } else {
     if (fs::exists(u8FilePath))
       fs::remove(u8FilePath);
-    m_UsingFiles.erase(u8FilePath);
-    ShowMessage(u8"出错", u8"网络异常或文件不能打开！\n文件名：" + u8FilePath +
-                              u8"\n网址：" + imageInfo->ImagePath);
+    g_UsingFiles.erase(u8FilePath);
+    ShowMessage(u8"出错"s, u8"网络异常或文件不能打开！\n文件名："s + u8FilePath +
+                              u8"\n网址："s + imageInfo->ImagePath);
     return false;
   }
 }
 
 Wallpaper::Desktop Wallpaper::GetDesktop() {
-#if defined(_WIN32)
+#ifdef _WIN32
   return Desktop::WIN;
 #elif defined(__linux__)
   std::vector<std::string> vec;
@@ -143,14 +146,13 @@ Wallpaper::Wallpaper(YJson* settings, void (*callback)(void))
 Wallpaper::~Wallpaper() {
   delete m_Timer;
   WallBase::ClearInstatnce();
-  for (const auto& i: m_UsingFiles ) {
+  for (const auto& i: g_UsingFiles ) {
     if (fs::exists(i))
       fs::remove(i);
   }
 }
 
 void Wallpaper::SetSlot(int type) {
-  using namespace std::literals;
   if (WallBase::m_IsWorking) {
     ShowMessage(u8"提示", u8"后台正忙，请稍后！");
     return;
@@ -428,7 +430,7 @@ bool Wallpaper::SetImageType(int index) {
   if (WallBase::m_IsWorking) {
     return false;
   }
-  auto& jsImageType = m_Settings->find(u8"ImageType")->second;
+  auto& jsImageType = m_Settings->find(u8"ImageType"sv)->second;
   if (jsImageType.getValueInt() != index) {
     jsImageType.setValue(index);
     m_SettingsCallback();
@@ -438,13 +440,12 @@ bool Wallpaper::SetImageType(int index) {
   if (index == WallBase::BINGAPI)
     return true;
   std::thread([this]() {
-    using namespace std::literals;
     std::this_thread::sleep_for(1min);
     if (!HttpLib::IsOnline() || WallBase::m_IsWorking)
       return;
 
     WallBase::m_IsWorking = true;
-    if (!m_BingWallpaper->GetJson()->find(u8"auto-download")->second.isTrue()) {
+    if (m_BingWallpaper->GetJson()->find(u8"auto-download"sv)->second.isFalse()) {
       WallBase::m_IsWorking = false;
       return;
     }

@@ -1,64 +1,74 @@
-﻿#include <unordered_set>
+﻿#include <wallbase.h>
+#include <unordered_set>
 #ifdef _WIN32
 #include <Shlobj.h>
 #endif  // _WIN32
 
-#include "bingapi.h"
-#include "directapi.h"
-#include "favorite.h"
-#include "native.h"
-#include "scriptoutput.h"
-#include "wallhaven.h"
+#if 0
+import wallpaper1;
+import wallpaper2;
+import wallpaper3;
+import wallpaper4;
+import wallpaper5;
+import wallpaper6;
+#else
+#include <mo_bingapi.h>
+#include <mo_directapi.h>
+#include <mo_favorie.h>
+#include <mo_native.h>
+#include <mo_scriptoutput.h>
+#include <mo_wallhaven.h>
+#endif
 
-std::filesystem::path GetSpecialFolderPath(int type) {
+fs::path GetSpecialFolderPath(int type) {
   std::wstring result(MAX_PATH, 0);
   SHGetSpecialFolderPathW(nullptr, result.data(), type, TRUE);
   result.erase(result.find(L'\0'));
   return result;
 }
 
-static WallBase* pFavorite = nullptr;
-static WallBase* pBingApi = nullptr;
-static WallBase* pOther = nullptr;
+static WallBase* s_pFavorite = nullptr;
+static WallBase* s_pBingApi = nullptr;
+static WallBase* s_pOther = nullptr;
 
-std::unordered_set<std::filesystem::path> m_UsingFiles;
+std::unordered_set<fs::path> g_UsingFiles;
 
 std::atomic_bool WallBase::m_IsWorking = false;
 
-const std::filesystem::path WallBase::m_HomePicLocation =
+const fs::path WallBase::ms_HomePicLocation =
     GetSpecialFolderPath(CSIDL_MYPICTURES) / L"桌面壁纸";
 
 WallBase* WallBase::GetNewInstance(int type) {
-  if (pOther) {
-    delete pOther;
-    pOther = nullptr;
+  if (s_pOther) {
+    delete s_pOther;
+    s_pOther = nullptr;
   }
   switch (type) {
     case WALLHAVEN:
-      return pOther = new Wallhaven;
+      return s_pOther = new Wallhaven;
     case BINGAPI:
-      if (!pBingApi)
-        pBingApi = new BingApi;
-      return pBingApi;
+      if (!s_pBingApi)
+        s_pBingApi = new BingApi;
+      return s_pBingApi;
     case DIRECTAPI:
-      return pOther = new DirectApi;
+      return s_pOther = new DirectApi;
     case NATIVE:
-      return pOther = new Native;
+      return s_pOther = new Native;
     case SCRIPTOUTPUT:
-      return pOther = new ScriptOutput;
+      return s_pOther = new ScriptOutput;
     case FAVORITE:
-      if (!pFavorite)
-        pFavorite = new Favorite;
-      return pFavorite;
+      if (!s_pFavorite)
+        s_pFavorite = new Favorite;
+      return s_pFavorite;
     default:
-      return pOther;
+      return s_pOther;
   }
 }
 
 void WallBase::ClearInstatnce() {
-  delete pOther;
-  delete pFavorite;
-  delete pBingApi;
+  delete s_pOther;
+  delete s_pFavorite;
+  delete s_pBingApi;
 }
 
 void WallBase::Dislike(const std::u8string& sImgPath) {}
@@ -66,4 +76,3 @@ void WallBase::Dislike(const std::u8string& sImgPath) {}
 void WallBase::UndoDislike(const std::u8string& sImgPath) {}
 
 void WallBase::SetCurDir(const std::u8string& sImgDir) {}
-

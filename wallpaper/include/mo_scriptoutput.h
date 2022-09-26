@@ -1,49 +1,56 @@
-﻿#include <systemapi.h>
-#include <ranges>
-#include <string>
-
+#include <wallpaper.h>
 #include <wallbase.h>
+#include <systemapi.h>
 
+#include <ranges>
+#include <utility>
+#include <numeric>
+#include <functional>
+#include <filesystem>
+
+// export module wallpaper5;
+
+namespace fs = std::filesystem;
 using namespace std::literals;
 
-class ScriptOutput : public WallBase {
+/* export */ class ScriptOutput : public WallBase {
  public:
   explicit ScriptOutput() : WallBase() { InitBase(); }
   ~ScriptOutput() override {}
   bool LoadSetting() override {
-    if (std::filesystem::exists(m_SettingPath)) {
-      m_Setting = new YJson(m_SettingPath, YJson::UTF8);
-      m_Command = m_Setting->find(u8"executeable"s)->second.getValueString();
-      auto range = m_Setting->find(u8"arglist"s)->second.getArray() |
+    if (fs::exists(m_SettingPath)) {
+      m_pSetting = new YJson(m_SettingPath, YJson::UTF8);
+      m_u8strCommand = m_pSetting->find(u8"executeable"s)->second.getValueString();
+      auto range = m_pSetting->find(u8"arglist"s)->second.getArray() |
                    std::views::transform(
                        [](const YJson& item) { return item.getValueString(); });
       m_ArgList.assign(range.begin(), range.end());
-      if (auto iter = m_Setting->find(u8"imgdir"); iter != m_Setting->endO()) {
+      if (auto iter = m_pSetting->find(u8"imgdir"); iter != m_pSetting->endO()) {
         m_ImageDir = iter->second.getValueString();
       } else {
-        m_ImageDir = m_HomePicLocation / L"脚本获取";
-        m_Setting->getObject().emplace_back(u8"imgdir"s, m_ImageDir.u8string());
-        m_Setting->toFile(m_SettingPath);
+        m_ImageDir = ms_HomePicLocation / L"脚本获取";
+        m_pSetting->getObject().emplace_back(u8"imgdir"s, m_ImageDir.u8string());
+        m_pSetting->toFile(m_SettingPath);
       }
       return true;
     }
     return false;
   }
   bool WriteDefaultSetting() override {
-    m_Setting = new YJson(YJson::Object);
-    m_Setting->append(m_Command, u8"executeable"s);
-    m_ImageDir = m_HomePicLocation / L"脚本获取";
-    auto item = m_Setting->append(YJson::Array, u8"arglist"s);
+    m_pSetting = new YJson(YJson::Object);
+    m_pSetting->append(m_u8strCommand, u8"executeable"s);
+    m_ImageDir = ms_HomePicLocation / L"脚本获取";
+    auto item = m_pSetting->append(YJson::Array, u8"arglist"s);
     for (auto& i: m_ArgList) {
       item->second.append(i);
     }
-    m_Setting->getObject().emplace_back(u8"imgdir"s, m_ImageDir.u8string());
-    m_Setting->toFile(m_SettingPath);
+    m_pSetting->getObject().emplace_back(u8"imgdir"s, m_ImageDir.u8string());
+    m_pSetting->toFile(m_SettingPath);
     return true;
   }
   ImageInfoEx GetNext() override {
     ImageInfoEx ptr(new ImageInfo);
-    if (m_Command.empty()) {
+    if (m_u8strCommand.empty()) {
       ptr->ErrorMsg = u8"Invalid command to get wallpaper path."s;
       ptr->ErrorCode = ImageInfo::CfgErr;
       return ptr;
@@ -79,29 +86,29 @@ class ScriptOutput : public WallBase {
   }
 
   YJson* GetJson() override {
-    return m_Setting;
+    return m_pSetting;
   }
 
   void SetCurDir(const std::u8string &sImgDir) override {
     m_ImageDir = sImgDir;
-    m_Setting->find(u8"imgdir")->second = sImgDir;
-    m_Setting->toFile(m_SettingPath);
+    m_pSetting->find(u8"imgdir")->second = sImgDir;
+    m_pSetting->toFile(m_SettingPath);
   }
 
   void SetJson(bool update) override {
-    m_Command = m_Setting->find(u8"executeable"s)->second.getValueString();
-    auto range = m_Setting->find(u8"arglist"s)->second.getArray() |
+    m_u8strCommand = m_pSetting->find(u8"executeable"s)->second.getValueString();
+    auto range = m_pSetting->find(u8"arglist"s)->second.getArray() |
                  std::views::transform([](const YJson& item) -> std::u8string {
                    return item.getValueString();
                  });
     m_ArgList.assign(range.begin(), range.end());
-    m_Setting->toFile(m_SettingPath);
+    m_pSetting->toFile(m_SettingPath);
   }
 
  private:
   const char m_SettingPath[19]{"ScriptCommand.json"};
-  YJson* m_Setting;
-  std::u8string m_Command = u8"python.exe";
+  YJson* m_pSetting;
+  std::u8string m_u8strCommand = u8"python.exe";
   std::vector<std::u8string> m_ArgList = { u8"scripts/getpic.py" };
   std::u8string GetCommandWithArg() const {
     std::u8string sExeWithArgs;
@@ -118,7 +125,7 @@ class ScriptOutput : public WallBase {
       }
       sExeWithArgs.push_back(u8' ');
     };
-    fnCheckSpaces(m_Command);
+    fnCheckSpaces(m_u8strCommand);
     for (auto& arg : m_ArgList) {
       fnCheckSpaces(arg);
     }

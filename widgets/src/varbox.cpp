@@ -15,7 +15,7 @@
 void ShowMessage(const std::u8string& title,
                  const std::u8string& text,
                  int type = 0) {
-  QTimer::singleShot(50, VarBox::GetSpeedBox(), [=]() {
+  QMetaObject::invokeMethod(VarBox::GetSpeedBox(), [=](){
     QMessageBox::information(VarBox::GetSpeedBox(),
                              QString::fromUtf8(title.data(), title.size()),
                              QString::fromUtf8(text.data(), text.size()));

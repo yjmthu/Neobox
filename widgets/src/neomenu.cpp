@@ -590,7 +590,7 @@ void NeoMenu::LoadWallpaperExmenu() {
       connect(temp, &QAction::triggered, this, [jsExInfo]() {
         using namespace std::chrono;
         size_t index = jsExInfo->find(u8"index")->second.getValueInt();
-        const auto time = current_zone()->to_local(system_clock::now());
+        const auto time = current_zone()->to_local(system_clock::now() - 24h);
         std::string curDate =
             std::format("&filters=HpDate:\"{0:%Y%m%d}_1600\"", time);
         std::u8string link = jsExInfo->find(u8"images")

@@ -1,21 +1,27 @@
-﻿#include <functional>
-#include <numeric>
-#include <set>
-#include <queue>
-
-#include <wallbase.h>
+#include <httplib.h>
 #include <wallpaper.h>
+#include <wallbase.h>
+#include <systemapi.h>
+
+#include <set>
+#include <utility>
+#include <numeric>
+#include <functional>
+#include <filesystem>
+
+// export module wallpaper4;
 
 namespace fs = std::filesystem;
+using namespace std::literals;
 
-class Native : public WallBase {
+/* export */ class Native : public WallBase {
  private:
   size_t GetFileCount() {
     size_t m_iCount = 0;
     if (!fs::exists(m_ImageDir) || !fs::is_directory(m_ImageDir))
       return m_iCount;
 
-    const bool bRecursion = m_Setting->find(u8"recursion")->second.isTrue();
+    const bool bRecursion = m_pSetting->find(u8"recursion")->second.isTrue();
     std::queue<fs::path> qDirsToWalk;
     qDirsToWalk.push(m_ImageDir);
 
@@ -39,14 +45,14 @@ class Native : public WallBase {
     if (!m_Toltal)
       return false;
     std::vector<size_t> numbers;
-    if (m_Toltal < m_MaxCount) {
+    if (m_Toltal < m_uMaxCount) {
       numbers.resize(m_Toltal);
       std::iota(numbers.begin(), numbers.end(), 0);
     } else {
       std::set<size_t> already;
       std::mt19937 g(std::random_device{}());
       auto pf = std::uniform_int_distribution<size_t>(0, m_Toltal - 1);
-      for (int i = 0; i < m_MaxCount; ++i) {
+      for (int i = 0; i < m_uMaxCount; ++i) {
         auto temp = pf(g);
         while (already.find(temp) != already.end())
           temp = pf(g);
@@ -56,7 +62,7 @@ class Native : public WallBase {
       std::sort(numbers.begin(), numbers.end());
     }
 
-    const bool bRecursion = m_Setting->find(u8"recursion")->second.isTrue();
+    const bool bRecursion = m_pSetting->find(u8"recursion")->second.isTrue();
     auto target = numbers.cbegin();
 
     std::queue<fs::path> qDirsToWalk;
@@ -81,7 +87,7 @@ class Native : public WallBase {
     }
 
     std::mt19937 g(std::random_device{}());
-    if (m_Setting->find(u8"random")->second.isTrue()) {
+    if (m_pSetting->find(u8"random")->second.isTrue()) {
       std::shuffle(m_FileList.begin(), m_FileList.end(), g);
     }
     return true;
@@ -89,7 +95,7 @@ class Native : public WallBase {
 
  public:
   explicit Native() : WallBase() { InitBase(); }
-  ~Native() override { delete m_Setting; }
+  ~Native() override { delete m_pSetting; }
   ImageInfoEx GetNext() override {
     ImageInfoEx ptr(new ImageInfo);
 
@@ -109,41 +115,40 @@ class Native : public WallBase {
     return ptr;
   }
   bool LoadSetting() override {
-    if (fs::exists(m_SettingPath)) {
-      m_Setting = new YJson(m_SettingPath, YJson::UTF8);
+    if (fs::exists(m_szSettingPath)) {
+      m_pSetting = new YJson(m_szSettingPath, YJson::UTF8);
       m_ImageDir =
-          m_Setting->find(u8"imgdirs")->second.beginA()->getValueString();
+          m_pSetting->find(u8"imgdirs")->second.beginA()->getValueString();
       return true;
     }
     return false;
   }
   bool WriteDefaultSetting() override {
-    using namespace std::literals;
-    m_ImageDir = m_HomePicLocation;
-    m_Setting = new YJson(YJson::O{{u8"imgdirs"sv, {m_ImageDir}},
+    m_ImageDir = ms_HomePicLocation;
+    m_pSetting = new YJson(YJson::O{{u8"imgdirs"sv, {m_ImageDir}},
                                    {u8"random"sv, true},
                                    {u8"recursion"sv, false}});
-    m_Setting->toFile(m_SettingPath);
+    m_pSetting->toFile(m_szSettingPath);
     return true;
   }
   void SetCurDir(const std::u8string& str) override {
     m_ImageDir = str;
-    auto& li = m_Setting->find(u8"imgdirs")->second;
+    auto& li = m_pSetting->find(u8"imgdirs")->second;
     li.beginA()->setText(str);
-    m_Setting->toFile(m_SettingPath);
+    m_pSetting->toFile(m_szSettingPath);
     m_FileList.clear();
   }
 
-  YJson* GetJson() override { return m_Setting; }
+  YJson* GetJson() override { return m_pSetting; }
 
   void SetJson(bool update) override {
     m_FileList.clear();
-    m_Setting->toFile(m_SettingPath);
+    m_pSetting->toFile(m_szSettingPath);
   }
 
  private:
-  const char m_SettingPath[12]{"Native.json"};
-  const uint32_t m_MaxCount = 100;
-  YJson* m_Setting;
+  const char m_szSettingPath[12]{"Native.json"};
+  const uint32_t m_uMaxCount = 100;
+  YJson* m_pSetting;
   std::vector<std::u8string> m_FileList;
 };

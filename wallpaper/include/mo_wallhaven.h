@@ -1,20 +1,23 @@
 ﻿#include <httplib.h>
-#include <yjson.h>
-#include <xstring>
-
-#include <wallbase.h>
 #include <wallpaper.h>
-#include <algorithm>
+#include <wallbase.h>
+#include <systemapi.h>
+
+#include <regex>
+#include <utility>
+#include <numeric>
+#include <functional>
 #include <array>
 #include <filesystem>
-#include <functional>
-#include <regex>
 
-class Wallhaven : public WallBase {
+// export module wallpaper6;
+
+using namespace std::literals;
+
+/* export */ class Wallhaven : public WallBase {
  private:
   static bool IsPngFile(std::u8string& str) {
     // if (!Wallpaper::IsOnline()) return false;
-    using namespace std::literals;
     std::u8string body;
     if (HttpLib::Get(u8"https://wallhaven.cc/api/v1/w/"s + str, body) != 200)
       return false;
@@ -25,10 +28,10 @@ class Wallhaven : public WallBase {
 
  public:
   bool LoadSetting() override {
-    if (!std::filesystem::exists(m_SettingPath))
+    if (!std::filesystem::exists(m_szSettingPath))
       return false;
     try {
-      m_Setting = new YJson(m_SettingPath, YJson::UTF8);
+      m_pSetting = new YJson(m_szSettingPath, YJson::UTF8);
       return m_InitOk = true;
     } catch (...) {
       return false;
@@ -36,18 +39,17 @@ class Wallhaven : public WallBase {
   }
   ImageInfoEx GetNext() override {
     // https://w.wallhaven.cc/full/1k/wallhaven-1kmx19.jpg
-    using namespace std::literals;
 
     ImageInfoEx ptr(new ImageInfo);
 
-    if (m_NeedDownUrl) {
+    if (m_bNeedDownUrl) {
       if (!HttpLib::IsOnline()) {
         ptr->ErrorMsg = u8"Bad network connection.";
         ptr->ErrorCode = ImageInfo::NetErr;
         return ptr;
       }
       size_t t = DownloadUrl();
-      m_NeedDownUrl = false;
+      m_bNeedDownUrl = false;
       if (!t) {
         ptr->ErrorMsg = u8"Bad data has been downloaded.";
         ptr->ErrorCode = ImageInfo::DataErr;
@@ -55,13 +57,13 @@ class Wallhaven : public WallBase {
       }
     }
 
-    auto& val = m_Data->find(u8"Unused")->second;
+    auto& val = m_pData->find(u8"Unused")->second;
     if (val.emptyA()) {
-      YJson::swap(val, m_Data->find(u8"Used")->second);
+      YJson::swap(val, m_pData->find(u8"Used")->second);
       if (val.emptyA()) {
         ptr->ErrorMsg = u8"No data has been downloaded.";
         ptr->ErrorCode = ImageInfo::DataErr;
-        m_NeedDownUrl = true;
+        m_bNeedDownUrl = true;
         return ptr;
       } else {
         std::vector<std::u8string> temp;
@@ -84,9 +86,9 @@ class Wallhaven : public WallBase {
     ptr->ImagePath = (m_ImageDir / name).u8string();
     ptr->ImageUrl =
         u8"https://w.wallhaven.cc/full/"s + name.substr(10, 2) + u8"/"s + name;
-    m_Data->find(u8"Used")->second.append(name);
+    m_pData->find(u8"Used")->second.append(name);
     val.popBackA();
-    m_Data->toFile(m_DataPath);
+    m_pData->toFile(m_szDataPath);
     ptr->ErrorCode = ImageInfo::NoErr;
     return ptr;
   }
@@ -102,10 +104,10 @@ class Wallhaven : public WallBase {
           std::find_if(m_FileName.begin() + 10, m_FileName.end() - 4,
                        [](char c) -> bool { return !isalnum(c); }) ==
               m_FileName.end() - 4) {
-        m_Data->find(u8"Unused")->second.removeByValA(m_FileName);
-        m_Data->find(u8"Used")->second.removeByValA(m_FileName);
-        m_Data->find(u8"Blacklist")->second.append(m_FileName);
-        m_Data->toFile(m_DataPath);
+        m_pData->find(u8"Unused")->second.removeByValA(m_FileName);
+        m_pData->find(u8"Used")->second.removeByValA(m_FileName);
+        m_pData->find(u8"Blacklist")->second.append(m_FileName);
+        m_pData->toFile(m_szDataPath);
       } else {
         return;
       }
@@ -123,48 +125,47 @@ class Wallhaven : public WallBase {
       if (std::regex_match(m_FileName, m_MatchResult, pattern)) {
         std::string&& str = m_MatchResult.str();
         std::u8string u8str(str.begin(), str.end());
-        m_Data->find(u8"Blacklist")->second.removeByValA(u8str);
-        m_Data->find(u8"Used")->second.append(u8str);
-        m_Data->toFile(m_DataPath);
+        m_pData->find(u8"Blacklist")->second.removeByValA(u8str);
+        m_pData->find(u8"Used")->second.append(u8str);
+        m_pData->toFile(m_szDataPath);
       }
     }
   }
-  explicit Wallhaven() : WallBase(), m_Setting(nullptr), m_Data(nullptr) {
+  explicit Wallhaven() : WallBase(), m_pSetting(nullptr), m_pData(nullptr) {
     InitBase();
     GetApiPathUrl();
-    m_NeedDownUrl = NeedGetImageUrl();
+    m_bNeedDownUrl = NeedGetImageUrl();
   }
   void SetCurDir(const std::u8string& str) override {
     m_ImageDir = str;
-    m_Setting
-        ->find(m_Setting->find(u8"WallhavenCurrent")->second.getValueString())
+    m_pSetting
+        ->find(m_pSetting->find(u8"WallhavenCurrent")->second.getValueString())
         ->second.find(u8"Directory")
         ->second.setText(str);
-    m_Setting->toFile(m_SettingPath);
+    m_pSetting->toFile(m_szSettingPath);
   }
   ~Wallhaven() override {
-    delete m_Data;
-    delete m_Setting;
+    delete m_pData;
+    delete m_pSetting;
   }
 
   void SetJson(bool update) override {
-    m_Setting->toFile(m_SettingPath);
+    m_pSetting->toFile(m_szSettingPath);
     if (!update)
       return;
     GetApiPathUrl();
-    m_Data->find(u8"Api")->second.setText(m_ImageUrl);
-    m_Data->find(u8"Used")->second.clearA();
-    m_Data->find(u8"Unused")->second.clearA();
-    m_NeedDownUrl = update;
+    m_pData->find(u8"Api")->second.setText(m_u8strImageUrl);
+    m_pData->find(u8"Used")->second.clearA();
+    m_pData->find(u8"Unused")->second.clearA();
+    m_bNeedDownUrl = update;
   }
 
-  YJson* GetJson() override { return m_Setting; }
+  YJson* GetJson() override { return m_pSetting; }
 
  private:
   bool WriteDefaultSetting() override {
-    using namespace std::literals;
-    delete m_Setting;
-    m_Setting = new YJson(YJson::Object);
+    delete m_pSetting;
+    m_pSetting = new YJson(YJson::Object);
     std::initializer_list<
         std::tuple<std::u8string, bool, std::u8string, std::u8string>>
         paramLIst = {{u8"最热壁纸"s, true, u8"categories"s, u8"111"s},
@@ -174,7 +175,7 @@ class Wallhaven : public WallBase {
                      {u8"极简壁纸"s, false, u8"q"s, u8"minimalism"s},
                      {u8"鬼刀壁纸"s, false, u8"q"s, u8"ghostblade"s}};
     auto& m_ApiObject =
-        m_Setting->append(YJson::Object, u8"WallhavenApi")->second;
+        m_pSetting->append(YJson::Object, u8"WallhavenApi")->second;
     for (auto& i : paramLIst) {
       // std::cout << std::get<0>(i) << std::get<1>(i) << std::get<2>(i) <<
       // std::get<3>(i) << std::endl;
@@ -184,27 +185,26 @@ class Wallhaven : public WallBase {
         ptr.append(u8"toplist", u8"sorting");
       }
       ptr.append(std::get<3>(i), std::get<2>(i));
-      item.append((m_HomePicLocation / std::get<0>(i)).u8string(),
+      item.append((ms_HomePicLocation / std::get<0>(i)).u8string(),
                   u8"Directory");
     }
-    m_Setting->append(std::get<0>(*paramLIst.begin()), u8"WallhavenCurrent"sv);
-    m_Setting->append(1, u8"PageNumber");
-    m_Setting->append(YJson::Null, u8"ApiKey");
-    m_Setting->toFile(m_SettingPath);
+    m_pSetting->append(std::get<0>(*paramLIst.begin()), u8"WallhavenCurrent"sv);
+    m_pSetting->append(1, u8"PageNumber");
+    m_pSetting->append(YJson::Null, u8"ApiKey");
+    m_pSetting->toFile(m_szSettingPath);
 
     return true;
   }
   size_t DownloadUrl() {
-    using namespace std::literals;
     std::cout << "Get next url\n";
     size_t m_TotalDownload = 0;
     // auto& m_Array = m_Data->find(u8"Unused")->second.getArray();
     std::vector<std::u8string> m_Array;
-    auto& m_BlackArray = m_Data->find(u8"Blacklist")->second;
+    auto& m_BlackArray = m_pData->find(u8"Blacklist")->second;
     size_t i =
-        5 * (m_Setting->find(u8"PageNumber")->second.getValueInt() - 1) + 1;
-    const std::string url(m_ImageUrl.begin(), m_ImageUrl.end());
-    if (m_ImageUrl.substr(20, 4) == u8"/api") {
+        5 * (m_pSetting->find(u8"PageNumber")->second.getValueInt() - 1) + 1;
+    const std::string url(m_u8strImageUrl.begin(), m_u8strImageUrl.end());
+    if (m_u8strImageUrl.substr(20, 4) == u8"/api") {
       for (size_t n = i + 5; i < n; ++i) {
         std::u8string body;
         int res = HttpLib::Get(
@@ -259,38 +259,36 @@ class Wallhaven : public WallBase {
     if (m_TotalDownload) {
       std::mt19937 g(std::random_device{}());
       std::shuffle(m_Array.begin(), m_Array.end(), g);
-      m_Data->find(u8"Unused")->second.assignA(m_Array.begin(), m_Array.end());
+      m_pData->find(u8"Unused")->second.assignA(m_Array.begin(), m_Array.end());
     }
 
-    m_Data->toFile(m_DataPath);
+    m_pData->toFile(m_szDataPath);
     return m_TotalDownload;
   }
   void GetApiPathUrl() {
-    using namespace std::literals;
     const std::u8string_view curType =
-        m_Setting->find(u8"WallhavenCurrent")->second.getValueString();
-    auto& data = m_Setting->find(u8"WallhavenApi")->second;
+        m_pSetting->find(u8"WallhavenCurrent")->second.getValueString();
+    auto& data = m_pSetting->find(u8"WallhavenApi")->second;
     auto& val = data[curType].second;
     m_ImageDir = val.find(u8"Directory")->second.getValueString();
     auto& param = val[u8"Parameter"].second;
     if (param.isObject()) {
-      m_ImageUrl = param.urlEncode(u8"https://wallhaven.cc/api/v1/search?"sv);
+      m_u8strImageUrl = param.urlEncode(u8"https://wallhaven.cc/api/v1/search?"sv);
     } else if (param.isString()) {
-      m_ImageUrl = param.getValueString();
+      m_u8strImageUrl = param.getValueString();
     } else {
       throw std::runtime_error("Cant find Wallhaven Parameter or Path!"s);
     }
-    auto& ApiKey = m_Setting->find(u8"ApiKey")->second;
+    auto& ApiKey = m_pSetting->find(u8"ApiKey")->second;
     if (ApiKey.isString()) {
-      m_ImageUrl.append(u8"&apikey="s + ApiKey.getValueString());
+      m_u8strImageUrl.append(u8"&apikey="s + ApiKey.getValueString());
     }
   }
   bool NeedGetImageUrl() {
-    using namespace std::literals;
-    if (std::filesystem::exists(m_DataPath)) {
+    if (std::filesystem::exists(m_szDataPath)) {
       try {
-        m_Data = new YJson(m_DataPath, YJson::UTF8);
-        if (!m_Data->isObject())
+        m_pData = new YJson(m_szDataPath, YJson::UTF8);
+        if (!m_pData->isObject())
           throw nullptr;
         std::array<std::tuple<std::u8string, YJson::Type, YJson>, 4> lst{
             std::tuple<std::u8string, YJson::Type, YJson>{
@@ -299,30 +297,30 @@ class Wallhaven : public WallBase {
             {u8"Blacklist"s, YJson::Array, YJson::Array},
             {u8"Api"s, YJson::String, YJson::String}};
         for (auto& [i, j, k] : lst) {
-          auto iter = m_Data->find(i);
-          if (iter == m_Data->endO()) {
-            m_Data->append(std::move(k), i);
+          auto iter = m_pData->find(i);
+          if (iter == m_pData->endO()) {
+            m_pData->append(std::move(k), i);
           } else if (iter->second.getType() != j) {
             YJson::swap(iter->second, k);
           }
         }
       } catch (...) {
-        delete m_Data;
-        m_Data = new YJson((YJson::O{{u8"Api"sv, m_ImageUrl},
+        delete m_pData;
+        m_pData = new YJson((YJson::O{{u8"Api"sv, m_u8strImageUrl},
                                      {u8"Used"sv, YJson::Array},
                                      {u8"Unused"sv, YJson::Array},
                                      {u8"Blacklist"sv, YJson::Array}}));
         return true;
       }
-      if (m_Data->find(u8"Api"sv)->second.getValueString() != m_ImageUrl) {
-        m_Data->find(u8"Api"sv)->second.setText(m_ImageUrl);
-        m_Data->find(u8"Used"sv)->second.clearA();
-        m_Data->find(u8"Unused"sv)->second.clearA();
+      if (m_pData->find(u8"Api"sv)->second.getValueString() != m_u8strImageUrl) {
+        m_pData->find(u8"Api"sv)->second.setText(m_u8strImageUrl);
+        m_pData->find(u8"Used"sv)->second.clearA();
+        m_pData->find(u8"Unused"sv)->second.clearA();
         return true;
       }
       return false;
     } else {
-      m_Data = new YJson(YJson::O{{u8"Api"sv, m_ImageUrl},
+      m_pData = new YJson(YJson::O{{u8"Api"sv, m_u8strImageUrl},
                                   {u8"Used"sv, YJson::Array},
                                   {u8"Unused"sv, YJson::Array},
                                   {u8"Blacklist"sv, YJson::Array}});
@@ -330,10 +328,10 @@ class Wallhaven : public WallBase {
     }
     return true;
   }
-  const char m_DataPath[13]{"ImgData.json"};
-  const char m_SettingPath[18]{"Wallhaven.json"};
-  YJson* m_Setting;
-  YJson* m_Data;
-  std::u8string m_ImageUrl;
-  bool m_NeedDownUrl;
+  const char m_szDataPath[13]{"ImgData.json"};
+  const char m_szSettingPath[18]{"Wallhaven.json"};
+  YJson* m_pSetting;
+  YJson* m_pData;
+  std::u8string m_u8strImageUrl;
+  bool m_bNeedDownUrl;
 };

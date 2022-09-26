@@ -1,4 +1,7 @@
-﻿#include <algorithm>
+﻿#ifndef SYSTEMAPI_H
+#define SYSTEMAPI_H
+
+#include <algorithm>
 #include <cstdio>
 #include <iostream>
 #include <regex>
@@ -188,4 +191,6 @@ void GetCmdOutput(const char* cmd, _Ty& result) {
     result.emplace_back(str.begin(), str.end());
   }
 }
+#endif
+
 #endif

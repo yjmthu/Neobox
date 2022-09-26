@@ -26,7 +26,7 @@ typedef std::shared_ptr<ImageInfo> ImageInfoEx;
 class WallBase {
  protected:
   bool m_InitOk = false;
-  static const std::filesystem::path m_HomePicLocation;
+  static const std::filesystem::path ms_HomePicLocation;
   std::filesystem::path m_ImageDir;
   inline void InitBase() {
     if (!LoadSetting())
@@ -38,8 +38,8 @@ class WallBase {
   static WallBase* GetNewInstance(int type);
   static void ClearInstatnce();
   inline WallBase() {
-    if (!std::filesystem::exists(m_HomePicLocation)) {
-      std::filesystem::create_directory(m_HomePicLocation);
+    if (!std::filesystem::exists(ms_HomePicLocation)) {
+      std::filesystem::create_directory(ms_HomePicLocation);
     }
   }
   virtual ~WallBase() {}
