@@ -33,7 +33,7 @@ static WallBase* s_pOther = nullptr;
 
 std::unordered_set<fs::path> g_UsingFiles;
 
-std::atomic_bool WallBase::m_IsWorking = false;
+std::atomic_bool WallBase::ms_IsWorking = false;
 
 const fs::path WallBase::ms_HomePicLocation =
     GetSpecialFolderPath(CSIDL_MYPICTURES) / L"桌面壁纸";

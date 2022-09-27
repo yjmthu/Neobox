@@ -228,6 +228,10 @@
       "壁纸目录": {
         "type": "Normal",
         "function": "AppOpenWallpaperDir"
+      },
+      "壁纸位置": {
+        "type": "Normal",
+        "function": "AppOpenWallpaperLocation"
       }
     }
   },

@@ -26,12 +26,12 @@ class NeoMenu : public QMenu {
   friend class SpeedBox;
   class TranslateDlg* m_TranslateDlg;
 
+  bool GetListWidget(QString title, QString label, class YJson& pData);
   void InitFunctionMap();
   void GetMenuContent(QMenu* parent, class YJson const& data);
   bool ChooseFolder(QString title, QString& folder);
   void LoadWallpaperExmenu();
-  void WallhavenParams(QAction* action);
-  void ScriptApiParams(QAction* action);
+  void WallhavenParams(QAction*const action);
 
  public:
   explicit NeoMenu(QWidget* parent = nullptr);

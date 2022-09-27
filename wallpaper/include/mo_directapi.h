@@ -11,6 +11,7 @@
 // export module wallpaper2;
 
 using namespace std::literals;
+using namespace std::chrono;
 
 /* export */ class DirectApi : public WallBase {
  public:
@@ -81,10 +82,13 @@ using namespace std::literals;
             ->second
             .find(m_pSetting->find(u8"ApiUrl"sv)->second.getValueString())
             ->second;
+    auto& paths = data[u8"Paths"sv].second;
+    auto& curPath = data[u8"CurPath"].second;
+    if (update && curPath.getValueInt() >= paths.sizeA())
+      data[u8"CurPath"].second = 0;
     m_u8strApiUrl = data[u8"Url"sv].second.getValueString();
     m_ImageDir = data[u8"Directory"].second.getValueString();
-    m_u8strApiPath = data[u8"Paths"sv]
-                    .second[data[u8"CurPath"sv].second.getValueInt()]
+    m_u8strApiPath = paths.emptyA() ? u8""s : paths[curPath.getValueInt()]
                     .getValueString();
     m_u8strImgNameFmt = data[u8"ImageNameFormat"sv].second.getValueString();
     m_pSetting->toFile(m_szSettingPath);
@@ -97,7 +101,6 @@ using namespace std::literals;
   std::u8string m_u8strApiPath;
   std::u8string m_u8strImgNameFmt;
   std::u8string GetImageName() {
-    using namespace std::chrono;
     auto utc = floor<seconds>(system_clock::now());  // Exactly in seconds.
     const auto time = current_zone()->to_local(utc);
     std::string result = std::vformat(

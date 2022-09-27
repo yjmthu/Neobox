@@ -153,11 +153,11 @@ Wallpaper::~Wallpaper() {
 }
 
 void Wallpaper::SetSlot(int type) {
-  if (WallBase::m_IsWorking) {
+  if (WallBase::ms_IsWorking) {
     ShowMessage(u8"提示", u8"后台正忙，请稍后！");
     return;
   }
-  WallBase::m_IsWorking = true;
+  WallBase::ms_IsWorking = true;
   std::thread([this, type]() {
     switch (type) {
       case -1:
@@ -173,7 +173,7 @@ void Wallpaper::SetSlot(int type) {
         break;
     }
     WriteSettings();
-    WallBase::m_IsWorking = false;
+    WallBase::ms_IsWorking = false;
     if (GetAutoChange()) {
       m_Timer->Expire();
       m_Timer->StartTimer(GetTimeInterval(),
@@ -293,9 +293,9 @@ bool Wallpaper::IsImageFile(const fs::path& filesName) {
 }
 
 bool Wallpaper::SetDropFile(std::deque<fs::path>&& paths) {
-  if (WallBase::m_IsWorking)
+  if (WallBase::ms_IsWorking)
     return false;
-  WallBase::m_IsWorking = true;
+  WallBase::ms_IsWorking = true;
   auto&& lst = paths | std::views::filter(Wallpaper::IsImageFile);
   for (auto& i : lst) {
     i.make_preferred();
@@ -305,7 +305,7 @@ bool Wallpaper::SetDropFile(std::deque<fs::path>&& paths) {
     SetNext();
     WriteSettings();
   }
-  WallBase::m_IsWorking = false;
+  WallBase::ms_IsWorking = false;
   return true;
 }
 
@@ -427,7 +427,7 @@ void Wallpaper::SetCurDir(fs::path str) {
 }
 
 bool Wallpaper::SetImageType(int index) {
-  if (WallBase::m_IsWorking) {
+  if (WallBase::ms_IsWorking) {
     return false;
   }
   auto& jsImageType = m_Settings->find(u8"ImageType"sv)->second;
@@ -437,28 +437,11 @@ bool Wallpaper::SetImageType(int index) {
   }
 
   m_Wallpaper = WallBase::GetNewInstance(index);
-  if (index == WallBase::BINGAPI)
-    return true;
-  std::thread([this]() {
-    std::this_thread::sleep_for(1min);
-    if (!HttpLib::IsOnline() || WallBase::m_IsWorking)
-      return;
-
-    WallBase::m_IsWorking = true;
-    if (m_BingWallpaper->GetJson()->find(u8"auto-download"sv)->second.isFalse()) {
-      WallBase::m_IsWorking = false;
-      return;
-    }
-    for (int i = 0; i < 7; ++i) {
-      Wallpaper::DownloadImage(m_BingWallpaper->GetNext());
-    }
-    WallBase::m_IsWorking = false;
-  }).detach();
   return true;
 }
 
 bool Wallpaper::IsWorking() {
-  return WallBase::m_IsWorking;
+  return WallBase::ms_IsWorking;
 }
 
 // attention: thread maybe working!

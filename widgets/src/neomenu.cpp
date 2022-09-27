@@ -41,6 +41,9 @@
 #endif
 
 namespace fs = std::filesystem;
+using namespace std::chrono;
+using namespace std::literals;
+
 extern QString QImage2Text(const QImage& qImage);
 
 NeoMenu::NeoMenu(QWidget* parent)
@@ -83,6 +86,13 @@ void NeoMenu::InitFunctionMap() {
          QDesktopServices::openUrl(QUrl::fromLocalFile(
              QString::fromStdWString(m_Wallpaper->GetImageDir().wstring())));
        }},
+      {u8"AppOpenWallpaperLocation",
+        [this]() {
+          std::wstring args = L"/select, " + m_Wallpaper->GetCurIamge().wstring();
+          ShellExecuteW(nullptr, L"open", L"explorer", args.c_str(), NULL,
+                        SW_SHOWNORMAL);
+        }
+      },
       {u8"AppOpenConfigDir",
        std::bind(QDesktopServices::openUrl,
                  QUrl::fromLocalFile(QDir::currentPath()))},
@@ -483,7 +493,7 @@ void NeoMenu::LoadWallpaperExmenu() {
       QAction* temp = nullptr;
       for (auto& [u8TypeName, data] :
            jsExInfo->find(u8"WallhavenApi")->second.getObject()) {
-        QAction* action = pMainMenu->addAction(
+        QAction* const action = pMainMenu->addAction(
             QString::fromUtf8(u8TypeName.data(), u8TypeName.size()));
         action->setCheckable(true);
         action->setChecked(
@@ -503,6 +513,18 @@ void NeoMenu::LoadWallpaperExmenu() {
               ->second.setText(array.begin(), array.end());
           m_Wallpaper->m_Wallpaper->SetJson(true);
         });
+        if (!action->isChecked()) {
+          temp = pSonMenu->addAction(QStringLiteral("删除此项"));
+          connect(temp, &QAction::triggered, this, [this, action](){
+            QByteArray&& array = action->text().toUtf8();
+            m_Wallpaper->m_Wallpaper->GetJson()->find(u8"WallhavenApi")->second.remove(std::u8string_view(
+                  reinterpret_cast<const char8_t*>(array.data()),
+                  array.size()
+            ));
+            m_Wallpaper->m_Wallpaper->SetJson(false);
+            LoadWallpaperExmenu();
+          });
+        }
         temp = pSonMenu->addAction("参数设置");
         connect(temp, &QAction::triggered, this,
                 std::bind(&NeoMenu::WallhavenParams, this, action));
@@ -588,7 +610,6 @@ void NeoMenu::LoadWallpaperExmenu() {
       });
       temp = pMainMenu->addAction("关于壁纸");
       connect(temp, &QAction::triggered, this, [jsExInfo]() {
-        using namespace std::chrono;
         size_t index = jsExInfo->find(u8"index")->second.getValueInt();
         const auto time = current_zone()->to_local(system_clock::now() - 24h);
         std::string curDate =
@@ -621,27 +642,72 @@ void NeoMenu::LoadWallpaperExmenu() {
     case WallBase::DIRECTAPI: {
       std::u8string_view key =
           jsExInfo->find(u8"ApiUrl")->second.getValueString();
-      QAction* temp = nullptr;
+      QAction* pSuperTemp, *temp = nullptr;
       QActionGroup* pGroup = new QActionGroup(pMainMenu);
       for (const auto& [_name, data] :
            jsExInfo->find(u8"ApiData")->second.getObject()) {
         std::u8string name = _name;
-        temp =
+        pSuperTemp =
             pMainMenu->addAction(QString::fromUtf8(name.data(), name.size()));
-        temp->setCheckable(true);
-        temp->setChecked(name == key);
-        pGroup->addAction(temp);
+        pSuperTemp->setCheckable(true);
+        pSuperTemp->setChecked(name == key);
+        pGroup->addAction(pSuperTemp);
 
         QMenu* tempMenu = new QMenu(pMainMenu);
-        temp->setMenu(tempMenu);
-        connect(tempMenu->addAction(QStringLiteral("启用此项")),
-                &QAction::triggered, this, [=]() {
-                  temp->setChecked(true);
-                  jsExInfo->find(u8"ApiUrl")->second = name;
-                  m_Wallpaper->m_Wallpaper->SetJson(true);
-                });
+        pSuperTemp->setMenu(tempMenu);
+        connect(tempMenu->addAction(QStringLiteral("修改名称")),
+            &QAction::triggered, this, [this, pSuperTemp, name, jsExInfo](){
+              QString qNewKeyName = QString::fromUtf8(name.data(), name.size());
+              qNewKeyName = QInputDialog::getText(this,
+                  QStringLiteral("文字输入"),
+                  QStringLiteral("请输入新名称"),
+                  QLineEdit::Normal,
+                  qNewKeyName
+              );
+              if (qNewKeyName.isEmpty()) return;
+              QByteArray array = qNewKeyName.toUtf8();
+              std::u8string_view viewNewName(
+                  reinterpret_cast<const char8_t*>(array.data()),
+                  array.size()
+              );
+              auto& jsApiData = jsExInfo->find(u8"ApiData")->second;
+              auto iter = jsApiData.find(viewNewName);
+              if (iter != jsApiData.endO())
+                return;
+              if (pSuperTemp->isChecked()) {
+                jsExInfo->find(u8"ApiUrl")->second = viewNewName;
+              }
+              jsApiData[name].first = viewNewName;
+              m_Wallpaper->m_Wallpaper->SetJson(false);
+              pSuperTemp->setText(qNewKeyName);
+            });
+        if (!pSuperTemp->isChecked()) {
+          connect(tempMenu->addAction(QStringLiteral("启用此项")),
+              &QAction::triggered, this, [=]() {
+                jsExInfo->find(u8"ApiUrl")->second = name;
+                m_Wallpaper->m_Wallpaper->SetJson(false);
+                LoadWallpaperExmenu();
+              });
+          connect(tempMenu->addAction(QStringLiteral("删除此项")),
+              &QAction::triggered, this, [=]() {
+                pGroup->removeAction(pSuperTemp);
+                delete pSuperTemp;
+                jsExInfo->find(u8"ApiData")->second.remove(name);
+                m_Wallpaper->m_Wallpaper->SetJson(false);
+              });
+        }
+        temp = tempMenu->addAction(QStringLiteral("路径编辑"));
         tempMenu->addSeparator();
         QActionGroup* pSonGroup = new QActionGroup(pMainMenu);
+
+        connect(temp, &QAction::triggered, this, [this, name, jsExInfo](){
+            bool changed = GetListWidget(QStringLiteral("输入文字"), QStringLiteral("请输入参数"),
+                jsExInfo->find(u8"ApiData")->second[name].second[u8"Paths"].second);
+            if (changed) {
+              LoadWallpaperExmenu();
+            }
+        });
+
         for (int32_t index = 0, cIndex = data[u8"CurPath"].second.getValueInt();
              auto& path : data[u8"Paths"].second.getArray()) {
           std::u8string_view path_view = path.getValueString();
@@ -654,11 +720,53 @@ void NeoMenu::LoadWallpaperExmenu() {
                 ->second[name]
                 .second[u8"CurPath"]
                 .second = index;
-            m_Wallpaper->m_Wallpaper->SetJson(true);
+            m_Wallpaper->m_Wallpaper->SetJson(false);
           });
           temp->setChecked(cIndex == index++);
         }
       }
+      temp = pMainMenu->addAction(QStringLiteral("添加更多"));
+      connect(temp, &QAction::triggered, this, [this, jsExInfo](){
+        while (true) {
+          const QString qKeyName = QInputDialog::getText(this,
+              QStringLiteral("请输入文字"), 
+              QStringLiteral("请输入要添加的Api的名称"),
+              QLineEdit::Normal, QStringLiteral("New Api"));
+          if (qKeyName.isEmpty()) return;
+          QByteArray qbBuffer = qKeyName.toUtf8();
+          std::u8string_view viewKeyName(
+            reinterpret_cast<const char8_t*>(qbBuffer.data()),
+            qbBuffer.size()
+          );
+          auto& obj = jsExInfo->find(u8"ApiData")->second[viewKeyName].second;
+          if (!obj.isNull()) {
+            continue;
+          }
+
+          QString qDomain = QInputDialog::getText(this,
+              QStringLiteral("请输入文字"), 
+              QStringLiteral("请输入要添加的Api的域名"),
+              QLineEdit::Normal, QStringLiteral("https://w.wallhaven.cc"));
+          if (qDomain.isEmpty()) qDomain = QStringLiteral("https://w.wallhaven.cc");
+          qbBuffer = qDomain.toUtf8();
+          std::u8string u8Domain(qbBuffer.begin(), qbBuffer.end());
+          QString qsFolder;
+          while (!ChooseFolder(QStringLiteral("选择壁纸存放文件夹"), qsFolder))
+            continue;
+          fs::path folder = qsFolder.toStdU16String();
+          folder.make_preferred();
+          obj = YJson(YJson::O {
+            {u8"Url"sv, u8Domain},
+            {u8"CurPath"sv, 0},
+            {u8"Paths"sv, YJson::A { u8"/full/6o/wallhaven-6oxgp6.jpg"s }},
+            {u8"Directory"sv, folder.u8string()},
+            {u8"ImageNameFormat"sv, u8"{0:%Y-%m-%d} {0:%H%M%S}.jpg"s}
+          });
+          GetListWidget(QStringLiteral("参数输入"), QStringLiteral("请输入Api路径"), obj[u8"Paths"].second);
+          LoadWallpaperExmenu();
+          return;
+        }
+      });
       break;
     }
     case WallBase::SCRIPTOUTPUT: {
@@ -675,21 +783,15 @@ void NeoMenu::LoadWallpaperExmenu() {
         m_Wallpaper->m_Wallpaper->SetJson(true);
       });
       temp = pMainMenu->addAction(QStringLiteral("参数列表"));
-      ScriptApiParams(temp);
+      connect(temp, &QAction::triggered, this, std::bind(&NeoMenu::GetListWidget, this, QStringLiteral("输入文字"), QStringLiteral("请输入参数"), std::ref(jsExInfo->find(u8"arglist")->second)));
       break;
     }
     default:
       break;
   }
-  connect(
-      pMainMenu->addAction("打开位置"), &QAction::triggered, this, [this]() {
-        std::wstring args = L"/select, " + m_Wallpaper->GetCurIamge().wstring();
-        ShellExecuteW(nullptr, L"open", L"explorer", args.c_str(), NULL,
-                      SW_SHOWNORMAL);
-      });
 }
 
-void NeoMenu::WallhavenParams(QAction* action) {
+void NeoMenu::WallhavenParams(QAction*const action) {
   QDialog* pTableDlg = new QDialog(this);
   pTableDlg->setWindowTitle(QStringLiteral("参数设置"));
   pTableDlg->setAttribute(Qt::WA_DeleteOnClose, true);
@@ -739,14 +841,24 @@ void NeoMenu::WallhavenParams(QAction* action) {
   pVLayout->insertWidget(0, pTable);
 
   connect(arButtons[0], &QPushButton::clicked, this,
-          [pTable]() { pTable->insertRow(pTable->currentRow()); });
+      [pTable]() {
+          if (pTable->currentRow() == -1) {
+            pTable->insertRow(pTable->rowCount());
+          } else {
+            pTable->insertRow(pTable->currentRow());
+          }
+      });
   connect(arButtons[1], &QPushButton::clicked, this,
           [pTable]() { pTable->removeRow(pTable->currentRow()); });
   connect(arButtons[2], &QPushButton::clicked, this, [=]() {
     YJson jsData = YJson::Object;
     for (int i = 0; i < pTable->rowCount(); ++i) {
-      auto qsKeyArray = pTable->item(i, 0)->text().toUtf8();
-      auto qsValueArray = pTable->item(i, 1)->text().toUtf8();
+      auto ptr = pTable->item(i, 0);
+      if (ptr == nullptr) continue;
+      auto qsKeyArray = ptr->text().toUtf8();
+      ptr = pTable->item(i, 1);
+      if (ptr == nullptr) continue;
+      auto qsValueArray = ptr->text().toUtf8();
       if (qsKeyArray.isEmpty() || qsValueArray.isEmpty())
         continue;
       jsData.append(std::u8string(qsValueArray.begin(), qsValueArray.end()),
@@ -778,79 +890,84 @@ void NeoMenu::WallhavenParams(QAction* action) {
   });
   connect(arButtons[3], &QPushButton::clicked, pTableDlg, &QDialog::close);
   pTableDlg->exec();
+  if (action == nullptr) {
+    LoadWallpaperExmenu();
+  }
 }
 
-void NeoMenu::ScriptApiParams(QAction* action) {
-  connect(action, &QAction::triggered, this, [this]() {
-    QDialog argDlg(this);
-    QVBoxLayout* pVout = new QVBoxLayout(&argDlg);
-    QHBoxLayout* pHout = new QHBoxLayout;
-    QListWidget* pLstWgt = new QListWidget(&argDlg);
-    pVout->addWidget(pLstWgt);
-    std::array arButtons = {
-        new QPushButton(QStringLiteral("添加"), &argDlg),
-        new QPushButton(QStringLiteral("删除"), &argDlg),
-        new QPushButton(QStringLiteral("取消"), &argDlg),
-        new QPushButton(QStringLiteral("确认"), &argDlg),
-    };
 
-    std::for_each(arButtons.begin(), arButtons.end(),
-                  std::bind(&QHBoxLayout::addWidget, pHout,
-                            std::placeholders::_1, 0, Qt::Alignment()));
+bool NeoMenu::GetListWidget(QString title, QString label, YJson& data)
+{
+  bool bDataChanged = false;
+  QDialog argDlg(this);
+  argDlg.setWindowTitle(QStringLiteral("参数编辑器"));
+  QVBoxLayout* pVout = new QVBoxLayout(&argDlg);
+  QHBoxLayout* pHout = new QHBoxLayout;
+  QListWidget* pLstWgt = new QListWidget(&argDlg);
+  pVout->addWidget(pLstWgt);
+  std::array arButtons = {
+      new QPushButton(QStringLiteral("添加"), &argDlg),
+      new QPushButton(QStringLiteral("删除"), &argDlg),
+      new QPushButton(QStringLiteral("取消"), &argDlg),
+      new QPushButton(QStringLiteral("确认"), &argDlg),
+  };
 
-    auto argview = m_Wallpaper->m_Wallpaper->GetJson()
-                       ->find(u8"arglist")
-                       ->second.getArray() |
-                   std::views::transform([](const YJson& item) {
-                     std::u8string_view str = item.getValueString();
-                     return QString::fromUtf8(str.data(), str.size());
-                   });
+  std::for_each(arButtons.begin(), arButtons.end(),
+                std::bind(&QHBoxLayout::addWidget, pHout,
+                          std::placeholders::_1, 0, Qt::Alignment()));
 
-    pLstWgt->addItems(QStringList(argview.begin(), argview.end()));
-    pVout->addLayout(pHout);
-
-    connect(arButtons[0], &QPushButton::clicked, pLstWgt, [&argDlg, pLstWgt]() {
-      QListWidgetItem *item = new QListWidgetItem("New Item");
-      pLstWgt->insertItem(pLstWgt->currentRow(), item);
-      const QString str = QInputDialog::getText(
-          &argDlg, 
-          QStringLiteral("文字输入"), 
-          QStringLiteral("请输入参数"), 
-          QLineEdit::Normal,
-          item->text());
-      if (!str.isEmpty() && str != item->text())
-        item->setText(str);
-    });
-    connect(arButtons[1], &QPushButton::clicked, pLstWgt, [pLstWgt]() {
-      for (auto item: pLstWgt->selectedItems()) {
-        delete item;
-      }
-    });
-    connect(arButtons[2], &QPushButton::clicked, &argDlg,
-            [&argDlg]() { argDlg.close(); });
-    connect(arButtons[3], &QPushButton::clicked, &argDlg,
-            [&argDlg, this, pLstWgt]() {
-              std::list<YJson> args;
-              for (int i = 0; i < pLstWgt->count(); ++i) {
-                QByteArray array = pLstWgt->item(i)->text().toUtf8();
-                args.emplace_back(std::u8string(array.begin(), array.end()));
-              }
-              m_Wallpaper->m_Wallpaper->GetJson()
-                  ->find(u8"arglist")
-                  ->second.getArray() = std::move(args);
-              m_Wallpaper->m_Wallpaper->SetJson(true);
-              argDlg.close();
-            });
-    connect(pLstWgt, &QListWidget::itemDoubleClicked, &argDlg, [&argDlg](QListWidgetItem* item){
-      const QString str = QInputDialog::getText(
-          &argDlg, 
-          QStringLiteral("文字输入"), 
-          QStringLiteral("请输入参数"), 
-          QLineEdit::Normal,
-          item->text());
-      if (!str.isEmpty() && str != item->text())
-        item->setText(str);
-    });
-    argDlg.exec();
+  auto argview = data.getArray() | std::views::transform([](const YJson& item) {
+     std::u8string_view str = item.getValueString();
+     return QString::fromUtf8(str.data(), str.size());
   });
+
+  pLstWgt->addItems(QStringList(argview.begin(), argview.end()));
+  pVout->addLayout(pHout);
+
+  connect(arButtons[0], &QPushButton::clicked, pLstWgt, [title, label, &argDlg, pLstWgt]() {
+    QListWidgetItem *item = new QListWidgetItem("New Item");
+    pLstWgt->insertItem(pLstWgt->currentRow(), item);
+    const QString str = QInputDialog::getText(
+        &argDlg, 
+        title, 
+        label, 
+        QLineEdit::Normal,
+        item->text());
+    if (!str.isEmpty() && str != item->text())
+      item->setText(str);
+  });
+  connect(arButtons[1], &QPushButton::clicked, pLstWgt, [pLstWgt]() {
+    for (auto item: pLstWgt->selectedItems()) {
+      delete item;
+    }
+  });
+  connect(arButtons[2], &QPushButton::clicked, &argDlg,
+          [&argDlg]() { argDlg.close(); });
+  connect(arButtons[3], &QPushButton::clicked, &argDlg,
+          [&argDlg, this, pLstWgt, &data, &bDataChanged]() {
+            std::list<YJson> args;
+            for (int i = 0; i < pLstWgt->count(); ++i) {
+              auto ptr = pLstWgt->item(i);
+              if (ptr == nullptr) continue;
+              QByteArray array = ptr->text().toUtf8();
+              if (array.isEmpty()) continue;
+              args.emplace_back(std::u8string(array.begin(), array.end()));
+            }
+            data.getArray() = std::move(args);
+            m_Wallpaper->m_Wallpaper->SetJson(true);
+            bDataChanged = true;
+            argDlg.close();
+          });
+  connect(pLstWgt, &QListWidget::itemDoubleClicked, &argDlg, [title, label, &argDlg](QListWidgetItem* item){
+    const QString str = QInputDialog::getText(
+        &argDlg, 
+        title,
+        label,
+        QLineEdit::Normal,
+        item->text());
+    if (!str.isEmpty() && str != item->text())
+      item->setText(str);
+  });
+  argDlg.exec();
+  return bDataChanged;
 }

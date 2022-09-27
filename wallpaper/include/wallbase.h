@@ -25,7 +25,9 @@ typedef std::shared_ptr<ImageInfo> ImageInfoEx;
 
 class WallBase {
  protected:
-  bool m_InitOk = false;
+  mutable std::atomic_bool m_InitOk = false;
+  static std::atomic_bool ms_IsWorking;
+
   static const std::filesystem::path ms_HomePicLocation;
   std::filesystem::path m_ImageDir;
   inline void InitBase() {
@@ -55,7 +57,6 @@ class WallBase {
 
  private:
   friend class Wallpaper;
-  static std::atomic_bool m_IsWorking;
 };
 
 #endif

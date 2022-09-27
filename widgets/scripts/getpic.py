@@ -1,4 +1,4 @@
-import requests, os, sys, time, ctypes
+import requests, os, time, ctypes
 import ctypes.wintypes as wintypes
 
 CSIDL_COMMON_PICTURES = 0x0027
