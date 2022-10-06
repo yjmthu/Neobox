@@ -75,6 +75,8 @@ using namespace std::literals;
     return m_InitOk = true;
   }
   virtual ImageInfoEx GetNext() override {
+    static size_t s_uCurImgIndex = 0;
+
     // https://www.bing.com/th?id=OHR.Yellowstone150_ZH-CN055
     // 下这个接口含义，直接看后面的请求参数1084440_UHD.jpg
 
@@ -90,6 +92,7 @@ using namespace std::literals;
     } else if (m_pSetting->find(u8"today")->second.getValueString() != GetToday()) {
       if (WriteDefaultSetting()) {
         m_pSetting->find(u8"today")->second = GetToday();
+        s_uCurImgIndex = 0;
         m_pSetting->toFile(m_szSettingPath);
       } else {
         ptr->ErrorMsg = u8"Bad network connection.";
@@ -97,8 +100,6 @@ using namespace std::literals;
         return ptr;
       }
     }
-
-    static size_t s_uCurImgIndex = 0;
 
     auto& jsTemp = m_pSetting->find(u8"images")->second[s_uCurImgIndex];
     ptr->ImagePath = (m_ImageDir / GetImageName(jsTemp)).u8string();

@@ -157,6 +157,7 @@ using namespace std::literals;
     m_pData->find(u8"Api")->second.setText(m_u8strImageUrl);
     m_pData->find(u8"Used")->second.clearA();
     m_pData->find(u8"Unused")->second.clearA();
+    m_pData->toFile(m_szDataPath);
     m_bNeedDownUrl = update;
   }
 

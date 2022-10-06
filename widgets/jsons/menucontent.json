@@ -239,6 +239,10 @@
     "type": "Checkable",
     "function": "AppAutoSatrt"
   },
+  "防止息屏": {
+    "type": "Checkable",
+    "function": "SystemStopSleep" 
+  },
   "快速关机": {
     "type": "Normal",
     "function": "SystemShutdown"

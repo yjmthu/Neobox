@@ -230,6 +230,16 @@ void NeoMenu::InitFunctionMap() {
                                 QUrl("https://www.github.com/yjmthu/Neobox"))}};
 
   m_FuncCheckMap = {
+      {u8"SystemStopSleep",
+       {[this](bool checked) {
+          SetThreadExecutionState(checked ?
+              (ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED) :
+              ES_CONTINUOUS
+          );
+        },
+        []()->bool { return false; }
+       }
+      },
       {u8"AppAutoSatrt",
        {[this](bool checked) {
           wchar_t pPath[] =
