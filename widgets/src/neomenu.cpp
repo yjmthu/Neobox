@@ -95,6 +95,11 @@ void NeoMenu::InitFunctionMap() {
                         SW_SHOWNORMAL);
         }
       },
+      {u8"AppMoveToLeftTop",
+        // []() { VarBox::GetSpeedBox()->move(100, 100); }
+        std::bind(static_cast<void (QWidget::*)(int, int)>(&SpeedBox::move),
+            VarBox::GetSpeedBox(), 100, 100)
+      },
       {u8"AppOpenConfigDir",
        std::bind(QDesktopServices::openUrl,
                  QUrl::fromLocalFile(QDir::currentPath()))},
