@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="256mm"
+   height="256mm"
+   viewBox="0 0 256 256"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
+   sodipodi:docname="neobox.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#000000"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="1"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="0.73940797"
+     inkscape:cx="364.48079"
+     inkscape:cy="532.18253"
+     inkscape:window-width="1920"
+     inkscape:window-height="1013"
+     inkscape:window-x="-9"
+     inkscape:window-y="-9"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2">
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient915">
+      <stop
+         style="stop-color:#ffcc00;stop-opacity:1;"
+         offset="0"
+         id="stop911" />
+      <stop
+         style="stop-color:#ffcc00;stop-opacity:0;"
+         offset="1"
+         id="stop913" />
+    </linearGradient>
+    <rect
+       x="389.22012"
+       y="537.44892"
+       width="77.461499"
+       height="47.81574"
+       id="rect747" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient915"
+       id="linearGradient917"
+       x1="146.35301"
+       y1="99.119286"
+       x2="97.330124"
+       y2="206.11084"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1.9471828,0,0,1.8487167,-122.27609,-84.845151)" />
+  </defs>
+  <g
+     inkscape:label="图层 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="fill:#552200;stroke:#6c5353;stroke-width:0.322472"
+       id="rect111-1"
+       width="114.79256"
+       height="87.451637"
+       x="95.202171"
+       y="60.657093"
+       ry="0"
+       transform="matrix(0.99399432,0.10943167,-0.04548168,0.99896517,0,0)" />
+    <rect
+       style="fill:#552200;stroke-width:0.487784"
+       id="rect225-3"
+       width="82.93988"
+       height="88.864937"
+       x="159.89273"
+       y="289.9895"
+       transform="matrix(0.43015842,-0.90275342,-0.04418287,0.99902346,0,0)" />
+    <path
+       style="fill:url(#linearGradient917);fill-opacity:1;stroke:none;stroke-width:0.556043"
+       d="M 147.69266,11 85.890377,130.80644 146.47885,102.83101 127.59136,179.86726 185.56672,67.161965 127.86018,92.36513 Z"
+       id="path492"
+       sodipodi:nodetypes="ccccccc" />
+    <rect
+       style="fill:#aa4400;stroke-width:0.48406"
+       id="rect225"
+       width="82.474579"
+       height="88.007149"
+       x="448.48129"
+       y="563.36554"
+       transform="matrix(0.4305311,-0.90257574,-0.04234981,0.99910284,0,0)" />
+    <rect
+       style="fill:#d45500;stroke-width:0.322472;stroke:#6c5353"
+       id="rect111"
+       width="114.79256"
+       height="87.451637"
+       x="61.979038"
+       y="138.76813"
+       ry="0"
+       transform="matrix(0.99399432,0.10943167,-0.04548168,0.99896517,0,0)" />
+    <rect
+       style="fill:#d45500;stroke:#6c5353;stroke-width:0.528472"
+       id="rect327"
+       width="48.754711"
+       height="83.453308"
+       x="130.00241"
+       y="162.4297"
+       transform="matrix(0.9052175,-0.42494855,-0.43242924,0.90166787,0,0)" />
+    <rect
+       style="fill:#d45500;stroke:#6c5353;stroke-width:0.621702"
+       id="rect329"
+       width="47.270046"
+       height="82.75798"
+       x="222.80544"
+       y="-38.138557"
+       transform="matrix(0.84852263,0.5291591,-0.43098383,0.90235965,0,0)" />
+    <text
+       xml:space="preserve"
+       style="font-size:31.0486px;fill:#2b0000;stroke:none;stroke-width:0.727703"
+       x="116.71315"
+       y="151.85028"
+       id="text753"
+       transform="matrix(0.75601283,0.0680473,-0.12187965,1.3117587,0,0)"><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:31.0486px;font-family:monospace;-inkscape-font-specification:'monospace Bold';fill:#f4d7d7;stroke-width:0.727703"
+         x="116.71315"
+         y="151.85028"
+         id="tspan755">Neobox</tspan></text>
+  </g>
+</svg>

@@ -1016,7 +1016,7 @@ void NeoMenu::ShowTrayIcon(bool show)
     pSystemTray = new QSystemTrayIcon(this);
     if (VarBox::GetSettings(u8"FormGlobal")[u8"ShowForm"].second.isFalse())
       VarBox::GetSpeedBox()->hide();
-    pSystemTray->setIcon(QIcon(QStringLiteral(":/icons/speedbox.ico")));
+    pSystemTray->setIcon(QIcon(QStringLiteral(":/icons/neobox.ico")));
     pSystemTray->setContextMenu(this);
     pSystemTray->setToolTip("Neobox");
     connect(pSystemTray, &QSystemTrayIcon::activated,

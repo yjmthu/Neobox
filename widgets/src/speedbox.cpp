@@ -104,7 +104,7 @@ void SpeedBox::SetStyleSheet() {
     setStyleSheet(fStyle.readAll());
     fStyle.close();
   }
-  setWindowIcon(QIcon(":/icons/speedbox.ico"));
+  setWindowIcon(QIcon(":/icons/neobox.ico"));
   setCursor(Qt::PointingHandCursor);
   std::u8string& toolTip =
       VarBox::GetSettings(u8"FormGlobal")[u8"ToolTip"].second.getValueString();
