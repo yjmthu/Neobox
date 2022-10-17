@@ -143,6 +143,6 @@ using namespace std::literals;
     m_pData->toFile(m_szDataPath);
   }
 
-  explicit Favorite() : WallBase(), m_pData(nullptr) { InitBase(); }
+  explicit Favorite() : WallBase(false), m_pData(nullptr) { InitBase(); }
   ~Favorite() { delete m_pData; }
 };

@@ -33,6 +33,7 @@
 #include <QUrl>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <QSystemTrayIcon>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -53,6 +54,7 @@ NeoMenu::NeoMenu(QWidget* parent)
       m_Wallpaper(new Wallpaper(&VarBox::GetSettings(u8"Wallpaper"),
                                 &VarBox::WriteSettings)) {
   setAttribute(Qt::WA_TranslucentBackground, true);
+  setToolTipsVisible(true);
   InitFunctionMap();
   QFile fJson(QStringLiteral(":/jsons/menucontent.json"));
   if (!fJson.open(QIODevice::ReadOnly)) {
@@ -264,6 +266,19 @@ void NeoMenu::InitFunctionMap() {
           return GetExeFullPath() ==
                  RegReadString(HKEY_CURRENT_USER, pPath, L"Neobox");
         }}},
+      {u8"AppShowTrayIcon",
+        {[this](bool checked) {
+          ShowTrayIcon(checked);
+          VarBox::GetSettings(u8"FormGlobal")[u8"ShowTrayIcon"].second = checked;
+          VarBox::WriteSettings();
+        },
+        [this]() -> bool {
+          const bool show = VarBox::GetSettings(u8"FormGlobal")[u8"ShowTrayIcon"].second.isTrue();
+          if (show) {
+            ShowTrayIcon(true);
+          }
+          return show;
+        }}},
       {u8"OtherSetDesktopRightMenu",
        {[](bool checked) {
           constexpr auto prefix = L"Software\\Classes\\{}\\shell";
@@ -433,12 +448,17 @@ void NeoMenu::GetMenuContent(QMenu* parent, const YJson& data) {
   for (const auto& [i, j] : data.getObject()) {
     QAction* action = parent->addAction(QString::fromUtf8(i.data(), i.size()));
     const std::u8string type = j[u8"type"].second.getValueString();
+    if (auto iter = j.find(u8"tip"); iter != j.endO()) {
+      const std::u8string_view tip = iter->second.getValueString();
+      action->setToolTip(QString::fromUtf8(tip.data(), tip.size()));
+    }
     if (type == u8"Normal") {
       const auto& function =
           m_FuncNormalMap[j[u8"function"].second.getValueString()];
       connect(action, &QAction::triggered, this, function);
     } else if (type == u8"Group") {
       QMenu* menu = new QMenu(parent);
+      menu->setToolTipsVisible(true);
       menu->setAttribute(Qt::WA_TranslucentBackground, true);
       action->setMenu(menu);
       GetMenuContent(menu, j[u8"children"].second);
@@ -453,6 +473,7 @@ void NeoMenu::GetMenuContent(QMenu* parent, const YJson& data) {
       const auto& function =
           m_FuncItemCheckMap[j[u8"function"].second.getValueString()].second;
       QMenu* menu = new QMenu(parent);
+      menu->setToolTipsVisible(true);
       menu->setAttribute(Qt::WA_TranslucentBackground, true);
       action->setMenu(menu);
       const auto& children = j[u8"children"].second;
@@ -486,6 +507,7 @@ void NeoMenu::GetMenuContent(QMenu* parent, const YJson& data) {
               std::bind(function, j[u8"index"].second.getValueInt()));
     } else if (type == u8"VarGroup") {
       QMenu* menu = new QMenu(parent);
+      menu->setToolTipsVisible(true);
       menu->setAttribute(Qt::WA_TranslucentBackground, true);
       action->setMenu(menu);
       m_ExMenus[j[u8"name"].second.getValueString()] = menu;
@@ -980,4 +1002,41 @@ bool NeoMenu::GetListWidget(QString title, QString label, YJson& data)
   });
   argDlg.exec();
   return bDataChanged;
+}
+
+void NeoMenu::ShowTrayIcon(bool show)
+{
+  static QSystemTrayIcon* pSystemTray = nullptr;
+  
+  if (show) {
+    pSystemTray = new QSystemTrayIcon(this);
+    if (VarBox::GetSettings(u8"FormGlobal")[u8"ShowForm"].second.isFalse())
+      VarBox::GetSpeedBox()->hide();
+    pSystemTray->setIcon(QIcon(QStringLiteral(":/icons/speedbox.ico")));
+    pSystemTray->setContextMenu(this);
+    pSystemTray->setToolTip("Neobox");
+    connect(pSystemTray, &QSystemTrayIcon::activated,
+      [](QSystemTrayIcon::ActivationReason reason){
+        switch (reason)
+        {
+          case QSystemTrayIcon::DoubleClick:
+            if (VarBox::GetSpeedBox()->isVisible()) {
+              VarBox::GetSpeedBox()->hide();
+              VarBox::GetSettings(u8"FormGlobal")[u8"ShowForm"].second = false;
+            } else {
+              VarBox::GetSpeedBox()->show();
+              VarBox::GetSettings(u8"FormGlobal")[u8"ShowForm"].second = true;
+            }
+            VarBox::WriteSettings();
+          case QSystemTrayIcon::Trigger:
+          default:
+            break;
+        }
+      });
+    pSystemTray->show();
+  } else {
+    pSystemTray->hide();
+    pSystemTray->deleteLater();
+    pSystemTray = nullptr;
+  }
 }

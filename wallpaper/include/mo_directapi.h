@@ -15,7 +15,7 @@ using namespace std::chrono;
 
 /* export */ class DirectApi : public WallBase {
  public:
-  explicit DirectApi() : WallBase() { InitBase(); }
+  explicit DirectApi() : WallBase(true) { InitBase(); }
   ~DirectApi() override {}
   bool LoadSetting() override {
     if (!std::filesystem::exists(m_szSettingPath))

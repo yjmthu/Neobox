@@ -27,6 +27,7 @@ class WallBase {
  protected:
   mutable std::atomic_bool m_InitOk = false;
   static std::atomic_bool ms_IsWorking;
+  const bool m_UseNetwork;
 
   static const std::filesystem::path ms_HomePicLocation;
   std::filesystem::path m_ImageDir;
@@ -39,11 +40,14 @@ class WallBase {
   enum { WALLHAVEN = 0, BINGAPI, DIRECTAPI, NATIVE, SCRIPTOUTPUT, FAVORITE };
   static WallBase* GetNewInstance(int type);
   static void ClearInstatnce();
-  inline WallBase() {
+  inline explicit WallBase(bool useNetwork):
+    m_UseNetwork(useNetwork)
+  {
     if (!std::filesystem::exists(ms_HomePicLocation)) {
       std::filesystem::create_directory(ms_HomePicLocation);
     }
   }
+  inline bool NeedNetwork() const { return m_UseNetwork; }
   virtual ~WallBase() {}
   inline const std::filesystem::path& GetImageDir() const { return m_ImageDir; }
   virtual bool LoadSetting() = 0;

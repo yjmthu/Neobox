@@ -94,7 +94,7 @@ using namespace std::literals;
   }
 
  public:
-  explicit Native() : WallBase() { InitBase(); }
+  explicit Native() : WallBase(false) { InitBase(); }
   ~Native() override { delete m_pSetting; }
   ImageInfoEx GetNext() override {
     ImageInfoEx ptr(new ImageInfo);

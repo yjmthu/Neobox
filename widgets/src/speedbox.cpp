@@ -286,3 +286,4 @@ void SpeedBox::leaveEvent(QEvent* event) {
   m_Animation->start();
   event->accept();
 }
+

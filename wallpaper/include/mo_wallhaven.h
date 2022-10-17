@@ -131,7 +131,7 @@ using namespace std::literals;
       }
     }
   }
-  explicit Wallhaven() : WallBase(), m_pSetting(nullptr), m_pData(nullptr) {
+  explicit Wallhaven() : WallBase(true), m_pSetting(nullptr), m_pData(nullptr) {
     InitBase();
     GetApiPathUrl();
     m_bNeedDownUrl = NeedGetImageUrl();

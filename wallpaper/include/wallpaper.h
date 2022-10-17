@@ -70,7 +70,7 @@ class Wallpaper {
 
  private:
   YJson* const m_Settings;
-  void (*m_SettingsCallback)(void);
+  void (*m_SettingsCallback)(void);  // call this to save settings
 
   class NeoTimer* const m_Timer;
   class WallBase* const m_Favorites;

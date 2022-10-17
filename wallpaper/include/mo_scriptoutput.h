@@ -15,7 +15,7 @@ using namespace std::literals;
 
 /* export */ class ScriptOutput : public WallBase {
  public:
-  explicit ScriptOutput() : WallBase() { InitBase(); }
+  explicit ScriptOutput() : WallBase(false) { InitBase(); }
   ~ScriptOutput() override {}
   bool LoadSetting() override {
     if (fs::exists(m_SettingPath)) {

@@ -108,11 +108,11 @@ bool Wallpaper::SetWallpaper(fs::path imagePath) {
       sstr << "gsettings set org.gnome.desktop.background picture-uri \"file:";
       break;
     case Desktop::DDE:
-      /*
+    /*
       Old deepin:
       std::string m_sCmd ("gsettings set
       com.deepin.wrap.gnome.desktop.background picture-uri \"");
-      */
+    */
       // xrandr|grep 'connected primary'|awk '{print $1}' ======> eDP
       sstr << "dbus-send --dest=com.deepin.daemon.Appearance "
               "/com/deepin/daemon/Appearance --print-reply "
@@ -416,8 +416,11 @@ void Wallpaper::SetFirstChange(bool flag) {
     jsFirstChange.setValue(flag);
     m_SettingsCallback();
   }
-  if (flag)
+  if (flag) {
+    if (m_Wallpaper->NeedNetwork() && !HttpLib::IsOnline())
+      return;
     SetSlot(1);
+  }
 }
 
 void Wallpaper::SetCurDir(fs::path str) {

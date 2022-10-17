@@ -18,7 +18,7 @@ using namespace std::literals;
 /* export */ class BingApi : public WallBase {
  public:
   explicit BingApi()
-      : WallBase(),
+      : WallBase(true),
         m_u8strMft(u8"zh-CN"),
         m_u8strImgNameFmt(u8"{0:%Y-%m-%d} {1}.jpg"),
         m_u8strApiUrl(u8"https://global.bing.com"),

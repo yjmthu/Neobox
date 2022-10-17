@@ -7,12 +7,24 @@
         "children": {
           "开机自启": {
             "type": "Checkable",
-            "function": "AppAutoSatrt"
+            "function": "AppAutoSatrt",
+            "tip": "设置软件是否自动开机启动"
+          },
+          "显示托盘": {
+            "type": "Checkable",
+            "function": "AppShowTrayIcon",
+            "tip": "设置是否显示托盘"
+          },
+          "还原位置": {
+            "type": "Normal",
+            "function": "AppMoveToLeftTop",
+            "tip": "把悬浮窗移动到屏幕左上方的位置"
           },
           "窗口效果": {
             "type": "ExclusiveGroup",
             "function": "AppFormEffect",
             "range": [0, -1],
+            "tip": "Windows10/11的五种窗口效果",
             "children": {
               "普通效果": {
                 "type": "GroupItem",
@@ -43,7 +55,8 @@
           },
           "背景颜色": {
             "type": "Normal",
-            "function": "AppFormBackground"
+            "function": "AppFormBackground",
+            "tip": "修改悬浮窗背景颜色"
           }
         }
       },
@@ -54,57 +67,69 @@
             "type": "ExclusiveGroup",
             "range": [0, -1],
             "function": "WallpaperType",
+            "tip": "六种内置壁纸源",
             "children": {
               "壁纸天堂": {
                 "type": "GroupItem", 
-                "function": "WallpaperType", 
+                "function": "WallpaperType",
+                "tip": "wallhaven.cc",
                 "index": 0
               },
               "必应壁纸": {
                 "type": "GroupItem",
                 "function": "WallpaperType",
+                "tip": "cn.bing.com",
                 "index": 1 
               },
               "直链壁纸": {
                 "type": "GroupItem",
                 "function": "WallpaperType",
+                "tip": "下载并设置链接中的壁纸，例如https://source.unsplash.com/random",
                 "index": 2
               },
               "本地壁纸": {
                 "type": "GroupItem",
                 "function": "WallpaperType",
+                "tip": "将本地文件夹中的图片作为壁纸来源",
                 "index": 3 },
               "脚本输出": {
                 "type": "GroupItem",
                 "function": "WallpaperType",
+                "tip": "运行程序/脚本，将第一行输出（壁纸路径）设为壁纸",
                 "index": 4
               },
               "收藏喜欢": {
                 "type": "GroupItem",
                 "function": "WallpaperType",
+                "tip": "收藏夹内的壁纸",
                 "index": 5
               }
             }
           },
           "自动更换": {
             "type": "Checkable",
-            "function": "WallpaperAutoChange"
+            "function": "WallpaperAutoChange",
+            "tip": "是否按照时间间隔自动切换壁纸"
           },
           "首次更换": {
             "type": "Checkable",
-            "function": "WallpaperInitChange"
+            "function": "WallpaperInitChange",
+            "tip": "启动软件时，更换一次壁纸（目前不稳定，可能导致软件崩溃）"
           },
           "时间间隔": {
             "type": "Normal",
-            "function": "WallpaperTimeInterval"
+            "function": "WallpaperTimeInterval",
+            "tip": "设置自动切换壁纸的时间间隔"
           },
           "存储位置": {
             "type": "Normal",
-            "function": "WallpaperDir"
+            "function": "WallpaperDir",
+            "tip": "修改当前壁纸的存储位置"
           },
           "清理垃圾": {
             "type": "Normal",
-            "function": "WallpaperClean"
+            "function": "WallpaperClean",
+            "tip": "删除垃圾箱里面的壁纸"
           },
           "更多设置": {
             "type": "VarGroup",
@@ -114,37 +139,49 @@
       },
       "插件设置": {
         "type": "Group",
-        "children":{
+        "children": {
           "翻译设置": {
+            "type": "Group",
+            "children": {
+              "翻译热键": {
+                "type": "Group",
+                "tip": "该热键用于显示/隐藏翻译窗口",
+                "children": {
+                  "热键名称": {
+                    "type": "Normal",
+                    "function": "ToolTransShortcut",
+                    "tip": "修改热键按键"
+                  },
+                  "注册热键": {
+                    "type": "Checkable",
+                    "function": "ToolTransRegistKey",
+                    "tip": "注册该热键后，便可以使用它了；如果不想使用，取消注册热键即可"
+                  }
+                }
+              }
+            }
+          },
+          "文字识别": {
             "type": "Group",
             "children": {
               "数据位置": {
                 "type": "Normal",
-                "function": "ToolOcrDataPath"
-              },
-              "翻译热键": {
-                "type": "Group",
-                "children": {
-                  "热键名称": {
-                    "type": "Normal",
-                    "function": "ToolTransShortcut"
-                  },
-                  "注册热键": {
-                    "type": "Checkable",
-                    "function": "ToolTransRegistKey"
-                  }
-                }
+                "function": "ToolOcrDataPath",
+                "tip": "文字识别训练数据的存放位置，默认在配置目录的tessdata文件夹下"
               },
               "截屏热键": {
                 "type": "Group",
+                "tip": "该热键用于截取屏幕并识别其中的文字",
                 "children": {
                   "热键名称": {
                     "type": "Normal",
-                    "function": "ToolOcrShortcut"
+                    "function": "ToolOcrShortcut",
+                    "tip": "修改热键按键"
                   },
                   "注册热键": {
                     "type": "Checkable",
-                    "function": "ToolOcrRegistKey"
+                    "function": "ToolOcrRegistKey",
+                    "tip": "注册该热键后，便可以使用它了；如果不想使用，取消注册热键即可"
                   }
                 }
               }
@@ -157,7 +194,8 @@
         "children": {
           "右键复制": {
             "type": "Checkable",
-            "function": "OtherSetDesktopRightMenu"
+            "function": "OtherSetDesktopRightMenu",
+            "tip": "在右键添加“复制路径”选项，Windows下默认复制反斜杠“\\”"
           }
         }
       },
@@ -166,7 +204,8 @@
         "children": {
           "关于软件": {
             "type": "Normal",
-            "function": "AppWbsite"
+            "function": "AppWbsite",
+            "tip": "打开软件网站"
           }
         }
       }
@@ -177,11 +216,13 @@
     "children": {
       "翻译窗口": {
         "type": "Normal",
-        "function": "ToolTransShowDlg"
+        "function": "ToolTransShowDlg",
+        "tip": "打开翻译窗口"
       },
       "截图翻译": {
         "type": "Normal",
-        "function": "ToolOcrGetScreen"
+        "function": "ToolOcrGetScreen",
+        "tip": "截取屏幕，并将其转化为可复制的文字"
       }
     }
   },
@@ -190,27 +231,33 @@
     "children": {
       "上一张图": {
         "type": "Normal",
-        "function": "WallpaperPrev"
+        "function": "WallpaperPrev",
+        "tip": "切换到上一张壁纸"
       },
       "下一张图": {
         "type": "Normal",
-        "function": "WallpaperNext"
+        "function": "WallpaperNext",
+        "tip": "切换到下一张壁纸"
       },
       "不看此图": {
         "type": "Normal",
-        "function": "WallpaperDislike"
+        "function": "WallpaperDislike",
+        "tip": "将当前壁纸移动到垃圾箱，并自动切换到下一张壁纸"
       },
       "撤销删除": {
         "type": "Normal",
-        "function": "WallpaperUndoDislike"
+        "function": "WallpaperUndoDislike",
+        "tip": "撤销移动壁纸到垃圾箱操作"
       },
       "收藏图片": {
         "type": "Normal",
-        "function": "WallpaperCollect"
+        "function": "WallpaperCollect",
+        "tip": "将当前壁纸文件复制到收藏夹"
       },
       "取消收藏": {
         "type": "Normal",
-        "function": "WallpaperUndoCollect"
+        "function": "WallpaperUndoCollect",
+        "tip": "将当前壁纸从收藏夹中移除"
       }
     }
   },
@@ -219,40 +266,49 @@
     "children": {
       "程序目录": {
         "type": "Normal",
-        "function": "AppOpenExeDir"
+        "function": "AppOpenExeDir",
+        "tip": "打开Neobox.exe文件所在的位置"
       },
       "配置目录": {
         "type": "Normal",
-        "function": "AppOpenConfigDir"
+        "function": "AppOpenConfigDir",
+        "tip": "打开配置文件存放位置"
       },
       "壁纸目录": {
         "type": "Normal",
-        "function": "AppOpenWallpaperDir"
+        "function": "AppOpenWallpaperDir",
+        "tip": "打开当前类型壁纸存放位置"
       },
       "壁纸位置": {
         "type": "Normal",
-        "function": "AppOpenWallpaperLocation"
+        "function": "AppOpenWallpaperLocation",
+        "tip": "打开当前壁纸存放位置，并选中改壁纸文件"
       }
     }
   },
   "开机自启": {
     "type": "Checkable",
-    "function": "AppAutoSatrt"
+    "function": "AppAutoSatrt",
+    "tip": "设置软件是否自动开机启动"
   },
   "防止息屏": {
     "type": "Checkable",
-    "function": "SystemStopSleep" 
+    "function": "SystemStopSleep",
+    "tip": "防止电脑自动进入息屏或休眠状态"
   },
   "快速关机": {
     "type": "Normal",
-    "function": "SystemShutdown"
+    "function": "SystemShutdown",
+    "tip": "关机"
   },
   "快捷重启": {
     "type": "Normal",
-    "function": "SystemRestart"
+    "function": "SystemRestart",
+    "tip": "重启电脑"
   },
   "退出软件": {
     "type":"Normal",
-    "function": "AppQuit"
+    "function": "AppQuit",
+    "tip": "退出软件。如果只是想要重启软件，用鼠标中键点击网速悬浮窗即可"
   }
 }

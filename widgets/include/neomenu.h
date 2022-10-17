@@ -32,6 +32,7 @@ class NeoMenu : public QMenu {
   bool ChooseFolder(QString title, QString& folder);
   void LoadWallpaperExmenu();
   void WallhavenParams(QAction*const action);
+  void ShowTrayIcon(bool show);
 
  public:
   explicit NeoMenu(QWidget* parent = nullptr);
