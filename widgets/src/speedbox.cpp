@@ -287,3 +287,9 @@ void SpeedBox::leaveEvent(QEvent* event) {
   event->accept();
 }
 
+void SpeedBox::Move(int x, int y)
+{
+  move(x, y);
+  VarBox::GetSettings(u8"FormGlobal")[u8"Position"].second.getArray() = YJson::A{x, y};
+  VarBox::WriteSettings();
+}
