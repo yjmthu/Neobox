@@ -206,6 +206,11 @@ void NeoMenu::InitFunctionMap() {
           VarBox::WriteSettings();
         }
       },
+      {u8"ToolColorPick", std::bind(&QColorDialog::getColor, Qt::white, this, QStringLiteral("颜色拾取器"), QColorDialog::ColorDialogOptions())
+        // [this](){
+        //   QColorDialog::getColor(Qt::white, this);
+        // }
+      },
       {u8"WallpaperPrev", std::bind(&Wallpaper::SetSlot, m_Wallpaper, -1)},
       {u8"WallpaperNext", std::bind(&Wallpaper::SetSlot, m_Wallpaper, 1)},
       {u8"WallpaperDislike", std::bind(&Wallpaper::SetSlot, m_Wallpaper, 0)},

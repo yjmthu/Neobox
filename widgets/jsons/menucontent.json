@@ -140,7 +140,7 @@
       "插件设置": {
         "type": "Group",
         "children": {
-          "翻译设置": {
+          "极简翻译": {
             "type": "Group",
             "children": {
               "翻译热键": {
@@ -186,6 +186,11 @@
                 }
               }
             }
+          },
+          "颜色拾取": {
+            "type": "Normal",
+            "function": "ToolColorPick",
+            "tip": "编辑颜色，或者拾取屏幕颜色"
           }
         }
       },
