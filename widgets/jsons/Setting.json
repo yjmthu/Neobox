@@ -16,10 +16,12 @@
   "Tools": {
     "Translate.RegisterHotKey": true,
     "Translate.Shortcut": "Shift+Z",
+    "Translate.Mode": 0,
     "Ocr.RegisterHotKey": true,
     "Ocr.Shortcut": "Shift+A",
     "Ocr.TessdataDir": "tessdata",
-    "Ocr.Languages": ["chi_sim", "eng"]
+    "Ocr.Languages": ["chi_sim", "eng"],
+    "App.StopSleep": false
   },
   "FormUi": {
     "BkColor": [85, 0, 127, 150],

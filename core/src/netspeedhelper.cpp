@@ -9,6 +9,7 @@
 #include <list>
 #include <regex>
 #include <string>
+#include <map>
 
 std::string NetSpeedHelper::FormatSpeed(uint64_t bytes, bool upload) {
   // https://unicode-table.com/en/2192/
@@ -67,19 +68,23 @@ void NetSpeedHelper::SetNetInfo() {
     GetIfTable(mi, &dwMISize, FALSE);
   }
   DWORD m_in_bytes = 0, m_out_bytes = 0;
-  PIP_ADAPTER_ADDRESSES paa = nullptr;
-  for (DWORD i = 0; i < mi->dwNumEntries; i++) {
-    paa = &piaa[0];
-    while (paa) {
-      if (paa->IfType != IF_TYPE_SOFTWARE_LOOPBACK &&
-          paa->IfType != IF_TYPE_TUNNEL) {
-        if (paa->IfIndex == mi->table[i].dwIndex) {
-          m_in_bytes += mi->table[i].dwInOctets;
-          m_out_bytes += mi->table[i].dwOutOctets;
-        }
-      }
+  PIP_ADAPTER_ADDRESSES paa = piaa;
+  auto find_fn = [&paa](const MIB_IFROW& item)->bool{
+      return item.dwIndex == paa->IfIndex;
+  };
+  const auto *table_begin = mi->table, *table_end = table_begin + mi->dwNumEntries;
+  while (paa) {
+    if (paa->IfType == IF_TYPE_SOFTWARE_LOOPBACK ||
+        paa->IfType == IF_TYPE_TUNNEL) {
       paa = paa->Next;
+      continue;
     }
+    auto iter = std::find_if(table_begin, table_end, find_fn);
+    if (iter != table_end) {
+      m_in_bytes += iter->dwInOctets;
+      m_out_bytes += iter->dwOutOctets;
+    }
+    paa = paa->Next;
   }
 
   if (m_last_in_bytes) {

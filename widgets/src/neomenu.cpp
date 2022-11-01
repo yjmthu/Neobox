@@ -247,8 +247,16 @@ void NeoMenu::InitFunctionMap() {
               (ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED) :
               ES_CONTINUOUS
           );
+          VarBox::GetSettings(u8"Tools")[u8"App.StopSleep"].second = checked;
+          VarBox::WriteSettings();
         },
-        []()->bool { return false; }
+        []()->bool {
+          bool enable = VarBox::GetSettings(u8"Tools")[u8"App.StopSleep"].second.isTrue();
+          if (enable) {
+            SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED);
+          }
+          return enable;
+        }
        }
       },
       {u8"AppAutoSatrt",

@@ -142,8 +142,7 @@ std::u8string Translate::GetResultBaidu(const std::u8string& text) {
 
   curl_easy_setopt(pCurl, CURLOPT_URL,
                    "https://aip.baidubce.com/rpc/2.0/mt/texttrans/v1?"
-                   "access_token=24.9283239c3466a3d58ef8c98a3f65923d.2592000."
-                   "1665405830.282335-27415445");
+                   "access_token=24.e722d8c3c3090cda4645507c8d1c06ba.2592000.1669883009.282335-27415445");
   curl_easy_setopt(pCurl, CURLOPT_HEADER, 0L);
   // curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 1L);
   curl_easy_setopt(pCurl, CURLOPT_NOSIGNAL, 1L);
@@ -162,6 +161,7 @@ std::u8string Translate::GetResultBaidu(const std::u8string& text) {
     YJson jsData(response.begin(), response.end());
     response.clear();
     if (auto iter = jsData.find(u8"error_msg"); iter != jsData.endO()) {
+      // Access token expired
       response = iter->second.getValueString();
       goto clean;
     }

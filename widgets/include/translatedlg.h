@@ -11,7 +11,8 @@ class TranslateDlg : public QWidget {
  public:
   explicit TranslateDlg(QWidget* parent);
   ~TranslateDlg();
-  void Show(QRect rect, const QString& text = "");
+  void Show(QRect rect, const QString& text);
+  void Show(QRect rect);
 
  private:
   void GetResultData();

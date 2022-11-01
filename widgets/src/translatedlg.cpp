@@ -1,5 +1,7 @@
 #include <translate.h>
 #include <translatedlg.h>
+#include <varbox.h>
+#include <yjson.h>
 
 #include <QApplication>
 #include <QClipboard>
@@ -95,22 +97,11 @@ bool TranslateDlg::eventFilter(QObject* target, QEvent* event) {
           close();
           return true;
         case Qt::Key_Return: {
-          QTextCursor&& pCursor = m_TextFrom->textCursor();
-          if (pCursor.atBlockEnd() && !pCursor.atBlockStart()) {
-            QChar c = m_TextFrom->document()
-                          ->findBlockByLineNumber(pCursor.blockNumber())
-                          .text()
-                          .back();
-            if (c == QChar(' ')) {
-              pCursor.deletePreviousChar();
-              pCursor.insertBlock();
-              // pCursor.insertHtml("<br/>");
-              m_TextFrom->setTextCursor(pCursor);
-              return true;
-            }
+          if (bCtrlDown) {
+            GetResultData();
+            return true;
           }
-          GetResultData();
-          return true;
+          break;
         }
         case Qt::Key_Alt:
           if (int i = m_BoxTo->currentIndex(); bShiftDown) {
@@ -169,6 +160,11 @@ void TranslateDlg::Show(QRect rect, const QString& text) {
   activateWindow();
 }
 
+void TranslateDlg::Show(QRect rect) {
+  m_FormRect = rect;
+  show();
+  activateWindow();
+}
 void TranslateDlg::GetResultData() {
   m_Translate->m_LanPair = {m_BoxFrom->currentIndex(), m_BoxTo->currentIndex()};
   QByteArray array = m_TextFrom->toPlainText().toUtf8();
@@ -239,17 +235,21 @@ void TranslateDlg::AddCombbox(QHBoxLayout* layout) {
   m_BtnTransMode->setCheckable(true);
   m_BtnTransMode->setText(QStringLiteral("查词"));
   layout->addWidget(m_BtnTransMode);
+  auto dic = static_cast<Translate::Dict>(VarBox::GetSettings(u8"Tools")[u8"Translate.Mode"].second.getValueInt());
+  m_Translate->SetDict(dic);
+  m_BtnTransMode->setChecked(dic == Translate::Dict::Youdao);
 
   connect(m_BtnTransMode, &QPushButton::toggled, this, [this](bool checked) {
+    auto dic = Translate::Dict::Baidu;
     if (checked)
-      m_Translate->SetDict(Translate::Dict::Youdao);
-    else
-      m_Translate->SetDict(Translate::Dict::Baidu);
+      dic = Translate::Dict::Youdao;
+    VarBox::GetSettings(u8"Tools")[u8"Translate.Mode"].second = static_cast<int>(dic);
+    m_Translate->SetDict(dic);
+    VarBox::WriteSettings();
     ChangeLanguage();
   });
 
   connect(m_BoxTo, &QComboBox::currentIndexChanged, this,
           [this](int index) { m_Translate->m_LanPair.second = index; });
-
   ChangeLanguage();
 }
