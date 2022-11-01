@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="256mm"
-   height="256mm"
-   viewBox="0 0 256 256"
+   width="1024"
+   height="1024"
+   viewBox="0 0 270.93334 270.93334"
    version="1.1"
    id="svg5"
    inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
@@ -23,7 +23,7 @@
      inkscape:pageopacity="1"
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
-     inkscape:document-units="mm"
+     inkscape:document-units="px"
      showgrid="false"
      inkscape:zoom="0.52284038"
      inkscape:cx="563.26942"
@@ -33,7 +33,8 @@
      inkscape:window-x="-9"
      inkscape:window-y="-9"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer1" />
+     inkscape:current-layer="layer1"
+     showborder="false" />
   <defs
      id="defs2">
     <linearGradient
@@ -74,10 +75,10 @@
     </linearGradient>
     <inkscape:perspective
        sodipodi:type="inkscape:persp3d"
-       inkscape:vp_x="13.66945 : 50.770714 : 1"
-       inkscape:vp_y="0 : 163.75467 : 0"
-       inkscape:vp_z="410.04086 : 55.553154 : 1"
-       inkscape:persp3d-origin="209.87678 : 48.566289 : 1"
+       inkscape:vp_x="13.669451 : 65.70405 : 1"
+       inkscape:vp_y="0 : 163.75468 : 0"
+       inkscape:vp_z="410.04089 : 70.48649 : 1"
+       inkscape:persp3d-origin="209.87679 : 63.499625 : 1"
        id="perspective900" />
     <linearGradient
        inkscape:collect="always"
@@ -93,9 +94,9 @@
     </linearGradient>
     <rect
        x="389.22012"
-       y="537.44892"
-       width="77.461499"
-       height="47.81574"
+       y="537.44891"
+       width="77.461502"
+       height="47.815739"
        id="rect747" />
     <linearGradient
        inkscape:collect="always"
@@ -211,7 +212,7 @@
        inkscape:label="Bubbly Bumps"
        inkscape:menu="Bumps"
        inkscape:menu-tooltip="Flexible bubbles effect with some displacement"
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        id="filter935"
        x="-0.043487257"
        y="-0.16197196"
@@ -239,7 +240,8 @@
          scale="5"
          in="result0"
          xChannelSelector="R"
-         id="feDisplacementMap915" />
+         id="feDisplacementMap915"
+         yChannelSelector="A" />
       <feComposite
          result="result2"
          operator="in"
@@ -251,7 +253,10 @@
          in2="result2"
          in="result0"
          operator="arithmetic"
-         id="feComposite919" />
+         id="feComposite919"
+         k1="0"
+         k2="0"
+         k4="0" />
       <feBlend
          result="fbSourceGraphic"
          mode="multiply"
@@ -290,17 +295,19 @@
          k2="1"
          k3="0.7"
          in2="result2"
-         id="feComposite933" />
+         id="feComposite933"
+         k1="0"
+         k4="0" />
     </filter>
     <filter
        inkscape:label="Black Light"
        inkscape:menu="Color"
        inkscape:menu-tooltip="Light areas turn to black"
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        id="filter1679"
        x="-0.0014651878"
        y="-0.0018790495"
-       width="1.0034929"
+       width="1.003493"
        height="1.0037581">
       <feColorMatrix
          type="luminanceToAlpha"
@@ -312,7 +319,10 @@
          in="result2"
          k3="2"
          result="result4"
-         id="feComposite1673" />
+         id="feComposite1673"
+         k1="0"
+         k2="0"
+         k4="0" />
       <feBlend
          in="result4"
          mode="multiply"
@@ -329,11 +339,11 @@
        inkscape:label="Pointillism"
        inkscape:menu="Scatter"
        inkscape:menu-tooltip="Gives a turbulent pointillist HSL sensitive transparency"
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        id="filter1952"
-       x="-0.00063530224"
-       y="-0.00067442489"
-       width="1.0014301"
+       x="-0.00063530222"
+       y="-0.00067442487"
+       width="1.0014302"
        height="1.0018384">
       <feTurbulence
          baseFrequency="0.09"
@@ -376,7 +386,9 @@
          result="result2"
          k1="0.5"
          k3="1"
-         id="feComposite1948" />
+         id="feComposite1948"
+         k2="0"
+         k4="0" />
       <feConvolveMatrix
          order="3 3"
          kernelMatrix="1 0 0 0 2 0 0 0 -1 "
@@ -396,8 +408,7 @@
          id="feTurbulence1956"
          baseFrequency="0.14"
          numOctaves="1"
-         type="fractalNoise"
-         in="fbSourceGraphic" />
+         type="fractalNoise" />
       <feColorMatrix
          id="feColorMatrix1958"
          values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 6 -3.5 "
@@ -428,7 +439,9 @@
          operator="arithmetic"
          result="result2"
          k1="1"
-         k3="1" />
+         k3="1"
+         k2="0"
+         k4="0" />
       <feBlend
          in2="result2"
          id="feBlend1968"
@@ -494,8 +507,7 @@
          type="fractalNoise"
          baseFrequency="1"
          numOctaves="3"
-         result="result1"
-         in="fbSourceGraphic" />
+         result="result1" />
       <feColorMatrix
          id="feColorMatrix2042"
          type="luminanceToAlpha"
@@ -520,7 +532,10 @@
          id="feComposite2050"
          operator="arithmetic"
          k1="1.5"
-         result="result93" />
+         result="result93"
+         k2="0"
+         k3="0"
+         k4="0" />
       <feComposite
          in2="result93"
          id="feComposite2052"
@@ -533,7 +548,9 @@
          operator="arithmetic"
          k2="0.5"
          k1="1"
-         result="result94" />
+         result="result94"
+         k3="0"
+         k4="0" />
       <feDisplacementMap
          in2="result1"
          id="feDisplacementMap2056"
@@ -546,12 +563,12 @@
        inkscape:label="Pointillism"
        inkscape:menu="Scatter"
        inkscape:menu-tooltip="Gives a turbulent pointillist HSL sensitive transparency"
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        id="filter1988"
        x="-0.00015518229"
-       y="-0.0012532075"
-       width="1.0013941"
-       height="1.0014016">
+       y="-0.0012532074"
+       width="1.0013942"
+       height="1.0014015">
       <feTurbulence
          baseFrequency="0.14"
          numOctaves="1"
@@ -587,7 +604,9 @@
          result="result2"
          k1="1"
          k3="1"
-         id="feComposite1982" />
+         id="feComposite1982"
+         k2="0"
+         k4="0" />
       <feBlend
          mode="darken"
          in="result2"
@@ -653,8 +672,7 @@
          type="fractalNoise"
          baseFrequency="1"
          numOctaves="3"
-         result="result1"
-         in="fbSourceGraphic" />
+         result="result1" />
       <feColorMatrix
          id="feColorMatrix2022"
          type="luminanceToAlpha"
@@ -679,7 +697,10 @@
          id="feComposite2030"
          operator="arithmetic"
          k1="1.5"
-         result="result93" />
+         result="result93"
+         k2="0"
+         k3="0"
+         k4="0" />
       <feComposite
          in2="result93"
          id="feComposite2032"
@@ -692,7 +713,9 @@
          operator="arithmetic"
          k2="0.5"
          k1="1"
-         result="result94" />
+         result="result94"
+         k3="0"
+         k4="0" />
       <feDisplacementMap
          in2="result1"
          id="feDisplacementMap2036"
@@ -705,12 +728,12 @@
        inkscape:menu-tooltip="Shadowy outer bevel"
        inkscape:menu="Shadows and Glows"
        inkscape:label="Inset"
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        id="filter2068"
        x="-0.148975"
-       y="-0.14354188"
-       width="1.3378293"
-       height="1.3230719">
+       y="-0.14354189"
+       width="1.3378294"
+       height="1.323072">
       <feOffset
          dy="3"
          dx="3"
@@ -841,10 +864,10 @@
        inkscape:menu-tooltip="Shadowy outer bevel"
        inkscape:menu="Shadows and Glows"
        inkscape:label="Inset"
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        id="filter2080"
-       x="-0.097789225"
-       y="-0.13270927"
+       x="-0.097789228"
+       y="-0.13270926"
        width="1.2210649"
        height="1.300328">
       <feOffset
@@ -977,11 +1000,11 @@
        inkscape:label="Scotland"
        inkscape:menu="Overlays"
        inkscape:menu-tooltip="Colorized mountain tops out of the fog"
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        id="filter2180"
        x="-0.1086276"
        y="-0.10496518"
-       width="1.2183389"
+       width="1.2183388"
        height="1.2088255">
       <feTurbulence
          numOctaves="3"
@@ -1014,8 +1037,7 @@
          id="feTurbulence2196"
          type="fractalNoise"
          numOctaves="5"
-         baseFrequency="0.143"
-         in="fbSourceGraphic" />
+         baseFrequency="0.143" />
       <feColorMatrix
          id="feColorMatrix2198"
          values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 5 -3"
@@ -1135,8 +1157,7 @@
          result="result7"
          type="fractalNoise"
          numOctaves="3"
-         baseFrequency="0.2 0.09"
-         in="fbSourceGraphic" />
+         baseFrequency="0.2 0.09" />
       <feColorMatrix
          id="feColorMatrix2290"
          result="result5"
@@ -1182,12 +1203,13 @@
          baseFrequency="0.03 0.1"
          numOctaves="5"
          type="fractalNoise"
-         result="result91"
-         in="fbSourceGraphic" />
+         result="result91" />
       <feDisplacementMap
          in2="result91"
          id="feDisplacementMap2322"
-         scale="5" />
+         scale="5"
+         xChannelSelector="A"
+         yChannelSelector="A" />
       <feColorMatrix
          id="feColorMatrix2324"
          values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 3 -1 "
@@ -1233,10 +1255,10 @@
        inkscape:label="Scotland"
        inkscape:menu="Overlays"
        inkscape:menu-tooltip="Colorized mountain tops out of the fog"
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        id="filter2192"
-       x="-0.071449267"
-       y="-0.096912547"
+       x="-0.071449265"
+       y="-0.096912548"
        width="1.1430581"
        height="1.1943146">
       <feTurbulence
@@ -1270,8 +1292,7 @@
          id="feTurbulence2216"
          type="fractalNoise"
          numOctaves="5"
-         baseFrequency="0.143"
-         in="fbSourceGraphic" />
+         baseFrequency="0.143" />
       <feColorMatrix
          id="feColorMatrix2218"
          values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 5 -3"
@@ -1391,8 +1412,7 @@
          result="result7"
          type="fractalNoise"
          numOctaves="3"
-         baseFrequency="0.2 0.09"
-         in="fbSourceGraphic" />
+         baseFrequency="0.2 0.09" />
       <feColorMatrix
          id="feColorMatrix2306"
          result="result5"
@@ -1438,12 +1458,13 @@
          baseFrequency="0.03 0.1"
          numOctaves="5"
          type="fractalNoise"
-         result="result91"
-         in="fbSourceGraphic" />
+         result="result91" />
       <feDisplacementMap
          in2="result91"
          id="feDisplacementMap2342"
-         scale="5" />
+         scale="5"
+         xChannelSelector="A"
+         yChannelSelector="A" />
       <feColorMatrix
          id="feColorMatrix2344"
          values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 3 -1 "
@@ -1489,10 +1510,10 @@
        inkscape:label="People"
        inkscape:menu="Overlays"
        inkscape:menu-tooltip="Colorized blotches, like a crowd of people"
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        id="filter2372"
        x="0"
-       y="-0.0011048356"
+       y="-0.0011048357"
        width="1.0010837"
        height="1.0011048">
       <feTurbulence
@@ -1540,10 +1561,10 @@
        inkscape:label="People"
        inkscape:menu="Overlays"
        inkscape:menu-tooltip="Colorized blotches, like a crowd of people"
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        id="filter2388"
-       x="-0.00053399471"
-       y="-0.00053674517"
+       x="-0.00053399469"
+       y="-0.00053674518"
        width="1.0012275"
        height="1.001563">
       <feTurbulence
@@ -1593,9 +1614,9 @@
        inkscape:menu-tooltip="Creates a black light inside and outside"
        height="1.1494768"
        width="1.156266"
-       y="-0.075290796"
-       x="-0.077591145"
-       style="color-interpolation-filters:sRGB;"
+       y="-0.075290799"
+       x="-0.077591144"
+       style="color-interpolation-filters:sRGB"
        id="filter2402">
       <feGaussianBlur
          stdDeviation="5"
@@ -1609,7 +1630,8 @@
          k4="-2"
          result="result3"
          in2="result1"
-         id="feComposite2392" />
+         id="feComposite2392"
+         k3="0" />
       <feColorMatrix
          values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 10 0 "
          result="result2"
@@ -1636,11 +1658,11 @@
        inkscape:label="Black Hole"
        inkscape:menu="Morphology"
        inkscape:menu-tooltip="Creates a black light inside and outside"
-       height="1.1392427"
+       height="1.1392426"
        width="1.1025351"
-       y="-0.069376604"
+       y="-0.069376603"
        x="-0.051187761"
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        id="filter2416">
       <feGaussianBlur
          stdDeviation="5"
@@ -1654,7 +1676,8 @@
          k4="-2"
          result="result3"
          in2="result1"
-         id="feComposite2406" />
+         id="feComposite2406"
+         k3="0" />
       <feColorMatrix
          values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 10 0 "
          result="result2"
@@ -1679,7 +1702,7 @@
     </filter>
     <filter
        inkscape:label="Pointillism"
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        inkscape:menu-tooltip="Gives a turbulent pointillist HSL sensitive transparency"
        inkscape:menu="Scatter"
        height="1.0011048"
@@ -1718,7 +1741,10 @@
          operator="arithmetic"
          k1="1.5"
          result="result93"
-         id="feComposite2456" />
+         id="feComposite2456"
+         k2="0"
+         k3="0"
+         k4="0" />
       <feComposite
          in2="result93"
          in="SourceGraphic"
@@ -1730,7 +1756,9 @@
          operator="arithmetic"
          k2="0.5"
          k1="1"
-         id="feComposite2460" />
+         id="feComposite2460"
+         k3="0"
+         k4="0" />
       <feDisplacementMap
          scale="15"
          xChannelSelector="R"
@@ -1741,7 +1769,7 @@
     </filter>
     <filter
        inkscape:label="Pointillism"
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        inkscape:menu-tooltip="Gives a turbulent pointillist HSL sensitive transparency"
        inkscape:menu="Scatter"
        height="1.001563"
@@ -1780,7 +1808,10 @@
          operator="arithmetic"
          k1="1.5"
          result="result93"
-         id="feComposite2476" />
+         id="feComposite2476"
+         k2="0"
+         k3="0"
+         k4="0" />
       <feComposite
          in2="result93"
          in="SourceGraphic"
@@ -1792,7 +1823,9 @@
          operator="arithmetic"
          k2="0.5"
          k1="1"
-         id="feComposite2480" />
+         id="feComposite2480"
+         k3="0"
+         k4="0" />
       <feDisplacementMap
          scale="15"
          xChannelSelector="R"
@@ -1805,7 +1838,7 @@
        inkscape:label="Cubes"
        inkscape:menu="Scatter"
        inkscape:menu-tooltip="Scattered cubes; adjust the Morphology primitive to vary size"
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        id="filter2502"
        x="-0.34644887"
        y="-0.17475227"
@@ -1846,7 +1879,9 @@
          result="result2"
          k1="1"
          k3="1"
-         id="feComposite2496" />
+         id="feComposite2496"
+         k2="0"
+         k4="0" />
       <feBlend
          mode="darken"
          in="result2"
@@ -1865,7 +1900,7 @@
        inkscape:label="Bubbly Bumps"
        inkscape:menu="Bumps"
        inkscape:menu-tooltip="Flexible bubbles effect with some displacement"
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        id="filter3264"
        x="-0.045123174"
        y="-0.022760579"
@@ -1893,7 +1928,8 @@
          scale="5"
          in="result0"
          xChannelSelector="R"
-         id="feDisplacementMap3244" />
+         id="feDisplacementMap3244"
+         yChannelSelector="A" />
       <feComposite
          result="result2"
          operator="in"
@@ -1905,7 +1941,10 @@
          in2="result2"
          in="result0"
          operator="arithmetic"
-         id="feComposite3248" />
+         id="feComposite3248"
+         k1="0"
+         k2="0"
+         k4="0" />
       <feBlend
          result="fbSourceGraphic"
          mode="multiply"
@@ -1944,7 +1983,9 @@
          k2="1"
          k3="0.7"
          in2="result2"
-         id="feComposite3262" />
+         id="feComposite3262"
+         k1="0"
+         k4="0" />
     </filter>
     <filter
        inkscape:label="Air Spray"
@@ -1952,9 +1993,9 @@
        inkscape:menu-tooltip="Convert to small scattered particles with some thickness"
        width="1.0001875"
        height="1.0001875"
-       y="-9.3749998e-05"
-       x="-9.3749998e-05"
-       style="color-interpolation-filters:sRGB;"
+       y="-9.3750001e-05"
+       x="-9.3750001e-05"
+       style="color-interpolation-filters:sRGB"
        id="filter3278">
       <feGaussianBlur
          stdDeviation="0.01"
@@ -1994,7 +2035,7 @@
        inkscape:label="Leaves"
        inkscape:menu="Scatter"
        inkscape:menu-tooltip="Leaves on the ground in Fall, or living foliage"
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        id="filter3296"
        x="0"
        y="0"
@@ -2041,7 +2082,9 @@
          result="result2"
          k1="0.5"
          k3="1"
-         id="feComposite3292" />
+         id="feComposite3292"
+         k2="0"
+         k4="0" />
       <feConvolveMatrix
          order="3 3"
          kernelMatrix="1 0 0 0 2 0 0 0 -1 "
@@ -2263,11 +2306,11 @@
        x="4.8000002"
        y="4.8000002"
        ry="128"
-       transform="matrix(0.96385529,0,0,0.96317158,1.5068616e-5,-4.7578362e-5)" />
+       transform="matrix(1.0200803,0,0,1.0200805,1.5068616e-5,-4.7578362e-5)" />
     <g
        id="g3213"
        style="display:inline;fill:#1a1a1a;fill-opacity:1;filter:url(#filter3219)"
-       transform="matrix(0.94088807,0,0,0.94088807,6.2148387,-1.8539563)"
+       transform="matrix(0.99577329,0,0,0.99648037,6.5773706,-1.9634944)"
        inkscape:label="BoxBlur">
       <path
          id="path3199"
@@ -2301,7 +2344,7 @@
     </g>
     <g
        id="g1196"
-       transform="matrix(0.94088807,0,0,0.94088807,4.7211788,-3.8455044)"
+       transform="matrix(0.99577329,0,0,0.99648037,4.9965804,-4.0727129)"
        inkscape:label="BoxBackSide"
        style="filter:url(#filter2464)">
       <rect
@@ -2323,7 +2366,7 @@
        id="g3093"
        inkscape:label="Lightning"
        style="filter:url(#filter3264)"
-       transform="matrix(0.94088807,0,0,0.94088807,7.7084985,7.6058896)">
+       transform="matrix(0.99577329,0,0,0.99648037,8.1581607,8.0552858)">
       <path
          style="display:inline;opacity:1;fill:url(#linearGradient2019);fill-opacity:1;stroke:none;stroke-width:0.556043"
          d="M 144.20322,12.203871 86.004699,121.31126 146.59315,93.335869 127.70566,170.37208 165.78632,64.281471 111.15204,98.235703 Z"
@@ -2338,7 +2381,7 @@
     <g
        id="g724"
        style="fill:#d40000;fill-opacity:1;filter:url(#filter2484)"
-       transform="matrix(0.94088807,0,0,0.94088807,4.7211788,-3.8455044)"
+       transform="matrix(0.99577329,0,0,0.99648037,4.9965804,-4.0727129)"
        inkscape:label="BoxFrontSide">
       <path
          id="rect225"
@@ -2373,7 +2416,7 @@
        id="g905"
        style="filter:url(#filter935)"
        inkscape:label="neobox"
-       transform="matrix(0.94088807,0,0,0.94088807,7.7084985,7.6058896)">
+       transform="matrix(0.99577329,0,0,0.99648037,8.1581607,8.0552858)">
       <text
          xml:space="preserve"
          style="font-size:31.0486px;opacity:1;mix-blend-mode:normal;fill:#0b2822;stroke:none;stroke-width:0.727703;filter:url(#filter3125)"

@@ -17,6 +17,7 @@ class ScreenFetch : public QWidget {
   bool HaveCatchImage() const { return m_bHaveCatchImage; }
 
  private:
+  void SetCursor();
   QImage& m_Image;
   uint8_t m_bFirstClicked = 0;
   bool m_bHaveCatchImage = false;

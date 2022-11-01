@@ -17,6 +17,7 @@
     "Translate.RegisterHotKey": true,
     "Translate.Shortcut": "Shift+Z",
     "Translate.Mode": 0,
+    "Translate.AutoTranslate": false,
     "Ocr.RegisterHotKey": true,
     "Ocr.Shortcut": "Shift+A",
     "Ocr.TessdataDir": "tessdata",

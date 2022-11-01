@@ -127,12 +127,16 @@ void NeoMenu::InitFunctionMap() {
        }},
       {u8"ToolOcrGetScreen",
        [this]() {
+         static bool busy = false;
+         if (busy) return;
+         busy = true;
          QImage image;
          ScreenFetch* box = new ScreenFetch(image);
          QEventLoop loop;
          connect(box, &ScreenFetch::destroyed, &loop, &QEventLoop::quit);
          box->showFullScreen();
          loop.exec();
+         busy = false;
          if (!box->HaveCatchImage())
            return;
          m_TranslateDlg->Show(
@@ -207,9 +211,6 @@ void NeoMenu::InitFunctionMap() {
         }
       },
       {u8"ToolColorPick", std::bind(&QColorDialog::getColor, Qt::white, this, QStringLiteral("颜色拾取器"), QColorDialog::ColorDialogOptions())
-        // [this](){
-        //   QColorDialog::getColor(Qt::white, this);
-        // }
       },
       {u8"WallpaperPrev", std::bind(&Wallpaper::SetSlot, m_Wallpaper, -1)},
       {u8"WallpaperNext", std::bind(&Wallpaper::SetSlot, m_Wallpaper, 1)},
@@ -389,6 +390,13 @@ void NeoMenu::InitFunctionMap() {
                                      m_FuncNormalMap[u8"ToolTransShowDlg"]);
           }
           return regist;
+        }}},
+      {u8"ToolTransAutoTranslate",
+        {[this](bool checked) {
+          VarBox::GetSettings(u8"Tools")[u8"Translate.AutoTranslate"].second = checked;
+          VarBox::WriteSettings();
+        },
+        {[]()->bool { return VarBox::GetSettings(u8"Tools")[u8"Translate.AutoTranslate"].second.isTrue(); }
         }}},
       {u8"ToolOcrRegistKey",
        {[this](bool checked) {

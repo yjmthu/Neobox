@@ -5,6 +5,7 @@
 #include <QPainter>
 #include <QPixmap>
 #include <QScreen>
+#include <QtSvg/QSvgRenderer>
 
 ScreenFetch::ScreenFetch(QImage& image, QWidget* parent)
     : QWidget(parent),
@@ -14,9 +15,21 @@ ScreenFetch::ScreenFetch(QImage& image, QWidget* parent)
       m_PixMap(QGuiApplication::primaryScreen()->grabWindow()) {
   setWindowFlag(Qt::WindowStaysOnTopHint, true);
   setAttribute(Qt::WA_DeleteOnClose, true);
+  SetCursor();
 }
 
 ScreenFetch::~ScreenFetch() {}
+
+void ScreenFetch::SetCursor() {
+	QSvgRenderer svgRender;
+	svgRender.load(QStringLiteral(":/icons/cursor.svg"));
+  QPixmap pixmap(16, 16);
+  pixmap.fill(Qt::transparent);
+  QPainter painter(&pixmap);
+  svgRender.render(&painter);
+  QCursor cursor(pixmap, 5, 0);
+  setCursor(cursor);
+}
 
 void ScreenFetch::mousePressEvent(QMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {

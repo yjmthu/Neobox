@@ -185,7 +185,8 @@ void SpeedBox::mouseDoubleClickEvent(QMouseEvent* event) {
 }
 
 void SpeedBox::dragEnterEvent(QDragEnterEvent* event) {
-  if (event->mimeData()->hasUrls())
+  auto mimeData = event->mimeData();
+  if (mimeData->hasUrls() || mimeData->hasText())
     event->acceptProposedAction();
   else
     event->ignore();
@@ -193,14 +194,22 @@ void SpeedBox::dragEnterEvent(QDragEnterEvent* event) {
 
 void SpeedBox::dropEvent(QDropEvent* event) {
   namespace fs = std::filesystem;
-  if (event->mimeData()->hasUrls()) {
+  auto mimeData = event->mimeData();
+  if (mimeData->hasUrls()) {
     auto urls =
-        event->mimeData()->urls() | std::views::transform([](const QUrl& i) {
+        mimeData->urls() | std::views::transform([](const QUrl& i) {
           return fs::path(i.toLocalFile().toStdWString());
         });
     m_MainMenu->m_Wallpaper->SetDropFile(
         std::deque<fs::path>(urls.begin(), urls.end()));
     event->accept();
+  } else if (mimeData->hasText()) {
+    const QString text = mimeData->text();
+    if (!text.isEmpty()) {
+      m_MainMenu->m_TranslateDlg->Show(frameGeometry(), mimeData->text());
+    } else {
+      m_MainMenu->m_TranslateDlg->Show(frameGeometry());
+    }
   } else {
     event->ignore();
   }

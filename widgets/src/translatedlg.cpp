@@ -158,6 +158,11 @@ void TranslateDlg::Show(QRect rect, const QString& text) {
   m_TextTo->clear();
   show();
   activateWindow();
+
+  if (VarBox::GetSettings(u8"Tools")[u8"Translate.AutoTranslate"].second.isTrue()) {
+    if (!text.isEmpty())
+      GetResultData();
+  }
 }
 
 void TranslateDlg::Show(QRect rect) {

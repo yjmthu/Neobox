@@ -158,6 +158,11 @@
                     "tip": "注册该热键后，便可以使用它了；如果不想使用，取消注册热键即可"
                   }
                 }
+              },
+              "自动翻译": {
+                "type": "Checkable",
+                "tip": "打开翻译窗口时自动翻译文本内容",
+                "function": "ToolTransAutoTranslate"
               }
             }
           },
