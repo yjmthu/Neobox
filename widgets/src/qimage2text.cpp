@@ -86,9 +86,9 @@ QString QImage2Text(const QImage& qImage) {
 
   const auto& settings = VarBox::GetSettings(u8"Tools");
   std::string path = std::filesystem::path(
-                         settings[u8"Ocr.TessdataDir"].second.getValueString())
+                         settings[u8"Ocr.TessdataDir"].getValueString())
                          .string();
-  auto&& languagesList = settings[u8"Ocr.Languages"].second.getArray() |
+  auto&& languagesList = settings[u8"Ocr.Languages"].getArray() |
                          std::views::transform([](const YJson& json) {
                            const std::u8string& str = json.getValueString();
                            return std::string(str.begin(), str.end());

@@ -163,6 +163,11 @@
                 "type": "Checkable",
                 "tip": "打开翻译窗口时自动翻译文本内容",
                 "function": "ToolTransAutoTranslate"
+              },
+              "读剪切板": {
+                "type": "Checkable",
+                "tip": "快捷键唤醒窗口时自动读取剪切板内容",
+                "function": "ToolTransReadClipboard" 
               }
             }
           },

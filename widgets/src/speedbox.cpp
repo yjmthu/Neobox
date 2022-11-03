@@ -72,7 +72,7 @@ void SpeedBox::Show() {
   m_Animation->setDuration(100);
   m_Animation->setTargetObject(this);
   connect(m_Animation, &QPropertyAnimation::finished, this, [this]() {
-    VarBox::GetSettings(u8"FormGlobal")[u8"Position"].second.getArray() =
+    VarBox::GetSettings(u8"FormGlobal")[u8"Position"].getArray() =
         YJson::A{x(), y()};
     VarBox::WriteSettings();
   });
@@ -94,7 +94,7 @@ void SpeedBox::SetWindowMode() {
   m_TextUploadSpeed->setMinimumWidth(65);
   m_TextDownLoadSpeed->setMinimumWidth(65);
   const auto& array =
-      VarBox::GetSettings(u8"FormGlobal")[u8"Position"].second.getArray();
+      VarBox::GetSettings(u8"FormGlobal")[u8"Position"].getArray();
   move(array.front().getValueInt(), array.back().getValueInt());
 }
 
@@ -107,7 +107,7 @@ void SpeedBox::SetStyleSheet() {
   setWindowIcon(QIcon(":/icons/neobox.ico"));
   setCursor(Qt::PointingHandCursor);
   std::u8string& toolTip =
-      VarBox::GetSettings(u8"FormGlobal")[u8"ToolTip"].second.getValueString();
+      VarBox::GetSettings(u8"FormGlobal")[u8"ToolTip"].getValueString();
   setToolTip(QString::fromUtf8(toolTip.data(), toolTip.size()));
 }
 
@@ -119,8 +119,8 @@ void SpeedBox::SetBaseLayout() {
   for (auto label : labels) {
     qByteName = label->objectName().toUtf8();
     YJson& temp =
-        jsFormUi[std::u8string(qByteName.begin(), qByteName.end())].second;
-    const auto& jsPos = temp[u8"Pos"].second.getArray();
+        jsFormUi[std::u8string(qByteName.begin(), qByteName.end())];
+    const auto& jsPos = temp[u8"Pos"].getArray();
     label->move(jsPos.front().getValueInt(), jsPos.back().getValueInt());
     //
   }
@@ -169,7 +169,7 @@ void SpeedBox::mousePressEvent(QMouseEvent* event) {
 void SpeedBox::mouseReleaseEvent(QMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
     setMouseTracking(false);
-    VarBox::GetSettings(u8"FormGlobal")[u8"Position"].second.getArray() =
+    VarBox::GetSettings(u8"FormGlobal")[u8"Position"].getArray() =
         YJson::A{x(), y()};
     VarBox::WriteSettings();
   }
@@ -299,6 +299,6 @@ void SpeedBox::leaveEvent(QEvent* event) {
 void SpeedBox::Move(int x, int y)
 {
   move(x, y);
-  VarBox::GetSettings(u8"FormGlobal")[u8"Position"].second.getArray() = YJson::A{x, y};
+  VarBox::GetSettings(u8"FormGlobal")[u8"Position"].getArray() = YJson::A{x, y};
   VarBox::WriteSettings();
 }

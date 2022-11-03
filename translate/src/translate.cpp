@@ -131,10 +131,10 @@ std::u8string Translate::GetResultBaidu(const std::u8string& text) {
   CURL* pCurl = curl_easy_init();
   curl_slist* pList = nullptr;
   std::u8string response;
-  jsData[u8"from"].second = m_LanNamesBaidu[m_LanPair.first].first;
-  jsData[u8"to"].second =
+  jsData[u8"from"] = m_LanNamesBaidu[m_LanPair.first].first;
+  jsData[u8"to"] =
       m_LanNamesBaidu[m_LanPair.first].second[m_LanPair.second];
-  jsData[u8"q"].second = text;
+  jsData[u8"q"] = text;
 
   pList =
       curl_slist_append(pList, "Content-Type:application/json;charset=utf-8");
@@ -166,9 +166,9 @@ std::u8string Translate::GetResultBaidu(const std::u8string& text) {
       goto clean;
     }
     const auto& obTransResult =
-        jsData[u8"result"].second[u8"trans_result"].second.getArray();
+        jsData[u8"result"][u8"trans_result"].getArray();
     for (auto& item : obTransResult) {
-      response.append(item[u8"dst"].second.getValueString());
+      response.append(item[u8"dst"].getValueString());
       response.push_back('\n');
     }
   } else {
@@ -199,17 +199,17 @@ std::u8string Translate::GetResultYoudao(const std::u8string& text) {
   curl_slist* pList = nullptr;
   std::u8string response;
 
-  m_scJson[u8"from"].second = m_LanNamesYoudao[m_LanPair.first].first;
-  m_scJson[u8"to"].second =
+  m_scJson[u8"from"] = m_LanNamesYoudao[m_LanPair.first].first;
+  m_scJson[u8"to"] =
       m_LanNamesYoudao[m_LanPair.first].second[m_LanPair.second];
 
-  m_scJson[u8"q"].second = text;
+  m_scJson[u8"q"] = text;
   const std::u8string&& curtime = GetTimeStamp();
-  m_scJson[u8"curtime"].second.setText(curtime);
+  m_scJson[u8"curtime"].setText(curtime);
   const std::u8string&& salt =
       Uuid1();  //"d818bc30-99df-11ec-9e18-1cbfc0a98096";
-  m_scJson[u8"salt"].second = salt;
-  m_scJson[u8"sign"].second =
+  m_scJson[u8"salt"] = salt;
+  m_scJson[u8"sign"] =
       Sha256(APP_KEY + Truncate(text) + salt + curtime + APP_SECRET);
 
   std::u8string&& url = m_scJson.urlEncode(u8"http://openapi.youdao.com/api/?");
@@ -232,8 +232,8 @@ std::u8string Translate::GetResultYoudao(const std::u8string& text) {
   if ((res == CURLE_OK) && (lResCode == 200 || lResCode == 201)) {
     YJson jsData(response.begin(), response.end());
     response.clear();
-    if (jsData[u8"errorCode"].second.getValueString() != u8"0") {
-      response = jsData[u8"errorCode"].second.getValueString();
+    if (jsData[u8"errorCode"].getValueString() != u8"0") {
+      response = jsData[u8"errorCode"].getValueString();
       goto clean;
     }
     FormatYoudaoResult(response, jsData);
@@ -271,11 +271,11 @@ void Translate::FormatYoudaoResult(std::u8string& result, const YJson& data) {
   using namespace std::literals;
   std::string html;
   // std::cout << data;
-  std::u8string l = data[u8"l"].second.getValueString();
+  std::u8string l = data[u8"l"].getValueString();
   if (auto basic = data.find(u8"basic"); basic == data.endO()) {
     html = std::format("<p>{}</p><hr/>",
-                       S(data[u8"query"].second.getValueString()));
-    auto& translation = data[u8"translation"].second.getArray();
+                       S(data[u8"query"].getValueString()));
+    auto& translation = data[u8"translation"].getArray();
     std::string buffer;
     if (!translation.empty()) {
       for (auto& i : translation) {
@@ -290,18 +290,18 @@ void Translate::FormatYoudaoResult(std::u8string& result, const YJson& data) {
       html = std::format(
           "<p>{}  英[<span style='color:#44EEEE;'>{}</span>] 美[<span "
           "style='color:#44EEEE;'>{}</span>]</p><hr/>",
-          S(data[u8"query"].second.getValueString()),
-          S(basic->second[u8"uk-phonetic"].second.getValueString()),
-          S(basic->second[u8"us-phonetic"].second.getValueString()));
+          S(data[u8"query"].getValueString()),
+          S(basic->second[u8"uk-phonetic"].getValueString()),
+          S(basic->second[u8"us-phonetic"].getValueString()));
     } else if (auto phonetic = basic->second.find(u8"phonetic");
                phonetic != basic->second.endO()) {
       html = std::format(
           "<p>{}  拼音[<span style='color:#44EEEE;'>{}</span>]</p><hr/>",
-          S(data[u8"query"].second.getValueString()),
-          S(basic->second[u8"phonetic"].second.getValueString()));
+          S(data[u8"query"].getValueString()),
+          S(basic->second[u8"phonetic"].getValueString()));
     } else {
       html = std::format("<p>{}</p><hr/>",
-                         S(data[u8"query"].second.getValueString()));
+                         S(data[u8"query"].getValueString()));
     }
     auto wfs = basic->second.find(u8"wfs"sv);
     if (wfs != basic->second.endO()) {
@@ -329,7 +329,7 @@ void Translate::FormatYoudaoResult(std::u8string& result, const YJson& data) {
     std::string buffer;
     for (int index = 0; auto& i : ptr->second.getArray()) {
       buffer.clear();
-      const auto& value = i[u8"value"].second.getArray();
+      const auto& value = i[u8"value"].getArray();
       for (auto& j : value) {
         buffer.append(j.getValueString().begin(), j.getValueString().end());
         buffer.append("; "s);
@@ -338,7 +338,7 @@ void Translate::FormatYoudaoResult(std::u8string& result, const YJson& data) {
         buffer.erase(buffer.size() - 2);
       html.append(std::format(
           "<p>{}. <span style='color: #FF00FF;'>{}</span> &lt;{}&gt;</p>",
-          ++index, S(i[u8"key"].second.getValueString()), buffer));
+          ++index, S(i[u8"key"].getValueString()), buffer));
     }
     html.append("<hr/>"s);
   }

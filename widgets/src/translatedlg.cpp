@@ -159,7 +159,7 @@ void TranslateDlg::Show(QRect rect, const QString& text) {
   show();
   activateWindow();
 
-  if (VarBox::GetSettings(u8"Tools")[u8"Translate.AutoTranslate"].second.isTrue()) {
+  if (VarBox::GetSettings(u8"Tools")[u8"Translate.AutoTranslate"].isTrue()) {
     if (!text.isEmpty())
       GetResultData();
   }
@@ -240,7 +240,7 @@ void TranslateDlg::AddCombbox(QHBoxLayout* layout) {
   m_BtnTransMode->setCheckable(true);
   m_BtnTransMode->setText(QStringLiteral("查词"));
   layout->addWidget(m_BtnTransMode);
-  auto dic = static_cast<Translate::Dict>(VarBox::GetSettings(u8"Tools")[u8"Translate.Mode"].second.getValueInt());
+  auto dic = static_cast<Translate::Dict>(VarBox::GetSettings(u8"Tools")[u8"Translate.Mode"].getValueInt());
   m_Translate->SetDict(dic);
   m_BtnTransMode->setChecked(dic == Translate::Dict::Youdao);
 
@@ -248,7 +248,7 @@ void TranslateDlg::AddCombbox(QHBoxLayout* layout) {
     auto dic = Translate::Dict::Baidu;
     if (checked)
       dic = Translate::Dict::Youdao;
-    VarBox::GetSettings(u8"Tools")[u8"Translate.Mode"].second = static_cast<int>(dic);
+    VarBox::GetSettings(u8"Tools")[u8"Translate.Mode"] = static_cast<int>(dic);
     m_Translate->SetDict(dic);
     VarBox::WriteSettings();
     ChangeLanguage();

@@ -22,7 +22,7 @@ using namespace std::literals;
     if (HttpLib::Get(u8"https://wallhaven.cc/api/v1/w/"s + str, body) != 200)
       return false;
     YJson js(body.begin(), body.end());
-    str = js[u8"data"].second[u8"path"].second.getValueString().substr(31);
+    str = js[u8"data"][u8"path"].getValueString().substr(31);
     return true;
   }
 
@@ -213,7 +213,7 @@ using namespace std::literals;
         if (res != 200)
           break;
         YJson root(body.begin(), body.end());
-        YJson& data = root[u8"data"sv].second;
+        YJson& data = root[u8"data"sv];
         for (auto& i : data.getArray()) {
           std::u8string name =
               i.find(u8"path")->second.getValueString().substr(31);
@@ -270,9 +270,9 @@ using namespace std::literals;
     const std::u8string_view curType =
         m_pSetting->find(u8"WallhavenCurrent")->second.getValueString();
     auto& data = m_pSetting->find(u8"WallhavenApi")->second;
-    auto& val = data[curType].second;
+    auto& val = data[curType];
     m_ImageDir = val.find(u8"Directory")->second.getValueString();
-    auto& param = val[u8"Parameter"].second;
+    auto& param = val[u8"Parameter"];
     if (param.isObject()) {
       m_u8strImageUrl = param.urlEncode(u8"https://wallhaven.cc/api/v1/search?"sv);
     } else if (param.isString()) {

@@ -26,12 +26,11 @@ using namespace std::chrono;
             ->second
             .find(m_pSetting->find(u8"ApiUrl"sv)->second.getValueString())
             ->second;
-    m_u8strApiUrl = data[u8"Url"sv].second.getValueString();
-    m_ImageDir = data[u8"Directory"].second.getValueString();
-    m_u8strApiPath = data[u8"Paths"sv]
-                    .second[data[u8"CurPath"sv].second.getValueInt()]
+    m_u8strApiUrl = data[u8"Url"sv].getValueString();
+    m_ImageDir = data[u8"Directory"].getValueString();
+    m_u8strApiPath = data[u8"Paths"sv][data[u8"CurPath"sv].getValueInt()]
                     .getValueString();
-    m_u8strImgNameFmt = data[u8"ImageNameFormat"sv].second.getValueString();
+    m_u8strImgNameFmt = data[u8"ImageNameFormat"sv].getValueString();
     return true;
   }
   ImageInfoEx GetNext() override {
@@ -72,7 +71,7 @@ using namespace std::chrono;
             .find(m_pSetting->find(u8"ApiUrl"sv)->second.getValueString())
             ->second;
     m_ImageDir = sImgPath;
-    data[u8"Directory"].second.setText(sImgPath);
+    data[u8"Directory"].setText(sImgPath);
     m_pSetting->toFile(m_szSettingPath);
   }
 
@@ -82,15 +81,15 @@ using namespace std::chrono;
             ->second
             .find(m_pSetting->find(u8"ApiUrl"sv)->second.getValueString())
             ->second;
-    auto& paths = data[u8"Paths"sv].second;
-    auto& curPath = data[u8"CurPath"].second;
+    auto& paths = data[u8"Paths"sv];
+    auto& curPath = data[u8"CurPath"];
     if (update && curPath.getValueInt() >= paths.sizeA())
-      data[u8"CurPath"].second = 0;
-    m_u8strApiUrl = data[u8"Url"sv].second.getValueString();
-    m_ImageDir = data[u8"Directory"].second.getValueString();
+      data[u8"CurPath"] = 0;
+    m_u8strApiUrl = data[u8"Url"sv].getValueString();
+    m_ImageDir = data[u8"Directory"].getValueString();
     m_u8strApiPath = paths.emptyA() ? u8""s : paths[curPath.getValueInt()]
                     .getValueString();
-    m_u8strImgNameFmt = data[u8"ImageNameFormat"sv].second.getValueString();
+    m_u8strImgNameFmt = data[u8"ImageNameFormat"sv].getValueString();
     m_pSetting->toFile(m_szSettingPath);
   }
 

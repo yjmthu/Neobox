@@ -12,7 +12,7 @@ std::u8string get_access_token(const std::string &AK, const std::string &SK) {
   if (HttpLib::Get(url, result) != 200)
     return result;
   YJson json(result.begin(), result.end());
-  return json[u8"access_token"].second.getValueString();
+  return json[u8"access_token"].getValueString();
 }
 
 int main(int argc, char* argv[]) {

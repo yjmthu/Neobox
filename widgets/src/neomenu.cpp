@@ -34,6 +34,8 @@
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QSystemTrayIcon>
+#include <QClipboard>
+#include <QMimeData>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -105,8 +107,8 @@ void NeoMenu::InitFunctionMap() {
       {u8"AppFormBackground",
        [this]() {
          auto& jsData = VarBox::GetSettings(u8"FormGlobal");
-         int iCurType = jsData[u8"ColorEffect"].second.getValueInt();
-         auto colList = jsData[u8"BackgroundColorRgba"].second.getArray() |
+         int iCurType = jsData[u8"ColorEffect"].getValueInt();
+         auto colList = jsData[u8"BackgroundColorRgba"].getArray() |
                         std::views::transform(
                             [](const YJson& i) { return i.getValueInt(); });
          auto colVector = std::vector<int>(colList.begin(), colList.end());
@@ -115,7 +117,7 @@ void NeoMenu::InitFunctionMap() {
              this, "选择颜色", QColorDialog::ShowAlphaChannel);
          if (!col.isValid())
            return;
-         jsData[u8"BackgroundColorRgba"].second.getArray() = {
+         jsData[u8"BackgroundColorRgba"].getArray() = {
              col.red(), col.green(), col.blue(), col.alpha()};
          VarBox::WriteSettings();
 
@@ -146,8 +148,8 @@ void NeoMenu::InitFunctionMap() {
       {u8"ToolOcrShortcut",
         [this](){
           auto& settings = VarBox::GetSettings(u8"Tools");
-          auto& shortcut = settings[u8"Ocr.Shortcut"].second.getValueString();
-          auto& regist = settings[u8"Ocr.RegisterHotKey"].second;
+          auto& shortcut = settings[u8"Ocr.Shortcut"].getValueString();
+          auto& regist = settings[u8"Ocr.RegisterHotKey"];
           const QString qsShortcut =
               QString::fromUtf8(shortcut.data(), shortcut.size());
           const QString qsNewShortcut = QInputDialog::getText(this, QStringLiteral("文字输入"), QStringLiteral("请输入热键组合"), QLineEdit::Normal, qsShortcut);
@@ -167,7 +169,7 @@ void NeoMenu::InitFunctionMap() {
        [this]() {
          std::u8string& u8Path =
              VarBox::GetSettings(u8"Tools")[u8"Ocr.TessdataDir"]
-                 .second.getValueString();
+                 .getValueString();
          QByteArray folder =
              QFileDialog::getExistingDirectory(
                  this, "请选择Tessdata数据文件存放位置",
@@ -186,15 +188,26 @@ void NeoMenu::InitFunctionMap() {
          if (m_TranslateDlg->isVisible()) {
            m_TranslateDlg->hide();
          } else {
+           const auto set = VarBox::GetSettings(u8"Tools")[u8"Translate.ReadClipboard"];
+           if (set.isTrue()) {
+             const QClipboard *clipbord = QGuiApplication::clipboard();
+             const QMimeData *mimeData = clipbord->mimeData();
+             if (mimeData->hasText()) {
+               m_TranslateDlg->Show(
+                 qobject_cast<const QWidget*>(parent())->frameGeometry(),
+                 mimeData->text());
+               return;
+             }
+           }
            m_TranslateDlg->Show(
-               qobject_cast<const QWidget*>(parent())->frameGeometry());
+             qobject_cast<const QWidget*>(parent())->frameGeometry());
          }
        }},
       {u8"ToolTransShortcut",
         [this](){
           auto& settings = VarBox::GetSettings(u8"Tools");
-          auto& shortcut = settings[u8"Translate.Shortcut"].second.getValueString();
-          auto& regist = settings[u8"Translate.RegisterHotKey"].second;
+          auto& shortcut = settings[u8"Translate.Shortcut"].getValueString();
+          auto& regist = settings[u8"Translate.RegisterHotKey"];
           const QString qsShortcut =
               QString::fromUtf8(shortcut.data(), shortcut.size());
           const QString qsNewShortcut = QInputDialog::getText(this, QStringLiteral("文字输入"), QStringLiteral("请输入热键组合"), QLineEdit::Normal, qsShortcut);
@@ -248,11 +261,11 @@ void NeoMenu::InitFunctionMap() {
               (ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED) :
               ES_CONTINUOUS
           );
-          VarBox::GetSettings(u8"Tools")[u8"App.StopSleep"].second = checked;
+          VarBox::GetSettings(u8"Tools")[u8"App.StopSleep"] = checked;
           VarBox::WriteSettings();
         },
         []()->bool {
-          bool enable = VarBox::GetSettings(u8"Tools")[u8"App.StopSleep"].second.isTrue();
+          bool enable = VarBox::GetSettings(u8"Tools")[u8"App.StopSleep"].isTrue();
           if (enable) {
             SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED);
           }
@@ -287,11 +300,11 @@ void NeoMenu::InitFunctionMap() {
       {u8"AppShowTrayIcon",
         {[this](bool checked) {
           ShowTrayIcon(checked);
-          VarBox::GetSettings(u8"FormGlobal")[u8"ShowTrayIcon"].second = checked;
+          VarBox::GetSettings(u8"FormGlobal")[u8"ShowTrayIcon"] = checked;
           VarBox::WriteSettings();
         },
         [this]() -> bool {
-          const bool show = VarBox::GetSettings(u8"FormGlobal")[u8"ShowTrayIcon"].second.isTrue();
+          const bool show = VarBox::GetSettings(u8"FormGlobal")[u8"ShowTrayIcon"].isTrue();
           if (show) {
             ShowTrayIcon(true);
           }
@@ -366,7 +379,7 @@ void NeoMenu::InitFunctionMap() {
        {[this](bool checked) {
           auto& settings = VarBox::GetSettings(u8"Tools");
           std::u8string& shortcut =
-              settings[u8"Translate.Shortcut"].second.getValueString();
+              settings[u8"Translate.Shortcut"].getValueString();
           QString qsShortcut =
               QString::fromUtf8(shortcut.data(), shortcut.size());
           if (checked) {
@@ -375,14 +388,14 @@ void NeoMenu::InitFunctionMap() {
           } else {
             m_Shortcut->UnregistHotKey(qsShortcut);
           }
-          settings[u8"Translate.RegisterHotKey"].second = checked;
+          settings[u8"Translate.RegisterHotKey"] = checked;
           VarBox::WriteSettings();
         },
         [this]() -> bool {
           auto& settings = VarBox::GetSettings(u8"Tools");
-          bool regist = settings[u8"Translate.RegisterHotKey"].second.isTrue();
+          bool regist = settings[u8"Translate.RegisterHotKey"].isTrue();
           std::u8string& shortcut =
-              settings[u8"Translate.Shortcut"].second.getValueString();
+              settings[u8"Translate.Shortcut"].getValueString();
           QString qsShortcut =
               QString::fromUtf8(shortcut.data(), shortcut.size());
           if (regist && !m_Shortcut->IsKeyRegisted(qsShortcut)) {
@@ -393,16 +406,24 @@ void NeoMenu::InitFunctionMap() {
         }}},
       {u8"ToolTransAutoTranslate",
         {[this](bool checked) {
-          VarBox::GetSettings(u8"Tools")[u8"Translate.AutoTranslate"].second = checked;
+          VarBox::GetSettings(u8"Tools")[u8"Translate.AutoTranslate"] = checked;
           VarBox::WriteSettings();
         },
-        {[]()->bool { return VarBox::GetSettings(u8"Tools")[u8"Translate.AutoTranslate"].second.isTrue(); }
+        []()->bool { return VarBox::GetSettings(u8"Tools")[u8"Translate.AutoTranslate"].isTrue(); }
+        }},
+      {u8"ToolTransReadClipboard",
+        {[this](bool checked) {
+          VarBox::GetSettings(u8"Tools")[u8"Translate.ReadClipboard"] = checked;
+          VarBox::WriteSettings();
+        },
+        []()->bool{
+          return VarBox::GetSettings(u8"Tools")[u8"Translate.ReadClipboard"].isTrue();
         }}},
       {u8"ToolOcrRegistKey",
        {[this](bool checked) {
           auto& settings = VarBox::GetSettings(u8"Tools");
           std::u8string& shortcut =
-              settings[u8"Ocr.Shortcut"].second.getValueString();
+              settings[u8"Ocr.Shortcut"].getValueString();
           QString qsShortcut =
               QString::fromUtf8(shortcut.data(), shortcut.size());
           if (checked) {
@@ -411,14 +432,14 @@ void NeoMenu::InitFunctionMap() {
           } else {
             m_Shortcut->UnregistHotKey(qsShortcut);
           }
-          settings[u8"Ocr.RegisterHotKey"].second = checked;
+          settings[u8"Ocr.RegisterHotKey"] = checked;
           VarBox::WriteSettings();
         },
         [this]() -> bool {
           auto& settings = VarBox::GetSettings(u8"Tools");
-          bool regist = settings[u8"Ocr.RegisterHotKey"].second.isTrue();
+          bool regist = settings[u8"Ocr.RegisterHotKey"].isTrue();
           std::u8string& shortcut =
-              settings[u8"Ocr.Shortcut"].second.getValueString();
+              settings[u8"Ocr.Shortcut"].getValueString();
           QString qsShortcut =
               QString::fromUtf8(shortcut.data(), shortcut.size());
           if (regist && !m_Shortcut->IsKeyRegisted(qsShortcut)) {
@@ -443,12 +464,12 @@ void NeoMenu::InitFunctionMap() {
        {[this](int type) {
           // to do sth if failed.
           auto& jsData = VarBox::GetSettings(u8"FormGlobal");
-          int iCurType = jsData[u8"ColorEffect"].second.getValueInt();
+          int iCurType = jsData[u8"ColorEffect"].getValueInt();
           if (iCurType != type) {
-            jsData[u8"ColorEffect"].second = type;
+            jsData[u8"ColorEffect"] = type;
             VarBox::WriteSettings();
           }
-          auto colList = jsData[u8"BackgroundColorRgba"].second.getArray() |
+          auto colList = jsData[u8"BackgroundColorRgba"].getArray() |
                          std::views::transform(
                              [](const YJson& i) { return i.getValueInt(); });
           auto colVector = std::vector<int>(colList.begin(), colList.end());
@@ -460,7 +481,7 @@ void NeoMenu::InitFunctionMap() {
         },
         []() -> int {
           return VarBox::GetSettings(u8"FormGlobal")[u8"ColorEffect"]
-              .second.getValueInt();
+              .getValueInt();
         }}}};
 }
 
@@ -472,23 +493,23 @@ bool NeoMenu::ChooseFolder(QString title, QString& current) {
 void NeoMenu::GetMenuContent(QMenu* parent, const YJson& data) {
   for (const auto& [i, j] : data.getObject()) {
     QAction* action = parent->addAction(QString::fromUtf8(i.data(), i.size()));
-    const std::u8string type = j[u8"type"].second.getValueString();
+    const std::u8string type = j[u8"type"].getValueString();
     if (auto iter = j.find(u8"tip"); iter != j.endO()) {
       const std::u8string_view tip = iter->second.getValueString();
       action->setToolTip(QString::fromUtf8(tip.data(), tip.size()));
     }
     if (type == u8"Normal") {
       const auto& function =
-          m_FuncNormalMap[j[u8"function"].second.getValueString()];
+          m_FuncNormalMap[j[u8"function"].getValueString()];
       connect(action, &QAction::triggered, this, function);
     } else if (type == u8"Group") {
       QMenu* menu = new QMenu(parent);
       menu->setToolTipsVisible(true);
       menu->setAttribute(Qt::WA_TranslucentBackground, true);
       action->setMenu(menu);
-      GetMenuContent(menu, j[u8"children"].second);
+      GetMenuContent(menu, j[u8"children"]);
     } else if (type == u8"Checkable") {
-      const auto fnName = j[u8"function"].second.getValueString();
+      const auto fnName = j[u8"function"].getValueString();
       const auto& [m, n] = m_FuncCheckMap[fnName];
       m_CheckableActions[fnName] = action;
       action->setCheckable(true);
@@ -496,15 +517,15 @@ void NeoMenu::GetMenuContent(QMenu* parent, const YJson& data) {
       connect(action, &QAction::triggered, this, m);
     } else if (type == u8"ExclusiveGroup") {
       const auto& function =
-          m_FuncItemCheckMap[j[u8"function"].second.getValueString()].second;
+          m_FuncItemCheckMap[j[u8"function"].getValueString()].second;
       QMenu* menu = new QMenu(parent);
       menu->setToolTipsVisible(true);
       menu->setAttribute(Qt::WA_TranslucentBackground, true);
       action->setMenu(menu);
-      const auto& children = j[u8"children"].second;
+      const auto& children = j[u8"children"];
       GetMenuContent(menu, children);
 
-      const auto& range = j[u8"range"].second.getArray();
+      const auto& range = j[u8"range"].getArray();
       const int first = range.front().getValueInt();
       int last = range.back().getValueInt();
       if (last == -1)
@@ -512,7 +533,7 @@ void NeoMenu::GetMenuContent(QMenu* parent, const YJson& data) {
       int index = 0, check = function();
       QActionGroup* group = new QActionGroup(menu);
       group->setExclusive(true);
-      m_ExclusiveGroups[j[u8"function"].second.getValueString()] = group;
+      m_ExclusiveGroups[j[u8"function"].getValueString()] = group;
 
       for (auto& k : menu->actions()) {
         if (index < first) {
@@ -526,16 +547,16 @@ void NeoMenu::GetMenuContent(QMenu* parent, const YJson& data) {
       }
     } else if (type == u8"GroupItem") {
       const auto& function =
-          m_FuncItemCheckMap[j[u8"function"].second.getValueString()].first;
+          m_FuncItemCheckMap[j[u8"function"].getValueString()].first;
       action->setCheckable(true);
       connect(action, &QAction::triggered, this,
-              std::bind(function, j[u8"index"].second.getValueInt()));
+              std::bind(function, j[u8"index"].getValueInt()));
     } else if (type == u8"VarGroup") {
       QMenu* menu = new QMenu(parent);
       menu->setToolTipsVisible(true);
       menu->setAttribute(Qt::WA_TranslucentBackground, true);
       action->setMenu(menu);
-      m_ExMenus[j[u8"name"].second.getValueString()] = menu;
+      m_ExMenus[j[u8"name"].getValueString()] = menu;
     }
   }
 }
@@ -598,7 +619,7 @@ void NeoMenu::LoadWallpaperExmenu() {
             m_Wallpaper->m_Wallpaper->GetJson()
                 ->find(key)
                 ->second[u8"Directory"]
-                .second = path.u8string();
+                 = path.u8string();
             m_Wallpaper->m_Wallpaper->SetJson(false);
           }
         });
@@ -673,7 +694,7 @@ void NeoMenu::LoadWallpaperExmenu() {
             std::format("&filters=HpDate:\"{0:%Y%m%d}_1600\"", time);
         std::u8string link = jsExInfo->find(u8"images")
                                  ->second[index][u8"copyrightlink"]
-                                 .second.getValueString();
+                                 .getValueString();
         link.append(curDate.cbegin(), curDate.cend());
         QDesktopServices::openUrl(QString::fromUtf8(link.data(), link.size()));
       });
@@ -734,7 +755,7 @@ void NeoMenu::LoadWallpaperExmenu() {
               if (pSuperTemp->isChecked()) {
                 jsExInfo->find(u8"ApiUrl")->second = viewNewName;
               }
-              jsApiData[name].first = viewNewName;
+              jsApiData.find(name)->first = viewNewName;
               m_Wallpaper->m_Wallpaper->SetJson(false);
               pSuperTemp->setText(qNewKeyName);
             });
@@ -759,24 +780,22 @@ void NeoMenu::LoadWallpaperExmenu() {
 
         connect(temp, &QAction::triggered, this, [this, name, jsExInfo](){
             bool changed = GetListWidget(QStringLiteral("输入文字"), QStringLiteral("请输入参数"),
-                jsExInfo->find(u8"ApiData")->second[name].second[u8"Paths"].second);
+                jsExInfo->find(u8"ApiData")->second[name][u8"Paths"]);
             if (changed) {
               LoadWallpaperExmenu();
             }
         });
 
-        for (int32_t index = 0, cIndex = data[u8"CurPath"].second.getValueInt();
-             auto& path : data[u8"Paths"].second.getArray()) {
+        for (int32_t index = 0, cIndex = data[u8"CurPath"].getValueInt();
+             auto& path : data[u8"Paths"].getArray()) {
           std::u8string_view path_view = path.getValueString();
           temp = tempMenu->addAction(
               QString::fromUtf8(path_view.data(), path_view.size()));
           temp->setCheckable(true);
           pSonGroup->addAction(temp);
           connect(temp, &QAction::triggered, this, [=](bool checked) {
-            jsExInfo->find(u8"ApiData")
-                ->second[name]
-                .second[u8"CurPath"]
-                .second = index;
+            jsExInfo->find(u8"ApiData")->second[name][u8"CurPath"]
+                 = index;
             m_Wallpaper->m_Wallpaper->SetJson(false);
           });
           temp->setChecked(cIndex == index++);
@@ -795,7 +814,7 @@ void NeoMenu::LoadWallpaperExmenu() {
             reinterpret_cast<const char8_t*>(qbBuffer.data()),
             qbBuffer.size()
           );
-          auto& obj = jsExInfo->find(u8"ApiData")->second[viewKeyName].second;
+          auto& obj = jsExInfo->find(u8"ApiData")->second[viewKeyName];
           if (!obj.isNull()) {
             continue;
           }
@@ -819,7 +838,7 @@ void NeoMenu::LoadWallpaperExmenu() {
             {u8"Directory"sv, folder.u8string()},
             {u8"ImageNameFormat"sv, u8"{0:%Y-%m-%d} {0:%H%M%S}.jpg"s}
           });
-          GetListWidget(QStringLiteral("参数输入"), QStringLiteral("请输入Api路径"), obj[u8"Paths"].second);
+          GetListWidget(QStringLiteral("参数输入"), QStringLiteral("请输入Api路径"), obj[u8"Paths"]);
           LoadWallpaperExmenu();
           return;
         }
@@ -878,9 +897,7 @@ void NeoMenu::WallhavenParams(QAction*const action) {
     u8TypeName.assign(qArrayKeyName.begin(), qArrayKeyName.end());
     auto& params = m_Wallpaper->m_Wallpaper->GetJson()
                        ->find(u8"WallhavenApi")
-                       ->second[u8TypeName]
-                       .second[u8"Parameter"]
-                       .second.getObject();
+                       ->second[u8TypeName][u8"Parameter"].getObject();
     pTable = new QTableWidget(static_cast<int>(params.size()), 2, pTableDlg);
     for (int i = 0; const auto& [key, value] : params) {
       std::u8string_view value_view = value.getValueString();
@@ -937,7 +954,7 @@ void NeoMenu::WallhavenParams(QAction*const action) {
                     u8TypeName);
       m_Wallpaper->m_Wallpaper->SetJson(false);
     } else {
-      YJson::swap(jsData, iter->second[u8"Parameter"].second);
+      YJson::swap(jsData, iter->second[u8"Parameter"]);
       m_Wallpaper->m_Wallpaper->SetJson(u8TypeName ==
                                         m_Wallpaper->m_Wallpaper->GetJson()
                                             ->find(u8"WallhavenCurrent")
@@ -1035,7 +1052,7 @@ void NeoMenu::ShowTrayIcon(bool show)
   
   if (show) {
     pSystemTray = new QSystemTrayIcon(this);
-    if (VarBox::GetSettings(u8"FormGlobal")[u8"ShowForm"].second.isFalse())
+    if (VarBox::GetSettings(u8"FormGlobal")[u8"ShowForm"].isFalse())
       VarBox::GetSpeedBox()->hide();
     pSystemTray->setIcon(QIcon(QStringLiteral(":/icons/neobox.ico")));
     pSystemTray->setContextMenu(this);
@@ -1047,10 +1064,10 @@ void NeoMenu::ShowTrayIcon(bool show)
           case QSystemTrayIcon::DoubleClick:
             if (VarBox::GetSpeedBox()->isVisible()) {
               VarBox::GetSpeedBox()->hide();
-              VarBox::GetSettings(u8"FormGlobal")[u8"ShowForm"].second = false;
+              VarBox::GetSettings(u8"FormGlobal")[u8"ShowForm"] = false;
             } else {
               VarBox::GetSpeedBox()->show();
-              VarBox::GetSettings(u8"FormGlobal")[u8"ShowForm"].second = true;
+              VarBox::GetSettings(u8"FormGlobal")[u8"ShowForm"] = true;
             }
             VarBox::WriteSettings();
           case QSystemTrayIcon::Trigger:

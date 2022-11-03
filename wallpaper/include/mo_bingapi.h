@@ -69,7 +69,7 @@ using namespace std::literals;
       return false;
 
     YJson data(body.begin(), body.end());
-    YJson::swap(m_pSetting->find(u8"images")->second, data[u8"images"].second);
+    YJson::swap(m_pSetting->find(u8"images")->second, data[u8"images"]);
     m_pSetting->toFile(m_szSettingPath);
 
     return m_InitOk = true;
@@ -103,7 +103,7 @@ using namespace std::literals;
 
     auto& jsTemp = m_pSetting->find(u8"images")->second[s_uCurImgIndex];
     ptr->ImagePath = (m_ImageDir / GetImageName(jsTemp)).u8string();
-    ptr->ImageUrl = m_u8strApiUrl + jsTemp[u8"urlbase"].second.getValueString() + u8"_UHD.jpg";
+    ptr->ImageUrl = m_u8strApiUrl + jsTemp[u8"urlbase"].getValueString() + u8"_UHD.jpg";
     m_pSetting->toFile(m_szSettingPath);
     ++s_uCurImgIndex &= 0x07;
     ptr->ErrorCode = ImageInfo::NoErr;
@@ -144,7 +144,7 @@ using namespace std::literals;
         ImageInfoEx ptr(new ImageInfo);
         ptr->ImagePath = (m_ImageDir / GetImageName(item)).u8string();
         ptr->ImageUrl = m_u8strApiUrl +
-                        item[u8"urlbase"].second.getValueString() +
+                        item[u8"urlbase"].getValueString() +
                         u8"_UHD.jpg";
         ptr->ErrorCode = ImageInfo::NoErr;
         Wallpaper::DownloadImage(ptr);
@@ -167,7 +167,7 @@ using namespace std::literals;
   std::u8string GetImageName(YJson& imgInfo) {
     // see https://codereview.stackexchange.com/questions/156695/converting-stdchronotime-point-to-from-stdstring
     const std::string fmt(m_u8strImgNameFmt.begin(), m_u8strImgNameFmt.end());
-    std::u8string_view date = imgInfo[u8"enddate"].second.getValueString();
+    std::u8string_view date = imgInfo[u8"enddate"].getValueString();
     std::u8string_view copyright =
         imgInfo.find(u8"copyright")->second.getValueString();
     std::string_view temp(
