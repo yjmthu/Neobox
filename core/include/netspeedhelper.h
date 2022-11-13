@@ -2,7 +2,7 @@
 #define NETSPEEDHELPER_H
 
 #include <string>
-#include <tuple>
+#include <array>
 #ifdef _WIN32
 #include <Winsock2.h>
 // #include <Windows.h>
@@ -16,10 +16,12 @@ class NetSpeedHelper {
   ~NetSpeedHelper();
 #endif
   void GetSysInfo();
-  std::tuple<int, uint64_t, uint64_t> m_SysInfo;
+  // std::tuple<int, uint64_t, uint64_t> m_SysInfo;
+  std::array<std::string, 4> m_StrFmt;
+  std::array<std::string, 4> m_SysInfo;
+  float m_CpuUse, m_MemUse;
   void ClearData();
 
-  static std::string FormatSpeed(uint64_t bytes, bool upload);
 
  private:
   uint64_t m_RecvBytes, m_SendBytes;
@@ -30,6 +32,7 @@ class NetSpeedHelper {
   class QTimer* m_Timer;
   void SetMemInfo();
   void SetNetInfo();
+  void FormatSpeed(uint64_t bytes, bool upload);
 };
 
 #endif  // NETSPEEDHELPER_H

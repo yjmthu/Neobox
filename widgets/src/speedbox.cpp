@@ -9,6 +9,7 @@
 #include <QPropertyAnimation>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <QUiLoader>
 
 #include <neomenu.h>
 #include <netspeedhelper.h>
@@ -31,11 +32,7 @@
 SpeedBox::SpeedBox(QWidget* parent)
     : QWidget(parent,
               Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool),
-      m_CentralWidget(new QWidget(this)),
       m_NetSpeedHelper(new NetSpeedHelper),
-      m_TextMemUseage(new QLabel(m_CentralWidget)),
-      m_TextUploadSpeed(new QLabel(m_CentralWidget)),
-      m_TextDownLoadSpeed(new QLabel(m_CentralWidget)),
       m_Timer(new QTimer(this)),
       m_MainMenu(nullptr),
       m_Animation(new QPropertyAnimation(this, "geometry")) {
@@ -79,63 +76,75 @@ void SpeedBox::Show() {
 }
 
 void SpeedBox::SetWindowMode() {
+  setWindowTitle("Neobox");
   setAttribute(Qt::WA_TranslucentBackground, true);
   setAttribute(Qt::WA_DeleteOnClose, true);
   setAcceptDrops(true);
-  setMinimumSize(100, 40);
-  setMaximumSize(100, 40);
-  m_CentralWidget->setMinimumSize(100, 40);
-  m_CentralWidget->setMaximumSize(100, 40);
-  m_CentralWidget->setObjectName("center");
-  m_TextMemUseage->setObjectName("memUse");
-  m_TextDownLoadSpeed->setObjectName("netDown");
-  m_TextUploadSpeed->setObjectName("netUp");
-  m_TextMemUseage->setMinimumWidth(30);
-  m_TextUploadSpeed->setMinimumWidth(65);
-  m_TextDownLoadSpeed->setMinimumWidth(65);
-  const auto& array =
+
+  const auto& position =
       VarBox::GetSettings(u8"FormGlobal")[u8"Position"].getArray();
-  move(array.front().getValueInt(), array.back().getValueInt());
+  move(position.front().getValueInt(), position.back().getValueInt());
 }
 
 void SpeedBox::SetStyleSheet() {
-  QFile fStyle(QStringLiteral("styles/MenuStyle.css"));
+  QFile fStyle(QStringLiteral("styles/AppStyle.css"));
   if (fStyle.open(QIODevice::ReadOnly)) {
     setStyleSheet(fStyle.readAll());
     fStyle.close();
   }
   setWindowIcon(QIcon(":/icons/neobox.ico"));
-  setCursor(Qt::PointingHandCursor);
-  std::u8string& toolTip =
-      VarBox::GetSettings(u8"FormGlobal")[u8"ToolTip"].getValueString();
-  setToolTip(QString::fromUtf8(toolTip.data(), toolTip.size()));
 }
 
 void SpeedBox::SetBaseLayout() {
-  YJson& jsFormUi = VarBox::GetSettings(u8"FormUi");
-  QByteArray qByteName;
-  std::array<QLabel*, 3> labels = {m_TextMemUseage, m_TextUploadSpeed,
-                                   m_TextDownLoadSpeed};
-  for (auto label : labels) {
-    qByteName = label->objectName().toUtf8();
-    YJson& temp =
-        jsFormUi[std::u8string(qByteName.begin(), qByteName.end())];
-    const auto& jsPos = temp[u8"Pos"].getArray();
-    label->move(jsPos.front().getValueInt(), jsPos.back().getValueInt());
-    //
+
+  QUiLoader loader;
+  QFile file(":/styles/Guanjia.ui");
+  file.open(QFile::ReadOnly);
+  m_CentralWidget = loader.load(&file, this);
+  file.close();
+
+  m_CentralWidget->move(0, 0);
+  setMinimumSize(m_CentralWidget->size());
+  setMaximumSize(m_CentralWidget->size());
+
+  m_TextMemUseage = m_CentralWidget->findChild<QLabel*>("memUse");
+  m_TextUploadSpeed = m_CentralWidget->findChild<QLabel*>("netUp");
+  m_TextDownloadSpeed = m_CentralWidget->findChild<QLabel*>("netDown");
+
+  QByteArray buffer;
+  buffer = m_TextUploadSpeed->text().toUtf8();
+  m_NetSpeedHelper->m_StrFmt[0].assign(buffer.begin(), buffer.end());
+  buffer = m_TextDownloadSpeed->text().toUtf8();
+  m_NetSpeedHelper->m_StrFmt[1].assign(buffer.begin(), buffer.end());
+  buffer = m_TextMemUseage->text().toUtf8();
+  m_NetSpeedHelper->m_StrFmt[2].assign(buffer.begin(), buffer.end());
+
+  m_MemColorFrame = m_CentralWidget->findChild<QFrame*>("memColorFrame");
+  if (m_MemColorFrame != nullptr) {
+    QByteArray buffer = m_MemColorFrame->styleSheet().toUtf8();
+    m_MemFrameStyle.assign(buffer.begin(), buffer.end());
   }
+
 }
 
 void SpeedBox::UpdateTextContent() {
-  static auto qstr = [](const std::string& str) {
+  static const auto qstr = [](const std::string& str) {
     return QString::fromUtf8(str.data(), str.size());
   };
-  m_TextMemUseage->setText(
-      QString::number(std::get<0>(m_NetSpeedHelper->m_SysInfo)));
-  m_TextUploadSpeed->setText(qstr(m_NetSpeedHelper->FormatSpeed(
-      std::get<1>(m_NetSpeedHelper->m_SysInfo), true)));
-  m_TextDownLoadSpeed->setText(qstr(m_NetSpeedHelper->FormatSpeed(
-      std::get<2>(m_NetSpeedHelper->m_SysInfo), false)));
+
+  auto iter = m_NetSpeedHelper->m_SysInfo.cbegin();
+  m_TextUploadSpeed->setText(qstr(*iter));
+  m_TextDownloadSpeed->setText(qstr(*++iter));
+  m_TextMemUseage->setText(qstr(*++iter));
+
+  if (m_MemColorFrame != nullptr) {
+    const float x1 = m_NetSpeedHelper->m_MemUse > 0.02 ? m_NetSpeedHelper->m_MemUse - 0.02 : m_NetSpeedHelper->m_MemUse;
+    const float x2 = x1 + 0.02, y1 = 1 - x2, y2 = 1 - x1;
+    const std::string style = std::vformat(m_MemFrameStyle, std::make_format_args(
+        x1, x2, y1, y2
+    ));
+    m_MemColorFrame->setStyleSheet(QString::fromUtf8(style.data(), style.size()));
+  }
 }
 
 void SpeedBox::SetHideFullScreen() {

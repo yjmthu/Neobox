@@ -10,9 +10,12 @@ class SpeedBox : public QWidget {
   class NetSpeedHelper* m_NetSpeedHelper;
   class QLabel* m_TextMemUseage;
   class QLabel* m_TextUploadSpeed;
-  class QLabel* m_TextDownLoadSpeed;
+  class QLabel* m_TextDownloadSpeed;
+  class QFrame* m_MemColorFrame;
   class QTimer* m_Timer;
   class NeoMenu* m_MainMenu;
+
+  std::string m_MemFrameStyle;
 
   class QPropertyAnimation* m_Animation;
   enum class HideSide {

@@ -990,12 +990,17 @@ bool NeoMenu::GetListWidget(QString title, QString label, YJson& data)
                 std::bind(&QHBoxLayout::addWidget, pHout,
                           std::placeholders::_1, 0, Qt::Alignment()));
 
-  auto argview = data.getArray() | std::views::transform([](const YJson& item) {
-     std::u8string_view str = item.getValueString();
-     return QString::fromUtf8(str.data(), str.size());
-  });
+  // auto argview = data.getArray() | std::views::transform([](const YJson& item) {
+  //    std::u8string_view str = item.getValueString();
+  //    return QString::fromUtf8(str.data(), str.size());
+  // });
 
-  pLstWgt->addItems(QStringList(argview.begin(), argview.end()));
+  // pLstWgt->addItems(QStringList(argview.begin(), argview.end()));
+  for (const auto& item: data.getArray()) {
+    std::u8string_view str = item.getValueString();
+    pLstWgt->addItem(QString::fromUtf8(str.data(), str.size()));
+  }
+
   pVout->addLayout(pHout);
 
   connect(arButtons[0], &QPushButton::clicked, pLstWgt, [title, label, &argDlg, pLstWgt]() {

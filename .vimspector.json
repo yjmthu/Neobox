@@ -10,7 +10,7 @@
         "program": "${workspaceFolder}/build/windows/x64/debug/Neobox.exe",
         "args": [ ],
         "env": {
-          "PATH": "${PATH};C:/Qt/6.3.1/msvc2019_64/bin;${workspaceFolder}/install/bin"
+          "PATH": "${PATH};C:/Qt/6.4.0/msvc2019_64/bin;${workspaceFolder}/install/bin"
         },
         "cwd": "${workspaceFolder}",
         "externalConsole": true,

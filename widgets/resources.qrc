@@ -4,23 +4,21 @@
         <file>fonts/Carattere-Regular-small.ttf</file>
         <file>fonts/FangZhengKaiTiJianTi-1.ttf</file>
         <file>fonts/Nickainley-Normal-small.ttf</file>
-        <file>icons/bilibili.svg</file>
         <file>icons/copy.ico</file>
         <file>icons/copy.svg</file>
         <file>icons/cursor.ico</file>
         <file>icons/cursor.svg</file>
-        <file>icons/drawing.svg</file>
-        <file>icons/github.svg</file>
         <file>icons/neobox.ico</file>
         <file>icons/neobox.svg</file>
-        <file>icons/netease.svg</file>
-        <file>icons/weibo.svg</file>
         <file>jsons/menucontent.json</file>
         <file>jsons/resources.json</file>
         <file>jsons/setting.json</file>
         <file>scripts/getpic.py</file>
         <file>scripts/Neobox.desktop</file>
         <file>scripts/SetWallpaper.sh</file>
-        <file>styles/MenuStyle.css</file>
+        <file>styles/AppStyle.css</file>
+        <file>styles/Guanjia.ui</file>
+        <file>styles/Monitor.ui</file>
+        <file>styles/Speedbox.ui</file>
     </qresource>
 </RCC>
