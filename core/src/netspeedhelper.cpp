@@ -28,7 +28,8 @@ void NetSpeedHelper::FormatSpeed(uint64_t bytes, bool upload) {
 }
 
 NetSpeedHelper::NetSpeedHelper()
-    : m_CpuUse(0), m_MemUse(0), m_RecvBytes(0), m_SendBytes(0) {}
+    : m_CpuUse(0), m_MemUse(0),
+      m_StrFmt() {}
 
 #ifdef _WIN32
 
@@ -42,6 +43,43 @@ void NetSpeedHelper::SetMemInfo() {
   GlobalMemoryStatus(&ms);
   m_MemUse = ms.dwMemoryLoad / 100.0;
   m_SysInfo[2] = std::vformat(m_StrFmt[2], std::make_format_args(ms.dwMemoryLoad));
+}
+
+void NetSpeedHelper::SetCpuInfo()
+{
+  static bool bFirstCall = true;
+  LARGE_INTEGER;
+  static FILETIME preIdleTime { 0 }, preKernelTime { 0 }, preUserTime { 0 };
+  static FILETIME idleTime, kernelTime, userTime;
+
+  // https://blog.csdn.net/alwaysrun/article/details/106433080
+  const auto Filetime2Int64 = [](const FILETIME &ftime)
+  {
+      LARGE_INTEGER li;
+      li.LowPart = ftime.dwLowDateTime;
+      li.HighPart = ftime.dwHighDateTime;
+      return li.QuadPart;
+  };
+
+  GetSystemTimes(&idleTime, &kernelTime, &userTime);
+  if (bFirstCall) {
+    preIdleTime = idleTime;
+    preKernelTime = kernelTime;
+    preUserTime = userTime;
+    bFirstCall = false;
+  } else {
+    const uint64_t free = Filetime2Int64(idleTime) - Filetime2Int64(preIdleTime);
+    const uint64_t all = (Filetime2Int64(kernelTime) - Filetime2Int64(preKernelTime))
+      + (Filetime2Int64(userTime) - Filetime2Int64(preUserTime));
+    if (all == 0) {
+      m_CpuUse = 100;
+    } else {
+      m_CpuUse = all - free;
+      m_CpuUse /= all;
+    }
+  }
+  m_SysInfo[3] = std::vformat(m_StrFmt[3], std::make_format_args(
+    static_cast<int>(m_CpuUse*100)));
 }
 
 void NetSpeedHelper::SetNetInfo() {
@@ -149,12 +187,15 @@ void NetSpeedHelper::SetNetInfo() {
 
 #endif
 
-void NetSpeedHelper::ClearData() {
-  m_RecvBytes = 0;
-  m_SendBytes = 0;
+void NetSpeedHelper::InitStrings()
+{
+  FormatSpeed(0, true);
+  FormatSpeed(0, false);
+  m_SysInfo[2] = std::vformat(m_StrFmt[2], std::make_format_args(0));
 }
 
 void NetSpeedHelper::GetSysInfo() {
   SetMemInfo();
   SetNetInfo();
+  SetCpuInfo();
 }

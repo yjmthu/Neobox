@@ -98,7 +98,9 @@ void SpeedBox::SetStyleSheet() {
 void SpeedBox::SetBaseLayout() {
 
   QUiLoader loader;
-  QFile file(":/styles/Guanjia.ui");
+  const auto& skins = VarBox::GetInstance()->m_Skins;
+  const std::u8string u8StringPath = skins[VarBox::GetSettings(u8"FormGlobal")[u8"CurSkin"].getValueInt()].path;
+  QFile file(QString::fromUtf8(u8StringPath.data(), u8StringPath.size()));
   file.open(QFile::ReadOnly);
   m_CentralWidget = loader.load(&file, this);
   file.close();
@@ -110,21 +112,38 @@ void SpeedBox::SetBaseLayout() {
   m_TextMemUseage = m_CentralWidget->findChild<QLabel*>("memUse");
   m_TextUploadSpeed = m_CentralWidget->findChild<QLabel*>("netUp");
   m_TextDownloadSpeed = m_CentralWidget->findChild<QLabel*>("netDown");
+  m_TextCpuUseage = m_CentralWidget->findChild<QLabel*>("cpuUse");
 
   QByteArray buffer;
-  buffer = m_TextUploadSpeed->text().toUtf8();
-  m_NetSpeedHelper->m_StrFmt[0].assign(buffer.begin(), buffer.end());
-  buffer = m_TextDownloadSpeed->text().toUtf8();
-  m_NetSpeedHelper->m_StrFmt[1].assign(buffer.begin(), buffer.end());
-  buffer = m_TextMemUseage->text().toUtf8();
-  m_NetSpeedHelper->m_StrFmt[2].assign(buffer.begin(), buffer.end());
+  if (m_TextUploadSpeed) {
+    buffer = m_TextUploadSpeed->text().toUtf8();
+    m_NetSpeedHelper->m_StrFmt[0].assign(buffer.begin(), buffer.end());
+  }
+  if (m_TextDownloadSpeed) {
+    buffer = m_TextDownloadSpeed->text().toUtf8();
+    m_NetSpeedHelper->m_StrFmt[1].assign(buffer.begin(), buffer.end());
+  }
+  if (m_TextMemUseage) {
+    buffer = m_TextMemUseage->text().toUtf8();
+    m_NetSpeedHelper->m_StrFmt[2].assign(buffer.begin(), buffer.end());
+  }
+  if (m_TextCpuUseage) {
+    buffer = m_TextCpuUseage->text().toUtf8();
+    m_NetSpeedHelper->m_StrFmt[3].assign(buffer.begin(), buffer.end());
+  }
 
   m_MemColorFrame = m_CentralWidget->findChild<QFrame*>("memColorFrame");
   if (m_MemColorFrame != nullptr) {
     QByteArray buffer = m_MemColorFrame->styleSheet().toUtf8();
     m_MemFrameStyle.assign(buffer.begin(), buffer.end());
+    const std::string style = std::vformat(m_MemFrameStyle, std::make_format_args(
+        0.1, 0.2, 0.8, 0.9
+    ));
+    m_MemColorFrame->setStyleSheet(QString::fromUtf8(style.data(), style.size()));
   }
 
+  m_NetSpeedHelper->InitStrings();
+  UpdateTextContent();
 }
 
 void SpeedBox::UpdateTextContent() {
@@ -133,9 +152,14 @@ void SpeedBox::UpdateTextContent() {
   };
 
   auto iter = m_NetSpeedHelper->m_SysInfo.cbegin();
-  m_TextUploadSpeed->setText(qstr(*iter));
-  m_TextDownloadSpeed->setText(qstr(*++iter));
-  m_TextMemUseage->setText(qstr(*++iter));
+  if (m_TextUploadSpeed)
+    m_TextUploadSpeed->setText(qstr(iter[0]));
+  if (m_TextDownloadSpeed)
+    m_TextDownloadSpeed->setText(qstr(iter[1]));
+  if (m_TextMemUseage)
+    m_TextMemUseage->setText(qstr(iter[2]));
+  if (m_TextCpuUseage)
+    m_TextCpuUseage->setText(qstr(iter[3]));
 
   if (m_MemColorFrame != nullptr) {
     const float x1 = m_NetSpeedHelper->m_MemUse > 0.02 ? m_NetSpeedHelper->m_MemUse - 0.02 : m_NetSpeedHelper->m_MemUse;

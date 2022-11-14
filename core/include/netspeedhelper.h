@@ -21,10 +21,10 @@ class NetSpeedHelper {
   std::array<std::string, 4> m_SysInfo;
   float m_CpuUse, m_MemUse;
   void ClearData();
-
+  void InitStrings();
 
  private:
-  uint64_t m_RecvBytes, m_SendBytes;
+  // uint64_t m_RecvBytes, m_SendBytes;
 #ifdef _WIN32
   PIP_ADAPTER_ADDRESSES piaa = nullptr;  // Network Card
   MIB_IFTABLE* mi = nullptr;             // Network Speed
@@ -32,6 +32,7 @@ class NetSpeedHelper {
   class QTimer* m_Timer;
   void SetMemInfo();
   void SetNetInfo();
+  void SetCpuInfo();
   void FormatSpeed(uint64_t bytes, bool upload);
 };
 

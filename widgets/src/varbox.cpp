@@ -22,11 +22,18 @@ void ShowMessage(const std::u8string& title,
   });
 }
 
-VarBox::VarBox() {
+VarBox::VarBox():
+  m_Skins({
+    {u8"经典火绒", u8":/styles/Huorong.ui"},
+    {u8"电脑管家", u8":/styles/Guanjia.ui"},
+    {u8"数字卫士", u8":/styles/360.ui"},
+    {u8"独霸一方", u8":/styles/duba.ui"}
+  })
+{
   MakeDirs();
   CopyFiles();
   LoadFonts();
-  LoadJsons();
+  LoadSkins();
 }
 
 VarBox::~VarBox() {}
@@ -50,8 +57,15 @@ YJson& VarBox::GetSettings(const char8_t* key) {
 }
 
 SpeedBox* VarBox::GetSpeedBox() {
+  // QObject box will delete itself when application exit.
   static SpeedBox* box = new SpeedBox;
   return box;
+}
+
+VarBox* VarBox::GetInstance()
+{
+  static std::unique_ptr<VarBox> self(new VarBox);
+  return self.get();
 }
 
 void VarBox::WriteSettings() {
@@ -65,7 +79,20 @@ void VarBox::LoadFonts() const {
       QStringLiteral(":/fonts/Carattere-Regular-small.ttf"));
 }
 
-void VarBox::LoadJsons() {}
+std::unique_ptr<YJson> VarBox::LoadJsons() {
+  QFile fJson(QStringLiteral(":/jsons/menucontent.json"));
+  fJson.open(QIODevice::ReadOnly);
+  QByteArray array = fJson.readAll();
+  std::unique_ptr<YJson> data(new YJson(array.begin(), array.end()));
+  fJson.close();
+  auto& item = (*data)[u8"设置中心"][u8"children"][u8"软件设置"][u8"children"][u8"皮肤选择"][u8"children"].getObject();
+  for (const auto& [i, j]: m_Skins) {
+    if (!QFile::exists(QString::fromUtf8(j.data(), j.size())))
+      continue;
+    item.emplace_back(i, YJson::Object).second.append(u8"GroupItem", u8"type");
+  }
+  return data;
+}
 
 void VarBox::MakeDirs() {
   QDir dir(QStandardPaths::writableLocation(QStandardPaths::HomeLocation));
@@ -110,5 +137,12 @@ void VarBox::CopyFiles() const {
         QFile::setPermissions(k, QFile::ReadUser | QFile::WriteUser);
       }
     }
+  }
+}
+
+void VarBox::LoadSkins()
+{
+  for (const auto& [key, value]: GetSettings(u8"FormGlobal")[u8"UserSkins"].getObject()) {
+    m_Skins.push_back(Skin { key, value.getValueString() });
   }
 }

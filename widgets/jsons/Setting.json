@@ -11,7 +11,8 @@
     "ShowTrayIcon": false,
     "ColorEffect": 0,
     "BackgroundColorRgba": [51, 51, 119, 204],
-    "Size": [ 100, 40 ]
+    "CurSkin": 0,
+    "UserSkins": { }
   },
   "Tools": {
     "Translate.RegisterHotKey": true,

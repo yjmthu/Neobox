@@ -4,10 +4,17 @@
         <file>fonts/Carattere-Regular-small.ttf</file>
         <file>fonts/FangZhengKaiTiJianTi-1.ttf</file>
         <file>fonts/Nickainley-Normal-small.ttf</file>
+        <file>icons/360shadow.svg</file>
+        <file>icons/360_shadow_normal.png</file>
         <file>icons/copy.ico</file>
         <file>icons/copy.svg</file>
         <file>icons/cursor.ico</file>
         <file>icons/cursor.svg</file>
+        <file>icons/duba.png</file>
+        <file>icons/duba.svg</file>
+        <file>icons/guanjiashadow.svg</file>
+        <file>icons/guanjia_shadow_hoverd.png</file>
+        <file>icons/guanjia_shadow_normal.png</file>
         <file>icons/neobox.ico</file>
         <file>icons/neobox.svg</file>
         <file>jsons/menucontent.json</file>
@@ -16,9 +23,10 @@
         <file>scripts/getpic.py</file>
         <file>scripts/Neobox.desktop</file>
         <file>scripts/SetWallpaper.sh</file>
+        <file>styles/360.ui</file>
         <file>styles/AppStyle.css</file>
+        <file>styles/duba.ui</file>
         <file>styles/Guanjia.ui</file>
-        <file>styles/Monitor.ui</file>
-        <file>styles/Speedbox.ui</file>
+        <file>styles/Huorong.ui</file>
     </qresource>
 </RCC>

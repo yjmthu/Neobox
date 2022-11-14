@@ -27,31 +27,33 @@
             "tip": "Windows10/11的五种窗口效果",
             "children": {
               "普通效果": {
-                "type": "GroupItem",
-                "function": "AppFormEffect",
-                "index": 0
+                "type": "GroupItem"
               },
               "渐变效果": {
-                "type": "GroupItem",
-                "function": "AppFormEffect",
-                "index": 1
+                "type": "GroupItem"
               },
               "透明效果": {
-                "type": "GroupItem",
-                "function": "AppFormEffect",
-                "index": 2
+                "type": "GroupItem"
               },
               "磨砂效果": {
-                "type": "GroupItem",
-                "function": "AppFormEffect",
-                "index": 3
+                "type": "GroupItem"
               },
               "亚克力效果": {
-                "type": "GroupItem",
-                "function": "AppFormEffect",
-                "index": 4
+                "type": "GroupItem"
               }
             }
+          },
+          "皮肤选择": {
+            "type": "ExclusiveGroup",
+            "function": "AppFormSkin",
+            "range": [0, -1],
+            "tip": "悬浮窗皮肤选择",
+            "children": { }
+          },
+          "皮肤添加": {
+            "type": "Normal",
+            "function": "AppAddSkin",
+            "tip": "选择用户自定义皮肤"
           },
           "背景颜色": {
             "type": "Normal",
@@ -63,7 +65,7 @@
       "壁纸设置": {
         "type": "Group",
         "children": {
-          "类型选择": {
+          "壁纸来源": {
             "type": "ExclusiveGroup",
             "range": [0, -1],
             "function": "WallpaperType",
@@ -71,38 +73,27 @@
             "children": {
               "壁纸天堂": {
                 "type": "GroupItem", 
-                "function": "WallpaperType",
-                "tip": "wallhaven.cc",
-                "index": 0
+                "tip": "wallhaven.cc"
               },
               "必应壁纸": {
                 "type": "GroupItem",
-                "function": "WallpaperType",
-                "tip": "cn.bing.com",
-                "index": 1 
+                "tip": "cn.bing.com"
               },
               "直链壁纸": {
                 "type": "GroupItem",
-                "function": "WallpaperType",
-                "tip": "下载并设置链接中的壁纸，例如https://source.unsplash.com/random",
-                "index": 2
+                "tip": "下载并设置链接中的壁纸，例如https://source.unsplash.com/random"
               },
               "本地壁纸": {
                 "type": "GroupItem",
-                "function": "WallpaperType",
-                "tip": "将本地文件夹中的图片作为壁纸来源",
-                "index": 3 },
+                "tip": "将本地文件夹中的图片作为壁纸来源"
+              },
               "脚本输出": {
                 "type": "GroupItem",
-                "function": "WallpaperType",
-                "tip": "运行程序/脚本，将第一行输出（壁纸路径）设为壁纸",
-                "index": 4
+                "tip": "运行程序/脚本，将第一行输出（壁纸路径）设为壁纸"
               },
               "收藏喜欢": {
                 "type": "GroupItem",
-                "function": "WallpaperType",
-                "tip": "收藏夹内的壁纸",
-                "index": 5
+                "tip": "收藏夹内的壁纸"
               }
             }
           },

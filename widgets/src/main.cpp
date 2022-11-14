@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
     return 0;
   QApplication a(argc, argv);
   a.setQuitOnLastWindowClosed(false);
-  VarBox var;
+  VarBox::GetInstance();
   VarBox::GetSpeedBox()->Show();
   auto iExitCode = static_cast<ExitCode>(a.exec());
     qSharedMemory.detach();

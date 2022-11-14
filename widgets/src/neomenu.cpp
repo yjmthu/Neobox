@@ -7,6 +7,7 @@
 #include <varbox.h>
 #include <wallpaper.h>
 #include <yjson.h>
+#include <appcode.hpp>
 
 #include <chrono>
 #include <map>
@@ -58,14 +59,8 @@ NeoMenu::NeoMenu(QWidget* parent)
   setAttribute(Qt::WA_TranslucentBackground, true);
   setToolTipsVisible(true);
   InitFunctionMap();
-  QFile fJson(QStringLiteral(":/jsons/menucontent.json"));
-  if (!fJson.open(QIODevice::ReadOnly)) {
-    qApp->quit();
-    return;
-  }
-  QByteArray array = fJson.readAll();
-  GetMenuContent(this, YJson(array.begin(), array.end()));
-  fJson.close();
+  auto const menuContent = VarBox::GetInstance()->LoadJsons();
+  GetMenuContent(this, *menuContent);
 
   // Maybe after the json file was download.
   LoadWallpaperExmenu();
@@ -127,6 +122,24 @@ void NeoMenu::InitFunctionMap() {
              hWnd, static_cast<ACCENT_STATE>(iCurType),
              qRgba(col.blue(), col.green(), col.red(), col.alpha()));
        }},
+      {u8"AppAddSkin",
+        [this]() {
+          const QString qSkinName = QInputDialog::getText(this, "输入", "请输入壁纸名字：");
+          if (qSkinName.isEmpty() || qSkinName.isNull()) {
+            return;
+          }
+          const QString qFilePath = QFileDialog::getOpenFileName(this, "选择文件", ".", "(*.ui)");
+          if (qFilePath.isEmpty() || !QFile::exists(qFilePath))
+            return;
+          QByteArray buffer = qFilePath.toUtf8();
+          const fs::path path = std::u8string(buffer.begin(), buffer.end());
+          const std::u8string u8FilePath = u8"styles/" + path.filename().u8string();
+          buffer = qSkinName.toUtf8();
+          const std::u8string u8SkinName(buffer.begin(), buffer.end());
+          auto& object = VarBox::GetSettings(u8"FormGlobal")[u8"UserSkins"];
+          object.append(u8FilePath, u8SkinName);
+        }
+      },
       {u8"ToolOcrGetScreen",
        [this]() {
          static bool busy = false;
@@ -482,7 +495,22 @@ void NeoMenu::InitFunctionMap() {
         []() -> int {
           return VarBox::GetSettings(u8"FormGlobal")[u8"ColorEffect"]
               .getValueInt();
-        }}}};
+        }}},
+      {u8"AppFormSkin",
+        {[this](int type) {
+          VarBox::GetSettings(u8"FormGlobal")[u8"CurSkin"] = type;
+          VarBox::WriteSettings();
+          auto answer = QMessageBox::question(this, "询问", "设置皮肤成功，是否重启Neobox？");
+          if (answer == QMessageBox::Yes) {
+            const auto code = static_cast<int>(ExitCode::RETCODE_RESTART);
+            qApp->exit(code);
+          }
+        },
+        []() -> int {
+          return VarBox::GetSettings(u8"FormGlobal")[u8"CurSkin"]
+              .getValueInt();
+        }}},
+  };
 }
 
 bool NeoMenu::ChooseFolder(QString title, QString& current) {
@@ -516,8 +544,7 @@ void NeoMenu::GetMenuContent(QMenu* parent, const YJson& data) {
       action->setChecked(n());
       connect(action, &QAction::triggered, this, m);
     } else if (type == u8"ExclusiveGroup") {
-      const auto& function =
-          m_FuncItemCheckMap[j[u8"function"].getValueString()].second;
+      const auto& functions = m_FuncItemCheckMap[j[u8"function"].getValueString()];
       QMenu* menu = new QMenu(parent);
       menu->setToolTipsVisible(true);
       menu->setAttribute(Qt::WA_TranslucentBackground, true);
@@ -530,7 +557,7 @@ void NeoMenu::GetMenuContent(QMenu* parent, const YJson& data) {
       int last = range.back().getValueInt();
       if (last == -1)
         last = static_cast<int>(children.getObject().size());
-      int index = 0, check = function();
+      int index = 0, check = functions.second();
       QActionGroup* group = new QActionGroup(menu);
       group->setExclusive(true);
       m_ExclusiveGroups[j[u8"function"].getValueString()] = group;
@@ -541,16 +568,14 @@ void NeoMenu::GetMenuContent(QMenu* parent, const YJson& data) {
         } else if (index >= last) {
           break;
         }
+        connect(k, &QAction::triggered, this,
+              std::bind(functions.first, index));
         group->addAction(k);
         k->setChecked(index == check);
         ++index;
       }
     } else if (type == u8"GroupItem") {
-      const auto& function =
-          m_FuncItemCheckMap[j[u8"function"].getValueString()].first;
       action->setCheckable(true);
-      connect(action, &QAction::triggered, this,
-              std::bind(function, j[u8"index"].getValueInt()));
     } else if (type == u8"VarGroup") {
       QMenu* menu = new QMenu(parent);
       menu->setToolTipsVisible(true);

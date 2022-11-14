@@ -11,6 +11,7 @@ class SpeedBox : public QWidget {
   class QLabel* m_TextMemUseage;
   class QLabel* m_TextUploadSpeed;
   class QLabel* m_TextDownloadSpeed;
+  class QLabel* m_TextCpuUseage;
   class QFrame* m_MemColorFrame;
   class QTimer* m_Timer;
   class NeoMenu* m_MainMenu;
