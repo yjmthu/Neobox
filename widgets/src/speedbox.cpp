@@ -332,6 +332,7 @@ void SpeedBox::leaveEvent(QEvent* event) {
 void SpeedBox::Move(int x, int y)
 {
   move(x, y);
+  m_HideSide = HideSide::None;
   VarBox::GetSettings(u8"FormGlobal")[u8"Position"].getArray() = YJson::A{x, y};
   VarBox::WriteSettings();
 }

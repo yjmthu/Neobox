@@ -13,18 +13,15 @@
 
 void NetSpeedHelper::FormatSpeed(uint64_t bytes, bool upload) {
   // https://unicode-table.com/en/2192/
-  static constexpr auto units = "BKMGTPN";
+  static constexpr auto units = "BKMGTP";
   const char *first = units, *last = first + 6;
-  double dw = static_cast<double>(bytes);
-  while (dw >= 1024) {
-    dw /= 1024;
+  uint64_t size = 1;
+  bytes &= (1ull << 50) - 1;
+  while ((bytes >> 10) >= size) {
+    size <<= 10;
     ++first;
   }
-  if (first >= last) {
-    dw = 0;
-    first = last;
-  }
-  m_SysInfo[upload ? 0 : 1] = std::vformat(m_StrFmt[upload ? 0 : 1], std::make_format_args(dw, *first));
+  m_SysInfo[upload ? 0 : 1] = std::vformat(m_StrFmt[upload ? 0 : 1], std::make_format_args(static_cast<float>(bytes) / size, *first));
 }
 
 NetSpeedHelper::NetSpeedHelper()
