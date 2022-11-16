@@ -93,8 +93,7 @@ void NeoMenu::InitFunctionMap() {
         }
       },
       {u8"AppMoveToLeftTop",
-        // []() { VarBox::GetSpeedBox()->move(100, 100); }
-        std::bind(&SpeedBox::Move, VarBox::GetSpeedBox(), 100, 100)
+        std::bind(&SpeedBox::Move, VarBox::GetSpeedBox())
       },
       {u8"AppOpenConfigDir",
        std::bind(QDesktopServices::openUrl,
@@ -138,6 +137,17 @@ void NeoMenu::InitFunctionMap() {
           const std::u8string u8SkinName(buffer.begin(), buffer.end());
           auto& object = VarBox::GetSettings(u8"FormGlobal")[u8"UserSkins"];
           object.append(u8FilePath, u8SkinName);
+          VarBox::WriteSettings();
+
+          auto menu = m_ExMenus[u8"AppFormSkin"];
+          auto group = m_ExclusiveGroups[u8"AppFormSkin"];
+          if (object.sizeO() == 1)
+            menu->addSeparator();
+          auto action = menu->addAction(qSkinName);
+          action->setCheckable(true);
+          connect(action, &QAction::triggered, this,
+              std::bind(m_FuncItemCheckMap[u8"AppFormSkin"].first, group->children().size()));
+          group->addAction(action);
         }
       },
       {u8"ToolOcrGetScreen",
@@ -520,8 +530,12 @@ bool NeoMenu::ChooseFolder(QString title, QString& current) {
 
 void NeoMenu::GetMenuContent(QMenu* parent, const YJson& data) {
   for (const auto& [i, j] : data.getObject()) {
+    const std::u8string& type = j[u8"type"].getValueString();
+    if (type == u8"Separator") {
+      parent->addSeparator();
+      continue;
+    }
     QAction* action = parent->addAction(QString::fromUtf8(i.data(), i.size()));
-    const std::u8string type = j[u8"type"].getValueString();
     if (auto iter = j.find(u8"tip"); iter != j.endO()) {
       const std::u8string_view tip = iter->second.getValueString();
       action->setToolTip(QString::fromUtf8(tip.data(), tip.size()));
@@ -544,7 +558,8 @@ void NeoMenu::GetMenuContent(QMenu* parent, const YJson& data) {
       action->setChecked(n());
       connect(action, &QAction::triggered, this, m);
     } else if (type == u8"ExclusiveGroup") {
-      const auto& functions = m_FuncItemCheckMap[j[u8"function"].getValueString()];
+      const std::u8string& functionName = j[u8"function"].getValueString();
+      const auto& functions = m_FuncItemCheckMap[functionName];
       QMenu* menu = new QMenu(parent);
       menu->setToolTipsVisible(true);
       menu->setAttribute(Qt::WA_TranslucentBackground, true);
@@ -560,9 +575,13 @@ void NeoMenu::GetMenuContent(QMenu* parent, const YJson& data) {
       int index = 0, check = functions.second();
       QActionGroup* group = new QActionGroup(menu);
       group->setExclusive(true);
-      m_ExclusiveGroups[j[u8"function"].getValueString()] = group;
+      m_ExMenus[functionName] = menu;
+      m_ExclusiveGroups[functionName] = group;
 
       for (auto& k : menu->actions()) {
+        if (k->property("separator").toBool()) {
+          menu->insertSeparator(k);
+        }
         if (index < first) {
           continue;
         } else if (index >= last) {
@@ -576,6 +595,7 @@ void NeoMenu::GetMenuContent(QMenu* parent, const YJson& data) {
       }
     } else if (type == u8"GroupItem") {
       action->setCheckable(true);
+      action->setProperty("separator", j[u8"separator"].isTrue());
     } else if (type == u8"VarGroup") {
       QMenu* menu = new QMenu(parent);
       menu->setToolTipsVisible(true);

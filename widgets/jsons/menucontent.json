@@ -280,6 +280,9 @@
         "function": "AppOpenConfigDir",
         "tip": "打开配置文件存放位置"
       },
+      "Separator": {
+        "type": "Separator"
+      },
       "壁纸目录": {
         "type": "Normal",
         "function": "AppOpenWallpaperDir",

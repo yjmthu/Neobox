@@ -329,10 +329,12 @@ void SpeedBox::leaveEvent(QEvent* event) {
   event->accept();
 }
 
-void SpeedBox::Move(int x, int y)
+void SpeedBox::Move()
 {
-  move(x, y);
+  move(100, 100);
   m_HideSide = HideSide::None;
-  VarBox::GetSettings(u8"FormGlobal")[u8"Position"].getArray() = YJson::A{x, y};
+  VarBox::GetSettings(u8"FormGlobal")[u8"Position"].getArray() = YJson::A{100, 100};
   VarBox::WriteSettings();
+  if (!isVisible())
+    show();
 }

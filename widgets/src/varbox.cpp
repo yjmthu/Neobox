@@ -86,10 +86,18 @@ std::unique_ptr<YJson> VarBox::LoadJsons() {
   std::unique_ptr<YJson> data(new YJson(array.begin(), array.end()));
   fJson.close();
   auto& item = (*data)[u8"设置中心"][u8"children"][u8"软件设置"][u8"children"][u8"皮肤选择"][u8"children"].getObject();
-  for (const auto& [i, j]: m_Skins) {
+  for (int index = 0; const auto& [i, j]: m_Skins) {
     if (!QFile::exists(QString::fromUtf8(j.data(), j.size())))
       continue;
-    item.emplace_back(i, YJson::Object).second.append(u8"GroupItem", u8"type");
+    if (++index == 5) {
+      item.emplace_back(i,
+        YJson {YJson::O {
+          {u8"type", u8"GroupItem"},
+          {u8"separator", true}
+        }});
+    } else {
+      item.emplace_back(i, YJson::Object).second.append(u8"GroupItem", u8"type");
+    }
   }
   return data;
 }
