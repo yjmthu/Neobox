@@ -1120,7 +1120,10 @@ void NeoMenu::ShowTrayIcon(bool show)
               VarBox::GetSettings(u8"FormGlobal")[u8"ShowForm"] = true;
             }
             VarBox::WriteSettings();
+            break;
           case QSystemTrayIcon::Trigger:
+            VarBox::GetSpeedBox()->raise();
+            break;
           default:
             break;
         }
