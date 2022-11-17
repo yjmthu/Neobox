@@ -71,9 +71,9 @@ long Get(const char* url, std::u8string& data) {
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &WriteString);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
   curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
-  if (curl_easy_perform(curl) != CURLE_OK)
-    return status;
-  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &status);
+  if (curl_easy_perform(curl) == CURLE_OK) {
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &status);
+  }
   curl_easy_cleanup(curl);
   return status;
 }
@@ -86,10 +86,6 @@ long Get(const char* url, std::filesystem::path path) {
   long status = 0;
   if (!curl)
     return status;
-  // struct curl_slist* header_list = NULL;
-  // header_list = curl_slist_append(header_list, "User-Agent: Mozilla/5.0
-  // (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko");
-  // curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
   curl_easy_setopt(curl, CURLOPT_HEADER, false);
   curl_easy_setopt(curl, CURLOPT_URL, url);
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
@@ -98,9 +94,9 @@ long Get(const char* url, std::filesystem::path path) {
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &WriteFile);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &stream);
   curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
-  if (curl_easy_perform(curl) != CURLE_OK)
-    return status;
-  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &status);
+  if (curl_easy_perform(curl) == CURLE_OK) {
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &status);
+  }
   curl_easy_cleanup(curl);
   stream.close();
   return status;
@@ -117,8 +113,10 @@ long Gets(const char* url, std::filesystem::path path) {
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &WriteString);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
   if (curl_easy_perform(curl) != CURLE_OK ||
-      curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &status) != CURLE_OK)
+      curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &status) != CURLE_OK) {
+    curl_easy_cleanup(curl);
     return status;
+  }
   if (status == 200) {
     std::ofstream file(path, std::ios::binary | std::ios::out);
     if (file.is_open()) {

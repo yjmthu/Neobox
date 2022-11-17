@@ -109,8 +109,10 @@ void NeoMenu::InitFunctionMap() {
          const QColor col = QColorDialog::getColor(
              QColor(colVector[0], colVector[1], colVector[2], colVector[3]),
              this, "选择颜色", QColorDialog::ShowAlphaChannel);
-         if (!col.isValid())
+         if (!col.isValid()) {
+           VarBox::ShowMsg("设置颜色失败！");
            return;
+         }
          jsData[u8"BackgroundColorRgba"].getArray() = {
              col.red(), col.green(), col.blue(), col.alpha()};
          VarBox::WriteSettings();
@@ -120,16 +122,20 @@ void NeoMenu::InitFunctionMap() {
          SetWindowCompositionAttribute(
              hWnd, static_cast<ACCENT_STATE>(iCurType),
              qRgba(col.blue(), col.green(), col.red(), col.alpha()));
+         VarBox::ShowMsg("设置颜色成功！");
        }},
       {u8"AppAddSkin",
         [this]() {
           const QString qSkinName = QInputDialog::getText(this, "输入", "请输入壁纸名字：");
           if (qSkinName.isEmpty() || qSkinName.isNull()) {
+            VarBox::ShowMsg("添加皮肤失败！");
             return;
           }
           const QString qFilePath = QFileDialog::getOpenFileName(this, "选择文件", ".", "(*.ui)");
-          if (qFilePath.isEmpty() || !QFile::exists(qFilePath))
+          if (qFilePath.isEmpty() || !QFile::exists(qFilePath)) {
+            VarBox::ShowMsg("添加皮肤失败！");
             return;
+          }
           QByteArray buffer = qFilePath.toUtf8();
           const fs::path path = std::u8string(buffer.begin(), buffer.end());
           const std::u8string u8FilePath = u8"styles/" + path.filename().u8string();
@@ -148,6 +154,7 @@ void NeoMenu::InitFunctionMap() {
           connect(action, &QAction::triggered, this,
               std::bind(m_FuncItemCheckMap[u8"AppFormSkin"].first, group->children().size()));
           group->addAction(action);
+          VarBox::ShowMsg("添加皮肤成功！");
         }
       },
       {u8"ToolOcrGetScreen",
@@ -204,6 +211,9 @@ void NeoMenu::InitFunctionMap() {
          if (!u8NewPath.empty() && u8NewPath != u8Path) {
            u8Path.swap(u8NewPath);
            VarBox::WriteSettings();
+           VarBox::ShowMsg("设置数据文件失成功！");
+         } else {
+           VarBox::ShowMsg("设置数据文件失败！");
          }
        }},
       {u8"ToolTransShowDlg",
@@ -244,6 +254,7 @@ void NeoMenu::InitFunctionMap() {
           }
           shortcut.assign(array.begin(), array.end());
           VarBox::WriteSettings();
+          VarBox::ShowMsg("设置翻译快捷键成功！");
         }
       },
       {u8"ToolColorPick", std::bind(&QColorDialog::getColor, Qt::white, this, QStringLiteral("颜色拾取器"), QColorDialog::ColorDialogOptions())
@@ -253,27 +264,41 @@ void NeoMenu::InitFunctionMap() {
       {u8"WallpaperDislike", std::bind(&Wallpaper::SetSlot, m_Wallpaper, 0)},
       {u8"WallpaperUndoDislike",
        std::bind(&Wallpaper::UndoDelete, m_Wallpaper)},
-      {u8"WallpaperCollect", std::bind(&Wallpaper::SetFavorite, m_Wallpaper)},
-      {u8"WallpaperUndoCollect",
-       std::bind(&Wallpaper::UnSetFavorite, m_Wallpaper)},
+      {u8"WallpaperCollect", [this](){
+          m_Wallpaper->Wallpaper::SetFavorite();
+          VarBox::ShowMsg("收藏壁纸成功！");
+        }},
+      {u8"WallpaperUndoCollect", [this](){
+          m_Wallpaper->UnSetFavorite();
+          VarBox::ShowMsg("撤销收藏壁纸成功！");
+        }},
       {u8"WallpaperDir",
        [this]() {
-         QString current =
-             QString::fromStdWString(m_Wallpaper->GetImageDir().wstring());
-         if (!ChooseFolder("选择壁纸文件夹", current))
-           return;
-         m_Wallpaper->SetCurDir(current.toStdWString());
-       }},
+          QString current =
+              QString::fromStdWString(m_Wallpaper->GetImageDir().wstring());
+          if (!ChooseFolder("选择壁纸文件夹", current)) {
+            VarBox::ShowMsg("取消设置成功！");
+            return;
+          }
+          m_Wallpaper->SetCurDir(current.toStdWString());
+          VarBox::ShowMsg("设置壁纸存放位置成功！");
+        }},
       {u8"WallpaperTimeInterval",
        [this]() {
          int iNewTime =
              QInputDialog::getInt(this, "输入时间间隔", "时间间隔（分钟）：",
                                   m_Wallpaper->GetTimeInterval(), 5);
-         if (iNewTime < 5)
+         if (iNewTime < 5) {
+           VarBox::ShowMsg("设置时间间隔失败！");
            return;
+         }
          m_Wallpaper->SetTimeInterval(iNewTime);
+         VarBox::ShowMsg("设置时间间隔成功！");
        }},
-      {u8"WallpaperClean", std::bind(&Wallpaper::ClearJunk, m_Wallpaper)},
+      {u8"WallpaperClean", [this](){
+          m_Wallpaper->ClearJunk();
+          VarBox::ShowMsg("清除壁纸垃圾成功！");
+       }},
       {u8"AppWbsite", std::bind(QDesktopServices::openUrl,
                                 QUrl("https://www.github.com/yjmthu/Neobox"))}};
 
@@ -307,10 +332,16 @@ void NeoMenu::InitFunctionMap() {
           if (wsThatPath != wsThisPath) {
             if (checked && !RegWriteString(HKEY_CURRENT_USER, pPath, pAppName, wsThisPath)) {
               m_CheckableActions[u8"AppAutoSatrt"]->setChecked(false);
+              VarBox::ShowMsg("设置自动启动失败！");
+            } else {
+              VarBox::ShowMsg("设置成功！");
             }
           } else {
             if (!checked && !RegRemoveValue(HKEY_CURRENT_USER, pPath, pAppName)) {
               m_CheckableActions[u8"AppAutoSatrt"]->setChecked(true);
+              VarBox::ShowMsg("取消自动启动失败！");
+            } else {
+              VarBox::ShowMsg("设置成功！");
             }
           }
         },
@@ -325,6 +356,7 @@ void NeoMenu::InitFunctionMap() {
           ShowTrayIcon(checked);
           VarBox::GetSettings(u8"FormGlobal")[u8"ShowTrayIcon"] = checked;
           VarBox::WriteSettings();
+          VarBox::ShowMsg(checked? "显示托盘图标成功！": "隐藏托盘图标成功！");
         },
         [this]() -> bool {
           const bool show = VarBox::GetSettings(u8"FormGlobal")[u8"ShowTrayIcon"].isTrue();

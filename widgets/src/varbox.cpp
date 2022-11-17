@@ -1,5 +1,6 @@
 #include <speedbox.h>
 #include <varbox.h>
+#include <msgdlg.h>
 #include <yjson.h>
 
 #include <QApplication>
@@ -28,7 +29,8 @@ VarBox::VarBox():
     {u8"电脑管家", u8":/styles/Guanjia.ui"},
     {u8"数字卫士", u8":/styles/360.ui"},
     {u8"独霸一方", u8":/styles/duba.ui"}
-  })
+  }),
+  m_MsgDlg(new MsgDlg)
 {
   MakeDirs();
   CopyFiles();
@@ -36,7 +38,9 @@ VarBox::VarBox():
   LoadSkins();
 }
 
-VarBox::~VarBox() {}
+VarBox::~VarBox() {
+  delete m_MsgDlg;
+}
 
 YJson& VarBox::GetSettings(const char8_t* key) {
   static const char szFileName[] = "Settings.json";
@@ -153,4 +157,9 @@ void VarBox::LoadSkins()
   for (const auto& [key, value]: GetSettings(u8"FormGlobal")[u8"UserSkins"].getObject()) {
     m_Skins.push_back(Skin { key, value.getValueString() });
   }
+}
+
+void VarBox::ShowMsg(const QString &text)
+{
+  GetInstance()->m_MsgDlg->ShowMessage(text);
 }

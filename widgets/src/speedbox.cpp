@@ -229,7 +229,7 @@ void SpeedBox::dropEvent(QDropEvent* event) {
   namespace fs = std::filesystem;
   auto mimeData = event->mimeData();
   if (mimeData->hasUrls()) {
-    auto urls =
+    const auto&& urls =
         mimeData->urls() | std::views::transform([](const QUrl& i) {
           return fs::path(i.toLocalFile().toStdWString());
         });
@@ -337,4 +337,5 @@ void SpeedBox::Move()
   VarBox::WriteSettings();
   if (!isVisible())
     show();
+  VarBox::ShowMsg("移动成功！");
 }

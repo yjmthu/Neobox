@@ -13,6 +13,7 @@ class VarBox {
   static class SpeedBox* GetSpeedBox();
   static void WriteSettings();
   static VarBox* GetInstance();
+  static void ShowMsg(const class QString& text);
 
   struct Skin { std::u8string name; std::u8string path; };
   std::vector<Skin> m_Skins;
@@ -24,6 +25,8 @@ class VarBox {
   void LoadSkins();
   void MakeDirs();
   void CopyFiles() const;
+
+  class MsgDlg* m_MsgDlg;
 };
 
 #endif
