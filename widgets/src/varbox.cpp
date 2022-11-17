@@ -9,6 +9,8 @@
 #include <QMessageBox>
 #include <QStandardPaths>
 #include <QTimer>
+#include <QSharedMemory>
+#include <QProcess>
 
 #include <memory>
 #include <ranges>
@@ -35,33 +37,56 @@ VarBox::VarBox():
   MakeDirs();
   CopyFiles();
   LoadFonts();
+  InitSettings();
   LoadSkins();
 }
 
 VarBox::~VarBox() {
+  delete GetSpeedBox();
   delete m_MsgDlg;
+  delete m_Settings;
+}
+
+void VarBox::CompareJson(YJson& jsDefault, YJson& jsUser)
+{
+  if (!jsDefault.isSameType(&jsUser))
+    return;
+  if (!jsUser.isObject()) {
+    YJson::swap(jsDefault, jsUser);
+    return;
+  }
+  for (auto& [key, val]: jsUser.getObject()) {
+    auto iter = jsDefault.find(key);
+    if (iter != jsDefault.endO()) {
+      CompareJson(iter->second, val);
+    } else {
+      YJson::swap(jsDefault[key], val);
+    }
+  }
+}
+
+void VarBox::InitSettings()
+{
+  QFile fJson(QStringLiteral(":/jsons/setting.json"));
+  fJson.open(QIODevice::ReadOnly);
+  QByteArray array = fJson.readAll();
+  fJson.close();
+
+  m_Settings = new YJson(array.begin(), array.end());
+
+  static const char szFileName[] = "Settings.json";
+  if (QFile::exists(szFileName)) {
+    YJson jsUser(szFileName, YJson::UTF8);
+    CompareJson(*m_Settings, jsUser);
+  }
+  m_Settings->toFile(szFileName);
 }
 
 YJson& VarBox::GetSettings(const char8_t* key) {
-  static const char szFileName[] = "Settings.json";
-  static std::unique_ptr<YJson> m_Settings;
-  if (!m_Settings) {
-    if (QFile::exists(szFileName)) {
-      m_Settings = std::make_unique<YJson>(szFileName, YJson::UTF8);
-      m_Settings->toFile(szFileName);
-    } else {
-      QFile fJson(QStringLiteral(":/jsons/setting.json"));
-      fJson.open(QIODevice::ReadOnly);
-      QByteArray array = fJson.readAll();
-      m_Settings = std::make_unique<YJson>(array.begin(), array.end());
-      fJson.close();
-    }
-  }
-  return key ? m_Settings->find(key)->second : *m_Settings;
+  return key ? GetInstance()->m_Settings->find(key)->second : *GetInstance()->m_Settings;
 }
 
 SpeedBox* VarBox::GetSpeedBox() {
-  // QObject box will delete itself when application exit.
   static SpeedBox* box = new SpeedBox;
   return box;
 }
@@ -89,19 +114,40 @@ std::unique_ptr<YJson> VarBox::LoadJsons() {
   QByteArray array = fJson.readAll();
   std::unique_ptr<YJson> data(new YJson(array.begin(), array.end()));
   fJson.close();
-  auto& item = (*data)[u8"设置中心"][u8"children"][u8"软件设置"][u8"children"][u8"皮肤选择"][u8"children"].getObject();
+  auto& appSettings = (*data)[u8"设置中心"][u8"children"][u8"软件设置"][u8"children"];
+  auto* item = &appSettings[u8"皮肤选择"][u8"children"].getObject();
+  const auto& u8SkinName = m_Settings->find(u8"FormGlobal")->second[u8"CurSkin"].getValueString();
   for (int index = 0; const auto& [i, j]: m_Skins) {
     if (!QFile::exists(QString::fromUtf8(j.data(), j.size())))
       continue;
     if (++index == 5) {
-      item.emplace_back(i,
+      item->emplace_back(u8"Separator",
         YJson {YJson::O {
-          {u8"type", u8"GroupItem"},
-          {u8"separator", true}
-        }});
-    } else {
-      item.emplace_back(i, YJson::Object).second.append(u8"GroupItem", u8"type");
+          {u8"type", u8"Separator"}
+      }});
     }
+    item->emplace_back(i,
+      YJson {YJson::O {
+        {u8"type", u8"Checkable"},
+        {u8"checked", i == u8SkinName},
+        {u8"string", i},
+        {u8"function", u8"AppSelectSkin"},
+        {u8"tip", j}
+    }});
+  }
+  item = &appSettings[u8"皮肤删除"][u8"children"].getObject();
+  for (size_t index = 4; index < m_Skins.size(); ++index)
+  {
+    item->emplace_back(m_Skins[index].name,
+      YJson {
+        YJson::O {
+          {u8"type", u8"StringItem"},
+          {u8"function", u8"AppRemoveSkin"},
+          {u8"string", m_Skins[index].name},
+          {u8"tip", m_Skins[index].path}
+        }
+      }
+    );
   }
   return data;
 }
@@ -113,6 +159,8 @@ void VarBox::MakeDirs() {
     dir.cd(relPath);
     QDir::setCurrent(dir.absolutePath());
   } else {
+    m_SharedMemory->detach();
+    QProcess::startDetached(QApplication::applicationFilePath(), QStringList {});
     qApp->quit();
     return;
   }
@@ -128,6 +176,7 @@ void VarBox::CopyFiles() const {
   QFile jsFile(QStringLiteral(":/jsons/resources.json"));
   if (!jsFile.open(QIODevice::ReadOnly)) {
     QMessageBox::critical(nullptr, "错误", "不能读取资源文件");
+    m_SharedMemory->detach();
     qApp->quit();
     return;
   }
@@ -154,8 +203,10 @@ void VarBox::CopyFiles() const {
 
 void VarBox::LoadSkins()
 {
-  for (const auto& [key, value]: GetSettings(u8"FormGlobal")[u8"UserSkins"].getObject()) {
-    m_Skins.push_back(Skin { key, value.getValueString() });
+  // There should be 'm_Settings', not the 'GetInstance()'.
+  auto& obj = m_Settings->find(u8"FormGlobal")->second.find(u8"UserSkins")->second.getObject();
+  for (const auto& [key, value]: obj) {
+    m_Skins.emplace_back(key, value.getValueString());
   }
 }
 
@@ -163,3 +214,4 @@ void VarBox::ShowMsg(const QString &text)
 {
   GetInstance()->m_MsgDlg->ShowMessage(text);
 }
+

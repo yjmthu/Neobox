@@ -29,7 +29,7 @@ void MsgDlg::ShowMessage(const QString& text)
   m_pLabel->setText(text);
   show();
   // m_pFrame->setWindowOpacity();
-  QTimer::singleShot(500, this, [this]() {
+  QTimer::singleShot(1000, this, [this]() {
       m_pAnimation->start();
     }
   );

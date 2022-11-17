@@ -43,10 +43,17 @@
               }
             }
           },
+          "背景颜色": {
+            "type": "Normal",
+            "function": "AppFormBackground",
+            "tip": "修改悬浮窗背景颜色"
+          },
+          "Separator": {
+            "type": "Separator"
+          },
           "皮肤选择": {
-            "type": "ExclusiveGroup",
-            "function": "AppFormSkin",
-            "range": [0, -1],
+            "type": "Group",
+            "name": "AppSelectSkin",
             "tip": "悬浮窗皮肤选择",
             "children": { }
           },
@@ -55,10 +62,10 @@
             "function": "AppAddSkin",
             "tip": "选择用户自定义皮肤"
           },
-          "背景颜色": {
-            "type": "Normal",
-            "function": "AppFormBackground",
-            "tip": "修改悬浮窗背景颜色"
+          "皮肤删除": {
+            "type": "Group",
+            "name": "AppRemoveSkin",
+            "children": { }
           }
         }
       },

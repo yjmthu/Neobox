@@ -11,14 +11,12 @@ int main(int argc, char* argv[]) {
   qSharedMemory.setKey(QStringLiteral("__Neobox__"));
   if(qSharedMemory.attach() || !qSharedMemory.create(1))
     return 0;
+  VarBox::m_SharedMemory = &qSharedMemory;
   QApplication a(argc, argv);
   a.setQuitOnLastWindowClosed(false);
   VarBox::GetInstance();
   VarBox::GetSpeedBox()->Show();
-  auto iExitCode = static_cast<ExitCode>(a.exec());
-    qSharedMemory.detach();
-  if (iExitCode == ExitCode::RETCODE_RESTART) {
-    QProcess::startDetached(a.applicationFilePath(), QStringList());
-  }
+  a.exec();
+  qSharedMemory.detach();
   return 0;
 }

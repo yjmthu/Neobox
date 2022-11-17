@@ -15,7 +15,9 @@
 #include <regex>
 #include <vector>
 
+#include <QProcess>
 #include <QActionGroup>
+#include <QSharedmemory>
 #include <QApplication>
 #include <QColorDialog>
 #include <QDesktopServices>
@@ -48,6 +50,7 @@ namespace fs = std::filesystem;
 using namespace std::chrono;
 using namespace std::literals;
 
+QSharedMemory* VarBox::m_SharedMemory = nullptr;
 extern QString QImage2Text(const QImage& qImage);
 
 NeoMenu::NeoMenu(QWidget* parent)
@@ -76,7 +79,10 @@ void NeoMenu::InitFunctionMap() {
                                      L"shutdown", L"-s -t 0", nullptr, 0)},
       {u8"SystemRestart", std::bind(ShellExecuteW, nullptr, L"open",
                                     L"shutdown", L"-r -t 0", nullptr, 0)},
-      {u8"AppQuit", &QApplication::quit},
+      {u8"AppQuit", [](){
+        VarBox::GetInstance()->m_SharedMemory->detach();
+        QApplication::quit();
+      }},
       {u8"AppOpenExeDir",
        std::bind(QDesktopServices::openUrl,
                  QUrl::fromLocalFile(qApp->applicationDirPath()))},
@@ -145,15 +151,20 @@ void NeoMenu::InitFunctionMap() {
           object.append(u8FilePath, u8SkinName);
           VarBox::WriteSettings();
 
-          auto menu = m_ExMenus[u8"AppFormSkin"];
-          auto group = m_ExclusiveGroups[u8"AppFormSkin"];
+          auto menu = m_ExMenus[u8"AppSelectSkin"];
+
           if (object.sizeO() == 1)
             menu->addSeparator();
           auto action = menu->addAction(qSkinName);
+          action->setToolTip(QString::fromUtf8(u8FilePath.data(), u8FilePath.size()));
           action->setCheckable(true);
           connect(action, &QAction::triggered, this,
-              std::bind(m_FuncItemCheckMap[u8"AppFormSkin"].first, group->children().size()));
-          group->addAction(action);
+              std::bind(m_FuncStingMap[u8"AppSelectSkin"], u8SkinName));
+          
+          menu = m_ExMenus[u8"AppRemoveSkin"];
+          action = menu->addAction(qSkinName);
+          connect(action, &QAction::triggered, this,
+              std::bind(m_FuncStingMap[u8"AppRemoveSkin"], u8SkinName));
           VarBox::ShowMsg("添加皮肤成功！");
         }
       },
@@ -538,20 +549,55 @@ void NeoMenu::InitFunctionMap() {
           return VarBox::GetSettings(u8"FormGlobal")[u8"ColorEffect"]
               .getValueInt();
         }}},
-      {u8"AppFormSkin",
-        {[this](int type) {
-          VarBox::GetSettings(u8"FormGlobal")[u8"CurSkin"] = type;
-          VarBox::WriteSettings();
-          auto answer = QMessageBox::question(this, "询问", "设置皮肤成功，是否重启Neobox？");
-          if (answer == QMessageBox::Yes) {
-            const auto code = static_cast<int>(ExitCode::RETCODE_RESTART);
-            qApp->exit(code);
-          }
-        },
-        []() -> int {
-          return VarBox::GetSettings(u8"FormGlobal")[u8"CurSkin"]
-              .getValueInt();
-        }}},
+  };
+  m_FuncStingMap = {
+    {u8"AppSelectSkin", [this](std::u8string name) {
+      VarBox::GetSettings(u8"FormGlobal")[u8"CurSkin"] = name;
+      VarBox::WriteSettings();
+
+      auto menu = m_ExMenus[u8"AppSelectSkin"];
+      const QString qname = QString::fromUtf8(name.data(), name.size());
+      for (auto i: menu->children()) {
+        QAction* action = qobject_cast<QAction*>(i);
+        action->setChecked(action->text() == qname);
+      }
+
+      menu = m_ExMenus[u8"AppRemoveSkin"];
+      menu->clear();
+      for (const auto& [key, val]: VarBox::GetInstance()->m_Skins) {
+        if (name == key) continue;
+        auto action = menu->addAction(QString::fromUtf8(key.data(), key.size()));
+        connect(action, &QAction::triggered, this, std::bind(m_FuncStingMap[u8"AppRemoveSkin"], name));
+      }
+      VarBox::GetSpeedBox()->UpdateSkin();
+      VarBox::ShowMsg("更换皮肤成功！");
+    }},
+    {u8"AppRemoveSkin", [this](std::u8string name) {
+      const QString qname = QString::fromUtf8(name.data(), name.size());
+      auto& object = VarBox::GetSettings(u8"FormGlobal")[u8"UserSkins"];
+      object.remove(name);
+      VarBox::WriteSettings();
+
+      auto menu = m_ExMenus[u8"AppSelectSkin"];
+      const auto rmItem = [&qname](QMenu* menu) {
+        const auto& lst = menu->children();
+        QAction* action1 = qobject_cast<QAction*>(*std::find_if(lst.cbegin(), lst.cend(), [&qname](const QObject* item){
+          return qobject_cast<const QAction*>(item)->text() == qname;
+        }));
+        menu->removeAction(action1);
+      };
+      rmItem(menu);
+      
+
+      if (object.emptyO())
+        menu->removeAction(
+          qobject_cast<QAction*>(menu->children().back()));
+
+      menu = m_ExMenus[u8"AppRemoveSkin"];
+      rmItem(menu);
+
+      VarBox::ShowMsg("删除皮肤成功！");
+    }}
   };
 }
 
@@ -578,17 +624,31 @@ void NeoMenu::GetMenuContent(QMenu* parent, const YJson& data) {
       connect(action, &QAction::triggered, this, function);
     } else if (type == u8"Group") {
       QMenu* menu = new QMenu(parent);
+      if (auto& name = j[u8"name"]; name.isString()) {
+        m_ExMenus[name.getValueString()] = menu;
+      }
       menu->setToolTipsVisible(true);
       menu->setAttribute(Qt::WA_TranslucentBackground, true);
       action->setMenu(menu);
       GetMenuContent(menu, j[u8"children"]);
     } else if (type == u8"Checkable") {
-      const auto fnName = j[u8"function"].getValueString();
-      const auto& [m, n] = m_FuncCheckMap[fnName];
-      m_CheckableActions[fnName] = action;
+
       action->setCheckable(true);
-      action->setChecked(n());
-      connect(action, &QAction::triggered, this, m);
+      if (j[u8"checked"].isNull()) {
+        const auto fnName = j[u8"function"].getValueString();
+        const auto& [m, n] = m_FuncCheckMap[fnName];
+        m_CheckableActions[fnName] = action;
+        action->setChecked(n());
+        connect(action, &QAction::triggered, this, m);
+      } else {
+        action->setChecked(j[u8"checked"].isTrue());
+        connect(action, &QAction::triggered,
+         this, 
+         std::bind(
+          m_FuncStingMap[j[u8"function"].getValueString()], 
+          j[u8"string"].getValueString()
+        ));
+      }
     } else if (type == u8"ExclusiveGroup") {
       const std::u8string& functionName = j[u8"function"].getValueString();
       const auto& functions = m_FuncItemCheckMap[functionName];
@@ -634,6 +694,12 @@ void NeoMenu::GetMenuContent(QMenu* parent, const YJson& data) {
       menu->setAttribute(Qt::WA_TranslucentBackground, true);
       action->setMenu(menu);
       m_ExMenus[j[u8"name"].getValueString()] = menu;
+    } else if (type == u8"StringItem") {
+      const auto& function =
+          m_FuncStingMap[j[u8"function"].getValueString()];
+      const auto& string = j[u8"string"].getValueString();
+      connect(action, &QAction::triggered, this, std::bind(
+        function, string));
     }
   }
 }

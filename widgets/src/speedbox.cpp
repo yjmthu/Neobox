@@ -10,6 +10,8 @@
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QUiLoader>
+#include <QSharedMemory>
+#include <QProcess>
 
 #include <neomenu.h>
 #include <netspeedhelper.h>
@@ -35,11 +37,13 @@ SpeedBox::SpeedBox(QWidget* parent)
       m_NetSpeedHelper(new NetSpeedHelper),
       m_Timer(new QTimer(this)),
       m_MainMenu(nullptr),
-      m_Animation(new QPropertyAnimation(this, "geometry")) {
+      m_Animation(new QPropertyAnimation(this, "geometry"))
+{
   SetWindowMode();
-  SetBaseLayout();
   SetStyleSheet();
   SetHideFullScreen();
+  SetBaseLayout();
+  m_NetSpeedHelper->InitStrings();
   UpdateTextContent();
   connect(m_Timer, &QTimer::timeout, this, [this]() {
     m_NetSpeedHelper->GetSysInfo();
@@ -78,7 +82,7 @@ void SpeedBox::Show() {
 void SpeedBox::SetWindowMode() {
   setWindowTitle("Neobox");
   setAttribute(Qt::WA_TranslucentBackground, true);
-  setAttribute(Qt::WA_DeleteOnClose, true);
+  // setAttribute(Qt::WA_DeleteOnClose, true);
   setAcceptDrops(true);
 
   const auto& position =
@@ -95,11 +99,22 @@ void SpeedBox::SetStyleSheet() {
   setWindowIcon(QIcon(":/icons/neobox.ico"));
 }
 
+void SpeedBox::UpdateSkin()
+{
+  m_CentralWidget->deleteLater();
+  SetBaseLayout();
+  UpdateTextContent();
+  m_CentralWidget->show();
+}
+
 void SpeedBox::SetBaseLayout() {
 
   QUiLoader loader;
   const auto& skins = VarBox::GetInstance()->m_Skins;
-  const std::u8string u8StringPath = skins[VarBox::GetSettings(u8"FormGlobal")[u8"CurSkin"].getValueInt()].path;
+  const auto& skinName = VarBox::GetSettings(u8"FormGlobal")[u8"CurSkin"].getValueString();
+  const auto& u8StringPath = std::find_if(skins.cbegin(), skins.cend(), [&skinName](const VarBox::Skin& item){
+    return item.name == skinName;
+  })->path;
   QFile file(QString::fromUtf8(u8StringPath.data(), u8StringPath.size()));
   file.open(QFile::ReadOnly);
   m_CentralWidget = loader.load(&file, this);
@@ -141,9 +156,6 @@ void SpeedBox::SetBaseLayout() {
     ));
     m_MemColorFrame->setStyleSheet(QString::fromUtf8(style.data(), style.size()));
   }
-
-  m_NetSpeedHelper->InitStrings();
-  UpdateTextContent();
 }
 
 void SpeedBox::UpdateTextContent() {
@@ -195,7 +207,9 @@ void SpeedBox::mousePressEvent(QMouseEvent* event) {
   } else if (event->button() == Qt::RightButton) {
     m_MainMenu->popup(pos() + event->pos());
   } else if (event->button() == Qt::MiddleButton) {
-    qApp->exit((int)ExitCode::RETCODE_RESTART);
+    VarBox::GetInstance()->m_SharedMemory->detach();
+    QProcess::startDetached(QApplication::applicationFilePath(), QStringList {});
+    qApp->quit();
   }
 }
 

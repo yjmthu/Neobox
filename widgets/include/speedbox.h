@@ -44,7 +44,8 @@ class SpeedBox : public QWidget {
   explicit SpeedBox(QWidget* parent = nullptr);
   ~SpeedBox();
   void Show();
-  void Move();//(int x, int y);
+  void Move();
+  void UpdateSkin();
 
  private:
   void SetWindowMode();

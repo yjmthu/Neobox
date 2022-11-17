@@ -19,14 +19,18 @@ class VarBox {
   std::vector<Skin> m_Skins;
 
   std::unique_ptr<YJson> LoadJsons();
+  static class QSharedMemory* m_SharedMemory;
 
  private:
   void LoadFonts() const;
   void LoadSkins();
   void MakeDirs();
   void CopyFiles() const;
+  void InitSettings();
+  void CompareJson(class YJson& jsDefault, class YJson& jsUser);
 
   class MsgDlg* m_MsgDlg;
+  class YJson* m_Settings;
 };
 
 #endif

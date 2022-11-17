@@ -11,6 +11,7 @@ class NeoMenu : public QMenu {
   using FuncCheck = std::function<bool()>;
   using FuncItemChecked = std::function<void(int)>;
   using FuncItemCheck = std::function<int()>;
+  using FuncString = std::function<void(std::u8string)>;
 
  private:
   class Shortcut* m_Shortcut;
@@ -18,6 +19,7 @@ class NeoMenu : public QMenu {
   std::map<std::u8string, std::pair<FuncChecked, FuncCheck>> m_FuncCheckMap;
   std::map<std::u8string, std::pair<FuncItemChecked, FuncItemCheck>>
       m_FuncItemCheckMap;
+  std::map<std::u8string, FuncString> m_FuncStingMap;
   std::map<std::u8string, QMenu*> m_ExMenus;
 
   std::map<std::u8string, QActionGroup*> m_ExclusiveGroups;
