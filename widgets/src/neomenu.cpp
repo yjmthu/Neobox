@@ -50,7 +50,6 @@ namespace fs = std::filesystem;
 using namespace std::chrono;
 using namespace std::literals;
 
-QSharedMemory* VarBox::m_SharedMemory = nullptr;
 extern QString QImage2Text(const QImage& qImage);
 
 NeoMenu::NeoMenu(QWidget* parent)
@@ -79,10 +78,7 @@ void NeoMenu::InitFunctionMap() {
                                      L"shutdown", L"-s -t 0", nullptr, 0)},
       {u8"SystemRestart", std::bind(ShellExecuteW, nullptr, L"open",
                                     L"shutdown", L"-r -t 0", nullptr, 0)},
-      {u8"AppQuit", [](){
-        VarBox::GetInstance()->m_SharedMemory->detach();
-        QApplication::quit();
-      }},
+      {u8"AppQuit", QApplication::quit},
       {u8"AppOpenExeDir",
        std::bind(QDesktopServices::openUrl,
                  QUrl::fromLocalFile(qApp->applicationDirPath()))},
@@ -1213,9 +1209,11 @@ void NeoMenu::ShowTrayIcon(bool show)
             if (VarBox::GetSpeedBox()->isVisible()) {
               VarBox::GetSpeedBox()->hide();
               VarBox::GetSettings(u8"FormGlobal")[u8"ShowForm"] = false;
+              VarBox::ShowMsg("隐藏悬浮窗成功！");
             } else {
               VarBox::GetSpeedBox()->show();
               VarBox::GetSettings(u8"FormGlobal")[u8"ShowForm"] = true;
+              VarBox::ShowMsg("显示悬浮窗成功！");
             }
             VarBox::WriteSettings();
             break;

@@ -10,7 +10,7 @@
     "Position": [ 100, 100 ],
     "ShowTrayIcon": true,
     "ColorEffect": 0,
-    "BackgroundColorRgba": [51, 51, 119, 204],
+    "BackgroundColorRgba": [ 51, 51, 119, 204 ],
     "CurSkin": "经典火绒",
     "UserSkins": { }
   },

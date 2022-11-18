@@ -17,7 +17,6 @@
         <file>icons/guanjia_shadow_normal.png</file>
         <file>icons/neobox.ico</file>
         <file>icons/neobox.svg</file>
-        <file>jsons/menucontent.json</file>
         <file>jsons/resources.json</file>
         <file>jsons/setting.json</file>
         <file>scripts/getpic.py</file>

@@ -20,6 +20,8 @@ class VarBox {
 
   std::unique_ptr<YJson> LoadJsons();
   static class QSharedMemory* m_SharedMemory;
+  static void WriteSharedFlag(int flag);
+  static int ReadSharedFlag();
 
  private:
   void LoadFonts() const;

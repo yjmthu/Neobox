@@ -48,6 +48,10 @@ SpeedBox::SpeedBox(QWidget* parent)
   connect(m_Timer, &QTimer::timeout, this, [this]() {
     m_NetSpeedHelper->GetSysInfo();
     UpdateTextContent();
+    if (VarBox::ReadSharedFlag() == 2) {
+      VarBox::WriteSharedFlag(0);
+      Move();
+    }
   });
   m_Timer->start(1000);
 }
@@ -101,6 +105,7 @@ void SpeedBox::SetStyleSheet() {
 
 void SpeedBox::UpdateSkin()
 {
+  m_CentralWidget->hide();
   m_CentralWidget->deleteLater();
   SetBaseLayout();
   UpdateTextContent();
@@ -207,7 +212,7 @@ void SpeedBox::mousePressEvent(QMouseEvent* event) {
   } else if (event->button() == Qt::RightButton) {
     m_MainMenu->popup(pos() + event->pos());
   } else if (event->button() == Qt::MiddleButton) {
-    VarBox::GetInstance()->m_SharedMemory->detach();
+    VarBox::WriteSharedFlag(1);
     QProcess::startDetached(QApplication::applicationFilePath(), QStringList {});
     qApp->quit();
   }

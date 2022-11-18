@@ -54,7 +54,7 @@ bool Wallpaper::DownloadImage(const ImageInfoEx imageInfo) {
       fs::remove(u8FilePath);
     g_UsingFiles.erase(u8FilePath);
     ShowMessage(u8"出错"s, u8"网络异常或文件不能打开！\n文件名："s + u8FilePath +
-                              u8"\n网址："s + imageInfo->ImagePath);
+                              u8"\n网址："s + imageInfo->ImageUrl);
     return false;
   }
 }
