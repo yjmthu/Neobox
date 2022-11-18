@@ -12,7 +12,8 @@
     "ColorEffect": 0,
     "BackgroundColorRgba": [ 51, 51, 119, 204 ],
     "CurSkin": "经典火绒",
-    "UserSkins": { }
+    "UserSkins": { },
+    "NetCardDisabled": []
   },
   "Tools": {
     "Translate.RegisterHotKey": false,

@@ -31,8 +31,7 @@ NetSpeedHelper::NetSpeedHelper()
 #ifdef _WIN32
 
 NetSpeedHelper::~NetSpeedHelper() {
-  HeapFree(GetProcessHeap(), 0, piaa);
-  HeapFree(GetProcessHeap(), 0, mi);
+  HeapFree(GetProcessHeap(), 0, pIfTable);
 }
 
 void NetSpeedHelper::SetMemInfo() {
@@ -45,7 +44,6 @@ void NetSpeedHelper::SetMemInfo() {
 void NetSpeedHelper::SetCpuInfo()
 {
   static bool bFirstCall = true;
-  LARGE_INTEGER;
   static FILETIME preIdleTime { 0 }, preKernelTime { 0 }, preUserTime { 0 };
   static FILETIME idleTime, kernelTime, userTime;
 
@@ -79,54 +77,65 @@ void NetSpeedHelper::SetCpuInfo()
     static_cast<int>(m_CpuUse*100)));
 }
 
-void NetSpeedHelper::SetNetInfo() {
-  static unsigned char iGetAddressTime = 10;
-  static DWORD m_last_in_bytes = 0, m_last_out_bytes = 0;
-
-  if (iGetAddressTime == 10) {
-    DWORD dwIPSize = 0;
-    if (GetAdaptersAddresses(AF_INET, 0, 0, piaa, &dwIPSize) ==
-        ERROR_BUFFER_OVERFLOW) {
-      HeapFree(GetProcessHeap(), 0, piaa);
-      piaa = (PIP_ADAPTER_ADDRESSES)HeapAlloc(GetProcessHeap(),
-                                              HEAP_ZERO_MEMORY, dwIPSize);
-      GetAdaptersAddresses(AF_INET, 0, 0, piaa, &dwIPSize);
-    }
-    iGetAddressTime = 0;
-  } else
-    ++iGetAddressTime;
-
-  DWORD dwMISize = 0;
-  if (GetIfTable(mi, &dwMISize, FALSE) == ERROR_INSUFFICIENT_BUFFER) {
-    dwMISize += sizeof(MIB_IFROW) * 2;
-    HeapFree(GetProcessHeap(), 0, mi);
-    mi = (MIB_IFTABLE*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dwMISize);
-    GetIfTable(mi, &dwMISize, FALSE);
+void NetSpeedHelper::UpdateAdaptersAddresses()
+{
+  PIP_ADAPTER_ADDRESSES piaa = nullptr;  // Network Card
+  DWORD dwIPSize = 0;
+  if (GetAdaptersAddresses(AF_INET, 0, 0, piaa, &dwIPSize) ==
+      ERROR_BUFFER_OVERFLOW) {
+    HeapFree(GetProcessHeap(), 0, piaa);
+    piaa = (PIP_ADAPTER_ADDRESSES)HeapAlloc(GetProcessHeap(),
+                                            HEAP_ZERO_MEMORY, dwIPSize);
+    GetAdaptersAddresses(AF_INET, 0, 0, piaa, &dwIPSize);
   }
-  DWORD m_in_bytes = 0, m_out_bytes = 0;
-  PIP_ADAPTER_ADDRESSES paa = piaa;
-  auto find_fn = [&paa](const MIB_IFROW& item)->bool{
-      return item.dwIndex == paa->IfIndex;
-  };
-  const auto *table_begin = mi->table, *table_end = table_begin + mi->dwNumEntries;
-  while (paa) {
+  m_Adapters.clear();
+  std::string strAdapterName;
+  for (auto paa = piaa; paa; paa = paa->Next) {
     if (paa->IfType == IF_TYPE_SOFTWARE_LOOPBACK ||
         paa->IfType == IF_TYPE_TUNNEL) {
-      paa = paa->Next;
       continue;
     }
-    auto iter = std::find_if(table_begin, table_end, find_fn);
-    if (iter != table_end) {
-      m_in_bytes += iter->dwInOctets;
-      m_out_bytes += iter->dwOutOctets;
-    }
-    paa = paa->Next;
+    strAdapterName = paa->AdapterName;
+    bool enabled = m_AdapterBalckList.find(strAdapterName) == m_AdapterBalckList.end();
+    m_Adapters.push_back(IpAdapter {
+      std::move(strAdapterName),
+      paa->FriendlyName,
+      enabled,
+      paa->IfIndex
+    });
   }
 
-  if (m_last_in_bytes) {
-    FormatSpeed(m_out_bytes - m_last_out_bytes, true);
-    FormatSpeed(m_in_bytes - m_last_in_bytes, false);
+  HeapFree(GetProcessHeap(), 0, piaa);
+}
+
+void NetSpeedHelper::SetNetInfo() {
+  static DWORD m_last_in_bytes = 0, m_last_out_bytes = 0;
+
+  DWORD dwMISize = 0;
+  if (GetIfTable(pIfTable, &dwMISize, FALSE) == ERROR_INSUFFICIENT_BUFFER) {
+    dwMISize += sizeof(MIB_IFROW) * 2;
+    HeapFree(GetProcessHeap(), 0, pIfTable);
+    pIfTable = (MIB_IFTABLE*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dwMISize);
+    GetIfTable(pIfTable, &dwMISize, FALSE);
   }
+  DWORD m_in_bytes = 0, m_out_bytes = 0;
+  const IpAdapter* ptr;
+  auto find_fn = [&ptr](const MIB_IFROW& item)->bool{
+      return ptr->enabled && item.dwIndex == ptr->index;
+  };
+  const auto *table_begin = pIfTable->table, *table_end = table_begin + pIfTable->dwNumEntries;
+  for (const auto& adpt: m_Adapters){
+    // if (!adpt.enabled) continue;
+    ptr = &adpt;               // pass it to find_fn.
+    auto pIfRow = std::find_if(table_begin, table_end, find_fn);
+    if (pIfRow != table_end) {
+      m_in_bytes += pIfRow->dwInOctets;
+      m_out_bytes += pIfRow->dwOutOctets;
+    }
+  }
+  
+  FormatSpeed(m_out_bytes - m_last_out_bytes, true);
+  FormatSpeed(m_in_bytes - m_last_in_bytes, false);
   m_last_out_bytes = m_out_bytes;
   m_last_in_bytes = m_in_bytes;
 }
@@ -189,6 +198,7 @@ void NetSpeedHelper::InitStrings()
   FormatSpeed(0, true);
   FormatSpeed(0, false);
   m_SysInfo[2] = std::vformat(m_StrFmt[2], std::make_format_args(0));
+  UpdateAdaptersAddresses();
 }
 
 void NetSpeedHelper::GetSysInfo() {

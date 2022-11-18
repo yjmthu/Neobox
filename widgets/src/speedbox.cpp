@@ -43,17 +43,7 @@ SpeedBox::SpeedBox(QWidget* parent)
   SetStyleSheet();
   SetHideFullScreen();
   SetBaseLayout();
-  m_NetSpeedHelper->InitStrings();
-  UpdateTextContent();
-  connect(m_Timer, &QTimer::timeout, this, [this]() {
-    m_NetSpeedHelper->GetSysInfo();
-    UpdateTextContent();
-    if (VarBox::ReadSharedFlag() == 2) {
-      VarBox::WriteSharedFlag(0);
-      Move();
-    }
-  });
-  m_Timer->start(1000);
+  InitNetCard();
 }
 
 SpeedBox::~SpeedBox() {
@@ -61,7 +51,7 @@ SpeedBox::~SpeedBox() {
   delete m_NetSpeedHelper;
 }
 
-void SpeedBox::Show() {
+void SpeedBox::InitShow() {
   show();
 
   /*
@@ -81,6 +71,8 @@ void SpeedBox::Show() {
         YJson::A{x(), y()};
     VarBox::WriteSettings();
   });
+
+  UpdateNetCardMenu();
 }
 
 void SpeedBox::SetWindowMode() {
@@ -348,7 +340,7 @@ void SpeedBox::leaveEvent(QEvent* event) {
   event->accept();
 }
 
-void SpeedBox::Move()
+void SpeedBox::InitMove()
 {
   move(100, 100);
   m_HideSide = HideSide::None;
@@ -357,4 +349,74 @@ void SpeedBox::Move()
   if (!isVisible())
     show();
   VarBox::ShowMsg("移动成功！");
+}
+
+
+void SpeedBox::InitNetCard()
+{
+  const auto& blacklistView = 
+    VarBox::GetSettings(u8"FormGlobal")[u8"NetCardDisabled"].getArray() |
+    std::views::transform([](const YJson& item)->const std::u8string&
+      { return item.getValueString(); });
+  for (auto i: blacklistView) {
+    const QByteArray array = QString::fromUtf8(i.data(), i.size()).toLocal8Bit();
+    m_NetSpeedHelper->m_AdapterBalckList.emplace(array.begin(), array.end());
+  }
+
+  m_NetSpeedHelper->InitStrings();
+  UpdateTextContent();
+  connect(m_Timer, &QTimer::timeout, this, [this]() {
+    static int count = 10;
+    if (--count == 0) {
+      m_NetSpeedHelper->UpdateAdaptersAddresses();
+      UpdateNetCardMenu();
+      count = 10;
+    }
+    m_NetSpeedHelper->GetSysInfo();
+    UpdateTextContent();
+    if (VarBox::ReadSharedFlag() == 2) {
+      VarBox::WriteSharedFlag(0);
+      InitMove();
+    }
+  });
+  m_Timer->start(1000);
+}
+
+void SpeedBox::UpdateNetCardMenu()
+{
+  auto menu = m_MainMenu->m_ExMenus[u8"NetCardSelect"];
+  menu->clear();
+  for (const auto& i: m_NetSpeedHelper->m_Adapters) {
+    const QString fName = QString::fromWCharArray(i.friendlyName.data(), i.friendlyName.size());
+    const QString aName = QString::fromLocal8Bit(i.adapterName.data(), i.adapterName.size());
+    auto action = menu->addAction(fName);
+    action->setCheckable(true);
+    action->setChecked(i.enabled);
+    action->setToolTip(aName);
+    action->setProperty("guid", aName);
+    connect(action, &QAction::triggered, this, std::bind(
+      &SpeedBox::UpdateNetCard, this, action, std::placeholders::_1
+    ));
+  }
+}
+
+void SpeedBox::UpdateNetCard(QAction* action, bool checked)
+{
+  const QString data = action->property("guid").toString();
+  QByteArray buffer = data.toLocal8Bit();
+  std::string guid(buffer.cbegin(), buffer.cend());
+  buffer = data.toUtf8();
+  std::u8string name(buffer.cbegin(), buffer.cend());
+
+  if (checked) {
+    VarBox::GetSettings(u8"FormGlobal")[u8"NetCardDisabled"].removeByValA(name);
+    m_NetSpeedHelper->m_AdapterBalckList.erase(guid);
+    VarBox::ShowMsg("添加网卡成功！"); // removed from blacklist
+  } else {
+    VarBox::GetSettings(u8"FormGlobal")[u8"NetCardDisabled"].append(std::move(name));
+    m_NetSpeedHelper->m_AdapterBalckList.emplace(std::move(guid));
+    VarBox::ShowMsg("删除网卡成功！");
+  }
+  m_NetSpeedHelper->UpdateAdaptersAddresses();
+  VarBox::WriteSettings();
 }

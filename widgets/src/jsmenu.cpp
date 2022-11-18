@@ -17,6 +17,11 @@ std::unique_ptr<YJson> GetMenuJson() {
               {u8"function", u8"AppAutoSatrt"},
               {u8"tip", u8"设置软件是否自动开机启动"},
             }},
+            {u8"网卡选择", O {
+              {u8"type", u8"Group"},
+              {u8"name", u8"NetCardSelect"},
+              {u8"children", O { }},
+            }},
             {u8"显示托盘", O {
               {u8"type", u8"Checkable"},
               {u8"function", u8"AppShowTrayIcon"},

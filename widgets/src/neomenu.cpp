@@ -95,7 +95,7 @@ void NeoMenu::InitFunctionMap() {
         }
       },
       {u8"AppMoveToLeftTop",
-        std::bind(&SpeedBox::Move, VarBox::GetSpeedBox())
+        std::bind(&SpeedBox::InitMove, VarBox::GetSpeedBox())
       },
       {u8"AppOpenConfigDir",
        std::bind(QDesktopServices::openUrl,

@@ -20,10 +20,8 @@ class SpeedBox : public QWidget {
 
   class QPropertyAnimation* m_Animation;
   enum class HideSide {
-    Left,
-    Right,
-    Top,
-    Bottom,
+    Left, Right,
+    Top, Bottom,
     None
   } m_HideSide = HideSide::None;
 
@@ -43,8 +41,8 @@ class SpeedBox : public QWidget {
  public:
   explicit SpeedBox(QWidget* parent = nullptr);
   ~SpeedBox();
-  void Show();
-  void Move();
+  void InitShow();
+  void InitMove();
   void UpdateSkin();
 
  private:
@@ -53,6 +51,9 @@ class SpeedBox : public QWidget {
   void UpdateTextContent();
   void SetStyleSheet();
   void SetHideFullScreen();
+  void InitNetCard();
+  void UpdateNetCardMenu();
+  void UpdateNetCard(QAction* action, bool checked);
 };
 
 #endif

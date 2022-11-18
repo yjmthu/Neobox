@@ -29,6 +29,33 @@ extern std::unique_ptr<YJson> GetMenuJson();
 
 QSharedMemory* VarBox::m_SharedMemory = nullptr;
 
+bool VarBox::CreateSharedMemory() {
+  static QSharedMemory qSharedMemory;
+  m_SharedMemory = &qSharedMemory;
+  qSharedMemory.setKey(QStringLiteral("__Neobox__"));
+  if(qSharedMemory.attach()) {
+    /*
+    * 0: already have an instance;
+    * 1: previous app want to restart;
+    * 2: app should go to left top.
+    */
+    if (ReadSharedFlag() == 0) {
+      WriteSharedFlag(2);
+      m_SharedMemory->detach();
+      return false;
+    }
+  } else if (!qSharedMemory.create(sizeof(int))) {
+    return false;
+  }
+  WriteSharedFlag(0);
+  return true;
+}
+
+void VarBox::DetachSharedMemory()
+{
+  m_SharedMemory->detach();
+}
+
 void VarBox::WriteSharedFlag(int flag)
 {
     m_SharedMemory->lock();
