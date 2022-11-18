@@ -226,18 +226,23 @@ std::unique_ptr<YJson> GetMenuJson() {
         }},
       }},
     }},
-    {u8"翻译功能", O {
+    {u8"插件功能", O {
       {u8"type", u8"Group"},
       {u8"children", O {
-        {u8"翻译窗口", O {
+        {u8"极简翻译", O {
           {u8"type", u8"Normal"},
           {u8"function", u8"ToolTransShowDlg"},
           {u8"tip", u8"打开翻译窗口"},
         }},
-        {u8"截图翻译", O {
+        {u8"文字识别", O {
           {u8"type", u8"Normal"},
           {u8"function", u8"ToolOcrGetScreen"},
           {u8"tip", u8"截取屏幕，并将其转化为可复制的文字"},
+        }},
+        {u8"颜色拾取", O {
+          {u8"type", u8"Normal"},
+          {u8"function", u8"ToolColorPick"},
+          {u8"tip", u8"编辑颜色，或者拾取屏幕颜色"},
         }},
       }},
     }},
