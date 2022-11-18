@@ -13,12 +13,13 @@ static bool CreateSharedMemory() {
   qSharedMemory.setKey(QStringLiteral("__Neobox__"));
   if(qSharedMemory.attach()) {
     /*
-    * 0: already have one instance;
-    * 1: app was restarted;
+    * 0: already have an instance;
+    * 1: previous app want to restart;
     * 2: app should go to left top.
     */
     if (VarBox::ReadSharedFlag() == 0) {
       VarBox::WriteSharedFlag(2);
+      VarBox::m_SharedMemory->detach();
       return false;
     }
   } else if (!qSharedMemory.create(sizeof(int))) {
