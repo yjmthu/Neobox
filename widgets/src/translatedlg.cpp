@@ -97,7 +97,7 @@ bool TranslateDlg::eventFilter(QObject* target, QEvent* event) {
           close();
           return true;
         case Qt::Key_Return: {
-          if (bCtrlDown) {
+          if (bCtrlDown || m_Translate->GetDict() == Translate::Dict::Youdao) {
             GetResultData();
             return true;
           }
