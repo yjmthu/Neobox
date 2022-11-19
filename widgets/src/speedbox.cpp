@@ -374,9 +374,12 @@ void SpeedBox::InitNetCard()
     }
     m_NetSpeedHelper->GetSysInfo();
     UpdateTextContent();
-    if (VarBox::ReadSharedFlag() == 2) {
+    const auto flag = VarBox::ReadSharedFlag();
+    if (flag == 2) {
       VarBox::WriteSharedFlag(0);
       InitMove();
+    } else if (flag == 4) {
+      QApplication::quit();
     }
   });
   m_Timer->start(1000);

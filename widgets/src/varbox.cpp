@@ -38,6 +38,7 @@ bool VarBox::CreateSharedMemory() {
     * 0: already have an instance;
     * 1: previous app want to restart;
     * 2: app should go to left top.
+    * 4: app should quit
     */
     if (ReadSharedFlag() == 0) {
       WriteSharedFlag(2);

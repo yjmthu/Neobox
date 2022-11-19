@@ -7,11 +7,11 @@
 #endif
 
 std::u8string get_access_token(const std::string &AK, const std::string &SK) {
-  std::string url = std::format("https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id={}&client_secret={}", AK, SK);
-  std::u8string result;
-  if (HttpLib::Get(url, result) != 200)
-    return result;
-  YJson json(result.begin(), result.end());
+  HttpLib clt(std::format("https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id={}&client_secret={}", AK, SK));
+  auto res = clt.Get();
+  if (res->status != 200)
+    return std::u8string(res->body.begin(), res->body.end());
+  YJson json(res->body.begin(), res->body.end());
   return json[u8"access_token"].getValueString();
 }
 

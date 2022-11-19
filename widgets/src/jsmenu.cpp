@@ -219,6 +219,11 @@ std::unique_ptr<YJson> GetMenuJson() {
           {u8"children", O {
             {u8"关于软件", O {
               {u8"type", u8"Normal"},
+              {u8"function", u8"AppInfo"},
+              {u8"tip", u8"软件详细信息"},
+            }},
+            {u8"Github", O {
+              {u8"type", u8"Normal"},
               {u8"function", u8"AppWbsite"},
               {u8"tip", u8"打开软件网站"},
             }},

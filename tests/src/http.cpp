@@ -1,25 +1,23 @@
 #include <httplib.h>
 #include <fstream>
-#include <xstring>
+#include <string>
+
+using namespace std::literals;
 
 int main() {
-  std::ofstream file(
-      "C:/Users/hacker/Documents/GitHub/Neobox/build/tests/https.txt",
-      std::ios::out | std::ios::binary);
-  std::u8string body;
+  std::ofstream file( "https.txt", std::ios::out | std::ios::binary);
+  HttpLib lib("https://api.github.com/repos/yjmthu/Neobox/releases/latest"s);
 #if 0
     auto res = get.Get("https://wallhaven.cc");
 #else
-  auto res = HttpLib::Get(
-      "https://global.bing.com/"
-      "HPImageArchive.aspx?format=js&idx=0&n=8&mkt=zh-CN",
-      body);
+  lib.SetHeader("User-Agent", "Dark Secret Ninja/1.0");
+  auto res = lib.Get();
 #endif
   if (res) {
-    file.write(reinterpret_cast<const char*>(body.data()), body.size());
+    file.write(res->body.data(), res->body.size());
     file.put('\n');
   } else {
-    file << "No response.\n";
+    file << std::to_string(res->status) << " No response.\n";
   }
   file.close();
   return 0;

@@ -63,12 +63,13 @@ using namespace std::literals;
       return false;
     // https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8
 
-    std::u8string body;
+    HttpLib clt(m_u8strApiUrl + u8"/HPImageArchive.aspx?format=js&idx=0&n=8&mkt="s + m_u8strMft);
+    auto res = clt.Get();
 
-    if (HttpLib::Get(m_u8strApiUrl + u8"/HPImageArchive.aspx?format=js&idx=0&n=8&mkt="s + m_u8strMft, body) != 200)
+    if (res->status != 200)
       return false;
 
-    YJson data(body.begin(), body.end());
+    YJson data(res->body.begin(), res->body.end());
     YJson::swap(m_pSetting->find(u8"images")->second, data[u8"images"]);
     m_pSetting->toFile(m_szSettingPath);
 

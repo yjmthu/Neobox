@@ -1,3 +1,5 @@
+add_requires("libcurl")
+
 target("wallpaper")
   set_kind("static")
   add_files("src/*.cpp")

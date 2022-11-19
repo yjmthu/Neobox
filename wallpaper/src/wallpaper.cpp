@@ -45,8 +45,10 @@ bool Wallpaper::DownloadImage(const ImageInfoEx imageInfo) {
     return false;
   }
   g_UsingFiles.emplace(u8FilePath);
-  int res = HttpLib::Gets(imageInfo->ImageUrl, u8FilePath);
-  if (res == 200) {
+  HttpLib clt(imageInfo->ImageUrl);
+  clt.SetRedirect(1);
+  auto res = clt.Get(u8FilePath);
+  if (res->status == 200) {
     g_UsingFiles.erase(u8FilePath);
     return true;
   } else {

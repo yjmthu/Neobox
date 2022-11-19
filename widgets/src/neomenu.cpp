@@ -8,6 +8,7 @@
 #include <wallpaper.h>
 #include <yjson.h>
 #include <appcode.hpp>
+#include <versiondlg.h>
 
 #include <chrono>
 #include <map>
@@ -133,21 +134,30 @@ void NeoMenu::InitFunctionMap() {
             VarBox::ShowMsg("添加皮肤失败！");
             return;
           }
+          
+          auto menu = m_ExMenus[u8"AppSelectSkin"];
+          auto& object = VarBox::GetSettings(u8"FormGlobal")[u8"UserSkins"];
+          const QByteArray buffer1 = qSkinName.toUtf8();
+          const std::u8string u8SkinName(buffer1.begin(), buffer1.end());
+          for (auto qobj: menu->children()) {
+            if (qobject_cast<QAction*>(qobj)->text() == qSkinName) {
+              VarBox::ShowMsg("请勿输入已经存在的名称！");
+              return;
+            }
+          }
+
           const QString qFilePath = QFileDialog::getOpenFileName(this, "选择文件", ".", "(*.ui)");
           if (qFilePath.isEmpty() || !QFile::exists(qFilePath)) {
             VarBox::ShowMsg("添加皮肤失败！");
             return;
           }
-          QByteArray buffer = qFilePath.toUtf8();
-          const fs::path path = std::u8string(buffer.begin(), buffer.end());
+          const QByteArray buffer2 = qFilePath.toUtf8();
+          const fs::path path = std::u8string(buffer2.begin(), buffer2.end());
           const std::u8string u8FilePath = u8"styles/" + path.filename().u8string();
-          buffer = qSkinName.toUtf8();
-          const std::u8string u8SkinName(buffer.begin(), buffer.end());
-          auto& object = VarBox::GetSettings(u8"FormGlobal")[u8"UserSkins"];
+          
+          
           object.append(u8FilePath, u8SkinName);
           VarBox::WriteSettings();
-
-          auto menu = m_ExMenus[u8"AppSelectSkin"];
 
           if (object.sizeO() == 1)
             menu->addSeparator();
@@ -307,7 +317,16 @@ void NeoMenu::InitFunctionMap() {
           VarBox::ShowMsg("清除壁纸垃圾成功！");
        }},
       {u8"AppWbsite", std::bind(QDesktopServices::openUrl,
-                                QUrl("https://www.github.com/yjmthu/Neobox"))}};
+                                QUrl("https://www.github.com/yjmthu/Neobox"))},
+      {u8"AppInfo", [](){
+          // loop can make the shortcut key still work.
+          QEventLoop loop;
+          VersionDlg dlg;
+          dlg.show();
+          connect(&dlg, &QDialog::finished, &loop, &QEventLoop::quit);
+          loop.exec();
+      }},
+    };
 
   m_FuncCheckMap = {
       {u8"SystemStopSleep",

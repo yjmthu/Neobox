@@ -18,10 +18,11 @@ using namespace std::literals;
  private:
   static bool IsPngFile(std::u8string& str) {
     // if (!Wallpaper::IsOnline()) return false;
-    std::u8string body;
-    if (HttpLib::Get(u8"https://wallhaven.cc/api/v1/w/"s + str, body) != 200)
+    HttpLib clt(u8"https://wallhaven.cc/api/v1/w/"s + str);
+    auto res = clt.Get();
+    if (res->status != 200)
       return false;
-    YJson js(body.begin(), body.end());
+    YJson js(res->body.begin(), res->body.end());
     str = js[u8"data"][u8"path"].getValueString().substr(31);
     return true;
   }
@@ -205,14 +206,16 @@ using namespace std::literals;
     size_t i =
         5 * (m_pSetting->find(u8"PageNumber")->second.getValueInt() - 1) + 1;
     const std::string url(m_u8strImageUrl.begin(), m_u8strImageUrl.end());
+    HttpLib *clt = nullptr;
     if (m_u8strImageUrl.substr(20, 4) == u8"/api") {
       for (size_t n = i + 5; i < n; ++i) {
-        std::u8string body;
-        int res = HttpLib::Get(
-            (i == 1 ? url : url + "&page=" + std::to_string(i)), body);
-        if (res != 200)
+        auto curUrl = (i == 1 ? url : url + "&page=" + std::to_string(i));
+        if (!clt) clt = new HttpLib(std::move(curUrl));
+        else clt->SetUrl(std::move(curUrl));
+        auto res = clt->Get();
+        if (res->status != 200)
           break;
-        YJson root(body.begin(), body.end());
+        YJson root(res->body.begin(), res->body.end());
         YJson& data = root[u8"data"sv];
         for (auto& i : data.getArray()) {
           std::u8string name =
@@ -231,14 +234,14 @@ using namespace std::literals;
       };
       std::cregex_iterator end;
       for (size_t n = i + 5; i < n; ++i) {
-        std::u8string body;
-        auto res = HttpLib::Get(
-            (i == 1 ? url : url + "&page=" + std::to_string(i)), body);
-        if (res != 200)
+        auto curUrl = (i == 1 ? url : url + "&page=" + std::to_string(i));
+        if (!clt) clt = new HttpLib(std::move(curUrl));
+        else clt->SetUrl(std::move(curUrl));
+        auto res = clt->Get();
+        if (res->status != 200)
           break;
-        std::cregex_iterator iter(
-            reinterpret_cast<const char*>(body.data()),
-            reinterpret_cast<const char*>(body.data()) + body.size(), pattern);
+        std::string_view body = res->body;
+        std::cregex_iterator iter(body.data(), body.data() + body.size(), pattern);
         while (iter != end) {
           const auto& i_ = iter->str(1);
           std::u8string_view i(reinterpret_cast<const char8_t*>(i_.data()),

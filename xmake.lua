@@ -1,5 +1,8 @@
 set_languages("c++20")
 
+set_project("Neobox")
+set_version("2.0.1", {build = "%Y%m%d%H%M"})
+
 if is_plat("windows") then
   add_defines("UNICODE", "_UNICODE")
   add_cxflags("/utf-8")
