@@ -579,7 +579,7 @@ void NeoMenu::InitFunctionMap() {
 
       menu = m_ExMenus[u8"AppRemoveSkin"];
       menu->clear();
-      for (const auto& [key, val]: VarBox::GetInstance()->m_Skins) {
+      for (const auto& [key, _]: VarBox::GetSettings(u8"FormGlobal")[u8"UserSkins"].getObject()) {
         if (name == key) continue;
         auto action = menu->addAction(QString::fromUtf8(key.data(), key.size()));
         connect(action, &QAction::triggered, this, std::bind(m_FuncStingMap[u8"AppRemoveSkin"], name));
@@ -596,10 +596,10 @@ void NeoMenu::InitFunctionMap() {
       auto menu = m_ExMenus[u8"AppSelectSkin"];
       const auto rmItem = [&qname](QMenu* menu) {
         const auto& lst = menu->children();
-        QAction* action1 = qobject_cast<QAction*>(*std::find_if(lst.cbegin(), lst.cend(), [&qname](const QObject* item){
+        QAction* action = qobject_cast<QAction*>(*std::find_if(lst.cbegin(), lst.cend(), [&qname](const QObject* item){
           return qobject_cast<const QAction*>(item)->text() == qname;
         }));
-        menu->removeAction(action1);
+        menu->removeAction(action);
       };
       rmItem(menu);
       
