@@ -6,6 +6,7 @@
 
 #include <format>
 #include <vector>
+#include <ranges>
 
 #include <QFile>
 #include <QMessageBox>
@@ -105,33 +106,31 @@ void VersionDlg::GetUpdate()
   }
 
   m_btnChk->setEnabled(false);
-  QString html = m_text->text();
+  QString qhtml = m_text->text();
   const YJson jsAboutNew(res->body.begin(), res->body.end());
-  std::u8string head(u8"<h2>最新版本</h2><p style='color: #FF00FF;'>");
-  head.append(jsAboutNew[u8"name"].getValueString());
-  html += QString::fromUtf8(head.data(), head.size());
+  std::u8string buffer(u8"<h2>最新版本</h2><p style='color: #FF00FF;'>");
+  buffer.append(jsAboutNew[u8"name"].getValueString());
 
-  std::u8string_view createDate = jsAboutNew[u8"created_at"].getValueString();
-  html += QString("<br>发布日期：%1</p>").arg(QString::fromUtf8(createDate.data(), 10));
+  const std::u8string& createDate = jsAboutNew[u8"created_at"].getValueString();
 
-  html += QStringLiteral("<h3>发行说明</h3>");
-  std::u8string_view body = jsAboutNew[u8"body"].getValueString();
-  html += QString::fromUtf8(body.data(), body.size()) + "\n";
-  
+  buffer += u8"<br>发布日期：" + createDate.substr(0, 10) + u8"</p><h3>发行说明</h3>";
+  auto html_view = jsAboutNew[u8"body"].getValueString() | std::ranges::views::filter([](char c){return c != '\n' && c != '\r';});
+  buffer.append(html_view.begin(), html_view.end());
+
   auto& array = jsAboutNew[u8"assets"].getArray();
   if (!array.empty()) {
-    html += QStringLiteral("<h3>下载链接：</h3><ol>");
+    buffer.append(u8"<h3>下载链接：</h3><ol>");
     for (auto& item: array)
     {
       auto& name = item[u8"name"].getValueString();
       auto& url = item[u8"browser_download_url"].getValueString();
-      const auto data = u8"<li><a href='" + url + u8"'>" + name + u8"</a></li>";
-      html += QString::fromUtf8(data.data(), data.size());
+      buffer += u8"<li><a href='" + url + u8"'>" + name + u8"</a></li>";
     }
-    html.push_back("</ol>");
+    buffer.append(u8"</ol>");
   }
 
-  m_text->setText(html);
+  qhtml += QString::fromUtf8(buffer.data(), buffer.size());
+  m_text->setText(qhtml);
 }
 
 void VersionDlg::showEvent(QShowEvent *event)

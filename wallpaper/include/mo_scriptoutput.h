@@ -57,7 +57,7 @@ using namespace std::literals;
     }
 #ifdef _WIN32
     std::vector<std::wstring> result;
-    std::wstring wcmd = Utf82WideString(GetCommandWithArg());
+    const std::wstring wcmd = Utf82WideString(GetCommandWithArg());
     GetCmdOutput(wcmd.c_str(), result);
     if (result.empty()) {
       ptr->ErrorMsg = u8"Invalid command to get wallpaper path."s;
@@ -77,6 +77,16 @@ using namespace std::literals;
 #endif
     if (str.empty()) {
       ptr->ErrorMsg = u8"Run command with wrong output."s;
+      ptr->ErrorCode = ImageInfo::RunErr;
+      return ptr;
+    }
+    if (!fs::exists(str)) {
+      auto wErMsg = std::accumulate(result.begin(), result.end(),
+        L"程序运行输出不匹配，请确保输出图片路径！\n"s,
+        [](const std::wstring& a, const std::wstring& b){
+          return a + L'\n' + b;
+        });
+      ptr->ErrorMsg = Wide2Utf8String(wErMsg);
       ptr->ErrorCode = ImageInfo::RunErr;
       return ptr;
     }
