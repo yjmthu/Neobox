@@ -1250,3 +1250,4 @@ void NeoMenu::ShowTrayIcon(bool show)
     pSystemTray = nullptr;
   }
 }
+

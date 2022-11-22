@@ -38,6 +38,7 @@ public:
     m_Headers[key] = value;
   }
   void SetRedirect(long redirect);
+  void SetPostData(const void* data, size_t size);
   Response* Get();
   Response* Get(const std::filesystem::path& path);
 private:

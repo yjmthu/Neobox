@@ -5,18 +5,21 @@ set(CMAKE_CXX_STANDARD 20)
 
 project(Neobox VERSION 2.0.1 LANGUAGES CXX C)
 
-set(VCPKG_ROOT "${CMAKE_SOURCE_DIR}/../vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE PATH "build")
 list(APPEND CMAKE_PREFIX_PATH "C:/Qt/6.4.1/msvc2019_64")
 
 add_definitions(-DUNICODE -D_UNICODE)
 add_compile_options("/utf-8")
 
 set(CMAKE_INSTALL_PREFIX "install")
-set(VCPKG_TARGET_TRIPLET "x86-windows-static")
-set(CMAKE_TOOLCHAIN_FILE ${VCPKG_ROOT})
-
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+if(MSVC)
+  add_compile_options(
+    $<$<CONFIG:>:/MT> #---------|
+    $<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
+    $<$<CONFIG:Release>:/MT> #--|
+  )
+endif()
 
 file(GLOB project_includes */include)
 file(GLOB thrd_includes 3rdlib/*/include)
@@ -42,4 +45,3 @@ install(TARGETS Neobox
   RUNTIME DESTINATION bin
   PUBLIC_HEADER DESTINATION include
 )
-

@@ -1,10 +1,10 @@
 #include <yjson.h>
-#include <memory>
+#include <varbox.h>
 
 #define O YJson::O
 #define A YJson::A
 
-std::unique_ptr<YJson> GetMenuJson() {
+std::unique_ptr<YJson> VarBox::GetMenuJson() {
   return std::unique_ptr<YJson>{ new YJson{ O {
     {u8"设置中心", O {
       {u8"type", u8"Group"},

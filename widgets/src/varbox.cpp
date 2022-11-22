@@ -257,3 +257,4 @@ void VarBox::ShowMsg(const QString &text)
   GetInstance()->m_MsgDlg->ShowMessage(text);
 }
 
+#include <jsmenu.h>

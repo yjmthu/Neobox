@@ -5,7 +5,6 @@ file(GLOB sources src/*.cpp)
 add_library(core STATIC ${sources})
 
 if(WIN32)
-    target_link_libraries(core PRIVATE
-        Iphlpapi
-    )
+  target_link_libraries(core PRIVATE Iphlpapi)
 endif()
+

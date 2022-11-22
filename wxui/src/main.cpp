@@ -29,7 +29,7 @@ enum
     ID_Hello = 1
 };
  
-wxIMPLEMENT_APP(MyApp);
+// wxIMPLEMENT_APP(MyApp);
  
 bool MyApp::OnInit()
 {
@@ -79,3 +79,12 @@ void MyFrame::OnHello(wxCommandEvent& event)
 {
     wxLogMessage("Hello world from wxWidgets!");
 }
+
+int main(int argc,char** argv)
+{
+    wxApp* pApp = new MyApp();
+    wxApp::SetInstance(pApp);
+    wxEntry(argc, argv);
+     return 0;
+}
+

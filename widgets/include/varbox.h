@@ -32,6 +32,7 @@ class VarBox {
   void CopyFiles() const;
   void InitSettings();
   void CompareJson(class YJson& jsDefault, class YJson& jsUser);
+  static std::unique_ptr<YJson> GetMenuJson();
 
   static class QSharedMemory* m_SharedMemory;
   class MsgDlg* m_MsgDlg;

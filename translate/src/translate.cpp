@@ -1,14 +1,13 @@
 #include <translate.h>
 #include <yjson.h>
-
-#include <curl/curl.h>
-#include <curl/easy.h>
-#include <openssl/sha.h>
+#include <httplib.h>
+#include <sha256.h>
 
 #include <chrono>
 #include <format>
 #include <random>
 
+using namespace std::literals;
 inline std::u8string GetTimeStamp() {
   using namespace std::chrono;
   const auto ms =
@@ -26,16 +25,11 @@ inline std::u8string Truncate(std::u8string q) {
 }
 
 inline std::u8string Sha256(const std::u8string& str) {
-  char buffer[4]{0};
-  byte digest[SHA256_DIGEST_LENGTH];
-  std::u8string result;
-  result.reserve(SHA256_DIGEST_LENGTH << 1);
-  SHA256(reinterpret_cast<const byte*>(str.data()), str.size(),
-         reinterpret_cast<byte*>(&digest));
-  std::for_each_n(digest, SHA256_DIGEST_LENGTH, [&](uint8_t c) {
-    std::format_to_n(buffer, 4, "{:02x}", c);
-    result.append(reinterpret_cast<const char8_t*>(buffer), 2);
-  });
+		SHA256 sha;
+		sha.update(str);
+		uint8_t * digest = sha.digest();
+		auto result =  SHA256::toString<char8_t>(digest);
+		delete[] digest;
   return result;
 }
 
@@ -116,70 +110,40 @@ void Translate::SetDict(Dict dict) {
   m_LanPair = {0, 0};
 }
 
-size_t WriteMemoryCallback(void* ptr, size_t size, size_t nmemb, void* data) {
-  auto buffer = reinterpret_cast<std::u8string*>(data);
-  auto first = reinterpret_cast<const char8_t*>(ptr),
-       last = first + (size *= nmemb);
-  buffer->append(first, last);
-  return size;
-}
-
 std::u8string Translate::GetResultBaidu(const std::u8string& text) {
   static YJson jsData(
       YJson::O{{u8"from", u8"auto"}, {u8"to", u8"zh"}, {u8"q", YJson::String}});
 
-  CURL* pCurl = curl_easy_init();
-  curl_slist* pList = nullptr;
-  std::u8string response;
   jsData[u8"from"] = m_LanNamesBaidu[m_LanPair.first].first;
   jsData[u8"to"] =
       m_LanNamesBaidu[m_LanPair.first].second[m_LanPair.second];
   jsData[u8"q"] = text;
 
-  pList =
-      curl_slist_append(pList, "Content-Type:application/json;charset=utf-8");
-  curl_easy_setopt(pCurl, CURLOPT_HTTPHEADER, pList);
-
-  curl_easy_setopt(pCurl, CURLOPT_URL,
-                   "https://aip.baidubce.com/rpc/2.0/mt/texttrans/v1?"
-                   "access_token=24.e722d8c3c3090cda4645507c8d1c06ba.2592000.1669883009.282335-27415445");
-  curl_easy_setopt(pCurl, CURLOPT_HEADER, 0L);
-  // curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 1L);
-  curl_easy_setopt(pCurl, CURLOPT_NOSIGNAL, 1L);
-  curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, &response);
-  curl_easy_setopt(pCurl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
-
   std::u8string strJsonData = jsData.toString(false);
-  curl_easy_setopt(pCurl, CURLOPT_POST, 1L);
-  curl_easy_setopt(pCurl, CURLOPT_POSTFIELDS, strJsonData.data());
-  curl_easy_setopt(pCurl, CURLOPT_POSTFIELDSIZE, strJsonData.size());
+  HttpLib clt("https://aip.baidubce.com/rpc/2.0/mt/texttrans/v1?"
+                   "access_token=24.e722d8c3c3090cda4645507c8d1c06ba.2592000.1669883009.282335-27415445"s);
+  clt.SetHeader("Content-Type", "application/json;charset=utf-8");
+  clt.SetPostData(strJsonData.data(), strJsonData.size());
 
-  auto res = curl_easy_perform(pCurl);
-  long lResCode = 0;
-  res = curl_easy_getinfo(pCurl, CURLINFO_RESPONSE_CODE, &lResCode);
-  if ((res == CURLE_OK) && (lResCode == 200 || lResCode == 201)) {
-    YJson jsData(response.begin(), response.end());
-    response.clear();
+  auto res = clt.Get();
+
+  if (res->status == 200 || res->status == 201) {
+    YJson jsData(res->body.begin(), res->body.end());
     if (auto iter = jsData.find(u8"error_msg"); iter != jsData.endO()) {
       // Access token expired
-      response = iter->second.getValueString();
-      goto clean;
+      return iter->second.getValueString();
     }
     const auto& obTransResult =
         jsData[u8"result"][u8"trans_result"].getArray();
-    for (auto& item : obTransResult) {
-      response.append(item[u8"dst"].getValueString());
-      response.push_back('\n');
-    }
-  } else {
-    response.clear();
-  }
-clean:
-  curl_slist_free_all(pList);
-  curl_easy_cleanup(pCurl);
-  curl_global_cleanup();
 
-  return response;
+    std::u8string content;
+    for (auto& item : obTransResult) {
+      content.append(item[u8"dst"].getValueString());
+      content.push_back('\n');
+    }
+    return content;
+  }
+  return std::u8string();
 }
 
 std::u8string Translate::GetResultYoudao(const std::u8string& text) {
@@ -195,10 +159,6 @@ std::u8string Translate::GetResultYoudao(const std::u8string& text) {
                                  {u8"salt"sv, YJson::Null},
                                  {u8"sign"sv, YJson::Null}});
 
-  CURL* pCurl = curl_easy_init();
-  curl_slist* pList = nullptr;
-  std::u8string response;
-
   m_scJson[u8"from"] = m_LanNamesYoudao[m_LanPair.first].first;
   m_scJson[u8"to"] =
       m_LanNamesYoudao[m_LanPair.first].second[m_LanPair.second];
@@ -212,40 +172,20 @@ std::u8string Translate::GetResultYoudao(const std::u8string& text) {
   m_scJson[u8"sign"] =
       Sha256(APP_KEY + Truncate(text) + salt + curtime + APP_SECRET);
 
-  std::u8string&& url = m_scJson.urlEncode(u8"http://openapi.youdao.com/api/?");
-  url.push_back(u8'\0');
+  HttpLib clt(m_scJson.urlEncode(u8"http://openapi.youdao.com/api/?"));
+  clt.SetHeader("Content-Type", "application/x-www-form-urlencoded");
 
-  pList = curl_slist_append(pList,
-                            "Content-Type:application/x-www-form-urlencoded");
-  curl_easy_setopt(pCurl, CURLOPT_HTTPHEADER, pList);
-
-  curl_easy_setopt(pCurl, CURLOPT_URL, url.data());
-  curl_easy_setopt(pCurl, CURLOPT_HEADER, 0L);
-  // curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 1L);
-  curl_easy_setopt(pCurl, CURLOPT_NOSIGNAL, 1L);
-  curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, &response);
-  curl_easy_setopt(pCurl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
-
-  auto res = curl_easy_perform(pCurl);
-  long lResCode = 0;
-  res = curl_easy_getinfo(pCurl, CURLINFO_RESPONSE_CODE, &lResCode);
-  if ((res == CURLE_OK) && (lResCode == 200 || lResCode == 201)) {
-    YJson jsData(response.begin(), response.end());
-    response.clear();
+  std::u8string content;
+  auto res = clt.Get();
+  if (res->status == 200 || res->status == 201) {
+    YJson jsData(res->body.begin(), res->body.end());
     if (jsData[u8"errorCode"].getValueString() != u8"0") {
-      response = jsData[u8"errorCode"].getValueString();
-      goto clean;
+      return jsData[u8"errorCode"].getValueString();
     }
-    FormatYoudaoResult(response, jsData);
-  } else {
-    response.clear();
+    FormatYoudaoResult(content, jsData);
+    return content;
   }
-clean:
-  curl_slist_free_all(pList);
-  curl_easy_cleanup(pCurl);
-  curl_global_cleanup();
-
-  return response;
+  return content;
 }
 
 std::u8string Translate::GetResult(const std::u8string& text) {

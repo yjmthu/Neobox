@@ -4,4 +4,4 @@ file(GLOB sources src/*.cpp)
 
 add_library(wallpaper STATIC ${sources})
 
-target_link_libraries(wallpaper network yjson core)
+target_link_libraries(wallpaper PRIVATE network yjson core)

@@ -18,7 +18,7 @@
 #include <QVBoxLayout>
 #include <QDesktopServices>
 
-namespace GetDateTime {
+namespace NeoGetDateTime {
   template<const char* _Str, int _Index>
   struct Month {
     static constexpr int Value() {
@@ -78,7 +78,7 @@ void VersionDlg::LoadJson()
 {
   const auto name = std::format("<h2>当前版本</h2>Neobox {}.{} {} <br> 发布日期：{:04d}-{:02d}-{:02d}<br>",
     NEOBOX_VERSION_MAJOR, NEOBOX_VERSION_MINOR, NEOBOX_BETA,
-    GetDateTime::YearValue, GetDateTime::MonthValue, GetDateTime::DateValue);
+    NeoGetDateTime::YearValue, NeoGetDateTime::MonthValue, NeoGetDateTime::DateValue);
   m_text->setText(QString::fromUtf8(name.data(), name.size()) + NEOBOX_COPYRIGHT);
 }
 

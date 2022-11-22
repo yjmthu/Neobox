@@ -70,12 +70,20 @@ void HttpLib::CurlInit()
   curl_easy_setopt(m_Curl, CURLOPT_SSL_VERIFYPEER, false);
   curl_easy_setopt(m_Curl, CURLOPT_SSL_VERIFYHOST, false);
   curl_easy_setopt(m_Curl, CURLOPT_READFUNCTION, NULL);
-  curl_easy_setopt(m_Curl, CURLOPT_NOSIGNAL, 1);
+  curl_easy_setopt(m_Curl, CURLOPT_NOSIGNAL, 1L);
+  curl_easy_setopt(m_Curl, CURLOPT_POST, 0L);
 }
 
 void HttpLib::SetRedirect(long redirect)
 {
   curl_easy_setopt(m_Curl, CURLOPT_FOLLOWLOCATION, redirect);
+}
+
+void HttpLib::SetPostData(const void *data, size_t size)
+{
+  curl_easy_setopt(m_Curl, CURLOPT_POST, 1L);
+  curl_easy_setopt(m_Curl, CURLOPT_POSTFIELDS, data);
+  curl_easy_setopt(m_Curl, CURLOPT_POSTFIELDSIZE, size);
 }
 
 void HttpLib::CurlPerform()
