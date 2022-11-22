@@ -13,13 +13,13 @@ add_compile_options("/utf-8")
 set(CMAKE_INSTALL_PREFIX "install")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-if(MSVC)
-  add_compile_options(
-    $<$<CONFIG:>:/MT> #---------|
-    $<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
-    $<$<CONFIG:Release>:/MT> #--|
-  )
-endif()
+# if(MSVC)
+#   add_compile_options(
+#     $<$<CONFIG:>:/MT> #---------|
+#     $<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
+#     $<$<CONFIG:Release>:/MT> #--|
+#   )
+# endif()
 
 file(GLOB project_includes */include)
 file(GLOB thrd_includes 3rdlib/*/include)
