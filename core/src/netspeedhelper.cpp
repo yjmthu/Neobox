@@ -14,14 +14,14 @@
 void NetSpeedHelper::FormatSpeed(uint64_t bytes, bool upload) {
   // https://unicode-table.com/en/2192/
   static constexpr auto units = "BKMGTP";
-  const char *first = units, *last = first + 6;
+  const char *u = units;
   uint64_t size = 1;
   bytes &= (1ull << 50) - 1;
   while ((bytes >> 10) >= size) {
     size <<= 10;
-    ++first;
+    ++u;
   }
-  m_SysInfo[upload ? 0 : 1] = std::vformat(m_StrFmt[upload ? 0 : 1], std::make_format_args(static_cast<float>(bytes) / size, *first));
+  m_SysInfo[upload ? 0 : 1] = std::vformat(m_StrFmt[upload ? 0 : 1], std::make_format_args(static_cast<float>(bytes) / size, *u));
 }
 
 NetSpeedHelper::NetSpeedHelper()
@@ -37,7 +37,7 @@ NetSpeedHelper::~NetSpeedHelper() {
 void NetSpeedHelper::SetMemInfo() {
   static MEMORYSTATUS ms;
   GlobalMemoryStatus(&ms);
-  m_MemUse = ms.dwMemoryLoad / 100.0;
+  m_MemUse = ms.dwMemoryLoad / 100.0f;
   m_SysInfo[2] = std::vformat(m_StrFmt[2], std::make_format_args(ms.dwMemoryLoad));
 }
 

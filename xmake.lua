@@ -1,4 +1,4 @@
-set_languages("c++20")
+set_languages("c11", "c++20")
 
 set_project("Neobox")
 set_version("2.0.1", {build = "%Y%m%d%H%M"})

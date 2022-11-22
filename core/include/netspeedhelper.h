@@ -31,7 +31,7 @@ class NetSpeedHelper {
   std::vector<IpAdapter> m_Adapters;
   std::array<std::string, 4> m_StrFmt;      // UTF8
   std::array<std::string, 4> m_SysInfo;     // UTF8
-  float m_CpuUse, m_MemUse;
+  float m_MemUse, m_CpuUse;
   void ClearData();
   void InitStrings();
 

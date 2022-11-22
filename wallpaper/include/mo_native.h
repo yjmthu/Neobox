@@ -52,7 +52,7 @@ using namespace std::literals;
       std::set<size_t> already;
       std::mt19937 g(std::random_device{}());
       auto pf = std::uniform_int_distribution<size_t>(0, m_Toltal - 1);
-      for (int i = 0; i < m_uMaxCount; ++i) {
+      for (uint32_t i = 0; i < m_uMaxCount; ++i) {
         auto temp = pf(g);
         while (already.find(temp) != already.end())
           temp = pf(g);
