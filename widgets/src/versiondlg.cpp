@@ -1,7 +1,6 @@
 #include <versiondlg.h>
 #include <yjson.h>
 #include <httplib.h>
-#include <varbox.h>
 #include <config.h>
 
 #include <format>
@@ -49,6 +48,7 @@ VersionDlg::VersionDlg():
   QDialog(nullptr)
 {
   setWindowTitle("关于 Neobox");
+  setAttribute(Qt::WA_DeleteOnClose, true);
   QVBoxLayout* layout1 = new QVBoxLayout(this);
   setContentsMargins(9, 9, 9, 9);
   m_text = new QLabel(this);

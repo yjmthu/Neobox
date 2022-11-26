@@ -1,0 +1,31 @@
+{
+    "Plugins": {
+        "neospeedboxplg": true,
+        "neotranslateplg": true,
+        "neoocrplg": true
+    },
+    "KeyMap": {
+        "neotranslateplg": [
+            "toggleVisibility",
+            0,
+            [
+                "Shift",
+                "Z"
+            ]
+        ],
+        "neoocrplg": [
+            "screenfetch",
+            0,
+            [
+                true,
+                "Shift",
+                "A"
+            ]
+        ]
+    },
+    "PluginsConfig": {
+        "neospeedboxplg": null,
+        "neotranslateplg": null,
+        "neoocrplg": null
+    }
+}

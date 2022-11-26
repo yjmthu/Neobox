@@ -16,20 +16,19 @@ foreach(full_filepath ${_resource_files})
   list(APPEND resource_files ${file_path})
 endforeach()
 
-add_executable(Neobox WIN32 ${source_files} logo.rc)
+add_library(neobox_core STATIC ${source_files})
 
-qt_add_resources(Neobox "all"
-    PREFIX "/"
-    FILES ${resource_files}
+qt_add_resources(neobox_core "neobox"
+  PREFIX "/"
+  FILES ${resource_files}
 )
 
 set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Svg Qt6::UiTools)
 set(ocr_libfiles leptonica Tesseract::libtesseract)
-set(project_libfiles wallpaper translate network core yjson)
+set(project_libfiles network pluginmgr core yjson)
 
-target_link_libraries(Neobox PRIVATE
+target_link_libraries(neobox_core PRIVATE
   ${ocr_libfiles}
   ${project_libfiles}
   ${qt_shared_files}
 )
-

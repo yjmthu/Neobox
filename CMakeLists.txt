@@ -21,7 +21,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 #   )
 # endif()
 
-file(GLOB project_includes */include)
+link_directories(build/pluginmgr)
+file(GLOB project_includes */include */*/include)
 file(GLOB thrd_includes 3rdlib/*/include)
 file(GLOB project_subdirs */CMakeLists.txt)
 foreach(item ${project_includes})
@@ -37,9 +38,15 @@ foreach(item ${project_subdirs})
   add_subdirectory(${subdir})
 endforeach()
 
-add_executable(hi hello.cpp)
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
+add_executable(neobox WIN32 main.cpp logo.rc)
 
-install(TARGETS Neobox
+target_link_libraries(neobox PRIVATE
+  neobox_core
+  Qt6::Widgets
+)
+
+install(TARGETS neobox
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin

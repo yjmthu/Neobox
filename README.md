@@ -40,18 +40,21 @@
 
 ## 开发进度
 
-1. 完善和修复壁纸设置功能；
-2. 完善自定义皮肤功能，考虑使用Lua语言来编写动画；
-3. 除bug和少部分功能外，Qt部分代码不再进行大的改动；
+1. 插件化所有模块，目前已经做到各个插件编译成功，但运行会有错误；
+2. 一定程度上重构壁纸功能；
+3. 完善自定义皮肤功能，考虑使用Lua语言来编写动画；
 4. 逐步增加wxWidgets部分的代码，最终取代qt。
 
 ## 编译环境
 
+> 由于经过重构，目前代码不太成熟，编译后不一定能正常运行。
+
 1. Windows x86_64
-    - xmake
-    - MSVC2022
-    - Qt6（最新版本）
-    - [YJson](https://github.com/yjmthu/YJson)
+    - <del>xmake+xrepo</del> **CMake+Vcpkg**
+    - MSVC 2022
+    - Qt 6.4.1（最新版本）
+    - vcpkg (libcurl, leptonica, tesseract)
+    - json库 [YJson](https://github.com/yjmthu/YJson)
 2. Linux
     - 更换系统后未曾尝试编译（待 GCC13 发布稳定后再考虑写linux部分代码）
 
