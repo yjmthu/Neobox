@@ -6,6 +6,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <list>
 #include <functional>
 
 class PluginObject {
@@ -40,9 +41,9 @@ protected:
   FunctionMapBool m_FunctionMapBool;
   class YJson& m_Settings;
   const PlugInfo m_PlugInfo;
-  std::vector<const FollowerFunction*> m_Followers;
-  std::vector<std::u8string> m_Following;
 public:
+  std::list<std::pair<std::u8string, FollowerFunction>> m_Following;
+  std::vector<const FollowerFunction*> m_Followers;
   virtual void InitMenuAction(class QMenu* pluginMenu);
   static std::u8string QString2Utf8(const class QString& str);
   static QString Utf82QString(const std::u8string& str);

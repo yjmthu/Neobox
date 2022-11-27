@@ -33,9 +33,10 @@
 extern PluginMgr* mgr;
 extern GlbObject* glb;
 
-SpeedBox::SpeedBox(YJson& settings, QMenu* netcardMenu)
+SpeedBox::SpeedBox(PluginObject* plugin, YJson& settings, QMenu* netcardMenu)
     : QWidget(glb->glbGetMenu(),
               Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool),
+    m_PluginObject(plugin),
     m_Settings(settings),
     m_NetCardMenu(*netcardMenu),
     m_NetSpeedHelper(new NetSpeedHelper),
@@ -186,9 +187,9 @@ void SpeedBox::SetHideFullScreen() {
 void SpeedBox::mouseMoveEvent(QMouseEvent* event) {
   if (event->buttons() == Qt::LeftButton) {
     move(pos() + event->pos() - m_ConstPos);
-    // if (m_MainMenu->m_TranslateDlg->isVisible()) {
-    //   m_MainMenu->m_TranslateDlg->hide();
-    // }
+    for (const auto& fun: m_PluginObject->m_Followers) {
+      fun->operator()(PluginEvent::MouseMove, event);
+    }
   }
 }
 
@@ -215,11 +216,9 @@ void SpeedBox::mouseReleaseEvent(QMouseEvent* event) {
 }
 
 void SpeedBox::mouseDoubleClickEvent(QMouseEvent* event) {
-  // if (m_MainMenu->m_TranslateDlg->isVisible()) {
-  //   m_MainMenu->m_TranslateDlg->hide();
-  // } else {
-  //   m_MainMenu->m_TranslateDlg->Show(frameGeometry());
-  // }
+  for (auto const fun: m_PluginObject->m_Followers) {
+    fun->operator()(PluginEvent::MouseDoubleClick, event);
+  }
   event->accept();
 }
 
@@ -319,16 +318,17 @@ void SpeedBox::leaveEvent(QEvent* event) {
   auto rtScreen = QGuiApplication::primaryScreen()->geometry();
   auto rtForm = this->frameGeometry();
   m_Animation->setStartValue(rtForm);
-  if (rtForm.right() + delta >= rtScreen.right()) {
+  auto const hideBits = m_Settings[u8"HideAside"].getValueInt();
+  if ((HideSide::Right & hideBits) && rtForm.right() + delta >= rtScreen.right()) {
     m_HideSide = HideSide::Right;
     rtForm.moveTo(rtScreen.right() - delta, rtForm.y());
-  } else if (rtForm.left() - delta <= rtScreen.left()) {
+  } else if ((HideSide::Left & hideBits)  && rtForm.left() - delta <= rtScreen.left()) {
     m_HideSide = HideSide::Left;
     rtForm.moveTo(delta - rtForm.width(), rtForm.y());
-  } else if (rtForm.top() - delta <= rtScreen.top()) {
+  } else if ((HideSide::Top & hideBits) && rtForm.top() - delta <= rtScreen.top()) {
     m_HideSide = HideSide::Top;
     rtForm.moveTo(rtForm.x(), delta - rtForm.height());
-  } else if (rtForm.bottom() + delta >= rtScreen.bottom()) {
+  } else if ((HideSide::Bottom & hideBits) && rtForm.bottom() + delta >= rtScreen.bottom()) {
     m_HideSide = HideSide::Bottom;
     rtForm.moveTo(rtForm.x(), rtScreen.bottom() - delta);
   } else {

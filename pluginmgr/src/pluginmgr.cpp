@@ -48,6 +48,7 @@ PluginMgr::PluginMgr(GlbObject* glb, QMenu* pluginMainMenu):
     }};
   }
   LoadPlugins();
+  InitBroadcast();
 }
 
 PluginMgr::~PluginMgr()
@@ -110,4 +111,15 @@ void PluginMgr::FreePlugin(PluginObject* plugin)
   auto& hdll = m_PluginPath[plugin];
   FreeLibrary(reinterpret_cast<HINSTANCE>(hdll));
   hdll = nullptr;
+}
+
+void PluginMgr::InitBroadcast()
+{
+  for (auto& [name, plugin]: m_Plugins) {
+    for (const auto& [idol, fun]: plugin->m_Following) {
+      auto iter = m_Plugins.find(idol);
+      if (iter == m_Plugins.end()) continue;
+      iter->second->m_Followers.push_back(&fun);
+    }
+  }
 }

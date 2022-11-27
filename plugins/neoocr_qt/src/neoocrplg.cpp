@@ -127,11 +127,10 @@ void NeoOcrPlg::InitFunctionMap() {
         busy = false;
         if (!box->HaveCatchImage())
           return;
-        auto const transdlg = qobject_cast<QWidget*>(GetMainObject(u8"neotranslateplg"));
-        if (!transdlg) return;
-        auto const txtfrom = transdlg->findChild<QPlainTextEdit*>("neoPlainTextFrom");
-        txtfrom->setPlainText(PluginObject::Utf82QString(m_Ocr->GetText(QImage2Pix(image))));
-        transdlg->show();
+        auto str = m_Ocr->GetText(QImage2Pix(image));
+        for (auto fun: m_Followers) {
+          fun->operator()(PluginEvent::U8string, &str);
+        }
       }},
     },
     {u8"setDataDir",

@@ -2,6 +2,8 @@
 #include <translatedlg.h>
 #include <yjson.h>
 
+#include <QPlainTextEdit>
+
 #define CLASS_NAME NeoTranslatePlg
 #include <pluginexport.cpp>
 
@@ -15,6 +17,26 @@ NeoTranslatePlg::NeoTranslatePlg(YJson& settings):
 {
   AddMainObject(m_TranslateDlg);
   InitFunctionMap();
+  m_Following.push_back({u8"neospeedboxplg", [this](PluginEvent event, void* data){
+    if (event == PluginEvent::MouseMove) {
+      if (m_TranslateDlg->isVisible())
+        m_TranslateDlg->hide();
+    } else if (event == PluginEvent::MouseDoubleClick) {
+      if (m_TranslateDlg->isVisible())
+        m_TranslateDlg->hide();
+      else
+        m_TranslateDlg->show();
+    }
+  }});
+  m_Following.push_back({u8"neoocrplg", [this](PluginEvent event, void* data){
+    if (event == PluginEvent::U8string) {
+      if (!data) return;
+      const auto& str = *reinterpret_cast<std::u8string*>(data);
+      auto const txtfrom = m_TranslateDlg->findChild<QPlainTextEdit*>("neoPlainTextFrom");
+      txtfrom->setPlainText(Utf82QString(str));
+      m_TranslateDlg->show();
+    }
+  }});
 }
 
 NeoTranslatePlg::~NeoTranslatePlg()

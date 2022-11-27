@@ -152,6 +152,8 @@ void NeoWallpaperPlg::LoadWallpaperTypeMenu(QMenu* pluginMenu)
   auto mainAction = pluginMenu->addAction("壁纸来源");
   mainAction->setToolTip("设置壁纸来源");
   m_WallpaperTypesMenu = new QMenu(pluginMenu);
+  m_WallpaperTypesMenu->setAttribute(Qt::WA_TranslucentBackground, true);
+  m_WallpaperTypesMenu->setToolTipsVisible(true);
   mainAction->setMenu(m_WallpaperTypesMenu);
   m_WallpaperTypesGroup = new QActionGroup(m_WallpaperTypesMenu);
 

@@ -2,6 +2,7 @@
 #include <translate.h>
 #include <pluginmgr.h>
 #include <pluginobject.h>
+#include <neoapp.h>
 #include <yjson.h>
 
 #include <QApplication>
@@ -18,9 +19,10 @@
 #include <QWidget>
 
 extern PluginMgr* mgr;
+extern GlbObject* glb;
 
 NeoTranslateDlg::NeoTranslateDlg(YJson& settings)
-    : QWidget(nullptr, Qt::WindowStaysOnTopHint | Qt::Tool),
+    : QWidget(glb->glbGetMenu(), Qt::WindowStaysOnTopHint | Qt::Tool),
       m_Settings(settings),
       m_TextFrom(new QPlainTextEdit(this)),
       m_TextTo(new QPlainTextEdit(this)),
@@ -30,31 +32,31 @@ NeoTranslateDlg::NeoTranslateDlg(YJson& settings)
       m_BtnCopyFrom(new QPushButton(m_TextFrom)),
       m_BtnCopyTo(new QPushButton(m_TextTo)),
       m_BtnTransMode(new QPushButton(this)) {
-  setWindowTitle(QStringLiteral("极简翻译"));
+  setWindowTitle("极简翻译");
   m_TextFrom->setObjectName("neoPlainTextFrom");
   m_TextTo->setObjectName("neoPlainTextTo");
-  QVBoxLayout* pvLayout = new QVBoxLayout(this);
+  auto const pvLayout = new QVBoxLayout(this);
   pvLayout->addWidget(m_TextFrom);
   pvLayout->addWidget(m_TextTo);
-  QHBoxLayout* phLayout = new QHBoxLayout;
+  auto const phLayout = new QHBoxLayout;
   AddCombbox(phLayout);
-  QPushButton* pButtonGet = new QPushButton(QStringLiteral("翻译"), this);
+  auto const pButtonGet = new QPushButton("翻译", this);
   phLayout->addWidget(pButtonGet);
   pvLayout->addLayout(phLayout);
   connect(pButtonGet, &QPushButton::clicked, this,
           std::bind(&NeoTranslateDlg::GetResultData, this));
 
-  m_BtnCopyFrom->setText(QStringLiteral("复制"));
-  m_BtnCopyTo->setText(QStringLiteral("复制"));
+  m_BtnCopyFrom->setText("复制");
+  m_BtnCopyTo->setText("复制");
   connect(m_BtnCopyFrom, &QPushButton::clicked, this, [this]() {
     QClipboard* clip = QApplication::clipboard();
     clip->setText(m_TextFrom->toPlainText());
-    m_BtnCopyFrom->setText(QStringLiteral("成功"));
+    m_BtnCopyFrom->setText("成功");
   });
   connect(m_BtnCopyTo, &QPushButton::clicked, this, [this]() {
     QClipboard* clip = QApplication::clipboard();
     clip->setText(m_TextTo->toPlainText());
-    m_BtnCopyTo->setText(QStringLiteral("成功"));
+    m_BtnCopyTo->setText("成功");
   });
   m_BtnCopyFrom->setObjectName("copyTextFrom");
   m_BtnCopyTo->setObjectName("copyTextTo");
@@ -72,19 +74,28 @@ NeoTranslateDlg::~NeoTranslateDlg() {
 }
 
 void NeoTranslateDlg::showEvent(QShowEvent*) {
-  QSize size = QGuiApplication::primaryScreen()->size();
-  QSize mSize = frameSize();
+  if (!ReferenceObject()) return;
+  const auto qFormRect = ReferenceObject()->frameGeometry();
+
+  if (m_Settings[u8"AutoTranslate"].isTrue()) {
+    if (!m_TextFrom->toPlainText().isEmpty()) {
+      GetResultData();
+    }
+  }
+
+  const auto size = QGuiApplication::primaryScreen()->size();
+  const auto mSize = frameSize();
   int x, y;
-  y = (mSize.height() + m_FormRect.bottom() > size.height())
-          ? m_FormRect.top() - mSize.height()
-          : m_FormRect.bottom();
-  if (((mSize.width() + m_FormRect.width()) >> 1) + m_FormRect.left() >
+  y = (mSize.height() + qFormRect.bottom() > size.height())
+          ? qFormRect.top() - mSize.height()
+          : qFormRect.bottom();
+  if (((mSize.width() + qFormRect.width()) >> 1) + qFormRect.left() >
       size.width()) {
     x = size.width() - mSize.width();
-  } else if ((m_FormRect.left() << 1) + m_FormRect.width() < mSize.width()) {
+  } else if ((qFormRect.left() << 1) + qFormRect.width() < mSize.width()) {
     x = 0;
   } else {
-    x = m_FormRect.right() - ((m_FormRect.width() + mSize.width()) >> 1);
+    x = qFormRect.right() - ((qFormRect.width() + mSize.width()) >> 1);
   }
   move(x, y);
 
@@ -94,13 +105,14 @@ void NeoTranslateDlg::showEvent(QShowEvent*) {
   m_BtnCopyTo->hide();
 
   m_TextFrom->setFocus();
+  activateWindow();
 }
 
 bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
   static bool bShiftDown = false, bCtrlDown = false;
   if (target == m_TextFrom || target == m_TextTo) {
     if (event->type() == QEvent::KeyPress) {
-      QKeyEvent* keyEvent = reinterpret_cast<QKeyEvent*>(event);
+      auto const keyEvent = reinterpret_cast<QKeyEvent*>(event);
       switch (keyEvent->key()) {
         case Qt::Key_Escape:
           close();
@@ -134,7 +146,7 @@ bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
           break;
       }
     } else if (event->type() == QEvent::KeyRelease) {
-      QKeyEvent* keyEvent = reinterpret_cast<QKeyEvent*>(event);
+      auto const keyEvent = reinterpret_cast<QKeyEvent*>(event);
       if (keyEvent->key() == Qt::Key_Shift) {
         bShiftDown = false;
         return true;
@@ -163,20 +175,20 @@ bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
 
 void NeoTranslateDlg::ToggleVisibility()
 {
-   if (isVisible()) {
-     hide();
-   } else {
-     const auto set = m_Settings[u8"ReadClipboard"];
-     if (set.isTrue()) {
-       const QClipboard *clipbord = QGuiApplication::clipboard();
-       const QMimeData *mimeData = clipbord->mimeData();
-       if (mimeData->hasText()) {
-         Show(mimeData->text());
-         return;
-       }
-     }
-     Show();
-   }
+  if (isVisible()) {
+    hide();
+  } else {
+    const auto set = m_Settings[u8"ReadClipboard"];
+    if (set.isTrue()) {
+      const auto *clipbord = QGuiApplication::clipboard();
+      const auto *mimeData = clipbord->mimeData();
+      if (mimeData->hasText()) {
+        m_TextFrom->setPlainText(mimeData->text());
+        return show();
+      }
+    }
+    show();
+  }
 }
 
 QWidget* NeoTranslateDlg::ReferenceObject() const
@@ -184,40 +196,18 @@ QWidget* NeoTranslateDlg::ReferenceObject() const
   return qobject_cast<QWidget*>(PluginObject::GetMainObject(u8"neospeedboxplg"));
 }
 
-void NeoTranslateDlg::Show(const QString& text) {
-  if (!ReferenceObject()) return;
-  m_FormRect = ReferenceObject()->frameGeometry();
-  m_TextFrom->setPlainText(text);
-  m_TextTo->clear();
-  show();
-  activateWindow();
-
-  if (m_Settings[u8"AutoTranslate"].isTrue()) {
-    if (!text.isEmpty())
-      GetResultData();
-  }
-}
-
-void NeoTranslateDlg::Show() {
-  if (!ReferenceObject()) return;
-  m_FormRect = ReferenceObject()->frameGeometry();
-  show();
-  activateWindow();
-}
 void NeoTranslateDlg::GetResultData() {
-  m_Translate->m_LanPair = {m_BoxFrom->currentIndex(), m_BoxTo->currentIndex()};
-  QByteArray array = m_TextFrom->toPlainText().toUtf8();
-  auto result =
-      m_Translate->GetResult(std::u8string(array.begin(), array.end()));
+  m_Translate->m_LanPair = { m_BoxFrom->currentIndex(), m_BoxTo->currentIndex() };
+  auto result = m_Translate->GetResult(PluginObject::QString2Utf8(m_TextFrom->toPlainText()));
   m_TextTo->clear();
   if (m_Translate->IsUsingBaidu())
-    m_TextTo->appendPlainText(QString::fromUtf8(result.data(), result.size()));
+    m_TextTo->appendPlainText(PluginObject::Utf82QString(result));
   else
-    m_TextTo->appendHtml(QString::fromUtf8(result.data(), result.size()));
+    m_TextTo->appendHtml(PluginObject::Utf82QString(result));
 }
 
 void NeoTranslateDlg::ChangeLanguage(int from) {
-  static auto lastDict = (Translate::Dict)-1;
+  static auto lastDict = static_cast<Translate::Dict>(-1);
   auto curDict = m_Translate->GetDict();
   m_BoxTo->clear();
 

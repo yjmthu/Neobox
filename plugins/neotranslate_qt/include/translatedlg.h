@@ -14,10 +14,7 @@ class NeoTranslateDlg : public QWidget {
   void ToggleVisibility();
 
  private:
-  void Show(const QString& text);
-  void Show();
   void GetResultData();
-private:
   class YJson& m_Settings;
   class QWidget* ReferenceObject() const;
   class QPlainTextEdit *m_TextFrom, *m_TextTo;
@@ -27,7 +24,6 @@ private:
   class QPushButton* m_BtnTransMode;
   void AddCombbox(class QHBoxLayout* layout);
   void ChangeLanguage(int from = 0);
-  QRect m_FormRect;
 };
 
 #endif // TRANSLATEDLG_H

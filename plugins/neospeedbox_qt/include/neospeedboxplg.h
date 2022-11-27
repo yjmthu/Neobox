@@ -17,6 +17,7 @@ private:
   static void LoadFonts();
   void LoadRemoveSkinMenu(QMenu* parent);
   void LoadChooseSkinMenu(QMenu* parent);
+  void LoadHideAsideMenu(QMenu* parent);
   void AddSkinConnect(class QAction* acion);
   void RemoveSkinConnect(QAction* action);
   void ChooseSkinConnect(QAction* action);

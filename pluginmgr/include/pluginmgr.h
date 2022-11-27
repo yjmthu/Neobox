@@ -22,6 +22,7 @@ private:
   PluginObject* LoadPlugin(const std::u8string& path);
   void FreePlugin(PluginObject* plugin);
   void LoadPlugins();
+  void InitBroadcast();
   const std::u8string m_SettingFileName;
   QMenu* const m_MainMenu;
   class YJson* m_Settings;

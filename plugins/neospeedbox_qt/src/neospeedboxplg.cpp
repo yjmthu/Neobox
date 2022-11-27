@@ -2,6 +2,7 @@
 #include <speedbox.h>
 #include <pluginobject.h>
 #include <yjson.h>
+#include <systemapi.h>
 #include <neoapp.h>
 
 #include <QMenu>
@@ -32,20 +33,25 @@ NeoSpeedboxPlg::~NeoSpeedboxPlg()
 
 void NeoSpeedboxPlg::InitFunctionMap() {
   m_FunctionMapVoid = {
-    {u8"enableBlur", {
-      u8"模糊背景", u8"Windows10+或KDE下的模糊效果", [this](){
-        //  HWND hWnd = reinterpret_cast<HWND>(
-        //      m_Speedbox->winId());
-        // QColor col(Qt::transparent);
-        //  SetWindowCompositionAttribute(
-        //      hWnd, static_cast<ACCENT_STATE>(iCurType),
-        //      qRgba(col.blue(), col.green(), col.red(), col.alpha()));
-         glb->glbShowMsg("设置颜色成功！");
-      }
-    }},
     {u8"moveLeftTop", {
       u8"还原位置", u8"将窗口移动到左上方位置", std::bind(&SpeedBox::InitMove, m_Speedbox)
     }}
+  };
+  m_FunctionMapBool = {
+    {u8"enableBlur", {
+      u8"模糊背景", u8"Windows10+或KDE下的模糊效果", [this](bool on){
+        static bool firstRun = true;
+        firstRun = false;
+        m_Settings[u8"ColorEffect"] = on;
+        auto status = on ? ACCENT_ENABLE_BLURBEHIND : ACCENT_DISABLED;
+        HWND hWnd = reinterpret_cast<HWND>(m_Speedbox->winId());
+        const QColor col(Qt::transparent);
+        SetWindowCompositionAttribute(hWnd, status,
+          qRgba(col.blue(), col.green(), col.red(), col.alpha()));
+        mgr->SaveSettings();
+        if (!firstRun) glb->glbShowMsg("设置颜色成功！");
+      }, std::bind(&YJson::isTrue, &m_Settings[u8"ColorEffect"]), 
+    }},
   };
 }
 
@@ -53,10 +59,14 @@ void NeoSpeedboxPlg::InitMenuAction(QMenu* pluginMenu)
 {
   auto action = pluginMenu->addAction("网卡选择");
   auto menu = new QMenu(pluginMenu);
+  menu->setAttribute(Qt::WA_TranslucentBackground, true);
+  menu->setToolTipsVisible(true);
   action->setMenu(menu);
-  m_Speedbox = new SpeedBox(m_Settings, menu);
+  m_Speedbox = new SpeedBox(this, m_Settings, menu);
   AddMainObject(m_Speedbox);   // 添加到对象列表
   this->PluginObject::InitMenuAction(pluginMenu);
+  LoadHideAsideMenu(pluginMenu);
+
   pluginMenu->addSeparator();
   LoadChooseSkinMenu(pluginMenu);
   pluginMenu->addAction("皮肤选择")->setMenu(m_ChooseSkinMenu);
@@ -65,6 +75,8 @@ void NeoSpeedboxPlg::InitMenuAction(QMenu* pluginMenu)
   pluginMenu->addAction("皮肤删除")->setMenu(m_RemoveSkinMenu);
 
   m_Speedbox->InitShow();
+  const auto& info = m_FunctionMapBool[u8"enableBlur"];
+  info.function(info.status());
 }
 
 YJson& NeoSpeedboxPlg::InitSettings(YJson& settings)
@@ -72,8 +84,8 @@ YJson& NeoSpeedboxPlg::InitSettings(YJson& settings)
   if (settings.isObject()) return settings;
   return settings = YJson::O {
     {u8"ShowForm", true},
-    {u8"Position", YJson::A {100, 100 }},
-    {u8"ShowTrayIcon", true,},
+    {u8"Position", YJson::A { 100, 100 }},
+    {u8"HideAside", 15},     // 0xFF
     {u8"ColorEffect", 0,},
     {u8"BackgroundColorRgba", YJson::A { 51, 51, 119, 204 } },
     {u8"CurSkin", u8"经典火绒"},
@@ -91,9 +103,13 @@ YJson& NeoSpeedboxPlg::InitSettings(YJson& settings)
 void NeoSpeedboxPlg::LoadRemoveSkinMenu(QMenu* parent)
 {
   m_RemoveSkinMenu = new QMenu(parent);
-  const std::u8string& curSkin = m_Settings[u8"CurSkin"].getValueString();
-  for (const auto& [name, _]: m_Settings[u8"UserSkins"].getObject()) {
-    RemoveSkinConnect(m_RemoveSkinMenu->addAction(QString::fromUtf8(name.data(), name.size())));
+  m_RemoveSkinMenu->setAttribute(Qt::WA_TranslucentBackground, true);
+  m_RemoveSkinMenu->setToolTipsVisible(true);
+  const auto& curSkin = m_Settings[u8"CurSkin"].getValueString();
+  for (const auto& [name, path]: m_Settings[u8"UserSkins"].getObject()) {
+    auto const action = m_RemoveSkinMenu->addAction(PluginObject::Utf82QString(name));
+    action->setToolTip(PluginObject::Utf82QString(path.getValueString()));
+    RemoveSkinConnect(action);
   }
 }
 
@@ -101,23 +117,51 @@ void NeoSpeedboxPlg::LoadChooseSkinMenu(QMenu* parent)
 {
   m_ChooseSkinMenu = new QMenu(parent);
   m_ChooseSkinGroup = new QActionGroup(m_ChooseSkinMenu);
+  m_ChooseSkinMenu->setToolTipsVisible(true);
+  m_ChooseSkinMenu->setAttribute(Qt::WA_TranslucentBackground, true);
 
   const std::u8string& curSkin = m_Settings[u8"CurSkin"].getValueString();
-  for (const auto& [name, _]: m_Settings[u8"UserSkins"].getObject()) {
-    QAction* action = m_ChooseSkinMenu->addAction(PluginObject::Utf82QString(name));
-    const QString qname = action->text();
+  for (const auto& [name, path]: m_Settings[u8"UserSkins"].getObject()) {
+    auto const action = m_ChooseSkinMenu->addAction(PluginObject::Utf82QString(name));
+    const auto qname = action->text();
     action->setCheckable(true);
     m_ChooseSkinGroup->addAction(action);
     action->setChecked(curSkin == name);
+    action->setToolTip(PluginObject::Utf82QString(path.getValueString()));
     ChooseSkinConnect(action);
+  }
+}
+
+void NeoSpeedboxPlg::LoadHideAsideMenu(QMenu* parent)
+{
+
+  const auto menu = new QMenu(parent);
+  menu->setToolTipsVisible(true);
+  menu->setAttribute(Qt::WA_TranslucentBackground, true);
+  parent->addAction("贴边隐藏")->setMenu(menu);
+
+  auto lst = {"上", "右", "下", "左"};
+  const int32_t set = m_Settings[u8"HideAside"].getValueInt();
+  int32_t bit = 1;
+  for (auto i: lst) {
+    auto const action = menu->addAction(i);
+    action->setCheckable(true);
+    action->setChecked(set & bit);
+    QObject::connect(action, &QAction::triggered, menu, [this, bit](bool on){
+      auto& obj = m_Settings[u8"HideAside"];
+      obj = on ? (obj.getValueInt() | bit) : (obj.getValueInt() & ~bit);
+      mgr->SaveSettings();
+      glb->glbShowMsg("设置成功！");
+    });
+    bit <<= 1;
   }
 }
 
 void NeoSpeedboxPlg::RemoveSkinConnect(QAction* action)
 {
   QObject::connect(action, &QAction::triggered, m_RemoveSkinMenu, [action, this](){
-    const QString qname = action->text();
-    const std::u8string name = PluginObject::QString2Utf8(qname);
+    const auto qname = action->text();
+    const auto name = PluginObject::QString2Utf8(qname);
     if (name == m_Settings[u8"CurSkin"].getValueString()) {
       glb->glbShowMsg("当前皮肤正在使用，无法删除！");
       return;
@@ -128,7 +172,7 @@ void NeoSpeedboxPlg::RemoveSkinConnect(QAction* action)
 
     QAction* anotherAction = nullptr;
     for (auto i: m_ChooseSkinGroup->actions()) {
-      if (i->text() == qname) continue;
+      if (i->text() != qname) continue;
       anotherAction = i;
       break;
     }
@@ -153,8 +197,8 @@ void NeoSpeedboxPlg::ChooseSkinConnect(QAction* action)
 void NeoSpeedboxPlg::AddSkinConnect(QAction* action)
 {
   QObject::connect(action, &QAction::triggered, [action, this](){
-      const QString qname = action->text();
-      const QString qSkinName = QInputDialog::getText(glb->glbGetMenu(), "输入", "请输入壁纸名字：");
+      const auto qname = action->text();
+      const auto qSkinName = QInputDialog::getText(glb->glbGetMenu(), "输入", "请输入壁纸名字：");
       if (qSkinName.isEmpty() || qSkinName.isNull()) {
         glb->glbShowMsg("添加皮肤失败！");
         return;
@@ -166,13 +210,13 @@ void NeoSpeedboxPlg::AddSkinConnect(QAction* action)
         }
       }
 
-      const QString qFilePath = QFileDialog::getOpenFileName(glb->glbGetMenu(), "选择文件", ".", "(*.ui)");
+      const auto qFilePath = QFileDialog::getOpenFileName(glb->glbGetMenu(), "选择文件", ".", "(*.ui)");
       if (qFilePath.isEmpty() || !QFile::exists(qFilePath)) {
         glb->glbShowMsg("添加皮肤失败！");
         return;
       }
       const fs::path path = PluginObject::QString2Utf8(qFilePath);
-      const std::u8string u8FilePath = u8"styles/" + path.filename().u8string();
+      const auto u8FilePath = u8"styles/" + path.filename().u8string();
 
       m_Settings[u8"UserSkins"].append(u8FilePath, PluginObject::QString2Utf8(qSkinName));
       mgr->SaveSettings();
@@ -189,8 +233,6 @@ void NeoSpeedboxPlg::AddSkinConnect(QAction* action)
 }
 
 void NeoSpeedboxPlg::LoadFonts() {
-  QFontDatabase::addApplicationFont(
-      QStringLiteral(":/fonts/Nickainley-Normal-small.ttf"));
-  QFontDatabase::addApplicationFont(
-      QStringLiteral(":/fonts/Carattere-Regular-small.ttf"));
+  QFontDatabase::addApplicationFont(":/fonts/Nickainley-Normal-small.ttf");
+  QFontDatabase::addApplicationFont(":/fonts/Carattere-Regular-small.ttf");
 }

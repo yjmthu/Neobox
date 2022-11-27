@@ -17,8 +17,10 @@ PluginObject::PluginObject(YJson& settings, std::u8string pluginName, std::u8str
 void PluginObject::InitMenuAction(QMenu* pluginMenu)
 {
   for (const auto& [_, funInfo]: m_FunctionMapVoid) {
-    QObject::connect(pluginMenu->addAction(
-          Utf82QString(funInfo.friendlyName)),
+    auto const action = pluginMenu->addAction(
+          Utf82QString(funInfo.friendlyName));
+    action->setToolTip(PluginObject::Utf82QString(funInfo.description));
+    QObject::connect(action,
         &QAction::triggered, pluginMenu, funInfo.function);
   }
   for (const auto& [_, funInfo]: m_FunctionMapBool) {
@@ -26,6 +28,7 @@ void PluginObject::InitMenuAction(QMenu* pluginMenu)
           Utf82QString(funInfo.friendlyName));
     action->setCheckable(true);
     action->setChecked(funInfo.status());
+    action->setToolTip(PluginObject::Utf82QString(funInfo.description));
     QObject::connect(action,
         &QAction::triggered, pluginMenu, funInfo.function);
   }

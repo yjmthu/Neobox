@@ -7,6 +7,7 @@ class SpeedBox : public QWidget {
  private:
   QPoint m_ConstPos;
   class YJson& m_Settings;
+  class PluginObject* m_PluginObject;
   class QWidget* m_CentralWidget;
   class NetSpeedHelper* m_NetSpeedHelper;
   class QLabel* m_TextMemUseage;
@@ -20,10 +21,10 @@ class SpeedBox : public QWidget {
   std::string m_MemFrameStyle;
 
   class QPropertyAnimation* m_Animation;
-  enum class HideSide {
-    Left, Right,
-    Top, Bottom,
-    None
+  enum HideSide: int32_t {
+    Left = 8, Right = 2,
+    Top = 1, Bottom = 4,
+    None = 0
   } m_HideSide = HideSide::None;
 
  protected:
@@ -40,7 +41,7 @@ class SpeedBox : public QWidget {
   void leaveEvent(QEvent* event) override;
 
  public:
-  explicit SpeedBox(YJson& settings, QMenu* netcardMenu);
+  explicit SpeedBox(PluginObject* plugin, YJson& settings, QMenu* netcardMenu);
   ~SpeedBox();
   void InitShow();
   void InitMove();

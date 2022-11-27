@@ -6,3 +6,4 @@ int main(int argc, char* argv[]) {
   GlbObject glbObject;
   return 0;
 }
+
