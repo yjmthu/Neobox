@@ -1,4 +1,23 @@
-# Neobox 插件管理器
+# Neobox 插件
 
-插件基类: PluginObject
-插件管理器: PluginMgr
+派生自插件基类 PluginObject
+
+## neoocrplg
+
+- 文字识别插件
+
+## neospeedboxplg
+
+- 网速显示插件
+
+## neosystemplg
+
+- 系统管理插件
+
+## neotranslateplg
+
+- 文本翻译插件
+
+## neowallpaperplg
+
+- 壁纸插件
