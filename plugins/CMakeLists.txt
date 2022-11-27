@@ -12,3 +12,11 @@ endforeach()
 
 # add_subdirectory(neosystem_core)
 # add_subdirectory(neosystem_qt)
+set(install_dir ${PROJECT_SOURCE_DIR}/install)
+
+install(TARGETS neoocrplg neospeedboxplg neosystemplg neotranslateplg neowallpaperplg 
+  LIBRARY DESTINATION ${install_dir}/lib
+  ARCHIVE DESTINATION ${install_dir}/lib
+  RUNTIME DESTINATION ${install_dir}/plugin
+  PUBLIC_HEADER DESTINATION ${install_dir}include
+)
