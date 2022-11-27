@@ -16,24 +16,15 @@ namespace fs = std::filesystem;
 NeoOcr::NeoOcr(YJson& settings, std::function<void()> callback):
   CallBackFunction(callback),
   m_Settings(settings),
-  m_Api(new tesseract::TessBaseAPI),
+  m_TessApi(new tesseract::TessBaseAPI),
   m_TrainedDataDir(fs::path(settings[u8"TessdataDir"].getValueString()).string())
 {
   InitLanguagesList();
-  InitTessApi();
 }
 
 NeoOcr::~NeoOcr()
 {
-  delete m_Api;
-}
-
-void NeoOcr::InitTessApi()
-{
-  if (m_Languages.empty()) {
-    return;
-  }
-  m_InitError = m_Api->Init(m_TrainedDataDir.c_str(), reinterpret_cast<const char*>(m_Languages.data()));
+  delete m_TessApi;
 }
 
 void NeoOcr::InitLanguagesList()
@@ -56,16 +47,17 @@ std::u8string NeoOcr::GetText(Pix *pix)
   std::u8string result;
   if (m_Languages.empty()) {
     glb->glbShowMsgbox(u8"error", u8"You should set some language first!");
+    m_TessApi->End();
     return result;
   }
-  if (m_InitError) {
+  if (m_TessApi->Init(m_TrainedDataDir.c_str(), reinterpret_cast<const char*>(m_Languages.data()))) {
     glb->glbShowMsgbox(u8"error", u8"Could not initialize tesseract.");
     return result;
   }
-  m_Api->SetImage(pix);
-  char* szText = m_Api->GetUTF8Text();
+  m_TessApi->SetImage(pix);
+  char* szText = m_TessApi->GetUTF8Text();
   result = reinterpret_cast<const char8_t*>(szText);
-  m_Api->End();
+  m_TessApi->End();
   delete [] szText;
   return result;
 }
@@ -106,7 +98,6 @@ void NeoOcr::AddLanguages(const std::vector<std::u8string> &urls)
   langsArray.assign(langsView.begin(), langsView.end());
   CallBackFunction();
   InitLanguagesList();
-  InitTessApi();
 }
 
 void NeoOcr::RmoveLanguages(const std::vector<std::u8string> &names)
@@ -117,7 +108,6 @@ void NeoOcr::RmoveLanguages(const std::vector<std::u8string> &names)
   }
   CallBackFunction();
   InitLanguagesList();
-  InitTessApi();
 }
 
 void NeoOcr::SetDataDir(const std::u8string &dirname)
@@ -127,6 +117,5 @@ void NeoOcr::SetDataDir(const std::u8string &dirname)
   });
   m_Settings[u8"TessdataDir"].getValueString().assign(goodname.begin(), goodname.end());
   CallBackFunction();
-  InitTessApi();
 }
 

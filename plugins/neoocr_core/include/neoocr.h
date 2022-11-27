@@ -19,14 +19,12 @@ public:
   void SetDataDir(const std::u8string& dirname);
 private:
   void InitLanguagesList();
-  void InitTessApi();
   std::u8string GetLanguageName(const std::u8string& url);
   void DownloadFile(const std::u8string& url,
       const std::filesystem::path& path);
   const std::function<void()> CallBackFunction;
   class YJson& m_Settings;
-  tesseract::TessBaseAPI* m_Api;
-  bool m_InitError;
+  tesseract::TessBaseAPI* m_TessApi;
   std::u8string m_Languages;
   std::string m_TrainedDataDir;
 };
