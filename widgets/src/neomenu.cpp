@@ -20,8 +20,9 @@
 #else
 #endif
 
-NeoMenu::NeoMenu(QWidget* parent)
-    : QMenu(parent)
+NeoMenu::NeoMenu(GlbObject* glb)
+    : QMenu(nullptr),
+    m_GlbObject(glb)
 {
   setAttribute(Qt::WA_TranslucentBackground, true);
   setToolTipsVisible(true);
@@ -52,22 +53,26 @@ void NeoMenu::InitStyleSheet()
 void NeoMenu::InitPluginMenu()
 {
   m_PluginMenu = new QMenu(this);
+  m_PluginMenu->setAttribute(Qt::WA_TranslucentBackground, true);
+  m_PluginMenu->setToolTipsVisible(true);
   addAction("插件中心")->setMenu(m_PluginMenu);
 }
 
 void NeoMenu::InitPluginMgr()
 {
-  m_PluginMgr = new PluginMgr(m_PluginMenu);
+  m_PluginMgr = new PluginMgr(m_GlbObject, m_PluginMenu);
 }
 
 void NeoMenu::InitSettingMenu()
 {
   m_SettingMenu = new QMenu(this);
+  m_SettingMenu->setAttribute(Qt::WA_TranslucentBackground, true);
+  m_SettingMenu->setToolTipsVisible(true);
   addAction("设置中心")->setMenu(m_SettingMenu);
   auto const action = m_SettingMenu->addAction("开机自启");
   action->setCheckable(true);
   action->setChecked(IsAutoStart());
-  connect(action, &QAction::triggered, this, std::bind(&NeoMenu::SetAutoSatrt, action, std::placeholders::_1));
+  connect(action, &QAction::triggered, this, std::bind(&NeoMenu::SetAutoSatrt, this, action, std::placeholders::_1));
   m_SettingMenu->addSeparator();
   m_SettingMenu->addAction("插件事件");
   m_SettingMenu->addAction("热键管理");
@@ -136,16 +141,16 @@ void NeoMenu::SetAutoSatrt(QAction* action, bool on)
   if (wsThatPath != wsThisPath) {
     if (on && !RegWriteString(HKEY_CURRENT_USER, pPath, pAppName, wsThisPath)) {
       action->setChecked(false);
-      glbShowMsg("设置自动启动失败！");
+      m_GlbObject->glbShowMsg("设置自动启动失败！");
     } else {
-      glbShowMsg("设置成功！");
+      m_GlbObject->glbShowMsg("设置成功！");
     }
   } else {
     if (!on && !RegRemoveValue(HKEY_CURRENT_USER, pPath, pAppName)) {
       action->setChecked(true);
-      glbShowMsg("取消自动启动失败！");
+      m_GlbObject->glbShowMsg("取消自动启动失败！");
     } else {
-      glbShowMsg("设置成功！");
+      m_GlbObject->glbShowMsg("设置成功！");
     }
   }
 }

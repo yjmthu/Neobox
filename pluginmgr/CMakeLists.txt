@@ -16,7 +16,7 @@ target_link_libraries(pluginmgr PRIVATE
 )
 
 if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-  message(STATUS "============deBUG=================")
-  target_link_libraries(pluginmgr PRIVATE neospeedboxplg)
+  # message(STATUS "============deBUG=================")
+  # target_link_libraries(pluginmgr PRIVATE neospeedboxplg)
 else()
 endif()

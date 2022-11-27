@@ -3,16 +3,21 @@
 
 #include <map>
 #include <string>
+#include <functional>
 
 class PluginObject;
 
 class PluginMgr {
 public:
-  explicit PluginMgr(class QMenu* pluginManiMenu);
+  explicit PluginMgr(class GlbObject*, 
+    class QMenu* pluginManiMenu);
   ~PluginMgr();
   bool HasPlaugin(PluginObject* plugin);
   void WritteSettings();
   class YJson* GetSettings(const char8_t* key);
+  std::function<void()> SaveSettings;
+  std::map<std::u8string, class QObject*> m_MainObjects;
+  class GlbObject* const m_GlbObject;
 private:
   PluginObject* LoadPlugin(const std::u8string& path);
   void FreePlugin(PluginObject* plugin);

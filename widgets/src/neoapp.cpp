@@ -6,13 +6,11 @@
 
 #include <QSharedMemory>
 #include <QMessageBox>
+#include <QApplication>
 
-static NeoSystemTray* glbTray = nullptr;
-static NeoMenu* glbMenu = nullptr;
-static QSharedMemory* glbSharedMemory = nullptr;
-static NeoMsgDlg* glbMsgDlg = nullptr;
+GlbObject *glb;
 
-QMenu* glbGetMenu() {
+QMenu* GlbObject::glbGetMenu() {
   return glbMenu;
 }
 
@@ -35,7 +33,7 @@ void CompareJson(YJson& jsDefault, YJson& jsUser)
 }
 
 
-void glbShowMsgbox(const std::u8string& title,
+void GlbObject::glbShowMsgbox(const std::u8string& title,
                  const std::u8string& text,
                  int type) {
   QMetaObject::invokeMethod(glbMenu, [=](){
@@ -45,29 +43,33 @@ void glbShowMsgbox(const std::u8string& title,
   });
 }
 
-void glbShowMsg(class QString text)
+void GlbObject::glbShowMsg(class QString text)
 {
   glbMsgDlg->ShowMessage(text);
 }
 
-void glbWriteSharedFlag(int flag) {
-  glbSharedMemory->lock();
-  *reinterpret_cast<int *>(glbSharedMemory->data()) = flag;
-  glbSharedMemory->unlock();
+#if 0
+void GlbObject::glbWriteSharedFlag(int flag) {
+  QSharedMemory mem;
+  mem.setKey(QStringLiteral("__Neobox__"));
+  mem.lock();
+  *reinterpret_cast<int *>(mem.data()) = flag;
+  mem.unlock();
 }
 
-int glbReadSharedFlag() {
-  glbSharedMemory->lock();
-  const auto state = *reinterpret_cast<const int*>(glbSharedMemory->constData());
-  glbSharedMemory->unlock();
+int GlbObject::glbReadSharedFlag() {
+  QSharedMemory mem;
+  mem.setKey(QStringLiteral("__Neobox__"));
+  mem.lock();
+  const auto state = *reinterpret_cast<const int*>(mem.constData());
+  mem.unlock();
   return state;
 }
 
-bool glbCreateSharedMemory() {
-  static QSharedMemory qSharedMemory;
-  glbSharedMemory = &qSharedMemory;
-  qSharedMemory.setKey(QStringLiteral("__Neobox__"));
-  if(qSharedMemory.attach()) {
+bool GlbObject::glbCreateSharedMemory() {
+  QSharedMemory mem;
+  mem.setKey(QStringLiteral("__Neobox__"));
+  if(mem.attach()) {
     /*
     * 0: already have an instance;
     * 1: previous app want to restart;
@@ -76,27 +78,40 @@ bool glbCreateSharedMemory() {
     */
     if (glbReadSharedFlag() == 0) {
       glbWriteSharedFlag(2);
-      glbSharedMemory->detach();
+      mem.detach();
       return false;
     }
-  } else if (!qSharedMemory.create(sizeof(int))) {
+  } else if (!mem.create(sizeof(int))) {
     return false;
   }
   glbWriteSharedFlag(0);
   return true;
 }
 
-void glbDetachSharedMemory()
+void GlbObject::glbDetachSharedMemory()
 {
-  glbSharedMemory->detach();
+  QSharedMemory mem;
+  mem.setKey(QStringLiteral("__Neobox__"));
+  mem.detach();
 }
+#endif
 
-void InitApp()
+GlbObject::GlbObject()
 {
+  glb = this;
+  // if (!glbCreateSharedMemory())
+  //   return;
+  QApplication::setQuitOnLastWindowClosed(false);
+  // glbDetachSharedMemory();
   glbTray = new NeoSystemTray;
-  glbMenu = new NeoMenu;
+  glbMenu = new NeoMenu(this);
   glbMsgDlg = new NeoMsgDlg(glbMenu);
   glbMenu->InitPluginMgr();
   glbTray->setContextMenu(glbMenu);
   glbTray->show();
+  QApplication::exec();
+}
+
+GlbObject::~GlbObject()
+{
 }

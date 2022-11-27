@@ -8,7 +8,7 @@ set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui)
 set(pliugin_libfiles neoocr_core neobox_core yjson)
 set(ocr_libfiles leptonica)
 
-add_library(neocorplg SHARED ${source_files} 
+add_library(neoocrplg SHARED ${source_files} 
 )
 
 file(GLOB _resource_files icons/*)
@@ -19,15 +19,14 @@ foreach(full_filepath ${_resource_files})
   list(APPEND resource_files ${file_path})
 endforeach()
 
-qt_add_resources(neocorplg "neoocrplg"
+qt_add_resources(neoocrplg "neoocrplg"
   PREFIX "/"
   FILES ${resource_files}
 )
 
-target_link_libraries(neocorplg PRIVATE
+target_link_libraries(neoocrplg PRIVATE
   ${pliugin_libfiles}
   ${qt_shared_files}
   ${ocr_libfiles}
   ${system_shared_files}
 )
-

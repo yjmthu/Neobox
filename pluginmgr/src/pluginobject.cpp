@@ -1,12 +1,12 @@
 #include <pluginobject.h>
+#include <pluginmgr.h>
 
 #include <QMenu>
 #include <QAction>
 
 #include <vector>
 
-std::function<void()> PluginObject::SaveSettings;
-std::map<std::u8string, QObject*> PluginObject::m_MainObjects;
+extern PluginMgr* mgr;
 
 PluginObject::PluginObject(YJson& settings, std::u8string pluginName, std::u8string friendlyName):
   m_Settings(settings),
@@ -44,16 +44,16 @@ QString PluginObject::Utf82QString(const std::u8string& str)
 
 void PluginObject::AddMainObject(QObject* object)
 {
-  m_MainObjects[m_PlugInfo.m_PluginName] = object;
+  mgr->m_MainObjects[m_PlugInfo.m_PluginName] = object;
 }
 
 void PluginObject::RemoveMainObject()
 {
-  m_MainObjects[m_PlugInfo.m_PluginName] = nullptr;
+  mgr->m_MainObjects[m_PlugInfo.m_PluginName] = nullptr;
 }
 
 QObject* PluginObject::GetMainObject(const std::u8string& pluginName)
 {
-  auto const iter = m_MainObjects.find(pluginName);
-  return iter == m_MainObjects.end() ? nullptr : iter->second;
+  auto const iter = mgr->m_MainObjects.find(pluginName);
+  return iter ==mgr->m_MainObjects.end() ? nullptr : iter->second;
 }

@@ -2,6 +2,7 @@
 #include <speedbox.h>
 #include <pluginobject.h>
 #include <yjson.h>
+#include <neoapp.h>
 
 #include <QMenu>
 #include <QActionGroup>
@@ -12,10 +13,10 @@
 #include <Windows.h>
 #include <filesystem>
 
-namespace fs = std::filesystem;
+#define CLASS_NAME NeoSpeedboxPlg
+#include <pluginexport.cpp>
 
-extern QMenu* glbGetMenu();
-extern void glbShowMsg(QString text);
+namespace fs = std::filesystem;
 
 NeoSpeedboxPlg::NeoSpeedboxPlg(YJson& settings):
   PluginObject(InitSettings(settings), u8"neospeedboxplg", u8"网速悬浮")
@@ -39,7 +40,7 @@ void NeoSpeedboxPlg::InitFunctionMap() {
         //  SetWindowCompositionAttribute(
         //      hWnd, static_cast<ACCENT_STATE>(iCurType),
         //      qRgba(col.blue(), col.green(), col.red(), col.alpha()));
-         glbShowMsg("设置颜色成功！");
+         glb->glbShowMsg("设置颜色成功！");
       }
     }},
     {u8"moveLeftTop", {
@@ -77,10 +78,10 @@ YJson& NeoSpeedboxPlg::InitSettings(YJson& settings)
     {u8"BackgroundColorRgba", YJson::A { 51, 51, 119, 204 } },
     {u8"CurSkin", u8"经典火绒"},
     {u8"UserSkins", YJson::O {
-      {u8"经典火绒", u8"skins/Huorong.ui"},
-      {u8"电脑管家", u8"skins/Guanjia.ui"},
-      {u8"数字卫士", u8"skins/360.ui"},
-      {u8"独霸一方", u8"skins/duba.ui"}
+      {u8"经典火绒", u8":/skins/Huorong.ui"},
+      {u8"电脑管家", u8":/skins/Guanjia.ui"},
+      {u8"数字卫士", u8":/skins/360.ui"},
+      {u8"独霸一方", u8":/skins/duba.ui"}
     }},
     {u8"NetCardDisabled", YJson::A {}},
   };
@@ -118,11 +119,11 @@ void NeoSpeedboxPlg::RemoveSkinConnect(QAction* action)
     const QString qname = action->text();
     const std::u8string name = PluginObject::QString2Utf8(qname);
     if (name == m_Settings[u8"CurSkin"].getValueString()) {
-      glbShowMsg("当前皮肤正在使用，无法删除！");
+      glb->glbShowMsg("当前皮肤正在使用，无法删除！");
       return;
     }
     m_Settings[u8"UserSkins"].remove(name);
-    PluginObject::SaveSettings();
+    mgr->SaveSettings();
     m_RemoveSkinMenu->removeAction(action);
 
     QAction* anotherAction = nullptr;
@@ -135,7 +136,7 @@ void NeoSpeedboxPlg::RemoveSkinConnect(QAction* action)
       m_ChooseSkinGroup->removeAction(anotherAction);
       m_ChooseSkinMenu->removeAction(anotherAction);
     }
-    glbShowMsg("删除皮肤成功！");
+    glb->glbShowMsg("删除皮肤成功！");
   });
 }
 
@@ -143,9 +144,9 @@ void NeoSpeedboxPlg::ChooseSkinConnect(QAction* action)
 {
   QObject::connect(action, &QAction::triggered, m_ChooseSkinMenu, [action, this](){
     m_Settings[u8"CurSkin"] = PluginObject::QString2Utf8(action->text());
-    PluginObject::SaveSettings();
+    mgr->SaveSettings();
     m_Speedbox->UpdateSkin();
-    glbShowMsg("更换皮肤成功！");
+    glb->glbShowMsg("更换皮肤成功！");
   });
 }
 
@@ -153,28 +154,28 @@ void NeoSpeedboxPlg::AddSkinConnect(QAction* action)
 {
   QObject::connect(action, &QAction::triggered, [action, this](){
       const QString qname = action->text();
-      const QString qSkinName = QInputDialog::getText(glbGetMenu(), "输入", "请输入壁纸名字：");
+      const QString qSkinName = QInputDialog::getText(glb->glbGetMenu(), "输入", "请输入壁纸名字：");
       if (qSkinName.isEmpty() || qSkinName.isNull()) {
-        glbShowMsg("添加皮肤失败！");
+        glb->glbShowMsg("添加皮肤失败！");
         return;
       }
       for (auto qobj: m_ChooseSkinMenu->children()) {
         if (qobject_cast<QAction*>(qobj)->text() == qSkinName) {
-          glbShowMsg("请勿输入已经存在的名称！");
+          glb->glbShowMsg("请勿输入已经存在的名称！");
           return;
         }
       }
 
-      const QString qFilePath = QFileDialog::getOpenFileName(glbGetMenu(), "选择文件", ".", "(*.ui)");
+      const QString qFilePath = QFileDialog::getOpenFileName(glb->glbGetMenu(), "选择文件", ".", "(*.ui)");
       if (qFilePath.isEmpty() || !QFile::exists(qFilePath)) {
-        glbShowMsg("添加皮肤失败！");
+        glb->glbShowMsg("添加皮肤失败！");
         return;
       }
       const fs::path path = PluginObject::QString2Utf8(qFilePath);
       const std::u8string u8FilePath = u8"styles/" + path.filename().u8string();
 
       m_Settings[u8"UserSkins"].append(u8FilePath, PluginObject::QString2Utf8(qSkinName));
-      PluginObject::SaveSettings();
+      mgr->SaveSettings();
 
       auto action = m_ChooseSkinMenu->addAction(qSkinName);
       action->setToolTip(QString::fromUtf8(u8FilePath.data(), u8FilePath.size()));
@@ -183,7 +184,7 @@ void NeoSpeedboxPlg::AddSkinConnect(QAction* action)
 
       action = m_RemoveSkinMenu->addAction(qSkinName);
       RemoveSkinConnect(action);
-      glbShowMsg("添加皮肤成功！");
+      glb->glbShowMsg("添加皮肤成功！");
   });
 }
 
@@ -193,6 +194,3 @@ void NeoSpeedboxPlg::LoadFonts() {
   QFontDatabase::addApplicationFont(
       QStringLiteral(":/fonts/Carattere-Regular-small.ttf"));
 }
-
-#define CLASS_NAME NeoSpeedboxPlg
-#include <pluginexport.cpp>

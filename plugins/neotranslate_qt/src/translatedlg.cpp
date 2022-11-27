@@ -1,5 +1,6 @@
 #include <translatedlg.h>
 #include <translate.h>
+#include <pluginmgr.h>
 #include <pluginobject.h>
 #include <yjson.h>
 
@@ -15,6 +16,8 @@
 #include <QVBoxLayout>
 #include <QMimeData>
 #include <QWidget>
+
+extern PluginMgr* mgr;
 
 NeoTranslateDlg::NeoTranslateDlg(YJson& settings)
     : QWidget(nullptr, Qt::WindowStaysOnTopHint | Qt::Tool),
@@ -279,7 +282,7 @@ void NeoTranslateDlg::AddCombbox(QHBoxLayout* layout) {
       dic = Translate::Dict::Youdao;
     m_Settings[u8"Mode"] = static_cast<int>(dic);
     m_Translate->SetDict(dic);
-    PluginObject::SaveSettings();
+    mgr->SaveSettings();
     ChangeLanguage();
   });
 

@@ -1,7 +1,10 @@
 #include <neoocrplg.h>
 #include <neoocr.h>
+#include <pluginmgr.h>
 #include <screenfetch.h>
 #include <yjson.h>
+#include <neoapp.h>
+#include <neoapp.h>
 
 #include <QMenu>
 #include <QDir>
@@ -13,10 +16,10 @@
 #include <leptonica/allheaders.h>
 #include <filesystem>
 
-namespace fs = std::filesystem;
+#define CLASS_NAME NeoOcrPlg
+#include <pluginexport.cpp>
 
-extern QMenu* glbGetMenu();
-extern void glbShowMsg(QString text);
+namespace fs = std::filesystem;
 
 static inline bool IsBigDuan() {
   const uint16_t s = 1;
@@ -92,7 +95,7 @@ void* QImage2Pix(const QImage& qImage) {
 
 NeoOcrPlg::NeoOcrPlg(YJson& settings):
   PluginObject(InitSettings(settings), u8"neoocrplg", u8"文字识别"),
-  m_Ocr(new NeoOcr(settings, SaveSettings))
+  m_Ocr(new NeoOcr(settings, std::bind(&PluginMgr::SaveSettings, mgr)))
 {
   QDir dir;
   auto lst = {"tessdata"};
@@ -132,10 +135,10 @@ void NeoOcrPlg::InitFunctionMap() {
             m_Settings[u8"TessdataDir"].getValueString();
         const QString folder =
             QFileDialog::getExistingDirectory(
-                glbGetMenu(), "请选择Tessdata数据文件存放位置",
+                glb->glbGetMenu(), "请选择Tessdata数据文件存放位置",
                 QString::fromUtf8(u8Path.data(), u8Path.size()));
         if (folder.isEmpty() || folder.isNull()) {
-          glbShowMsg("取消设置成功！");
+          glb->glbShowMsg("取消设置成功！");
           return;
         }
         fs::path pNewPath = PluginObject::QString2Utf8(folder);
@@ -143,10 +146,10 @@ void NeoOcrPlg::InitFunctionMap() {
         std::u8string u8NewPath = pNewPath.u8string();
         if (!u8NewPath.empty() && u8NewPath != u8Path) {
           u8Path.swap(u8NewPath);
-          PluginObject::SaveSettings();
-          glbShowMsg("设置数据文件失成功！");
+          mgr->SaveSettings();
+          glb->glbShowMsg("设置数据文件失成功！");
         } else {
-          glbShowMsg("设置数据文件失败！");
+          glb->glbShowMsg("设置数据文件失败！");
         }
       }},
     }
@@ -167,6 +170,3 @@ YJson& NeoOcrPlg::InitSettings(YJson& settings)
   };
   // we may not need to call SaveSettings;
 }
-
-#define CLASS_NAME NeoOcrPlg
-#include <pluginexport.cpp>

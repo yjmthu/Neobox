@@ -7,6 +7,10 @@
 
 #include <windows.h>
 
+#define CLASS_NAME NeoSystemPlg
+#include <pluginexport.cpp>
+
+
 NeoSystemPlg::NeoSystemPlg(YJson& settings):
   PluginObject(InitSettings(settings), u8"neosystemplg", u8"系统控制")
 {
@@ -42,7 +46,7 @@ void NeoSystemPlg::InitFunctionMap() {
             ES_CONTINUOUS
         );
         m_Settings[u8"StopSleep"] = on;
-        SaveSettings();
+        mgr->SaveSettings();
       }, std::bind(&YJson::isTrue, &m_Settings[u8"StopSleep"])}
     },
   };
@@ -128,6 +132,3 @@ void NeoSystemPlg::LoadResources()
   QFile::copy(":/" + des, des);
   QFile::setPermissions(des, QFile::ReadUser | QFile::WriteUser);
 }
-
-#define CLASS_NAME NeoSystemPlg
-#include <pluginexport.cpp>

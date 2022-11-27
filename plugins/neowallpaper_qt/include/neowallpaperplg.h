@@ -14,7 +14,7 @@ private:
   YJson& InitSettings(YJson& settings);
   void InitFunctionMap() override;
   void LoadWallpaperTypeMenu(class QMenu* pluginMenu);
-  QMenu* LoadWallpaperExMenu(class QMenu* pluginMenu);
+  void LoadWallpaperExMenu(class QMenu* pluginMenu);
   class Wallpaper* const m_Wallpaper;
   class QMenu* m_WallpaperTypesMenu;
   class QAction* m_MoreSettingsAction;

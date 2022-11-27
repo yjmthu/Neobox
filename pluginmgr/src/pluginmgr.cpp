@@ -1,10 +1,7 @@
 #include <pluginmgr.h>
 #include <pluginobject.h>
 #include <yjson.h>
-
-#ifdef _DEBUG
-#include <neospeedboxplg.h>
-#endif
+#include <neoapp.h>
 
 #include <QMenu>
 #include <QAction>
@@ -15,10 +12,15 @@
 
 namespace fs = std::filesystem;
 
-PluginMgr::PluginMgr(QMenu* pluginMainMenu):
+PluginMgr* mgr;
+
+PluginMgr::PluginMgr(GlbObject* glb, QMenu* pluginMainMenu):
+  m_GlbObject(glb),
   m_SettingFileName(u8"PluginSettings.json"),
+  SaveSettings([this](){m_Settings->toFile(m_SettingFileName);}),
   m_MainMenu(pluginMainMenu)
 {
+  mgr = this;
   if (!fs::exists("plugins")) {
     fs::create_directory("plugins");
   }
@@ -30,6 +32,8 @@ PluginMgr::PluginMgr(QMenu* pluginMainMenu):
         {u8"neospeedboxplg", true},
         {u8"neotranslateplg", true},
         {u8"neoocrplg", true},
+        {u8"neowallpaperplg", true},
+        {u8"neosystemplg", true},
       }},
       { u8"KeyMap", YJson::O {
         {u8"neotranslateplg", YJson::A {
@@ -43,20 +47,15 @@ PluginMgr::PluginMgr(QMenu* pluginMainMenu):
       }},
     }};
   }
-
-  (PluginObject::SaveSettings=[this](){m_Settings->toFile(m_SettingFileName);})();
-
   LoadPlugins();
 }
 
 PluginMgr::~PluginMgr()
 {
-#ifndef _DEBUG
   for (auto [i, j]: m_PluginPath) {
     if (j) delete i;
     FreeLibrary(reinterpret_cast<HINSTANCE>(j));
   }
-#endif
   delete m_Settings;
 }
 
@@ -66,30 +65,31 @@ void PluginMgr::LoadPlugins()
     if (!on.isTrue()) continue;
     PluginObject* objptr = nullptr;
     auto& pluginSttings = m_Settings->find(u8"PluginsConfig")->second[name];
-#ifdef _DEBUG
-    if (name == u8"neospeedboxplg") {
-      objptr = new NeoSpeedboxPlg((*m_Settings)[name]);
-    }
-#else
     objptr = LoadPlugin(name);
-#endif
     if (!objptr) continue;
     auto& pluginName = objptr->GetPlugInfo().m_FriendlyName;
     QMenu* const pluginMenu = new QMenu(m_MainMenu);
+    pluginMenu->setAttribute(Qt::WA_TranslucentBackground, true);
+    pluginMenu->setToolTipsVisible(true);
     m_MainMenu->addAction(PluginObject::Utf82QString(pluginName))->setMenu(pluginMenu);
     objptr->InitMenuAction(pluginMenu);
     m_Plugins[name] = objptr;
   }
-  PluginObject::SaveSettings();
+  SaveSettings();
 }
 
 PluginObject* PluginMgr::LoadPlugin(const std::u8string& pluginName)
 {
-  PluginObject* (*newPlugin)(YJson&) = nullptr;
+  PluginObject* (*newPlugin)(YJson&, PluginMgr*)= nullptr;
+
+#ifndef _DEBUG
   fs::path path = u8"plugins";
+#else
+  fs::path path = __FILEW__;
+  path = path.parent_path().parent_path().parent_path() / "build/plugins";
+#endif
   path /= pluginName + u8".dll";
   if (!fs::exists(path)) return nullptr;
-  // const std::u8string pluginName = path.stem().u8string();
   path.make_preferred();
   std::wstring wPath = path.wstring();
   wPath.push_back(L'\0');
@@ -99,7 +99,7 @@ PluginObject* PluginMgr::LoadPlugin(const std::u8string& pluginName)
   if (!newPlugin) {
     FreeLibrary(hdll);
   }
-  auto plugin = newPlugin((*m_Settings)[pluginName]);      // nice
+  auto plugin = newPlugin(m_Settings->find(u8"PluginsConfig")->second[pluginName], this);      // nice
   m_PluginPath[plugin] = hdll;
   return plugin;
 }

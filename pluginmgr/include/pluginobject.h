@@ -13,7 +13,6 @@ class PluginObject {
     std::u8string friendlyName;
     std::u8string description;
   };
-  static std::map<std::u8string, class QObject*> m_MainObjects;
 public:
   struct FunctionInfoVoid: public FunctionInfo {
     std::function<void(void)> function;
@@ -35,7 +34,7 @@ public:
     { return m_PlugInfo; }
 protected:
   virtual void InitFunctionMap() {}
-  void AddMainObject(QObject* object);
+  void AddMainObject(class QObject* object);
   void RemoveMainObject();
   FunctionMapVoid m_FunctionMapVoid;
   FunctionMapBool m_FunctionMapBool;
@@ -44,15 +43,13 @@ protected:
   std::vector<const FollowerFunction*> m_Followers;
   std::vector<std::u8string> m_Following;
 public:
-  explicit PluginObject(class YJson& settings,
-      std::u8string pluginName, std::u8string friendlyName);
-  virtual ~PluginObject() = default;
   virtual void InitMenuAction(class QMenu* pluginMenu);
-  static std::function<void()> SaveSettings;
   static std::u8string QString2Utf8(const class QString& str);
   static QString Utf82QString(const std::u8string& str);
   static QObject* GetMainObject(const std::u8string& pluginName);
-private:
+public:
+  explicit PluginObject(class YJson& settings, std::u8string pluginName, std::u8string friendlyName);
+  virtual ~PluginObject() = default;
 };
 
 #endif //PLUGINOBJECT_H

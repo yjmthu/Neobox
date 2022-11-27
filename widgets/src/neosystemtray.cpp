@@ -6,6 +6,8 @@
 #include <QProcess>
 #include <QApplication>
 
+// extern GlbObject* glb;
+
 NeoSystemTray::NeoSystemTray()
 {
   setIcon(QIcon(QStringLiteral(":/icons/neobox.ico")));
@@ -27,8 +29,10 @@ void NeoSystemTray::InitDirs()
     dir.cd(relPath);
     QDir::setCurrent(dir.absolutePath());
   } else {
-    glbWriteSharedFlag(1);
+#if 0
+    glb->glbWriteSharedFlag(1);
     QProcess::startDetached(QApplication::applicationFilePath(), QStringList {});
+#endif
     qApp->quit();
     return;
   }

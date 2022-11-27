@@ -17,8 +17,10 @@
 #include <netspeedhelper.h>
 #include <speedbox.h>
 #include <yjson.h>
+#include <pluginmgr.h>
 #include <appcode.hpp>
 #include <pluginobject.h>
+#include <neoapp.h>
 
 #include <array>
 #include <filesystem>
@@ -28,13 +30,11 @@
 #include <Windows.h>
 #endif
 
-extern void glbShowMsg(QString text);
-extern void glbWriteSharedFlag(int flag);
-extern QMenu* glbGetMenu();
-extern int glbReadSharedFlag();
+extern PluginMgr* mgr;
+extern GlbObject* glb;
 
 SpeedBox::SpeedBox(YJson& settings, QMenu* netcardMenu)
-    : QWidget(glbGetMenu(),
+    : QWidget(glb->glbGetMenu(),
               Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool),
     m_Settings(settings),
     m_NetCardMenu(*netcardMenu),
@@ -72,7 +72,7 @@ void SpeedBox::InitShow() {
   connect(m_Animation, &QPropertyAnimation::finished, this, [this]() {
     m_Settings[u8"Position"].getArray() =
         YJson::A{x(), y()};
-    PluginObject::SaveSettings();
+    mgr->SaveSettings();
   });
 
   UpdateNetCardMenu();
@@ -139,7 +139,7 @@ void SpeedBox::SetBaseLayout() {
 
   m_MemColorFrame = m_CentralWidget->findChild<QFrame*>("memColorFrame");
   if (m_MemColorFrame != nullptr) {
-    QByteArray buffer = m_MemColorFrame->styleSheet().toUtf8();
+    buffer = m_MemColorFrame->styleSheet().toUtf8();
     m_MemFrameStyle.assign(buffer.begin(), buffer.end());
     const std::string style = std::vformat(m_MemFrameStyle, std::make_format_args(
         0.1, 0.2, 0.8, 0.9
@@ -197,9 +197,9 @@ void SpeedBox::mousePressEvent(QMouseEvent* event) {
     m_ConstPos = event->pos();
     setMouseTracking(true);
   } else if (event->button() == Qt::RightButton) {
-    glbGetMenu()->popup(pos() + event->pos());
+    glb->glbGetMenu()->popup(pos() + event->pos());
   } else if (event->button() == Qt::MiddleButton) {
-    glbWriteSharedFlag(1);
+    // glb->glbWriteSharedFlag(1);
     QProcess::startDetached(QApplication::applicationFilePath(), QStringList {});
     qApp->quit();
   }
@@ -210,7 +210,7 @@ void SpeedBox::mouseReleaseEvent(QMouseEvent* event) {
     setMouseTracking(false);
     m_Settings[u8"Position"].getArray() =
         YJson::A{x(), y()};
-    PluginObject::SaveSettings();
+    mgr->SaveSettings();
   }
 }
 
@@ -346,10 +346,10 @@ void SpeedBox::InitMove()
   move(100, 100);
   m_HideSide = HideSide::None;
   m_Settings[u8"Position"].getArray() = YJson::A{100, 100};
-  PluginObject::SaveSettings();
+  mgr->SaveSettings();
   if (!isVisible())
     show();
-  glbShowMsg("移动成功！");
+  glb->glbShowMsg("移动成功！");
 }
 
 
@@ -375,13 +375,15 @@ void SpeedBox::InitNetCard()
     }
     m_NetSpeedHelper->GetSysInfo();
     UpdateTextContent();
-    const auto flag = glbReadSharedFlag();
+#if 0
+    const auto flag = glb->glbReadSharedFlag();
     if (flag == 2) {
-      glbWriteSharedFlag(0);
+      glb->glbWriteSharedFlag(0);
       InitMove();
     } else if (flag == 4) {
       QApplication::quit();
     }
+#endif
   });
   m_Timer->start(1000);
 }
@@ -415,12 +417,12 @@ void SpeedBox::UpdateNetCard(QAction* action, bool checked)
   if (checked) {
     m_Settings[u8"NetCardDisabled"].removeByValA(name);
     m_NetSpeedHelper->m_AdapterBalckList.erase(guid);
-    glbShowMsg("添加网卡成功！"); // removed from blacklist
+    glb->glbShowMsg("添加网卡成功！"); // removed from blacklist
   } else {
     m_Settings[u8"NetCardDisabled"].append(std::move(name));
     m_NetSpeedHelper->m_AdapterBalckList.emplace(std::move(guid));
-    glbShowMsg("删除网卡成功！");
+    glb->glbShowMsg("删除网卡成功！");
   }
   m_NetSpeedHelper->UpdateAdaptersAddresses();
-  PluginObject::SaveSettings();
+  mgr->SaveSettings();
 }

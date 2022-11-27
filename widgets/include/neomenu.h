@@ -7,7 +7,7 @@
 
 class NeoMenu : public QMenu {
  public:
-  explicit NeoMenu(QWidget* parent = nullptr);
+  explicit NeoMenu(class GlbObject* glb);
   virtual ~NeoMenu();
   void InitPluginMgr();
  private:
@@ -15,8 +15,9 @@ class NeoMenu : public QMenu {
   void InitPluginMenu();
   void InitFunctionMap();
   void InitSettingMenu();
-  static bool IsAutoStart();
-  static void SetAutoSatrt(QAction* action, bool on);
+  bool IsAutoStart();
+  void SetAutoSatrt(QAction* action, bool on);
+  GlbObject* m_GlbObject;
   QMenu *m_SettingMenu, *m_PluginMenu;
   class PluginMgr* m_PluginMgr;
 };

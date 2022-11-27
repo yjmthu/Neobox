@@ -2,7 +2,8 @@
 #include <translatedlg.h>
 #include <yjson.h>
 
-extern QMenu* glbGetMenu();
+#define CLASS_NAME NeoTranslatePlg
+#include <pluginexport.cpp>
 
 /*
  * NeoTranslatePlugin
@@ -31,13 +32,13 @@ void NeoTranslatePlg::InitFunctionMap() {
     {u8"enableReadClipboard",
       {u8"读剪切板", u8"打开界面自动读取剪切板内容到From区", [this](bool checked) {
         m_Settings[u8"AutoTranslate"] = checked;
-        SaveSettings();
+        mgr->SaveSettings();
       }, std::bind(&YJson::isTrue, &m_Settings[u8"AutoTranslate"])}
     },
     {u8"enableAutoTranslate",
       {u8"自动翻译", u8"打开界面自动翻译From区内容", [this](bool checked) {
         m_Settings[u8"ReadClipboard"] = checked;
-        SaveSettings();
+        mgr->SaveSettings();
       }, std::bind(&YJson::isTrue, &m_Settings[u8"ReadClipboard"])}
     },
   };
@@ -58,6 +59,3 @@ YJson& NeoTranslatePlg::InitSettings(YJson& settings)
   };
   // we may not need to call SaveSettings;
 }
-
-#define CLASS_NAME NeoTranslatePlg
-#include <pluginexport.cpp>
