@@ -11,6 +11,7 @@
 #include <QAction>
 #include <QEventLoop>
 #include <QFileDialog>
+#include <QPlainTextEdit>
 #include <QImage>
 
 #include <leptonica/allheaders.h>
@@ -26,7 +27,7 @@ static inline bool IsBigDuan() {
   return *reinterpret_cast<const uint8_t*>(&s);
 }
 
-void* QImage2Pix(const QImage& qImage) {
+Pix* QImage2Pix(const QImage& qImage) {
   static const bool bIsBigDuan = IsBigDuan();
   if (qImage.isNull())
     return nullptr;
@@ -126,7 +127,11 @@ void NeoOcrPlg::InitFunctionMap() {
         busy = false;
         if (!box->HaveCatchImage())
           return;
-        // m_TranslateDlg->Show(qobject_cast<const QWidget*>(parent())->frameGeometry(), QImage2Text(image));
+        auto const transdlg = qobject_cast<QWidget*>(GetMainObject(u8"neotranslateplg"));
+        if (!transdlg) return;
+        auto const txtfrom = transdlg->findChild<QPlainTextEdit*>("neoPlainTextFrom");
+        txtfrom->setPlainText(PluginObject::Utf82QString(m_Ocr->GetText(QImage2Pix(image))));
+        transdlg->show();
       }},
     },
     {u8"setDataDir",
@@ -158,7 +163,7 @@ void NeoOcrPlg::InitFunctionMap() {
 
 void NeoOcrPlg::InitMenuAction(QMenu* pluginMenu)
 {
-  this->PluginObject::InitFunctionMap();
+  this->PluginObject::InitMenuAction(pluginMenu);
 }
 
 YJson& NeoOcrPlg::InitSettings(YJson& settings)

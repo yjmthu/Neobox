@@ -31,6 +31,8 @@ NeoTranslateDlg::NeoTranslateDlg(YJson& settings)
       m_BtnCopyTo(new QPushButton(m_TextTo)),
       m_BtnTransMode(new QPushButton(this)) {
   setWindowTitle(QStringLiteral("极简翻译"));
+  m_TextFrom->setObjectName("neoPlainTextFrom");
+  m_TextTo->setObjectName("neoPlainTextTo");
   QVBoxLayout* pvLayout = new QVBoxLayout(this);
   pvLayout->addWidget(m_TextFrom);
   pvLayout->addWidget(m_TextTo);
