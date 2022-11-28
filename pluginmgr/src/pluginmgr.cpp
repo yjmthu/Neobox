@@ -78,8 +78,6 @@ PluginMgr::PluginMgr(GlbObject* glb, QMenu* pluginMainMenu):
       }},
     }};
   }
-  LoadPlugins();
-  InitBroadcast();
 }
 
 PluginMgr::~PluginMgr()
@@ -91,24 +89,36 @@ PluginMgr::~PluginMgr()
   delete m_Settings;
 }
 
-void PluginMgr::InitSettingMenu(QMenu* settingsMenu)
+void PluginMgr::LoadPlugins(QMenu* settingsMenu)
 {
-  QActionGroup* group = new QActionGroup(settingsMenu);
-  group->setExclusive(true);
   for (auto& [i, j]: m_Settings->find(u8"Plugins")->second.getObject()) {
-    const auto& name = i;
+    const auto name = i;
     const auto& friendlyName = j[u8"FriendlyName"].getValueString();
     auto const action = settingsMenu->addAction(PluginObject::Utf82QString(friendlyName));
     action->setCheckable(true);
-    action->setChecked(j[u8"Enabled"].isTrue());
-    group->addAction(action);
-    QObject::connect(action, &QAction::triggered, settingsMenu, [this, &name, &friendlyName](bool on){
+    if (j[u8"Enabled"].isTrue()) {
+      auto& pluginSttings = m_Settings->find(u8"PluginsConfig")->second[name];
       auto& plugin = m_Plugins[name];
-      m_Settings->find(name)->second[u8"Enabled"] = on;
+      if ((plugin = LoadPlugin(name))) {
+        plugin->InitMenuAction();
+        action->setChecked(true);
+      } else {
+        action->setChecked(false);
+      }
+    } else {
+      action->setChecked(false);
+    }
+    QObject::connect(action, &QAction::triggered, settingsMenu, [this, action, name](bool on){
+      auto& plugin = m_Plugins[name];
+      m_Settings->find(u8"Plugins")->second[name][u8"Enabled"] = on;
       SaveSettings();
       if (on) {
         if ((plugin = LoadPlugin(name))) {
           plugin->InitMenuAction();
+        } else {
+          action->setChecked(false);
+          m_GlbObject->glbShowMsg("设置失败！");
+          return;
         }
       } else {
         FreePlugin(plugin);
@@ -116,22 +126,8 @@ void PluginMgr::InitSettingMenu(QMenu* settingsMenu)
       m_GlbObject->glbShowMsg("设置成功！");
     });
   }
-}
-
-void PluginMgr::LoadPlugins()
-{
-  for (const auto& [name, info]: m_Settings->find(u8"Plugins")->second.getObject()) {
-    if (!info[u8"Enabled"].isTrue()) continue;
-    auto& pluginSttings = m_Settings->find(u8"PluginsConfig")->second[name];
-    auto& pluginName = info[u8"FriendlyName"].getValueString();
-    PluginObject* objptr = LoadPlugin(name);
-    if (!objptr) {
-      continue;
-    }
-    objptr->InitMenuAction();
-    m_Plugins[name] = objptr;
-  }
   SaveSettings();
+  InitBroadcast();
 }
 
 PluginObject* PluginMgr::LoadPlugin(const std::u8string& pluginName)
@@ -174,19 +170,21 @@ PluginObject* PluginMgr::LoadPlugin(const std::u8string& pluginName)
 
 void PluginMgr::FreePlugin(PluginObject*& plugin)
 {
-  delete plugin;
-  auto& hdll = m_PluginPath[plugin];
+  auto const ptr = plugin;
+  plugin = nullptr;
+  delete ptr;
+  auto& hdll = m_PluginPath[ptr];
   FreeLibrary(reinterpret_cast<HINSTANCE>(hdll));
   hdll = nullptr;
-  plugin = nullptr;
 }
 
 void PluginMgr::InitBroadcast()
 {
   for (auto& [name, plugin]: m_Plugins) {
+    if (!plugin) continue;
     for (const auto& [idol, fun]: plugin->m_Following) {
       auto iter = m_Plugins.find(idol);
-      if (iter == m_Plugins.end()) continue;
+      if (iter == m_Plugins.end() || !iter->second) continue;
       iter->second->m_Followers.push_back(&fun);
     }
   }

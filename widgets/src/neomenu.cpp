@@ -65,7 +65,7 @@ void NeoMenu::InitPluginMgr()
   menu->setAttribute(Qt::WA_TranslucentBackground, true);
   menu->setToolTipsVisible(true);
   m_SettingMenu->addAction("插件状态")->setMenu(menu);
-  m_PluginMgr->InitSettingMenu(menu);
+  m_PluginMgr->LoadPlugins(menu);
 }
 
 void NeoMenu::InitSettingMenu()

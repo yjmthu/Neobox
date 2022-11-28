@@ -16,16 +16,17 @@ public:
   bool HasPlaugin(PluginObject* plugin);
   void WritteSettings();
   class YJson* GetSettings(const char8_t* key);
-  void InitSettingMenu(QMenu* settingsMenu);
   std::function<void()> SaveSettings;
   std::map<std::u8string, class QObject*> m_MainObjects;
+  PluginObject* GetPluginObject(const std::u8string& pluginName)
+    { return m_Plugins[pluginName]; }
+  void LoadPlugins(QMenu* settingsMenu);
   class GlbObject* const m_GlbObject;
   QMenu* const m_MainMenu;
 private:
   PluginObject* LoadPlugin(const std::u8string& path);
   void FreePlugin(PluginObject*& plugin);
   bool LoadPlugEnv(const std::filesystem::path& path);
-  void LoadPlugins();
   void InitBroadcast();
   const std::u8string m_SettingFileName;
   class YJson* m_Settings;
