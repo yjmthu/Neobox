@@ -66,9 +66,9 @@ void NeoTranslatePlg::InitFunctionMap() {
   };
 }
 
-void NeoTranslatePlg::InitMenuAction(QMenu* pluginMenu)
+void NeoTranslatePlg::InitMenuAction()
 {
-  PluginObject::InitMenuAction(pluginMenu);
+  PluginObject::InitMenuAction();
 }
 
 YJson& NeoTranslatePlg::InitSettings(YJson& settings)

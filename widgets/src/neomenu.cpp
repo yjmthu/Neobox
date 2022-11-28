@@ -55,12 +55,17 @@ void NeoMenu::InitPluginMenu()
   m_PluginMenu = new QMenu(this);
   m_PluginMenu->setAttribute(Qt::WA_TranslucentBackground, true);
   m_PluginMenu->setToolTipsVisible(true);
-  addAction("插件中心")->setMenu(m_PluginMenu);
+  addAction("插件设置")->setMenu(m_PluginMenu);
 }
 
 void NeoMenu::InitPluginMgr()
 {
   m_PluginMgr = new PluginMgr(m_GlbObject, m_PluginMenu);
+  auto const menu = new QMenu(m_SettingMenu);
+  menu->setAttribute(Qt::WA_TranslucentBackground, true);
+  menu->setToolTipsVisible(true);
+  m_SettingMenu->addAction("插件状态")->setMenu(menu);
+  m_PluginMgr->InitSettingMenu(menu);
 }
 
 void NeoMenu::InitSettingMenu()
@@ -74,8 +79,6 @@ void NeoMenu::InitSettingMenu()
   action->setChecked(IsAutoStart());
   connect(action, &QAction::triggered, this, std::bind(&NeoMenu::SetAutoSatrt, this, action, std::placeholders::_1));
   m_SettingMenu->addSeparator();
-  m_SettingMenu->addAction("插件事件");
-  m_SettingMenu->addAction("热键管理");
 }
 
 void NeoMenu::InitFunctionMap() {

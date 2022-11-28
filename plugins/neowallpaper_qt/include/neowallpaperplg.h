@@ -6,7 +6,7 @@
 class NeoWallpaperPlg: public PluginObject
 {
 protected:
-  void InitMenuAction(QMenu *pluginMenu) override;
+  void InitMenuAction() override;
 public:
   explicit NeoWallpaperPlg(YJson& settings);
   virtual ~NeoWallpaperPlg();

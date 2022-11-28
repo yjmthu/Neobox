@@ -114,4 +114,7 @@ GlbObject::GlbObject()
 
 GlbObject::~GlbObject()
 {
+  delete glbMenu;
+  delete glbTray;
 }
+

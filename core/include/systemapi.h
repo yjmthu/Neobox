@@ -146,8 +146,9 @@ void GetCmdOutput(std::wstring cmd, _Ty& result) {
 }
 
 inline std::wstring GetExeFullPath() {
-  WCHAR exeFullPath[MAX_PATH];
-  GetModuleFileNameW(NULL, exeFullPath, MAX_PATH);
+  std::wstring exeFullPath(MAX_PATH, '\0');
+  GetModuleFileNameW(NULL, exeFullPath.data(), MAX_PATH);
+  exeFullPath.erase(exeFullPath.find(L'\0'));
   return exeFullPath;
 }
 

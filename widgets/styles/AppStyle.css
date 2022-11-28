@@ -1,3 +1,9 @@
+QToolTip{
+  background-color: #fff;
+  color: #484848;
+  font-size:12px;
+}
+
 QWidget#center {
   background-color: #33333377;
   border-radius: 2px;

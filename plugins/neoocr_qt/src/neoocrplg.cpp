@@ -160,9 +160,9 @@ void NeoOcrPlg::InitFunctionMap() {
   };
 }
 
-void NeoOcrPlg::InitMenuAction(QMenu* pluginMenu)
+void NeoOcrPlg::InitMenuAction()
 {
-  this->PluginObject::InitMenuAction(pluginMenu);
+  this->PluginObject::InitMenuAction();
 }
 
 YJson& NeoOcrPlg::InitSettings(YJson& settings)

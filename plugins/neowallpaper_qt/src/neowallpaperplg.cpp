@@ -114,13 +114,13 @@ return ;
   };
 }
 
-void NeoWallpaperPlg::InitMenuAction(QMenu* pluginMenu)
+void NeoWallpaperPlg::InitMenuAction()
 {
-  m_MoreSettingsAction = new QAction("更多设置", pluginMenu);
-  LoadWallpaperTypeMenu(pluginMenu);
-  PluginObject::InitMenuAction(pluginMenu);
-  pluginMenu->addAction(m_MoreSettingsAction);
-  LoadWallpaperExMenu(pluginMenu);
+  m_MoreSettingsAction = new QAction("更多设置", m_MainMenu);
+  LoadWallpaperTypeMenu(m_MainMenu);
+  PluginObject::InitMenuAction();
+  m_MainMenu->addAction(m_MoreSettingsAction);
+  LoadWallpaperExMenu(m_MainMenu);
 }
 
 YJson& NeoWallpaperPlg::InitSettings(YJson& settings)

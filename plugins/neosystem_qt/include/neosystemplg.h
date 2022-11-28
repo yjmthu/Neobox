@@ -6,7 +6,7 @@
 class NeoSystemPlg: public PluginObject
 {
 protected:
-  void InitMenuAction(QMenu* pluginMenu) override;
+  void InitMenuAction() override;
 public:
   explicit NeoSystemPlg(YJson& settings);
   virtual ~NeoSystemPlg();

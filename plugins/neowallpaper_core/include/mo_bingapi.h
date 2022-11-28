@@ -102,12 +102,16 @@ using namespace std::literals;
       }
     }
 
-    auto& jsTemp = m_pSetting->find(u8"images")->second[s_uCurImgIndex];
-    ptr->ImagePath = (m_ImageDir / GetImageName(jsTemp)).u8string();
-    ptr->ImageUrl = m_u8strApiUrl + jsTemp[u8"urlbase"].getValueString() + u8"_UHD.jpg";
-    m_pSetting->toFile(m_szSettingPath);
-    ++s_uCurImgIndex &= 0x07;
-    ptr->ErrorCode = ImageInfo::NoErr;
+    try {
+      auto& jsTemp = m_pSetting->find(u8"images")->second[s_uCurImgIndex];
+      ptr->ImagePath = (m_ImageDir / GetImageName(jsTemp)).u8string();
+      ptr->ImageUrl = m_u8strApiUrl + jsTemp[u8"urlbase"].getValueString() + u8"_UHD.jpg";
+      m_pSetting->toFile(m_szSettingPath);
+      ++s_uCurImgIndex &= 0x07;
+      ptr->ErrorCode = ImageInfo::NoErr;
+    } catch (...) {
+      ptr->ErrorCode = ImageInfo::DataErr;
+    }
     return ptr;
   }
   virtual void SetCurDir(const std::u8string& str) override {

@@ -6,7 +6,7 @@
 class NeoTranslatePlg: public PluginObject
 {
 protected:
-  void InitMenuAction(QMenu* pluginMenu) override;
+  void InitMenuAction() override;
 public:
   explicit NeoTranslatePlg(YJson& settings);
   virtual ~NeoTranslatePlg();

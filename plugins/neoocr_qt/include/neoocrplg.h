@@ -6,7 +6,7 @@
 class NeoOcrPlg: public PluginObject
 {
 protected:
-  void InitMenuAction(QMenu* menu) override;
+  void InitMenuAction() override;
   void InitFunctionMap() override;
 public:
   explicit NeoOcrPlg(YJson& settings);

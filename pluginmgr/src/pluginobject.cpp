@@ -8,29 +8,42 @@
 
 extern PluginMgr* mgr;
 
-PluginObject::PluginObject(YJson& settings, std::u8string pluginName, std::u8string friendlyName):
+PluginObject::PluginObject(YJson& settings, std::u8string name,
+  const std::u8string& friendlyName):
   m_Settings(settings),
-  m_PlugInfo(PlugInfo { friendlyName, pluginName, m_FunctionMapVoid, m_FunctionMapBool })
+  m_PluginName(std::move(name)),
+  m_MainAction(mgr->m_MainMenu->addAction((Utf82QString(friendlyName)))),
+  m_MainMenu(new QMenu(mgr->m_MainMenu)),
+  m_PluginMethod(PluginMethod { m_FunctionMapVoid, m_FunctionMapBool })
 {
+  m_MainMenu->setAttribute(Qt::WA_TranslucentBackground, true);
+  m_MainMenu->setToolTipsVisible(true);
+  m_MainAction->setMenu(m_MainMenu);
 }
 
-void PluginObject::InitMenuAction(QMenu* pluginMenu)
+PluginObject::~PluginObject()
+{
+  delete m_MainMenu;
+  delete m_MainAction;
+}
+
+void PluginObject::InitMenuAction()
 {
   for (const auto& [_, funInfo]: m_FunctionMapVoid) {
-    auto const action = pluginMenu->addAction(
+    auto const action = m_MainMenu->addAction(
           Utf82QString(funInfo.friendlyName));
     action->setToolTip(PluginObject::Utf82QString(funInfo.description));
     QObject::connect(action,
-        &QAction::triggered, pluginMenu, funInfo.function);
+        &QAction::triggered, m_MainMenu, funInfo.function);
   }
   for (const auto& [_, funInfo]: m_FunctionMapBool) {
-    auto const action = pluginMenu->addAction(
+    auto const action = m_MainMenu->addAction(
           Utf82QString(funInfo.friendlyName));
     action->setCheckable(true);
     action->setChecked(funInfo.status());
     action->setToolTip(PluginObject::Utf82QString(funInfo.description));
     QObject::connect(action,
-        &QAction::triggered, pluginMenu, funInfo.function);
+        &QAction::triggered, m_MainMenu, funInfo.function);
   }
 }
 
@@ -47,12 +60,12 @@ QString PluginObject::Utf82QString(const std::u8string& str)
 
 void PluginObject::AddMainObject(QObject* object)
 {
-  mgr->m_MainObjects[m_PlugInfo.m_PluginName] = object;
+  mgr->m_MainObjects[m_PluginName] = object;
 }
 
 void PluginObject::RemoveMainObject()
 {
-  mgr->m_MainObjects[m_PlugInfo.m_PluginName] = nullptr;
+  mgr->m_MainObjects[m_PluginName] = nullptr;
 }
 
 QObject* PluginObject::GetMainObject(const std::u8string& pluginName)

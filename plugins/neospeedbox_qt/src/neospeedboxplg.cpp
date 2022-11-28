@@ -28,7 +28,7 @@ NeoSpeedboxPlg::NeoSpeedboxPlg(YJson& settings):
 
 NeoSpeedboxPlg::~NeoSpeedboxPlg()
 {
-  //
+  delete m_Speedbox;
 }
 
 void NeoSpeedboxPlg::InitFunctionMap() {
@@ -55,24 +55,24 @@ void NeoSpeedboxPlg::InitFunctionMap() {
   };
 }
 
-void NeoSpeedboxPlg::InitMenuAction(QMenu* pluginMenu)
+void NeoSpeedboxPlg::InitMenuAction()
 {
-  auto action = pluginMenu->addAction("网卡选择");
-  auto menu = new QMenu(pluginMenu);
+  auto action = m_MainMenu->addAction("网卡选择");
+  auto menu = new QMenu(m_MainMenu);
   menu->setAttribute(Qt::WA_TranslucentBackground, true);
   menu->setToolTipsVisible(true);
   action->setMenu(menu);
   m_Speedbox = new SpeedBox(this, m_Settings, menu);
   AddMainObject(m_Speedbox);   // 添加到对象列表
-  this->PluginObject::InitMenuAction(pluginMenu);
-  LoadHideAsideMenu(pluginMenu);
+  this->PluginObject::InitMenuAction();
+  LoadHideAsideMenu(m_MainMenu);
 
-  pluginMenu->addSeparator();
-  LoadChooseSkinMenu(pluginMenu);
-  pluginMenu->addAction("皮肤选择")->setMenu(m_ChooseSkinMenu);
-  AddSkinConnect(pluginMenu->addAction("添加皮肤"));
-  LoadRemoveSkinMenu(pluginMenu);
-  pluginMenu->addAction("皮肤删除")->setMenu(m_RemoveSkinMenu);
+  m_MainMenu->addSeparator();
+  LoadChooseSkinMenu(m_MainMenu);
+  m_MainMenu->addAction("皮肤选择")->setMenu(m_ChooseSkinMenu);
+  AddSkinConnect(m_MainMenu->addAction("添加皮肤"));
+  LoadRemoveSkinMenu(m_MainMenu);
+  m_MainMenu->addAction("皮肤删除")->setMenu(m_RemoveSkinMenu);
 
   m_Speedbox->InitShow();
   const auto& info = m_FunctionMapBool[u8"enableBlur"];

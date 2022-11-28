@@ -52,9 +52,9 @@ void NeoSystemPlg::InitFunctionMap() {
   };
 }
 
-void NeoSystemPlg::InitMenuAction(QMenu* pluginMenu)
+void NeoSystemPlg::InitMenuAction()
 {
-  this->PluginObject::InitMenuAction(pluginMenu);
+  this->PluginObject::InitMenuAction();
 }
 
 YJson& NeoSystemPlg::InitSettings(YJson& settings)

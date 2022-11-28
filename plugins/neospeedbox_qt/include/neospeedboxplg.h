@@ -6,7 +6,7 @@
 class NeoSpeedboxPlg: public PluginObject
 {
 protected:
-  void InitMenuAction(QMenu *pluginMenu) override;
+  void InitMenuAction() override;
 public:
   explicit NeoSpeedboxPlg(YJson& settings);
   virtual ~NeoSpeedboxPlg();
