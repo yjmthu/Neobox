@@ -101,7 +101,7 @@ void SpeedBox::UpdateSkin()
 
 void SpeedBox::SetBaseLayout() {
 
-  QUiLoader loader;
+  QUiLoader loader(this);
   const auto& skinName = m_Settings[u8"CurSkin"].getValueString();
   QString qSkinPath = PluginObject::Utf82QString(m_Settings[u8"UserSkins"][skinName].getValueString());
   if (!QFile::exists(qSkinPath))

@@ -14,7 +14,8 @@
 
 namespace fs = std::filesystem;
 
-#define WRITE_LOG(x) writelog((x))
+// #define WRITE_LOG(x) writelog((x))
+#define WRITE_LOG(x) 
 
 void writelog(std::string data)
 {
@@ -204,8 +205,9 @@ bool PluginMgr::LoadPlugEnv(const fs::path& dir)
     strEnvPaths.push_back(L';');
   auto path = fs::absolute(dir);
   path.make_preferred();
+  if (strEnvPaths.find(strEnvPaths) != std::wstring::npos)
+    return true;
   strEnvPaths.append(path.wstring());
-  WRITE_LOG(Wide2AnsiString(strEnvPaths));
   strEnvPaths.push_back(L'\0');
   BOOL const bRet = SetEnvironmentVariableW(varName, strEnvPaths.data());  
   return bRet;  
