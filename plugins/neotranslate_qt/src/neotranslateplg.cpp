@@ -2,7 +2,7 @@
 #include <translatedlg.h>
 #include <yjson.h>
 
-#include <QPlainTextEdit>
+#include <QTextEdit>
 
 #define CLASS_NAME NeoTranslatePlg
 #include <pluginexport.cpp>
@@ -32,7 +32,7 @@ NeoTranslatePlg::NeoTranslatePlg(YJson& settings):
     if (event == PluginEvent::U8string) {
       if (!data) return;
       const auto& str = *reinterpret_cast<std::u8string*>(data);
-      auto const txtfrom = m_TranslateDlg->findChild<QPlainTextEdit*>("neoPlainTextFrom");
+      auto const txtfrom = m_TranslateDlg->findChild<QTextEdit*>("neoTextFrom");
       txtfrom->setPlainText(Utf82QString(str));
       m_TranslateDlg->show();
     }

@@ -8,6 +8,7 @@
 #include <random>
 
 using namespace std::literals;
+
 inline std::u8string GetTimeStamp() {
   using namespace std::chrono;
   const auto ms =
@@ -34,7 +35,7 @@ inline std::u8string Sha256(const std::u8string& str) {
 }
 
 inline std::u8string Uuid1() {
-  std::u8string result(37, 0);
+  std::string result;
   union {
     struct {
       uint32_t time_low;
@@ -57,56 +58,60 @@ inline std::u8string Uuid1() {
   uuid.time_hi_and_version =
       (uint16_t)((uuid.time_hi_and_version & 0x0FFF) | 0x4000);
 
-  snprintf(reinterpret_cast<char*>(&result.front()), 37,
-           "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x", uuid.time_low,
-           uuid.time_mid, uuid.time_hi_and_version, uuid.clk_seq_hi_res,
-           uuid.clk_seq_low, uuid.node[0], uuid.node[1], uuid.node[2],
-           uuid.node[3], uuid.node[4], uuid.node[5]);
-  result.pop_back();
-  return result;
+  result = std::format("{:08x}-{:04x}-{:04x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
+      uuid.time_low, uuid.time_mid, uuid.time_hi_and_version, uuid.clk_seq_hi_res,
+      uuid.clk_seq_low, uuid.node[0], uuid.node[1], uuid.node[2],
+      uuid.node[3], uuid.node[4], uuid.node[5]);
+  return std::u8string(result.begin(), result.end());
 }
 
+
+std::map<std::u8string, std::u8string> Translate::m_LangNameMap
+{
+  {u8"auto",   u8"自动检测"},
+  {u8"zh",     u8"中文简体"},
+  {u8"zh-CNS", u8"中文简体"},
+  {u8"cht",    u8"中文繁体"},
+  {u8"en",     u8"英语"},
+  {u8"ja",     u8"日语"},
+  {u8"jp",     u8"日语"},
+  {u8"fra",    u8"法语"},
+  {u8"fr",     u8"法语"},
+  {u8"ko",     u8"韩语"},
+  {u8"ru",     u8"俄语"},
+};
+
+const Translate::LanguageMap Translate::m_LanguageCanFromTo
+{
+  {
+    {u8"auto", {u8"zh", u8"cht", u8"en", u8"jp", u8"fra", u8"ru"}},
+    {u8"zh",   {u8"cht", u8"en", u8"jp", u8"fra", u8"ru"}},
+    {u8"cht",  {u8"zh", u8"en", u8"jp", u8"fra", u8"ru"}},
+    {u8"en",   {u8"zh", u8"cht", u8"jp", u8"fra", u8"ru"}},
+    {u8"jp",   {u8"zh", u8"cht", u8"en", u8"fra", u8"ru"}},
+    {u8"fra",  {u8"zh", u8"cht", u8"en", u8"jp", u8"ru"}},
+    {u8"ru",   {u8"zh", u8"cht", u8"en", u8"jp", u8"fra"}},
+   },{
+    {u8"auto",   {u8"auto", u8"zh-CNS", u8"en", u8"ja", u8"ko", u8"fr", u8"ru"}},
+    {u8"zh-CNS", {u8"auto", u8"en", u8"ja", u8"ko", u8"fr", u8"ru"}},
+    {u8"en",     {u8"auto", u8"zh-CNS", u8"ja"}},
+    {u8"ja",     {u8"auto", u8"zh-CNS", u8"en"}},
+    {u8"ko",     {u8"auto", u8"zh-CNS"}},
+    {u8"fr",     {u8"auto", u8"zh-CNS"}},
+    {u8"ru",     {u8"auto", u8"zh-CNS"}},
+  }
+};
+
 Translate::Translate()
-    : m_LanPair(0, 0),
-      m_LanMap({
-          {u8"auto", u8"自动检测"},
-          {u8"zh", u8"中文简体"},
-          {u8"zh-CNS", u8"中文简体"},
-          {u8"cht", u8"中文繁体"},
-          {u8"en", u8"英语"},
-          {u8"ja", u8"日语"},
-          {u8"jp", u8"日语"},
-          {u8"fra", u8"法语"},
-          {u8"fr", u8"法语"},
-          {u8"ko", u8"韩语"},
-          {u8"ru", u8"俄语"},
-      }),
-      m_LanNamesBaidu(
-          {{u8"auto", {u8"zh", u8"cht", u8"en", u8"jp", u8"fra", u8"ru"}},
-           {u8"zh", {u8"cht", u8"en", u8"jp", u8"fra", u8"ru"}},
-           {u8"cht", {u8"zh", u8"en", u8"jp", u8"fra", u8"ru"}},
-           {u8"en", {u8"zh", u8"cht", u8"jp", u8"fra", u8"ru"}},
-           {u8"jp", {u8"zh", u8"cht", u8"en", u8"fra", u8"ru"}},
-           {u8"fra", {u8"zh", u8"cht", u8"en", u8"jp", u8"ru"}},
-           {u8"ru", {u8"zh", u8"cht", u8"en", u8"jp", u8"fra"}}}),
-      m_LanNamesYoudao({
-          {u8"auto",
-           {u8"auto", u8"zh-CNS", u8"en", u8"ja", u8"ko", u8"fr", u8"ru"}},
-          {u8"zh-CNS", {u8"auto", u8"en", u8"ja", u8"ko", u8"fr", u8"ru"}},
-          {u8"en", {u8"auto", u8"zh-CNS", u8"ja"}},
-          {u8"ja", {u8"auto", u8"zh-CNS", u8"en"}},
-          {u8"ko", {u8"auto", u8"zh-CNS"}},
-          {u8"fr", {u8"auto", u8"zh-CNS"}},
-          {u8"ru", {u8"auto", u8"zh-CNS"}},
-      }) {
-  SetDict(Dict::Baidu);
-  // SetDict(Dict::Youdao);
+    : m_LanPair(0, 0)
+ {
+  SetSource(Baidu);
 }
 
 Translate::~Translate() {}
 
-void Translate::SetDict(Dict dict) {
-  m_Dict = dict;
+void Translate::SetSource(Source dict) {
+  m_Source = dict;
   m_LanPair = {0, 0};
 }
 
@@ -114,9 +119,8 @@ std::u8string Translate::GetResultBaidu(const std::u8string& text) {
   static YJson jsData(
       YJson::O{{u8"from", u8"auto"}, {u8"to", u8"zh"}, {u8"q", YJson::String}});
 
-  jsData[u8"from"] = m_LanNamesBaidu[m_LanPair.first].first;
-  jsData[u8"to"] =
-      m_LanNamesBaidu[m_LanPair.first].second[m_LanPair.second];
+  jsData[u8"from"] = m_LanguageCanFromTo[m_Source][m_LanPair.first].first;
+  jsData[u8"to"] = m_LanguageCanFromTo[m_Source][m_LanPair.first].second[m_LanPair.second];
   jsData[u8"q"] = text;
 
   std::u8string strJsonData = jsData.toString(false);
@@ -159,9 +163,8 @@ std::u8string Translate::GetResultYoudao(const std::u8string& text) {
                                  {u8"salt"sv, YJson::Null},
                                  {u8"sign"sv, YJson::Null}});
 
-  m_scJson[u8"from"] = m_LanNamesYoudao[m_LanPair.first].first;
-  m_scJson[u8"to"] =
-      m_LanNamesYoudao[m_LanPair.first].second[m_LanPair.second];
+  m_scJson[u8"from"] = m_LanguageCanFromTo[m_Source][m_LanPair.first].first;
+  m_scJson[u8"to"] = m_LanguageCanFromTo[m_Source][m_LanPair.first].second[m_LanPair.second];
 
   m_scJson[u8"q"] = text;
   const std::u8string&& curtime = GetTimeStamp();
@@ -190,11 +193,11 @@ std::u8string Translate::GetResultYoudao(const std::u8string& text) {
 
 std::u8string Translate::GetResult(const std::u8string& text) {
   std::u8string result;
-  switch (m_Dict) {
-    case Dict::Baidu:
+  switch (m_Source) {
+    case Baidu:
       result = GetResultBaidu(text);
       break;
-    case Dict::Youdao:
+    case Youdao:
       result = GetResultYoudao(text);
       break;
     default:
@@ -213,7 +216,7 @@ void Translate::FormatYoudaoResult(std::u8string& result, const YJson& data) {
   // std::cout << data;
   std::u8string l = data[u8"l"].getValueString();
   if (auto basic = data.find(u8"basic"); basic == data.endO()) {
-    html = std::format("<p>{}</p><hr/>",
+    html = std::format("<h3>{}</3><hr/>",
                        S(data[u8"query"].getValueString()));
     auto& translation = data[u8"translation"].getArray();
     std::string buffer;
@@ -228,46 +231,50 @@ void Translate::FormatYoudaoResult(std::u8string& result, const YJson& data) {
   } else {
     if (!l.compare(0, 6, u8"zh-CNS")) {
       html = std::format(
-          "<p>{}  英[<span style='color:#44EEEE;'>{}</span>] 美[<span "
-          "style='color:#44EEEE;'>{}</span>]</p><hr/>",
+          "<h3>{}  英[<span style='color:#44EEEE;'>{}</span>] 美[<span "
+          "style='color:#44EEEE;'>{}</span>]</h3><hr/>",
           S(data[u8"query"].getValueString()),
           S(basic->second[u8"uk-phonetic"].getValueString()),
           S(basic->second[u8"us-phonetic"].getValueString()));
     } else if (auto phonetic = basic->second.find(u8"phonetic");
                phonetic != basic->second.endO()) {
       html = std::format(
-          "<p>{}  拼音[<span style='color:#44EEEE;'>{}</span>]</p><hr/>",
+          "<h3>{}  拼音[<span style='color:#44EEEE;'>{}</span>]</h3><hr/>",
           S(data[u8"query"].getValueString()),
           S(basic->second[u8"phonetic"].getValueString()));
     } else {
-      html = std::format("<p>{}</p><hr/>",
+      html = std::format("<h3>{}</h3><hr/>",
                          S(data[u8"query"].getValueString()));
     }
     auto wfs = basic->second.find(u8"wfs"sv);
     if (wfs != basic->second.endO()) {
+      html.append("<ul'>");
       for (auto& wf : wfs->second.getArray()) {
         auto temp = wf.beginO();
         if (temp == wf.endO() || temp->first != u8"wf"sv)
           break;
         html.append(std::format(
-            "<p>+ {}：<span style='color:#FF77CC;'>{}</span></p>",
+            "<li style='color:#FF77CC;'>{}: {}</li>",
             S(temp->second.find(u8"name")->second.getValueString()),
             S(temp->second.find(u8"value")->second.getValueString())));
       }
-      html.append("<hr/>"s);
+      html.append("</ul><hr/>"s);
     }
 
     const auto& explains = basic->second.find(u8"explains")->second.getArray();
-    for (auto& i : explains) {
-      html.append(std::format("<p>- {}</p>", S(i.getValueString())));
+    if (!explains.empty()) {
+      html.append("<ul>");
+      for (auto& i : explains) {
+        html.append(std::format("<li>{}</li>", S(i.getValueString())));
+      }
+      html.append("</ul><hr/>"s);
     }
-    if (!explains.empty())
-      html.append("<hr/>"s);
   }
 
   if (auto ptr = data.find(u8"web"); ptr != data.endO()) {
     std::string buffer;
-    for (int index = 0; auto& i : ptr->second.getArray()) {
+    html.append("<ol>");
+    for (auto& i : ptr->second.getArray()) {
       buffer.clear();
       const auto& value = i[u8"value"].getArray();
       for (auto& j : value) {
@@ -277,10 +284,10 @@ void Translate::FormatYoudaoResult(std::u8string& result, const YJson& data) {
       if (!buffer.empty())
         buffer.erase(buffer.size() - 2);
       html.append(std::format(
-          "<p>{}. <span style='color: #FF00FF;'>{}</span> &lt;{}&gt;</p>",
-          ++index, S(i[u8"key"].getValueString()), buffer));
+          "<li><span style='color: #FF00FF;'>{}</span> &lt;{}&gt;</li>",
+          S(i[u8"key"].getValueString()), buffer));
     }
-    html.append("<hr/>"s);
+    html.append("</ol><hr/>"s);
   }
   result.assign(html.begin(), html.end());
 }

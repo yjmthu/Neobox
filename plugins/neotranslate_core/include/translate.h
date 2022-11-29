@@ -7,21 +7,22 @@
 #include <vector>
 
 class Translate {
- public:
+public:
   // enum class Lan { AUTO, ZH_CN, ZH_TW, EN_US, JA_JP, FR_LU, RU_RU, MAX };
-  enum class Dict { Baidu, Youdao, Icba } m_Dict;
+  enum Source { Baidu = 0, Youdao = 1, None = 2 } m_Source;
+  typedef std::vector<std::vector<std::pair<std::u8string, std::vector<std::u8string>>>> LanguageMap;
+
+public:
   Translate();
   ~Translate();
+
+public:
   std::u8string GetResult(const std::u8string& text);
-  void SetDict(Dict dict);
-  inline Dict GetDict() const { return m_Dict; }
-  inline bool IsUsingBaidu() const { return m_Dict == Dict::Baidu; }
+  void SetSource(Source dict);
+  inline Source GetSource() const { return m_Source; }
   std::pair<size_t, size_t> m_LanPair;
-  std::map<std::u8string, std::u8string> m_LanMap;
-  const std::vector<std::pair<std::u8string, std::vector<std::u8string>>>
-      m_LanNamesBaidu;
-  const std::vector<std::pair<std::u8string, std::vector<std::u8string>>>
-      m_LanNamesYoudao;
+  static std::map<std::u8string, std::u8string> m_LangNameMap;
+  static const LanguageMap m_LanguageCanFromTo;
 
  private:
   std::u8string GetResultBaidu(const std::u8string& text);
