@@ -83,9 +83,11 @@ PluginMgr::PluginMgr(GlbObject* glb, QMenu* pluginMainMenu):
 
 PluginMgr::~PluginMgr()
 {
-  for (auto [i, j]: m_PluginPath) {
-    if (j) delete i;
-    FreeLibrary(reinterpret_cast<HINSTANCE>(j));
+  for (auto& [_, info]: m_Plugins) {
+    if (!info.plugin) continue;
+    delete info.plugin;
+    info.plugin = nullptr;
+    FreeLibrary(reinterpret_cast<HINSTANCE>(info.handle));
   }
   delete m_Settings;
 }
@@ -99,9 +101,9 @@ void PluginMgr::LoadPlugins(QMenu* settingsMenu)
     action->setCheckable(true);
     if (j[u8"Enabled"].isTrue()) {
       auto& pluginSttings = m_Settings->find(u8"PluginsConfig")->second[name];
-      auto& plugin = m_Plugins[name];
-      if ((plugin = LoadPlugin(name))) {
-        plugin->InitMenuAction();
+      auto& info = m_Plugins[name];
+      if ((info.plugin = LoadPlugin(name))) {
+        info.plugin->InitMenuAction();
         action->setChecked(true);
       } else {
         action->setChecked(false);
@@ -110,19 +112,20 @@ void PluginMgr::LoadPlugins(QMenu* settingsMenu)
       action->setChecked(false);
     }
     QObject::connect(action, &QAction::triggered, settingsMenu, [this, action, name](bool on){
-      auto& plugin = m_Plugins[name];
+      auto& info = m_Plugins[name];
       m_Settings->find(u8"Plugins")->second[name][u8"Enabled"] = on;
       SaveSettings();
       if (on) {
-        if ((plugin = LoadPlugin(name))) {
-          plugin->InitMenuAction();
+        if ((info.plugin = LoadPlugin(name))) {
+          info.plugin->InitMenuAction();
+          UpdateBroadcast(info.plugin);
         } else {
           action->setChecked(false);
           m_GlbObject->glbShowMsg("设置失败！");
           return;
         }
       } else {
-        FreePlugin(plugin);
+        FreePlugin(info);
       }
       m_GlbObject->glbShowMsg("设置成功！");
     });
@@ -165,29 +168,44 @@ PluginObject* PluginMgr::LoadPlugin(const std::u8string& pluginName)
     FreeLibrary(hdll);
   }
   auto plugin = newPlugin(m_Settings->find(u8"PluginsConfig")->second[pluginName], this);      // nice
-  m_PluginPath[plugin] = hdll;
   return plugin;
 }
 
-void PluginMgr::FreePlugin(PluginObject*& plugin)
+void PluginMgr::FreePlugin(PluginInfo& info)
 {
-  auto const ptr = plugin;
-  plugin = nullptr;
-  delete ptr;
-  auto& hdll = m_PluginPath[ptr];
-  FreeLibrary(reinterpret_cast<HINSTANCE>(hdll));
-  hdll = nullptr;
+  delete info.plugin;
+  info.plugin = nullptr;
+  FreeLibrary(reinterpret_cast<HINSTANCE>(info.handle));
 }
 
 void PluginMgr::InitBroadcast()
 {
-  for (auto& [name, plugin]: m_Plugins) {
-    if (!plugin) continue;
-    for (const auto& [idol, fun]: plugin->m_Following) {
-      auto iter = m_Plugins.find(idol);
-      if (iter == m_Plugins.end() || !iter->second) continue;
-      iter->second->m_Followers.push_back(&fun);
+  for (auto& [name, info]: m_Plugins) {
+    if (!info.plugin) continue;
+    for (const auto& idol: info.plugin->m_Following) {
+      auto iter = m_Plugins.find(idol.first);
+      if (iter == m_Plugins.end() || !iter->second.plugin) continue;
+      iter->second.plugin->m_Followers.insert(&idol.second);
     }
+  }
+}
+
+void PluginMgr::UpdateBroadcast(PluginObject* plugin)
+{
+  for (auto& [name, info]: m_Plugins) {
+    if (!info.plugin || info.plugin == plugin) continue;
+    auto const & lst = info.plugin->m_Following;
+    auto iter = std::find_if(lst.begin(), lst.end(),
+      [plugin](decltype(lst.front())& item){
+        return item.first == plugin->m_PluginName;
+      });
+    if (iter == lst.end()) continue;
+    plugin->m_Followers.insert(&iter->second);
+  }
+  for (auto& idol: plugin->m_Following) {
+    auto iter = m_Plugins.find(idol.first);
+    if (iter == m_Plugins.end() || !iter->second.plugin) continue;
+    iter->second.plugin->m_Followers.insert(&idol.second);
   }
 }
 
@@ -205,9 +223,14 @@ bool PluginMgr::LoadPlugEnv(const fs::path& dir)
     strEnvPaths.push_back(L';');
   auto path = fs::absolute(dir);
   path.make_preferred();
-  if (strEnvPaths.find(strEnvPaths) != std::wstring::npos)
-    return true;
-  strEnvPaths.append(path.wstring());
+  auto const & wpath = path.wstring();
+  if (auto pos = strEnvPaths.find(wpath); pos != std::wstring::npos) {
+    pos += wpath.size();
+    if (wpath.size() == pos || wpath[pos] == L';') {
+      return true;
+    }
+  }
+  strEnvPaths.append(wpath);
   strEnvPaths.push_back(L'\0');
   BOOL const bRet = SetEnvironmentVariableW(varName, strEnvPaths.data());  
   return bRet;  

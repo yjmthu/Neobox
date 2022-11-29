@@ -5,7 +5,7 @@
 
 #include <string>
 #include <map>
-#include <vector>
+#include <set>
 #include <list>
 #include <functional>
 
@@ -41,7 +41,7 @@ protected:
   const PluginMethod m_PluginMethod;
 public:
   std::list<std::pair<std::u8string, FollowerFunction>> m_Following;
-  std::vector<const FollowerFunction*> m_Followers;
+  std::set<const FollowerFunction*> m_Followers;
   virtual void InitMenuAction();
   static std::u8string QString2Utf8(const class QString& str);
   static QString Utf82QString(const std::u8string& str);

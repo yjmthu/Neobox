@@ -23,11 +23,11 @@ PluginObject::PluginObject(YJson& settings, std::u8string name,
 
 PluginObject::~PluginObject()
 {
-  for (const auto& [idol, fun]: m_Following) {
-    auto ptr = mgr->GetPluginObject(idol);
-    if (!ptr) continue;
-    auto& lst = ptr->m_Followers;
-    auto iter = std::find(lst.begin(), lst.end(), &fun);
+  for (const auto& idol: m_Following) {
+    auto& info = mgr->m_Plugins[idol.first];
+    if (!info.plugin) continue;
+    auto& lst = info.plugin->m_Followers;
+    auto iter = std::find(lst.begin(), lst.end(), &idol.second);
     lst.erase(iter);
   }
   delete m_MainMenu;
