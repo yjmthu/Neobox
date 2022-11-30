@@ -2,12 +2,14 @@
 #include <yjson.h>
 #include <httplib.h>
 #include <sha256.h>
+#include <md5.h>
 
 #include <chrono>
 #include <format>
 #include <random>
 
 using namespace std::literals;
+namespace chrono = std::chrono;
 
 inline std::u8string GetTimeStamp() {
   using namespace std::chrono;
@@ -32,6 +34,11 @@ inline std::u8string Sha256(const std::u8string& str) {
 		auto result =  SHA256::toString<char8_t>(digest);
 		delete[] digest;
   return result;
+}
+
+inline std::u8string Md5(const std::u8string& str)
+{
+  return MD5(str).toStr<char8_t>();
 }
 
 inline std::u8string Uuid1() {
@@ -115,30 +122,43 @@ void Translate::SetSource(Source dict) {
   m_LanPair = {0, 0};
 }
 
-std::u8string Translate::GetResultBaidu(const std::u8string& text) {
-  static YJson jsData(
-      YJson::O{{u8"from", u8"auto"}, {u8"to", u8"zh"}, {u8"q", YJson::String}});
+inline static std::u8string GetSalt() {
+  auto const now = chrono::system_clock::now();
+  auto const count = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+  std::string data = std::format("{}", count);
+  return std::u8string(data.begin(), data.end());
+}
 
+std::u8string Translate::GetResultBaidu(const std::u8string& text) {
+  // http://api.fanyi.baidu.com/product/113
+  static YJson jsData {
+    YJson::O{
+      {u8"from", u8"auto"},
+      {u8"to", u8"zh"},
+      {u8"q", YJson::String},
+      {u8"appid", u8"20210503000812254"},
+    }
+  };
+
+  const auto& salt = GetSalt();
   jsData[u8"from"] = m_LanguageCanFromTo[m_Source][m_LanPair.first].first;
   jsData[u8"to"] = m_LanguageCanFromTo[m_Source][m_LanPair.first].second[m_LanPair.second];
   jsData[u8"q"] = text;
+  jsData[u8"salt"] = salt;
+  jsData[u8"sign"].setText(Md5(u8"20210503000812254"s + text + salt + u8"Q_2PPxmCr66r6B2hi0ts"));
 
-  std::u8string strJsonData = jsData.toString(false);
-  HttpLib clt("https://aip.baidubce.com/rpc/2.0/mt/texttrans/v1?"
-                   "access_token=24.e722d8c3c3090cda4645507c8d1c06ba.2592000.1669883009.282335-27415445"s);
-  clt.SetHeader("Content-Type", "application/json;charset=utf-8");
-  clt.SetPostData(strJsonData.data(), strJsonData.size());
-
+  HttpLib clt(jsData.urlEncode(u8"https://fanyi-api.baidu.com/api/trans/vip/translate?"));
   auto res = clt.Get();
 
   if (res->status == 200 || res->status == 201) {
     YJson jsData(res->body.begin(), res->body.end());
     if (auto iter = jsData.find(u8"error_msg"); iter != jsData.endO()) {
       // Access token expired
-      return iter->second.getValueString();
+      return std::u8string(res->body.begin(), res->body.end());
+      // return iter->second.getValueString();
     }
     const auto& obTransResult =
-        jsData[u8"result"][u8"trans_result"].getArray();
+        jsData[u8"trans_result"].getArray();
 
     std::u8string content;
     for (auto& item : obTransResult) {
@@ -147,21 +167,24 @@ std::u8string Translate::GetResultBaidu(const std::u8string& text) {
     }
     return content;
   }
-  return std::u8string();
+  return u8"<h1>没网络了！</h1>"s;
 }
 
 std::u8string Translate::GetResultYoudao(const std::u8string& text) {
-  using namespace std::literals;
   static const char8_t APP_KEY[]{u8"0b5f90d14623b917"};
   static const char8_t APP_SECRET[]{u8"8X1HcIvXXETCRf2smIbey8AGJ2xGRyK3"};
-  static YJson m_scJson(YJson::O{{u8"from"sv, u8"auto"sv},
-                                 {u8"to"sv, u8"auto"sv},
-                                 {u8"appKey"sv, APP_KEY},
-                                 {u8"signType"sv, u8"v3"sv},
-                                 {u8"curtime"sv, YJson::String},
-                                 {u8"q"sv, YJson::Null},
-                                 {u8"salt"sv, YJson::Null},
-                                 {u8"sign"sv, YJson::Null}});
+  static YJson m_scJson {
+    YJson::O{
+      {u8"from"sv, u8"auto"sv},
+      {u8"to"sv, u8"auto"sv},
+      {u8"appKey"sv, APP_KEY},
+      {u8"signType"sv, u8"v3"sv},
+      {u8"curtime"sv, YJson::String},
+      {u8"q"sv, YJson::Null},
+      {u8"salt"sv, YJson::Null},
+      {u8"sign"sv, YJson::Null}
+    }
+  };
 
   m_scJson[u8"from"] = m_LanguageCanFromTo[m_Source][m_LanPair.first].first;
   m_scJson[u8"to"] = m_LanguageCanFromTo[m_Source][m_LanPair.first].second[m_LanPair.second];
@@ -192,18 +215,7 @@ std::u8string Translate::GetResultYoudao(const std::u8string& text) {
 }
 
 std::u8string Translate::GetResult(const std::u8string& text) {
-  std::u8string result;
-  switch (m_Source) {
-    case Baidu:
-      result = GetResultBaidu(text);
-      break;
-    case Youdao:
-      result = GetResultYoudao(text);
-      break;
-    default:
-      break;
-  }
-  return result;
+  return m_Source == Youdao ? GetResultYoudao(text) : GetResultBaidu(text);
 }
 
 inline std::string S(const std::u8string& x) {

@@ -1,15 +1,18 @@
 cmake_minimum_required(VERSION 3.10.1)
 
-find_package(CURL CONFIG REQUIRED)
+if (UNIX)
+  find_package(CURL CONFIG REQUIRED)
+endif()
 
 file(GLOB sources src/*.cpp)
 
 add_library(network STATIC ${sources})
 
-set(libraries CURL::libcurl)
 
 if (WIN32)
-  list(APPEND libraries Wininet)
+  set(libraries Winhttp)
+else()
+  set(libraries CURL::libcurl)
 endif()
 
 target_link_libraries(network PRIVATE ${libraries})

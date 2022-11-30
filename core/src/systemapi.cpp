@@ -46,7 +46,7 @@ typedef BOOL(WINAPI* pGetWindowCompositionAttribute)(HWND, WINCOMPATTRDATA*);
 
 BOOL GetWindowCompositionAttribute(HWND hWnd, ACCENT_POLICY* accent) {
   BOOL ret = FALSE;
-  HMODULE hUser = GetModuleHandle(L"user32.dll");
+  HMODULE hUser = GetModuleHandleW(L"user32.dll");
   if (hUser) {
     pGetWindowCompositionAttribute getWindowCompositionAttribute =
         (pGetWindowCompositionAttribute)GetProcAddress(

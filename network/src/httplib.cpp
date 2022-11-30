@@ -1,9 +1,10 @@
+#ifdef _WIN32
+#include <systemapi.h>
+#include <Shlobj.h>
+#include <winhttp.h>
+#else
 #include <curl/curl.h>
 #include <curl/header.h>
-
-#ifdef _WIN32
-#include <Shlobj.h>
-#include <wininet.h>
 #endif  // _WIN32
 
 #include <httplib.h>
@@ -11,10 +12,26 @@
 #include <fstream>
 #include <format>
 
+using namespace std::literals;
+namespace fs = std::filesystem;
+
 bool HttpLib::IsOnline() {
 #ifdef _WIN32
+  BOOL bResult = FALSE;
   DWORD flags;
-  return InternetGetConnectedState(&flags, 0);
+  typedef BOOL(* pInternetGetConnectedState)(LPDWORD, DWORD*);
+  
+  HMODULE hWininet = LoadLibraryW(L"Wininet.dll");
+  if (hWininet) {
+    pInternetGetConnectedState InternetGetConnectedState =
+        (pInternetGetConnectedState)GetProcAddress(
+            hWininet, "InternetGetConnectedState");
+    if (InternetGetConnectedState) {
+      bResult = InternetGetConnectedState(&flags, 0);
+    }
+    FreeLibrary(hWininet);
+  }
+  return bResult;
 #elif 0
   std::vector<std::string> result;
   GetCmdOutput<char>("ping www.baidu.com -c 2", result);
@@ -57,38 +74,135 @@ size_t HttpLib::WriteString(void* buffer,
 }
 
 HttpLib::~HttpLib() {
-  curl_easy_cleanup(m_Curl);
+#ifdef _WIN32
+  if(m_hRequest)
+    WinHttpCloseHandle(m_hRequest);
+  if (m_hConnect)
+    WinHttpCloseHandle(m_hConnect);
+  if (m_hSession)
+    WinHttpCloseHandle(m_hSession);
+#else
+  if (m_hSession)
+    curl_easy_cleanup(m_hSession);
+#endif
 }
 
-void HttpLib::CurlInit()
+std::wstring HttpLib::GetDomain()
 {
-  if (m_Curl)
-    curl_easy_cleanup(m_Curl);
-  m_Curl = curl_easy_init();
-  curl_easy_setopt(m_Curl, CURLOPT_HEADER, false);
-  curl_easy_setopt(m_Curl, CURLOPT_URL, m_Url.data());
-  curl_easy_setopt(m_Curl, CURLOPT_SSL_VERIFYPEER, false);
-  curl_easy_setopt(m_Curl, CURLOPT_SSL_VERIFYHOST, false);
-  curl_easy_setopt(m_Curl, CURLOPT_READFUNCTION, NULL);
-  curl_easy_setopt(m_Curl, CURLOPT_NOSIGNAL, 1L);
-  curl_easy_setopt(m_Curl, CURLOPT_POST, 0L);
+  std::wstring result;
+  if (m_Url.starts_with("https://")) {
+    result = Ansi2WideString(m_Url.substr(8, m_Url.find('/', 8) - 8));
+  } else if (m_Url.starts_with("http://")) {
+    result = Ansi2WideString(m_Url.substr(7, m_Url.find('/', 7) - 7));
+  } else {
+    throw nullptr;
+  }
+  result.push_back(L'\0');
+  return result;
+}
+
+std::wstring HttpLib::GetPath()
+{
+  size_t pos;
+  if (m_Url.starts_with("https://")) {
+    pos = m_Url.find('/', 8);
+  } else if (m_Url.starts_with("http://")) {
+    pos = m_Url.find('/', 7);
+  } else {
+    throw nullptr;
+  }
+  if (pos == std::string::npos) {
+    return L"/"s;
+  }
+  auto result = Ansi2WideString(m_Url.substr(pos));
+  result.push_back(L'\0');
+  return result;
+}
+
+void HttpLib::HttpInit()
+{
+  if (!WinHttpCheckPlatform()) {
+    std::cerr << "This platform is NOT supported by WinHTTP.\n";
+    throw nullptr;
+  }
+  m_PostData.data = nullptr;
+  m_PostData.size = 0;
+#ifdef _WIN32
+  if (m_hConnect) WinHttpCloseHandle(m_hConnect);
+  if (m_hSession) {
+    WinHttpCloseHandle(m_hSession);
+  }
+  m_hSession = WinHttpOpen(L"A WinHTTP Example Program/1.0", 
+    WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+    WINHTTP_NO_PROXY_NAME, 
+    WINHTTP_NO_PROXY_BYPASS, 0);
+  if (m_hSession) {
+    auto url = GetDomain();
+    m_hConnect = WinHttpConnect(m_hSession, url.data(), INTERNET_DEFAULT_HTTP_PORT, 0);
+  }
+#else
+  m_Url.push_back('\0');
+  if (m_hSession)
+    curl_easy_cleanup(m_hSession);
+  m_hSession = curl_easy_init();
+  curl_easy_setopt(m_hSession, CURLOPT_HEADER, false);
+  curl_easy_setopt(m_hSession, CURLOPT_URL, m_Url.data());
+  curl_easy_setopt(m_hSession, CURLOPT_SSL_VERIFYPEER, false);
+  curl_easy_setopt(m_hSession, CURLOPT_SSL_VERIFYHOST, false);
+  curl_easy_setopt(m_hSession, CURLOPT_READFUNCTION, NULL);
+  curl_easy_setopt(m_hSession, CURLOPT_NOSIGNAL, 1L);
+  curl_easy_setopt(m_hSession, CURLOPT_POST, 0L);
+#endif
 }
 
 void HttpLib::SetRedirect(long redirect)
 {
-  curl_easy_setopt(m_Curl, CURLOPT_FOLLOWLOCATION, redirect);
+#ifdef _WIN32
+  ULONGLONG flag = redirect ? WINHTTP_OPTION_REDIRECT_POLICY_DISALLOW_HTTPS_TO_HTTP : WINHTTP_OPTION_REDIRECT_POLICY_NEVER;
+  WinHttpSetOption(m_hSession, WINHTTP_OPTION_REDIRECT_POLICY, &flag, sizeof(flag));
+#else
+  curl_easy_setopt(m_hSession, CURLOPT_FOLLOWLOCATION, redirect);
+#endif
 }
 
-void HttpLib::SetPostData(const void *data, size_t size)
+void HttpLib::SetPostData(void *data, size_t size)
 {
-  curl_easy_setopt(m_Curl, CURLOPT_POST, 1L);
-  curl_easy_setopt(m_Curl, CURLOPT_POSTFIELDS, data);
-  curl_easy_setopt(m_Curl, CURLOPT_POSTFIELDSIZE, size);
+  m_PostData.data = data;
+  m_PostData.size = size;
 }
 
-void HttpLib::CurlPerform()
+bool HttpLib::SendRequestData()
 {
-  CURLcode lStatus;
+  if (m_PostData.data) {
+#ifdef _WIN32
+    if (!m_hRequest) return false;
+    return WinHttpSendRequest(m_hRequest,
+      WINHTTP_NO_ADDITIONAL_HEADERS, 0, m_PostData.data, m_PostData.size, m_PostData.size, 0);
+#else
+    curl_easy_setopt(m_hSession, CURLOPT_POST, 1L);
+    curl_easy_setopt(m_hSession, CURLOPT_POSTFIELDS, m_PostData.data);
+    curl_easy_setopt(m_hSession, CURLOPT_POSTFIELDSIZE, m_PostData.size);
+#endif
+  } else {
+#ifdef _WIN32
+    if (!m_hRequest) return false;
+    return WinHttpSendRequest(m_hRequest,
+      WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0);
+#endif
+  }
+  return true;
+}
+
+void HttpLib::SendHeaders()
+{
+#ifdef _WIN32
+  if(m_hRequest) {
+    for (auto& [i, j]: m_Headers) {
+      auto header = Ansi2WideString(std::format("{}: {}", i, j));
+      WinHttpAddRequestHeaders(m_hRequest, header.data(), header.size(), WINHTTP_ADDREQ_FLAG_ADD);
+    }
+  }
+#else
   if (!m_Headers.empty()) {
     struct curl_slist *headers = nullptr;
     std::string buffer;
@@ -97,27 +211,126 @@ void HttpLib::CurlPerform()
       buffer.push_back('\0');
       headers = curl_slist_append(headers, buffer.data());
     }
-    curl_easy_setopt(m_Curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(m_hSession, CURLOPT_HTTPHEADER, headers);
   }
-  lStatus = curl_easy_perform(m_Curl);
-  if (lStatus != CURLE_OK) {
-    fprintf(stderr, "curl_easy_perform() failed: %s\n",
-              curl_easy_strerror(lStatus));
+#endif
+}
+
+void HttpLib::HttpPerform()
+{
+  bool bResults = false;
+#ifdef _WIN32
+  auto path = GetPath();
+  m_hRequest = WinHttpOpenRequest (m_hConnect,
+    m_PostData.data ? L"POST": L"GET",
+    path.data(), L"HTTP/1.1", WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, 0);
+#else
+  curl_easy_setopt(m_hSession, CURLOPT_WRITEFUNCTION, m_CallBack);
+  curl_easy_setopt(m_hSession, CURLOPT_WRITEDATA, m_DataBuffer);
+#endif
+  SendHeaders();
+#ifdef _WIN32
+  if (m_hRequest) {
+    bResults = SendRequestData();
   } else {
-    curl_easy_getinfo(m_Curl, CURLINFO_RESPONSE_CODE, &m_Response.status);
-    if((lStatus == CURLE_OK) && ((m_Response.status / 100) != 3)) {
-      char *ct = nullptr;
-      m_Response.headers.clear();
-      lStatus = curl_easy_getinfo(m_Curl, CURLINFO_CONTENT_TYPE, &ct);
-      if(!lStatus && ct) {
-        m_Response.headers["Content-Type"] = ct;
+    std::cerr << "WinHttpOpenRequest failed: " << GetLastError() << std::endl;
+  }
+  if(bResults) {
+    bResults = WinHttpReceiveResponse(m_hRequest, NULL);
+  } else {
+    std::cerr << "WinHttpSendRequest failed: " << GetLastError() << std::endl;
+  }
+#else
+  auto lStatus = curl_easy_perform(m_hSession);
+  bResults = lStatus == CURLE_OK;
+#endif
+#ifdef _WIN32
+  if(DWORD dwSize = sizeof(m_Response.status); bResults) 
+    bResults = WinHttpQueryHeaders(m_hRequest, 
+                WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+      NULL, &m_Response.status, &dwSize, WINHTTP_NO_HEADER_INDEX);
+  else
+    std::cerr << "WinHttpReceiveResponse failed: " << GetLastError() << std::endl;
+  if(bResults)
+  {
+    if(m_Response.status == 304) 
+      std::cout << "Document has not been updated.\n";
+  }
+#else
+  if (bResults)
+    lStatus = curl_easy_getinfo(m_hSession, CURLINFO_RESPONSE_CODE, &m_Response.status);
+  else
+    std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(lStatus) << std::endl;
+  bResults = lStatus == CURLE_OK;
+#endif
+  if(bResults) {
+    m_Response.headers.clear();
+#ifdef _WIN32
+    DWORD dwSize = 0;
+    WinHttpQueryHeaders(m_hRequest, WINHTTP_QUERY_RAW_HEADERS_CRLF,
+                          WINHTTP_HEADER_NAME_BY_INDEX, NULL,
+                          &dwSize, WINHTTP_NO_HEADER_INDEX);
+
+    // Allocate memory for the buffer.
+    if( GetLastError( ) == ERROR_INSUFFICIENT_BUFFER )
+    {
+      auto lpOutBuffer = new WCHAR[dwSize/sizeof(WCHAR)];
+
+      // Now, use WinHttpQueryHeaders to retrieve the header.
+      bResults = WinHttpQueryHeaders(m_hRequest,
+                                  WINHTTP_QUERY_RAW_HEADERS_CRLF,
+                                  WINHTTP_HEADER_NAME_BY_INDEX,
+                                  lpOutBuffer, &dwSize,
+                                  WINHTTP_NO_HEADER_INDEX);
+      if (bResults) { // regex expr: '/^([^:]+):([^\n]+)/'
+        std::wistringstream strstream(bResults);
+        std::wstring buffer;
+        while (strstream >> buffer) {
+          const auto str = Wide2AnsiString(buffer);
+          const auto pos = str.find(':');
+          m_Response.headers[str.substr(0, pos)] = str.substr(pos+1);
+        }
+        delete[] lpOutBuffer;
       }
-    } else {
+    }
+
+    if (bResults) {
+      std::string strBuffer;
+      DWORD dwDownloaded = 0;         // 实际收取的字符数
+      for (;;) {
+        dwSize = 0;
+        bResults = WinHttpQueryDataAvailable(m_hRequest, &dwSize);
+        if (!bResults) {
+          std::wcerr << L"WinHttpQueryDataAvailable failed: " << GetLastError() << std::endl;
+          break;
+        }           
+        if (dwSize <= 0) break;            
+        strBuffer.resize(dwSize);
+        bResults = WinHttpReadData(m_hRequest, strBuffer.data(), dwSize, &dwDownloaded);
+        if (!bResults) {
+          std::wcout << L"WinHttpQueryDataAvailable failed: " << GetLastError() << std::endl;
+        }
+        if (!dwDownloaded) break;
+        m_CallBack(strBuffer.data(), sizeof(char), dwDownloaded, m_DataBuffer);
+      };
+    }
+#else
+    char *ct = nullptr;
+    lStatus = curl_easy_getinfo(m_hSession, CURLINFO_CONTENT_TYPE, &ct);
+    if(!lStatus && ct) {
+      m_Response.headers["Content-Type"] = ct;
+    }
+#endif
+    if (m_Response.status / 100 == 3) {
+#ifdef _WIN32
+      m_Response.location = m_Response.headers["Location"];
+#else
       char* szRedirectUrl = nullptr;
-      lStatus = curl_easy_getinfo(m_Curl, CURLINFO_REDIRECT_URL, &szRedirectUrl);
+      lStatus = curl_easy_getinfo(m_hSession, CURLINFO_REDIRECT_URL, &szRedirectUrl);
       if (lStatus == CURLE_OK) {
         m_Response.location = szRedirectUrl;
       }
+#endif
     }
   }
 }
@@ -125,24 +338,32 @@ void HttpLib::CurlPerform()
 HttpLib::Response* HttpLib::Get()
 {
   m_Response.body.clear();
-  
-  curl_easy_setopt(m_Curl, CURLOPT_WRITEFUNCTION, &HttpLib::WriteString);
-  curl_easy_setopt(m_Curl, CURLOPT_WRITEDATA, &m_Response.body);
+  m_CallBack = &HttpLib::WriteString;
+  m_DataBuffer = &m_Response.body;
 
-  CurlPerform();
+  HttpPerform();
   return &m_Response;
 }
 
-HttpLib::Response* HttpLib::Get(const std::filesystem::path& path)
+HttpLib::Response* HttpLib::Get(const fs::path& path)
 {
   std::ofstream stream(path, std::ios::binary | std::ios::out);
+  m_Response.body.clear();
+  m_CallBack = &HttpLib::WriteFile;
   if (!stream.is_open())
     return 0;
-  curl_easy_setopt(m_Curl, CURLOPT_WRITEFUNCTION, &WriteFile);
-  curl_easy_setopt(m_Curl, CURLOPT_WRITEDATA, &stream);
+  m_DataBuffer = &stream;
 
-  CurlPerform();
+  HttpPerform();
   stream.close();
   return &m_Response;
 }
 
+HttpLib::Response* HttpLib::Get(HttpLib::CallbackFunction* callback, void* userdata) {
+  m_Response.body.clear();
+  m_CallBack = callback;
+  m_DataBuffer = userdata;
+
+  HttpPerform();
+  return &m_Response;
+}
