@@ -29,18 +29,17 @@ YJson& ScriptOutput::InitSetting(YJson& setting)
 {
   if (setting.isObject())
     return setting;
-  auto initDirPath = ms_HomePicLocation / u8"脚本获取";
-  initDirPath.make_preferred();
-  auto const initDir = initDirPath.u8string();
-  return setting = YJson::O {
+  setting = YJson::O {
     {u8"curcmd", u8"默认脚本"},
     {u8"cmds", YJson::O {
       {u8"默认脚本", YJson::O{
         {u8"command", u8"python.exe \"scripts/getpic.py\""},
-        {u8"directory", initDir}
+        {u8"directory", GetStantardDir(u8"脚本获取")}
       }}
     }}
   };
+  SaveSetting();
+  return setting;
 }
 
 ImageInfoEx ScriptOutput::GetNext()
@@ -95,7 +94,7 @@ ImageInfoEx ScriptOutput::GetNext()
 
 YJson& ScriptOutput::GetCurInfo() 
 {
-  return m_Setting[u8"cmsd"][m_Setting[u8"curcmd"].getValueString()];
+  return m_Setting[u8"cmds"][m_Setting[u8"curcmd"].getValueString()];
 }
 
 fs::path ScriptOutput::GetImageDir() const

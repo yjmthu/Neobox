@@ -26,7 +26,7 @@ std::unordered_set<fs::path> g_UsingFiles;
 std::atomic_bool WallBase::ms_IsWorking = false;
 const fs::path WallBase::m_DataDir = u8"wallpaperData";
 const fs::path WallBase::m_ConfigPath = u8"wallpaperData/Wallpaper.json";
-std::function<void()> WallBase::SaveSetting;
+std::function<void()> WallBase::SaveSetting = [](){};
 
 const fs::path WallBase::ms_HomePicLocation =
     GetSpecialFolderPath(CSIDL_MYPICTURES) / L"桌面壁纸";
@@ -57,7 +57,6 @@ WallBase* WallBase::GetNewInstance(YJson& setting, int type) {
     default:
       return s_pOther;
   }
-  SaveSetting();
 }
 
 void WallBase::ClearInstatnce() {

@@ -31,10 +31,8 @@ YJson& BingApi::InitSetting(YJson& setting) {
   if (setting.isObject()) {
     return setting;
   }
-  auto initDirPath = ms_HomePicLocation / u8"必应壁纸";
-  initDirPath.make_preferred();
-  auto const initDir = initDirPath.u8string();
-  return setting = YJson {
+  auto const initDir = GetStantardDir(u8"必应壁纸");
+  setting = YJson {
     YJson::O {
       { u8"api", u8"https://global.bing.com"},
       { u8"curday"sv,    GetToday() },
@@ -45,6 +43,8 @@ YJson& BingApi::InitSetting(YJson& setting) {
       { u8"index"sv, 0}
     }
   };
+  SaveSetting();
+  return setting;
 }
 
 void BingApi::InitData()
@@ -77,9 +77,9 @@ bool BingApi::CheckData()
   if (res->status != 200)
     return false;
 
+  m_Data = new YJson(res->body.begin(), res->body.end());
+
   m_Setting[u8"curday"] = GetToday();
-  // YJson data(res->body.begin(), res->body.end());
-  // YJson::swap(m_pSetting->find(u8"images")->second, data[u8"images"]);
   SaveSetting();
   m_Data->toFile(m_DataPath);
   return true;
@@ -92,6 +92,7 @@ ImageInfoEx BingApi::GetNext() {
   // 下这个接口含义，直接看后面的请求参数1084440_UHD.jpg
 
   ImageInfoEx ptr(new ImageInfo);
+
   if (!CheckData()) {
     ptr->ErrorMsg = u8"Bad network connection.";
     ptr->ErrorCode = ImageInfo::NetErr;

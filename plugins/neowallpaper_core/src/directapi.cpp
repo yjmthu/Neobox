@@ -29,7 +29,7 @@ YJson& DirectApi::InitSetting(YJson& setting)
     return setting;
   }
 
-  return m_Setting = YJson::O {
+  setting = YJson::O {
     {u8"ApiUrl"sv, u8"Unsplash"sv},
     {u8"ApiData"sv, YJson::O{
       {u8"Unsplash"sv, YJson::O{
@@ -54,6 +54,8 @@ YJson& DirectApi::InitSetting(YJson& setting)
       }}
     }},
   };
+  SaveSetting();
+  return setting;
 }
 /*
   auto& data =

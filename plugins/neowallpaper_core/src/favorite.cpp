@@ -3,7 +3,9 @@
 Favorite::Favorite(YJson& setting):
   WallBase(InitSetting(setting)),
   m_Data(nullptr)
-{}
+{
+  CheckData();
+}
 
 Favorite::~Favorite()
 {
@@ -14,12 +16,11 @@ YJson& Favorite::InitSetting(YJson& setting)
 {
   if (setting.isObject())
     return setting;
-  auto initDirPath = ms_HomePicLocation / u8"收藏壁纸";
-  initDirPath.make_preferred();
-  auto const initDir = initDirPath.u8string();
-  return setting = YJson::O {
-    { u8"Directory", initDir },
+  setting = YJson::O {
+    { u8"Directory", GetStantardDir(u8"收藏壁纸") },
   };
+  SaveSetting();
+  return setting;
 }
 
 bool Favorite::CheckData()
@@ -37,6 +38,12 @@ bool Favorite::CheckData()
 ImageInfoEx Favorite::GetNext()
 {
   ImageInfoEx ptr(new ImageInfo);
+
+  if (!CheckData()) {
+    ptr->ErrorCode = ImageInfo::Errors::DataErr;
+    ptr->ErrorMsg = u8"favorite data file can not be created!";
+    return ptr;
+  }
 
   auto& arrayA = m_Data->find(u8"Unused")->second.getArray();
   auto& arrayB = m_Data->find(u8"Used")->second.getArray();
@@ -66,7 +73,7 @@ ImageInfoEx Favorite::GetNext()
 
   fs::path pImgPath = ptr->ImagePath;
   if (fs::exists(pImgPath) && pImgPath.has_filename()) {
-    pImgPath = m_Setting[u8"Dir"].getValueString() / pImgPath.filename();
+    pImgPath = GetImageDir() / pImgPath.filename();
     if (!fs::exists(pImgPath)) {
       fs::copy(ptr->ImagePath, pImgPath);
     }
@@ -86,7 +93,7 @@ void Favorite::Dislike(const std::u8string& sImgPath)
     ptr->remove(iter);
   fs::path pImgPath = sImgPath;
   if (pImgPath.has_filename()) {
-    pImgPath = m_Setting[u8"Dir"].getValueString() / pImgPath.filename();
+    pImgPath = GetImageDir() / pImgPath.filename();
     if (fs::exists(pImgPath)) {
       fs::remove(pImgPath);
     }
@@ -108,7 +115,7 @@ void Favorite::UndoDislike(const std::u8string& sImgPath)
 
   fs::path pImgPath = sImgPath;
   if (fs::exists(pImgPath) && pImgPath.has_filename()) {
-    pImgPath = m_Setting[u8"Dir"].getValueString() / pImgPath.filename();
+    pImgPath = GetImageDir() / pImgPath.filename();
     if (!fs::exists(pImgPath)) {
       fs::copy(sImgPath, pImgPath);
     }
@@ -117,7 +124,7 @@ void Favorite::UndoDislike(const std::u8string& sImgPath)
 
 fs::path Favorite::GetImageDir() const
 {
-  return m_Setting[u8"Dir"].getValueString();
+  return m_Setting[u8"Directory"].getValueString();
 }
 
 void Favorite::SetJson(bool)
@@ -127,6 +134,6 @@ void Favorite::SetJson(bool)
 
 void Favorite::SetCurDir(const std::u8string& str)
 {
-  m_Setting[u8"Dir"] = str;
+  m_Setting[u8"Directory"] = str;
   SaveSetting();
 }

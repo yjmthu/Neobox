@@ -26,7 +26,7 @@ YJson& Native::InitSetting(YJson& setting)
   if (setting.isObject())
     return setting;
   
-  return setting = YJson::O {
+  setting = YJson::O {
     {u8"curdir", u8"默认位置"},
     {u8"max", 100},
     {u8"dirs", YJson::O {
@@ -37,6 +37,8 @@ YJson& Native::InitSetting(YJson& setting)
       }}
     }}
   };
+  SaveSetting();
+  return setting;
 }
 
 YJson& Native::GetCurInfo()

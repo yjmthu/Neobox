@@ -399,7 +399,7 @@ bool Wallpaper::RemoveCurrent() {
 }
 
 void Wallpaper::ReadSettings() {
-  std::ifstream file("History.txt", std::ios::in);
+  std::ifstream file("wallpaperData/History.txt", std::ios::in);
   if (file.is_open()) {
     std::string temp;
     if (std::getline(file, temp)) {
@@ -411,7 +411,7 @@ void Wallpaper::ReadSettings() {
     }
     file.close();
   }
-  file.open("Blacklist.txt", std::ios::in);
+  file.open("wallpaperData/Blacklist.txt", std::ios::in);
   if (file.is_open()) {
     std::string key, val;
     while (std::getline(file, key) && std::getline(file, val)) {
@@ -423,7 +423,7 @@ void Wallpaper::ReadSettings() {
 
 void Wallpaper::WriteSettings() const {
   int m_CountLimit = 100;
-  std::ofstream file("History.txt", std::ios::out);
+  std::ofstream file("wallpaperData/History.txt", std::ios::out);
   if (!file.is_open())
     return;
   if (!m_CurImage.empty())
@@ -444,14 +444,14 @@ void Wallpaper::AppendBlackList(const fs::path& path) {
   auto& back = m_BlackList.emplace_back(junk / path.filename(), path);
   fs::rename(back.second, back.first);
 
-  std::ofstream file("Blacklist.txt", std::ios::app);
+  std::ofstream file("wallpaperData/Blacklist.txt", std::ios::app);
   if (!file.is_open())
     return;
   file << back.first.string() << std::endl << back.second.string() << std::endl;
 }
 
 void Wallpaper::WriteBlackList() const {
-  std::ofstream file("Blacklist.txt", std::ios::out);
+  std::ofstream file("wallpaperData/Blacklist.txt", std::ios::out);
   if (!file.is_open())
     return;
   for (auto& i : m_BlackList) {

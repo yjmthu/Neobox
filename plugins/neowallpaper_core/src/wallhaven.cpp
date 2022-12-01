@@ -58,9 +58,7 @@ YJson& Wallhaven::InitSetting(YJson& setting)
       {u8"鬼刀壁纸"s, false, u8"q"s, u8"ghostblade"s}
   };
   auto& m_ApiObject = setting[u8"WallhavenApi"];
-  auto initDirPath = ms_HomePicLocation / u8"壁纸天堂";
-  initDirPath.make_preferred();
-  const auto initDir = initDirPath.u8string();
+  const auto initDir = GetStantardDir(u8"壁纸天堂");
 
   for (const auto& [i, j, k, l] : paramLIst) {
     auto& item = m_ApiObject.append(YJson::Object, i)->second;
@@ -69,6 +67,7 @@ YJson& Wallhaven::InitSetting(YJson& setting)
     item.append(initDir, u8"Directory");
     item.append(1, u8"StartPage");
   }
+  SaveSetting();
   return setting;
 }
 
@@ -138,6 +137,7 @@ bool Wallhaven::CheckData(ImageInfoEx ptr)
     };
   }
 
+  m_Data->find(u8"Api")->second = apiUrl;
   if (DownloadUrl(apiUrl)) {
     return true;
   }
@@ -154,6 +154,7 @@ ImageInfoEx Wallhaven::GetNext()
   ImageInfoEx ptr(new ImageInfo);
 
   if (!CheckData(ptr)) {
+    m_Data->toFile(m_DataPath);
     return ptr;
   }
 
