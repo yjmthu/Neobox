@@ -175,14 +175,14 @@ std::u8string Translate::GetResultYoudao(const std::u8string& text) {
   static const char8_t APP_SECRET[]{u8"8X1HcIvXXETCRf2smIbey8AGJ2xGRyK3"};
   static YJson m_scJson {
     YJson::O{
-      {u8"from"sv, u8"auto"sv},
-      {u8"to"sv, u8"auto"sv},
-      {u8"appKey"sv, APP_KEY},
-      {u8"signType"sv, u8"v3"sv},
-      {u8"curtime"sv, YJson::String},
-      {u8"q"sv, YJson::Null},
-      {u8"salt"sv, YJson::Null},
-      {u8"sign"sv, YJson::Null}
+      {u8"from", u8"auto"},
+      {u8"to", u8"auto"},
+      {u8"appKey", APP_KEY},
+      {u8"signType", u8"v3"},
+      {u8"curtime", YJson::String},
+      {u8"q", YJson::Null},
+      {u8"salt", YJson::Null},
+      {u8"sign", YJson::Null}
     }
   };
 
@@ -223,12 +223,11 @@ inline std::string S(const std::u8string& x) {
 }
 
 void Translate::FormatYoudaoResult(std::u8string& result, const YJson& data) {
-  using namespace std::literals;
   std::string html;
   // std::cout << data;
   std::u8string l = data[u8"l"].getValueString();
   if (auto basic = data.find(u8"basic"); basic == data.endO()) {
-    html = std::format("<h3>{}</3><hr/>",
+    html = std::format("<h3>{}</h3><hr/>",
                        S(data[u8"query"].getValueString()));
     auto& translation = data[u8"translation"].getArray();
     std::string buffer;

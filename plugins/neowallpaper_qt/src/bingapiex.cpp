@@ -27,7 +27,7 @@ BingApiExMenu::~BingApiExMenu()
 void BingApiExMenu::LoadSettingMenu()
 {
   connect(addAction("名称格式"), &QAction::triggered, this, [this]() {
-    auto& u8ImgFmt = m_Data[u8"imgfmt"].getValueString();
+    auto& u8ImgFmt = m_Data[u8"name-format"].getValueString();
     QString qImgFmt = QString::fromUtf8(u8ImgFmt.data(), u8ImgFmt.size());
     const QString qImgFmtNew =
         QInputDialog::getText(this, "图片名称", "输入名称格式",QLineEdit::Normal, qImgFmt);
@@ -38,7 +38,7 @@ void BingApiExMenu::LoadSettingMenu()
     m_CallBack(true);
   });
   connect(addAction("地理位置"), &QAction::triggered, this, [this]() {
-    auto& u8Mkt = m_Data[u8"mkt"].getValueString();
+    auto& u8Mkt = m_Data[u8"region"].getValueString();
     QString qMkt = QString::fromUtf8(u8Mkt.data(), u8Mkt.size());
     const QString qMktNew =
         QInputDialog::getText(this, "图片地区", "输入图片所在地区", QLineEdit::Normal, qMkt);

@@ -60,18 +60,19 @@ QPushButton#copyTextFrom {
   font-size: 12px;
 }
 
-QPushButton#btnTransMode::unchecked {
+QPushButton#btnTransMode {
   border-radius: 2px;
   background-color: white;
+  padding: 4px 7px 4px 7px;
 }
 
 QPushButton#btnTransMode::checked {
   border-radius: 2px;
-  background-color: rgb(50, 150, 200);
+  background-color: blueviolet;
 }
 
 QPushButton#btnTransMode:hover {
   border-radius: 2px;
-  background-color: rgb(50, 150, 200);
+  background-color: slategray;
 }
 

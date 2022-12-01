@@ -198,7 +198,7 @@ void NeoWallpaperPlg::LoadWallpaperExMenu(QMenu* parent)
 QMenu* NeoWallpaperPlg::LoadWallavenMenu(QMenu* parent)
 {
   return new WallhavenExMenu(
-    *m_Wallpaper->m_Wallpaper->GetJson(),
+    m_Wallpaper->m_Wallpaper->m_Setting,
     parent,
     std::bind(&WallBase::SetJson, m_Wallpaper->m_Wallpaper, std::placeholders::_1),
     std::bind(&Wallpaper::GetCurIamge, m_Wallpaper)
@@ -208,7 +208,7 @@ QMenu* NeoWallpaperPlg::LoadWallavenMenu(QMenu* parent)
 QMenu* NeoWallpaperPlg::LoadBingApiMenu(QMenu* parent)
 {
   return new BingApiExMenu(
-    *m_Wallpaper->m_Wallpaper->GetJson(),
+    m_Wallpaper->m_Wallpaper->m_Setting,
     parent,
     std::bind(&WallBase::SetJson, m_Wallpaper->m_Wallpaper, std::placeholders::_1)
   );
@@ -217,7 +217,7 @@ QMenu* NeoWallpaperPlg::LoadBingApiMenu(QMenu* parent)
 QMenu* NeoWallpaperPlg::LoadDirectApiMenu(QMenu* parent)
 {
   return new DirectApiExMenu(
-    *m_Wallpaper->m_Wallpaper->GetJson(),
+    m_Wallpaper->m_Wallpaper->m_Setting,
     parent,
     std::bind(&WallBase::SetJson, m_Wallpaper->m_Wallpaper, std::placeholders::_1)
   );
@@ -226,7 +226,7 @@ QMenu* NeoWallpaperPlg::LoadDirectApiMenu(QMenu* parent)
 QMenu* NeoWallpaperPlg::LoadNativeMenu(QMenu* parent)
 {
   return new NativeExMenu(
-    *m_Wallpaper->m_Wallpaper->GetJson(),
+    m_Wallpaper->m_Wallpaper->m_Setting,
     parent,
     std::bind(&WallBase::SetJson, m_Wallpaper->m_Wallpaper, std::placeholders::_1)
   );
@@ -235,7 +235,7 @@ QMenu* NeoWallpaperPlg::LoadNativeMenu(QMenu* parent)
 QMenu* NeoWallpaperPlg::LoadScriptMenu(QMenu* parent)
 {
   return new NativeExMenu(
-    *m_Wallpaper->m_Wallpaper->GetJson(),
+    m_Wallpaper->m_Wallpaper->m_Setting,
     parent,
     std::bind(&WallBase::SetJson, m_Wallpaper->m_Wallpaper, std::placeholders::_1)
   );

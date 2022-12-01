@@ -131,12 +131,13 @@ bool Wallpaper::SetWallpaper(fs::path imagePath) {
 
 Wallpaper::Wallpaper(YJson& settings, std::function<void()> callback)
     :  // m_PicHomeDir(GetSpecialFolderPath(CSIDL_MYPICTURES)),
-      m_Wallpaper(nullptr),
       m_Settings(settings),
+      m_Config(fs::exists(WallBase::m_ConfigPath) ? new YJson(WallBase::m_ConfigPath, YJson::UTF8): new YJson(YJson::Object)),
+      m_Wallpaper(nullptr),
       SettingsCallback(callback),
       m_Timer(new NeoTimer),
-      m_Favorites(WallBase::GetNewInstance(WallBase::FAVORITE)),
-      m_BingWallpaper(WallBase::GetNewInstance(WallBase::BINGAPI)) {
+      m_Favorites(WallBase::GetNewInstance(*m_Config, WallBase::FAVORITE)),
+      m_BingWallpaper(WallBase::GetNewInstance(*m_Config, WallBase::BINGAPI)) {
   ReadSettings();
   SetImageType(GetImageType());
   SetTimeInterval(GetTimeInterval());
@@ -182,7 +183,7 @@ void Wallpaper::SetSlot(int type) {
   }).detach();
 }
 
-const fs::path& Wallpaper::GetImageDir() const {
+fs::path Wallpaper::GetImageDir() const {
   return m_Wallpaper->GetImageDir();
 }
 
@@ -479,8 +480,6 @@ void Wallpaper::SetFirstChange(bool flag) {
     SettingsCallback();
   }
   if (flag) {
-    if (m_Wallpaper->NeedNetwork() && !HttpLib::IsOnline())
-      return;
     SetSlot(1);
   }
 }
@@ -501,7 +500,7 @@ bool Wallpaper::SetImageType(int index) {
     SettingsCallback();
   }
 
-  m_Wallpaper = WallBase::GetNewInstance(index);
+  m_Wallpaper = WallBase::GetNewInstance(*m_Config, index);
   return true;
 }
 

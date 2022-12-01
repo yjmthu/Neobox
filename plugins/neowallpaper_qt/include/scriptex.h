@@ -11,6 +11,8 @@ public:
   virtual ~ScriptExMenu();
 private:
   void LoadSettingMenu();
+  void LoadTypeChooseMenu();
+  void LoadDataEditMenu();
   const std::function<void(bool)> m_CallBack;
   YJson& m_Data;
 };

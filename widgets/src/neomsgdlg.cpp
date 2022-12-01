@@ -78,7 +78,7 @@ void NeoMsgDlg::InitAnimation()
 
 void NeoMsgDlg::showEvent(QShowEvent *event)
 {
-  auto screenSize = QGuiApplication::primaryScreen()->availableSize();
+  auto const screenSize = QGuiApplication::primaryScreen()->availableSize();
   m_pLabel->adjustSize();
   m_pFrame->adjustSize();
   this->adjustSize();

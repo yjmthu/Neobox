@@ -41,7 +41,7 @@ public:
   void SetPostData(void* data, size_t size);
   Response* Get();
   Response* Get(const std::filesystem::path& path);
-  Response* Get(CallbackFunction *callback, void* userData);
+  Response* Get(pCallbackFunction callback, void* userData);
   static bool IsOnline();
 private:
   Headers m_Headers;
@@ -62,7 +62,7 @@ private:
 private:
   static CallbackFunction WriteFile;
   static CallbackFunction WriteString;
-  CallbackFunction* m_CallBack;
+  pCallbackFunction m_CallBack;
   void* m_DataBuffer;
 };
 

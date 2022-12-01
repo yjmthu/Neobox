@@ -54,7 +54,7 @@
     - <del>xmake+xrepo</del> **CMake+Vcpkg**
     - MSVC 2022
     - Qt 6.4.1（最新版本）
-    - vcpkg (libcurl, leptonica, tesseract)
+    - vcpkg (libcurl[linux], leptonica, tesseract)
     - json库 [YJson](https://github.com/yjmthu/YJson)
 2. Linux
     - 更换系统后未曾尝试编译（待 GCC13 发布稳定后再考虑写linux部分代码）

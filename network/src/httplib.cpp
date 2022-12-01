@@ -9,6 +9,7 @@
 
 #include <httplib.h>
 #include <filesystem>
+#include <stdexcept>
 #include <fstream>
 #include <format>
 
@@ -30,6 +31,8 @@ bool HttpLib::IsOnline() {
       bResult = InternetGetConnectedState(&flags, 0);
     }
     FreeLibrary(hWininet);
+  } else {
+    throw std::runtime_error("Can't find Wininet library!");
   }
   return bResult;
 #elif 0
@@ -95,7 +98,7 @@ std::wstring HttpLib::GetDomain()
   } else if (m_Url.starts_with("http://")) {
     result = Ansi2WideString(m_Url.substr(7, m_Url.find('/', 7) - 7));
   } else {
-    throw nullptr;
+    throw std::logic_error("Url should begin with 'http://' or 'http://'!");
   }
   result.push_back(L'\0');
   return result;
@@ -109,7 +112,7 @@ std::wstring HttpLib::GetPath()
   } else if (m_Url.starts_with("http://")) {
     pos = m_Url.find('/', 7);
   } else {
-    throw nullptr;
+    throw std::logic_error("Url should begin with 'http://' or 'http://'!");
   }
   if (pos == std::string::npos) {
     return L"/"s;
@@ -122,8 +125,7 @@ std::wstring HttpLib::GetPath()
 void HttpLib::HttpInit()
 {
   if (!WinHttpCheckPlatform()) {
-    std::cerr << "This platform is NOT supported by WinHTTP.\n";
-    throw nullptr;
+    throw std::runtime_error("This platform is NOT supported by WinHTTP.");
   }
   m_PostData.data = nullptr;
   m_PostData.size = 0;
@@ -132,7 +134,7 @@ void HttpLib::HttpInit()
   if (m_hSession) {
     WinHttpCloseHandle(m_hSession);
   }
-  m_hSession = WinHttpOpen(L"A WinHTTP Example Program/1.0", 
+  m_hSession = WinHttpOpen(L"WinHTTP in Neobox/1.0", 
     WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
     WINHTTP_NO_PROXY_NAME, 
     WINHTTP_NO_PROXY_BYPASS, 0);
@@ -158,7 +160,8 @@ void HttpLib::HttpInit()
 void HttpLib::SetRedirect(long redirect)
 {
 #ifdef _WIN32
-  ULONGLONG flag = redirect ? WINHTTP_OPTION_REDIRECT_POLICY_DISALLOW_HTTPS_TO_HTTP : WINHTTP_OPTION_REDIRECT_POLICY_NEVER;
+  ULONGLONG flag = redirect ?
+    WINHTTP_OPTION_REDIRECT_POLICY_DISALLOW_HTTPS_TO_HTTP : WINHTTP_OPTION_REDIRECT_POLICY_NEVER;
   WinHttpSetOption(m_hSession, WINHTTP_OPTION_REDIRECT_POLICY, &flag, sizeof(flag));
 #else
   curl_easy_setopt(m_hSession, CURLOPT_FOLLOWLOCATION, redirect);
@@ -272,7 +275,7 @@ void HttpLib::HttpPerform()
                           &dwSize, WINHTTP_NO_HEADER_INDEX);
 
     // Allocate memory for the buffer.
-    if( GetLastError( ) == ERROR_INSUFFICIENT_BUFFER )
+    if(GetLastError( ) == ERROR_INSUFFICIENT_BUFFER)
     {
       auto lpOutBuffer = new WCHAR[dwSize/sizeof(WCHAR)];
 
@@ -290,21 +293,20 @@ void HttpLib::HttpPerform()
           const auto pos = str.find(':');
           m_Response.headers[str.substr(0, pos)] = str.substr(pos+1);
         }
-        delete[] lpOutBuffer;
       }
+
+      delete[] lpOutBuffer;
     }
 
     if (bResults) {
       std::string strBuffer;
-      DWORD dwDownloaded = 0;         // 实际收取的字符数
-      for (;;) {
-        dwSize = 0;
+      for (DWORD dwDownloaded = 0;;) {
         bResults = WinHttpQueryDataAvailable(m_hRequest, &dwSize);
         if (!bResults) {
           std::wcerr << L"WinHttpQueryDataAvailable failed: " << GetLastError() << std::endl;
           break;
         }           
-        if (dwSize <= 0) break;            
+        if (dwSize == 0) break;
         strBuffer.resize(dwSize);
         bResults = WinHttpReadData(m_hRequest, strBuffer.data(), dwSize, &dwDownloaded);
         if (!bResults) {
@@ -359,7 +361,7 @@ HttpLib::Response* HttpLib::Get(const fs::path& path)
   return &m_Response;
 }
 
-HttpLib::Response* HttpLib::Get(HttpLib::CallbackFunction* callback, void* userdata) {
+HttpLib::Response* HttpLib::Get(HttpLib::pCallbackFunction callback, void* userdata) {
   m_Response.body.clear();
   m_CallBack = callback;
   m_DataBuffer = userdata;

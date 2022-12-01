@@ -166,6 +166,7 @@ PluginObject* PluginMgr::LoadPlugin(const std::u8string& pluginName)
   if (!newPlugin) {
     WRITE_LOG("load plugin failed\npath name: " + path.string() + "\n");
     FreeLibrary(hdll);
+    return nullptr;
   }
   auto plugin = newPlugin(m_Settings->find(u8"PluginsConfig")->second[pluginName], this);      // nice
   return plugin;
