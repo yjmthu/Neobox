@@ -13,7 +13,7 @@ public:
   ~Favorite();
 public:
   YJson& InitSetting(YJson& setting);
-  bool CheckData();
+  void InitData();
   ImageInfoEx GetNext() override;
   fs::path GetImageDir() const override;
 

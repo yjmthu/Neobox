@@ -419,6 +419,17 @@ void Wallpaper::ReadSettings() {
     }
     file.close();
   }
+#ifdef _WIN32
+  fs::path const curWallpaper = RegReadString(HKEY_CURRENT_USER, L"Control Panel\\Desktop", L"WallPaper");
+  if (!curWallpaper.empty() && fs::exists(curWallpaper)) {
+    fs::path temp = m_CurImage;
+    temp.make_preferred();
+    if (temp != curWallpaper) {
+      m_PrevImgs.push_back(temp);
+      m_CurImage = curWallpaper.u8string();
+    }
+  }
+#endif
 }
 
 void Wallpaper::WriteSettings() const {

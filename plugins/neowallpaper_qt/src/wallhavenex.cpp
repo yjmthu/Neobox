@@ -55,12 +55,15 @@ void WallhavenExMenu::LoadSubSettingMenu(QAction* action)
     QByteArray&& array = action->text().toUtf8();
     m_Data[u8"WallhavenCurrent"].setText(array.begin(), array.end());
     m_CallBack(true);
+    glb->glbShowMsg("设置成功！");
   });
   if (!action->isChecked()) {
     connect(pSonMenu->addAction("删除此项"), &QAction::triggered, pSonMenu, [pSonMenu, this, action](){
       m_Data[u8"WallhavenApi"].remove(PluginObject::QString2Utf8(action->text()));
       m_CallBack(false);
+      action->deleteLater();
       pSonMenu->deleteLater();
+      glb->glbShowMsg("删除配置成功！");
     });
   }
   connect(pSonMenu->addAction("参数设置"), &QAction::triggered, this,
@@ -146,7 +149,7 @@ void WallhavenExMenu::EditCurType(const std::u8string& typeName)
     m_ActionGroup->addAction(action);
     LoadSubSettingMenu(action);
     m_CallBack(typeName == m_Data[u8"WallhavenCurrent"].getValueString());
-    glb->glbShowMsg("添加配置成功！");
+    glb->glbShowMsg("配置成功！");
   });
   editor->show();
 }
@@ -165,7 +168,7 @@ void WallhavenExMenu::EditNewType(const std::u8string& typeName)
     auto action = std::find_if(actions.begin(), actions.end(), [&name](QAction* a){return a->text() == name;});
     if (action == actions.end()) return;
     m_CallBack(typeName == m_Data[u8"WallhavenCurrent"].getValueString());
-    glb->glbShowMsg("修改配置成功！");
+    glb->glbShowMsg("配置成功！");
   });
   editor->show();
 }

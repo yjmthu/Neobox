@@ -4,7 +4,7 @@ Favorite::Favorite(YJson& setting):
   WallBase(InitSetting(setting)),
   m_Data(nullptr)
 {
-  CheckData();
+  InitData();
 }
 
 Favorite::~Favorite()
@@ -23,27 +23,27 @@ YJson& Favorite::InitSetting(YJson& setting)
   return setting;
 }
 
-bool Favorite::CheckData()
+void Favorite::InitData()
 {
-  if (m_Data) return true;
+  if (fs::exists(m_DataPath)) {
+    m_Data = new YJson(m_DataPath, YJson::UTF8);
+    if (m_Data->isObject()) {
+      return;
+    }
+    delete m_Data;
+    m_Data = nullptr;
+  }
   m_Data = new YJson(
     YJson::O{
       {u8"Unused", YJson::Array}, 
       {u8"Used", YJson::Array},
     });
   m_Data->toFile(m_DataPath);
-  return true;
 }
 
 ImageInfoEx Favorite::GetNext()
 {
   ImageInfoEx ptr(new ImageInfo);
-
-  if (!CheckData()) {
-    ptr->ErrorCode = ImageInfo::Errors::DataErr;
-    ptr->ErrorMsg = u8"favorite data file can not be created!";
-    return ptr;
-  }
 
   auto& arrayA = m_Data->find(u8"Unused")->second.getArray();
   auto& arrayB = m_Data->find(u8"Used")->second.getArray();

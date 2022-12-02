@@ -37,18 +37,18 @@ void MapEditor::SetBaseLayout()
                 std::bind(&QHBoxLayout::addWidget, pHLayout,
                           std::placeholders::_1, 0, Qt::Alignment()));
   pVLayout->addLayout(pHLayout);
-  std::u8string u8TypeName;
 
-    for (int i = 0; const auto& [key, value] : m_Data.getObject()) {
-      std::u8string_view value_view = value.getValueString();
-      m_Table->setItem(
-          i, 0,
-          new QTableWidgetItem(QString::fromUtf8(key.data(), key.size())));
-      m_Table->setItem(i, 1,
-                      new QTableWidgetItem(QString::fromUtf8(
-                          value_view.data(), value_view.size())));
-      ++i;
-    }
+  for (int i = 0; const auto& [key, value] : m_Data.getObject()) {
+    std::u8string_view value_view = value.getValueString();
+    m_Table->setItem(
+        i, 0,
+        new QTableWidgetItem(QString::fromUtf8(key.data(), key.size())));
+    m_Table->setItem(i, 1,
+                    new QTableWidgetItem(QString::fromUtf8(
+                        value_view.data(), value_view.size())));
+    ++i;
+  }
+  
   m_Table->setHorizontalHeaderLabels(
       {QStringLiteral("key"), QStringLiteral("value")});
   pVLayout->insertWidget(0, m_Table);
@@ -83,4 +83,5 @@ void MapEditor::SaveData()
                   std::u8string(qsKeyArray.begin(), qsKeyArray.end()));
   }
   m_Data.swap(jsData);
+  close();
 }
