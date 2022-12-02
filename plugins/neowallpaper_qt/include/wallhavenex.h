@@ -20,6 +20,7 @@ private:
   void LoadSubSettingMenu(QAction* action);
   void LoadMoreActions();
   void AddNewType();
+  void EditNewType(const std::u8string& typeName);
   void EditCurType(const std::u8string& typeName);
   const std::function<void(bool)> m_CallBack;
   const std::function<const std::filesystem::path &()> GetCurImage;

@@ -1,6 +1,7 @@
 #include <wallhavenex.h>
 #include <mapeditor.h>
 #include <pluginobject.h>
+#include <neoapp.h>
 #include <yjson.h>
 
 #include <QActionGroup>
@@ -110,31 +111,61 @@ void WallhavenExMenu::AddNewType()
   if (qKeyName.isEmpty()) {
     return;
   }
+
   std::u8string u8KeyName = PluginObject::QString2Utf8(qKeyName);
   if (apis.find(u8KeyName) != apis.endO()) {
     return;
   }
+
   const QString folder = QFileDialog::getExistingDirectory(this, "选择壁纸文件夹");
   if (folder.isEmpty() || folder.isNull()) {
     return;
   }
+
   apis.append(YJson::O {
     {u8"Parameter", YJson::O {}},
-    {u8"Directory", PluginObject::QString2Utf8(folder)}
+    {u8"Directory", PluginObject::QString2Utf8(folder)},
+    {u8"StartPage", 1}
   }, u8KeyName);
-  EditCurType(u8KeyName);
+
+  EditNewType(u8KeyName);
 }
 
 void WallhavenExMenu::EditCurType(const std::u8string& typeName)
 {
   auto& params = m_Data[u8"WallhavenApi"][typeName][u8"Parameter"];
-  MapEditor*const editor = new MapEditor("编辑参数", params, [this, typeName](){
-    QAction* const action = new QAction( this);
+  auto const editor = new MapEditor("编辑参数", params, [this, typeName, &params](){
+    if (params.emptyO()) {
+      m_Data[u8"WallhavenApi"].removeByValO(typeName);
+      glb->glbShowMsg("取消设置成功！");
+      return;
+    }
+    auto const action = new QAction(PluginObject::Utf82QString(typeName), this);
     insertAction(m_Separator, action);
     action->setCheckable(true);
     m_ActionGroup->addAction(action);
     LoadSubSettingMenu(action);
     m_CallBack(typeName == m_Data[u8"WallhavenCurrent"].getValueString());
+    glb->glbShowMsg("添加配置成功！");
+  });
+  editor->show();
+}
+
+void WallhavenExMenu::EditNewType(const std::u8string& typeName)
+{
+  auto& params = m_Data[u8"WallhavenApi"][typeName][u8"Parameter"];
+  auto const editor = new MapEditor("编辑参数", params, [this, typeName, &params](){
+    if (params.emptyO()) {
+      m_Data[u8"WallhavenApi"].removeByValO(typeName);
+      glb->glbShowMsg("取消设置成功！");
+      return;
+    }
+    auto const name = PluginObject::Utf82QString(typeName);
+    auto actions = m_ActionGroup->actions();
+    auto action = std::find_if(actions.begin(), actions.end(), [&name](QAction* a){return a->text() == name;});
+    if (action == actions.end()) return;
+    m_CallBack(typeName == m_Data[u8"WallhavenCurrent"].getValueString());
+    glb->glbShowMsg("修改配置成功！");
   });
   editor->show();
 }
