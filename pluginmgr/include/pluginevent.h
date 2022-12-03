@@ -30,6 +30,7 @@ enum class PluginEvent: char8_t
   MouseLeave,
   MouseDoubleClick,
   Drop,
+  HotKey
 };
 
 #endif // PLUGINEVENT_H

@@ -35,9 +35,11 @@ namespace NeoGetDateTime {
     }
   };
 
-  constexpr int YearValue = (__DATE__[7] * 1000 + __DATE__[8] * 100 + __DATE__[9] * 10 + __DATE__[10]) - '0' * 1111;
+  constexpr int GetValue(int i) { return __DATE__[i] == ' ' ? 0 : __DATE__[i] - '0'; }
 
-  constexpr int DateValue = (__DATE__[4] * 10 + __DATE__[5]) - '0' * 11;
+  constexpr int YearValue = GetValue(7) * 1000 + GetValue(8) * 100 + GetValue(9) * 10 + GetValue(10);
+
+  constexpr int DateValue = GetValue(4) * 10 + GetValue(5);
 
   constexpr const char szMonths[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
 
@@ -76,10 +78,10 @@ VersionDlg::~VersionDlg()
 
 void VersionDlg::LoadJson()
 {
-  const auto name = std::format("<h2>当前版本</h2>Neobox {}.{} {} <br> 发布日期：{:04d}-{:02d}-{:02d}<br>",
+  const auto name = std::format("<h2>当前版本</h2>Neobox {}.{} {} <br> 发布日期：{:04d}-{:02d}-{:02d}<br>{}",
     NEOBOX_VERSION_MAJOR, NEOBOX_VERSION_MINOR, NEOBOX_BETA,
-    NeoGetDateTime::YearValue, NeoGetDateTime::MonthValue, NeoGetDateTime::DateValue);
-  m_text->setText(QString::fromUtf8(name.data(), name.size()) + NEOBOX_COPYRIGHT);
+    NeoGetDateTime::YearValue, NeoGetDateTime::MonthValue, NeoGetDateTime::DateValue, NEOBOX_COPYRIGHT);
+  m_text->setText(QString::fromUtf8(name.data(), name.size()));
 }
 
 void VersionDlg::Connect()

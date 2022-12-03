@@ -63,7 +63,7 @@ QPushButton#copyTextFrom {
 QPushButton#btnTransMode {
   border-radius: 2px;
   background-color: white;
-  padding: 4px 7px 4px 7px;
+  padding: 3px 7px 3px 7px;
 }
 
 QPushButton#btnTransMode::checked {
