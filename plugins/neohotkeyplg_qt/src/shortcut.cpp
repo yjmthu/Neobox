@@ -4,73 +4,52 @@
 
 #include <Windows.h>
 
-Shortcut::Shortcut(QObject* parent) : QObject(parent) {}
+Shortcut::Shortcut() {
 
-Shortcut::~Shortcut() {
-  HWND winId =
-      reinterpret_cast<HWND>(qobject_cast<QWidget*>(parent())->winId());
-  for (const auto& [id, keys, func] : m_HotKeys) {
-    UnregisterHotKey(winId, id);
-  }
 }
 
-void Shortcut::CallFunction(int id) {
-  auto iter =
-      std::find_if(m_HotKeys.begin(), m_HotKeys.end(),
-                   [id](const decltype(m_HotKeys)::value_type& item) -> bool {
-                     return std::get<0>(item) == id;
-                   });
-  if (iter != m_HotKeys.end())
-    std::get<2> (*iter)();
+Shortcut::~Shortcut() {
+  for (const auto& [_, id] : m_HotKeys) {
+    if (id.id < 0) continue;
+    ::UnregisterHotKey(NULL, id.id);
+  }
 }
 
 Shortcut::KeyName Shortcut::GetKeyName(const QKeySequence& shortcut) {
   const uint32_t nativeKey =
       GetNativeKeycode(shortcut.isEmpty() ? Qt::Key(0) : shortcut[0].key());
   const uint32_t nativeMods =
-      GetNativeModifiers(shortcut.isEmpty() ? Qt::KeyboardModifiers(0)
-                                            : shortcut[0].keyboardModifiers());
-  return {{nativeKey, nativeMods}};
+      GetNativeModifiers(shortcut.isEmpty() ? Qt::KeyboardModifiers(0) : shortcut[0].keyboardModifiers());
+  return KeyName { nativeKey, nativeMods };
 }
 
-bool Shortcut::RegistHotKey(QKeySequence shortcuts,
-                            std::function<void()> func) {
-  static int id = 0;
+bool Shortcut::RegisterHotKey(QString shortcuts) 
+{
+  static KeyId id;
   KeyName keyName = GetKeyName(shortcuts);
-  if (IsKeyRegisted(keyName))
+  if (IsKeyRegistered(keyName))
     return false;
-
-  bool ok = RegisterHotKey(
-      reinterpret_cast<HWND>(qobject_cast<QWidget*>(parent())->winId()), id,
+  bool ok = ::RegisterHotKey(NULL, (++id).id,
       keyName.nativeMods, keyName.nativeKey);
   if (!ok)
     return false;
-  m_HotKeys.emplace_back(decltype(m_HotKeys)::value_type{id++, keyName, func});
+  m_HotKeys[keyName] = id;
   return true;
 }
 
-bool Shortcut::UnregistHotKey(QKeySequence shortcut) {
+bool Shortcut::UnregisterHotKey(QString shortcut) {
   const KeyName keyName = GetKeyName(shortcut);
 
-  auto iter = std::find_if(
-      m_HotKeys.begin(), m_HotKeys.end(),
-      [&keyName](const decltype(m_HotKeys)::value_type& item) -> bool {
-        return std::get<1>(item).big == keyName.big;
-      });
-  if (iter != m_HotKeys.end()) {
-    return UnregisterHotKey(
-        reinterpret_cast<HWND>(qobject_cast<QWidget*>(parent())->winId()),
-        std::get<0>(*iter));
+  auto iter = m_HotKeys.find(keyName);
+  if (iter != m_HotKeys.end() && iter->second.id >= 0) {
+    return ::UnregisterHotKey(NULL, iter->second.id);
   }
   return false;
 }
 
-bool Shortcut::IsKeyRegisted(const KeyName& keyName) {
-  return std::find_if(
-             m_HotKeys.begin(), m_HotKeys.end(),
-             [&keyName](const decltype(m_HotKeys)::value_type& item) -> bool {
-               return std::get<1>(item).big == keyName.big;
-             }) != m_HotKeys.end();
+bool Shortcut::IsKeyRegistered(const KeyName& keyName) {
+  auto iter = m_HotKeys.find(keyName);
+  return (iter != m_HotKeys.end() && iter->second.id >= 0);
 }
 
 uint32_t Shortcut::GetNativeModifiers(Qt::KeyboardModifiers modifiers) {

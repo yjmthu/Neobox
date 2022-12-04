@@ -2,39 +2,43 @@
 #define SHORTCUT_H
 
 #include <QKeySequence>
-#include <QObject>
 
-#include <vector>
+#include <map>
 
-class Shortcut : public QObject {
- protected:
-  union KeyName {
-    struct {
-      uint32_t nativeKey;
-      uint32_t nativeMods;
+class Shortcut {
+public:
+  struct KeyName {
+    union {
+      struct {
+        uint32_t nativeKey;
+        uint32_t nativeMods;
+      };
+      uint64_t big;
     };
-    uint64_t big;
+    // KeyName(uint32_t nativeKey, uint32_t nativeMods):
+    // nativeKey {nativeKey}, nativeMods {nativeMods} {
+    // }
+    bool operator<(const KeyName& other) const {
+      return big < other.big;
+    }
+  };
+  struct KeyId {
+    int id = -1;
+    KeyId& operator++() {
+      return ++id, *this;
+    }
   };
 
  public:
-  explicit Shortcut(QObject* parent);
+  explicit Shortcut();
   ~Shortcut();
-  bool RegistHotKey(QKeySequence shortcut, std::function<void()>);
-  inline bool RegistHotKey(QString shortcut, std::function<void()> func) {
-    return RegistHotKey(QKeySequence(shortcut), func);
-  }
-  bool UnregistHotKey(QKeySequence shortcut);
-  inline bool UnregistHotKey(QString shortcut) {
-    return UnregistHotKey(QKeySequence(shortcut));
-  }
-  void CallFunction(int id);
-  inline bool IsKeyRegisted(QString shortcut) {
-    return IsKeyRegisted(GetKeyName(QKeySequence(shortcut)));
-  }
+  inline bool RegisterHotKey(QString shortcut);
+  bool UnregisterHotKey(QString shortcut);
+  inline bool IsKeyRegistered(QString shortcut);
 
  private:
-  std::vector<std::tuple<int, const KeyName, std::function<void()>>> m_HotKeys;
-  bool IsKeyRegisted(const KeyName& keyName);
+  std::map<KeyName, KeyId> m_HotKeys;
+  bool IsKeyRegistered(const KeyName& keyName);
   static KeyName GetKeyName(const QKeySequence& shortcut);
   static uint32_t GetNativeModifiers(Qt::KeyboardModifiers modifiers);
   static uint32_t GetNativeKeycode(Qt::Key key);

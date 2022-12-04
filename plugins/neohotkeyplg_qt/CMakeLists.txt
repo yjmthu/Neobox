@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10.1)
 
-file(GLOB source_files src/*.cpp)
+file(GLOB source_files src/*.cpp src/*.ui)
 
 # set(system_shared_files Shell32)
 set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui)

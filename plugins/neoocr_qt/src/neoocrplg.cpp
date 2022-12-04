@@ -21,6 +21,92 @@
 #include <pluginexport.cpp>
 
 namespace fs = std::filesystem;
+Pix* QImage2Pix(const QImage& qImage);
+
+/*
+ * NeoOcrPlg Class
+ *
+ */
+
+NeoOcrPlg::NeoOcrPlg(YJson& settings):
+  PluginObject(InitSettings(settings), u8"neoocrplg", u8"文字识别"),
+  m_Ocr(new NeoOcr(settings, std::bind(&PluginMgr::SaveSettings, mgr)))
+{
+  QDir dir;
+  auto lst = {"tessdata"};
+  for (auto i : lst) {
+    if (!dir.exists(i))
+      dir.mkdir(i);
+  }
+  InitFunctionMap();
+}
+
+NeoOcrPlg::~NeoOcrPlg()
+{
+}
+
+void NeoOcrPlg::InitFunctionMap() {
+  m_FunctionMapVoid = {
+    {u8"screenfetch",
+      {u8"截取屏幕", u8"截取屏幕区域，识别其中文字。", [this]() {
+        static bool busy = false;
+        if (busy) return; else busy = true;
+        QImage image;
+        ScreenFetch* box = new ScreenFetch(image);
+        QEventLoop loop;
+        QObject::connect(box, &ScreenFetch::destroyed, &loop, &QEventLoop::quit);
+        box->showFullScreen();
+        loop.exec();
+        busy = false;
+        if (!box->HaveCatchImage())
+          return;
+        auto str = m_Ocr->GetText(QImage2Pix(image));
+        for (auto fun: m_Followers) {
+          fun->operator()(PluginEvent::U8string, &str);
+        }
+      }},
+    },
+    {u8"setDataDir",
+      {u8"设置路径", u8"设置训练数据（语言包）的存储位置", [this]() {
+        std::u8string& u8Path =
+            m_Settings[u8"TessdataDir"].getValueString();
+        const QString folder =
+            QFileDialog::getExistingDirectory(
+                glb->glbGetMenu(), "请选择Tessdata数据文件存放位置",
+                QString::fromUtf8(u8Path.data(), u8Path.size()));
+        if (folder.isEmpty() || folder.isNull()) {
+          glb->glbShowMsg("取消设置成功！");
+          return;
+        }
+        fs::path pNewPath = PluginObject::QString2Utf8(folder);
+        pNewPath.make_preferred();
+        std::u8string u8NewPath = pNewPath.u8string();
+        if (!u8NewPath.empty() && u8NewPath != u8Path) {
+          u8Path.swap(u8NewPath);
+          mgr->SaveSettings();
+          glb->glbShowMsg("设置数据文件失成功！");
+        } else {
+          glb->glbShowMsg("设置数据文件失败！");
+        }
+      }},
+    }
+  };
+}
+
+void NeoOcrPlg::InitMenuAction()
+{
+  this->PluginObject::InitMenuAction();
+}
+
+YJson& NeoOcrPlg::InitSettings(YJson& settings)
+{
+  if (settings.isObject()) return settings;
+  return settings = YJson::O {
+    { u8"TessdataDir", u8"tessdata" },
+    { u8"Languages", YJson::A { u8"chi_sim", u8"eng" } },
+  };
+  // we may not need to call SaveSettings;
+}
 
 static inline bool IsBigDuan() {
   const uint16_t s = 1;
@@ -87,90 +173,4 @@ Pix* QImage2Pix(const QImage& qImage) {
       break;
   }
   return pix;
-}
-
-/*
- * NeoOcrPlg Class
- *
- */
-
-NeoOcrPlg::NeoOcrPlg(YJson& settings):
-  PluginObject(InitSettings(settings), u8"neoocrplg", u8"文字识别"),
-  m_Ocr(new NeoOcr(settings, std::bind(&PluginMgr::SaveSettings, mgr)))
-{
-  QDir dir;
-  auto lst = {"tessdata"};
-  for (auto i : lst) {
-    if (!dir.exists(i))
-      dir.mkdir(i);
-  }
-  InitFunctionMap();
-}
-
-NeoOcrPlg::~NeoOcrPlg()
-{
-  //
-}
-
-void NeoOcrPlg::InitFunctionMap() {
-  m_FunctionMapVoid = {
-    {u8"screenfetch",
-      {u8"截取屏幕", u8"截取屏幕区域，识别其中文字。", [this]() {
-        static bool busy = false;
-        if (busy) return; else busy = true;
-        QImage image;
-        ScreenFetch* box = new ScreenFetch(image);
-        QEventLoop loop;
-        QObject::connect(box, &ScreenFetch::destroyed, &loop, &QEventLoop::quit);
-        box->showFullScreen();
-        loop.exec();
-        busy = false;
-        if (!box->HaveCatchImage())
-          return;
-        auto str = m_Ocr->GetText(QImage2Pix(image));
-        for (auto fun: m_Followers) {
-          fun->operator()(PluginEvent::U8string, &str);
-        }
-      }},
-    },
-    {u8"setDataDir",
-      {u8"设置路径", u8"设置训练数据（语言包）的存储位置", [this]() {
-        std::u8string& u8Path =
-            m_Settings[u8"TessdataDir"].getValueString();
-        const QString folder =
-            QFileDialog::getExistingDirectory(
-                glb->glbGetMenu(), "请选择Tessdata数据文件存放位置",
-                QString::fromUtf8(u8Path.data(), u8Path.size()));
-        if (folder.isEmpty() || folder.isNull()) {
-          glb->glbShowMsg("取消设置成功！");
-          return;
-        }
-        fs::path pNewPath = PluginObject::QString2Utf8(folder);
-        pNewPath.make_preferred();
-        std::u8string u8NewPath = pNewPath.u8string();
-        if (!u8NewPath.empty() && u8NewPath != u8Path) {
-          u8Path.swap(u8NewPath);
-          mgr->SaveSettings();
-          glb->glbShowMsg("设置数据文件失成功！");
-        } else {
-          glb->glbShowMsg("设置数据文件失败！");
-        }
-      }},
-    }
-  };
-}
-
-void NeoOcrPlg::InitMenuAction()
-{
-  this->PluginObject::InitMenuAction();
-}
-
-YJson& NeoOcrPlg::InitSettings(YJson& settings)
-{
-  if (settings.isObject()) return settings;
-  return settings = YJson::O {
-    { u8"TessdataDir", u8"tessdata" },
-    { u8"Languages", YJson::A { u8"chi_sim", u8"eng" } },
-  };
-  // we may not need to call SaveSettings;
 }
