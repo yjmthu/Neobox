@@ -45,23 +45,31 @@ NeoTranslatePlg::~NeoTranslatePlg()
 }
 
 void NeoTranslatePlg::InitFunctionMap() {
-  m_FunctionMapVoid = {
+  m_PluginMethod = {
     {u8"toggleVisibility",
-      {u8"打开窗口", u8"打开或关闭极简翻译界面", std::bind(&NeoTranslateDlg::ToggleVisibility, m_TranslateDlg)}
-    }
-  };
-  m_FunctionMapBool = {
+      {u8"打开窗口", u8"打开或关闭极简翻译界面", [this](PluginEvent, void* data){
+        m_TranslateDlg->ToggleVisibility();
+      }, PluginEvent::Void
+    }},
     {u8"enableReadClipboard",
-      {u8"读剪切板", u8"打开界面自动读取剪切板内容到From区", [this](bool checked) {
-        m_Settings[u8"AutoTranslate"] = checked;
-        mgr->SaveSettings();
-      }, std::bind(&YJson::isTrue, &m_Settings[u8"AutoTranslate"])}
+      {u8"读剪切板", u8"打开界面自动读取剪切板内容到From区", [this](PluginEvent event, void* data) {
+        if (event == PluginEvent::Bool) {
+          m_Settings[u8"AutoTranslate"] = *reinterpret_cast<bool*>(data);
+          mgr->SaveSettings();
+        } else if (event == PluginEvent::BoolGet) {
+          *reinterpret_cast<bool*>(data) = m_Settings[u8"AutoTranslate"].isTrue();
+        }
+      }, PluginEvent::Bool}
     },
     {u8"enableAutoTranslate",
-      {u8"自动翻译", u8"打开界面自动翻译From区内容", [this](bool checked) {
-        m_Settings[u8"ReadClipboard"] = checked;
-        mgr->SaveSettings();
-      }, std::bind(&YJson::isTrue, &m_Settings[u8"ReadClipboard"])}
+      {u8"自动翻译", u8"打开界面自动翻译From区内容", [this](PluginEvent event, void* data) {
+        if (event == PluginEvent::Bool) {
+          m_Settings[u8"ReadClipboard"] =  *reinterpret_cast<bool*>(data);
+          mgr->SaveSettings();
+        } else if (event == PluginEvent::Bool) {
+          *reinterpret_cast<bool*>(data) = m_Settings[u8"ReadClipboard"].isTrue();
+        }
+      }, PluginEvent::Bool}
     },
   };
 }

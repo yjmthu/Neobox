@@ -24,30 +24,41 @@ NeoSystemPlg::~NeoSystemPlg()
 }
 
 void NeoSystemPlg::InitFunctionMap() {
-  m_FunctionMapVoid = {
+  m_PluginMethod = {
     {u8"shutdownComputer",
-      {u8"快速关机", u8"关闭计算机",
-        std::bind(ShellExecuteW, nullptr, L"open", L"shutdown", L"-s -t 0", nullptr, 0)},
+      {u8"快速关机", u8"关闭计算机", [](PluginEvent, void*) {
+        ShellExecuteW(nullptr, L"open", L"shutdown", L"-s -t 0", nullptr, 0);
+      }, PluginEvent::Void},
     },
     {u8"restartComputer",
-      {u8"快捷重启", u8"重启计算机",
-        std::bind(ShellExecuteW, nullptr, L"open", L"shutdown", L"-r -t 0", nullptr, 0)},
-    }
-  };
+      {u8"快捷重启", u8"重启计算机", [](PluginEvent, void*){
+        ShellExecuteW(nullptr, L"open", L"shutdown", L"-r -t 0", nullptr, 0);
+      }, PluginEvent::Void},
+    },
 
-  m_FunctionMapBool = {
     {u8"enableCopyPath",
-      {u8"复制路径", u8"在文件资源管理器右键菜单添加“复制路径选项”", &NeoSystemPlg::SetDesktopRightMenu, &NeoSystemPlg::HasDesktopRightMenu}
+      {u8"复制路径", u8"在文件资源管理器右键菜单添加“复制路径选项”", [](PluginEvent event, void* data) {
+        if (event == PluginEvent::Bool) {
+          SetDesktopRightMenu(*reinterpret_cast<bool *>(data));
+        } else if (event == PluginEvent::BoolGet) {
+          *reinterpret_cast<bool *>(data) = HasDesktopRightMenu();
+        }
+      }, PluginEvent::Bool},
     },
     {u8"enableStopSleep",
-      {u8"防止息屏", u8"防止电脑自动锁屏或休眠", [this](bool on){
-        SetThreadExecutionState(on ?
-            (ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED) :
-            ES_CONTINUOUS
-        );
-        m_Settings[u8"StopSleep"] = on;
-        mgr->SaveSettings();
-      }, std::bind(&YJson::isTrue, &m_Settings[u8"StopSleep"])}
+      {u8"防止息屏", u8"防止电脑自动锁屏或休眠", [this](PluginEvent event, void* data){
+        if (event == PluginEvent::Bool) {
+          auto const on = *reinterpret_cast<bool *>(data);
+          SetThreadExecutionState(on ?
+              (ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED) :
+              ES_CONTINUOUS
+          );
+          m_Settings[u8"StopSleep"] = on;
+          mgr->SaveSettings();
+        } else if (event == PluginEvent::BoolGet) {
+          *reinterpret_cast<bool *>(data) = m_Settings[u8"StopSleep"].isTrue();
+        }
+      }, PluginEvent::Bool}
     },
   };
 }

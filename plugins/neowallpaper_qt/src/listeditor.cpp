@@ -23,7 +23,7 @@ ListEditor::ListEditor(QString title, YJson& data, const std::function<void()> c
 ListEditor::~ListEditor()
 {
   m_CallBack();
-      // m_Wallpaper->m_Wallpaper->SetJson(true);
+  // m_Wallpaper->m_Wallpaper->SetJson(true);
 }
 
 void ListEditor::SetBaseLayout()

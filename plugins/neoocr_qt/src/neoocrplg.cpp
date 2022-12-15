@@ -46,9 +46,9 @@ NeoOcrPlg::~NeoOcrPlg()
 }
 
 void NeoOcrPlg::InitFunctionMap() {
-  m_FunctionMapVoid = {
+  m_PluginMethod = {
     {u8"screenfetch",
-      {u8"截取屏幕", u8"截取屏幕区域，识别其中文字。", [this]() {
+      {u8"截取屏幕", u8"截取屏幕区域，识别其中文字。", [this](PluginEvent, void*) {
         static bool busy = false;
         if (busy) return; else busy = true;
         QImage image;
@@ -64,10 +64,10 @@ void NeoOcrPlg::InitFunctionMap() {
         for (auto fun: m_Followers) {
           fun->operator()(PluginEvent::U8string, &str);
         }
-      }},
+      }, PluginEvent::Void},
     },
     {u8"setDataDir",
-      {u8"设置路径", u8"设置训练数据（语言包）的存储位置", [this]() {
+      {u8"设置路径", u8"设置训练数据（语言包）的存储位置", [this](PluginEvent, void*) {
         std::u8string& u8Path =
             m_Settings[u8"TessdataDir"].getValueString();
         const QString folder =
@@ -88,7 +88,7 @@ void NeoOcrPlg::InitFunctionMap() {
         } else {
           glb->glbShowMsg("设置数据文件失败！");
         }
-      }},
+      }, PluginEvent::Void},
     }
   };
 }

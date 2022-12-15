@@ -2,6 +2,7 @@
 #define NEOMSGDLG_H
 
 #include <QWidget>
+#include <queue>
 
 class NeoMsgDlg: QWidget
 {
@@ -19,6 +20,9 @@ public:
   class QLabel *m_pLabel;
 protected:
   void showEvent(QShowEvent *event) override;
+private:
+  void HandleShowMsg();
+  std::queue<QString> m_Data;
 };
 
 #endif

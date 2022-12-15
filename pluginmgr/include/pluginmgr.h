@@ -25,6 +25,7 @@ public:
   std::function<void()> SaveSettings;
   std::map<std::u8string, class QObject*> m_MainObjects;
   void LoadPlugins(QMenu* settingsMenu);
+  void LoadEventMap(class QAction *action);
   class GlbObject* const m_GlbObject;
   QMenu* const m_MainMenu;
 private:
@@ -36,5 +37,7 @@ private:
   const std::u8string m_SettingFileName;
   class YJson* m_Settings;
 };
+
+extern PluginMgr* mgr;
 
 #endif // PLUGINMGR_H

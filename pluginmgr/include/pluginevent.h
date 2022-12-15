@@ -4,6 +4,8 @@
 enum class PluginEvent: char8_t
 {
   Bool,         // bool
+  BoolGet,
+  Void,         // void
   Int8,         // int8_t
   Int16,        // int16_t
   Int32,        // int32_t

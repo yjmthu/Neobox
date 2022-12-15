@@ -36,35 +36,47 @@ NeoWallpaperPlg::~NeoWallpaperPlg()
 
 void NeoWallpaperPlg::InitFunctionMap()
 {
-  m_FunctionMapVoid = {
+  m_PluginMethod = {
     {u8"prev",
-      {u8"上一张图", u8"切换到上一张壁纸", std::bind(&Wallpaper::SetSlot, m_Wallpaper, -1)},
+      {u8"上一张图", u8"切换到上一张壁纸", [this](PluginEvent, void*) {
+          m_Wallpaper->SetSlot(-1);
+        }, PluginEvent::Void},
     },
     {u8"next",
-      {u8"下一张图", u8"切换到下一张壁纸", std::bind(&Wallpaper::SetSlot, m_Wallpaper, 1)},
+      {u8"下一张图", u8"切换到下一张壁纸", [this](PluginEvent, void*) {
+          m_Wallpaper->SetSlot(1);
+        }, PluginEvent::Void
+      },
     },
     {u8"dislike",
-      {u8"不看此图", u8"把这张图移动到垃圾桶", std::bind(&Wallpaper::SetSlot, m_Wallpaper, 0)},
+      {u8"不看此图", u8"把这张图移动到垃圾桶", [this](PluginEvent, void*) {
+          m_Wallpaper->SetSlot(0);
+        }, PluginEvent::Void
+      },
     },
     {u8"undoDislike",
       {u8"撤销删除", u8"撤销上次的删除操作",
-      std::bind(&Wallpaper::UndoDelete, m_Wallpaper)},
+       [this](PluginEvent, void*){
+          m_Wallpaper->UndoDelete();
+        }, PluginEvent::Void
+      },
     },
     {u8"collect",
-      {u8"收藏图片", u8"把当前壁纸复制到收藏夹", [this](){
+      {u8"收藏图片", u8"把当前壁纸复制到收藏夹", [this](PluginEvent, void*) {
         m_Wallpaper->Wallpaper::SetFavorite();
         glb->glbShowMsg("收藏壁纸成功！");
-      }},
+      }, PluginEvent::Void},
     },
     {u8"undoCollect",
-      {u8"撤销收藏", u8"如果当前壁纸在收藏夹内，则将其移出", [this](){
-        m_Wallpaper->UnSetFavorite();
-        glb->glbShowMsg("撤销收藏壁纸成功！");
-      }},
+      {u8"撤销收藏", u8"如果当前壁纸在收藏夹内，则将其移出", [this](PluginEvent, void*) {
+          m_Wallpaper->UnSetFavorite();
+          glb->glbShowMsg("撤销收藏壁纸成功！");
+        }, PluginEvent::Void
+      },
     },
     {u8"setCurrentDir",
       {u8"设置位置", u8"设置当前壁纸来源存储位置",
-        [this]() {
+        [this](PluginEvent, void*) {
         QString current =
             QString::fromStdU16String(m_Wallpaper->GetImageDir().u16string());
         current = QFileDialog::getExistingDirectory(glb->glbGetMenu(), "选择壁纸文件夹", current);
@@ -76,10 +88,10 @@ return ;
         }
         m_Wallpaper->SetCurDir(current.toStdWString());
         glb->glbShowMsg("设置壁纸存放位置成功！");
-      }},
+      }, PluginEvent::Void},
     },
     {u8"setTimeInterval",
-      {u8"时间间隔", u8"设置更换壁纸的时间间隔", [this](){
+      {u8"时间间隔", u8"设置更换壁纸的时间间隔", [this](PluginEvent, void*){
         int iNewTime =
             QInputDialog::getInt(glb->glbGetMenu(), "输入时间间隔", "时间间隔（分钟）：", m_Wallpaper->GetTimeInterval(), 5);
         if (iNewTime < 5) {
@@ -88,29 +100,39 @@ return ;
         }
         m_Wallpaper->SetTimeInterval(iNewTime);
         glb->glbShowMsg("设置时间间隔成功！");
-      }}
+      }, PluginEvent::Void}
     },
     {u8"openCurrentDir",
-      { u8"打开位置", u8"打开当前壁纸位置", [this]() {
+      { u8"打开位置", u8"打开当前壁纸位置", [this](PluginEvent, void*) {
         std::wstring args = L"/select, " + m_Wallpaper->GetCurIamge().wstring();
         ShellExecuteW(nullptr, L"open", L"explorer", args.c_str(), NULL, SW_SHOWNORMAL);
-      }
+      }, PluginEvent::Void
     }},
     {u8"cleanRubish",
-      { u8"清理垃圾", u8"删除垃圾箱内壁纸", [this](){
+      { u8"清理垃圾", u8"删除垃圾箱内壁纸", [this](PluginEvent, void*){
         m_Wallpaper->ClearJunk();
         glb->glbShowMsg("清除壁纸垃圾成功！");
-      }
+      }, PluginEvent::Void
     }},
-  };
-
-  m_FunctionMapBool = {
     {u8"setAutoChange",
-      {u8"自动更换", u8"设置是否按照时间间隔自动切换壁纸", std::bind(&Wallpaper::SetAutoChange, m_Wallpaper, std::placeholders::_1), std::bind(&Wallpaper::GetAutoChange, m_Wallpaper)}
+      {u8"自动更换", u8"设置是否按照时间间隔自动切换壁纸", [this](PluginEvent event, void* data) {
+        if (event == PluginEvent::Bool) {
+          m_Wallpaper->SetAutoChange(*reinterpret_cast<bool*>(data));
+        } else if (event == PluginEvent::BoolGet) {
+          *reinterpret_cast<bool*>(data) = m_Wallpaper->GetAutoChange();
+        }
+      },
+      PluginEvent::Bool }
     },
     {u8"setFirstChange",
-      {u8"首次更换", u8"设置是否在插件启动时更换一次壁纸", std::bind(&Wallpaper::SetFirstChange, m_Wallpaper, std::placeholders::_1), std::bind(&Wallpaper::GetFirstChange, m_Wallpaper)}
-    },
+      {u8"首次更换", u8"设置是否在插件启动时更换一次壁纸", [this](PluginEvent event, void* data) {
+        if (event == PluginEvent::Bool) {
+          m_Wallpaper->SetFirstChange(*reinterpret_cast<bool*>(data));
+        } else if (event == PluginEvent::BoolGet) {
+          *reinterpret_cast<bool*>(data) = m_Wallpaper->GetFirstChange();
+        }
+      }, PluginEvent::Bool },
+    }
   };
 }
 

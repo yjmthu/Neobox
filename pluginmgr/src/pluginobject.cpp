@@ -13,8 +13,8 @@ PluginObject::PluginObject(YJson& settings, std::u8string name,
   m_Settings(settings),
   m_PluginName(std::move(name)),
   m_MainAction(mgr->m_MainMenu->addAction((Utf82QString(friendlyName)))),
-  m_MainMenu(new QMenu(mgr->m_MainMenu)),
-  m_PluginMethod(PluginMethod { m_FunctionMapVoid, m_FunctionMapBool })
+  m_MainMenu(new QMenu(mgr->m_MainMenu)) //,
+  // m_PluginMethod(PluginMethod { m_FunctionMapVoid, m_FunctionMapBool })
 {
   m_MainMenu->setAttribute(Qt::WA_TranslucentBackground, true);
   m_MainMenu->setToolTipsVisible(true);
@@ -36,21 +36,22 @@ PluginObject::~PluginObject()
 
 void PluginObject::InitMenuAction()
 {
-  for (const auto& [_, funInfo]: m_FunctionMapVoid) {
+  for (const auto& [_, funInfo]: m_PluginMethod) {
     auto const action = m_MainMenu->addAction(
           Utf82QString(funInfo.friendlyName));
     action->setToolTip(PluginObject::Utf82QString(funInfo.description));
-    QObject::connect(action,
-        &QAction::triggered, m_MainMenu, funInfo.function);
-  }
-  for (const auto& [_, funInfo]: m_FunctionMapBool) {
-    auto const action = m_MainMenu->addAction(
-          Utf82QString(funInfo.friendlyName));
-    action->setCheckable(true);
-    action->setChecked(funInfo.status());
-    action->setToolTip(PluginObject::Utf82QString(funInfo.description));
-    QObject::connect(action,
-        &QAction::triggered, m_MainMenu, funInfo.function);
+    if (funInfo.type == PluginEvent::Void) {
+      QObject::connect(action, &QAction::triggered, m_MainMenu, std::bind(funInfo.function, PluginEvent::Void, nullptr));
+    } else if (funInfo.type == PluginEvent::Bool) {
+      bool status = false;
+      action->setCheckable(true);
+      const auto& func = funInfo.function;
+      func(PluginEvent::BoolGet, &status);
+      action->setChecked(status);
+      QObject::connect(action, &QAction::triggered, m_MainMenu, [func](bool on){
+        func(PluginEvent::Bool, &on);
+      });
+    }
   }
 }
 

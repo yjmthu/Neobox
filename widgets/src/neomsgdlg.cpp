@@ -24,15 +24,31 @@ NeoMsgDlg::~NeoMsgDlg()
 {
 }
 
+void NeoMsgDlg::HandleShowMsg()
+{
+  QTimer::singleShot(1000, this, [this]() {
+      m_Data.pop();
+      if (m_Data.empty()) {
+        m_pAnimation->start();
+      } else {
+        m_pLabel->setText(m_Data.front());
+        HandleShowMsg();
+      }
+    }
+  );
+}
+
 void NeoMsgDlg::ShowMessage(const QString& text)
 {
+  if (!m_Data.empty()) {
+    m_Data.push(text);
+    return;
+  }
+  m_Data.push(text);
   m_pLabel->setText(text);
   show();
   // m_pFrame->setWindowOpacity();
-  QTimer::singleShot(1000, this, [this]() {
-      m_pAnimation->start();
-    }
-  );
+  HandleShowMsg();
 }
 
 void NeoMsgDlg::InitWindowStyle()

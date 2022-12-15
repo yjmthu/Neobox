@@ -44,36 +44,53 @@ PluginMgr::PluginMgr(GlbObject* glb, QMenu* pluginMainMenu):
         {u8"neospeedboxplg", YJson::O {
           {u8"Enabled", true},
           {u8"FriendlyName", u8"网速悬浮"},
-          {u8"Url", u8"https://github.com/yjmthu/Neobox/..."},   // zipfile url
+          {u8"Description", u8"实时显示网速和内存占用"},
+          {u8"Author", u8"yjmthu"},
+          {u8"Version", YJson::A { 0, 0, 1 }},
         }},
         {u8"neotranslateplg", YJson::O{
           {u8"Enabled", true},
           {u8"FriendlyName", u8"极简翻译"},
-          {u8"Url", u8"https://github.com/yjmthu/Neobox/..."},
+          {u8"Description", u8"有道和百度翻译"},
+          {u8"Author", u8"yjmthu"},
+          {u8"Version", YJson::A { 0, 0, 1 }},
         }},
         {u8"neoocrplg", YJson::O {
           {u8"Enabled", true},
           {u8"FriendlyName", u8"文字识别"},
-          {u8"Url", u8"https://github.com/yjmthu/Neobox/..."},
+          {u8"Description", u8"识别截图中的文字"},
+          {u8"Author", u8"yjmthu"},
+          {u8"Version", YJson::A { 0, 0, 1 }},
         }},
         {u8"neowallpaperplg", YJson::O {
           {u8"Enabled", true},
           {u8"FriendlyName", u8"壁纸引擎"},
-          {u8"Url", u8"https://github.com/yjmthu/Neobox/..."},
+          {u8"Description", u8"多种壁纸来源，随心更换壁纸"},
+          {u8"Author", u8"yjmthu"},
+          {u8"Version", YJson::A { 0, 0, 1 }},
         }},
         {u8"neosystemplg", YJson::O {
           {u8"Enabled", true},
           {u8"FriendlyName", u8"系统控制"},
-          {u8"Url", u8"https://github.com/yjmthu/Neobox/..."},
+          {u8"Description", u8"使系统更加方便的一些小功能"},
+          {u8"Author", u8"yjmthu"},
+          {u8"Version", YJson::A { 0, 0, 1 }},
+        }},
+        {u8"neohotkeyplg", YJson::O {
+          {u8"Enabled", true},
+          {u8"FriendlyName", u8"热键管理"},
+          {u8"Description", u8"插件热键管理器"},
+          {u8"Author", u8"yjmthu"},
+          {u8"Version", YJson::A { 0, 0, 1 }},
         }},
       }},
-      { u8"KeyMap", YJson::O {
-        {u8"neotranslateplg", YJson::A {
-          YJson::A {u8"toggleVisibility", 0, YJson::A {u8"Shift", u8"Z"}},
-        }},
-        {u8"neoocrplg", YJson::A {
-          YJson::A {u8"screenfetch", 0, YJson::A {u8"Ctrl", u8"Shift", u8"A"}},
-        }},
+      { u8"EventMap", YJson::A {
+        // YJson::O {
+        //   {u8"from", u8"" },
+        //   {u8"event", u8"" },
+        //   {u8"to", u8"" },
+        //   {u8"function", u8""},
+        // }
       }},
       { u8"PluginsConfig", YJson::O {
       }},
@@ -90,6 +107,11 @@ PluginMgr::~PluginMgr()
     FreeLibrary(reinterpret_cast<HINSTANCE>(info.handle));
   }
   delete m_Settings;
+}
+
+void PluginMgr::LoadEventMap(QAction *action)
+{
+  //
 }
 
 void PluginMgr::LoadPlugins(QMenu* settingsMenu)
@@ -145,13 +167,13 @@ PluginObject* PluginMgr::LoadPlugin(const std::u8string& pluginName)
   fs::path path = u8"plugins";
   path /= pluginName;
   if (!LoadPlugEnv(path)) {
-    WRITE_LOG("load env failed\n");
+    glb->glbShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件文件夹加载失败！"));
     return nullptr;
   }
 #endif
   path /= pluginName + u8".dll";
   if (!fs::exists(path)) {
-    WRITE_LOG("file not exsist\n");
+    glb->glbShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件文件加载失败！"));
     return nullptr;
   }
   path.make_preferred();
@@ -159,17 +181,21 @@ PluginObject* PluginMgr::LoadPlugin(const std::u8string& pluginName)
   wPath.push_back(L'\0');
   HINSTANCE hdll = LoadLibraryW(wPath.data());
   if (!hdll) {
-    WRITE_LOG("load lib failed\npath name: " + path.string() + "\n");
+    glb->glbShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件动态库加载失败！"));
     return nullptr;
   }
   newPlugin = reinterpret_cast<decltype(newPlugin)>(GetProcAddress(hdll, "newPlugin"));
   if (!newPlugin) {
-    WRITE_LOG("load plugin failed\npath name: " + path.string() + "\n");
+    glb->glbShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件函数加载失败！"));
     FreeLibrary(hdll);
     return nullptr;
   }
-  auto plugin = newPlugin(m_Settings->find(u8"PluginsConfig")->second[pluginName], this);      // nice
-  return plugin;
+  try {
+    return newPlugin(m_Settings->find(u8"PluginsConfig")->second[pluginName], this);      // nice
+  } catch (...) {
+    glb->glbShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件初始化失败！"));
+  }
+  return nullptr;
 }
 
 void PluginMgr::FreePlugin(PluginInfo& info)

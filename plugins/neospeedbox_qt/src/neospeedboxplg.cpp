@@ -32,26 +32,30 @@ NeoSpeedboxPlg::~NeoSpeedboxPlg()
 }
 
 void NeoSpeedboxPlg::InitFunctionMap() {
-  m_FunctionMapVoid = {
+  m_PluginMethod = {
     {u8"moveLeftTop", {
-      u8"还原位置", u8"将窗口移动到左上方位置", std::bind(&SpeedBox::InitMove, m_Speedbox)
-    }}
-  };
-  m_FunctionMapBool = {
+      u8"还原位置", u8"将窗口移动到左上方位置", [this](PluginEvent, void*){
+        m_Speedbox->InitMove();
+      }, PluginEvent::Void}
+    },
     {u8"enableBlur", {
-      u8"模糊背景", u8"Windows10+或KDE下的模糊效果", [this](bool on){
+      u8"模糊背景", u8"Windows10+或KDE下的模糊效果", [this](PluginEvent event, void* data){
         static bool firstRun = true;
-        firstRun = false;
-        m_Settings[u8"ColorEffect"] = on;
-        auto status = on ? ACCENT_ENABLE_BLURBEHIND : ACCENT_DISABLED;
-        HWND hWnd = reinterpret_cast<HWND>(m_Speedbox->winId());
-        const QColor col(Qt::transparent);
-        SetWindowCompositionAttribute(hWnd, status,
-          qRgba(col.blue(), col.green(), col.red(), col.alpha()));
-        mgr->SaveSettings();
-        if (!firstRun) glb->glbShowMsg("设置颜色成功！");
-      }, std::bind(&YJson::isTrue, &m_Settings[u8"ColorEffect"]), 
-    }},
+        if (event == PluginEvent::Bool) {
+          m_Settings[u8"ColorEffect"] = *reinterpret_cast<bool *>(data);
+          auto status = *reinterpret_cast<bool *>(data) ? ACCENT_ENABLE_BLURBEHIND : ACCENT_DISABLED;
+          auto hWnd = reinterpret_cast<HWND>(m_Speedbox->winId());
+          const QColor col(Qt::transparent);
+          SetWindowCompositionAttribute(hWnd, status,
+            qRgba(col.blue(), col.green(), col.red(), col.alpha()));
+          mgr->SaveSettings();
+          if (!firstRun) glb->glbShowMsg("设置颜色成功！");
+          firstRun = false;
+        } else if (event == PluginEvent::BoolGet) {
+          *reinterpret_cast<bool *>(data) = m_Settings[u8"ColorEffect"].isTrue();
+        }
+      }, PluginEvent::Bool}
+    },
   };
 }
 
@@ -75,8 +79,10 @@ void NeoSpeedboxPlg::InitMenuAction()
   m_MainMenu->addAction("皮肤删除")->setMenu(m_RemoveSkinMenu);
 
   m_Speedbox->InitShow();
-  const auto& info = m_FunctionMapBool[u8"enableBlur"];
-  info.function(info.status());
+  bool buffer = false;
+  const auto& info = m_PluginMethod[u8"enableBlur"];
+  info.function(PluginEvent::BoolGet, &buffer);
+  info.function(PluginEvent::Bool, &buffer);
 }
 
 YJson& NeoSpeedboxPlg::InitSettings(YJson& settings)

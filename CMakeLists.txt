@@ -13,6 +13,8 @@ add_compile_options("/utf-8")
 set(CMAKE_INSTALL_PREFIX "install")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# https://blog.csdn.net/10km/article/details/51735432
+
 # if(MSVC)
 #   add_compile_options(
 #     $<$<CONFIG:>:/MT> #---------|

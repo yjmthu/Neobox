@@ -1,14 +1,30 @@
 #include <shortcut.h>
+#include <pluginobject.h>
+#include <yjson.h>
 
 #include <QWidget>
 
 #include <Windows.h>
 
-Shortcut::Shortcut() {
-
+Shortcut::Shortcut(const YJson& data)
+  : m_Data(data)
+{
+  RegisterAllHotKey();
 }
 
 Shortcut::~Shortcut() {
+  UnregisterAllHotKey();
+}
+
+void Shortcut::RegisterAllHotKey()
+{
+  for (const auto& [description, infomation]: m_Data.getObject()) {
+    if (!infomation[u8"Enabled"].isTrue()) continue;
+    RegisterHotKey(PluginObject::Utf82QString(infomation[u8"KeySequence"].getValueString()));
+  }
+}
+
+void Shortcut::UnregisterAllHotKey() {
   for (const auto& [_, id] : m_HotKeys) {
     if (id.id < 0) continue;
     ::UnregisterHotKey(NULL, id.id);
