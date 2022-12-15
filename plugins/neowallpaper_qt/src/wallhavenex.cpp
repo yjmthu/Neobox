@@ -51,9 +51,23 @@ void WallhavenExMenu::LoadSubSettingMenu(QAction* action)
   pSonMenu->setAttribute(Qt::WA_TranslucentBackground, true);
   action->setMenu(pSonMenu);
   connect(pSonMenu->addAction(action->isChecked() ? "刷新此项" : "启用此项"), &QAction::triggered, pSonMenu, [this, action]() {
+    auto& current = m_Data[u8"WallhavenCurrent"];
+    auto const curName = action->text();
+    auto const lastName = PluginObject::Utf82QString(current.getValueString());
+
+    if (lastName != curName) {
+      const auto actions = m_ActionGroup->actions();
+      auto lastAction = *std::find_if(actions.begin(), actions.end(), [&lastName](QAction* a){return a->text() == lastName;});
+      delete lastAction->menu();
+      LoadSubSettingMenu(lastAction);
+
+      delete action->menu();
+      LoadSubSettingMenu(action);
+    }
+
     action->setChecked(true);
-    QByteArray&& array = action->text().toUtf8();
-    m_Data[u8"WallhavenCurrent"].setText(array.begin(), array.end());
+    current.setText(PluginObject::QString2Utf8(curName));
+
     m_CallBack(true);
     glb->glbShowMsg("设置成功！");
   });
@@ -125,16 +139,19 @@ void WallhavenExMenu::AddNewType()
     return;
   }
 
+  fs::path path = folder.toStdU16String();
+  path.make_preferred();
+
   apis.append(YJson::O {
     {u8"Parameter", YJson::O {}},
-    {u8"Directory", PluginObject::QString2Utf8(folder)},
+    {u8"Directory", path.u8string()},
     {u8"StartPage", 1}
   }, u8KeyName);
 
   EditNewType(u8KeyName);
 }
 
-void WallhavenExMenu::EditCurType(const std::u8string& typeName)
+void WallhavenExMenu::EditNewType(const std::u8string& typeName)
 {
   auto& params = m_Data[u8"WallhavenApi"][typeName][u8"Parameter"];
   auto const editor = new MapEditor("编辑参数", params, [this, typeName, &params](){
@@ -148,13 +165,13 @@ void WallhavenExMenu::EditCurType(const std::u8string& typeName)
     action->setCheckable(true);
     m_ActionGroup->addAction(action);
     LoadSubSettingMenu(action);
-    m_CallBack(typeName == m_Data[u8"WallhavenCurrent"].getValueString());
+    m_CallBack(false);
     glb->glbShowMsg("配置成功！");
   });
   editor->show();
 }
 
-void WallhavenExMenu::EditNewType(const std::u8string& typeName)
+void WallhavenExMenu::EditCurType(const std::u8string& typeName)
 {
   auto& params = m_Data[u8"WallhavenApi"][typeName][u8"Parameter"];
   auto const editor = new MapEditor("编辑参数", params, [this, typeName, &params](){
@@ -167,7 +184,7 @@ void WallhavenExMenu::EditNewType(const std::u8string& typeName)
     auto actions = m_ActionGroup->actions();
     auto action = std::find_if(actions.begin(), actions.end(), [&name](QAction* a){return a->text() == name;});
     if (action == actions.end()) return;
-    m_CallBack(typeName == m_Data[u8"WallhavenCurrent"].getValueString());
+    m_CallBack((*action)->isChecked());
     glb->glbShowMsg("配置成功！");
   });
   editor->show();

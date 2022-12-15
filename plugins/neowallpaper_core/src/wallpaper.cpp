@@ -130,7 +130,7 @@ bool Wallpaper::SetWallpaper(fs::path imagePath) {
 }
 
 Wallpaper::Wallpaper(YJson& settings, std::function<void()> callback)
-    :  // m_PicHomeDir(GetSpecialFolderPath(CSIDL_MYPICTURES)),
+    :
       m_Settings(settings),
       m_Config(fs::exists(WallBase::m_ConfigPath) ? new YJson(WallBase::m_ConfigPath, YJson::UTF8): new YJson(YJson::Object)),
       m_Wallpaper(nullptr),

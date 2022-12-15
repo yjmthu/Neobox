@@ -73,14 +73,14 @@ void MapEditor::SaveData()
   for (int i = 0; i < m_Table->rowCount(); ++i) {
     auto ptr = m_Table->item(i, 0);
     if (ptr == nullptr) continue;
-    auto qsKeyArray = ptr->text().toUtf8();
+    auto const qsKeyArray = ptr->text();
     ptr = m_Table->item(i, 1);
     if (ptr == nullptr) continue;
-    auto qsValueArray = ptr->text().toUtf8();
+    auto const qsValueArray = ptr->text();
     if (qsKeyArray.isEmpty() || qsValueArray.isEmpty())
       continue;
-    jsData.append(std::u8string(qsValueArray.begin(), qsValueArray.end()),
-                  std::u8string(qsKeyArray.begin(), qsKeyArray.end()));
+    jsData.append(PluginObject::QString2Utf8(qsValueArray),
+                  PluginObject::QString2Utf8(qsKeyArray));
   }
   m_Data.swap(jsData);
   close();

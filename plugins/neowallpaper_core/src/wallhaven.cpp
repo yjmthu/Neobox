@@ -218,7 +218,7 @@ void Wallhaven::UndoDislike(const std::u8string& sImgPath)
   if (!IsWallhavenFile(Utf8AsString(m_FileName)))
     return;
 
-  auto& data =*m_Data;
+  auto& data = *m_Data;
   data[u8"Blacklist"].removeByValA(m_FileName);
   data[u8"Used"].append(m_FileName);
   data.toFile(m_DataPath);
@@ -240,8 +240,12 @@ void Wallhaven::SetJson(bool update)
   SaveSetting();
   if (!update)
     return;
-  m_Data->find(u8"Api")->second.getValueString().clear();
-  m_Data->toFile(m_DataPath);
+  if (m_Data) {
+    m_Data->find(u8"Api")->second.getValueString().clear();
+    m_Data->toFile(m_DataPath);
+  // } else if (fs::exists(m_DataPath)) {
+  //   fs::remove(m_DataPath);
+  }
 }
 
 size_t Wallhaven::DownloadUrl(const std::u8string& mainUrl) {
