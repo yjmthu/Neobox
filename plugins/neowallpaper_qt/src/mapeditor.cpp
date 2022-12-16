@@ -28,8 +28,8 @@ MapEditor::~MapEditor()
 
 void MapEditor::SetBaseLayout()
 {
-  QVBoxLayout* pVLayout = new QVBoxLayout(this);
-  QHBoxLayout* pHLayout = new QHBoxLayout;
+  auto const pVLayout = new QVBoxLayout(this);
+  auto const pHLayout = new QHBoxLayout;
   std::array arButtons = {
       new QPushButton("添加", this), new QPushButton("删除", this),
       new QPushButton("确认", this), new QPushButton("取消", this)};

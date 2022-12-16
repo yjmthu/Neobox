@@ -13,8 +13,12 @@
 #include <QFileDialog>
 #include <QActionGroup>
 #include <QMenu>
+#include <QDropEvent>
+#include <QMimeData>
 
 #include <windows.h>
+
+#include <ranges>
 
 #define CLASS_NAME NeoWallpaperPlg
 #include <pluginexport.cpp>
@@ -31,49 +35,14 @@ NeoWallpaperPlg::NeoWallpaperPlg(YJson& settings):
 
 NeoWallpaperPlg::~NeoWallpaperPlg()
 {
+  delete m_MainMenuAction;
+  // delete m_MainMenu;
   delete m_Wallpaper;
 }
 
 void NeoWallpaperPlg::InitFunctionMap()
 {
   m_PluginMethod = {
-    {u8"prev",
-      {u8"上一张图", u8"切换到上一张壁纸", [this](PluginEvent, void*) {
-          m_Wallpaper->SetSlot(-1);
-        }, PluginEvent::Void},
-    },
-    {u8"next",
-      {u8"下一张图", u8"切换到下一张壁纸", [this](PluginEvent, void*) {
-          m_Wallpaper->SetSlot(1);
-        }, PluginEvent::Void
-      },
-    },
-    {u8"dislike",
-      {u8"不看此图", u8"把这张图移动到垃圾桶", [this](PluginEvent, void*) {
-          m_Wallpaper->SetSlot(0);
-        }, PluginEvent::Void
-      },
-    },
-    {u8"undoDislike",
-      {u8"撤销删除", u8"撤销上次的删除操作",
-       [this](PluginEvent, void*){
-          m_Wallpaper->UndoDelete();
-        }, PluginEvent::Void
-      },
-    },
-    {u8"collect",
-      {u8"收藏图片", u8"把当前壁纸复制到收藏夹", [this](PluginEvent, void*) {
-        m_Wallpaper->Wallpaper::SetFavorite();
-        glb->glbShowMsg("收藏壁纸成功！");
-      }, PluginEvent::Void},
-    },
-    {u8"undoCollect",
-      {u8"撤销收藏", u8"如果当前壁纸在收藏夹内，则将其移出", [this](PluginEvent, void*) {
-          m_Wallpaper->UnSetFavorite();
-          glb->glbShowMsg("撤销收藏壁纸成功！");
-        }, PluginEvent::Void
-      },
-    },
     {u8"setCurrentDir",
       {u8"设置位置", u8"设置当前壁纸来源存储位置",
         [this](PluginEvent, void*) {
@@ -134,15 +103,89 @@ return ;
       }, PluginEvent::Bool },
     }
   };
+
+  m_Following.push_back({u8"neospeedboxplg", [this](PluginEvent event, void* data){
+    if (event == PluginEvent::Drop) {
+      const auto mimeData = reinterpret_cast<QDropEvent*>(data)->mimeData();
+      if (!mimeData->hasUrls()) return;
+      auto urls = mimeData->urls();
+      auto picUrlsView =
+      urls | std::views::filter([](const QUrl& i) { return i.isValid() && (i.isLocalFile() || i.scheme().startsWith("http")); })
+      | std::views::transform([](const QUrl& i) {
+      auto const data = i.isLocalFile() ? i.toLocalFile() : i.toString();
+      return PluginObject::QString2Utf8(data); });
+      m_Wallpaper->SetDropFile(std::vector<std::u8string>(picUrlsView.begin(), picUrlsView.end()));
+    }
+  }});
 }
 
-void NeoWallpaperPlg::InitMenuAction()
+QAction* NeoWallpaperPlg::InitMenuAction()
 {
   m_MoreSettingsAction = new QAction("更多设置", m_MainMenu);
   LoadWallpaperTypeMenu(m_MainMenu);
-  PluginObject::InitMenuAction();
+  this->PluginObject::InitMenuAction();
   m_MainMenu->addAction(m_MoreSettingsAction);
   LoadWallpaperExMenu(m_MainMenu);
+  LoadMainMenuAction();
+
+  return m_MainMenuAction;
+}
+
+void NeoWallpaperPlg::LoadMainMenuAction()
+{
+  m_MainMenuAction = new QAction("壁纸切换");
+  auto const menu = new QMenu(m_MainMenu);
+  menu->setAttribute(Qt::WA_TranslucentBackground, true);
+  menu->setToolTipsVisible(true);
+  m_MainMenuAction->setMenu(menu);
+
+  std::vector<std::pair<std::u8string, FunctionInfo>> temp = {
+    { u8"prev",
+      {u8"上一张图", u8"切换到上一张壁纸", [this](PluginEvent, void*) {
+          m_Wallpaper->SetSlot(-1);
+        }, PluginEvent::Void }
+    },
+    {u8"next",
+      {u8"下一张图", u8"切换到下一张壁纸", [this](PluginEvent, void*) {
+          m_Wallpaper->SetSlot(1);
+        }, PluginEvent::Void
+      },
+    },
+    {u8"dislike",
+      {u8"不看此图", u8"把这张图移动到垃圾桶", [this](PluginEvent, void*) {
+          m_Wallpaper->SetSlot(0);
+        }, PluginEvent::Void
+      },
+    },
+    {u8"undoDislike",
+      {u8"撤销删除", u8"撤销上次的删除操作",
+       [this](PluginEvent, void*){
+          m_Wallpaper->UndoDelete();
+        }, PluginEvent::Void
+      },
+    },
+    {u8"collect",
+      {u8"收藏图片", u8"把当前壁纸复制到收藏夹", [this](PluginEvent, void*) {
+        m_Wallpaper->Wallpaper::SetFavorite();
+        glb->glbShowMsg("收藏壁纸成功！");
+      }, PluginEvent::Void},
+    },
+    {u8"undoCollect",
+      {u8"撤销收藏", u8"如果当前壁纸在收藏夹内，则将其移出", [this](PluginEvent, void*) {
+          m_Wallpaper->UnSetFavorite();
+          glb->glbShowMsg("撤销收藏壁纸成功！");
+        }, PluginEvent::Void
+      },
+    },
+  };
+
+  for (auto& [name, info]: temp) {
+    auto const action = menu->addAction(
+          Utf82QString(info.friendlyName));
+    action->setToolTip(PluginObject::Utf82QString(info.description));
+    QObject::connect(action, &QAction::triggered, menu, std::bind(info.function, PluginEvent::Void, nullptr));
+    m_PluginMethod[name] = std::move(info);
+  }
 }
 
 YJson& NeoWallpaperPlg::InitSettings(YJson& settings)

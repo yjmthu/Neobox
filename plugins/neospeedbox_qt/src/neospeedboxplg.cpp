@@ -59,7 +59,7 @@ void NeoSpeedboxPlg::InitFunctionMap() {
   };
 }
 
-void NeoSpeedboxPlg::InitMenuAction()
+QAction* NeoSpeedboxPlg::InitMenuAction()
 {
   auto action = m_MainMenu->addAction("网卡选择");
   auto menu = new QMenu(m_MainMenu);
@@ -83,6 +83,8 @@ void NeoSpeedboxPlg::InitMenuAction()
   const auto& info = m_PluginMethod[u8"enableBlur"];
   info.function(PluginEvent::BoolGet, &buffer);
   info.function(PluginEvent::Bool, &buffer);
+  
+  return nullptr;
 }
 
 YJson& NeoSpeedboxPlg::InitSettings(YJson& settings)

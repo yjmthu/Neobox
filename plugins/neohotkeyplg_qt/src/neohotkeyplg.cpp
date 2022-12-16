@@ -56,9 +56,9 @@ void NeoHotKeyPlg::InitFunctionMap()
   };
 }
 
-void NeoHotKeyPlg::InitMenuAction()
+QAction* NeoHotKeyPlg::InitMenuAction()
 {
-  this->PluginObject::InitMenuAction();
+  return this->PluginObject::InitMenuAction();
 }
 
 YJson& NeoHotKeyPlg::InitSettings(YJson& settings)
@@ -71,10 +71,12 @@ YJson& NeoHotKeyPlg::InitSettings(YJson& settings)
       {u8"开关翻译窗口", YJson::O {
         {u8"KeySequence", u8"Shift+Z"},
         {u8"Enabled", false},
+        {u8"Plugin", u8"neotranslateplg"},
       }},
-      {u8"屏幕截图", YJson::O {
+      {u8"文字识别屏幕截图", YJson::O {
         {u8"KeySequence", u8"Ctrl+Shift+A"},
         {u8"Enabled", false},
+        {u8"Plugin", u8"neoocrplg"},
       }},
     }},
   };

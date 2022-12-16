@@ -8,7 +8,7 @@ class NeoHotKeyPlg: public QAbstractNativeEventFilter, public PluginObject
 {
 protected:
   bool nativeEventFilter(const QByteArray &eventType, void *message, qintptr *) override;
-  void InitMenuAction() override;
+  class QAction* InitMenuAction() override;
   void InitFunctionMap() override;
 public:
   explicit NeoHotKeyPlg(YJson& settings);

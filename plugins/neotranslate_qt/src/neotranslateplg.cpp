@@ -3,6 +3,8 @@
 #include <yjson.h>
 
 #include <QTextEdit>
+#include <QMimeData>
+#include <QDropEvent>
 
 #define CLASS_NAME NeoTranslatePlg
 #include <pluginexport.cpp>
@@ -26,6 +28,14 @@ NeoTranslatePlg::NeoTranslatePlg(YJson& settings):
         m_TranslateDlg->hide();
       else
         m_TranslateDlg->show();
+    } else if (event == PluginEvent::Drop) {
+      const auto mimeData = reinterpret_cast<QDropEvent*>(data)->mimeData();
+      if (mimeData->hasUrls() || !mimeData->hasText()) return;
+      const QString text = mimeData->text();
+      if (text.isEmpty() || text.isNull()) return;
+      auto const txtfrom = m_TranslateDlg->findChild<QTextEdit*>("neoTextFrom");
+      txtfrom->setPlainText(text);
+      m_TranslateDlg->show();
     }
   }});
   m_Following.push_back({u8"neoocrplg", [this](PluginEvent event, void* data){
@@ -74,9 +84,9 @@ void NeoTranslatePlg::InitFunctionMap() {
   };
 }
 
-void NeoTranslatePlg::InitMenuAction()
+QAction* NeoTranslatePlg::InitMenuAction()
 {
-  PluginObject::InitMenuAction();
+  return PluginObject::InitMenuAction();
 }
 
 YJson& NeoTranslatePlg::InitSettings(YJson& settings)

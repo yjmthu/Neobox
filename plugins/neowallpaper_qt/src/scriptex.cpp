@@ -11,7 +11,7 @@
 
 extern GlbObject* glb;
 
-namespace fs = std::filesystem;
+// namespace fs = std::filesystem;
 
 ScriptExMenu::ScriptExMenu(YJson& data, QMenu* parent, std::function<void(bool)> callback):
   QMenu(parent),

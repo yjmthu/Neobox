@@ -34,7 +34,7 @@ PluginObject::~PluginObject()
   delete m_MainAction;
 }
 
-void PluginObject::InitMenuAction()
+QAction* PluginObject::InitMenuAction()
 {
   for (const auto& [_, funInfo]: m_PluginMethod) {
     auto const action = m_MainMenu->addAction(
@@ -53,6 +53,7 @@ void PluginObject::InitMenuAction()
       });
     }
   }
+  return nullptr;
 }
 
 std::u8string PluginObject::QString2Utf8(const QString& str)

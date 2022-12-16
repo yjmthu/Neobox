@@ -13,9 +13,12 @@
 #include <QFileDialog>
 #include <QPlainTextEdit>
 #include <QImage>
+#include <QDropEvent>
+#include <QMimeData>
 
 #include <leptonica/allheaders.h>
 #include <filesystem>
+#include <ranges>
 
 #define CLASS_NAME NeoOcrPlg
 #include <pluginexport.cpp>
@@ -91,11 +94,30 @@ void NeoOcrPlg::InitFunctionMap() {
       }, PluginEvent::Void},
     }
   };
+
+  m_Following.push_back({u8"neospeedboxplg", [this](PluginEvent event, void* data){
+    if (event == PluginEvent::Drop) {
+      const auto mimeData = reinterpret_cast<QDropEvent*>(data)->mimeData();
+      if (!mimeData->hasUrls()) return;
+      auto urls = mimeData->urls();
+      auto uiUrlsView = urls | std::views::filter([](const QUrl& i) {
+      return i.isValid() && i.isLocalFile() && i.fileName().endsWith(".traineddata"); });
+      // to do sth
+    }
+  }});
+
+  m_Following.push_back({u8"neohotkeyplg", [this](PluginEvent event, void* data){
+    if (event == PluginEvent::HotKey) {
+      // 判断是否为想要的快捷键
+      // MSG* msg = reinterpret_cast<MSG*>(data);
+      m_PluginMethod[u8"screenfetch"].function(event, data);
+    }
+  }});
 }
 
-void NeoOcrPlg::InitMenuAction()
+QAction* NeoOcrPlg::InitMenuAction()
 {
-  this->PluginObject::InitMenuAction();
+  return this->PluginObject::InitMenuAction();
 }
 
 YJson& NeoOcrPlg::InitSettings(YJson& settings)

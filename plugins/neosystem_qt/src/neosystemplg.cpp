@@ -6,6 +6,7 @@
 #include <QDir>
 
 #include <windows.h>
+#include <powrprof.h>
 
 #define CLASS_NAME NeoSystemPlg
 #include <pluginexport.cpp>
@@ -33,6 +34,16 @@ void NeoSystemPlg::InitFunctionMap() {
     {u8"restartComputer",
       {u8"快捷重启", u8"重启计算机", [](PluginEvent, void*){
         ShellExecuteW(nullptr, L"open", L"shutdown", L"-r -t 0", nullptr, 0);
+      }, PluginEvent::Void},
+    },
+    {u8"suspendedComputer",
+      {u8"进入睡眠", u8"计算机进入睡眠模式", [](PluginEvent, void*){
+        SetSuspendState(FALSE, TRUE, FALSE);
+      }, PluginEvent::Void},
+    },
+    {u8"hibernateComputer",
+      {u8"开启休眠", u8"计算机进入休眠模式", [](PluginEvent, void*){
+        SetSuspendState(TRUE, TRUE, TRUE);
       }, PluginEvent::Void},
     },
 
@@ -63,9 +74,32 @@ void NeoSystemPlg::InitFunctionMap() {
   };
 }
 
-void NeoSystemPlg::InitMenuAction()
+QAction* NeoSystemPlg::LoadMainMenuAction()
+{
+  auto names = {u8"shutdownComputer", u8"restartComputer", u8"suspendedComputer"};
+
+  auto const mainMenuAction = new QAction("快捷功能");
+  auto const menu = new QMenu(m_MainMenu);
+  menu->setAttribute(Qt::WA_TranslucentBackground, true);
+  menu->setToolTipsVisible(true);
+  mainMenuAction->setMenu(menu);
+
+  for (const auto& name: names) {
+    const auto& info = m_PluginMethod[name];
+    auto const action = menu->addAction(
+          Utf82QString(info.friendlyName));
+    action->setToolTip(PluginObject::Utf82QString(info.description));
+    QObject::connect(action, &QAction::triggered, menu, std::bind(info.function, PluginEvent::Void, nullptr));
+    m_PluginMethod[name] = std::move(info);
+  }
+
+  return mainMenuAction;
+}
+
+QAction* NeoSystemPlg::InitMenuAction()
 {
   this->PluginObject::InitMenuAction();
+  return LoadMainMenuAction();
 }
 
 YJson& NeoSystemPlg::InitSettings(YJson& settings)

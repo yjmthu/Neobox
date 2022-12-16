@@ -34,7 +34,7 @@ extern PluginMgr* mgr;
 extern GlbObject* glb;
 
 SpeedBox::SpeedBox(PluginObject* plugin, YJson& settings, QMenu* netcardMenu)
-    : QWidget(glb->glbGetMenu(),
+    : QWidget(/*glb->glbGetMenu()*/ nullptr,
               Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool),
     m_PluginObject(plugin),
     m_Settings(settings),
@@ -148,7 +148,7 @@ void SpeedBox::SetBaseLayout() {
     m_MemColorFrame->setStyleSheet(QString::fromUtf8(style.data(), style.size()));
   }
 
-  // setStyleSheet(qobject_cast<QMenu*>(parent())->styleSheet());
+  setStyleSheet(glb->glbGetMenu()->styleSheet());
 }
 
 void SpeedBox::UpdateTextContent() {
@@ -232,31 +232,17 @@ void SpeedBox::dragEnterEvent(QDragEnterEvent* event) {
 
 void SpeedBox::dropEvent(QDropEvent* event) {
   auto mimeData = event->mimeData();
-  if (mimeData->hasUrls()) {
-    auto urls = mimeData->urls();
-    auto picUrlsView =
-      urls | std::views::filter([](const QUrl& i) { return i.isValid() && (i.isLocalFile() || i.scheme().startsWith("http")); })
-      | std::views::transform([](const QUrl& i) {
-      QByteArray data = i.isLocalFile() ? i.toLocalFile().toUtf8() : i.toString().toUtf8();
-      return std::u8string(data.begin(), data.end()); });
-    //auto netUrlsView = urls | std::views::filter([](const QUrl& i) { return i.isValid() && ; })
-    //  | std::views::transform([](const QUrl& i) { return i.toLocalFile().toUtf8(); });
-    auto uiUrlsView = urls | std::views::filter([](const QUrl& i) {
-      return i.isValid() && i.fileName().endsWith(".ui") || i.fileName().endsWith(".traineddata"); });
-    auto ocrUrlsView = urls | std::views::filter([](const QUrl& i) {
-      return i.isValid() && i.fileName().endsWith(".ui") || i.fileName().endsWith(".traineddata"); });
-    // m_MainMenu->m_Wallpaper->SetDropFile(std::vector<std::u8string>(picUrlsView.begin(), picUrlsView.end()));
-    event->accept();
-  } else if (mimeData->hasText()) {
-    const QString text = mimeData->text();
-    if (!text.isEmpty()) {
-      // m_MainMenu->m_TranslateDlg->Show(frameGeometry(), mimeData->text());
-    } else {
-      // m_MainMenu->m_TranslateDlg->Show(frameGeometry());
-    }
-  } else {
-    event->ignore();
+  // if (mimeData->hasUrls()) {}
+
+  /*
+  auto ocrUrlsView = urls | std::views::filter([](const QUrl& i) {
+    return i.isValid() && i.fileName().endsWith(".ui") || i.fileName().endsWith(".traineddata"); });
+    */
+
+  for (const auto& fun: m_PluginObject->m_Followers) {
+    fun->operator()(PluginEvent::Drop, event);
   }
+  event->accept();
 }
 
 bool SpeedBox::nativeEvent(const QByteArray& eventType,

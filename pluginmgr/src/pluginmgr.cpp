@@ -125,7 +125,9 @@ void PluginMgr::LoadPlugins(QMenu* settingsMenu)
       auto& pluginSttings = m_Settings->find(u8"PluginsConfig")->second[name];
       auto& info = m_Plugins[name];
       if ((info.plugin = LoadPlugin(name))) {
-        info.plugin->InitMenuAction();
+        auto const mainMenuAction = info.plugin->InitMenuAction();
+        if (mainMenuAction)
+          glb->glbGetMenu()->addAction(mainMenuAction);
         action->setChecked(true);
       } else {
         action->setChecked(false);
@@ -139,7 +141,9 @@ void PluginMgr::LoadPlugins(QMenu* settingsMenu)
       SaveSettings();
       if (on) {
         if ((info.plugin = LoadPlugin(name))) {
-          info.plugin->InitMenuAction();
+          auto const mainMenuAction = info.plugin->InitMenuAction();
+          if (mainMenuAction)
+            glb->glbGetMenu()->addAction(mainMenuAction);
           UpdateBroadcast(info.plugin);
         } else {
           action->setChecked(false);

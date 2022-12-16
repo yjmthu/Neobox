@@ -6,12 +6,13 @@
 class NeoSystemPlg: public PluginObject
 {
 protected:
-  void InitMenuAction() override;
+  class QAction* InitMenuAction() override;
 public:
   explicit NeoSystemPlg(YJson& settings);
   virtual ~NeoSystemPlg();
 private:
   void InitFunctionMap() override;
+  QAction* LoadMainMenuAction();
   static void LoadResources();
   static void SetDesktopRightMenu(bool on);
   static bool HasDesktopRightMenu();

@@ -6,7 +6,7 @@
 class NeoWallpaperPlg: public PluginObject
 {
 protected:
-  void InitMenuAction() override;
+  class QAction* InitMenuAction() override;
 public:
   explicit NeoWallpaperPlg(YJson& settings);
   virtual ~NeoWallpaperPlg();
@@ -19,6 +19,7 @@ private:
   class QMenu* m_WallpaperTypesMenu;
   class QAction* m_MoreSettingsAction;
   class QActionGroup* m_WallpaperTypesGroup;
+  class QAction* m_MainMenuAction;
 private:
   QMenu* LoadWallavenMenu(QMenu* parent);
   QMenu* LoadBingApiMenu(QMenu* parent);
@@ -26,6 +27,7 @@ private:
   QMenu* LoadNativeMenu(QMenu* parent);
   QMenu* LoadScriptMenu(QMenu* parent);
   QMenu* LoadFavoriteMenu(QMenu* parent);
+  void LoadMainMenuAction();
 };
 
 #endif // NEOWALLPAPERPLG_H

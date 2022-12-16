@@ -29,7 +29,6 @@ NeoMenu::NeoMenu(GlbObject* glb)
   InitStyleSheet();
   InitSettingMenu();
   InitPluginMenu();
-  InitFunctionMap();
 }
 
 NeoMenu::~NeoMenu() {
@@ -66,6 +65,7 @@ void NeoMenu::InitPluginMgr()
   menu->setToolTipsVisible(true);
   m_SettingMenu->addAction("插件状态")->setMenu(menu);
   m_PluginMgr->LoadPlugins(menu);
+  InitFunctionMap();
 }
 
 void NeoMenu::InitSettingMenu()
@@ -82,12 +82,12 @@ void NeoMenu::InitSettingMenu()
 }
 
 void NeoMenu::InitFunctionMap() {
-  connect(addAction("程序位置"), &QAction::triggered, this, std::bind(QDesktopServices::openUrl,
+  connect(m_SettingMenu->addAction("程序位置"), &QAction::triggered, this, std::bind(QDesktopServices::openUrl,
                  QUrl::fromLocalFile(qApp->applicationDirPath())));
-  connect(addAction("配置目录"), &QAction::triggered, this, std::bind(QDesktopServices::openUrl,
+  connect(m_SettingMenu->addAction("配置目录"), &QAction::triggered, this, std::bind(QDesktopServices::openUrl,
                  QUrl::fromLocalFile(QDir::currentPath())));
-  connect(addAction("关于软件"), &QAction::triggered, this, [](){(new VersionDlg)->show();});
-  connect(addAction("退出软件"), &QAction::triggered, this, QApplication::quit);
+  connect(m_SettingMenu->addAction("关于软件"), &QAction::triggered, this, [](){(new VersionDlg)->show();});
+  connect(m_SettingMenu->addAction("退出软件"), &QAction::triggered, this, QApplication::quit);
   /*
   m_FuncCheckMap = {
       {u8"ToolTransRegistKey",
