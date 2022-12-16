@@ -77,6 +77,13 @@ void PluginObject::RemoveMainObject()
   mgr->m_MainObjects[m_PluginName] = nullptr;
 }
 
+void PluginObject::SendBroadcast(PluginEvent event, void* data)
+{
+  for (auto const fun: m_Followers) {
+    fun->operator()(event, data);
+  }
+}
+
 QObject* PluginObject::GetMainObject(const std::u8string& pluginName)
 {
   auto const iter = mgr->m_MainObjects.find(pluginName);

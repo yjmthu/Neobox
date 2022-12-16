@@ -33,9 +33,7 @@ bool NeoHotKeyPlg::nativeEventFilter(const QByteArray &eventType, void *message,
      * Modifiers = (UINT) LOWORD(lParam);
      * uVirtKey = (UINT) HIWORD(lParam);
      */
-    for (const auto& fun: m_Followers) {
-      fun->operator()(PluginEvent::HotKey, message);
-    }
+    SendBroadcast(PluginEvent::HotKey, message);
   }
   return false;
 }

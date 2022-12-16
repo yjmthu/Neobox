@@ -3,6 +3,7 @@
 #include <pluginobject.h>
 #include <yjson.h>
 #include <systemapi.h>
+#include <neosystemtray.h>
 #include <neoapp.h>
 
 #include <QMenu>
@@ -28,6 +29,8 @@ NeoSpeedboxPlg::NeoSpeedboxPlg(YJson& settings):
 
 NeoSpeedboxPlg::~NeoSpeedboxPlg()
 {
+  auto& followers = glb->glbGetSystemTray()->m_Followers;
+  followers.erase(&m_ActiveWinodow);
   delete m_Speedbox;
 }
 
@@ -57,6 +60,23 @@ void NeoSpeedboxPlg::InitFunctionMap() {
       }, PluginEvent::Bool}
     },
   };
+
+  m_ActiveWinodow = [this](PluginEvent event, void*){
+    if (event == PluginEvent::MouseDoubleClick) {
+      if (m_Speedbox->isVisible()) {
+        m_Speedbox->hide();
+        glb->glbShowMsg("隐藏悬浮窗成功！");
+      } else {
+        m_Speedbox->show();
+        glb->glbShowMsg("显示悬浮窗成功！");
+      }
+    } else if (event == PluginEvent::MouseClick) {
+      m_Speedbox->raise();
+    }
+  };
+
+  auto& followers = glb->glbGetSystemTray()->m_Followers;
+  followers.insert(&m_ActiveWinodow);
 }
 
 QAction* NeoSpeedboxPlg::InitMenuAction()

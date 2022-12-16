@@ -41,24 +41,19 @@ void NeoSystemTray::InitDirs()
 void NeoSystemTray::InitConnect()
 {
   connect(this, &QSystemTrayIcon::activated,
-    [](QSystemTrayIcon::ActivationReason reason){
+    [this](QSystemTrayIcon::ActivationReason reason){
       switch (reason)
       {
-        // case QSystemTrayIcon::DoubleClick:
-        //   if (VarBox::GetSpeedBox()->isVisible()) {
-        //     VarBox::GetSpeedBox()->hide();
-        //     VarBox::GetSettings(u8"FormGlobal")[u8"ShowForm"] = false;
-        //     VarBox::ShowMsg("隐藏悬浮窗成功！");
-        //   } else {
-        //     VarBox::GetSpeedBox()->show();
-        //     VarBox::GetSettings(u8"FormGlobal")[u8"ShowForm"] = true;
-        //     VarBox::ShowMsg("显示悬浮窗成功！");
-        //   }
-        //   VarBox::WriteSettings();
-        //   break;
-        // case QSystemTrayIcon::Trigger:
-        //   VarBox::GetSpeedBox()->raise();
-        //   break;
+        case QSystemTrayIcon::Trigger:
+          for (const auto& fun: m_Followers) {
+            fun->operator()(PluginEvent::MouseClick, nullptr);
+          }
+          break;
+        case QSystemTrayIcon::DoubleClick:
+          for (const auto& fun: m_Followers) {
+            fun->operator()(PluginEvent::MouseDoubleClick, nullptr);
+          }
+          break;
         default:
           break;
       }

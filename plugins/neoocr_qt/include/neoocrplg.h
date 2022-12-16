@@ -13,6 +13,7 @@ public:
   virtual ~NeoOcrPlg();
 private:
   YJson& InitSettings(YJson& settings);
+  void ChooseLanguages();
   void InitMenu();
   class NeoOcr* const m_Ocr;
 };

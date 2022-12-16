@@ -196,8 +196,8 @@ YJson& NeoWallpaperPlg::InitSettings(YJson& settings)
     {u8"FirstChange", false},
     {u8"TimeInterval", 30},
     {u8"ImageType", 0},
-    {u8"DropToCurDir", false},
-    {u8"DropDir", u8"junk"},
+    {u8"DropToCurDir", true},
+    {u8"DropDir", (fs::current_path() / "junk").u8string()},
     {u8"DropImgUseUrlName", true},
     {u8"DropINameFmt", u8"drop-image {1} {0:%Y-%m-%d}"},
   };

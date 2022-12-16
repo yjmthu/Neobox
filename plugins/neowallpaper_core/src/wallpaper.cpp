@@ -207,6 +207,12 @@ std::filesystem::path Wallpaper::GetImageName(const std::u8string& url)
     imagePath = m_Wallpaper->GetImageDir();
   } else {
     imagePath = m_Settings[u8"DropDir"].getValueString();
+    if (imagePath.is_relative()) {
+      imagePath = fs::absolute(imagePath);
+      imagePath.make_preferred();
+      m_Settings[u8"DropDir"].getValueString() = imagePath.u8string();
+      SettingsCallback();
+    }
   }
   auto iter = std::find(url.crbegin(), url.crend(), '/').base();
   if (m_Settings[u8"DropImgUseUrlName"].isTrue()) {
@@ -221,6 +227,7 @@ std::filesystem::path Wallpaper::GetImageName(const std::u8string& url)
       std::make_format_args(std::chrono::current_zone()->to_local(utc), std::string(iter, pt)));
     imagePath.append(std::u8string(fmtedName.begin(), fmtedName.end()) + std::u8string(pt, url.cend()));
   }
+
   return imagePath.make_preferred();
 }
 

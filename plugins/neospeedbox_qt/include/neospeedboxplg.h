@@ -21,10 +21,12 @@ private:
   void AddSkinConnect(class QAction* acion);
   void RemoveSkinConnect(QAction* action);
   void ChooseSkinConnect(QAction* action);
+private:
   class SpeedBox* m_Speedbox;
   class QMenu* m_ChooseSkinMenu;
   class QMenu* m_RemoveSkinMenu;
   class QActionGroup* m_ChooseSkinGroup;
+  std::function<void(PluginEvent, void*)> m_ActiveWinodow;
 };
 
 #endif // NEOSPEEDBOXPLG_H

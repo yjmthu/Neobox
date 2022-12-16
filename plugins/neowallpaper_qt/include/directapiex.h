@@ -12,7 +12,7 @@ public:
 private:
   void LoadSettingMenu();
   void LoadSubSettingMenu(QAction* action);
-  void LoadPaths(QMenu* subMenu);
+  void LoadPaths(QMenu* subMenu, const std::u8string& name);
   void AddApi();
   void EditApi(QAction* action);
   void RenameApi(QAction* action);

@@ -55,18 +55,16 @@ void WallhavenExMenu::LoadSubSettingMenu(QAction* action)
     auto const curName = action->text();
     auto const lastName = PluginObject::Utf82QString(current.getValueString());
 
+    action->setChecked(true);
+    current.setText(PluginObject::QString2Utf8(curName));
     if (lastName != curName) {
       const auto actions = m_ActionGroup->actions();
       auto lastAction = *std::find_if(actions.begin(), actions.end(), [&lastName](QAction* a){return a->text() == lastName;});
       delete lastAction->menu();
       LoadSubSettingMenu(lastAction);
-
       delete action->menu();
       LoadSubSettingMenu(action);
     }
-
-    action->setChecked(true);
-    current.setText(PluginObject::QString2Utf8(curName));
 
     m_CallBack(true);
     glb->glbShowMsg("设置成功！");

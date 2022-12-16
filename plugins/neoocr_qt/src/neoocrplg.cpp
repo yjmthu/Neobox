@@ -15,6 +15,11 @@
 #include <QImage>
 #include <QDropEvent>
 #include <QMimeData>
+#include <QFileInfo>
+#include <QPushButton>
+#include <QCheckBox>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
 
 #include <leptonica/allheaders.h>
 #include <filesystem>
@@ -64,9 +69,7 @@ void NeoOcrPlg::InitFunctionMap() {
         if (!box->HaveCatchImage())
           return;
         auto str = m_Ocr->GetText(QImage2Pix(image));
-        for (auto fun: m_Followers) {
-          fun->operator()(PluginEvent::U8string, &str);
-        }
+        SendBroadcast(PluginEvent::U8string, &str);
       }, PluginEvent::Void},
     },
     {u8"setDataDir",
@@ -85,6 +88,7 @@ void NeoOcrPlg::InitFunctionMap() {
         pNewPath.make_preferred();
         std::u8string u8NewPath = pNewPath.u8string();
         if (!u8NewPath.empty() && u8NewPath != u8Path) {
+          m_Ocr->SetDataDir(u8NewPath);
           u8Path.swap(u8NewPath);
           mgr->SaveSettings();
           glb->glbShowMsg("设置数据文件失成功！");
@@ -92,6 +96,12 @@ void NeoOcrPlg::InitFunctionMap() {
           glb->glbShowMsg("设置数据文件失败！");
         }
       }, PluginEvent::Void},
+    },
+    {u8"chooseDataFiles",
+      {u8"选择语言", u8"可批量选择训练数据文件", [this](PluginEvent, void*){
+        ChooseLanguages();
+      },
+      PluginEvent::Void}
     }
   };
 
@@ -99,10 +109,20 @@ void NeoOcrPlg::InitFunctionMap() {
     if (event == PluginEvent::Drop) {
       const auto mimeData = reinterpret_cast<QDropEvent*>(data)->mimeData();
       if (!mimeData->hasUrls()) return;
-      auto urls = mimeData->urls();
+      const auto urls = mimeData->urls();
       auto uiUrlsView = urls | std::views::filter([](const QUrl& i) {
-      return i.isValid() && i.isLocalFile() && i.fileName().endsWith(".traineddata"); });
-      // to do sth
+          return i.isValid() && i.isLocalFile() && i.fileName().endsWith(".traineddata");
+        }) | std::views::transform([](const QUrl& url){
+          return fs::path(PluginObject::QString2Utf8(url.toLocalFile()));
+        }) | std::views::filter([](const fs::path& url) {
+          return fs::exists(url);
+        });
+      // std::vector<std::u8string> vec(uiUrlsView.begin(), uiUrlsView.end());
+      auto const folder = fs::path(m_Settings[u8"TessdataDir"].getValueString());
+      for (const auto file: uiUrlsView) {
+        fs::copy(file, folder / file.filename());
+      }
+      glb->glbShowMsg("复制数据文件成功。");
     }
   }});
 
@@ -128,6 +148,63 @@ YJson& NeoOcrPlg::InitSettings(YJson& settings)
     { u8"Languages", YJson::A { u8"chi_sim", u8"eng" } },
   };
   // we may not need to call SaveSettings;
+}
+
+void NeoOcrPlg::ChooseLanguages()
+{
+  const auto& path = m_Settings[u8"TessdataDir"].getValueString();
+  QDir dir(Utf82QString(path));
+  QStringList files = dir.entryList(QStringList { QStringLiteral("*.traineddata") }, QDir::Files | QDir::Readable, QDir::Name);
+
+  std::set<QString> curDatas;
+  for (auto& item: m_Settings[u8"Languages"].getArray()) {
+    curDatas.insert(Utf82QString(item.getValueString()));
+  }
+
+  auto const dialog = new QDialog;
+  dialog->setAttribute(Qt::WidgetAttribute::WA_DeleteOnClose, true);
+
+  auto const vlayout = new QVBoxLayout(dialog);
+  QHBoxLayout* hlayout = nullptr;
+  std::vector<QCheckBox*> chkboxs;
+
+  for (size_t i=0; auto file: files) {
+    auto const name = file.left(file.indexOf('.'));
+    auto const box = new QCheckBox(name, dialog);
+    chkboxs.push_back(box);
+    box->setChecked(curDatas.find(name) != curDatas.end());
+    if (i == 0) {
+      hlayout = new QHBoxLayout;
+      vlayout->addLayout(hlayout);
+      ++i;
+    } else if (i == 6) {
+      i = 0;
+    } else {
+      ++i;
+    }
+    hlayout->addWidget(box);
+  }
+
+  hlayout = new QHBoxLayout;
+  vlayout->addLayout(hlayout);
+  auto const btnNo = new QPushButton("取消", dialog);
+  auto const btnOk = new QPushButton("确认", dialog);
+  QObject::connect(btnOk, &QPushButton::clicked, dialog, [&](){
+    auto& object = m_Settings[u8"Languages"];
+    object.clearA();
+    for (auto box: chkboxs) {
+      if (!box->isChecked()) continue;
+      object.append(QString2Utf8(box->text()));
+    }
+    m_Ocr->InitLanguagesList();
+    mgr->SaveSettings();
+    glb->glbShowMsg("保存成功！");
+    dialog->close();
+  });
+  QObject::connect(btnNo, &QPushButton::clicked, dialog, &QDialog::close);
+  hlayout->addWidget(btnNo);
+  hlayout->addWidget(btnOk);
+  dialog->exec();
 }
 
 static inline bool IsBigDuan() {

@@ -30,6 +30,7 @@ enum class PluginEvent: char8_t
   MouseRelease,
   MouseEnter,
   MouseLeave,
+  MouseClick,
   MouseDoubleClick,
   Drop,
   HotKey

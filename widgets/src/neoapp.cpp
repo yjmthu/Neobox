@@ -14,6 +14,11 @@ QMenu* GlbObject::glbGetMenu() {
   return glbMenu;
 }
 
+NeoSystemTray* GlbObject::glbGetSystemTray()
+{
+  return glbTray;
+}
+
 void CompareJson(YJson& jsDefault, YJson& jsUser)
 {
   if (!jsDefault.isSameType(&jsUser))

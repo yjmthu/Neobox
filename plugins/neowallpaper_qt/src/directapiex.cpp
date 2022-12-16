@@ -48,8 +48,9 @@ void DirectApiExMenu::LoadSubSettingMenu(QAction* action)
   connect(subMenu->addAction("修改名称"),
     &QAction::triggered, this, std::bind(&DirectApiExMenu::RenameApi, this, action));
 
+  const std::u8string viewName = PluginObject::QString2Utf8(action->text());
+
   if (!action->isChecked()) {
-    const std::u8string viewName = PluginObject::QString2Utf8(action->text());
     connect(subMenu->addAction("启用此项"),
       &QAction::triggered, this, [this, viewName]() {
         m_Data[u8"ApiUrl"] = viewName;
@@ -68,7 +69,7 @@ void DirectApiExMenu::LoadSubSettingMenu(QAction* action)
 
   connect(subMenu->addAction("路径编辑"), &QAction::triggered, this, std::bind(&DirectApiExMenu::EditApi, this, action));
   subMenu->addSeparator();
-  LoadPaths(subMenu);
+  LoadPaths(subMenu, viewName);
 
   connect(subMenu->addAction("添加更多"), &QAction::triggered, this, &DirectApiExMenu::AddApi);
 }
@@ -109,12 +110,13 @@ void DirectApiExMenu::RenameApi(QAction* action)
   action->setText(qKeyNewName);
 }
 
-void DirectApiExMenu::LoadPaths(QMenu* subMenu)
+void DirectApiExMenu::LoadPaths(QMenu* subMenu, const std::u8string& name)
 {
   QActionGroup* pSonGroup = new QActionGroup(subMenu);
-  for (const auto& [name, data] : m_Data[u8"ApiData"].getObject()) {
-    auto& curPath = m_Data[u8"ApiData"][name][u8"CurPath"];
-    for (int32_t index = 0, cIndex = data[u8"CurPath"].getValueInt();
+  // for (const auto& [name, data] : m_Data[u8"ApiData"].getObject()) {
+    auto& data = m_Data[u8"ApiData"][name];
+    auto& curPath = data[u8"CurPath"];
+    for (int32_t index = 0, cIndex = curPath.getValueInt();
           auto& path : data[u8"Paths"].getArray()) {
       const std::u8string& path_view = path.getValueString();
       QAction* action = subMenu->addAction(
@@ -127,7 +129,7 @@ void DirectApiExMenu::LoadPaths(QMenu* subMenu)
       });
       action->setChecked(cIndex == index++);
     }
-  }
+  // }
 }
 
 void DirectApiExMenu::AddApi()

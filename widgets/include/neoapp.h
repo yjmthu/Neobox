@@ -19,6 +19,7 @@ public:
   int glbReadSharedFlag();
 #endif
   class QMenu* glbGetMenu();
+  class NeoSystemTray* glbGetSystemTray();
   void glbShowMsg(class QString text);
   void glbShowMsgbox(const std::u8string& title, const std::u8string& text, int type = 0);
 };

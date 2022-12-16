@@ -47,7 +47,6 @@ SpeedBox::SpeedBox(PluginObject* plugin, YJson& settings, QMenu* netcardMenu)
   SetHideFullScreen();
   SetBaseLayout();
   InitNetCard();
-  if (!QFile::exists(":/skins/Huorong.ui")) throw nullptr;
 }
 
 SpeedBox::~SpeedBox() {
@@ -187,9 +186,7 @@ void SpeedBox::SetHideFullScreen() {
 void SpeedBox::mouseMoveEvent(QMouseEvent* event) {
   if (event->buttons() == Qt::LeftButton) {
     move(pos() + event->pos() - m_ConstPos);
-    for (const auto& fun: m_PluginObject->m_Followers) {
-      fun->operator()(PluginEvent::MouseMove, event);
-    }
+    m_PluginObject->SendBroadcast(PluginEvent::MouseMove, event);
   }
 }
 
@@ -216,9 +213,7 @@ void SpeedBox::mouseReleaseEvent(QMouseEvent* event) {
 }
 
 void SpeedBox::mouseDoubleClickEvent(QMouseEvent* event) {
-  for (auto const fun: m_PluginObject->m_Followers) {
-    fun->operator()(PluginEvent::MouseDoubleClick, event);
-  }
+  m_PluginObject->SendBroadcast(PluginEvent::MouseDoubleClick, event);
   event->accept();
 }
 
@@ -239,9 +234,7 @@ void SpeedBox::dropEvent(QDropEvent* event) {
     return i.isValid() && i.fileName().endsWith(".ui") || i.fileName().endsWith(".traineddata"); });
     */
 
-  for (const auto& fun: m_PluginObject->m_Followers) {
-    fun->operator()(PluginEvent::Drop, event);
-  }
+  m_PluginObject->SendBroadcast(PluginEvent::Drop, event);
   event->accept();
 }
 
