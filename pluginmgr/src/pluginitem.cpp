@@ -188,6 +188,7 @@ void PluginItem::Uninstall()
   m_Installed = false;
   m_CanUpdate = false;
   m_Enabled = false;
+  m_ChkEnable->setChecked(false);
   UpdateEnabled();
 
   glb->glbShowMsg("卸载成功！");

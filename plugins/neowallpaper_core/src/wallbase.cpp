@@ -63,6 +63,10 @@ void WallBase::ClearInstatnce() {
   delete s_pOther;
   delete s_pFavorite;
   delete s_pBingApi;
+
+  s_pOther = nullptr;
+  s_pFavorite = nullptr;
+  s_pBingApi = nullptr;
 }
 
 void WallBase::Dislike(const std::u8string& sImgPath) {}
