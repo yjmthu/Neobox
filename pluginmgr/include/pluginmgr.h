@@ -21,9 +21,12 @@ public:
   bool HasPlaugin(PluginObject* plugin);
   void WritteSettings();
   class YJson* GetSettings(const char8_t* key);
-  void LoadPlugins(QMenu* settingsMenu);
+  void LoadPlugins();
   void LoadManageAction(class QAction *action);
   const class YJson& GetPluginsInfo() const;
+  bool InstallPlugin(const std::u8string& plugin, const YJson& info);
+  bool UnInstallPlugin(const std::u8string& plugin);
+  bool LoadPlugin(const std::u8string& plugin, bool on);
 private:
   PluginObject* LoadPlugin(const std::u8string& path);
   void FreePlugin(PluginInfo& info);

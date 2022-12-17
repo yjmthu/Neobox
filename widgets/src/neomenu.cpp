@@ -60,11 +60,8 @@ void NeoMenu::InitPluginMenu()
 void NeoMenu::InitPluginMgr()
 {
   m_PluginMgr = new PluginMgr(m_GlbObject, m_PluginMenu);
-  auto const menu = new QMenu(m_SettingMenu);
-  menu->setAttribute(Qt::WA_TranslucentBackground, true);
-  menu->setToolTipsVisible(true);
-  m_SettingMenu->addAction("插件状态")->setMenu(menu);
-  m_PluginMgr->LoadPlugins(menu);
+  m_PluginMgr->LoadPlugins();
+  m_PluginMgr->LoadManageAction(m_SettingMenu->addAction("插件管理"));
   InitFunctionMap();
 }
 

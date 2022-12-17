@@ -21,8 +21,6 @@ HotKeyItemWidget::HotKeyItemWidget(QWidget* parent, const YJson& data)
     , m_HotKey(new QPushButton(PluginObject::Utf82QString(data[u8"KeySequence"].getValueString()), this))
     , m_Enabled(new QCheckBox(this))
   {
-    // setMinimumWidth(500);
-    // setMinimumHeight(40);
     m_Enabled->setChecked(data[u8"Enabled"].isTrue());
     InitCombox(data[u8"Plugin"].getValueString());
 

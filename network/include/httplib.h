@@ -31,7 +31,7 @@ public:
 public:
   template<typename Char=char>
   void SetUrl(std::basic_string<Char> url) {
-    m_Url = std::move(url);
+    m_Url.assign(url.begin(), url.end());
     HttpInit();
   }
   void SetHeader(std::string key, std::string value) {

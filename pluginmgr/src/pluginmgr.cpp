@@ -1,5 +1,6 @@
 #include <pluginmgr.h>
 #include <pluginobject.h>
+#include <plugincenter.h>
 #include <yjson.h>
 #include <neoapp.h>
 #include <systemapi.h>
@@ -112,7 +113,8 @@ PluginMgr::~PluginMgr()
 void PluginMgr::LoadManageAction(QAction *action)
 {
   QObject::connect(action, &QAction::triggered, m_MainMenu, [this](){
-    //
+    PluginCenter center(m_Settings->find(u8"Plugins")->second);
+    center.exec();
   });
 }
 
@@ -121,50 +123,45 @@ const YJson& PluginMgr::GetPluginsInfo() const
   return m_Settings->find(u8"Plugins")->second;
 }
 
-void PluginMgr::LoadPlugins(QMenu* settingsMenu)
+void PluginMgr::LoadPlugins()
 {
   for (auto& [i, j]: m_Settings->find(u8"Plugins")->second.getObject()) {
     const auto name = i;
-    const auto& friendlyName = j[u8"FriendlyName"].getValueString();
-    auto const action = settingsMenu->addAction(PluginObject::Utf82QString(friendlyName));
-    action->setCheckable(true);
-    if (j[u8"Enabled"].isTrue()) {
-      auto& pluginSttings = m_Settings->find(u8"PluginsConfig")->second[name];
-      auto& info = m_Plugins[name];
-      if ((info.plugin = LoadPlugin(name))) {
-        auto const mainMenuAction = info.plugin->InitMenuAction();
-        if (mainMenuAction)
-          glb->glbGetMenu()->addAction(mainMenuAction);
-        action->setChecked(true);
-      } else {
-        action->setChecked(false);
-      }
+    if (!j[u8"Enabled"].isTrue()) continue;
+    auto& pluginSttings = m_Settings->find(u8"PluginsConfig")->second[name];
+    auto& info = m_Plugins[name];
+    if ((info.plugin = LoadPlugin(name))) {
+      auto const mainMenuAction = info.plugin->InitMenuAction();
+      if (mainMenuAction)
+        glb->glbGetMenu()->addAction(mainMenuAction);
     } else {
-      action->setChecked(false);
+      j[u8"Enabled"] = false;
     }
-    QObject::connect(action, &QAction::triggered, settingsMenu, [this, action, name](bool on){
-      auto& info = m_Plugins[name];
-      m_Settings->find(u8"Plugins")->second[name][u8"Enabled"] = on;
-      SaveSettings();
-      if (on) {
-        if ((info.plugin = LoadPlugin(name))) {
-          auto const mainMenuAction = info.plugin->InitMenuAction();
-          if (mainMenuAction)
-            glb->glbGetMenu()->addAction(mainMenuAction);
-          UpdateBroadcast(info.plugin);
-        } else {
-          action->setChecked(false);
-          m_GlbObject->glbShowMsg("设置失败！");
-          return;
-        }
-      } else {
-        FreePlugin(info);
-      }
-      m_GlbObject->glbShowMsg("设置成功！");
-    });
   }
   SaveSettings();
   InitBroadcast();
+}
+
+bool PluginMgr::LoadPlugin(const std::u8string& pluginName, bool on)
+{
+  auto& info = m_Plugins[pluginName];
+  m_Settings->find(u8"Plugins")->second[pluginName][u8"Enabled"] = on;
+  SaveSettings();
+  if (on) {
+    if ((info.plugin = LoadPlugin(pluginName))) {
+      auto const mainMenuAction = info.plugin->InitMenuAction();
+      if (mainMenuAction)
+        glb->glbGetMenu()->addAction(mainMenuAction);
+      UpdateBroadcast(info.plugin);
+    } else {
+      m_GlbObject->glbShowMsg("设置失败！");
+      return false;
+    }
+  } else {
+    FreePlugin(info);
+  }
+  m_GlbObject->glbShowMsg("设置成功！");
+  return true;
 }
 
 PluginObject* PluginMgr::LoadPlugin(const std::u8string& pluginName)
@@ -273,3 +270,43 @@ bool PluginMgr::LoadPlugEnv(const fs::path& dir)
   BOOL const bRet = SetEnvironmentVariableW(varName, strEnvPaths.data());  
   return bRet;  
 }
+
+
+bool PluginMgr::InstallPlugin(const std::u8string& plugin, const YJson& info)
+{
+  auto iter = m_Plugins.find(plugin);
+  if (iter != m_Plugins.end() && iter->second.plugin) {
+    return false;
+  }
+  auto& pluginsInfo = m_Settings->find(u8"Plugins")->second;
+  auto infoIter = pluginsInfo.find(plugin);
+
+  if (infoIter != pluginsInfo.endO()) {
+    return false;
+  }
+
+  auto& pluginInfo = pluginsInfo[plugin] = info;
+  pluginInfo[u8"Enabled"] = false;
+  SaveSettings();
+  return true;
+}
+
+bool PluginMgr::UnInstallPlugin(const std::u8string& plugin)
+{
+  auto iter = m_Plugins.find(plugin);
+  if (iter != m_Plugins.end() && iter->second.plugin) {
+    delete iter->second.plugin;
+    iter->second.plugin = nullptr;
+    FreeLibrary(reinterpret_cast<HINSTANCE>(iter->second.handle));
+  }
+  auto& pluginsInfo = m_Settings->find(u8"Plugins")->second;
+  auto infoIter = pluginsInfo.find(plugin);
+
+  if (infoIter == pluginsInfo.endO()) {
+    return false;
+  }
+  pluginsInfo.remove(infoIter);
+  SaveSettings();
+  return true;
+}
+
