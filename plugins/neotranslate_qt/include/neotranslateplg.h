@@ -13,6 +13,8 @@ public:
 private:
   YJson& InitSettings(YJson& settings);
   void InitFunctionMap() override;
+private:
+  class QAction* m_MainMenuAction;
   class NeoTranslateDlg* m_TranslateDlg;
 };
 

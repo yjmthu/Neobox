@@ -2,6 +2,7 @@
 #include <translatedlg.h>
 #include <yjson.h>
 
+#include <QMenu>
 #include <QTextEdit>
 #include <QMimeData>
 #include <QDropEvent>
@@ -51,6 +52,7 @@ NeoTranslatePlg::NeoTranslatePlg(YJson& settings):
 
 NeoTranslatePlg::~NeoTranslatePlg()
 {
+  delete m_MainMenuAction;
   delete m_TranslateDlg;  // must delete the dlg when plugin destroying.
 }
 
@@ -96,7 +98,10 @@ void NeoTranslatePlg::InitFunctionMap() {
 
 QAction* NeoTranslatePlg::InitMenuAction()
 {
-  return PluginObject::InitMenuAction();
+  m_MainMenuAction = new QAction("极简翻译");
+  PluginObject::InitMenuAction();
+  QObject::connect(m_MainMenuAction, &QAction::triggered, m_MainMenu, std::bind(m_PluginMethod[u8"toggleVisibility"].function, PluginEvent::Void, nullptr));
+  return m_MainMenuAction;
 }
 
 YJson& NeoTranslatePlg::InitSettings(YJson& settings)

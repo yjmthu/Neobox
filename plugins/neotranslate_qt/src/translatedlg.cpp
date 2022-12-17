@@ -74,8 +74,7 @@ NeoTranslateDlg::~NeoTranslateDlg() {
 }
 
 void NeoTranslateDlg::showEvent(QShowEvent*) {
-  if (!ReferenceObject()) return;
-  const auto qFormRect = ReferenceObject()->frameGeometry();
+  auto const speedbox = ReferenceObject();
 
   if (m_Settings[u8"AutoTranslate"].isTrue()) {
     if (!m_TextFrom->toPlainText().isEmpty()) {
@@ -83,21 +82,25 @@ void NeoTranslateDlg::showEvent(QShowEvent*) {
     }
   }
 
-  const auto size = QGuiApplication::primaryScreen()->size();
-  const auto mSize = frameSize();
-  int x, y;
-  y = (mSize.height() + qFormRect.bottom() > size.height())
-          ? qFormRect.top() - mSize.height()
-          : qFormRect.bottom();
-  if (((mSize.width() + qFormRect.width()) >> 1) + qFormRect.left() >
-      size.width()) {
-    x = size.width() - mSize.width();
-  } else if ((qFormRect.left() << 1) + qFormRect.width() < mSize.width()) {
-    x = 0;
-  } else {
-    x = qFormRect.right() - ((qFormRect.width() + mSize.width()) >> 1);
+  if (speedbox) {
+    const auto qFormRect = speedbox->frameGeometry();
+
+    const auto size = QGuiApplication::primaryScreen()->size();
+    const auto mSize = frameSize();
+    int x, y;
+    y = (mSize.height() + qFormRect.bottom() > size.height())
+            ? qFormRect.top() - mSize.height()
+            : qFormRect.bottom();
+    if (((mSize.width() + qFormRect.width()) >> 1) + qFormRect.left() >
+        size.width()) {
+      x = size.width() - mSize.width();
+    } else if ((qFormRect.left() << 1) + qFormRect.width() < mSize.width()) {
+      x = 0;
+    } else {
+      x = qFormRect.right() - ((qFormRect.width() + mSize.width()) >> 1);
+    }
+    move(x, y);
   }
-  move(x, y);
 
   m_BtnCopyFrom->move(m_TextFrom->width() - m_BtnCopyFrom->width() - 4, 4);
   m_BtnCopyTo->move(m_TextTo->width() - m_BtnCopyTo->width() - 4, 4);
