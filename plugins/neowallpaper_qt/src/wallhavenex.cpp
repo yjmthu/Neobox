@@ -50,6 +50,8 @@ void WallhavenExMenu::LoadSubSettingMenu(QAction* action)
   QMenu* pSonMenu = new QMenu(this);
   pSonMenu->setAttribute(Qt::WA_TranslucentBackground, true);
   action->setMenu(pSonMenu);
+  const std::u8string viewName = PluginObject::QString2Utf8(action->text());
+
   connect(pSonMenu->addAction(action->isChecked() ? "刷新此项" : "启用此项"), &QAction::triggered, pSonMenu, [this, action]() {
     auto& current = m_Data[u8"WallhavenCurrent"];
     auto const curName = action->text();
@@ -80,10 +82,15 @@ void WallhavenExMenu::LoadSubSettingMenu(QAction* action)
   }
   connect(pSonMenu->addAction("参数设置"), &QAction::triggered, this,
     std::bind(&WallhavenExMenu::EditCurType, this, PluginObject::QString2Utf8(action->text())));
-  connect(pSonMenu->addAction("存储路径"), &QAction::triggered, this, [this, action]() {
-    const QString qTypeName = action->text();
-    const std::u8string key(PluginObject::QString2Utf8(qTypeName));
-    fs::path curdir = m_Data[u8"WallhavenApi"][key][u8"Directory"].getValueString();
+  connect(pSonMenu->addAction("起始页面"), &QAction::triggered, this, [this, viewName](){
+    auto& page = m_Data[u8"WallhavenApi"][viewName][u8"StartPage"];
+    auto i = QInputDialog::getInt(this, "输入数字", "请输入壁纸起始页面，每页最多有24张壁纸", page.getValueInt(), 1, 100);
+    page = i;
+    m_CallBack(true);
+    glb->glbShowMsg("配置成功！");
+  });
+  connect(pSonMenu->addAction("存储路径"), &QAction::triggered, this, [this, viewName]() {
+    fs::path curdir = m_Data[u8"WallhavenApi"][viewName][u8"Directory"].getValueString();
     QString qCurDir = QString::fromStdU16String(curdir.u16string());
 
     qCurDir = QFileDialog::getExistingDirectory(this, "请选择壁纸存放路径", qCurDir);
@@ -92,13 +99,20 @@ void WallhavenExMenu::LoadSubSettingMenu(QAction* action)
     }
     curdir = qCurDir.toStdU16String();
     curdir.make_preferred();
-    m_Data[u8"WallhavenApi"][key][u8"Directory"] = curdir.u8string();
+    m_Data[u8"WallhavenApi"][viewName][u8"Directory"] = curdir.u8string();
     m_CallBack(false);
   });
 }
 
 void WallhavenExMenu::LoadMoreActions()
 {
+  connect(addAction("页数设置"), &QAction::triggered, this, [this](){
+    auto& page = m_Data[u8"WallhavenApi"][u8"PageSize"];
+    auto i = QInputDialog::getInt(this, "输入数字", "请输入每次缓存的最大页数，每页最多有24张壁纸", page.getValueInt(), 1, 5);
+    page = i;
+    m_CallBack(true);
+    glb->glbShowMsg("配置成功！");
+  });
   connect(addAction("添加更多"), &QAction::triggered, this, std::bind(&WallhavenExMenu::AddNewType, this));
   connect(addAction("关于壁纸"), &QAction::triggered, this, [this]() {
     auto fileName = GetCurImage().stem().string();

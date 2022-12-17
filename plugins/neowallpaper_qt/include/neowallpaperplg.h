@@ -27,6 +27,7 @@ private:
   QMenu* LoadNativeMenu(QMenu* parent);
   QMenu* LoadScriptMenu(QMenu* parent);
   QMenu* LoadFavoriteMenu(QMenu* parent);
+  void LoadDropMenu(QAction* action);
   void LoadMainMenuAction();
 };
 

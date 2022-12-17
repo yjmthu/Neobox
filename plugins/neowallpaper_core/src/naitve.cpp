@@ -91,13 +91,13 @@ bool Native::GetFileList() {
     std::mt19937 g(std::random_device{}());
     auto pf = std::uniform_int_distribution<size_t>(0, m_Toltal - 1);
     for (uint32_t i = 0; i < maxCount; ++i) {
-      auto temp = pf(g);
+      size_t temp = pf(g);
       while (already.find(temp) != already.end())
         temp = pf(g);
       already.insert(temp);
-      numbers.push_back(temp);
     }
-    std::sort(numbers.begin(), numbers.end());
+    numbers.assign(already.begin(), already.end());
+    // std::sort(numbers.begin(), numbers.end());
   }
 
   const bool bRecursion = GetCurInfo()[u8"recursion"].isTrue();

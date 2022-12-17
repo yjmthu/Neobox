@@ -2,6 +2,7 @@
 #include <bingapiex.h>
 #include <directapiex.h>
 #include <nativeex.h>
+#include <scriptex.h>
 #include <neowallpaperplg.h>
 #include <wallpaper.h>
 #include <yjson.h>
@@ -71,12 +72,6 @@ return ;
         glb->glbShowMsg("设置时间间隔成功！");
       }, PluginEvent::Void}
     },
-    {u8"openCurrentDir",
-      { u8"打开位置", u8"打开当前壁纸位置", [this](PluginEvent, void*) {
-        std::wstring args = L"/select, " + m_Wallpaper->GetCurIamge().wstring();
-        ShellExecuteW(nullptr, L"open", L"explorer", args.c_str(), NULL, SW_SHOWNORMAL);
-      }, PluginEvent::Void
-    }},
     {u8"cleanRubish",
       { u8"清理垃圾", u8"删除垃圾箱内壁纸", [this](PluginEvent, void*){
         m_Wallpaper->ClearJunk();
@@ -124,6 +119,7 @@ QAction* NeoWallpaperPlg::InitMenuAction()
   m_MoreSettingsAction = new QAction("更多设置", m_MainMenu);
   LoadWallpaperTypeMenu(m_MainMenu);
   this->PluginObject::InitMenuAction();
+  LoadDropMenu(m_MainMenu->addAction("拖拽设置"));
   m_MainMenu->addAction(m_MoreSettingsAction);
   LoadWallpaperExMenu(m_MainMenu);
   LoadMainMenuAction();
@@ -177,6 +173,12 @@ void NeoWallpaperPlg::LoadMainMenuAction()
         }, PluginEvent::Void
       },
     },
+    {u8"openCurrentDir",
+      { u8"打开位置", u8"打开当前壁纸位置", [this](PluginEvent, void*) {
+        std::wstring args = L"/select, " + m_Wallpaper->GetCurIamge().wstring();
+        ShellExecuteW(nullptr, L"open", L"explorer", args.c_str(), NULL, SW_SHOWNORMAL);
+      }, PluginEvent::Void
+    }},
   };
 
   for (auto& [name, info]: temp) {
@@ -240,7 +242,67 @@ void NeoWallpaperPlg::LoadWallpaperTypeMenu(QMenu* pluginMenu)
       }
     });
     action->setChecked(i == curType);   // very nice
-  } 
+  }
+}
+
+void NeoWallpaperPlg::LoadDropMenu(QAction* action)
+{
+  auto const menu = new QMenu(m_MainMenu);
+  menu->setAttribute(Qt::WA_TranslucentBackground, true);
+  menu->setToolTipsVisible(true);
+  action->setMenu(menu);
+
+  auto actionDrop2Cur = menu->addAction("拖拽至当前");
+  actionDrop2Cur->setCheckable(true);
+  actionDrop2Cur->setToolTip("是否将拖拽进来的壁纸复制到当前类型壁纸存放的文件夹");
+  actionDrop2Cur->setChecked(m_Settings[u8"DropToCurDir"].isTrue());
+  QObject::connect(actionDrop2Cur, &QAction::triggered, m_MainMenu, [this](bool on){
+    m_Settings[u8"DropToCurDir"] = on;
+    mgr->SaveSettings();
+  });
+
+  auto actionDir = menu->addAction("拖拽文件夹");
+  actionDir->setToolTip("当\"拖拽至当前\"取消勾选时，拖拽壁纸存放的文件夹。");
+  QObject::connect(actionDir, &QAction::triggered, m_MainMenu, [this](){
+    auto& u8Folder = m_Settings[u8"DropDir"].getValueString();
+
+    auto qFolder = QFileDialog::getExistingDirectory(m_MainMenu, "选择拖拽壁纸存放的文件夹", Utf82QString(u8Folder));
+
+    if (qFolder.isEmpty()) {
+      glb->glbShowMsg("取消设置成功");
+      return;
+    }
+
+    fs::path path = qFolder.toStdU16String();
+    path.make_preferred();
+
+    u8Folder = path.u8string();
+    mgr->SaveSettings();
+    glb->glbShowMsg("设置成功！");
+  });
+
+  auto actionDefaultName = menu->addAction("使用链接名称");
+  actionDefaultName->setCheckable(true);
+  actionDefaultName->setToolTip("拖拽壁纸后，使用链接中的名称作为壁纸文件名称");
+  actionDefaultName->setChecked(m_Settings[u8"DropImgUseUrlName"].isTrue());
+  QObject::connect(actionDefaultName, &QAction::triggered, m_MainMenu, [this](bool on){
+    m_Settings[u8"DropToCurDir"] = on;
+    mgr->SaveSettings();
+  });
+
+  auto const actionNameFmt = menu->addAction("自定义名称");
+  actionNameFmt->setToolTip("当\"使用链接名称\"取消勾选时，拖拽壁纸存使用的名称。");
+  QObject::connect(actionNameFmt, &QAction::triggered, m_MainMenu, [this](){
+    auto& u8name = m_Settings[u8"DropINameFmt"].getValueString();
+    auto qNewName = QInputDialog::getText(m_MainMenu, "请输入格式字符串", "输入拖拽壁纸的c++ format命名格式，错误输入会导致程序崩溃。0: 当前时间; 1: 链接自带名称.", QLineEdit::EchoMode::Normal, Utf82QString(u8name));
+    if (qNewName.isEmpty()) {
+      glb->glbShowMsg("取消设置成功！");
+      return;
+    }
+    u8name = QString2Utf8(qNewName);
+    mgr->SaveSettings();
+    glb->glbShowMsg("设置成功！");
+  });
 }
 
 void NeoWallpaperPlg::LoadWallpaperExMenu(QMenu* parent)
@@ -299,7 +361,7 @@ QMenu* NeoWallpaperPlg::LoadNativeMenu(QMenu* parent)
 
 QMenu* NeoWallpaperPlg::LoadScriptMenu(QMenu* parent)
 {
-  return new NativeExMenu(
+  return new ScriptExMenu(
     m_Wallpaper->m_Wallpaper->m_Setting,
     parent,
     std::bind(&WallBase::SetJson, m_Wallpaper->m_Wallpaper, std::placeholders::_1)

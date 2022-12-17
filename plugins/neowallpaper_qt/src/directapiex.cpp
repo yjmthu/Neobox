@@ -2,6 +2,7 @@
 #include <pluginobject.h>
 #include <listeditor.h>
 #include <yjson.h>
+#include <neoapp.h>
 
 #include <QAction>
 #include <QActionGroup>
@@ -38,6 +39,7 @@ void DirectApiExMenu::LoadSettingMenu()
     m_ActionGroup->addAction(action);
     LoadSubSettingMenu(action);
   }
+  connect(addAction("添加更多"), &QAction::triggered, this, &DirectApiExMenu::AddApi);
 }
 
 void DirectApiExMenu::LoadSubSettingMenu(QAction* action)
@@ -52,10 +54,24 @@ void DirectApiExMenu::LoadSubSettingMenu(QAction* action)
 
   if (!action->isChecked()) {
     connect(subMenu->addAction("启用此项"),
-      &QAction::triggered, this, [this, viewName]() {
+      &QAction::triggered, this, [this, action, viewName]() {
+        auto const actions = m_ActionGroup->actions();
+        auto lastName = PluginObject::Utf82QString(m_Data[u8"ApiUrl"].getValueString());
+        auto iter = std::find_if(actions.begin(), actions.end(), [&lastName](QAction* action){
+          return action->text() == lastName;
+        });
+
         m_Data[u8"ApiUrl"] = viewName;
         m_CallBack(false);
-        // LoadWallpaperExmenu();
+
+        action->setChecked(true);
+        delete action->menu();
+        LoadSubSettingMenu(action);
+        if (iter != actions.end()) {
+          delete (*iter)->menu();
+          LoadSubSettingMenu(*iter);
+        }
+        glb->glbShowMsg("修改成功！");
       });
     connect(subMenu->addAction("删除此项"),
       &QAction::triggered, this, [action, this, viewName]() {
@@ -64,22 +80,23 @@ void DirectApiExMenu::LoadSubSettingMenu(QAction* action)
         delete action;
         m_Data[u8"ApiData"].remove(viewName);
         m_CallBack(false);
+
+        glb->glbShowMsg("修改成功！");
       });
   }
 
   connect(subMenu->addAction("路径编辑"), &QAction::triggered, this, std::bind(&DirectApiExMenu::EditApi, this, action));
   subMenu->addSeparator();
   LoadPaths(subMenu, viewName);
-
-  connect(subMenu->addAction("添加更多"), &QAction::triggered, this, &DirectApiExMenu::AddApi);
 }
 
 void DirectApiExMenu::EditApi(QAction* action)
 {
   auto const editor = new ListEditor(
-    "列表编辑器", m_Data[u8"ApiData"][PluginObject::QString2Utf8(action->text())][u8"Paths"], [this](){
+    "列表编辑器", m_Data[u8"ApiData"][PluginObject::QString2Utf8(action->text())][u8"Paths"], [this, action](){
       m_CallBack(false);
-      /*LoadWallpaperExmenu();*/
+      delete action->menu();
+      LoadSubSettingMenu(action);
     });
     editor->m_ArgEditTitle = "输入该域名下的网址路径(path)";
     editor->m_ArgEditLabel = "路径：";
@@ -108,6 +125,8 @@ void DirectApiExMenu::RenameApi(QAction* action)
   jsApiData.find(viewName)->first = viewNewName;
   m_CallBack(false);
   action->setText(qKeyNewName);
+
+  glb->glbShowMsg("修改成功！");
 }
 
 void DirectApiExMenu::LoadPaths(QMenu* subMenu, const std::u8string& name)
@@ -142,6 +161,7 @@ void DirectApiExMenu::AddApi()
   std::u8string viewKeyName(PluginObject::QString2Utf8(qKeyName));
   auto& obj = m_Data[u8"ApiData"][viewKeyName];
   if (!obj.isNull()) {
+    glb->glbShowMsg("昵称不能重复！");
     return;
   }
 

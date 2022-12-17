@@ -75,7 +75,7 @@ void NeoMenu::InitSettingMenu()
   action->setCheckable(true);
   action->setChecked(IsAutoStart());
   connect(action, &QAction::triggered, this, std::bind(&NeoMenu::SetAutoSatrt, this, action, std::placeholders::_1));
-  m_SettingMenu->addSeparator();
+  // m_SettingMenu->addSeparator();
 }
 
 void NeoMenu::InitFunctionMap() {
