@@ -11,6 +11,7 @@
 #include <QCheckBox>
 #include <QPushButton>
 #include <QLabel>
+#include <QTimer>
 
 #include <filesystem>
 #include <format>
@@ -100,39 +101,47 @@ bool PluginItem::DownloadPlugin()
     glb->glbShowMsgbox(u8"失败", u8"请检查网络连接！");
     return false;
   }
-  QWidget dialog(this);
+  bool result = true;
+  QDialog dialog(this);
   dialog.setWindowTitle("正在下载，请稍等");
-  dialog.show();
-  HttpLib clt(PluginCenter::GetRawUrl(u8"plugins/" + m_PluginName + u8"/manifest.json"));
-  auto res = clt.Get();
-  if (res->status != 200) {
-    glb->glbShowMsgbox(u8"失败", u8"下载清单失败！");
-    return false;
-  }
 
-  const YJson data(res->body.begin(), res->body.end());
-  for (auto& [dir, info]: data.getObject()) {
-    if (!fs::exists(dir)) {
-      fs::create_directories(dir);
+  QTimer::singleShot(100, this, [this, &result, &dialog]() {
+    HttpLib clt(PluginCenter::GetRawUrl(u8"plugins/" + m_PluginName + u8"/manifest.json"));
+    auto res = clt.Get();
+    if (res->status != 200) {
+      glb->glbShowMsgbox(u8"失败", u8"下载清单失败！");
+      dialog.close();
+      result = false;
+      return;
     }
-    fs::path path = dir;
-    for (auto& subdir: info[u8"dirs"].getArray()) {
-      auto subpath = path / subdir.getValueString();
-      if (!fs::exists(subpath)) {
-        fs::create_directory(subpath);
+
+    const YJson data(res->body.begin(), res->body.end());
+    for (auto& [dir, info]: data.getObject()) {
+      if (!fs::exists(dir)) {
+        fs::create_directories(dir);
+      }
+      fs::path path = dir;
+      for (auto& subdir: info[u8"dirs"].getArray()) {
+        auto subpath = path / subdir.getValueString();
+        if (!fs::exists(subpath)) {
+          fs::create_directory(subpath);
+        }
+      }
+      for (auto& file: info[u8"files"].getArray()) {
+        auto subpath = path / file.getValueString();
+        clt.SetUrl<char8_t>(PluginCenter::GetRawUrl(dir + u8"/" + file.getValueString()));
+        res = clt.Get(subpath);
+        if (res->status != 200) {
+          glb->glbShowMsgbox(u8"失败", u8"下载插件失败！");
+          result = false;
+          break;
+        }
       }
     }
-    for (auto& file: info[u8"files"].getArray()) {
-      auto subpath = path / file.getValueString();
-      clt.SetUrl<char8_t>(PluginCenter::GetRawUrl(dir + u8"/" + file.getValueString()));
-      res = clt.Get(subpath);
-      if (res->status != 200) {
-        glb->glbShowMsgbox(u8"失败", u8"下载插件失败！");
-        return false;
-      }
-    }
-  }
-  return true;
+    dialog.close();
+  });
+  dialog.exec();
+  return result;
 }
 
 void PluginItem::InitStatus()
