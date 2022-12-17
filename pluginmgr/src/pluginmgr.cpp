@@ -42,48 +42,6 @@ PluginMgr::PluginMgr(GlbObject* glb, QMenu* pluginMainMenu):
   } else {
     m_Settings = new YJson{ YJson::O{
       { u8"Plugins", YJson::O {
-        {u8"neospeedboxplg", YJson::O {
-          {u8"Enabled", true},
-          {u8"FriendlyName", u8"网速悬浮"},
-          {u8"Description", u8"实时显示网速和内存占用"},
-          {u8"Author", u8"yjmthu"},
-          {u8"Version", YJson::A { 0, 0, 1 }},
-        }},
-        {u8"neotranslateplg", YJson::O{
-          {u8"Enabled", true},
-          {u8"FriendlyName", u8"极简翻译"},
-          {u8"Description", u8"有道和百度翻译"},
-          {u8"Author", u8"yjmthu"},
-          {u8"Version", YJson::A { 0, 0, 1 }},
-        }},
-        {u8"neoocrplg", YJson::O {
-          {u8"Enabled", true},
-          {u8"FriendlyName", u8"文字识别"},
-          {u8"Description", u8"识别截图中的文字"},
-          {u8"Author", u8"yjmthu"},
-          {u8"Version", YJson::A { 0, 0, 1 }},
-        }},
-        {u8"neowallpaperplg", YJson::O {
-          {u8"Enabled", true},
-          {u8"FriendlyName", u8"壁纸引擎"},
-          {u8"Description", u8"多种壁纸来源，随心更换壁纸"},
-          {u8"Author", u8"yjmthu"},
-          {u8"Version", YJson::A { 0, 0, 1 }},
-        }},
-        {u8"neosystemplg", YJson::O {
-          {u8"Enabled", true},
-          {u8"FriendlyName", u8"系统控制"},
-          {u8"Description", u8"使系统更加方便的一些小功能"},
-          {u8"Author", u8"yjmthu"},
-          {u8"Version", YJson::A { 0, 0, 1 }},
-        }},
-        {u8"neohotkeyplg", YJson::O {
-          {u8"Enabled", true},
-          {u8"FriendlyName", u8"热键管理"},
-          {u8"Description", u8"插件热键管理器"},
-          {u8"Author", u8"yjmthu"},
-          {u8"Version", YJson::A { 0, 0, 1 }},
-        }},
       }},
       { u8"EventMap", YJson::A {
         // YJson::O {
