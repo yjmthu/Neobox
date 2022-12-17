@@ -15,6 +15,8 @@ private:
   YJson& InitSettings(YJson& settings);
   void ChooseLanguages();
   void InitMenu();
+private:
+  QAction* m_MainMenuAction;
   class NeoOcr* const m_Ocr;
 };
 

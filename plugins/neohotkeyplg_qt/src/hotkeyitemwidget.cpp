@@ -5,25 +5,33 @@
 #include <neoapp.h>
 
 #include <QEvent>
+#include <QLabel>
 #include <QKeyEvent>
 #include <QHBoxLayout>
 #include <QPushButton>
+#include <QComboBox>
 #include <QCheckBox>
 #include <QLineEdit>
 
 bool HotKeyItemWidget::isChecked = false;
 
-HotKeyItemWidget::HotKeyItemWidget(QWidget* parent, const std::u8string& name, const YJson& data)
+HotKeyItemWidget::HotKeyItemWidget(QWidget* parent, const YJson& data)
     : QWidget(parent)
-    , m_Description(new QLineEdit(PluginObject::Utf82QString(name), this))
+    , m_TargetPlugin(new QComboBox(this))
     , m_HotKey(new QPushButton(PluginObject::Utf82QString(data[u8"KeySequence"].getValueString()), this))
     , m_Enabled(new QCheckBox(this))
   {
-    setMinimumHeight(40);
+    // setMinimumWidth(500);
+    // setMinimumHeight(40);
     m_Enabled->setChecked(data[u8"Enabled"].isTrue());
+    InitCombox(data[u8"Plugin"].getValueString());
+
     QHBoxLayout* layout = new QHBoxLayout(this);
-    layout->addWidget(m_Description);
+    layout->addWidget(new QLabel("插件名称", this));
+    layout->addWidget(m_TargetPlugin);
+    layout->addWidget(new QLabel("热键", this));
     layout->addWidget(m_HotKey);
+    layout->addWidget(new QLabel("是否注册", this));
     layout->addWidget(m_Enabled);
 
     m_HotKey->setCheckable(true);
@@ -34,6 +42,18 @@ HotKeyItemWidget::HotKeyItemWidget(QWidget* parent, const std::u8string& name, c
 HotKeyItemWidget::~HotKeyItemWidget()
 {
   isChecked = false;
+}
+
+void HotKeyItemWidget::InitCombox(const std::u8string& plugin)
+{
+  int index = 0;
+  for (int i = 0; auto [name, info]: mgr->GetPluginsInfo().getObject()) {
+    m_TargetPlugin->addItem(PluginObject::Utf82QString(
+          info[u8"FriendlyName"].getValueString()));
+    if (name == plugin) index = i;
+    ++i;
+  }
+  m_TargetPlugin->setCurrentIndex(index);
 }
 
 bool HotKeyItemWidget::eventFilter(QObject *obj, QEvent *event)
@@ -67,17 +87,20 @@ bool HotKeyItemWidget::eventFilter(QObject *obj, QEvent *event)
 }
 
 bool HotKeyItemWidget::WriteJson(YJson& data) const {
-  auto const text = m_Description->text();
-  if (text.isEmpty()) {
-    return false;
-  }
   auto const shortcut = m_HotKey->text();
   if (shortcut.isEmpty()) return false;
-  data[PluginObject::QString2Utf8(text)] = YJson::O {
-    {u8"KeySequence", PluginObject::QString2Utf8(shortcut)},
-    {u8"Enabled", m_Enabled->isChecked()},
-  };
-  return true;
+  auto friendlyName = PluginObject::QString2Utf8(m_TargetPlugin->currentText());
+  for (auto& [name, info]: mgr->GetPluginsInfo().getObject()) {
+    if (info[u8"FriendlyName"].getValueString() == friendlyName) {
+      data.append(YJson::O {
+        {u8"KeySequence", PluginObject::QString2Utf8(shortcut)},
+        {u8"Enabled", m_Enabled->isChecked()},
+        {u8"Plugin", name}
+      });
+      return true;
+    }
+  }
+  return false;
 }
 
 void HotKeyItemWidget::SetExlusive(bool on)

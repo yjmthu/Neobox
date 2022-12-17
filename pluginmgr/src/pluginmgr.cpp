@@ -109,9 +109,16 @@ PluginMgr::~PluginMgr()
   delete m_Settings;
 }
 
-void PluginMgr::LoadEventMap(QAction *action)
+void PluginMgr::LoadManageAction(QAction *action)
 {
-  //
+  QObject::connect(action, &QAction::triggered, m_MainMenu, [this](){
+    //
+  });
+}
+
+const YJson& PluginMgr::GetPluginsInfo() const
+{
+  return m_Settings->find(u8"Plugins")->second;
 }
 
 void PluginMgr::LoadPlugins(QMenu* settingsMenu)

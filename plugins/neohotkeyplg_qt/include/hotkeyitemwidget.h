@@ -9,8 +9,8 @@ class HotKeyItemWidget: public QWidget
 protected:
   bool eventFilter(QObject *obj, QEvent *event) override;
 public:
-  explicit HotKeyItemWidget(QWidget* parent, const std::u8string& name, const class YJson& data);
-  ~HotKeyItemWidget();
+  explicit HotKeyItemWidget(QWidget* parent, const class YJson& data);
+  virtual ~HotKeyItemWidget();
 
 public:
   bool WriteJson(YJson& data) const;
@@ -19,12 +19,13 @@ public slots:
   void SetExlusive(bool on);
 
 public:
-  class QLineEdit* m_Description;
   class QPushButton* m_HotKey;
+  class QComboBox* m_TargetPlugin;
   class QCheckBox* m_Enabled;
 
 private:
   void SetShortCut();
+  void InitCombox(const std::u8string& plugin);
   static bool isChecked;
 };
 

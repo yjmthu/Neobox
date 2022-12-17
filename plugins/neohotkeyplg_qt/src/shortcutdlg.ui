@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>365</width>
+    <width>452</width>
     <height>387</height>
    </rect>
   </property>
@@ -15,10 +15,24 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>按住热键录制按钮后，可以录制组合键。注册热键后，即可使用。</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QListWidget" name="listWidget"/>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QPushButton" name="pBtnClear">
+       <property name="text">
+        <string>清空</string>
+       </property>
+      </widget>
+     </item>
      <item>
       <widget class="QPushButton" name="pBtnRemove">
        <property name="text">

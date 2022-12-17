@@ -33,7 +33,8 @@ bool NeoHotKeyPlg::nativeEventFilter(const QByteArray &eventType, void *message,
      * Modifiers = (UINT) LOWORD(lParam);
      * uVirtKey = (UINT) HIWORD(lParam);
      */
-    SendBroadcast(PluginEvent::HotKey, message);
+    auto name = m_Shortcut->GetPluginName(msg->wParam);
+    SendBroadcast(PluginEvent::HotKey, &name);
   }
   return false;
 }
@@ -65,17 +66,17 @@ YJson& NeoHotKeyPlg::InitSettings(YJson& settings)
     return settings;
   }
   return settings = YJson::O {
-    {u8"HotKeys", YJson::O {
-      {u8"开关翻译窗口", YJson::O {
+    {u8"HotKeys", YJson::A {
+      YJson::O {
         {u8"KeySequence", u8"Shift+Z"},
         {u8"Enabled", false},
         {u8"Plugin", u8"neotranslateplg"},
-      }},
-      {u8"文字识别屏幕截图", YJson::O {
+      },
+      YJson::O {
         {u8"KeySequence", u8"Ctrl+Shift+A"},
         {u8"Enabled", false},
         {u8"Plugin", u8"neoocrplg"},
-      }},
+      },
     }},
   };
 }

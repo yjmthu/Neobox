@@ -14,7 +14,6 @@ public:
     PluginObject* plugin = nullptr;
     void* handle = nullptr;
   };
-  std::map<std::u8string, PluginInfo> m_Plugins;
 public:
   explicit PluginMgr(class GlbObject*, 
     class QMenu* pluginManiMenu);
@@ -22,18 +21,22 @@ public:
   bool HasPlaugin(PluginObject* plugin);
   void WritteSettings();
   class YJson* GetSettings(const char8_t* key);
-  std::function<void()> SaveSettings;
-  std::map<std::u8string, class QObject*> m_MainObjects;
   void LoadPlugins(QMenu* settingsMenu);
-  void LoadEventMap(class QAction *action);
-  class GlbObject* const m_GlbObject;
-  QMenu* const m_MainMenu;
+  void LoadManageAction(class QAction *action);
+  const class YJson& GetPluginsInfo() const;
 private:
   PluginObject* LoadPlugin(const std::u8string& path);
   void FreePlugin(PluginInfo& info);
   bool LoadPlugEnv(const std::filesystem::path& path);
   void InitBroadcast();
   void UpdateBroadcast(PluginObject* plugin);
+public:
+  std::map<std::u8string, PluginInfo> m_Plugins;
+  std::function<void()> SaveSettings;
+  std::map<std::u8string, class QObject*> m_MainObjects;
+  class GlbObject* const m_GlbObject;
+  QMenu* const m_MainMenu;
+private:
   const std::u8string m_SettingFileName;
   class YJson* m_Settings;
 };

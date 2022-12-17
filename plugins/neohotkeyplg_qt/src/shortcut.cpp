@@ -18,17 +18,27 @@ Shortcut::~Shortcut() {
 
 void Shortcut::RegisterAllHotKey()
 {
-  for (const auto& [description, infomation]: m_Data.getObject()) {
+  for (const auto& infomation: m_Data.getArray()) {
     if (!infomation[u8"Enabled"].isTrue()) continue;
-    RegisterHotKey(PluginObject::Utf82QString(infomation[u8"KeySequence"].getValueString()));
+    RegisterHotKey(
+      PluginObject::Utf82QString(infomation[u8"KeySequence"].getValueString()),
+      infomation[u8"Plugin"].getValueString());
   }
 }
 
 void Shortcut::UnregisterAllHotKey() {
   for (const auto& [_, id] : m_HotKeys) {
-    if (id.id < 0) continue;
-    ::UnregisterHotKey(NULL, id.id);
+    ::UnregisterHotKey(NULL, id);
   }
+  m_HotKeys.clear();
+  m_Plugins.clear();
+}
+
+const std::u8string& Shortcut::GetPluginName(int id)
+{
+  static const std::u8string error(u8"errorplg");
+  if (id < 0 || id >= m_Plugins.size()) return error;
+  return m_Plugins[id];
 }
 
 Shortcut::KeyName Shortcut::GetKeyName(const QKeySequence& shortcut) {
@@ -39,17 +49,17 @@ Shortcut::KeyName Shortcut::GetKeyName(const QKeySequence& shortcut) {
   return KeyName { nativeKey, nativeMods };
 }
 
-bool Shortcut::RegisterHotKey(QString shortcuts) 
+bool Shortcut::RegisterHotKey(QString shortcuts, std::u8string plugin) 
 {
-  static KeyId id;
   KeyName keyName = GetKeyName(shortcuts);
   if (IsKeyRegistered(keyName))
     return false;
-  bool ok = ::RegisterHotKey(NULL, (++id).id,
+  bool ok = ::RegisterHotKey(NULL, m_Plugins.size(),
       keyName.nativeMods, keyName.nativeKey);
   if (!ok)
     return false;
-  m_HotKeys[keyName] = id;
+  m_HotKeys[keyName] = m_Plugins.size();
+  m_Plugins.emplace_back(std::move(plugin));
   return true;
 }
 
@@ -57,15 +67,16 @@ bool Shortcut::UnregisterHotKey(QString shortcut) {
   const KeyName keyName = GetKeyName(shortcut);
 
   auto iter = m_HotKeys.find(keyName);
-  if (iter != m_HotKeys.end() && iter->second.id >= 0) {
-    return ::UnregisterHotKey(NULL, iter->second.id);
+  if (iter != m_HotKeys.end()) {
+    auto const ret = ::UnregisterHotKey(NULL, iter->second);
+    m_HotKeys.erase(iter);
+    return ret;
   }
   return false;
 }
 
 bool Shortcut::IsKeyRegistered(const KeyName& keyName) {
-  auto iter = m_HotKeys.find(keyName);
-  return (iter != m_HotKeys.end() && iter->second.id >= 0);
+  return m_HotKeys.find(keyName) != m_HotKeys.end();
 }
 
 uint32_t Shortcut::GetNativeModifiers(Qt::KeyboardModifiers modifiers) {

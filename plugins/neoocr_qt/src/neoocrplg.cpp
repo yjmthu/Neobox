@@ -8,6 +8,7 @@
 
 #include <QMenu>
 #include <QDir>
+#include <QLabel>
 #include <QAction>
 #include <QEventLoop>
 #include <QFileDialog>
@@ -18,6 +19,7 @@
 #include <QFileInfo>
 #include <QPushButton>
 #include <QCheckBox>
+#include <QDesktopServices>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 
@@ -51,6 +53,8 @@ NeoOcrPlg::NeoOcrPlg(YJson& settings):
 
 NeoOcrPlg::~NeoOcrPlg()
 {
+  delete m_MainMenuAction;
+  delete m_Ocr;
 }
 
 void NeoOcrPlg::InitFunctionMap() {
@@ -119,7 +123,7 @@ void NeoOcrPlg::InitFunctionMap() {
         });
       // std::vector<std::u8string> vec(uiUrlsView.begin(), uiUrlsView.end());
       auto const folder = fs::path(m_Settings[u8"TessdataDir"].getValueString());
-      for (const auto file: uiUrlsView) {
+      for (const auto& file: uiUrlsView) {
         fs::copy(file, folder / file.filename());
       }
       glb->glbShowMsg("复制数据文件成功。");
@@ -129,15 +133,20 @@ void NeoOcrPlg::InitFunctionMap() {
   m_Following.push_back({u8"neohotkeyplg", [this](PluginEvent event, void* data){
     if (event == PluginEvent::HotKey) {
       // 判断是否为想要的快捷键
-      // MSG* msg = reinterpret_cast<MSG*>(data);
-      m_PluginMethod[u8"screenfetch"].function(event, data);
+      if (*reinterpret_cast<std::u8string*>(data) == u8"neoocrplg") {
+        // MSG* msg = reinterpret_cast<MSG*>(data);
+        m_PluginMethod[u8"screenfetch"].function(event, data);
+      }
     }
   }});
 }
 
 QAction* NeoOcrPlg::InitMenuAction()
 {
-  return this->PluginObject::InitMenuAction();
+  this->PluginObject::InitMenuAction();
+  m_MainMenuAction = new QAction("文字识别");
+  QObject::connect(m_MainMenuAction, &QAction::triggered, m_MainMenu, std::bind(m_PluginMethod[u8"screenfetch"].function, PluginEvent::Void, nullptr));
+  return m_MainMenuAction;
 }
 
 YJson& NeoOcrPlg::InitSettings(YJson& settings)
@@ -166,6 +175,8 @@ void NeoOcrPlg::ChooseLanguages()
 
   auto const vlayout = new QVBoxLayout(dialog);
   QHBoxLayout* hlayout = nullptr;
+  auto label = new QLabel("如果为空不要慌，将下载好的语言文件(*.traineddata)拖拽到网速悬浮窗后，在这里就可以看到了~", dialog);
+  vlayout->addWidget(label);
   std::vector<QCheckBox*> chkboxs;
 
   for (size_t i=0; auto file: files) {
@@ -187,8 +198,10 @@ void NeoOcrPlg::ChooseLanguages()
 
   hlayout = new QHBoxLayout;
   vlayout->addLayout(hlayout);
+  auto const btnDownload = new QPushButton("语言包下载", dialog);
   auto const btnNo = new QPushButton("取消", dialog);
   auto const btnOk = new QPushButton("确认", dialog);
+  QObject::connect(btnDownload, &QPushButton::clicked, dialog, std::bind(&QDesktopServices::openUrl, QUrl("https://github.com/tesseract-ocr/tessdata")));
   QObject::connect(btnOk, &QPushButton::clicked, dialog, [&](){
     auto& object = m_Settings[u8"Languages"];
     object.clearA();
@@ -202,6 +215,7 @@ void NeoOcrPlg::ChooseLanguages()
     dialog->close();
   });
   QObject::connect(btnNo, &QPushButton::clicked, dialog, &QDialog::close);
+  hlayout->addWidget(btnDownload);
   hlayout->addWidget(btnNo);
   hlayout->addWidget(btnOk);
   dialog->exec();
