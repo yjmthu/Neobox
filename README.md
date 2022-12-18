@@ -1,54 +1,124 @@
 # Neobox
 
+[![GitHub issues](https://img.shields.io/github/issues/yjmthu/Neobox.svg)](https://github.com/yjmthu/Neobox/issues) [![GitHub stars](https://img.shields.io/github/stars/yjmthu/Neobox.svg)](https://github.com/yjmthu/Neobox/stargazers) [![GitHub forks](https://img.shields.io/github/forks/yjmthu/Neobox.svg)](https://github.com/yjmthu/Neobox/network/members) [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/yjmthu/Neobox/master/LICENSE)
+
 - Qt6和C++20写的一个插件管理工具。安装相关插件后可获取网速显示、壁纸切换、文本翻译、文字识别、天气预报等任何功能。
 
-> 感觉用Qt来写是不是太大了？正在思考换到wxWidgets，这样既跨平台又有较小的文件体积。
+## Neobox 插件
 
-## 屏幕截图
+目前 Neobox 共有6款插件，可在 [Gitlab](https://gitlab.com/yjmthu1/neoboxplg) 中查看。
 
-1. 原生火绒样式
+- 插件下载方式
+    1. 托盘图标->右键菜单->设置中心->插件管理，打开 Neobox 插件管理；
+    2. 在插件管理窗口里面即可下载、更新、卸载插件。
+
+- 插件下载界面
+
+![Neobox 插件](https://cloud.tsinghua.edu.cn/f/c5b662d65cf2474d94c5/?dl=1)
+
+<details>
+<summary>网速悬浮插件</summary>
+
+功能：网速、内存、CPU占用显示。
+
+1. 原生样式
 
     ![](https://cloud.tsinghua.edu.cn/f/cb162e06a23e4d42a772/?dl=1)
     <!-- ![](./screenshots/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202022-11-13%20234151.png) -->
 
-2. 360卫士样式
+2. 卫士样式
 
     ![](https://cloud.tsinghua.edu.cn/f/42ef9aa2d55444759783/?dl=1)
     <!-- ![](./screenshots/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202022-11-13%20233907.png) -->
 
-3. 电脑管家样式
+3. 管家样式
 
     ![](https://cloud.tsinghua.edu.cn/f/1688364ff8d8477888b9/?dl=1)
     <!-- ![](./screenshots/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202022-11-13%20233257.png) -->
 
-4. 金山毒霸样式
+
+4. 毒霸样式
 
     ![](https://cloud.tsinghua.edu.cn/f/2ed05e162e12420f83d4/?dl=1)
     <!-- ![](./screenshots/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202022-11-14%20212223.png) -->
 
-5. 壁纸功能
-
-    ![](https://cloud.tsinghua.edu.cn/f/58fdaa71432c49edbc96/?dl=1)
-    <!-- ![](./screenshots/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202022-11-13%20235138.png) -->
-
-6. 有道翻译
-
-    ![](https://cloud.tsinghua.edu.cn/f/0eac4655ae34426d9c48/?dl=1)
-    <!-- ![](./screenshots/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202022-11-13%20234609.png) -->
-
 > 你可以使用内置的这四种皮肤，也可以自己创建一个皮肤。
 
-## 开发进度
+</details>
 
-1. 插件化所有模块，完善插件基类和插件管理器；
-2. 一定程度上重构壁纸功能，合并壁纸配置文件为一个JSON文件；
-3. 完善自定义皮肤功能，考虑使用Lua语言来编写动画；
-4. Windows下使用原生网络库取代curl；
-4. 逐步增加wxWidgets部分的代码，最终取代qt。
+<details>
+<summary>壁纸引擎插件</summary>
+
++ 手动切换、定时切换、收藏夹、黑名单
++ 网络壁纸源
+    - Awesome Wallpapers: <https://wallhaven.cc/>
+    - Bing: <https://www.bing.com/>
+    - Unsplash: <https://unsplash.com/>
+    - 小歪: <https://api.ixiaowai.cn/>
+    - 其他壁纸Api链接（必须是直接在浏览器打开就能看到图片的链接，例如<https://source.unsplash.com/random/2500x1600>）
++ 本地壁纸源
+    - 可遍历壁纸文件夹
+    - 可调用脚本获取本地壁纸路径
+    - 用户收藏夹内的壁纸
++ 拖拽壁纸源
+    - 如果安装了网速悬浮插件的话，可以拖拽网页或者本地的图片到悬浮窗，也是可以设置壁纸的。
++ 屏幕截图
+
+![](https://cloud.tsinghua.edu.cn/f/f1bec3fe13a94a9794a5/?dl=1)
+
+![](https://cloud.tsinghua.edu.cn/f/7db62f1da80f4374b742/?dl=1)
+
+</details>
+
+
+<details>
+<summary>极简翻译插件</summary>
+
+- 简介：普通模式调用百度翻译Api，查词模式调用有道翻译Api。
+
+![极简翻译](https://cloud.tsinghua.edu.cn/f/ad12e8d1452549789dc1/?dl=1)
+
+</details>
+
+<details>
+<summary>文字识别插件</summary>
+
+- 简介：截图识别多种语言文字，需要自行下载相应语言的训练数据。目前依赖于极简翻译插件来输出识别结果。
+
+![文字识别](https://cloud.tsinghua.edu.cn/f/612106e8c64c49c393c8/?dl=1)
+
+![文字识别](https://cloud.tsinghua.edu.cn/f/42e2e76532a2416aa9fa/?dl=1)
+
+</details>
+
+<details>
+<summary>系统控制插件</summary>
+
+- 简介：提供防止息屏、右键复制、快速关机、重启、睡眠等功能。
+
+![系统控制](https://cloud.tsinghua.edu.cn/f/c27ae43c1ca242419ad6/?dl=1)
+
+</details>
+
+<details>
+<summary>热键管理插件</summary>
+
+- 简介：注册并捕获系统全局热键，并将结果发送至相应插件。至于插件具体作何反应与此插件无关。
+
+![热键管理](https://cloud.tsinghua.edu.cn/f/11eae0e195d6402685d9/?dl=1)
+
+</details>
+
+## 插件开发计划
+
+> 这是我目前打算新开发的插件，如果有什么建议或者想参与插件开发，可以联系我。
+
+1. 颜色拾取
+2. 动态壁纸
+3. U盘助手
+4. 任务栏网速
 
 ## 编译环境
-
-> 由于经过重构，目前代码不太成熟，编译后不一定能正常运行。
 
 1. Windows x86_64
     - <del>xmake+xrepo</del> **CMake+Vcpkg**
@@ -59,37 +129,8 @@
 2. Linux
     - 更换系统后未曾尝试编译（待 GCC13 发布稳定后再考虑写linux部分代码）
 
-## 核心功能
 
-1. 网速、内存、CPU占用显示
-2. 壁纸切换
-    + 手动切换、定时切换、收藏夹、黑名单
-    + 网络壁纸源
-      - Awesome Wallpapers: <https://wallhaven.cc/>
-      - Bing: <https://www.bing.com/>
-      - Unsplash: <https://unsplash.com/>
-      - 小歪: <https://api.ixiaowai.cn/>
-      - 其他壁纸Api链接（必须是直接在浏览器打开就能看到图片的链接，例如<https://source.unsplash.com/random/2500x1600>）
-    + 本地壁纸源
-      - 可遍历壁纸文件夹
-      - 可调用脚本获取本地壁纸路径
-      - 用户收藏夹内的壁纸
-3. 系统优化
-    - 文件资源管理器右键增加“复制路径”选项
-    - 防止息屏、快速关机、快捷重启等选项在右键菜单，让操作更方便
-4. 可能会要添加的功能
-    - 悬浮窗嵌入任务栏
-    - 热键注册管理
-    - 右键菜单功能自定义
-    - 可查看CPU温度、磁盘使用率
-    - U盘助手
+## 开发进度
 
-## 额外功能
-
-- 文本翻译，单词翻译（富文本渲染）
-- 支持拖拽文字翻译
-- 支持读取剪切板
-- 屏幕文字识别，快捷键打开
-- 支持用户自行添加训练数据
-    -支持用户自行选择语言，默认为中文简体加英语
-- 屏幕颜色拾取
+1. 完善自定义皮肤功能，考虑使用Lua语言来编写动画；
+2. 逐步增加wxWidgets部分的代码，最终取代qt。
