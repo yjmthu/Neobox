@@ -9,7 +9,7 @@
 目前 Neobox 共有6款插件，可在 [Gitlab](https://gitlab.com/yjmthu1/neoboxplg) 中查看。
 
 - 插件下载方式
-    1. 托盘图标->右键菜单->设置中心->插件管理，打开 Neobox 插件管理；
+    1. `托盘图标` `右键菜单` `设置中心` `插件管理`，打开 Neobox 插件管理；
     2. 在插件管理窗口里面即可下载、更新、卸载插件。
 
 - 插件下载界面
@@ -120,17 +120,17 @@
 
 ## 编译环境
 
-1. Windows x86_64
-    - <del>xmake+xrepo</del> **CMake+Vcpkg**
-    - MSVC 2022
-    - Qt 6.4.1（最新版本）
-    - vcpkg (libcurl[linux], leptonica, tesseract)
-    - json库 [YJson](https://github.com/yjmthu/YJson)
-2. Linux
+- `Windows10+ x86_64`
+    - <del>xmake+xrepo</del> **[CMake](https://cmake.org/download/)+Vcpkg**
+    - [MSVC 2022](https://visualstudio.microsoft.com/zh-hans/vs/)
+    - [Qt 6.4.1](https://www.qt.io/download)（最新版本）
+    - [vcpkg](https://github.com/microsoft/vcpkg) (libcurl[linux], leptonica, tesseract)
+    - c++20 JSON库 [YJson](https://github.com/yjmthu/YJson)
+- `Linux x86_64`
     - 更换系统后未曾尝试编译（待 GCC13 发布稳定后再考虑写linux部分代码）
 
 
 ## 开发进度
 
-1. 完善自定义皮肤功能，考虑使用Lua语言来编写动画；
+1. 完善自定义皮肤功能，考虑使用 `Lua` 语言来编写动画；
 2. 逐步增加wxWidgets部分的代码，最终取代qt。
