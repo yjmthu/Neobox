@@ -87,12 +87,8 @@ void PluginMgr::LoadPlugins()
     const auto name = i;
     if (!j[u8"Enabled"].isTrue()) continue;
     auto& pluginSttings = m_Settings->find(u8"PluginsConfig")->second[name];
-    auto& info = m_Plugins[name];
-    if ((info.plugin = LoadPlugin(name))) {
-      auto const mainMenuAction = info.plugin->InitMenuAction();
-      if (mainMenuAction)
-        glb->glbGetMenu()->addAction(mainMenuAction);
-    } else {
+    if (!LoadPlugin(name, m_Plugins[name])) {
+      m_Plugins.erase(name);
       j[u8"Enabled"] = false;
     }
   }
@@ -100,16 +96,13 @@ void PluginMgr::LoadPlugins()
   InitBroadcast();
 }
 
-bool PluginMgr::LoadPlugin(const std::u8string& pluginName, bool on)
+bool PluginMgr::TooglePlugin(const std::u8string& pluginName, bool on)
 {
   auto& info = m_Plugins[pluginName];
   m_Settings->find(u8"Plugins")->second[pluginName][u8"Enabled"] = on;
   SaveSettings();
   if (on) {
-    if ((info.plugin = LoadPlugin(pluginName))) {
-      auto const mainMenuAction = info.plugin->InitMenuAction();
-      if (mainMenuAction)
-        glb->glbGetMenu()->addAction(mainMenuAction);
+    if (LoadPlugin(pluginName, info)) {
       UpdateBroadcast(info.plugin);
     } else {
       m_GlbObject->glbShowMsg("设置失败！");
@@ -117,13 +110,17 @@ bool PluginMgr::LoadPlugin(const std::u8string& pluginName, bool on)
     }
   } else {
     FreePlugin(info);
+    m_Plugins.erase(pluginName);
   }
   m_GlbObject->glbShowMsg("设置成功！");
   return true;
 }
 
-PluginObject* PluginMgr::LoadPlugin(const std::u8string& pluginName)
+bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& pluginInfo)
 {
+  pluginInfo.plugin = nullptr;
+  pluginInfo.handle = nullptr;
+
   PluginObject* (*newPlugin)(YJson&, PluginMgr*)= nullptr;
 
 #ifdef _DEBUG
@@ -134,13 +131,13 @@ PluginObject* PluginMgr::LoadPlugin(const std::u8string& pluginName)
   path /= pluginName;
   if (!LoadPlugEnv(path)) {
     glb->glbShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件文件夹加载失败！"));
-    return nullptr;
+    return false;
   }
 #endif
   path /= pluginName + u8".dll";
   if (!fs::exists(path)) {
     glb->glbShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件文件加载失败！"));
-    return nullptr;
+    return false;
   }
   path.make_preferred();
   std::wstring wPath = path.wstring();
@@ -148,27 +145,35 @@ PluginObject* PluginMgr::LoadPlugin(const std::u8string& pluginName)
   HINSTANCE hdll = LoadLibraryW(wPath.data());
   if (!hdll) {
     glb->glbShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件动态库加载失败！"));
-    return nullptr;
+    return false;
   }
+  pluginInfo.handle = hdll;
   newPlugin = reinterpret_cast<decltype(newPlugin)>(GetProcAddress(hdll, "newPlugin"));
   if (!newPlugin) {
     glb->glbShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件函数加载失败！"));
     FreeLibrary(hdll);
-    return nullptr;
+    return false;
   }
   try {
-    return newPlugin(m_Settings->find(u8"PluginsConfig")->second[pluginName], this);      // nice
+    pluginInfo.plugin = newPlugin(m_Settings->find(u8"PluginsConfig")->second[pluginName], this);      // nice
+    auto const mainMenuAction = pluginInfo.plugin->InitMenuAction();
+    if (mainMenuAction)
+      glb->glbGetMenu()->addAction(mainMenuAction);
+    return true;
   } catch (...) {
+    pluginInfo.plugin = nullptr;
+    pluginInfo.handle = nullptr;
+    FreeLibrary(hdll);
     glb->glbShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件初始化失败！"));
   }
-  return nullptr;
+  return false;
 }
 
-void PluginMgr::FreePlugin(PluginInfo& info)
+bool PluginMgr::FreePlugin(PluginInfo& info)
 {
   delete info.plugin;
   info.plugin = nullptr;
-  FreeLibrary(reinterpret_cast<HINSTANCE>(info.handle));
+  return FreeLibrary(reinterpret_cast<HINSTANCE>(info.handle));
 }
 
 void PluginMgr::InitBroadcast()
@@ -253,9 +258,8 @@ bool PluginMgr::UnInstallPlugin(const std::u8string& plugin)
 {
   auto iter = m_Plugins.find(plugin);
   if (iter != m_Plugins.end() && iter->second.plugin) {
-    delete iter->second.plugin;
-    iter->second.plugin = nullptr;
-    FreeLibrary(reinterpret_cast<HINSTANCE>(iter->second.handle));
+    FreePlugin(iter->second);
+    m_Plugins.erase(iter);
   }
   auto& pluginsInfo = m_Settings->find(u8"Plugins")->second;
   auto infoIter = pluginsInfo.find(plugin);
@@ -267,4 +271,3 @@ bool PluginMgr::UnInstallPlugin(const std::u8string& plugin)
   SaveSettings();
   return true;
 }
-

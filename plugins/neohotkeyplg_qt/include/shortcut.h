@@ -19,12 +19,6 @@ private:
       return big < other.big;
     }
   };
-  // struct KeyId {
-  //   int id = -1;
-  //   KeyId& operator++() {
-  //     return ++id, *this;
-  //   }
-  // } m_StaticId;
 
 public:
   explicit Shortcut(const class YJson& m_Data);

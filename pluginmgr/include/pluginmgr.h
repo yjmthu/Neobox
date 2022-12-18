@@ -26,10 +26,10 @@ public:
   const class YJson& GetPluginsInfo() const;
   bool InstallPlugin(const std::u8string& plugin, const YJson& info);
   bool UnInstallPlugin(const std::u8string& plugin);
-  bool LoadPlugin(const std::u8string& plugin, bool on);
+  bool TooglePlugin(const std::u8string& plugin, bool on);
 private:
-  PluginObject* LoadPlugin(const std::u8string& path);
-  void FreePlugin(PluginInfo& info);
+  bool LoadPlugin(std::u8string pluginName, PluginInfo& info);
+  bool FreePlugin(PluginInfo& info);
   bool LoadPlugEnv(const std::filesystem::path& path);
   void InitBroadcast();
   void UpdateBroadcast(PluginObject* plugin);

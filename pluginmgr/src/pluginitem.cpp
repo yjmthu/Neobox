@@ -70,7 +70,7 @@ void PluginItem::InitLayout()
 
   m_ChkEnable->setChecked(m_Enabled);
   connect(m_ChkEnable, &QCheckBox::clicked, this, [this](bool on){
-    bool const ok = mgr->LoadPlugin(m_PluginName, on);
+    bool const ok = mgr->TooglePlugin(m_PluginName, on);
     if (!ok) m_ChkEnable->toggle();
   });
   m_SubLayout->addWidget(m_ChkEnable);
@@ -153,11 +153,11 @@ void PluginItem::InitStatus()
     m_CanUpdate = m_Enabled = false;
     return;
   }
-  const auto& jsVersion = m_Data[u8"Version"];
+  const auto& newVersion = m_Data[u8"Version"];
   const auto& curVersion = iter->second[u8"Version"];
-  m_CanUpdate = curVersion[0].getValueInt() < jsVersion[0].getValueInt() &&
-    curVersion[1].getValueInt() < jsVersion[1].getValueInt() &&
-    curVersion[2].getValueInt() < jsVersion[2].getValueInt();
+  int iCurVersion = curVersion[0].getValueInt() * 100 + curVersion[1].getValueInt() * 10 + curVersion[2].getValueInt();
+  int iNewVersion = newVersion[0].getValueInt() * 100 + newVersion[1].getValueInt() * 10 + newVersion[2].getValueInt();
+  m_CanUpdate = iNewVersion > iCurVersion;
   m_Enabled = mgr->GetPluginsInfo()[m_PluginName][u8"Enabled"].isTrue();
 }
 
