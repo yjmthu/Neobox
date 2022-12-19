@@ -1,4 +1,4 @@
-# Neobox
+# <img width=23 src="widgets/icons/neobox.svg"/> Neobox
 
 [![GitHub issues](https://img.shields.io/github/issues/yjmthu/Neobox.svg)](https://github.com/yjmthu/Neobox/issues) 
 [![GitHub stars](https://img.shields.io/github/stars/yjmthu/Neobox.svg)](https://github.com/yjmthu/Neobox/stargazers)
