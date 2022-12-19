@@ -3,6 +3,10 @@
 
 #include <pluginobject.h>
 
+namespace std::filesystem {
+  class path;
+}
+
 class NeoSpeedboxPlg: public PluginObject
 {
 protected:
@@ -21,6 +25,7 @@ private:
   void AddSkinConnect(class QAction* acion);
   void RemoveSkinConnect(QAction* action);
   void ChooseSkinConnect(QAction* action);
+  void AddSkin(const QString& name, const std::filesystem::path& path);
 private:
   class SpeedBox* m_Speedbox;
   class QMenu* m_ChooseSkinMenu;

@@ -26,24 +26,17 @@
 
 功能：网速、内存、CPU占用显示。
 
-1. 原生样式
+![](https://cloud.tsinghua.edu.cn/f/cb162e06a23e4d42a772/?dl=1)
 
-    ![](https://cloud.tsinghua.edu.cn/f/cb162e06a23e4d42a772/?dl=1)
+![](https://cloud.tsinghua.edu.cn/f/42ef9aa2d55444759783/?dl=1)
 
-2. 卫士样式
+![](https://cloud.tsinghua.edu.cn/f/1688364ff8d8477888b9/?dl=1)
 
-    ![](https://cloud.tsinghua.edu.cn/f/42ef9aa2d55444759783/?dl=1)
+![](https://cloud.tsinghua.edu.cn/f/2ed05e162e12420f83d4/?dl=1)
 
-3. 管家样式
+![](https://cloud.tsinghua.edu.cn/f/a018b6be4f5e41498500/?dl=1)
 
-    ![](https://cloud.tsinghua.edu.cn/f/1688364ff8d8477888b9/?dl=1)
-
-
-4. 毒霸样式
-
-    ![](https://cloud.tsinghua.edu.cn/f/2ed05e162e12420f83d4/?dl=1)
-
-> 你可以使用内置的这四种皮肤，也可以自己创建一个皮肤。
+> 你可以使用内置的这几种皮肤，也可以自己创建一个独特的皮肤。
 
 </details>
 

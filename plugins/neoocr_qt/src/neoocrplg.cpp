@@ -121,12 +121,13 @@ void NeoOcrPlg::InitFunctionMap() {
         }) | std::views::filter([](const fs::path& url) {
           return fs::exists(url);
         });
-      // std::vector<std::u8string> vec(uiUrlsView.begin(), uiUrlsView.end());
+    std::vector<fs::path> vec(uiUrlsView.begin(), uiUrlsView.end());
       auto const folder = fs::path(m_Settings[u8"TessdataDir"].getValueString());
-      for (const auto& file: uiUrlsView) {
+      for (const auto& file: vec) {
         fs::copy(file, folder / file.filename());
       }
-      glb->glbShowMsg("复制数据文件成功。");
+      if (!vec.empty())
+        glb->glbShowMsg("复制数据文件成功。");
     }
   }});
 
