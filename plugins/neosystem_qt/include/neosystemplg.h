@@ -17,6 +17,7 @@ private:
   static void SetDesktopRightMenu(bool on);
   static bool HasDesktopRightMenu();
   YJson& InitSettings(YJson& settings);
+  QAction* m_MainMenuAction;
 };
 
 #endif // NEOSYSTEMPLG_H

@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.21.1)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 20)
 
+# https://zhuanlan.zhihu.com/p/429849408
+# set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:DebugDLL>")
+
 project(Neobox VERSION 2.0.1 LANGUAGES CXX C)
 
 list(APPEND CMAKE_PREFIX_PATH "C:/Qt/6.4.1/msvc2019_64")
@@ -12,16 +15,6 @@ add_compile_options("/utf-8")
 
 set(CMAKE_INSTALL_PREFIX "install")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-# https://blog.csdn.net/10km/article/details/51735432
-
-# if(MSVC)
-#   add_compile_options(
-#     $<$<CONFIG:>:/MT> #---------|
-#     $<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
-#     $<$<CONFIG:Release>:/MT> #--|
-#   )
-# endif()
 
 link_directories(build/pluginmgr)
 file(GLOB project_includes */include */*/include)

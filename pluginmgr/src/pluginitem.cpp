@@ -221,6 +221,7 @@ void PluginItem::Upgrade()
   m_Installed = true;
   m_CanUpdate = false;
   m_Enabled = false;
+  m_ChkEnable->setChecked(false);
   UpdateEnabled();
 
   glb->glbShowMsg("升级成功！");

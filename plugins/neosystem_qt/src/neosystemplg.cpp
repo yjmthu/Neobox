@@ -21,7 +21,7 @@ NeoSystemPlg::NeoSystemPlg(YJson& settings):
 
 NeoSystemPlg::~NeoSystemPlg()
 {
-  //
+  delete m_MainMenuAction;
 }
 
 void NeoSystemPlg::InitFunctionMap() {
@@ -78,11 +78,11 @@ QAction* NeoSystemPlg::LoadMainMenuAction()
 {
   auto names = {u8"shutdownComputer", u8"restartComputer", u8"suspendedComputer"};
 
-  auto const mainMenuAction = new QAction("快捷功能");
+  m_MainMenuAction = new QAction("快捷功能");
   auto const menu = new QMenu(m_MainMenu);
   menu->setAttribute(Qt::WA_TranslucentBackground, true);
   menu->setToolTipsVisible(true);
-  mainMenuAction->setMenu(menu);
+  m_MainMenuAction->setMenu(menu);
 
   for (const auto& name: names) {
     const auto& info = m_PluginMethod[name];
@@ -93,7 +93,7 @@ QAction* NeoSystemPlg::LoadMainMenuAction()
     m_PluginMethod[name] = std::move(info);
   }
 
-  return mainMenuAction;
+  return m_MainMenuAction;
 }
 
 QAction* NeoSystemPlg::InitMenuAction()

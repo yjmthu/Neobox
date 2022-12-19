@@ -115,7 +115,13 @@ void Favorite::UndoDislike(const std::u8string& sImgPath)
 
   fs::path pImgPath = sImgPath;
   if (fs::exists(pImgPath) && pImgPath.has_filename()) {
-    pImgPath = GetImageDir() / pImgPath.filename();
+    auto const parent = GetImageDir();
+    if (!fs::exists(parent)) {
+      if (!fs::create_directories(parent)) {
+        return;
+      }
+    }
+    pImgPath = parent / pImgPath.filename();
     if (!fs::exists(pImgPath)) {
       fs::copy(sImgPath, pImgPath);
     }

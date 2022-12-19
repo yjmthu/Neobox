@@ -1,12 +1,17 @@
 # Neobox
 
-[![GitHub issues](https://img.shields.io/github/issues/yjmthu/Neobox.svg)](https://github.com/yjmthu/Neobox/issues) [![GitHub stars](https://img.shields.io/github/stars/yjmthu/Neobox.svg)](https://github.com/yjmthu/Neobox/stargazers) [![GitHub forks](https://img.shields.io/github/forks/yjmthu/Neobox.svg)](https://github.com/yjmthu/Neobox/network/members) [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/yjmthu/Neobox/master/LICENSE)
+[![GitHub issues](https://img.shields.io/github/issues/yjmthu/Neobox.svg)](https://github.com/yjmthu/Neobox/issues) 
+[![GitHub stars](https://img.shields.io/github/stars/yjmthu/Neobox.svg)](https://github.com/yjmthu/Neobox/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/yjmthu/Neobox.svg)](https://github.com/yjmthu/Neobox/network/members)
+![GitHub watchers](https://img.shields.io/github/watchers/yjmthu/Neobox.svg)
+[![GitHub license](https://img.shields.io/badge/license-MIT-green.svg)](https://raw.githubusercontent.com/yjmthu/Neobox/master/LICENSE)
+[![Latest release version](https://img.shields.io/badge/version-2.1-red.svg)](https://github.com/yjmthu/Neobox/releases/latest)
 
 - Qt6和C++20写的一个插件管理工具。安装相关插件后可获取网速显示、壁纸切换、文本翻译、文字识别、天气预报等任何功能。
 
 ## Neobox 插件
 
-目前 Neobox 共有6款插件，可在 [Gitlab](https://gitlab.com/yjmthu1/neoboxplg) 中查看。
+目前 Neobox 共有6款插件，可在 [![Gitlab](https://img.shields.io/badge/Gitlab-yellow.svg?logo=gitlab)](https://gitlab.com/yjmthu1/neoboxplg) 中查看。
 
 - 插件下载方式
     1. `托盘图标` `右键菜单` `设置中心` `插件管理`，打开 Neobox 插件管理；
@@ -24,23 +29,19 @@
 1. 原生样式
 
     ![](https://cloud.tsinghua.edu.cn/f/cb162e06a23e4d42a772/?dl=1)
-    <!-- ![](./screenshots/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202022-11-13%20234151.png) -->
 
 2. 卫士样式
 
     ![](https://cloud.tsinghua.edu.cn/f/42ef9aa2d55444759783/?dl=1)
-    <!-- ![](./screenshots/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202022-11-13%20233907.png) -->
 
 3. 管家样式
 
     ![](https://cloud.tsinghua.edu.cn/f/1688364ff8d8477888b9/?dl=1)
-    <!-- ![](./screenshots/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202022-11-13%20233257.png) -->
 
 
 4. 毒霸样式
 
     ![](https://cloud.tsinghua.edu.cn/f/2ed05e162e12420f83d4/?dl=1)
-    <!-- ![](./screenshots/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202022-11-14%20212223.png) -->
 
 > 你可以使用内置的这四种皮肤，也可以自己创建一个皮肤。
 
@@ -88,6 +89,8 @@
 ![文字识别](https://cloud.tsinghua.edu.cn/f/612106e8c64c49c393c8/?dl=1)
 
 ![文字识别](https://cloud.tsinghua.edu.cn/f/42e2e76532a2416aa9fa/?dl=1)
+
+> 技巧：按住鼠标中键可移动选框，按ESC键退出框选。
 
 </details>
 
