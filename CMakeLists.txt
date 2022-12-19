@@ -1,20 +1,20 @@
 cmake_minimum_required(VERSION 3.21.1)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_INSTALL_PREFIX "install")
 
 # https://zhuanlan.zhihu.com/p/429849408
 # set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:DebugDLL>")
 
-project(Neobox VERSION 2.0.1 LANGUAGES CXX C)
+project(Neobox VERSION 2.2.1 LANGUAGES CXX C)
 
 list(APPEND CMAKE_PREFIX_PATH "C:/Qt/6.4.1/msvc2019_64")
 
 add_definitions(-DUNICODE -D_UNICODE)
 add_compile_options("/utf-8")
-
-set(CMAKE_INSTALL_PREFIX "install")
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 link_directories(build/pluginmgr)
 file(GLOB project_includes */include */*/include)
@@ -36,8 +36,9 @@ endforeach()
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 add_executable(neobox WIN32 main.cpp logo.rc)
 
-target_link_libraries(neobox PRIVATE
-  neobox_core
+target_link_libraries(neobox PUBLIC
+  pluginmgr
+  yjson
   Qt6::Widgets
 )
 

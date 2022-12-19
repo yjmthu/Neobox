@@ -12,7 +12,7 @@ set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui Qt6::UiTools)
   # add_library(neospeedboxplg STATIC ${source_files})
 # else()
   add_library(neospeedboxplg SHARED ${source_files})
-  set(pliugin_libfiles neospeedbox_core neobox_core yjson)
+  set(pliugin_libfiles neospeedbox_core pluginmgr yjson)
 # endif()
 
 file(GLOB _resource_files fonts/*.ttf icons/* skins/*.ui)
@@ -34,5 +34,3 @@ target_link_libraries(neospeedboxplg PRIVATE
   ${qt_shared_files}
   ${system_shared_files}
 )
-
-

@@ -24,6 +24,6 @@ public:
   void glbShowMsgbox(const std::u8string& title, const std::u8string& text, int type = 0);
 };
 
-extern GlbObject* glb;
+extern GlbObject *glb;
 
 #endif // NEOAPP_H

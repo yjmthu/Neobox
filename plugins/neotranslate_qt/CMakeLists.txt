@@ -4,7 +4,7 @@ file(GLOB source_files src/*.cpp)
 
 set(system_shared_files Shell32)
 set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui)
-set(pliugin_libfiles translate_core neobox_core yjson)
+set(pliugin_libfiles translate_core pluginmgr yjson)
 
 add_library(neotranslateplg SHARED ${source_files})
 

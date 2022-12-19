@@ -8,7 +8,7 @@
 #include <QMessageBox>
 #include <QApplication>
 
-GlbObject *glb;
+extern GlbObject *glb;
 
 QMenu* GlbObject::glbGetMenu() {
   return glbMenu;

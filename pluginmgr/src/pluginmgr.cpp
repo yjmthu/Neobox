@@ -14,6 +14,7 @@
 #include <filesystem>
 
 namespace fs = std::filesystem;
+GlbObject *glb;
 
 // #define WRITE_LOG(x) writelog((x))
 #define WRITE_LOG(x) 

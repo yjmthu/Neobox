@@ -14,7 +14,7 @@ qt_wrap_ui(WRAP_FILES src/shortcutdlg.ui) # 根据UI文件生成头文件
 
 # set(system_shared_files Shell32)
 set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui)
-set(pliugin_libfiles neobox_core yjson)
+set(pliugin_libfiles pluginmgr yjson)
 
 add_library(neohotkeyplg SHARED
   ${source_files}

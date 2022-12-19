@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 3.10.1)
 
+find_package(Qt6 REQUIRED COMPONENTS Svg)
 find_package(Leptonica CONFIG REQUIRED)
 file(GLOB source_files src/*.cpp)
 
 set(system_shared_files Shell32)
-set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui)
-set(pliugin_libfiles neoocr_core neobox_core yjson)
+set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Svg)
+set(pliugin_libfiles neoocr_core pluginmgr yjson)
 set(ocr_libfiles leptonica)
 
 add_library(neoocrplg SHARED ${source_files} 

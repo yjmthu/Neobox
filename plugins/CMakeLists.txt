@@ -10,8 +10,6 @@ foreach(plugin_subdir_cmake ${plugin_subdirs})
   add_subdirectory(${subdir_name})
 endforeach()
 
-# add_subdirectory(neosystem_core)
-# add_subdirectory(neosystem_qt)
 set(install_dir ${PROJECT_SOURCE_DIR}/install)
 
 install(TARGETS neoocrplg neospeedboxplg neosystemplg neotranslateplg neowallpaperplg neohotkeyplg  

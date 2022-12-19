@@ -5,6 +5,9 @@
 #include <pluginmgr.h>
 #include <yjson.h>
 
+GlbObject *glb;
+PluginMgr *mgr;
+
 extern "C" _declspec(dllexport) PluginObject* newPlugin(YJson& settings, PluginMgr* _mgr)
 {
   mgr = _mgr;

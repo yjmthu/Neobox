@@ -4,7 +4,7 @@ file(GLOB source_files src/*.cpp)
 
 set(system_shared_files Shell32)
 set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui)
-set(pliugin_libfiles wallpaper_core neobox_core yjson network)
+set(pliugin_libfiles wallpaper_core pluginmgr yjson)
 
 add_library(neowallpaperplg SHARED ${source_files})
 
