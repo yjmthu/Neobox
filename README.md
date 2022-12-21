@@ -11,7 +11,7 @@
 
 ## Neobox 插件
 
-目前 Neobox 共有6款插件，可在 [![Gitlab](https://img.shields.io/badge/Gitlab-yellow.svg?logo=gitlab)](https://gitlab.com/yjmthu1/neoboxplg) 中查看。
+目前 Neobox 共有6款插件，源代码在 `plugin` 目录下。插件二进制文件可在 [![Gitlab](https://img.shields.io/badge/Gitlab-yellow.svg?logo=gitlab)](https://gitlab.com/yjmthu1/neoboxplg) 中查看。
 
 - 插件下载方式
     1. `托盘图标` `右键菜单` `设置中心` `插件管理`，打开 Neobox 插件管理；

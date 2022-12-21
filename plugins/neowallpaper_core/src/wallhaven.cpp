@@ -177,7 +177,7 @@ ImageInfoEx Wallhaven::GetNext()
       return ptr;
     }
   }
-  ptr->ImagePath = (GetImageDir() / name).u8string();
+  ptr->ImagePath = GetCurInfo()[u8"Directory"].getValueString() + u8"/" + name;
   ptr->ImageUrl =
       u8"https://w.wallhaven.cc/full/"s + name.substr(10, 2) + u8"/"s + name;
   m_Data->find(u8"Used")->second.append(name);
@@ -224,16 +224,16 @@ void Wallhaven::UndoDislike(const std::u8string& sImgPath)
   data.toFile(m_DataPath);
 }
 
-fs::path Wallhaven::GetImageDir() const
-{
-  return GetCurInfo()[u8"Directory"].getValueString();
-}
+// fs::path Wallhaven::GetImageDir() const
+// {
+//   return ;
+// }
 
-void Wallhaven::SetCurDir(const std::u8string& str)
-{
-  GetCurInfo()[u8"Directory"].setText(str);
-  SaveSetting();
-}
+// void Wallhaven::SetCurDir(const std::u8string& str)
+// {
+//   GetCurInfo()[u8"Directory"].setText(str);
+//   SaveSetting();
+// }
 
 void Wallhaven::SetJson(bool update)
 {

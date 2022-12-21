@@ -12,9 +12,9 @@ public:
 
 public:
   ImageInfoEx GetNext() override;
-  void SetCurDir(const std::u8string& str) override;
+  // void SetCurDir(const std::u8string& str) override;
   void SetJson(bool update) override;
-  fs::path GetImageDir() const override;
+  // fs::path GetImageDir() const override;
 
 private:
   void AutoDownload();

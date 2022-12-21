@@ -83,12 +83,12 @@ bool Native::GetFileList() {
   auto const curDir = GetImageDir();
   auto const maxCount = m_Setting[u8"max"].getValueInt();
   std::vector<size_t> numbers;
+  std::mt19937 g(std::random_device{}());
   if (m_Toltal < maxCount) {
     numbers.resize(m_Toltal);
     std::iota(numbers.begin(), numbers.end(), 0);
   } else {
     std::set<size_t> already;
-    std::mt19937 g(std::random_device{}());
     auto pf = std::uniform_int_distribution<size_t>(0, m_Toltal - 1);
     for (uint32_t i = 0; i < maxCount; ++i) {
       size_t temp = pf(g);
@@ -124,7 +124,6 @@ bool Native::GetFileList() {
     qDirsToWalk.pop();
   }
 
-  std::mt19937 g(std::random_device{}());
   if (GetCurInfo()[u8"random"].isTrue()) {
     std::shuffle(m_FileList.begin(), m_FileList.end(), g);
   }
@@ -151,12 +150,12 @@ ImageInfoEx Native::GetNext()
   return ptr;
 }
 
-void Native::SetCurDir(const std::u8string& str)
-{
-  GetCurInfo()[u8"imgdir"] = str;
-  m_FileList.clear();
-  SaveSetting();
-}
+// void Native::SetCurDir(const std::u8string& str)
+// {
+//   GetCurInfo()[u8"imgdir"] = str;
+//   m_FileList.clear();
+//   SaveSetting();
+// }
 
 void Native::SetJson(bool update) {
   m_FileList.clear();

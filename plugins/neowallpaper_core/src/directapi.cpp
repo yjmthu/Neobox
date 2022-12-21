@@ -91,16 +91,16 @@ YJson& DirectApi::GetCurInfo()
   return m_Setting[u8"ApiData"][m_Setting[u8"ApiUrl"].getValueString()];
 }
 
-fs::path DirectApi::GetImageDir() const
-{
-  return GetCurInfo()[u8"Directory"].getValueString();
-}
+// fs::path DirectApi::GetImageDir() const
+// {
+//   return GetCurInfo()[u8"Directory"].getValueString();
+// }
 
-void DirectApi::SetCurDir(const std::u8string& sImgPath)
-{
-  GetCurInfo()[u8"Directory"] = sImgPath;
-  SaveSetting();
-}
+// void DirectApi::SetCurDir(const std::u8string& sImgPath)
+// {
+//   GetCurInfo()[u8"Directory"] = sImgPath;
+//   SaveSetting();
+// }
 
 void DirectApi::SetJson(bool)
 {

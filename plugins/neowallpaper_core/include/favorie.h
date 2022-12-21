@@ -15,13 +15,12 @@ public:
   YJson& InitSetting(YJson& setting);
   void InitData();
   ImageInfoEx GetNext() override;
-  fs::path GetImageDir() const override;
+  fs::path GetImageDir() const;
 
   void Dislike(const std::u8string& sImgPath) override;
   void UndoDislike(const std::u8string& sImgPath) override;
 
   void SetJson(bool update) override;
-  void SetCurDir(const std::u8string& str) override;
 
 private:
   YJson* m_Data;

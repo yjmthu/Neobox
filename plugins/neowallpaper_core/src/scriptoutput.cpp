@@ -97,16 +97,16 @@ YJson& ScriptOutput::GetCurInfo()
   return m_Setting[u8"cmds"][m_Setting[u8"curcmd"].getValueString()];
 }
 
-fs::path ScriptOutput::GetImageDir() const
-{
-  return GetCurInfo()[u8"directory"].getValueString();
-}
+// fs::path ScriptOutput::GetImageDir() const
+// {
+//   return GetCurInfo()[u8"directory"].getValueString();
+// }
 
-void ScriptOutput::SetCurDir(const std::u8string &sImgDir)
-{  
-  GetCurInfo()[u8"directory"] = sImgDir;
-  SaveSetting();
-}
+// void ScriptOutput::SetCurDir(const std::u8string &sImgDir)
+// {  
+//   GetCurInfo()[u8"directory"] = sImgDir;
+//   SaveSetting();
+// }
 
 void ScriptOutput::SetJson(bool update)
 {

@@ -11,13 +11,12 @@ public:
 
 public:
   ImageInfoEx GetNext() override;
-  void SetCurDir(const std::u8string& str) override;
   void SetJson(bool update) override;
-  fs::path GetImageDir() const override;
 
 private:
   YJson& InitSetting(YJson& setting);
   YJson& GetCurInfo();
+  fs::path GetImageDir() const;
   YJson& GetCurInfo() const {
     return const_cast<Native*>(this)->GetCurInfo();
   }

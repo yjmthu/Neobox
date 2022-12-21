@@ -73,8 +73,6 @@ void WallBase::Dislike(const std::u8string& sImgPath) {}
 
 void WallBase::UndoDislike(const std::u8string& sImgPath) {}
 
-void WallBase::SetCurDir(const std::u8string& sImgDir) {}
-
 std::u8string WallBase::GetStantardDir(const std::u8string& name)
 {
   auto initDir = ms_HomePicLocation / name;

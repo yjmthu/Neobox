@@ -26,7 +26,7 @@
 
 NeoWallpaperPlg::NeoWallpaperPlg(YJson& settings):
   PluginObject(InitSettings(settings), u8"neowallpaperplg", u8"壁纸引擎"),
-  m_Wallpaper(new Wallpaper(m_Settings, std::bind(&PluginMgr::SaveSettings, mgr)))
+  m_Wallpaper(new Wallpaper(m_Settings, mgr->SaveSettings))
 {
   QDir dir;
   if (!dir.exists("junk"))
@@ -44,22 +44,6 @@ NeoWallpaperPlg::~NeoWallpaperPlg()
 void NeoWallpaperPlg::InitFunctionMap()
 {
   m_PluginMethod = {
-    {u8"setCurrentDir",
-      {u8"设置位置", u8"设置当前壁纸来源存储位置",
-        [this](PluginEvent, void*) {
-        QString current =
-            QString::fromStdU16String(m_Wallpaper->GetImageDir().u16string());
-        current = QFileDialog::getExistingDirectory(glb->glbGetMenu(), "选择壁纸文件夹", current);
-return ;
-                                
-        if (current.isEmpty() || !QDir().exists(current)) {
-          glb->glbShowMsg("取消设置成功！");
-          return;
-        }
-        m_Wallpaper->SetCurDir(current.toStdWString());
-        glb->glbShowMsg("设置壁纸存放位置成功！");
-      }, PluginEvent::Void},
-    },
     {u8"setTimeInterval",
       {u8"时间间隔", u8"设置更换壁纸的时间间隔", [this](PluginEvent, void*){
         int iNewTime =
@@ -82,6 +66,7 @@ return ;
       {u8"自动更换", u8"设置是否按照时间间隔自动切换壁纸", [this](PluginEvent event, void* data) {
         if (event == PluginEvent::Bool) {
           m_Wallpaper->SetAutoChange(*reinterpret_cast<bool*>(data));
+          glb->glbShowMsg("设置成功！");
         } else if (event == PluginEvent::BoolGet) {
           *reinterpret_cast<bool*>(data) = m_Wallpaper->GetAutoChange();
         }
@@ -92,6 +77,7 @@ return ;
       {u8"首次更换", u8"设置是否在插件启动时更换一次壁纸", [this](PluginEvent event, void* data) {
         if (event == PluginEvent::Bool) {
           m_Wallpaper->SetFirstChange(*reinterpret_cast<bool*>(data));
+          glb->glbShowMsg("设置成功！");
         } else if (event == PluginEvent::BoolGet) {
           *reinterpret_cast<bool*>(data) = m_Wallpaper->GetFirstChange();
         }
@@ -108,8 +94,8 @@ return ;
       urls | std::views::filter([](const QUrl& i) { return i.isValid() && (i.isLocalFile() || i.scheme().startsWith("http")); })
       | std::views::transform([](const QUrl& i) {
       auto const data = i.isLocalFile() ? i.toLocalFile() : i.toString();
-      return PluginObject::QString2Utf8(data); });
-      m_Wallpaper->SetDropFile(std::vector<std::u8string>(picUrlsView.begin(), picUrlsView.end()));
+      return data.toStdWString(); });
+      m_Wallpaper->SetDropFile(std::vector<std::wstring>(picUrlsView.begin(), picUrlsView.end()));
     }
   }});
 }
@@ -174,7 +160,7 @@ void NeoWallpaperPlg::LoadMainMenuAction()
       },
     },
     {u8"openCurrentDir",
-      { u8"打开位置", u8"打开当前壁纸位置", [this](PluginEvent, void*) {
+      { u8"定位文件", u8"打开当前壁纸位置", [this](PluginEvent, void*) {
         std::wstring args = L"/select, " + m_Wallpaper->GetCurIamge().wstring();
         ShellExecuteW(nullptr, L"open", L"explorer", args.c_str(), NULL, SW_SHOWNORMAL);
       }, PluginEvent::Void
@@ -192,17 +178,22 @@ void NeoWallpaperPlg::LoadMainMenuAction()
 
 YJson& NeoWallpaperPlg::InitSettings(YJson& settings)
 {
-  if (settings.isObject()) return settings;
-  return settings = YJson::O {
-    {u8"AutoChange", false},
-    {u8"FirstChange", false},
-    {u8"TimeInterval", 30},
-    {u8"ImageType", 0},
-    {u8"DropToCurDir", true},
-    {u8"DropDir", (fs::current_path() / "junk").u8string()},
-    {u8"DropImgUseUrlName", true},
-    {u8"DropINameFmt", u8"drop-image {1} {0:%Y-%m-%d}"},
-  };
+  if (!settings.isObject()) {
+    settings = YJson::O {
+      {u8"AutoChange", false},
+      {u8"FirstChange", false},
+      {u8"TimeInterval", 30},
+      {u8"ImageType", 0},
+      // {u8"DropToCurDir", true},
+      {u8"DropDir", (fs::current_path() / "junk").u8string()},
+      {u8"DropImgUseUrlName", true},
+      {u8"DropNameFmt", u8"drop-image {1} {0:%Y-%m-%d}"},
+    };
+  }
+  auto& nameFmt = settings[u8"DropNameFmt"];
+  if (!nameFmt.isString())
+    nameFmt = u8"drop-image {1} {0:%Y-%m-%d}";
+  return settings;
   // we may not need to call SaveSettings;
 }
 
@@ -252,14 +243,14 @@ void NeoWallpaperPlg::LoadDropMenu(QAction* action)
   menu->setToolTipsVisible(true);
   action->setMenu(menu);
 
-  auto actionDrop2Cur = menu->addAction("拖拽至当前");
-  actionDrop2Cur->setCheckable(true);
-  actionDrop2Cur->setToolTip("是否将拖拽进来的壁纸复制到当前类型壁纸存放的文件夹");
-  actionDrop2Cur->setChecked(m_Settings[u8"DropToCurDir"].isTrue());
-  QObject::connect(actionDrop2Cur, &QAction::triggered, m_MainMenu, [this](bool on){
-    m_Settings[u8"DropToCurDir"] = on;
-    mgr->SaveSettings();
-  });
+  // auto actionDrop2Cur = menu->addAction("拖拽至当前");
+  // actionDrop2Cur->setCheckable(true);
+  // actionDrop2Cur->setToolTip("是否将拖拽进来的壁纸复制到当前类型壁纸存放的文件夹");
+  // actionDrop2Cur->setChecked(m_Settings[u8"DropToCurDir"].isTrue());
+  // QObject::connect(actionDrop2Cur, &QAction::triggered, m_MainMenu, [this](bool on){
+  //   m_Settings[u8"DropToCurDir"] = on;
+  //   mgr->SaveSettings();
+  // });
 
   auto actionDir = menu->addAction("拖拽文件夹");
   actionDir->setToolTip("当\"拖拽至当前\"取消勾选时，拖拽壁纸存放的文件夹。");
@@ -286,14 +277,14 @@ void NeoWallpaperPlg::LoadDropMenu(QAction* action)
   actionDefaultName->setToolTip("拖拽壁纸后，使用链接中的名称作为壁纸文件名称");
   actionDefaultName->setChecked(m_Settings[u8"DropImgUseUrlName"].isTrue());
   QObject::connect(actionDefaultName, &QAction::triggered, m_MainMenu, [this](bool on){
-    m_Settings[u8"DropToCurDir"] = on;
+    m_Settings[u8"DropImgUseUrlName"] = on;
     mgr->SaveSettings();
   });
 
   auto const actionNameFmt = menu->addAction("自定义名称");
   actionNameFmt->setToolTip("当\"使用链接名称\"取消勾选时，拖拽壁纸存使用的名称。");
   QObject::connect(actionNameFmt, &QAction::triggered, m_MainMenu, [this](){
-    auto& u8name = m_Settings[u8"DropINameFmt"].getValueString();
+    auto& u8name = m_Settings[u8"DropNameFmt"].getValueString();
     auto qNewName = QInputDialog::getText(m_MainMenu, "请输入格式字符串", "输入拖拽壁纸的c++ format命名格式，错误输入会导致程序崩溃。0: 当前时间; 1: 链接自带名称.", QLineEdit::EchoMode::Normal, Utf82QString(u8name));
     if (qNewName.isEmpty()) {
       glb->glbShowMsg("取消设置成功！");

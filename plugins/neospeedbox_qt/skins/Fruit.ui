@@ -6,20 +6,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>123</width>
-    <height>54</height>
+    <width>121</width>
+    <height>52</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>123</width>
-    <height>54</height>
+    <width>121</width>
+    <height>52</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>123</width>
-    <height>54</height>
+    <width>121</width>
+    <height>52</height>
    </size>
   </property>
   <property name="cursor">
@@ -41,20 +41,20 @@ background-color: rgba(255, 255, 255, 0);
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>54</width>
-     <height>54</height>
+     <width>52</width>
+     <height>52</height>
     </rect>
    </property>
    <property name="minimumSize">
     <size>
-     <width>54</width>
-     <height>54</height>
+     <width>52</width>
+     <height>52</height>
     </size>
    </property>
    <property name="maximumSize">
     <size>
-     <width>54</width>
-     <height>54</height>
+     <width>52</width>
+     <height>52</height>
     </size>
    </property>
    <property name="styleSheet">
@@ -73,8 +73,8 @@ border-color: rgb(148, 148, 148);</string>
   <widget class="QFrame" name="frame">
    <property name="geometry">
     <rect>
-     <x>53</x>
-     <y>6</y>
+     <x>52</x>
+     <y>5</y>
      <width>68</width>
      <height>42</height>
     </rect>
@@ -151,8 +151,8 @@ background-color: transparent;</string>
   <widget class="QFrame" name="memColorFrame">
    <property name="geometry">
     <rect>
-     <x>5</x>
-     <y>5</y>
+     <x>4</x>
+     <y>4</y>
      <width>44</width>
      <height>44</height>
     </rect>
@@ -171,8 +171,8 @@ border-radius: 3px;</string>
   <widget class="QFrame" name="borderColor">
    <property name="geometry">
     <rect>
-     <x>1</x>
-     <y>1</y>
+     <x>0</x>
+     <y>0</y>
      <width>52</width>
      <height>52</height>
     </rect>

@@ -30,7 +30,6 @@ class WallBase {
 protected:
   static std::atomic_bool ms_IsWorking;
   static const fs::path ms_HomePicLocation;
-  // const std::filesystem::path m_InitImageDir;
   static const fs::path m_DataDir;
   static std::function<void()> SaveSetting;
   static std::string Utf8AsString(const std::u8string& str) { return std::string(str.begin(), str.end()); };
@@ -41,7 +40,7 @@ public:
   enum { WALLHAVEN = 0, BINGAPI, DIRECTAPI, NATIVE, SCRIPTOUTPUT, FAVORITE };
   static WallBase* GetNewInstance(YJson& setting, int type);
   static void ClearInstatnce();
-  inline explicit WallBase(YJson& setting):
+  explicit WallBase(YJson& setting):
     m_Setting(setting)
     {
       if (!fs::exists(m_DataDir)) {
@@ -52,11 +51,9 @@ public:
   static const fs::path m_ConfigPath;
 
 public:
-  virtual fs::path GetImageDir() const = 0;
   virtual ImageInfoEx GetNext() = 0;
   virtual void Dislike(const std::u8string& sImgPath);
   virtual void UndoDislike(const std::u8string& sImgPath);
-  virtual void SetCurDir(const std::u8string& sImgDir);
   virtual void SetJson(bool update) = 0;
   YJson& m_Setting;
 

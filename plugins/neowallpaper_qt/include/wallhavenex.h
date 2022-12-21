@@ -16,6 +16,7 @@ public:
   explicit WallhavenExMenu(class YJson& data, QMenu* parent, std::function<void(bool)> callback, std::function<const std::filesystem::path&()> getCurImg);
   virtual ~WallhavenExMenu();
 private:
+  static std::string GetImageName(const std::filesystem::path& path);
   void LoadWallpaperTypes();
   void LoadSubSettingMenu(QAction* action);
   void LoadMoreActions();

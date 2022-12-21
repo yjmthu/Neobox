@@ -32,6 +32,17 @@ WallhavenExMenu::~WallhavenExMenu()
   //
 }
 
+std::string WallhavenExMenu::GetImageName(const std::filesystem::path& path)
+{
+  auto const fileName = path.stem().string();
+  std::regex const pattern("wallhaven-([a-z0-9]{6})", std::regex::icase);
+  std::smatch result;
+  if (std::regex_search(fileName, result, pattern)) {
+    return result.str(1);
+  }
+  return {};
+}
+
 void WallhavenExMenu::LoadWallpaperTypes()
 {
   const std::u8string& curType = m_Data[u8"WallhavenCurrent"].getValueString();
@@ -115,20 +126,16 @@ void WallhavenExMenu::LoadMoreActions()
   });
   connect(addAction("添加更多"), &QAction::triggered, this, std::bind(&WallhavenExMenu::AddNewType, this));
   connect(addAction("关于壁纸"), &QAction::triggered, this, [this]() {
-    auto fileName = GetCurImage().stem().string();
-    std::regex pattern("^wallhaven-[a-z0-9]{6}$", std::regex::icase);
-    if (!std::regex_match(fileName, pattern))
-      return;
-    std::string url = "https://wallhaven.cc/w/" + fileName.substr(10);
-    QDesktopServices::openUrl(QString::fromStdString(url));
+    const auto name = GetImageName(GetCurImage());
+    if (name.size() != 6) return;
+    QDesktopServices::openUrl(
+      QString::fromStdString("https://wallhaven.cc/w/" + name));
   });
   connect(addAction("相似壁纸"), &QAction::triggered, this, [this]() {
-    auto fileName = GetCurImage().stem().string();
-    std::regex pattern("^wallhaven-[a-z0-9]{6}$", std::regex::icase);
-    if (!std::regex_match(fileName, pattern))
-      return;
-    std::string url =
-        "https://wallhaven.cc/search?q=like:" + fileName.substr(10);
+    const auto name = GetImageName(GetCurImage());
+    if (name.size() != 6) return;
+    auto const url =
+        "https://wallhaven.cc/search?q=like:" + name;
     QDesktopServices::openUrl(QString::fromStdString(url));
   });
 }

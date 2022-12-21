@@ -11,8 +11,8 @@ public:
   explicit Wallhaven(YJson& setting);
   virtual ~Wallhaven();
   void SetJson(bool update) override;
-  void SetCurDir(const std::u8string& str) override;
-  fs::path GetImageDir() const override;
+  // void SetCurDir(const std::u8string& str) override;
+  // fs::path GetImageDir() const override;
 
 private:
   YJson& InitSetting(YJson& setting);

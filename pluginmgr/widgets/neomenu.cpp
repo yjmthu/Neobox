@@ -79,51 +79,18 @@ void NeoMenu::InitSettingMenu()
 }
 
 void NeoMenu::InitFunctionMap() {
-  connect(m_SettingMenu->addAction("程序位置"), &QAction::triggered, this, std::bind(QDesktopServices::openUrl,
-                 QUrl::fromLocalFile(qApp->applicationDirPath())));
+  connect(m_SettingMenu->addAction("程序位置"), &QAction::triggered, this, [](){
+    std::wstring args = L"/select, " + GetExeFullPath();
+    ShellExecuteW(nullptr, L"open", L"explorer", args.c_str(), NULL, SW_SHOWNORMAL);
+  });
   connect(m_SettingMenu->addAction("配置目录"), &QAction::triggered, this, std::bind(QDesktopServices::openUrl,
                  QUrl::fromLocalFile(QDir::currentPath())));
   connect(m_SettingMenu->addAction("关于软件"), &QAction::triggered, this, [](){(new VersionDlg)->show();});
   connect(m_SettingMenu->addAction("退出软件"), &QAction::triggered, this, QApplication::quit);
-  /*
-  m_FuncCheckMap = {
-      {u8"ToolTransRegistKey",
-       {[this](bool checked) {
-          auto& settings = VarBox::GetSettings(u8"Tools");
-          std::u8string& shortcut =
-              settings[u8"Translate.Shortcut"].getValueString();
-          QString qsShortcut =
-              QString::fromUtf8(shortcut.data(), shortcut.size());
-          if (checked) {
-            m_Shortcut->RegistHotKey(qsShortcut,
-                                     m_FuncNormalMap[u8"ToolTransShowDlg"]);
-          } else {
-            m_Shortcut->UnregistHotKey(qsShortcut);
-          }
-          settings[u8"Translate.RegisterHotKey"] = checked;
-          VarBox::WriteSettings();
-        },
-        [this]() -> bool {
-
-        }}},
-      };
-  */
 }
 
 bool NeoMenu::IsAutoStart()
 {
-  /*
-  auto& settings = VarBox::GetSettings(u8"Tools");
-  bool regist = settings[u8"Translate.RegisterHotKey"].isTrue();
-  std::u8string& shortcut =
-      settings[u8"Translate.Shortcut"].getValueString();
-  QString qsShortcut =
-      QString::fromUtf8(shortcut.data(), shortcut.size());
-  if (regist && !m_Shortcut->IsKeyRegisted(qsShortcut)) {
-    m_Shortcut->RegistHotKey(qsShortcut,
-                              m_FuncNormalMap[u8"ToolTransShowDlg"]);
-  }
-  return regist;*/
   wchar_t pPath[] =
       L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
   return GetExeFullPath() ==

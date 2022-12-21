@@ -183,9 +183,9 @@ void Wallpaper::SetSlot(int type) {
   }).detach();
 }
 
-fs::path Wallpaper::GetImageDir() const {
-  return m_Wallpaper->GetImageDir();
-}
+// fs::path Wallpaper::GetImageDir() const {
+//   return m_Wallpaper->GetImageDir();
+// }
 
 void Wallpaper::SetTimeInterval(int minute) {
   auto& jsTimeInterval = m_Settings[u8"TimeInterval"];
@@ -200,32 +200,29 @@ void Wallpaper::SetTimeInterval(int minute) {
   m_Timer->StartTimer(minute, std::bind(&Wallpaper::SetSlot, this, 1));
 }
 
-std::filesystem::path Wallpaper::GetImageName(const std::u8string& url)
+std::filesystem::path Wallpaper::GetImageName(const std::wstring& url)
 {
-  std::filesystem::path imagePath;
-  if (m_Settings[u8"DropToCurDir"].isTrue()) {
-    imagePath = m_Wallpaper->GetImageDir();
-  } else {
-    imagePath = m_Settings[u8"DropDir"].getValueString();
-    if (imagePath.is_relative()) {
-      imagePath = fs::absolute(imagePath);
-      imagePath.make_preferred();
-      m_Settings[u8"DropDir"].getValueString() = imagePath.u8string();
-      SettingsCallback();
-    }
+  std::filesystem::path imagePath = m_Settings[u8"DropDir"].getValueString();
+  if (imagePath.is_relative()) {
+    imagePath = fs::absolute(imagePath);
+    imagePath.make_preferred();
+    m_Settings[u8"DropDir"].getValueString() = imagePath.u8string();
+    SettingsCallback();
   }
-  auto iter = std::find(url.crbegin(), url.crend(), '/').base();
+  // }
+  auto const iter = url.rfind(L'/') + 1;
   if (m_Settings[u8"DropImgUseUrlName"].isTrue()) {
     // url's separator is the '/'.
-    imagePath.append(std::u8string(iter, url.end()));
+    imagePath /= url.substr(iter);
   } else {
-    const auto& fmt = m_Settings[u8"DropINameFmt"].getValueString();
-    auto pt = std::find(url.crbegin(), url.crend(), u8'.').base() - 1;
+    const auto& fmt = m_Settings[u8"DropNameFmt"].getValueString();
+    auto const extension = url.rfind(L'.');                       // all url is img file
+    // auto pt = std::find(url.crbegin(), url.crend(), u8'.').base() - 1;
     auto utc = std::chrono::system_clock::now();
-    auto fmtedName = std::vformat(
-      std::string(fmt.begin(), fmt.end()),
-      std::make_format_args(std::chrono::current_zone()->to_local(utc), std::string(iter, pt)));
-    imagePath.append(std::u8string(fmtedName.begin(), fmtedName.end()) + std::u8string(pt, url.cend()));
+    auto const fmtedName = std::vformat(
+      Utf82WideString(fmt) + url.substr(extension),
+      std::make_wformat_args(std::chrono::current_zone()->to_local(utc), url.substr(iter, extension - iter)));
+    imagePath.append(fmtedName);
   }
 
   return imagePath.make_preferred();
@@ -233,13 +230,13 @@ std::filesystem::path Wallpaper::GetImageName(const std::u8string& url)
 
 bool Wallpaper::SetNext() {
   if (!m_NextImgsBuffer.empty()) {
-    std::u8string imgUrl = std::move(m_NextImgsBuffer.front());
+    auto const imgUrl = std::move(m_NextImgsBuffer.front());
     m_NextImgsBuffer.pop_front();
-    if (imgUrl.starts_with(u8"http")) {
+    if (imgUrl.starts_with(L"http")) {
       ImageInfoEx ptr(new ImageInfo{
         GetImageName(imgUrl).u8string(),
-        imgUrl,
-        std::u8string(),
+        Wide2Utf8String(imgUrl),
+        {/* ??? */},
         ImageInfo::Errors::NoErr,
       });
       if (DownloadImage(ptr)) {
@@ -250,9 +247,16 @@ bool Wallpaper::SetNext() {
         }
       }
     } else if (fs::exists(imgUrl)) {
-      if (SetWallpaper(imgUrl)) {
+      auto newName { GetImageName(imgUrl) }, oldName { fs::path { imgUrl } };
+      oldName.make_preferred();
+      if (oldName.parent_path() != newName.parent_path()) {
+        fs::copy(oldName, newName);
+      } else {                     // don't move wallpaper to the same directory.
+        newName = std::move(oldName);
+      }
+      if (SetWallpaper(newName)) {
         m_PrevImgs.push_back(m_CurImage);
-        m_CurImage = imgUrl;
+        m_CurImage = newName;
         return true;
       }
     } else if (!m_NextImgsBuffer.empty()) {
@@ -353,18 +357,14 @@ bool Wallpaper::IsImageFile(const fs::path& filesName) {
   return std::regex_match(filesName.wstring(), pattern);
 }
 
-bool Wallpaper::SetDropFile(std::vector<std::u8string> urls) {
+bool Wallpaper::SetDropFile(std::vector<std::wstring> urls) {
   if (WallBase::ms_IsWorking) {
     glb->glbShowMsgbox(u8"提示", u8"目前没空！");
     return false;
   }
   WallBase::ms_IsWorking = true;
-  auto lst = urls | std::views::filter([](const std::u8string& i) {
-    auto iter = std::find(i.crbegin(), i.crend(), u8'.');
-    if (iter == i.crend()) return false;
-    const std::wregex pattern(m_ImgNamePattern, std::wregex::icase);
-    return std::regex_match(std::wstring(--iter.base(), i.cend()), pattern);
-  });
+  const std::wregex pattern(m_ImgNamePattern, std::wregex::icase);
+  auto lst = urls | std::views::filter([&pattern](const std::wstring& i){ return std::regex_match(i, pattern);});
   m_NextImgsBuffer.insert(m_NextImgsBuffer.end(), lst.begin(), lst.end());
   if (!lst.empty()) {
     std::thread([this]() {
@@ -480,11 +480,8 @@ void Wallpaper::WriteBlackList() const {
 
 void Wallpaper::SetAutoChange(bool flag) {
   m_Timer->Expire();
-  auto& jsAutoChange = m_Settings[u8"AutoChange"];
-  if (jsAutoChange.isTrue() != flag) {
-    jsAutoChange.setValue(flag);
-    SettingsCallback();
-  }
+  m_Settings[u8"AutoChange"] = flag;
+  SettingsCallback();
   if (flag) {
     m_Timer->StartTimer(GetTimeInterval(),
                         std::bind(&Wallpaper::SetSlot, this, 1));
@@ -492,20 +489,28 @@ void Wallpaper::SetAutoChange(bool flag) {
 }
 
 void Wallpaper::SetFirstChange(bool flag) {
-  auto& jsFirstChange = m_Settings[u8"FirstChange"];
-  if (jsFirstChange.isTrue() != flag) {
-    jsFirstChange.setValue(flag);
-    SettingsCallback();
-  }
+  m_Settings[u8"FirstChange"] = flag;
+  SettingsCallback();
   if (flag) {
-    SetSlot(1);
-  }
-}
+    std::thread([this](){
+      int i = 0;
+      while ((++i != 60) && (WallBase::ms_IsWorking || !HttpLib::IsOnline())) {
+        std::this_thread::sleep_for(1s);
+      }
 
-void Wallpaper::SetCurDir(fs::path str) {
-  str.make_preferred();
-  if (fs::exists(str) || fs::create_directory(str))
-    m_Wallpaper->SetCurDir(str.u8string());
+      if (i == 60) return;
+
+      WallBase::ms_IsWorking = true;
+      SetNext();
+      WriteSettings();
+      WallBase::ms_IsWorking = false;
+      
+      if (GetAutoChange()) {
+        m_Timer->Expire();
+        m_Timer->StartTimer(GetTimeInterval(), std::bind(&Wallpaper::SetSlot, this, 1));
+      }
+    }).detach();
+  }
 }
 
 bool Wallpaper::SetImageType(int index) {

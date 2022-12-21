@@ -116,16 +116,16 @@ ImageInfoEx BingApi::GetNext() {
   return ptr;
 }
 
-fs::path BingApi::GetImageDir() const
-{
-  return m_Setting[u8"directory"].getValueString();
-}
+// fs::path BingApi::GetImageDir() const
+// {
+//   return m_Setting[u8"directory"].getValueString();
+// }
 
-void BingApi::SetCurDir(const std::u8string& str)
-{
-  m_Setting[u8"directory"] = str;
-  SaveSetting();
-}
+// void BingApi::SetCurDir(const std::u8string& str)
+// {
+//   m_Setting[u8"directory"] = str;
+//   SaveSetting();
+// }
 
 void BingApi::SetJson(bool update)
 {

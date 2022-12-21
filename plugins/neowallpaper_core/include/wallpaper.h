@@ -44,25 +44,24 @@ class Wallpaper {
   bool ClearJunk();
   bool SetFavorite();
   bool UnSetFavorite();
-  bool SetDropFile(std::vector<std::u8string> urls);
-  inline const fs::path& GetCurIamge() const { return m_CurImage; }
+  bool SetDropFile(std::vector<std::wstring> urls);
+  const fs::path& GetCurIamge() const { return m_CurImage; }
   void SetSlot(int type);
-  fs::path GetImageDir() const;
 
   bool SetImageType(int type);
-  inline int GetImageType() const {
+  int GetImageType() const {
     return m_Settings[u8"ImageType"].getValueInt();
   }
   void SetFirstChange(bool val);
-  inline bool GetFirstChange() const {
+  bool GetFirstChange() const {
     return m_Settings[u8"FirstChange"].isTrue();
   }
   void SetTimeInterval(int minute);
-  inline int GetTimeInterval() const {
+  int GetTimeInterval() const {
     return m_Settings[u8"TimeInterval"].getValueInt();
   }
   void SetAutoChange(bool val);
-  inline bool GetAutoChange() const {
+  bool GetAutoChange() const {
     return m_Settings[u8"AutoChange"].isTrue();
   }
 
@@ -70,16 +69,15 @@ class Wallpaper {
 
  public:
   static Desktop GetDesktop();
-  void SetCurDir(fs::path str);
   void StartTimer(bool start);
   // fs::path m_PicHomeDir;
   static const std::wstring m_ImgNamePattern;
-  std::list<std::u8string> m_NextImgsBuffer;
+  std::list<std::wstring> m_NextImgsBuffer;
   class WallBase* m_Wallpaper;
 
  private:
   std::function<void()> SettingsCallback;  // call this to save settings
-  fs::path GetImageName(const std::u8string& url);
+  fs::path GetImageName(const std::wstring& url);
 
   class NeoTimer* const m_Timer;
   class WallBase* const m_Favorites;

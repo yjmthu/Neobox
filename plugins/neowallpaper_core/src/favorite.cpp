@@ -138,8 +138,8 @@ void Favorite::SetJson(bool)
   SaveSetting();
 }
 
-void Favorite::SetCurDir(const std::u8string& str)
-{
-  m_Setting[u8"Directory"] = str;
-  SaveSetting();
-}
+// void Favorite::SetCurDir(const std::u8string& str)
+// {
+//   m_Setting[u8"Directory"] = str;
+//   SaveSetting();
+// }

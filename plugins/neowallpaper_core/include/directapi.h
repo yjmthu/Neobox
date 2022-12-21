@@ -8,9 +8,8 @@ public:
 
 public:
   ImageInfoEx GetNext() override;
-  void SetCurDir(const std::u8string& sImgPath) override;
   void SetJson(bool update) override;
-  fs::path GetImageDir() const override;
+  // fs::path GetImageDir() const override;
 
 private:
   YJson& InitSetting(YJson& setting);
