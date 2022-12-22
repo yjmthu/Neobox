@@ -187,24 +187,29 @@ ImageInfoEx Wallhaven::GetNext()
   return ptr;
 }
 
-bool Wallhaven::IsWallhavenFile(std::string name)
+std::string Wallhaven::IsWallhavenFile(std::string name)
 {
-  std::regex pattern("^wallhaven-[0-9a-z]{6}\\.(png|jpg)$", std::regex::icase);
-  return std::regex_match(name, pattern);
+  std::regex pattern("^.*(wallhaven-[0-9a-z]{6}).*\\.(png|jpg)$", std::regex::icase);
+  std::smatch result;
+  if (std::regex_match(name, result, pattern)) {
+    return result.str(1) + "." + result.str(2);
+  }
+  return {};
 }
 
 void Wallhaven::Dislike(const std::u8string& sImgPath)
 {
   fs::path img = sImgPath;
   if (!img.has_filename()) return;
-  std::u8string m_FileName(img.filename().u8string());
-  if (!IsWallhavenFile(Utf8AsString(m_FileName)))
+  auto const id = IsWallhavenFile(img.filename().string());
+  if (id.empty())
     return;
   
+  auto const u8Id = StringAsUtf8(id);
   auto& data =*m_Data;
-  data[u8"Unused"].removeByValA(m_FileName);
-  data[u8"Used"].removeByValA(m_FileName);
-  data[u8"Blacklist"].append(m_FileName);
+  data[u8"Unused"].removeByValA(u8Id);
+  data[u8"Used"].removeByValA(u8Id);
+  data[u8"Blacklist"].append(u8Id);
   data.toFile(m_DataPath);
 }
 
@@ -214,13 +219,14 @@ void Wallhaven::UndoDislike(const std::u8string& sImgPath)
   if (!path.has_filename())
     return;
 
-  auto m_FileName = path.filename().u8string();
-  if (!IsWallhavenFile(Utf8AsString(m_FileName)))
+  auto const id = IsWallhavenFile(path.filename().string());
+  if (id.empty())
     return;
 
+  auto const u8Id = StringAsUtf8(id);
   auto& data = *m_Data;
-  data[u8"Blacklist"].removeByValA(m_FileName);
-  data[u8"Used"].append(m_FileName);
+  data[u8"Blacklist"].removeByValA(u8Id);
+  data[u8"Used"].append(u8Id);
   data.toFile(m_DataPath);
 }
 

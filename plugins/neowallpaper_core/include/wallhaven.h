@@ -20,7 +20,7 @@ private:
   YJson& GetCurInfo() const {
     return const_cast<Wallhaven*>(this)->GetCurInfo();
   };
-  bool IsWallhavenFile(std::string name);
+  std::string IsWallhavenFile(std::string name);
   size_t DownloadUrl(const std::u8string& mainUrl);
   bool CheckData(ImageInfoEx ptr);
   std::u8string GetApiPathUrl() const;

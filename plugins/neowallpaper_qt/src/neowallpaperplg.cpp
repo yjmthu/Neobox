@@ -98,6 +98,16 @@ void NeoWallpaperPlg::InitFunctionMap()
       m_Wallpaper->SetDropFile(std::vector<std::wstring>(picUrlsView.begin(), picUrlsView.end()));
     }
   }});
+
+  m_Following.push_back({u8"neohotkeyplg", [this](PluginEvent event, void* data){
+    if (event == PluginEvent::HotKey) {
+      // 判断是否为想要的快捷键
+      if (*reinterpret_cast<std::u8string*>(data) == u8"neowallpaperplg") {
+        // MSG* msg = reinterpret_cast<MSG*>(data);
+        m_Wallpaper->SetSlot(1);
+      }
+    }
+  }});
 }
 
 QAction* NeoWallpaperPlg::InitMenuAction()
@@ -174,6 +184,8 @@ void NeoWallpaperPlg::LoadMainMenuAction()
     QObject::connect(action, &QAction::triggered, menu, std::bind(info.function, PluginEvent::Void, nullptr));
     m_PluginMethod[name] = std::move(info);
   }
+  
+  menu->addAction(m_MoreSettingsAction);
 }
 
 YJson& NeoWallpaperPlg::InitSettings(YJson& settings)

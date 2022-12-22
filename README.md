@@ -1,17 +1,21 @@
 # <img width=23 src="widgets/icons/neobox.svg"/> Neobox
 
-[![GitHub issues](https://img.shields.io/github/issues/yjmthu/Neobox.svg)](https://github.com/yjmthu/Neobox/issues) 
-[![GitHub stars](https://img.shields.io/github/stars/yjmthu/Neobox.svg)](https://github.com/yjmthu/Neobox/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/yjmthu/Neobox.svg)](https://github.com/yjmthu/Neobox/network/members)
-![GitHub watchers](https://img.shields.io/github/watchers/yjmthu/Neobox.svg)
+![GitHub top language](https://img.shields.io/github/languages/top/yjmthu/Neobox)
 [![GitHub license](https://img.shields.io/badge/license-MIT-green.svg)](https://raw.githubusercontent.com/yjmthu/Neobox/master/LICENSE)
-[![Latest release version](https://img.shields.io/badge/version-2.1-red.svg)](https://github.com/yjmthu/Neobox/releases/latest)
+[![GitHub stars](https://img.shields.io/github/stars/yjmthu/Neobox)](https://github.com/yjmthu/Neobox/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/yjmthu/Neobox.svg)](https://github.com/yjmthu/Neobox/network/members)
+![GitHub watchers](https://img.shields.io/github/watchers/yjmthu/Neobox?color=purple)
+[![GitHub issues](https://img.shields.io/github/issues/yjmthu/Neobox)](https://github.com/yjmthu/Neobox/issues)
+[![GitHub closed issues](https://img.shields.io/github/issues-closed/yjmthu/Neobox)](https://github.com/yjmthu/Neobox/issues)
+[![Latest release version](https://img.shields.io/github/v/release/yjmthu/Neobox?color=red)](https://github.com/yjmthu/Neobox/releases/latest)
+![GitHub all releases](https://img.shields.io/github/downloads/yjmthu/Neobox/total)
+
 
 - Qt6和C++20写的一个插件管理工具。安装相关插件后可获取网速显示、壁纸切换、文本翻译、文字识别、天气预报等任何功能。
 
 ## Neobox 插件
 
-目前 Neobox 共有6款插件，源代码在 `plugin` 目录下。插件二进制文件可在 [![Gitlab](https://img.shields.io/badge/Gitlab-yellow.svg?logo=gitlab)](https://gitlab.com/yjmthu1/neoboxplg) 中查看。
+目前 Neobox 共有6款插件，源代码在 `plugins` 目录下。插件二进制文件可在 [![Gitlab](https://img.shields.io/badge/Gitlab-yellow.svg?logo=gitlab)](https://gitlab.com/yjmthu1/neoboxplg) 中查看。
 
 - 插件下载方式
     1. `托盘图标` `右键菜单` `设置中心` `插件管理`，打开 Neobox 插件管理；
@@ -36,7 +40,7 @@
 
 ![](https://cloud.tsinghua.edu.cn/f/a018b6be4f5e41498500/?dl=1)
 
-> 你可以使用内置的这几种皮肤，也可以自己创建一个独特的皮肤。
+> 你可以使用内置的这几种皮肤，也可以自己创建一个独特的皮肤。皮肤相关 [![GitHub issue/pull request detail](https://img.shields.io/github/issues/detail/state/yjmthu/Neobox/5)](https://github.com/yjmthu/Neobox/issues/5)
 
 </details>
 
@@ -109,7 +113,7 @@
 
 > 这是我目前打算新开发的插件，如果有什么建议或者想参与插件开发，可以联系我。
 
-1. 颜色拾取
+1. 颜色拾取（PowerToys已具备，但为了跨平台还是先简单写一个吧）
 2. 天气预报
 3. 动态壁纸
 4. U盘助手
@@ -124,7 +128,7 @@
     - [vcpkg](https://github.com/microsoft/vcpkg) (libcurl[linux], leptonica, tesseract)
     - c++20 JSON库 [YJson](https://github.com/yjmthu/YJson)
 - `Linux x86_64`
-    - 更换系统后未曾尝试编译（待 GCC13 发布稳定后再考虑写linux部分代码）
+    - 更换系统后未曾尝试编译（待 GCC13 发布后再考虑用arch写linux部分代码）
 
 
 ## 开发进度

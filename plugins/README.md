@@ -20,4 +20,8 @@
 
 ## neowallpaperplg
 
-- 壁纸插件
+- 壁纸引擎插件
+
+## neohotkeyplg
+
+- 热键管理插件
