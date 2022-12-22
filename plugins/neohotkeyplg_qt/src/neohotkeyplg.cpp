@@ -43,7 +43,10 @@ void NeoHotKeyPlg::InitFunctionMap()
 {
   m_PluginMethod = {
     {u8"showDialog",
-      {u8"控制面版", u8"注册/取消热键或生成新的热键。", [this](PluginEvent, void*) {
+      {u8"控制面版", u8"注册/取消热键或生成新的热键。", [this](PluginEvent event, void* data) {
+        if (event == PluginEvent::HotKey && 
+          *reinterpret_cast<std::u8string*>(data) != u8"neohotkeyplg")
+          return;
         auto const dlg = new ShortcutDlg(m_Settings[u8"HotKeys"]);
         dlg->show();
         QObject::connect(dlg, &ShortcutDlg::finished, dlg, [this](){
@@ -53,6 +56,8 @@ void NeoHotKeyPlg::InitFunctionMap()
       }, PluginEvent::Void},
     },
   };
+
+  m_Followers.insert(&m_PluginMethod[u8"showDialog"].function);
 }
 
 QAction* NeoHotKeyPlg::InitMenuAction()
