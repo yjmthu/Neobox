@@ -6,6 +6,7 @@
 class NeoTranslateDlg : public QWidget {
  protected:
   void showEvent(QShowEvent*) override;
+  void hideEvent(QHideEvent *event) override;
   bool eventFilter(QObject*, QEvent*) override;
 
  public:
@@ -14,14 +15,17 @@ class NeoTranslateDlg : public QWidget {
   void ToggleVisibility();
 
  private:
-  void GetResultData();
   class YJson& m_Settings;
-  class QWidget* ReferenceObject() const;
   class QTextEdit *m_TextFrom, *m_TextTo;
   class QComboBox *m_BoxFrom, *m_BoxTo;
   class Translate* m_Translate;
   class QPushButton *m_BtnCopyFrom, *m_BtnCopyTo;
   class QPushButton* m_BtnTransMode;
+  QPoint m_LastPostion;
+  QSize m_LastSize;
+private:
+  void GetResultData();
+  class QWidget* ReferenceObject() const;
   void AddCombbox(class QHBoxLayout* layout);
   void ChangeLanguageSource(bool checked);
   void ChangeLanguageFrom(int index);

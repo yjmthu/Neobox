@@ -1,4 +1,4 @@
-# <img width=23 src="widgets/icons/neobox.svg"/> Neobox
+# <img width=23 src="pluginmgr/icons/neobox.svg"/> Neobox
 
 ![GitHub top language](https://img.shields.io/github/languages/top/yjmthu/Neobox)
 [![GitHub license](https://img.shields.io/badge/license-MIT-green.svg)](https://raw.githubusercontent.com/yjmthu/Neobox/master/LICENSE)

@@ -65,6 +65,15 @@ NeoTranslateDlg::NeoTranslateDlg(YJson& settings)
 
   m_TextFrom->installEventFilter(this);
   m_TextTo->installEventFilter(this);
+
+  const auto& position = m_Settings[u8"Position"].getArray();
+  auto const& size = m_Settings[u8"Size"].getArray();
+  m_LastPostion = QPoint {
+    position.front().getValueInt(), position.back().getValueInt()
+  };
+  m_LastSize = QSize {
+    size.front().getValueInt(), size.back().getValueInt()
+  };
 }
 
 NeoTranslateDlg::~NeoTranslateDlg() {
@@ -74,33 +83,39 @@ NeoTranslateDlg::~NeoTranslateDlg() {
 }
 
 void NeoTranslateDlg::showEvent(QShowEvent*) {
-  auto const speedbox = ReferenceObject();
-
+  static auto const defaultSize = size();
   if (m_Settings[u8"AutoTranslate"].isTrue()) {
     if (!m_TextFrom->toPlainText().isEmpty()) {
       GetResultData();
     }
   }
 
-  if (speedbox) {
-    const auto qFormRect = speedbox->frameGeometry();
+  resize(m_Settings[u8"AutoSize"].isTrue() ? defaultSize : m_LastSize);
 
-    const auto size = QGuiApplication::primaryScreen()->size();
-    const auto mSize = frameSize();
-    int x, y;
-    y = (mSize.height() + qFormRect.bottom() > size.height())
-            ? qFormRect.top() - mSize.height()
-            : qFormRect.bottom();
-    if (((mSize.width() + qFormRect.width()) >> 1) + qFormRect.left() >
-        size.width()) {
-      x = size.width() - mSize.width();
-    } else if ((qFormRect.left() << 1) + qFormRect.width() < mSize.width()) {
-      x = 0;
-    } else {
-      x = qFormRect.right() - ((qFormRect.width() + mSize.width()) >> 1);
+  if (m_Settings[u8"AutoMove"].isTrue()) {
+    auto const speedbox = ReferenceObject();
+    if (speedbox) {
+      const auto qFormRect = speedbox->frameGeometry();
+
+      const auto size = QGuiApplication::primaryScreen()->size();
+      const auto mSize = frameSize();
+      int x, y;
+      y = (mSize.height() + qFormRect.bottom() > size.height())
+              ? qFormRect.top() - mSize.height()
+              : qFormRect.bottom();
+      if (((mSize.width() + qFormRect.width()) >> 1) + qFormRect.left() >
+          size.width()) {
+        x = size.width() - mSize.width();
+      } else if ((qFormRect.left() << 1) + qFormRect.width() < mSize.width()) {
+        x = 0;
+      } else {
+        x = qFormRect.right() - ((qFormRect.width() + mSize.width()) >> 1);
+      }
+      m_LastPostion = QPoint(x, y);
     }
-    move(x, y);
   }
+
+  move(m_LastPostion);
 
   m_BtnCopyFrom->move(m_TextFrom->width() - m_BtnCopyFrom->width() - 4, 4);
   m_BtnCopyTo->move(m_TextTo->width() - m_BtnCopyTo->width() - 4, 4);
@@ -109,6 +124,32 @@ void NeoTranslateDlg::showEvent(QShowEvent*) {
 
   m_TextFrom->setFocus();
   activateWindow();
+}
+
+void NeoTranslateDlg::hideEvent(QHideEvent *event)
+{
+  bool save = false;
+  if (m_LastPostion != pos()) {
+    if (m_Settings[u8"AutoMove"].isFalse()) {
+      m_LastPostion = pos();
+      m_Settings[u8"Position"] = YJson::A {
+        m_LastPostion.x(),
+        m_LastPostion.y(),
+      };
+      save = true;
+    }
+  }
+  if (m_LastSize != size()) {
+    if (m_Settings[u8"AutoSize"].isFalse()) {
+      m_LastSize = size();
+      m_Settings[u8"Size"] = YJson::A {
+        m_LastSize.width(), m_LastSize.height()
+      };
+      save = true;
+    }
+  }
+  if (save) mgr->SaveSettings();
+  event->accept();
 }
 
 bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {

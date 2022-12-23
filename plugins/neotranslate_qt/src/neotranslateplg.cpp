@@ -68,6 +68,7 @@ void NeoTranslatePlg::InitFunctionMap() {
         if (event == PluginEvent::Bool) {
           m_Settings[u8"AutoTranslate"] = *reinterpret_cast<bool*>(data);
           mgr->SaveSettings();
+          glb->glbShowMsg("设置成功");
         } else if (event == PluginEvent::BoolGet) {
           *reinterpret_cast<bool*>(data) = m_Settings[u8"AutoTranslate"].isTrue();
         }
@@ -78,8 +79,31 @@ void NeoTranslatePlg::InitFunctionMap() {
         if (event == PluginEvent::Bool) {
           m_Settings[u8"ReadClipboard"] =  *reinterpret_cast<bool*>(data);
           mgr->SaveSettings();
-        } else if (event == PluginEvent::Bool) {
+          glb->glbShowMsg("设置成功");
+        } else if (event == PluginEvent::BoolGet) {
           *reinterpret_cast<bool*>(data) = m_Settings[u8"ReadClipboard"].isTrue();
+        }
+      }, PluginEvent::Bool}
+    },
+    {u8"enableAutoMove",
+      {u8"吸附窗口", u8"自动吸附窗口贴近网速悬浮窗", [this](PluginEvent event, void* data) {
+        if (event == PluginEvent::Bool) {
+          m_Settings[u8"AutoMove"] =  *reinterpret_cast<bool*>(data);
+          mgr->SaveSettings();
+          glb->glbShowMsg("设置成功");
+        } else if (event == PluginEvent::BoolGet) {
+          *reinterpret_cast<bool*>(data) = m_Settings[u8"AutoMove"].isTrue();
+        }
+      }, PluginEvent::Bool}
+    },
+    {u8"enableAutoSize",
+      {u8"默认大小", u8"每次显示界面时调回默认大小", [this](PluginEvent event, void* data) {
+        if (event == PluginEvent::Bool) {
+          m_Settings[u8"AutoSize"] =  *reinterpret_cast<bool*>(data);
+          mgr->SaveSettings();
+          glb->glbShowMsg("设置成功");
+        } else if (event == PluginEvent::BoolGet) {
+          *reinterpret_cast<bool*>(data) = m_Settings[u8"AutoSize"].isTrue();
         }
       }, PluginEvent::Bool}
     },
@@ -106,11 +130,28 @@ QAction* NeoTranslatePlg::InitMenuAction()
 
 YJson& NeoTranslatePlg::InitSettings(YJson& settings)
 {
-  if (settings.isObject()) return settings;
-  return settings = YJson::O {
-    { u8"Mode", 0 },
-    { u8"AutoTranslate", false },
-    { u8"ReadClipboard", false },
-  };
+  if (!settings.isObject()) {
+    return settings = YJson::O {
+      { u8"Version", 0},
+      { u8"Mode", 0 },
+      { u8"Size", YJson::A { 300, 500 }},
+      { u8"Pair", YJson::A {0, 0}},    // 语言组合
+      { u8"AutoTranslate", false },
+      { u8"ReadClipboard", false },
+      { u8"AutoMove",      true  },    // 自动移动悬浮窗
+      { u8"AutoSize",      true  },    // 自动移动悬浮窗
+      { u8"Position", YJson::A { 100, 100 }},
+    };
+  }
+  auto& version = settings[u8"Version"];
+  if (!version.isNumber()) {
+    version = 0;
+    settings[u8"Pair"] = YJson::A {0, 0};
+    settings[u8"AutoMove"] = true;
+    settings[u8"Position"] = YJson::A { 100, 100 };
+    settings[u8"Size"] = YJson::A { 300, 500 };
+    settings[u8"AutoSize"] = true;
+  }
+  return settings;
   // we may not need to call SaveSettings;
 }
