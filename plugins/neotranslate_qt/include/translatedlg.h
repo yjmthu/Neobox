@@ -16,7 +16,8 @@ class NeoTranslateDlg : public QWidget {
 
  private:
   class YJson& m_Settings;
-  class QTextEdit *m_TextFrom, *m_TextTo;
+  class QPlainTextEdit *m_TextFrom;
+  class QTextEdit *m_TextTo;
   class QComboBox *m_BoxFrom, *m_BoxTo;
   class Translate* m_Translate;
   class QPushButton *m_BtnCopyFrom, *m_BtnCopyTo;

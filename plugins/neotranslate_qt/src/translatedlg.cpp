@@ -12,6 +12,7 @@
 #include <QLabel>
 #include <QMenu>
 #include <QTextEdit>
+#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QTextBlock>
 #include <QVBoxLayout>
@@ -24,7 +25,7 @@ extern GlbObject* glb;
 NeoTranslateDlg::NeoTranslateDlg(YJson& settings)
     : QWidget(glb->glbGetMenu(), Qt::WindowStaysOnTopHint | Qt::Tool),
       m_Settings(settings),
-      m_TextFrom(new QTextEdit(this)),
+      m_TextFrom(new QPlainTextEdit(this)),
       m_TextTo(new QTextEdit(this)),
       m_BoxFrom(new QComboBox(this)),
       m_BoxTo(new QComboBox(this)),
@@ -153,7 +154,7 @@ void NeoTranslateDlg::hideEvent(QHideEvent *event)
 }
 
 bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
-  static bool bShiftDown = false, bCtrlDown = false;
+  // static bool bShiftDown = false, bCtrlDown = false;
   if (target == m_TextFrom || target == m_TextTo) {
     if (event->type() == QEvent::KeyPress) {
       auto const keyEvent = reinterpret_cast<QKeyEvent*>(event);
@@ -162,41 +163,27 @@ bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
           close();
           return true;
         case Qt::Key_Return: {
-          if (bCtrlDown || m_Translate->GetSource() == Translate::Youdao) {
+          if (keyEvent->modifiers() & Qt::ControlModifier) {
+            m_TextFrom->insertPlainText("\n");
+          } else {
             GetResultData();
-            return true;
           }
-          break;
+          return true;
         }
         case Qt::Key_Alt:
-          if (int i = m_BoxTo->currentIndex(); bShiftDown) {
+          if (int i = m_BoxTo->currentIndex(); keyEvent->modifiers() & Qt::ShiftModifier) {
             m_BoxTo->setCurrentIndex(i == 0 ? m_BoxTo->count() - 1 : --i);
           } else {
             m_BoxTo->setCurrentIndex(++i == m_BoxTo->count() ? 0 : i);
           }
           return true;
-        case Qt::Key_Shift:
-          bShiftDown = true;
-          return true;
-        case Qt::Key_Control:
-          bCtrlDown = true;
-          return true;
         case Qt::Key_M:
-          if (bCtrlDown) {
+          if (keyEvent->modifiers() & Qt::ControlModifier) {
             m_BtnTransMode->toggle();
             return true;
           }
         default:
           break;
-      }
-    } else if (event->type() == QEvent::KeyRelease) {
-      auto const keyEvent = reinterpret_cast<QKeyEvent*>(event);
-      if (keyEvent->key() == Qt::Key_Shift) {
-        bShiftDown = false;
-        return true;
-      } else if (keyEvent->key() == Qt::Key_Control) {
-        bCtrlDown = false;
-        return true;
       }
     } else if (event->type() == QEvent::Enter) {
       if (target == m_TextFrom) {

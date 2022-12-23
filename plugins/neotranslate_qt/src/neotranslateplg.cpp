@@ -3,7 +3,7 @@
 #include <yjson.h>
 
 #include <QMenu>
-#include <QTextEdit>
+#include <QPlainTextEdit>
 #include <QMimeData>
 #include <QDropEvent>
 
@@ -34,7 +34,7 @@ NeoTranslatePlg::NeoTranslatePlg(YJson& settings):
       if (mimeData->hasUrls() || !mimeData->hasText()) return;
       const QString text = mimeData->text();
       if (text.isEmpty() || text.isNull()) return;
-      auto const txtfrom = m_TranslateDlg->findChild<QTextEdit*>("neoTextFrom");
+      auto const txtfrom = m_TranslateDlg->findChild<QPlainTextEdit*>("neoTextFrom");
       txtfrom->setPlainText(text);
       m_TranslateDlg->show();
     }
@@ -43,7 +43,7 @@ NeoTranslatePlg::NeoTranslatePlg(YJson& settings):
     if (event == PluginEvent::U8string) {
       if (!data) return;
       const auto& str = *reinterpret_cast<std::u8string*>(data);
-      auto const txtfrom = m_TranslateDlg->findChild<QTextEdit*>("neoTextFrom");
+      auto const txtfrom = m_TranslateDlg->findChild<QPlainTextEdit*>("neoTextFrom");
       txtfrom->setPlainText(Utf82QString(str));
       m_TranslateDlg->show();
     }
