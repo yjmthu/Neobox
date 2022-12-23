@@ -1,6 +1,7 @@
 #include <bingapiex.h>
 #include <pluginobject.h>
 #include <yjson.h>
+#include <neoapp.h>
 
 #include <QInputDialog>
 #include <QDesktopServices>
@@ -56,10 +57,18 @@ void BingApiExMenu::LoadSettingMenu()
     m_CallBack(true);
   });
   connect(addAction("关于壁纸"), &QAction::triggered, this, [this]() {
-    size_t index = m_Data[u8"index"].getValueInt();
     const auto time = chrono::current_zone()->to_local(chrono::system_clock::now() - 24h);
     std::string curDate = std::format("&filters=HpDate:\"{0:%Y%m%d}_1600\"", time);
-    std::u8string link = m_Data[u8"images"][index][u8"copyrightlink"].getValueString();
+    auto const& copyrightlink = m_Data[u8"copyrightlink"];
+    if (!copyrightlink.isString()) {
+      glb->glbShowMsg("找不到当前图片信息！");
+      return;
+    }
+    std::u8string link = copyrightlink.getValueString();
+    if (link.empty()) {
+      glb->glbShowMsg("找不到当前图片信息！");
+      return;
+    }
     link.append(curDate.cbegin(), curDate.cend());
     QDesktopServices::openUrl(QString::fromUtf8(link.data(), link.size()));
   });

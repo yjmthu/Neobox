@@ -29,6 +29,9 @@ BingApi::~BingApi()
 
 YJson& BingApi::InitSetting(YJson& setting) {
   if (setting.isObject()) {
+    auto& copyrightlink = setting[u8"copyrightlink"];
+    if (!copyrightlink.isString())
+      copyrightlink = YJson::String;
     return setting;
   }
   auto const initDir = GetStantardDir(u8"必应壁纸");
@@ -40,7 +43,7 @@ YJson& BingApi::InitSetting(YJson& setting) {
       { u8"name-format"sv, u8"{0:%Y-%m-%d} {1}.jpg" },
       { u8"region"sv, u8"zh-CN" },
       { u8"auto-download"sv, false },
-      { u8"index"sv, 0}
+      { u8"copyrightlink"sv, YJson::String}
     }
   };
   SaveSetting();
@@ -106,10 +109,11 @@ ImageInfoEx BingApi::GetNext() {
     return ptr;
   }
 
-  m_Setting[u8"index"].getValueDouble() = s_uCurImgIndex;
   auto& imgInfo = m_Data->find(u8"images")->second[s_uCurImgIndex];
+  m_Setting[u8"copyrightlink"] = imgInfo[u8"copyrightlink"];
   ptr->ImagePath = (imgDir / GetImageName(imgInfo)).u8string();
   ptr->ImageUrl = m_Setting[u8"api"].getValueString() + imgInfo[u8"urlbase"].getValueString() + u8"_UHD.jpg";
+  SaveSetting();
 
   ++s_uCurImgIndex &= 0x07;
   ptr->ErrorCode = ImageInfo::NoErr;

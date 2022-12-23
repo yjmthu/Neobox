@@ -9,7 +9,10 @@ set(CMAKE_INSTALL_PREFIX "install")
 # https://zhuanlan.zhihu.com/p/429849408
 # set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:DebugDLL>")
 
-project(Neobox VERSION 2.2.1 LANGUAGES CXX C)
+project(Neobox VERSION 2.3.0 LANGUAGES CXX C)
+
+string(TIMESTAMP COMPILE_TIME %Y-%m-%d)
+set(NEOBOX_BUILD_TIME ${COMPILE_TIME})
 
 list(APPEND CMAKE_PREFIX_PATH "C:/Qt/6.4.1/msvc2019_64")
 

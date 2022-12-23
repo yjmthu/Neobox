@@ -78,11 +78,15 @@ QAction* NeoSystemPlg::LoadMainMenuAction()
 {
   auto names = {u8"shutdownComputer", u8"restartComputer", u8"suspendedComputer"};
 
-  m_MainMenuAction = new QAction("快捷功能");
+  m_MainMenuAction = new QAction("系统控制");
   auto const menu = new QMenu(m_MainMenu);
   menu->setAttribute(Qt::WA_TranslucentBackground, true);
   menu->setToolTipsVisible(true);
   m_MainMenuAction->setMenu(menu);
+
+  auto actions = m_MainMenu->actions();
+  auto iter = std::find_if(actions.begin(), actions.end(), [](QAction* action){ return action->text() == "防止息屏"; });
+  if (iter != actions.end()) menu->addAction(*iter);
 
   for (const auto& name: names) {
     const auto& info = m_PluginMethod[name];

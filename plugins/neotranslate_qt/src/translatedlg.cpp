@@ -164,7 +164,10 @@ bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
           return true;
         case Qt::Key_Return: {
           if (keyEvent->modifiers() & Qt::ControlModifier) {
-            m_TextFrom->insertPlainText("\n");
+            if (target == m_TextFrom)
+              m_TextFrom->insertPlainText("\n");
+            else if (target == m_TextTo)
+              m_TextTo->insertPlainText("\n");
           } else {
             GetResultData();
           }

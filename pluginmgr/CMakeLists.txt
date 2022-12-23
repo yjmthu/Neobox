@@ -3,6 +3,10 @@ cmake_minimum_required(VERSION 3.10.1)
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui)
 qt_standard_project_setup()
 
+configure_file(
+  src/config.h.in include/config.h
+)
+
 file(GLOB source_files src/*.cpp widgets/*.cpp)
 file(GLOB _resource_files fonts/*.ttf  icons/*  jsons/*.json scripts/* styles/*)
 

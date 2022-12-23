@@ -17,6 +17,7 @@
 #include <QVBoxLayout>
 #include <QDesktopServices>
 
+#if 0
 namespace NeoGetDateTime {
   template<const char* _Str, int _Index>
   struct Month {
@@ -45,6 +46,7 @@ namespace NeoGetDateTime {
 
   constexpr int MonthValue = Month<szMonths, 0>::Value();
 }
+#endif
 
 VersionDlg::VersionDlg():
   QDialog(nullptr)
@@ -78,9 +80,8 @@ VersionDlg::~VersionDlg()
 
 void VersionDlg::LoadJson()
 {
-  const auto name = std::format("<h2>当前版本</h2>Neobox {}.{} {} <br> 发布日期：{:04d}-{:02d}-{:02d}<br>{}",
-    NEOBOX_VERSION_MAJOR, NEOBOX_VERSION_MINOR, NEOBOX_BETA,
-    NeoGetDateTime::YearValue, NeoGetDateTime::MonthValue, NeoGetDateTime::DateValue, NEOBOX_COPYRIGHT);
+  const auto name = std::format("<h2>当前版本</h2>Neobox {} {} <br> 发布日期：{}<br>{}",
+    NEOBOX_VERSION, NEOBOX_BUILD_TYPE, NEOBOX_BUILD_TIME, NEOBOX_COPYRIGHT);
   m_text->setText(QString::fromUtf8(name.data(), name.size()));
 }
 
@@ -88,7 +89,7 @@ void VersionDlg::Connect()
 {
   connect(m_btnCls, &QPushButton::clicked, this, &QWidget::close);
   connect(m_btnWeb, &QPushButton::clicked, this,
-    std::bind(QDesktopServices::openUrl, QUrl(NEOBOX_WEBSITE)));
+    std::bind(QDesktopServices::openUrl, QUrl(NEOBOX_WEBSITE_URL)));
   connect(m_btnChk, &QPushButton::clicked, this, &VersionDlg::GetUpdate);
 }
 
@@ -98,7 +99,7 @@ void VersionDlg::GetUpdate()
     QMessageBox::information(this, "提示", "当前没有网络，请稍后再试！");
     return;
   }
-  HttpLib clt(std::string(NEOBOX_LATEST));
+  HttpLib clt(std::string(NEOBOX_LATEST_URL));
   clt.SetHeader("User-Agent", "Libcurl in Neobox App/1.0");
   auto res = clt.Get();
   if (200 != res->status)
