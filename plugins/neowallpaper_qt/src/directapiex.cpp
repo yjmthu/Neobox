@@ -47,6 +47,8 @@ void DirectApiExMenu::LoadSubSettingMenu(QAction* action)
   QMenu* subMenu = new QMenu(this);
   action->setMenu(subMenu);
 
+  auto u8ViewName = PluginObject::QString2Utf8(action->text());
+
   connect(subMenu->addAction("修改名称"),
     &QAction::triggered, this, std::bind(&DirectApiExMenu::RenameApi, this, action));
 
@@ -85,7 +87,53 @@ void DirectApiExMenu::LoadSubSettingMenu(QAction* action)
       });
   }
 
-  connect(subMenu->addAction("路径编辑"), &QAction::triggered, this, std::bind(&DirectApiExMenu::EditApi, this, action));
+  connect(subMenu->addAction("域名编辑"), &QAction::triggered, this, [this, u8ViewName](){
+    auto& u8CurDomain = m_Data[u8"ApiData"][u8ViewName][u8"Url"].getValueString();
+    auto const qCurDomain = PluginObject::Utf82QString(u8CurDomain);
+
+    const auto qNewDomain = QInputDialog::getText(this,
+      QStringLiteral("文字输入"),
+      QStringLiteral("请输入新域名"),
+      QLineEdit::Normal, qCurDomain
+    );
+    if (qNewDomain.isEmpty() || qCurDomain == qNewDomain) {
+      glb->glbShowMsg("取消成功");
+      return;
+    }
+
+    u8CurDomain = PluginObject::QString2Utf8(qNewDomain);
+    if (u8CurDomain.ends_with(u8"/")) {
+      u8CurDomain.pop_back();
+    }
+    glb->glbShowMsg("设置成功");
+    m_CallBack(true);
+  });
+
+  connect(subMenu->addAction("网址编辑"), &QAction::triggered, this, std::bind(&DirectApiExMenu::EditApi, this, action));
+
+  connect(subMenu->addAction("存储路径"), &QAction::triggered, this, [this, u8ViewName]() {
+    auto& u8CurDir = m_Data[u8"ApiData"][u8ViewName][u8"Directory"].getValueString();
+    auto const qNewDir = QFileDialog::getExistingDirectory(
+      glb->glbGetMenu(),
+      QStringLiteral("选择存储壁纸的文件夹"),
+      PluginObject::Utf82QString(u8CurDir)
+    );
+    if(qNewDir.isEmpty()) {
+      glb->glbShowMsg("取消成功");
+      return;
+    }
+    fs::path path = qNewDir.toStdU16String();
+    path.make_preferred();
+    
+    if (path.u8string() == u8CurDir) {
+      glb->glbShowMsg("取消成功");
+      return;
+    }
+    u8CurDir = path.u8string();
+    glb->glbShowMsg("设置成功");
+    m_CallBack(true);
+  });
+
   subMenu->addSeparator();
   LoadPaths(subMenu, viewName);
 }

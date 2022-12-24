@@ -341,13 +341,39 @@ bool Wallpaper::ClearJunk() {
 }
 
 bool Wallpaper::SetFavorite() {
-  m_Favorites->UndoDislike(m_CurImage.u8string());
-  return true;
+  if (m_Wallpaper != m_Favorites) {
+    m_Favorites->UndoDislike(m_CurImage.u8string());
+    return true;
+  } else {
+    return true;
+  }
 }
 
 bool Wallpaper::UnSetFavorite() {
-  m_Favorites->Dislike(m_CurImage.u8string());
-  return true;
+  if (m_Wallpaper != m_Favorites) {
+    m_Favorites->Dislike(m_CurImage.u8string());
+    return true;
+  } else {
+    if (m_NextImgs.empty()) {
+      if (!SetNext())
+        return false;
+      m_Wallpaper->Dislike(m_PrevImgs.back().u8string());
+      m_PrevImgs.pop_back();
+      return true;
+    } else {
+      if (SetWallpaper(m_NextImgs.top())) {
+        m_Wallpaper->Dislike(m_CurImage.u8string());
+        m_CurImage = m_NextImgs.top();
+        m_CurImage.make_preferred();
+        m_NextImgs.pop();
+        return true;
+      } else {
+        m_NextImgs.pop();
+        return SetFavorite();
+      }
+    }
+    return true;
+  }
 }
 
 const std::wstring Wallpaper::m_ImgNamePattern = L".*\\.(jpg|bmp|gif|jpeg|png)$";

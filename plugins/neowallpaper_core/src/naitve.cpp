@@ -76,7 +76,8 @@ size_t Native::GetFileCount() {
   return m_iCount;
 }
 
-bool Native::GetFileList() {
+bool Native::GetFileList()
+{
   size_t m_Toltal = GetFileCount(), m_Index = 0;
   if (!m_Toltal)
     return false;

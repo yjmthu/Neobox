@@ -13,6 +13,8 @@
 #include <QEventLoop>
 #include <QFileDialog>
 #include <QPlainTextEdit>
+#include <QApplication>
+#include <QClipboard>
 #include <QImage>
 #include <QDropEvent>
 #include <QMimeData>
@@ -73,7 +75,13 @@ void NeoOcrPlg::InitFunctionMap() {
         if (!box->HaveCatchImage())
           return;
         auto str = m_Ocr->GetText(QImage2Pix(image));
-        SendBroadcast(PluginEvent::U8string, &str);
+        if (m_Settings[u8"WriteClipboard"].isTrue()) {
+          QApplication::clipboard()->setText(Utf82QString(str));
+          glb->glbShowMsg("复制数据成功");
+        }
+        if (m_Settings[u8"ShowWindow"].isTrue()) {
+          SendBroadcast(PluginEvent::U8string, &str);
+        }
       }, PluginEvent::Void},
     },
     {u8"setDataDir",
@@ -106,7 +114,29 @@ void NeoOcrPlg::InitFunctionMap() {
         ChooseLanguages();
       },
       PluginEvent::Void}
-    }
+    },
+    {u8"enableWriteClipboard",
+      {u8"复制文字", u8"复制文字到剪切板", [this](PluginEvent event, void* data) {
+        if (event == PluginEvent::Bool) {
+          m_Settings[u8"WriteClipboard"] =  *reinterpret_cast<bool*>(data);
+          mgr->SaveSettings();
+          glb->glbShowMsg("设置成功");
+        } else if (event == PluginEvent::BoolGet) {
+          *reinterpret_cast<bool*>(data) = m_Settings[u8"WriteClipboard"].isTrue();
+        }
+      }, PluginEvent::Bool}
+    },
+    {u8"enableShowWindow",
+      {u8"显示窗口", u8"唤起极简翻译窗口", [this](PluginEvent event, void* data) {
+        if (event == PluginEvent::Bool) {
+          m_Settings[u8"ShowWindow"] =  *reinterpret_cast<bool*>(data);
+          mgr->SaveSettings();
+          glb->glbShowMsg("设置成功");
+        } else if (event == PluginEvent::BoolGet) {
+          *reinterpret_cast<bool*>(data) = m_Settings[u8"ShowWindow"].isTrue();
+        }
+      }, PluginEvent::Bool}
+    },
   };
 
   m_Following.push_back({u8"neospeedboxplg", [this](PluginEvent event, void* data){
@@ -152,11 +182,22 @@ QAction* NeoOcrPlg::InitMenuAction()
 
 YJson& NeoOcrPlg::InitSettings(YJson& settings)
 {
-  if (settings.isObject()) return settings;
-  return settings = YJson::O {
-    { u8"TessdataDir", u8"tessdata" },
-    { u8"Languages", YJson::A { u8"chi_sim", u8"eng" } },
-  };
+  if (!settings.isObject()) {
+    return settings = YJson::O {
+      { u8"TessdataDir", u8"tessdata" },
+      { u8"Languages", YJson::A { u8"chi_sim", u8"eng" } },
+      { u8"WriteClipboard", false },
+      { u8"ShowWindow", true },
+      { u8"Version", 0},
+    };
+  }
+  auto& version = settings[u8"Version"];
+  if (!version.isNumber()) {
+    version = 0;
+    settings[u8"WriteClipboard"] = false;
+    settings[u8"ShowWindow"] = true;
+  }
+  return settings;
   // we may not need to call SaveSettings;
 }
 

@@ -275,9 +275,9 @@ void HttpLib::HttpPerform()
                           &dwSize, WINHTTP_NO_HEADER_INDEX);
 
     // Allocate memory for the buffer.
-    if(GetLastError( ) == ERROR_INSUFFICIENT_BUFFER)
+    if(GetLastError() == ERROR_INSUFFICIENT_BUFFER)
     {
-      auto lpOutBuffer = new WCHAR[dwSize/sizeof(WCHAR)];
+      auto const lpOutBuffer = new WCHAR[dwSize/sizeof(WCHAR)];
 
       // Now, use WinHttpQueryHeaders to retrieve the header.
       bResults = WinHttpQueryHeaders(m_hRequest,
@@ -285,13 +285,19 @@ void HttpLib::HttpPerform()
                                   WINHTTP_HEADER_NAME_BY_INDEX,
                                   lpOutBuffer, &dwSize,
                                   WINHTTP_NO_HEADER_INDEX);
+
       if (bResults) { // regex expr: '/^([^:]+):([^\n]+)/'
-        std::wistringstream strstream(bResults);
-        std::wstring buffer;
-        while (strstream >> buffer) {
-          const auto str = Wide2AnsiString(buffer);
-          const auto pos = str.find(':');
-          m_Response.headers[str.substr(0, pos)] = str.substr(pos+1);
+        std::istringstream strstream(Wide2AnsiString(lpOutBuffer));
+        std::string buffer;
+        if (std::getline(strstream, buffer)) {
+          auto const pos = buffer.find(' ');
+          m_Response.version = buffer.substr(0, pos);
+        }
+        while (std::getline(strstream, buffer)) {
+          // const auto str = Wide2AnsiString(buffer);
+          const auto left = buffer.find(':'), right = buffer.find('\r', left);
+          if (left == buffer.npos || right == buffer.npos) continue;
+          m_Response.headers[buffer.substr(0, left)] = buffer.substr(left + 1, right - left - 1);
         }
       }
 

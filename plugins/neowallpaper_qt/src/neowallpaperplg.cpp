@@ -2,6 +2,7 @@
 #include <bingapiex.h>
 #include <directapiex.h>
 #include <nativeex.h>
+#include <favoriteex.h>
 #include <scriptex.h>
 #include <neowallpaperplg.h>
 #include <wallpaper.h>
@@ -373,5 +374,9 @@ QMenu* NeoWallpaperPlg::LoadScriptMenu(QMenu* parent)
 
 QMenu* NeoWallpaperPlg::LoadFavoriteMenu(QMenu* parent)
 {
-  return new QMenu(parent);
+  return new FavoriteExMenu(
+    m_Wallpaper->m_Wallpaper->m_Setting,
+    parent,
+    std::bind(&WallBase::SetJson, m_Wallpaper->m_Wallpaper, std::placeholders::_1)
+  );
 }
