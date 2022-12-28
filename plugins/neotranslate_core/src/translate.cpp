@@ -25,7 +25,7 @@ std::u8string Truncate(std::u8string q) {
   while (ptr < stop) {
     string.push_back(ptr);
     if (*ptr < 0x80) {
-      ++ptr;
+      ptr += 1;
     } else if (*ptr < 0xE0) {
       ptr += 2;
     } else if (*ptr < 0xF0) {
@@ -261,7 +261,7 @@ void Translate::FormatYoudaoResult(std::u8string& result, const YJson& data) {
         buffer.append("; "s);
       }
       buffer.erase(buffer.size() - 2);
-      html.append(std::format("<p>- 释义：{}</p><hr/>", buffer));
+      html.append(std::format("<ul><li>释义：{}</li></ul><hr/>", buffer));
     }
   } else {
     if (!l.compare(0, 6, u8"zh-CNS")) {
