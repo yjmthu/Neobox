@@ -93,7 +93,7 @@ bool NeoMenu::IsAutoStart()
 {
   wchar_t pPath[] =
       L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
-  return GetExeFullPath() ==
+  return std::format(L"\"{}\"", GetExeFullPath()) ==
           RegReadString(HKEY_CURRENT_USER, pPath, L"Neobox");
 }
 
@@ -102,7 +102,7 @@ void NeoMenu::SetAutoSatrt(QAction* action, bool on)
   wchar_t pPath[] =
       L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
   wchar_t pAppName[] = L"Neobox";
-  std::wstring wsThisPath = GetExeFullPath();
+  std::wstring wsThisPath = std::format(L"\"{}\"", GetExeFullPath());
   std::wstring wsThatPath =
       RegReadString(HKEY_CURRENT_USER, pPath, pAppName);
   if (wsThatPath != wsThisPath) {

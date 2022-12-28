@@ -13,7 +13,7 @@
 
 - Qt6和C++20写的一个插件管理工具。安装相关插件后可获取网速显示、壁纸切换、文本翻译、文字识别、天气预报等任何功能。
 
-## Neobox 插件
+## Neobox 插件管理
 
 目前 Neobox 共有6款插件，源代码在 `plugins` 目录下。插件二进制文件可在 [![Gitlab](https://img.shields.io/badge/Gitlab-yellow.svg?logo=gitlab)](https://gitlab.com/yjmthu1/neoboxplg) 中查看。
 
@@ -25,8 +25,10 @@
 
 ![Neobox 插件](https://cloud.tsinghua.edu.cn/f/c5b662d65cf2474d94c5/?dl=1)
 
-<details>
-<summary>网速悬浮插件</summary>
+## 插件详情
+
+<details open="open">
+<summary style="font-size:17pt;">网速悬浮插件</summary>
 
 功能：网速、内存、CPU占用显示。
 
@@ -45,7 +47,7 @@
 </details>
 
 <details>
-<summary>壁纸引擎插件</summary>
+<summary style="font-size:17pt;">壁纸引擎插件</summary>
 
 + 手动切换、定时切换、收藏夹、黑名单
 + 网络壁纸源
@@ -76,7 +78,7 @@
 
 
 <details>
-<summary>极简翻译插件</summary>
+<summary style="font-size:17pt;">极简翻译插件</summary>
 
 - 简介：普通模式调用百度翻译Api，查词模式调用有道翻译Api。
 
@@ -98,7 +100,7 @@
 </details>
 
 <details>
-<summary>文字识别插件</summary>
+<summary style="font-size:17pt;">文字识别插件</summary>
 
 - 简介：截图识别多种语言文字，需要自行下载相应语言的训练数据。目前依赖于极简翻译插件来输出识别结果。
 
@@ -116,7 +118,7 @@
 </details>
 
 <details>
-<summary>系统控制插件</summary>
+<summary style="font-size:17pt;">系统控制插件</summary>
 
 - 简介：提供防止息屏、右键复制、快速关机、重启、睡眠等功能。
 
@@ -125,7 +127,7 @@
 </details>
 
 <details>
-<summary>热键管理插件</summary>
+<summary style="font-size:17pt;">热键管理插件</summary>
 
 - 简介：注册并捕获系统全局热键，并将结果发送至相应插件。至于插件具体作何反应与此插件无关。
 
@@ -140,16 +142,6 @@
 
 </details>
 
-## 插件开发计划
-
-> 这是我目前打算新开发的插件，如果有什么建议或者想参与插件开发，可以联系我。
-
-1. 颜色拾取（PowerToys已具备，但为了跨平台还是先简单写一个吧）
-2. 天气预报
-3. 动态壁纸
-4. U盘助手
-5. 任务栏网速
-
 ## 编译环境
 
 - `Windows10+ x86_64`
@@ -162,7 +154,23 @@
     - 更换系统后未曾尝试编译（待 GCC13 发布后再考虑用arch写linux部分代码）
 
 
-## 开发进度
+## 现有功能增强方向
 
-1. 完善自定义皮肤功能，考虑使用 `Lua` 语言来编写动画；
-2. 逐步增加wxWidgets部分的代码，最终取代qt。
+<!-- 1. 完善自定义皮肤功能，考虑使用 `Lua` 语言来编写动画；
+2. 逐步增加wxWidgets部分的代码，最终取代qt。 -->
+
+- [ ] 文字识别模仿微信加强，可在图片上选中文字；
+- [ ] 尽量解决网速悬浮窗的闪退情况；
+- [ ] 插件更新功能完善，可离线管理插件、调整插件顺序；
+- [ ] 热键管理加强，增加热键执行命令功能；
+- [ ] 翻译功能记住from，to语言。
+
+## 插件开发计划
+
+> 这是我目前打算新开发的插件，如果有什么建议或者想参与插件开发，可以联系我。
+
+- [ ] 颜色拾取（PowerToys已具备，但为了跨平台还是先简单写一个吧）
+- [ ] 天气预报
+- [ ] 动态壁纸
+- [ ] U盘助手
+- [ ] 任务栏网速

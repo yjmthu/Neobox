@@ -21,6 +21,9 @@ NeoSystemPlg::NeoSystemPlg(YJson& settings):
 
 NeoSystemPlg::~NeoSystemPlg()
 {
+  if (m_Settings[u8"StopSleep"].isTrue()) {
+    SetThreadExecutionState(ES_CONTINUOUS);
+  }
   delete m_MainMenuAction;
 }
 
@@ -60,14 +63,21 @@ void NeoSystemPlg::InitFunctionMap() {
       {u8"防止息屏", u8"防止电脑自动锁屏或休眠", [this](PluginEvent event, void* data){
         if (event == PluginEvent::Bool) {
           auto const on = *reinterpret_cast<bool *>(data);
-          SetThreadExecutionState(on ?
-              (ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED) :
-              ES_CONTINUOUS
-          );
+          if (on) {
+            SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED);
+            glb->glbShowMsg("开启成功");
+          } else {
+            SetThreadExecutionState(ES_CONTINUOUS);
+            glb->glbShowMsg("关闭成功");
+          }
           m_Settings[u8"StopSleep"] = on;
           mgr->SaveSettings();
         } else if (event == PluginEvent::BoolGet) {
-          *reinterpret_cast<bool *>(data) = m_Settings[u8"StopSleep"].isTrue();
+          auto& on = *reinterpret_cast<bool *>(data);
+          on = m_Settings[u8"StopSleep"].isTrue();
+          if (on) {
+            SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED);
+          }
         }
       }, PluginEvent::Bool}
     },

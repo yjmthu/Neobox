@@ -256,7 +256,7 @@ bool Wallpaper::SetNext() {
       }
       if (SetWallpaper(newName)) {
         m_PrevImgs.push_back(m_CurImage);
-        m_CurImage = newName;
+        m_CurImage = std::move(newName);
         return true;
       }
     } else if (!m_NextImgsBuffer.empty()) {

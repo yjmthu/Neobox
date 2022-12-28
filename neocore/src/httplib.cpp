@@ -174,6 +174,7 @@ void HttpLib::SetPostData(void *data, size_t size)
   m_PostData.size = size;
 }
 
+// https://blog.csdn.net/kaola518/article/details/84065621
 bool HttpLib::SendRequestData()
 {
   if (m_PostData.data) {
