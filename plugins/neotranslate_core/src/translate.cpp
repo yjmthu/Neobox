@@ -19,10 +19,33 @@ inline std::u8string GetTimeStamp() {
   return std::u8string(msCount.begin(), msCount.end());
 }
 
-inline std::u8string Truncate(std::u8string q) {
-  if (q.size() > 20) {
-    std::string result = std::to_string(q.size());
-    q.replace(q.begin() + 10, q.end() - 10, result.begin(), result.end());
+std::u8string Truncate(std::u8string q) {
+  std::vector<char8_t const*> string;
+  char8_t const* start = q.data(), *ptr = start, *stop = start + q.size();
+  while (ptr < stop) {
+    string.push_back(ptr);
+    if (*ptr < 0x80) {
+      ++ptr;
+    } else if (*ptr < 0xE0) {
+      ptr += 2;
+    } else if (*ptr < 0xF0) {
+      ptr += 3;
+    } else if (*ptr < 0xF8) {
+      ptr += 4;
+    } else if (*ptr < 0xFC) {
+      ptr += 5;
+    } else if (*ptr < 0xFE) {
+      ptr += 6;
+    } else {  // never
+      ptr += 7;
+    }
+  }
+  if (string.size() > 20) {
+    std::string result = std::to_string(string.size());
+    q.replace(string[10] - start + q.begin(),
+      string[string.size() - 10] - start + q.begin(),
+      result.begin(), result.end()
+    );
   }
   return q;
 }
@@ -205,8 +228,9 @@ std::u8string Translate::GetResultYoudao(const std::u8string& text) {
   auto res = clt.Get();
   if (res->status == 200 || res->status == 201) {
     YJson jsData(res->body.begin(), res->body.end());
-    if (jsData[u8"errorCode"].getValueString() != u8"0") {
-      return jsData[u8"errorCode"].getValueString();
+    auto const& err = jsData[u8"errorCode"].getValueString();
+    if (err != u8"0") {
+      return err;
     }
     FormatYoudaoResult(content, jsData);
     return content;
