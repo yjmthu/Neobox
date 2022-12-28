@@ -42,7 +42,7 @@
 
 ![](https://cloud.tsinghua.edu.cn/f/a018b6be4f5e41498500/?dl=1)
 
-> 你可以使用内置的这几种皮肤，也可以自己创建一个独特的皮肤。皮肤相关 [![GitHub issue/pull request detail](https://img.shields.io/github/issues/detail/state/yjmthu/Neobox/5)](https://github.com/yjmthu/Neobox/issues/5)
+> 你可以使用内置的这几种皮肤，也可以自己创建一个独特的皮肤。皮肤相关问题 [![GitHub issue/pull request detail](https://img.shields.io/github/issues/detail/state/yjmthu/Neobox/5)](https://github.com/yjmthu/Neobox/issues/5)
 
 </details>
 
@@ -113,7 +113,7 @@
 | 热键信号 | 文字识别截屏 |
 | <kbd>esc</kbd> | 退出截屏 |
 
-> 技巧：按住鼠标中键可移动选框。
+> 技巧： 1. 如果只需要识别简体中文和英文，选择 `chi_sim` 即可，选的语言种类越多识别可能 **越不准确** 。2. 截屏时，按住鼠标中键可移动选框。
 
 </details>
 
