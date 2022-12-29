@@ -47,11 +47,13 @@ void ScreenFetch::mouseReleaseEvent(QMouseEvent* event) {
     if (m_bFirstClicked == 2) {
       if (hasMouseTracking())
         setMouseTracking(false);
-      QImage temp = m_PixMap.toImage();
-      double kx = static_cast<double>(temp.width()) / width();
-      double ky = static_cast<double>(temp.height()) / height();
-      m_Image = temp.copy(m_LeftTop.x() * kx, m_LeftTop.y() * ky,
-                          m_RectSize.x() * kx, m_RectSize.y() * ky);
+      auto temp = m_PixMap.toImage();
+      auto const kx = static_cast<float>(temp.width()) / width();
+      auto const ky = static_cast<float>(temp.height()) / height();
+      auto const x = std::min(m_LeftTop.x() + m_RectSize.x(), m_LeftTop.x());
+      auto const y = std::min(m_LeftTop.y() + m_RectSize.y(), m_LeftTop.y());
+      auto const w = std::abs(m_RectSize.x()), h = std::abs(m_RectSize.y());
+      m_Image = temp.copy(x * kx, y * ky, w * kx, h * ky);
       m_bHaveCatchImage = true;
       close();
     }

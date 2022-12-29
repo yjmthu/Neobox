@@ -66,22 +66,22 @@ void NeoTranslatePlg::InitFunctionMap() {
     {u8"enableReadClipboard",
       {u8"读剪切板", u8"打开界面自动读取剪切板内容到From区", [this](PluginEvent event, void* data) {
         if (event == PluginEvent::Bool) {
-          m_Settings[u8"AutoTranslate"] = *reinterpret_cast<bool*>(data);
+          m_Settings[u8"ReadClipboard"] = *reinterpret_cast<bool*>(data);
           mgr->SaveSettings();
           glb->glbShowMsg("设置成功");
         } else if (event == PluginEvent::BoolGet) {
-          *reinterpret_cast<bool*>(data) = m_Settings[u8"AutoTranslate"].isTrue();
+          *reinterpret_cast<bool*>(data) = m_Settings[u8"ReadClipboard"].isTrue();
         }
       }, PluginEvent::Bool}
     },
     {u8"enableAutoTranslate",
       {u8"自动翻译", u8"打开界面自动翻译From区内容", [this](PluginEvent event, void* data) {
         if (event == PluginEvent::Bool) {
-          m_Settings[u8"ReadClipboard"] =  *reinterpret_cast<bool*>(data);
+          m_Settings[u8"AutoTranslate"] =  *reinterpret_cast<bool*>(data);
           mgr->SaveSettings();
           glb->glbShowMsg("设置成功");
         } else if (event == PluginEvent::BoolGet) {
-          *reinterpret_cast<bool*>(data) = m_Settings[u8"ReadClipboard"].isTrue();
+          *reinterpret_cast<bool*>(data) = m_Settings[u8"AutoTranslate"].isTrue();
         }
       }, PluginEvent::Bool}
     },

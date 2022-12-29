@@ -25,24 +25,9 @@ inline std::u8string GetTimeStamp() {
 
 std::u8string Truncate(std::u8string q) {
   std::vector<char8_t const*> string;
-  char8_t const* start = q.data(), *ptr = start, *stop = start + q.size();
-  while (ptr < stop) {
-    string.push_back(ptr);
-    if (*ptr < 0x80) {
-      ptr += 1;
-    } else if (*ptr < 0xE0) {
-      ptr += 2;
-    } else if (*ptr < 0xF0) {
-      ptr += 3;
-    } else if (*ptr < 0xF8) {
-      ptr += 4;
-    } else if (*ptr < 0xFC) {
-      ptr += 5;
-    } else if (*ptr < 0xFE) {
-      ptr += 6;
-    } else {  // never
-      ptr += 7;
-    }
+  char8_t const* start = q.data(), *stop = start + q.size();
+  for (auto ptr = start; ptr != stop; ++ptr) {
+    if (*ptr >> 6 != 2) string.push_back(ptr);
   }
   if (string.size() > 20) {
     std::string result = std::to_string(string.size());
@@ -341,11 +326,11 @@ void Translate::FormatYoudaoResult(std::u8string& result, const YJson& data) {
 
   // 翻译结果
   if (auto const& translation = data[u8"translation"]; translation.isArray() && !translation.emptyA()) {
-    html << "<h5>翻译结果</h5><li><ul>";
+    html << "<h5>翻译结果</h5><ul>";
     for (auto const& i : translation.getArray()) {
-      html << i.getValueString() << "; ";
+      html << "<li>" << i.getValueString() << "</li>";
     }
-    html << "</ul></li><hr/>";
+    html << "</ul><hr/>";
   }
 
   // html << "<br>" << l;
