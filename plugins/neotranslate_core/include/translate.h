@@ -27,7 +27,7 @@ public:
   ~Translate();
 
 public:
-  std::u8string GetResult(const std::u8string& text);
+  const std::u8string& GetResult(const std::u8string& text);
   void SetSource(Source dict);
   inline Source GetSource() const { return m_Source; }
 

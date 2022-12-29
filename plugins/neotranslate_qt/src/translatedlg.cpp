@@ -242,7 +242,7 @@ QWidget* NeoTranslateDlg::ReferenceObject() const
 void NeoTranslateDlg::GetResultData() {
   // m_Translate->m_LanPair = { m_BoxFrom->currentIndex(), m_BoxTo->currentIndex() };
 
-  auto result = m_Translate->GetResult(PluginObject::QString2Utf8(m_TextFrom->toPlainText()));
+  auto const& result = m_Translate->GetResult(PluginObject::QString2Utf8(m_TextFrom->toPlainText()));
   m_TextTo->clear();
   if (m_Translate->GetSource() == Translate::Baidu)
     m_TextTo->setPlainText(PluginObject::Utf82QString(result));
