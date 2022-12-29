@@ -24,6 +24,7 @@ class NeoTranslateDlg : public QWidget {
   class QPushButton* m_BtnTransMode;
   QPoint m_LastPostion;
   QSize m_LastSize;
+  bool m_LanPairChanged = false;
 private:
   void GetResultData();
   class QWidget* ReferenceObject() const;

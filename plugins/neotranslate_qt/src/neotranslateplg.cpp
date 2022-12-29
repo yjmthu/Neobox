@@ -135,7 +135,8 @@ YJson& NeoTranslatePlg::InitSettings(YJson& settings)
       { u8"Version", 0},
       { u8"Mode", 0 },
       { u8"Size", YJson::A { 300, 500 }},
-      { u8"Pair", YJson::A {0, 0}},    // 语言组合
+      { u8"PairBaidu", YJson::A {0, 0}},     // 语言组合
+      { u8"PairYoudao", YJson::A {0, 0}},    // 语言组合
       { u8"AutoTranslate", false },
       { u8"ReadClipboard", false },
       { u8"AutoMove",      true  },    // 自动移动悬浮窗
@@ -146,11 +147,15 @@ YJson& NeoTranslatePlg::InitSettings(YJson& settings)
   auto& version = settings[u8"Version"];
   if (!version.isNumber()) {
     version = 0;
-    settings[u8"Pair"] = YJson::A {0, 0};
     settings[u8"AutoMove"] = true;
     settings[u8"Position"] = YJson::A { 100, 100 };
     settings[u8"Size"] = YJson::A { 300, 500 };
     settings[u8"AutoSize"] = true;
+  }
+  if (version.getValueInt() == 0) {
+    version = 1;
+    settings[u8"PairBaidu"] = YJson::A {0, 0};
+    settings[u8"PairYoudao"] = YJson::A {0, 0};
   }
   return settings;
   // we may not need to call SaveSettings;

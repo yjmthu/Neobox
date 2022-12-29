@@ -4,7 +4,11 @@
 #include <iostream>
 
 int main() {
-  Translate tran;
+  YJson setting = YJson::O{
+    {u8"PairBaidu", YJson::A {0, 0}},
+    {u8"PairYoudao", YJson::A {0, 0}},
+  };
+  Translate tran(setting);
   SetConsoleOutputCP(65001);
   auto res = tran.GetResult(u8"翻译结果");
   if (!res.empty()) {
