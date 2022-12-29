@@ -36,6 +36,7 @@ NeoTranslateDlg::NeoTranslateDlg(YJson& settings)
   setWindowTitle("极简翻译");
   m_TextFrom->setObjectName("neoTextFrom");
   m_TextTo->setObjectName("neoTextTo");
+  m_TextTo->setReadOnly(true);
   m_TextFrom->setMinimumHeight(50);
   m_TextFrom->setMaximumHeight(50);
   auto const pvLayout = new QVBoxLayout(this);

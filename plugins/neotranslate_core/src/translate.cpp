@@ -260,8 +260,6 @@ void Translate::FormatYoudaoResult(std::u8string& result, const YJson& data) {
   }
   std::ostringstream html;
 
-  std::u8string l = data[u8"l"].getValueString();
-
   // 查询内容
   html << "<h3>" << data[u8"query"].getValueString();
 
@@ -269,23 +267,38 @@ void Translate::FormatYoudaoResult(std::u8string& result, const YJson& data) {
   if (auto basic = data[u8"basic"]; basic.isObject()) {
 
     // 获取读音
+    auto const& l = data[u8"l"].getValueString();
+
+    static const std::u8string lst[][2] {
+      {u8"英"s, u8"uk-phonetic"s},
+      {u8"美"s, u8"us-phonetic"s},
+      {u8"拼音"s, u8"phonetic"s},
+      {u8"读音"s, u8"phonetic"s},
+    };
+    size_t left = 0, right = 0;
     if (l.starts_with(u8"en2")) {
-      html << "  英[<span style='color:#44EEEE;'>"
-        << basic[u8"uk-phonetic"].getValueString()
-        << "</span>]  美[<span style='color:#44EEEE;'>"
-        << basic[u8"us-phonetic"].getValueString()
-        << "</span>]";
-    } else if (auto phonetic = basic[u8"phonetic"]; phonetic.isString()) {
-      html << "  拼音[<span style='color:#44EEEE;'>"
-        << phonetic.getValueString()
-        << "</span>]";
+      left = 0;
+      right = 2;
+    } else if (l.starts_with(u8"zh")) {
+      left = 2;
+      right = 3;
+    } else {
+      left = 3;
+      right = 4;
     }
+
+    for (int i = left; i != right; ++i) {
+      auto const& phonetic = basic[lst[i][1]];
+      if (!phonetic.isString()) continue;
+      html << "  " << lst[i][0] << "[<span style='color:#44EEEE;'>" << phonetic.getValueString() << "</span>]";
+    }
+
     html << "</h3><hr/>";
 
     // 获取
-    if (auto wfs = basic.find(u8"wfs"); wfs != basic.endO()) {
+    if (auto wfs = basic[u8"wfs"]; wfs.isArray() && !wfs.emptyA()) {
       html << "<h5>形式变化</h5><ul>";
-      for (auto& wf : wfs->second.getArray()) {
+      for (auto& wf : wfs.getArray()) {
         auto temp = wf.beginO();
         if (temp == wf.endO() || temp->first != u8"wf")
           break;
@@ -299,9 +312,9 @@ void Translate::FormatYoudaoResult(std::u8string& result, const YJson& data) {
     }
 
     // 	基本释义
-    if (const auto& explains = basic[u8"explains"].getArray(); !explains.empty()) {
+    if (const auto& explains = basic[u8"explains"]; explains.isArray() && !explains.emptyA()) {
       html << "<h5>基本释义</h5><ul>";
-      for (auto& i : explains) {
+      for (const auto& i : explains.getArray()) {
         html << "<li>" << i.getValueString() << "</li>";
       }
       html << "</ul><hr/>";
@@ -311,9 +324,9 @@ void Translate::FormatYoudaoResult(std::u8string& result, const YJson& data) {
   }
 
   // 网络释义
-  if (auto ptr = data.find(u8"web"); ptr != data.endO()) {
+  if (auto web = data[u8"web"]; web.isArray() && !web.emptyA()) {
     html << "<h5>网络释义</h5><ol>";
-    for (auto& i : ptr->second.getArray()) {
+    for (const auto& i : web.getArray()) {
       html << "<li><span style='color: #FF00FF;'>"
         << i[u8"key"].getValueString()
         << "</span> &lt;";
@@ -327,9 +340,9 @@ void Translate::FormatYoudaoResult(std::u8string& result, const YJson& data) {
   }
 
   // 翻译结果
-  if (auto& translation = data[u8"translation"].getArray(); !translation.empty()) {
+  if (auto const& translation = data[u8"translation"]; translation.isArray() && !translation.emptyA()) {
     html << "<h5>翻译结果</h5><li><ul>";
-    for (auto& i : translation) {
+    for (auto const& i : translation.getArray()) {
       html << i.getValueString() << "; ";
     }
     html << "</ul></li><hr/>";

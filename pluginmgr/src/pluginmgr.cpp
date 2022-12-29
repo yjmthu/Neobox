@@ -31,7 +31,7 @@ PluginMgr* mgr;
 PluginMgr::PluginMgr(GlbObject* glb, QMenu* pluginMainMenu):
   m_GlbObject(glb),
   m_SettingFileName(u8"PluginSettings.json"),
-  SaveSettings([this](){m_Settings->toFile(m_SettingFileName);}),
+  SaveSettings([this](){m_Settings->toFile(m_SettingFileName, false, YJson::UTF8);}),
   m_MainMenu(pluginMainMenu)
 {
   mgr = this;

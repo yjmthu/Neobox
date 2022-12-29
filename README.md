@@ -82,7 +82,7 @@
 
 - 简介：普通模式调用百度翻译Api，查词模式调用有道翻译Api。
 
-![极简翻译](https://cloud.tsinghua.edu.cn/f/ad12e8d1452549789dc1/?dl=1)
+![极简翻译](https://cloud.tsinghua.edu.cn/f/ce4fb5704e5748fea962/?dl=1)
 
 
 - 极简翻译 **快捷键** 映射表
