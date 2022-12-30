@@ -17,6 +17,7 @@ class SpeedBox : public QWidget {
   class QFrame* m_MemColorFrame;
   class QTimer* m_Timer;
   class QMenu& m_NetCardMenu;
+  void* m_AppBarData;
 
   std::string m_MemFrameStyle;
 

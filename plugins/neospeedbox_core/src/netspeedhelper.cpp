@@ -16,11 +16,7 @@ void NetSpeedHelper::FormatSpeed(uint64_t bytes, bool upload) {
   static constexpr auto units = "BKMGTP";
   const char *u = units;
   uint64_t size = 1;
-  bytes &= (1ull << 50) - 1;
-  while ((bytes >> 10) >= size) {
-    size <<= 10;
-    ++u;
-  }
+  for (auto const b = ((bytes &= ((1ull << 50) - 1)) >> 10); size < b; ++u) { size <<= 10; }
   m_SysInfo[upload ? 0 : 1] = std::vformat(m_StrFmt[upload ? 0 : 1], std::make_format_args(static_cast<float>(bytes) / size, *u));
 }
 
@@ -31,7 +27,7 @@ NetSpeedHelper::NetSpeedHelper()
 #ifdef _WIN32
 
 NetSpeedHelper::~NetSpeedHelper() {
-  HeapFree(GetProcessHeap(), 0, pIfTable);
+  HeapFree(GetProcessHeap(), 0, m_IfTable);
 }
 
 void NetSpeedHelper::SetMemInfo() {
@@ -48,9 +44,9 @@ void NetSpeedHelper::SetCpuInfo()
   static FILETIME idleTime, kernelTime, userTime;
 
   // https://blog.csdn.net/alwaysrun/article/details/106433080
-  const auto Filetime2Int64 = [](const FILETIME &ftime)
+  static const auto Filetime2Int64 = [](const FILETIME &ftime)
   {
-      LARGE_INTEGER li;
+      static LARGE_INTEGER li;
       li.LowPart = ftime.dwLowDateTime;
       li.HighPart = ftime.dwHighDateTime;
       return li.QuadPart;
@@ -74,20 +70,20 @@ void NetSpeedHelper::SetCpuInfo()
     }
   }
   m_SysInfo[3] = std::vformat(m_StrFmt[3], std::make_format_args(
-    static_cast<int>(m_CpuUse*100)));
+    static_cast<int>(m_CpuUse * 100)));
 }
 
 void NetSpeedHelper::UpdateAdaptersAddresses()
 {
-  PIP_ADAPTER_ADDRESSES piaa = nullptr;  // Network Card
+  
   DWORD dwIPSize = 0;
-  if (GetAdaptersAddresses(AF_INET, 0, 0, piaa, &dwIPSize) ==
-      ERROR_BUFFER_OVERFLOW) {
-    HeapFree(GetProcessHeap(), 0, piaa);
-    piaa = (PIP_ADAPTER_ADDRESSES)HeapAlloc(GetProcessHeap(),
-                                            HEAP_ZERO_MEMORY, dwIPSize);
-    GetAdaptersAddresses(AF_INET, 0, 0, piaa, &dwIPSize);
-  }
+  if (GetAdaptersAddresses(AF_INET, 0, 0, nullptr, &dwIPSize) != ERROR_BUFFER_OVERFLOW) return;
+  
+  auto const piaa = reinterpret_cast<PIP_ADAPTER_ADDRESSES>(
+    HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dwIPSize));
+  
+  // 检索的地址的地址系列: IPv4
+  GetAdaptersAddresses(AF_INET, 0, 0, piaa, &dwIPSize);
   m_Adapters.clear();
   std::string strAdapterName;
   for (auto paa = piaa; paa; paa = paa->Next) {
@@ -96,7 +92,7 @@ void NetSpeedHelper::UpdateAdaptersAddresses()
       continue;
     }
     strAdapterName = paa->AdapterName;
-    bool enabled = m_AdapterBalckList.find(strAdapterName) == m_AdapterBalckList.end();
+    bool const enabled = m_AdapterBalckList.find(strAdapterName) == m_AdapterBalckList.end();
     m_Adapters.push_back(IpAdapter {
       std::move(strAdapterName),
       paa->FriendlyName,
@@ -112,19 +108,20 @@ void NetSpeedHelper::SetNetInfo() {
   static DWORD m_last_in_bytes = 0, m_last_out_bytes = 0;
 
   DWORD dwMISize = 0;
-  if (GetIfTable(pIfTable, &dwMISize, FALSE) == ERROR_INSUFFICIENT_BUFFER) {
+  if (GetIfTable(m_IfTable, &dwMISize, FALSE) == ERROR_INSUFFICIENT_BUFFER) {
     dwMISize += sizeof(MIB_IFROW) * 2;
-    HeapFree(GetProcessHeap(), 0, pIfTable);
-    pIfTable = (MIB_IFTABLE*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dwMISize);
-    GetIfTable(pIfTable, &dwMISize, FALSE);
+    HeapFree(GetProcessHeap(), 0, m_IfTable);
+    m_IfTable = (MIB_IFTABLE*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dwMISize);
+    GetIfTable(m_IfTable, &dwMISize, FALSE);
   }
   DWORD m_in_bytes = 0, m_out_bytes = 0;
   const IpAdapter* ptr;
   auto find_fn = [&ptr](const MIB_IFROW& item)->bool{
       return ptr->enabled && item.dwIndex == ptr->index;
   };
-  const auto *table_begin = pIfTable->table, *table_end = table_begin + pIfTable->dwNumEntries;
-  for (const auto& adpt: m_Adapters){
+
+  for (const auto *table_begin = m_IfTable->table, *table_end = table_begin + m_IfTable->dwNumEntries;
+    const auto& adpt: m_Adapters) {
     // if (!adpt.enabled) continue;
     ptr = &adpt;               // pass it to find_fn.
     auto pIfRow = std::find_if(table_begin, table_end, find_fn);

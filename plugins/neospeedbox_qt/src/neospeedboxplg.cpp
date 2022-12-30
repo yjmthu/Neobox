@@ -169,10 +169,11 @@ YJson& NeoSpeedboxPlg::InitSettings(YJson& settings)
     {u8"数字卫士"s, u8":/skins/360.ui"s},
     {u8"独霸一方"s, u8":/skins/duba.ui"s},
     {u8"果里果气"s, u8":/skins/Fruit.ui"s},
+    {u8"开源力量"s, u8":/skins/archlinux.ui"s},
   };
   auto& skins = settings[u8"UserSkins"];
   if (!skins.isObject()) skins = YJson::Object;
-  for (size_t i=0; i!=5; ++i) {
+  for (size_t i=0; i!=6; ++i) {
     skins[default_skins[i][0]] = default_skins[i][1];
   }
   return settings;

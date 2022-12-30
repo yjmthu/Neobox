@@ -3,6 +3,8 @@
 #include <yjson.h>
 #include <iostream>
 
+using namespace std::literals;
+
 int main() {
   YJson setting = YJson::O{
     {u8"PairBaidu", YJson::A {0, 0}},
@@ -10,7 +12,7 @@ int main() {
   };
   Translate tran(setting);
   SetConsoleOutputCP(65001);
-  auto const& res = tran.GetResult(u8"翻译结果");
+  auto const& res = tran.GetResult("翻译结果"s);
   if (!res.empty()) {
     std::cout << res;
   } else {

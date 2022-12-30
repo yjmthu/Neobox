@@ -32,15 +32,17 @@
 
 功能：网速、内存、CPU占用显示。
 
-![](https://cloud.tsinghua.edu.cn/f/cb162e06a23e4d42a772/?dl=1)
+![经典火绒](https://cloud.tsinghua.edu.cn/f/cb162e06a23e4d42a772/?dl=1)
 
-![](https://cloud.tsinghua.edu.cn/f/42ef9aa2d55444759783/?dl=1)
+![数字卫士](https://cloud.tsinghua.edu.cn/f/42ef9aa2d55444759783/?dl=1)
 
-![](https://cloud.tsinghua.edu.cn/f/1688364ff8d8477888b9/?dl=1)
+![电脑管家](https://cloud.tsinghua.edu.cn/f/1688364ff8d8477888b9/?dl=1)
 
-![](https://cloud.tsinghua.edu.cn/f/2ed05e162e12420f83d4/?dl=1)
+![独霸一方](https://cloud.tsinghua.edu.cn/f/2ed05e162e12420f83d4/?dl=1)
 
-![](https://cloud.tsinghua.edu.cn/f/a018b6be4f5e41498500/?dl=1)
+![果里果气](https://cloud.tsinghua.edu.cn/f/a018b6be4f5e41498500/?dl=1)
+
+![开源力量](https://cloud.tsinghua.edu.cn/f/a698f71195e34aefb794/?dl=1)
 
 > 你可以使用内置的这几种皮肤，也可以自己创建一个独特的皮肤。皮肤相关问题 [![GitHub issue/pull request detail](https://img.shields.io/github/issues/detail/state/yjmthu/Neobox/5)](https://github.com/yjmthu/Neobox/issues/5)
 

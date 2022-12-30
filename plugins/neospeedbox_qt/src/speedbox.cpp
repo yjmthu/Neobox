@@ -34,7 +34,7 @@ extern PluginMgr* mgr;
 extern GlbObject* glb;
 
 SpeedBox::SpeedBox(PluginObject* plugin, YJson& settings, QMenu* netcardMenu)
-    : QWidget(/*glb->glbGetMenu()*/ nullptr,
+    : QWidget(nullptr,
               Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool),
     m_PluginObject(plugin),
     m_Settings(settings),
@@ -50,6 +50,7 @@ SpeedBox::SpeedBox(PluginObject* plugin, YJson& settings, QMenu* netcardMenu)
 }
 
 SpeedBox::~SpeedBox() {
+  SHAppBarMessage(ABM_REMOVE, reinterpret_cast<APPBARDATA*>(m_AppBarData));
   m_Timer->stop();
   delete m_Timer;
   delete m_NetSpeedHelper;
@@ -57,16 +58,6 @@ SpeedBox::~SpeedBox() {
 
 void SpeedBox::InitShow() {
   show();
-
-  /*
-   * Notice
-   * m_MainMenu should be construct after SpeedBox isShown.
-   */
-
-  // if (m_MainMenu)
-  //   return;
-  // m_MainMenu = new NeoMenu(this);  // must be this, not m_CentralWidget.
-  // m_MainMenu->SetFormColorEffect();
 
   m_Animation->setDuration(100);
   m_Animation->setTargetObject(this);
@@ -81,9 +72,8 @@ void SpeedBox::InitShow() {
 
 void SpeedBox::SetWindowMode() {
   setWindowTitle("Neobox");
-  setWindowIcon(QIcon(":/icons/neobox.ico"));
+  setWindowIcon(QIcon(QStringLiteral(":/icons/neobox.ico")));
   setAttribute(Qt::WA_TranslucentBackground, true);
-  // setAttribute(Qt::WA_DeleteOnClose, true);
   setAcceptDrops(true);
 
   const auto& position = m_Settings [u8"Position"].getArray();
@@ -103,9 +93,9 @@ void SpeedBox::SetBaseLayout() {
 
   QUiLoader loader(this);
   const auto& skinName = m_Settings[u8"CurSkin"].getValueString();
-  QString qSkinPath = PluginObject::Utf82QString(m_Settings[u8"UserSkins"][skinName].getValueString());
+  auto const qSkinPath = PluginObject::Utf82QString(m_Settings[u8"UserSkins"][skinName].getValueString());
   if (!QFile::exists(qSkinPath))
-    throw nullptr;
+    throw std::runtime_error("Can't find skin file!");
   QFile file(qSkinPath);
   file.open(QFile::ReadOnly);
   m_CentralWidget = loader.load(&file, this);
@@ -142,7 +132,7 @@ void SpeedBox::SetBaseLayout() {
   if (m_MemColorFrame != nullptr) {
     buffer = m_MemColorFrame->styleSheet().toUtf8();
     m_MemFrameStyle.assign(buffer.begin(), buffer.end());
-    const std::string style = std::vformat(m_MemFrameStyle, std::make_format_args(
+    const auto style = std::vformat(m_MemFrameStyle, std::make_format_args(
         0.1, 0.2, 0.8, 0.9
     ));
     m_MemColorFrame->setStyleSheet(QString::fromUtf8(style.data(), style.size()));
@@ -153,7 +143,7 @@ void SpeedBox::SetBaseLayout() {
 
 void SpeedBox::UpdateTextContent() {
   static constexpr auto delta = 0.0002;
-  static const auto qstr = [](const std::string& str) {
+  static const auto qstr = [](const auto& str) {
     return QString::fromUtf8(str.data(), str.size());
   };
 
@@ -170,7 +160,7 @@ void SpeedBox::UpdateTextContent() {
   if (m_MemColorFrame != nullptr) {
     const float x1 = m_NetSpeedHelper->m_MemUse > delta ? m_NetSpeedHelper->m_MemUse - delta : m_NetSpeedHelper->m_MemUse;
     const float x2 = x1 + delta, y1 = 1 - x2, y2 = 1 - x1;
-    const std::string style = std::vformat(m_MemFrameStyle, std::make_format_args(
+    const auto style = std::vformat(m_MemFrameStyle, std::make_format_args(
         x1, x2, y1, y2
     ));
     m_MemColorFrame->setStyleSheet(QString::fromUtf8(style.data(), style.size()));
@@ -178,11 +168,14 @@ void SpeedBox::UpdateTextContent() {
 }
 
 void SpeedBox::SetHideFullScreen() {
-  static APPBARDATA abd{0};
-  abd.cbSize = sizeof(APPBARDATA);
-  abd.hWnd = reinterpret_cast<HWND>(winId());
-  abd.uCallbackMessage = static_cast<UINT>(MsgCode::MSG_APPBAR_MSGID);
-  SHAppBarMessage(ABM_NEW, &abd);
+  static APPBARDATA appBarData {
+    sizeof(APPBARDATA),
+    reinterpret_cast<HWND>(winId()), 
+    static_cast<UINT>(MsgCode::MSG_APPBAR_MSGID),
+    0, 0, 0
+  };
+  m_AppBarData = &appBarData;
+  SHAppBarMessage(ABM_NEW, reinterpret_cast<APPBARDATA*>(m_AppBarData));
 }
 
 void SpeedBox::mouseMoveEvent(QMouseEvent* event) {
@@ -229,12 +222,6 @@ void SpeedBox::dragEnterEvent(QDragEnterEvent* event) {
 
 void SpeedBox::dropEvent(QDropEvent* event) {
   auto mimeData = event->mimeData();
-  // if (mimeData->hasUrls()) {}
-
-  /*
-  auto ocrUrlsView = urls | std::views::filter([](const QUrl& i) {
-    return i.isValid() && i.fileName().endsWith(".ui") || i.fileName().endsWith(".traineddata"); });
-    */
 
   m_PluginObject->SendBroadcast(PluginEvent::Drop, event);
   event->accept();
@@ -374,8 +361,8 @@ void SpeedBox::UpdateNetCardMenu()
   // auto menu = m_MainMenu->m_ExMenus[u8"NetCardSelect"];
   m_NetCardMenu.clear();
   for (const auto& i: m_NetSpeedHelper->m_Adapters) {
-    const QString fName = QString::fromWCharArray(i.friendlyName.data(), i.friendlyName.size());
-    const QString aName = QString::fromLocal8Bit(i.adapterName.data(), i.adapterName.size());
+    const auto fName = QString::fromWCharArray(i.friendlyName.data(), i.friendlyName.size());
+    const auto aName = QString::fromLocal8Bit(i.adapterName.data(), i.adapterName.size());
     auto action = m_NetCardMenu.addAction(fName);
     action->setCheckable(true);
     action->setChecked(i.enabled);

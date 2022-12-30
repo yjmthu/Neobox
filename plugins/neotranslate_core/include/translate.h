@@ -6,6 +6,11 @@
 #include <string>
 #include <vector>
 
+struct Utf8Array {
+  const char8_t* begin;
+  const char8_t* end;
+};
+
 class LanPair {
 public:
   double& from;
@@ -27,7 +32,13 @@ public:
   ~Translate();
 
 public:
-  std::u8string GetResult(const std::u8string& text);
+  template<typename _Utf8Array>
+  std::u8string GetResult(const _Utf8Array& text) {
+    const Utf8Array array { 
+      reinterpret_cast<const char8_t*>(text.data()),
+      reinterpret_cast<const char8_t*>(text.data()) + text.size() };
+    return m_Source == Youdao ? GetResultYoudao(array) : GetResultBaidu(array);
+  }
   void SetSource(Source dict);
   inline Source GetSource() const { return m_Source; }
 
@@ -39,8 +50,8 @@ public:
   static const LanguageMap m_LanguageCanFromTo;
 
 private:
-  std::u8string GetResultBaidu(const std::u8string& text);
-  std::u8string GetResultYoudao(const std::u8string& text);
+  std::u8string GetResultBaidu(const Utf8Array& text);
+  std::u8string GetResultYoudao(const Utf8Array& text);
   static void FormatYoudaoResult(std::u8string& result,
                                  const class YJson& data);
 };

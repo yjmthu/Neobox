@@ -38,7 +38,7 @@ class NetSpeedHelper {
  private:
   // uint64_t m_RecvBytes, m_SendBytes;
 #ifdef _WIN32
-  MIB_IFTABLE* pIfTable = nullptr;             // Network Speed
+  MIB_IFTABLE* m_IfTable = nullptr;             // Network Speed
 #endif
   // class QTimer* m_Timer;
   void SetMemInfo();

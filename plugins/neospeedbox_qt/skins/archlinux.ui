@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>center</class>
+ <widget class="QWidget" name="center">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>150</width>
+    <height>50</height>
+   </rect>
+  </property>
+  <property name="cursor">
+   <cursorShape>PointingHandCursor</cursorShape>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QWidget#center {
+	background-color: transparent;
+    border-image: url(&quot;:/icons/archlinux.png&quot;);
+}
+QWidget:hover#center {
+	background-color: transparent;
+    border-image: url(&quot;:/icons/archlinux_hoverd.png&quot;);
+}</string>
+  </property>
+  <widget class="QLabel" name="memUse">
+   <property name="geometry">
+    <rect>
+     <x>12</x>
+     <y>30</y>
+     <width>40</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">font: 6pt &quot;华文细黑&quot;;
+color: rgb(42, 255, 202);</string>
+   </property>
+   <property name="text">
+    <string>{0} %</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="netUp">
+   <property name="geometry">
+    <rect>
+     <x>105</x>
+     <y>15</y>
+     <width>60</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">font: 7pt &quot;Microsoft YaHei UI&quot;;
+color: rgb(0, 0, 0);</string>
+   </property>
+   <property name="text">
+    <string>{0:.0f} {1}</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="netDown">
+   <property name="geometry">
+    <rect>
+     <x>62</x>
+     <y>15</y>
+     <width>60</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">font: 7pt &quot;Microsoft YaHei UI&quot;;
+color: rgb(0, 0, 0);</string>
+   </property>
+   <property name="text">
+    <string>{0:.0f} {1} </string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
