@@ -44,7 +44,7 @@
 
 ![开源力量](https://cloud.tsinghua.edu.cn/f/a698f71195e34aefb794/?dl=1)
 
-> 你可以使用内置的这几种皮肤，也可以自己创建一个独特的皮肤。皮肤相关问题 [![GitHub issue/pull request detail](https://img.shields.io/github/issues/detail/state/yjmthu/Neobox/5)](https://github.com/yjmthu/Neobox/issues/5)
+> <del>原谅我的美术造诣，感觉都不是特别完美。</del>你可以使用内置的这几种皮肤，也可以自己创建一个独特的皮肤。皮肤相关问题 [![GitHub issue/pull request detail](https://img.shields.io/github/issues/detail/state/yjmthu/Neobox/5)](https://github.com/yjmthu/Neobox/issues/5)
 
 </details>
 
