@@ -2,6 +2,11 @@
 #define TRANSLATEDLG_H
 
 #include <QWidget>
+#include <QPlainTextEdit>
+#include <QTextEdit>
+
+#include <translate.h>
+#include <pluginobject.h>
 
 class NeoTranslateDlg : public QWidget {
  protected:
@@ -13,6 +18,8 @@ class NeoTranslateDlg : public QWidget {
   explicit NeoTranslateDlg(class YJson& setings);
   ~NeoTranslateDlg();
   void ToggleVisibility();
+  template<typename _Utf8Array>
+  void GetResultData(const _Utf8Array& text);
 
  private:
   class YJson& m_Settings;
@@ -27,12 +34,30 @@ class NeoTranslateDlg : public QWidget {
   bool m_LanPairChanged = false;
   bool m_TextFromChanged = false;
 private:
-  void GetResultData();
   class QWidget* ReferenceObject() const;
   void AddCombbox(class QHBoxLayout* layout);
   void ChangeLanguageSource(bool checked);
   void ChangeLanguageFrom(int index);
   void ChangeLanguageTo(int index);
 };
+
+template<typename _Utf8Array>
+void NeoTranslateDlg::GetResultData(const _Utf8Array& text) {
+  // m_Translate->m_LanPair = { m_BoxFrom->currentIndex(), m_BoxTo->currentIndex() };
+  std::u8string s;
+  if (!m_TextFromChanged) return;
+  if (text.size() == 0) {
+    m_TextTo->clear();
+    m_TextFromChanged = false;
+    return;
+  }
+  auto const& result = m_Translate->GetResult(text);
+  m_TextTo->clear();
+  if (m_Translate->GetSource() == Translate::Baidu)
+    m_TextTo->setPlainText(PluginObject::Utf82QString(result));
+  else
+    m_TextTo->setHtml(PluginObject::Utf82QString(result));
+  m_TextFromChanged = false;
+}
 
 #endif // TRANSLATEDLG_H

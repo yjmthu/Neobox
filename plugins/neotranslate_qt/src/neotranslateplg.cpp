@@ -45,7 +45,13 @@ NeoTranslatePlg::NeoTranslatePlg(YJson& settings):
       const auto& str = *reinterpret_cast<std::u8string*>(data);
       auto const txtfrom = m_TranslateDlg->findChild<QPlainTextEdit*>("neoTextFrom");
       txtfrom->setPlainText(Utf82QString(str));
-      m_TranslateDlg->show();
+      if (m_TranslateDlg->isVisible()) {
+        if (m_Settings[u8"AutoTranslate"].isTrue()) {
+          m_TranslateDlg->GetResultData(str);
+        }
+      } else {
+        m_TranslateDlg->show();
+      }
     }
   }});
 }

@@ -23,20 +23,19 @@ inline std::u8string GetTimeStamp() {
   return std::u8string(msCount.begin(), msCount.end());
 }
 
-std::u8string Truncate(std::u8string q) {
+std::u8string Truncate(const Utf8Array& q) {
   std::vector<char8_t const*> string;
-  char8_t const* start = q.data(), *stop = start + q.size();
-  for (auto ptr = start; ptr != stop; ++ptr) {
+  // char8_t const* start = q.begin, *stop = start + q.end;
+  for (auto ptr = q.begin; ptr != q.end; ++ptr) {
     if (*ptr >> 6 != 2) string.push_back(ptr);
   }
   if (string.size() > 20) {
-    std::string result = std::to_string(string.size());
-    q.replace(string[10] - start + q.begin(),
-      string[string.size() - 10] - start + q.begin(),
-      result.begin(), result.end()
-    );
+    std::u8string result(q.begin, string[10]);
+    std::format_to(std::back_inserter(result), "{}", string.size());
+    result.append(string[string.size() - 10], q.end);
+    return result;
   }
-  return q;
+  return std::u8string(q.begin, q.end);
 }
 
 inline std::u8string Sha256(const std::u8string& str) {
@@ -54,7 +53,8 @@ inline std::u8string Md5(const std::u8string& str)
 }
 
 inline std::u8string Uuid1() {
-  std::string result;
+  std::u8string result;
+  result.reserve(36);   // uuid length
   union {
     struct {
       uint32_t time_low;
@@ -77,11 +77,11 @@ inline std::u8string Uuid1() {
   uuid.time_hi_and_version =
       (uint16_t)((uuid.time_hi_and_version & 0x0FFF) | 0x4000);
 
-  result = std::format("{:08x}-{:04x}-{:04x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
+  std::format_to(std::back_inserter(result), "{:08x}-{:04x}-{:04x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
       uuid.time_low, uuid.time_mid, uuid.time_hi_and_version, uuid.clk_seq_hi_res,
       uuid.clk_seq_low, uuid.node[0], uuid.node[1], uuid.node[2],
       uuid.node[3], uuid.node[4], uuid.node[5]);
-  return std::u8string(result.begin(), result.end());
+  return result;
 }
 
 
@@ -151,7 +151,7 @@ inline static std::u8string GetSalt() {
   return std::u8string(data.begin(), data.end());
 }
 
-std::u8string Translate::GetResultBaidu(const std::u8string& text) {
+std::u8string Translate::GetResultBaidu(const Utf8Array& text) {
   // http://api.fanyi.baidu.com/product/113
   static YJson jsData {
     YJson::O{
@@ -159,15 +159,24 @@ std::u8string Translate::GetResultBaidu(const std::u8string& text) {
       {u8"to", u8"zh"},
       {u8"q", YJson::String},
       {u8"appid", u8"20210503000812254"},
+      {u8"salt", YJson::String},
+      {u8"sign", YJson::String},
     }
   };
 
-  const auto& salt = GetSalt();
-  jsData[u8"from"] = m_LanguageCanFromTo[Baidu][m_LanPair->f()].first;
-  jsData[u8"to"] = m_LanguageCanFromTo[Baidu][m_LanPair->f()].second[m_LanPair->t()];
-  jsData[u8"q"] = text;
-  jsData[u8"salt"] = salt;
-  jsData[u8"sign"].setText(Md5(u8"20210503000812254"s + text + salt + u8"Q_2PPxmCr66r6B2hi0ts"));
+  static auto& from = jsData[u8"from"].getValueString();
+  from = m_LanguageCanFromTo[Baidu][m_LanPair->f()].first;
+  static auto& to = jsData[u8"to"].getValueString();
+  to = m_LanguageCanFromTo[Baidu][m_LanPair->f()].second[m_LanPair->t()];
+
+  static auto& salt = jsData[u8"salt"].getValueString();
+  salt = GetSalt();
+
+  static auto& q = jsData[u8"q"].getValueString();
+  q.assign(text.begin, text.end);
+ 
+  static auto& sign = jsData[u8"sign"].getValueString();
+  sign = Md5(u8"20210503000812254"s + q + salt + u8"Q_2PPxmCr66r6B2hi0ts");
 
   HttpLib clt(jsData.urlEncode(u8"https://fanyi-api.baidu.com/api/trans/vip/translate?"));
   auto res = clt.Get();
@@ -192,9 +201,9 @@ std::u8string Translate::GetResultBaidu(const std::u8string& text) {
   return u8"<h1>没网络了！</h1>"s;
 }
 
-std::u8string Translate::GetResultYoudao(const std::u8string& text) {
-  static const char8_t APP_KEY[]{u8"0b5f90d14623b917"};
-  static const char8_t APP_SECRET[]{u8"8X1HcIvXXETCRf2smIbey8AGJ2xGRyK3"};
+std::u8string Translate::GetResultYoudao(const Utf8Array& text) {
+  static const auto APP_KEY{u8"0b5f90d14623b917"s};
+  static const auto APP_SECRET{u8"8X1HcIvXXETCRf2smIbey8AGJ2xGRyK3"s};
   static YJson m_scJson {
     YJson::O{
       {u8"from", u8"auto"},
@@ -202,23 +211,25 @@ std::u8string Translate::GetResultYoudao(const std::u8string& text) {
       {u8"appKey", APP_KEY},
       {u8"signType", u8"v3"},
       {u8"curtime", YJson::String},
-      {u8"q", YJson::Null},
-      {u8"salt", YJson::Null},
-      {u8"sign", YJson::Null}
+      {u8"q", YJson::String},
+      {u8"salt", YJson::String},
+      {u8"sign", YJson::String}
     }
   };
 
-  m_scJson[u8"from"] = m_LanguageCanFromTo[Youdao][m_LanPair->f()].first;
-  m_scJson[u8"to"] = m_LanguageCanFromTo[Youdao][m_LanPair->f()].second[m_LanPair->t()];
+  static auto& from = m_scJson[u8"from"].getValueString();
+  from = m_LanguageCanFromTo[Youdao][m_LanPair->f()].first;
+  static auto& to = m_scJson[u8"to"].getValueString();
+  to = m_LanguageCanFromTo[Youdao][m_LanPair->f()].second[m_LanPair->t()];
 
-  m_scJson[u8"q"] = text;
-  const std::u8string&& curtime = GetTimeStamp();
-  m_scJson[u8"curtime"].setText(curtime);
-  const std::u8string&& salt =
-      Uuid1();  //"d818bc30-99df-11ec-9e18-1cbfc0a98096";
-  m_scJson[u8"salt"] = salt;
-  m_scJson[u8"sign"] =
-      Sha256(APP_KEY + Truncate(text) + salt + curtime + APP_SECRET);
+  static auto& q = m_scJson[u8"q"].getValueString();
+  q.assign(text.begin, text.end);
+  static auto& curtime = m_scJson[u8"curtime"].getValueString();
+  curtime = GetTimeStamp();
+  static auto& salt = m_scJson[u8"salt"].getValueString();
+  salt = Uuid1();  //"d818bc30-99df-11ec-9e18-1cbfc0a98096";
+  static auto& sign = m_scJson[u8"sign"].getValueString();
+  sign = Sha256(APP_KEY + Truncate(text) + salt + curtime + APP_SECRET);
 
   HttpLib clt(m_scJson.urlEncode(u8"http://openapi.youdao.com/api/?"));
   clt.SetHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -231,10 +242,6 @@ std::u8string Translate::GetResultYoudao(const std::u8string& text) {
     return content;
   }
   return content;
-}
-
-std::u8string Translate::GetResult(const std::u8string& text) {
-  return m_Source == Youdao ? GetResultYoudao(text) : GetResultBaidu(text);
 }
 
 void Translate::FormatYoudaoResult(std::u8string& result, const YJson& data) {

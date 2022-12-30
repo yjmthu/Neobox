@@ -34,8 +34,8 @@ NeoTranslateDlg::NeoTranslateDlg(YJson& settings)
   m_TextFrom->setObjectName("neoTextFrom");
   m_TextTo->setObjectName("neoTextTo");
   m_TextTo->setReadOnly(true);
-  // m_TextFrom->setMinimumHeight(50);
-  // m_TextFrom->setMaximumHeight(50);
+  m_TextFrom->setMinimumHeight(30);
+  m_TextFrom->setMaximumHeight(30);
   auto const pvLayout = new QVBoxLayout(this);
   pvLayout->addWidget(m_TextFrom);
   pvLayout->addWidget(m_TextTo);
@@ -44,8 +44,9 @@ NeoTranslateDlg::NeoTranslateDlg(YJson& settings)
   auto const pButtonGet = new QPushButton("翻译", this);
   phLayout->addWidget(pButtonGet);
   pvLayout->addLayout(phLayout);
-  connect(pButtonGet, &QPushButton::clicked, this,
-          std::bind(&NeoTranslateDlg::GetResultData, this));
+  connect(pButtonGet, &QPushButton::clicked, this, [this](){
+    GetResultData(m_TextFrom->toPlainText().toUtf8());
+  });
 
   m_BtnCopyFrom->setText("复制");
   m_BtnCopyTo->setText("复制");
@@ -85,11 +86,6 @@ NeoTranslateDlg::~NeoTranslateDlg() {
 
 void NeoTranslateDlg::showEvent(QShowEvent*) {
   static auto const defaultSize = size();
-  if (m_Settings[u8"AutoTranslate"].isTrue()) {
-    if (!m_TextFrom->toPlainText().isEmpty()) {
-      GetResultData();
-    }
-  }
 
   resize(m_Settings[u8"AutoSize"].isTrue() ? defaultSize : m_LastSize);
 
@@ -125,6 +121,12 @@ void NeoTranslateDlg::showEvent(QShowEvent*) {
 
   m_TextFrom->setFocus();
   activateWindow();
+
+  if (m_Settings[u8"AutoTranslate"].isTrue()) {
+    if (!m_TextFrom->toPlainText().isEmpty()) {
+      GetResultData(m_TextFrom->toPlainText().toUtf8());
+    }
+  }
 }
 
 void NeoTranslateDlg::hideEvent(QHideEvent *event)
@@ -173,7 +175,7 @@ bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
             else if (target == m_TextTo)
               m_TextTo->insertPlainText("\n");
           } else {
-            GetResultData();
+            GetResultData(m_TextFrom->toPlainText().toUtf8());
           }
           return true;
         }
@@ -234,19 +236,6 @@ void NeoTranslateDlg::ToggleVisibility()
 QWidget* NeoTranslateDlg::ReferenceObject() const
 {
   return qobject_cast<QWidget*>(PluginObject::GetMainObject(u8"neospeedboxplg"));
-}
-
-void NeoTranslateDlg::GetResultData() {
-  // m_Translate->m_LanPair = { m_BoxFrom->currentIndex(), m_BoxTo->currentIndex() };
-
-  if (!m_TextFromChanged) return;
-  auto const& result = m_Translate->GetResult(PluginObject::QString2Utf8(m_TextFrom->toPlainText()));
-  m_TextTo->clear();
-  if (m_Translate->GetSource() == Translate::Baidu)
-    m_TextTo->setPlainText(PluginObject::Utf82QString(result));
-  else
-    m_TextTo->setHtml(PluginObject::Utf82QString(result));
-  m_TextFromChanged = false;
 }
 
 void NeoTranslateDlg::ChangeLanguageSource(bool checked) {
