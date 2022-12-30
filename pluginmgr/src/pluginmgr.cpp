@@ -124,17 +124,17 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
 
   PluginObject* (*newPlugin)(YJson&, PluginMgr*)= nullptr;
 
-#ifdef _DEBUG
-  fs::path path = __FILEW__;
-  path = path.parent_path().parent_path().parent_path() / "build/plugins";
-#else
+// #ifdef _DEBUG
+//   fs::path path = __FILEW__;
+//   path = path.parent_path().parent_path().parent_path() / "build/plugins";
+// #else
   fs::path path = u8"plugins";
   path /= pluginName;
   if (!LoadPlugEnv(path)) {
     glb->glbShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件文件夹加载失败！"));
     return false;
   }
-#endif
+// #endif
   path /= pluginName + u8".dll";
   if (!fs::exists(path)) {
     glb->glbShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件文件加载失败！"));
@@ -216,23 +216,23 @@ bool PluginMgr::LoadPlugEnv(const fs::path& dir)
   }
   constexpr auto const varName = L"PATH";
   std::wstring strEnvPaths(GetEnvironmentVariableW(varName, nullptr, 0), L'\0');  
-  DWORD const dwSize = GetEnvironmentVariableW(varName, strEnvPaths.data(), strEnvPaths.size());
+  auto const dwSize = GetEnvironmentVariableW(varName, strEnvPaths.data(), strEnvPaths.size());
   strEnvPaths.pop_back();
-  if (!strEnvPaths.ends_with(L';'))
+  if (!strEnvPaths.empty() && !strEnvPaths.ends_with(L';'))
     strEnvPaths.push_back(L';');
   auto path = fs::absolute(dir);
   path.make_preferred();
-  auto const & wpath = path.wstring();
-  if (auto pos = strEnvPaths.find(wpath); pos != std::wstring::npos) {
+  auto wpath = path.wstring();
+  for (auto pos = strEnvPaths.find(wpath); pos != std::wstring::npos; pos = strEnvPaths.find(wpath, pos)) {
     pos += wpath.size();
-    if (wpath.size() == pos || wpath[pos] == L';') {
+    if (pos == strEnvPaths.size() || strEnvPaths[pos] == L';') {
       return true;
     }
   }
+  wpath.push_back(L'\0');
   strEnvPaths.append(wpath);
-  strEnvPaths.push_back(L'\0');
-  BOOL const bRet = SetEnvironmentVariableW(varName, strEnvPaths.data());  
-  return bRet;  
+  auto const bRet = SetEnvironmentVariableW(varName, strEnvPaths.data());  
+  return bRet;
 }
 
 

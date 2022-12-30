@@ -215,7 +215,7 @@ font: 7pt &quot;黑体&quot;;</string>
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 #07764c, stop:{2:.2f} #4c9b24, stop:{3:.2f} #51c55f, stop:1 #51c55f);
+    <string notr="true">background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 #07764c, stop:{2:.4f} #4c9b24, stop:{3:.4f} #51c55f, stop:1 #51c55f);
 border-radius: 20px;</string>
    </property>
    <property name="frameShape">

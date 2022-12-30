@@ -10,7 +10,7 @@ int main() {
   };
   Translate tran(setting);
   SetConsoleOutputCP(65001);
-  auto& res = tran.GetResult(u8"翻译结果");
+  auto const& res = tran.GetResult(u8"翻译结果");
   if (!res.empty()) {
     std::cout << res;
   } else {

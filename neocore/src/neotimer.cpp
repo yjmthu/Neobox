@@ -1,11 +1,13 @@
 #include <neotimer.h>
 #include <stdint.h>
 
-NeoTimer::NeoTimer() : expired_(true), try_to_expire_(false) {}
+using namespace std::literals;
+
+NeoTimer::NeoTimer() : m_Expired(true), m_ToExpire(false) {}
 
 NeoTimer::NeoTimer(const NeoTimer& t) {
-  expired_ = t.expired_.load();
-  try_to_expire_ = t.try_to_expire_.load();
+  m_Expired = t.m_Expired.load();
+  m_ToExpire = t.m_ToExpire.load();
 }
 NeoTimer::~NeoTimer() {
   Expire();
@@ -13,28 +15,25 @@ NeoTimer::~NeoTimer() {
 }
 
 void NeoTimer::StartTimer(uint32_t interval, std::function<void()> task) {
-  if (expired_ == false) {
+  if (m_Expired == false) {
     //          std::cout << "timer is currently running, please expire it
     //          first..." << std::endl;
     return;
   }
-  expired_ = false;
+  m_Expired = false;
   std::thread([this, interval, task]() {
-    auto temp = interval;
-    while (temp--) {
-      for (char i = 0; i < 60; ++i) {
-        if (try_to_expire_)
-          goto label;
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+    for (auto temp = interval; !m_ToExpire && temp--; ) {
+      for (char i = 0; !m_ToExpire && i != 120; ++i) {
+        std::this_thread::sleep_for(500ms);
       }
     }
-    task();
+    if (!m_ToExpire) task();
   label:
     //          std::cout << "stop task..." << std::endl;
     {
-      std::lock_guard<std::mutex> locker(mutex_);
-      expired_ = true;
-      expired_cond_.notify_one();
+      std::lock_guard<std::mutex> locker(m_Mutex);
+      m_Expired = true;
+      m_ExpiredCondition.notify_one();
     }
   }).detach();
 }
@@ -45,22 +44,22 @@ void NeoTimer::ResetTime(uint32_t mini, const std::function<void()>& task) {
 }
 
 void NeoTimer::Expire() {
-  if (expired_) {
+  if (m_Expired) {
     return;
   }
 
-  if (try_to_expire_) {
+  if (m_ToExpire) {
     //          std::cout << "timer is trying to expire, please wait..." <<
     //          std::endl;
     return;
   }
-  try_to_expire_ = true;
+  m_ToExpire = true;
   {
-    std::unique_lock<std::mutex> locker(mutex_);
-    expired_cond_.wait(locker, [this] { return expired_ == true; });
-    if (expired_ == true) {
+    std::unique_lock<std::mutex> locker(m_Mutex);
+    m_ExpiredCondition.wait(locker, [this] { return m_Expired == true; });
+    if (m_Expired == true) {
       //              std::cout << "timer expired!" << std::endl;
-      try_to_expire_ = false;
+      m_ToExpire = false;
     }
   }
 }

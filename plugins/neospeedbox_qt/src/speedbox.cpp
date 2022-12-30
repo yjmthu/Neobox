@@ -51,6 +51,7 @@ SpeedBox::SpeedBox(PluginObject* plugin, YJson& settings, QMenu* netcardMenu)
 
 SpeedBox::~SpeedBox() {
   m_Timer->stop();
+  delete m_Timer;
   delete m_NetSpeedHelper;
 }
 
@@ -151,6 +152,7 @@ void SpeedBox::SetBaseLayout() {
 }
 
 void SpeedBox::UpdateTextContent() {
+  static constexpr auto delta = 0.0002;
   static const auto qstr = [](const std::string& str) {
     return QString::fromUtf8(str.data(), str.size());
   };
@@ -166,8 +168,8 @@ void SpeedBox::UpdateTextContent() {
     m_TextCpuUseage->setText(qstr(iter[3]));
 
   if (m_MemColorFrame != nullptr) {
-    const float x1 = m_NetSpeedHelper->m_MemUse > 0.02 ? m_NetSpeedHelper->m_MemUse - 0.02 : m_NetSpeedHelper->m_MemUse;
-    const float x2 = x1 + 0.02, y1 = 1 - x2, y2 = 1 - x1;
+    const float x1 = m_NetSpeedHelper->m_MemUse > delta ? m_NetSpeedHelper->m_MemUse - delta : m_NetSpeedHelper->m_MemUse;
+    const float x2 = x1 + delta, y1 = 1 - x2, y2 = 1 - x1;
     const std::string style = std::vformat(m_MemFrameStyle, std::make_format_args(
         x1, x2, y1, y2
     ));

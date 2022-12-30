@@ -5,62 +5,44 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <memory>
 
 #include <windows.h>
 #include <shlobj_core.h>
 
 using namespace std::literals;
 
-class DateTime {
-public:
-  uint16_t year;
-  uint8_t mon;
-  uint8_t mday;
-  uint8_t hour;
-  uint8_t min;
-  uint8_t sec;
-  uint8_t wday;
-};
+static const auto strMonths = "JanFebMarAprMayJunJulAugSepOctNovDec"s;
+static const auto strWeeks = "SunMonTueWedThuFriSat"s;
 
 // Date:  Sat, 24 Dec 2022 17:19:03 GMT
-static DateTime GetDateTime(std::string dateStr)
+static auto GetDateTime(std::string dateStr)
 {
-  static const auto strMonths = "JanFebMarAprMayJunJulAugSepOctNovDec"s;
-  static const auto strWeeks = "Sun Mon TuesWed ThurFri Sat "s;
   std::cout << "inital string is {" << dateStr << "} size <" << dateStr.size() << ">" << std::endl;
-  std::regex pattern(" ?(\\w{3,4}), {1,2}(\\d{1,2}) (\\w{3}) (\\d{4}) (\\d{2})\\:(\\d{2})\\:(\\d{2}) GMT");
+  std::regex pattern(" (\\w{3}), {1,2}(\\d{1,2}) (\\w{3}) (\\d{4}) (\\d{2})\\:(\\d{2})\\:(\\d{2}) GMT");
   std::smatch result;
   if (!std::regex_match(dateStr, result, pattern)) {
     throw std::runtime_error("can't match string!");
   }
-  DateTime datetime = DateTime {
-    static_cast<uint16_t>(std::stoul(result.str(4))),
-    static_cast<uint8_t>(strMonths.find(result.str(3)) / 3 + 1),
-    static_cast<uint8_t>(std::stoul(result.str(2))),
-    static_cast<uint8_t>(std::stoul(result[5])),
-    static_cast<uint8_t>(std::stoul(result[6])),
-    static_cast<uint8_t>(std::stoul(result[7])),
-    static_cast<uint8_t>(strWeeks.find(result.str(1)) / 4)
+  auto const datetime = new SYSTEMTIME {
+    static_cast<unsigned short>(std::stoul(result.str(4))),  // year
+    static_cast<unsigned short>(strMonths.find(result.str(3)) / 3 + 1),  // month
+    static_cast<unsigned short>(strWeeks.find(result.str(1)) / 3), // wday
+    static_cast<unsigned short>(std::stoul(result.str(2))),  // mday
+    static_cast<unsigned short>(std::stoul(result[5])),  // hour
+    static_cast<unsigned short>(std::stoul(result[6])),  // minute
+    static_cast<unsigned short>(std::stoul(result[7])),  // second
+    999,
   };
-  return datetime;
+  return std::unique_ptr<SYSTEMTIME>(datetime);
 }
 
-void SetDateTime(const DateTime& datetime)
+void SetDateTime(SYSTEMTIME& datetime)
 {
   if (!IsUserAnAdmin())
     throw std::runtime_error("Failed. user is not an admin.");
-  SYSTEMTIME time {
-    datetime.year,
-    datetime.mon,
-    datetime.wday,
-    datetime.mday,
-    datetime.hour,
-    datetime.min,
-    datetime.sec,
-    999
-  };
 
-  if (!SetSystemTime(&time)) {
+  if (!SetSystemTime(&datetime)) {
     std::cout << "failed: " << GetLastError() << std::endl;
   }
 }
@@ -72,9 +54,12 @@ int main()
   HttpLib clt("https://beijing-time.org/"s);
   auto res = clt.Get();
   try {
-    auto datetime = GetDateTime(res->headers["Date"]);
-    std::cout << std::format("year: {} month: {} day: {} hour: {} minute: {} second: {} weekday: {}\n",
-        datetime.year, datetime.mon, datetime.mday, datetime.hour, datetime.min, datetime.sec, datetime.wday);
+    auto ptr = GetDateTime(res->headers["Date"]);
+    auto& datetime = *ptr;
+    std::cout << std::format("{:04}-{:02}-{:02} {:02}:{:02}:{:02} {}\n",
+        datetime.wYear, datetime.wMonth, datetime.wDay,
+        datetime.wHour, datetime.wMinute, datetime.wSecond,
+        strWeeks.substr(datetime.wDayOfWeek * 3, 3));
     SetDateTime(datetime);
     std::cout << "all ok.\n";
   } catch (std::runtime_error err) {

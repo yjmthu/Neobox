@@ -25,6 +25,7 @@ class NeoTranslateDlg : public QWidget {
   QPoint m_LastPostion;
   QSize m_LastSize;
   bool m_LanPairChanged = false;
+  bool m_TextFromChanged = false;
 private:
   void GetResultData();
   class QWidget* ReferenceObject() const;

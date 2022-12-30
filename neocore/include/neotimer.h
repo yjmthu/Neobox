@@ -19,10 +19,10 @@ class NeoTimer {
   void Expire();
 
  private:
-  std::atomic<bool> expired_;
-  std::atomic<bool> try_to_expire_;
-  std::mutex mutex_;
-  std::condition_variable expired_cond_;
+  std::atomic<bool> m_Expired;
+  std::atomic<bool> m_ToExpire;
+  std::mutex m_Mutex;
+  std::condition_variable m_ExpiredCondition;
 };
 
 #endif  // TIMER_H

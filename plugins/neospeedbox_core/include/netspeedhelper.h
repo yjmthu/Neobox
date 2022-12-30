@@ -40,7 +40,7 @@ class NetSpeedHelper {
 #ifdef _WIN32
   MIB_IFTABLE* pIfTable = nullptr;             // Network Speed
 #endif
-  class QTimer* m_Timer;
+  // class QTimer* m_Timer;
   void SetMemInfo();
   void SetNetInfo();
   void SetCpuInfo();

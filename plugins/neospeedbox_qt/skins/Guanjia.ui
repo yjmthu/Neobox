@@ -128,7 +128,7 @@ border-radius: 21px;</string>
     </size>
    </property>
    <property name="styleSheet">
-    <string notr="true">background-color: qconicalgradient(cx:0.5, cy:0.5, angle:90, stop:0 #595c6b, stop:{2:2f} #595c6b, stop:{3:2f} transparent stop:1 transparent);
+    <string notr="true">background-color: qconicalgradient(cx:0.5, cy:0.5, angle:90, stop:0 #595c6b, stop:{2:4f} #595c6b, stop:{3:4f} transparent stop:1 transparent);
 border-radius: 21px;</string>
    </property>
    <property name="frameShape">

@@ -233,16 +233,8 @@ std::u8string Translate::GetResultYoudao(const std::u8string& text) {
   return content;
 }
 
-const std::u8string& Translate::GetResult(const std::u8string& text) {
-  static Source oldSource = Baidu;
-  static std::u8string old256, data;
-  std::u8string new256 = Sha256(text);
-  if (old256 != new256 || oldSource != m_Source) {
-    old256.swap(new256);
-    oldSource = m_Source;
-    data = m_Source == Youdao ? GetResultYoudao(text) : GetResultBaidu(text);
-  }
-  return data;
+std::u8string Translate::GetResult(const std::u8string& text) {
+  return m_Source == Youdao ? GetResultYoudao(text) : GetResultBaidu(text);
 }
 
 void Translate::FormatYoudaoResult(std::u8string& result, const YJson& data) {

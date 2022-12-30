@@ -158,7 +158,7 @@ background-color: transparent;</string>
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(33, 203, 48, 200), stop:{2:.2f} #4c9b24, stop:{3:.2f} #51c55f, stop:1 rgba(179, 255, 57, 200));
+    <string notr="true">background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(33, 203, 48, 200), stop:{2:.4f} #4c9b24, stop:{3:.4f} #51c55f, stop:1 rgba(179, 255, 57, 200));
 border-radius: 3px;</string>
    </property>
    <property name="frameShape">
