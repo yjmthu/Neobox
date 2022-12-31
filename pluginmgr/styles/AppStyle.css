@@ -4,34 +4,6 @@ QToolTip{
   font-size:12px;
 }
 
-QWidget#center {
-  background-color: #33333377;
-  border-radius: 2px;
-}
-
-QLabel#memUse {
-  width: 26px;
-  color: #00FFFF;
-  font-size: 17pt;
-  font-family: Carattere;
-  font-weight: bold;
-  padding-left: 1px;
-}
-
-QLabel#netUp {
-  color: #FAAA23;
-  font-family: Nickainley;
-  font-weight: bold;
-  margin-left: 1px;
-}
-
-QLabel#netDown {
-  color: #8CF01E;
-  font-family: Nickainley;
-  font-weight: bold;
-  margin-left: 1px;
-}
-
 QMenu {
   background-color: white;
   padding: 5px;

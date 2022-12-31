@@ -129,8 +129,9 @@ LanPair::LanPair(YJson& array)
 {
 }
 
-Translate::Translate(YJson& setting)
-    : m_LanPairBaidu(setting[u8"PairBaidu"])
+Translate::Translate(YJson& setting, Translate::Callback&& callback)
+    : m_Callback(std::move(callback))
+    , m_LanPairBaidu(setting[u8"PairBaidu"])
     , m_LanPairYoudao(setting[u8"PairYoudao"])
     , m_LanPair(nullptr)
 {
@@ -151,7 +152,7 @@ inline static std::u8string GetSalt() {
   return std::u8string(data.begin(), data.end());
 }
 
-std::u8string Translate::GetResultBaidu(const Utf8Array& text) {
+bool Translate::GetResultBaidu(const Utf8Array& text) {
   // http://api.fanyi.baidu.com/product/113
   static YJson jsData {
     YJson::O{
@@ -163,6 +164,7 @@ std::u8string Translate::GetResultBaidu(const Utf8Array& text) {
       {u8"sign", YJson::String},
     }
   };
+  static auto const badNet = u8"<h1>没网络了！</h1>"s;
 
   static auto& from = jsData[u8"from"].getValueString();
   from = m_LanguageCanFromTo[Baidu][m_LanPair->f()].first;
@@ -185,7 +187,8 @@ std::u8string Translate::GetResultBaidu(const Utf8Array& text) {
     YJson jsData(res->body.begin(), res->body.end());
     if (auto iter = jsData.find(u8"error_msg"); iter != jsData.endO()) {
       // Access token expired
-      return std::u8string(res->body.begin(), res->body.end());
+      m_Callback(res->body.data(), res->body.size());
+      return false;
       // return iter->second.getValueString();
     }
     const auto& obTransResult =
@@ -196,12 +199,14 @@ std::u8string Translate::GetResultBaidu(const Utf8Array& text) {
       content.append(item[u8"dst"].getValueString());
       content.push_back('\n');
     }
-    return content;
+    m_Callback(content.data(), content.size());
+    return true;
   }
-  return u8"<h1>没网络了！</h1>"s;
+  m_Callback(badNet.data(), badNet.size());
+  return false;
 }
 
-std::u8string Translate::GetResultYoudao(const Utf8Array& text) {
+bool Translate::GetResultYoudao(const Utf8Array& text) {
   static const auto APP_KEY{u8"0b5f90d14623b917"s};
   static const auto APP_SECRET{u8"8X1HcIvXXETCRf2smIbey8AGJ2xGRyK3"s};
   static YJson m_scJson {
@@ -234,20 +239,18 @@ std::u8string Translate::GetResultYoudao(const Utf8Array& text) {
   HttpLib clt(m_scJson.urlEncode(u8"http://openapi.youdao.com/api/?"));
   clt.SetHeader("Content-Type", "application/x-www-form-urlencoded");
 
-  std::u8string content;
-  auto res = clt.Get();
-  if (res->status == 200 || res->status == 201) {
+  if (auto res = clt.Get(); res->status == 200 || res->status == 201) {
     YJson jsData(res->body.begin(), res->body.end());
-    FormatYoudaoResult(content, jsData);
-    return content;
+    FormatYoudaoResult(jsData);
+    return true;
   }
-  return content;
+  return false;
 }
 
-void Translate::FormatYoudaoResult(std::u8string& result, const YJson& data) {
+void Translate::FormatYoudaoResult(const YJson& data) {
   auto const& err = data[u8"errorCode"].getValueString();
   if (err != u8"0") {
-    result = err;
+    m_Callback(err.data(), err.size());
     return;
   }
   std::ostringstream html;
@@ -342,5 +345,5 @@ void Translate::FormatYoudaoResult(std::u8string& result, const YJson& data) {
 
   // html << "<br>" << l;
   auto const view = html.rdbuf()->view();
-  result.assign(view.cbegin(), view.cend());
+  m_Callback(view.data(), view.size());
 }

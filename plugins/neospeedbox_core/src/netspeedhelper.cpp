@@ -11,6 +11,7 @@
 #include <string>
 #include <map>
 
+#if 0
 void NetSpeedHelper::FormatSpeed(uint64_t bytes, bool upload) {
   // https://unicode-table.com/en/2192/
   static constexpr auto units = "BKMGTP";
@@ -19,10 +20,9 @@ void NetSpeedHelper::FormatSpeed(uint64_t bytes, bool upload) {
   for (auto const b = ((bytes &= ((1ull << 50) - 1)) >> 10); size < b; ++u) { size <<= 10; }
   m_SysInfo[upload ? 0 : 1] = std::vformat(m_StrFmt[upload ? 0 : 1], std::make_format_args(static_cast<float>(bytes) / size, *u));
 }
+#endif
 
-NetSpeedHelper::NetSpeedHelper()
-    : m_CpuUse(0), m_MemUse(0),
-      m_StrFmt() {}
+NetSpeedHelper::NetSpeedHelper() {}
 
 #ifdef _WIN32
 
@@ -33,8 +33,8 @@ NetSpeedHelper::~NetSpeedHelper() {
 void NetSpeedHelper::SetMemInfo() {
   static MEMORYSTATUS ms;
   GlobalMemoryStatus(&ms);
-  m_MemUse = ms.dwMemoryLoad / 100.0f;
-  m_SysInfo[2] = std::vformat(m_StrFmt[2], std::make_format_args(ms.dwMemoryLoad));
+  m_TrafficInfo.memUsage = ms.dwMemoryLoad / 100.0f;
+  // m_SysInfo[2] = std::vformat(m_StrFmt[2], std::make_format_args(ms.dwMemoryLoad));
 }
 
 void NetSpeedHelper::SetCpuInfo()
@@ -63,14 +63,14 @@ void NetSpeedHelper::SetCpuInfo()
     const uint64_t all = (Filetime2Int64(kernelTime) - Filetime2Int64(preKernelTime))
       + (Filetime2Int64(userTime) - Filetime2Int64(preUserTime));
     if (all == 0) {
-      m_CpuUse = 100;
+      m_TrafficInfo.cpuUsage = 100;
     } else {
-      m_CpuUse = all - free;
-      m_CpuUse /= all;
+      m_TrafficInfo.cpuUsage = all - free;
+      m_TrafficInfo.cpuUsage /= all;
     }
   }
-  m_SysInfo[3] = std::vformat(m_StrFmt[3], std::make_format_args(
-    static_cast<int>(m_CpuUse * 100)));
+  // m_SysInfo[3] = std::vformat(m_StrFmt[3], std::make_format_args(
+    // static_cast<int>(m_CpuUse * 100)));
 }
 
 void NetSpeedHelper::UpdateAdaptersAddresses()
@@ -131,8 +131,8 @@ void NetSpeedHelper::SetNetInfo() {
     }
   }
   
-  FormatSpeed(m_out_bytes - m_last_out_bytes, true);
-  FormatSpeed(m_in_bytes - m_last_in_bytes, false);
+  m_TrafficInfo.bytesUp = m_out_bytes - m_last_out_bytes;
+  m_TrafficInfo.bytesDown = m_in_bytes - m_last_in_bytes;
   m_last_out_bytes = m_out_bytes;
   m_last_in_bytes = m_in_bytes;
 }
@@ -189,14 +189,6 @@ void NetSpeedHelper::SetNetInfo() {
 }
 
 #endif
-
-void NetSpeedHelper::InitStrings()
-{
-  FormatSpeed(0, true);
-  FormatSpeed(0, false);
-  m_SysInfo[2] = std::vformat(m_StrFmt[2], std::make_format_args(0));
-  UpdateAdaptersAddresses();
-}
 
 void NetSpeedHelper::GetSysInfo() {
   SetMemInfo();

@@ -10,13 +10,11 @@ int main() {
     {u8"PairBaidu", YJson::A {0, 0}},
     {u8"PairYoudao", YJson::A {0, 0}},
   };
-  Translate tran(setting);
   SetConsoleOutputCP(65001);
+  Translate tran(setting, [](const void* data, size_t size){
+    std::cout.write(reinterpret_cast<const char*>(data), size);
+    if (!size) std::cout << "\nPOST Failed.\n";
+  });
   auto const& res = tran.GetResult("翻译结果"s);
-  if (!res.empty()) {
-    std::cout << res;
-  } else {
-    std::cout << res << "\nPOST Failed.\n";
-  }
   return 0;
 }

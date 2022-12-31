@@ -3,18 +3,18 @@
 
 #include <QWidget>
 
+#include <filesystem>
+
+namespace fs = std::filesystem;
+
 class SpeedBox : public QWidget {
  private:
   QPoint m_ConstPos;
   class YJson& m_Settings;
   class PluginObject* m_PluginObject;
-  class QWidget* m_CentralWidget;
+  class SkinObject* m_CentralWidget;
   class NetSpeedHelper* m_NetSpeedHelper;
-  class QLabel* m_TextMemUseage;
-  class QLabel* m_TextUploadSpeed;
-  class QLabel* m_TextDownloadSpeed;
-  class QLabel* m_TextCpuUseage;
-  class QFrame* m_MemColorFrame;
+  HINSTANCE m_SkinDll;
   class QTimer* m_Timer;
   class QMenu& m_NetCardMenu;
   void* m_AppBarData;
@@ -46,12 +46,12 @@ class SpeedBox : public QWidget {
   ~SpeedBox();
   void InitShow();
   void InitMove();
-  void UpdateSkin();
+  bool UpdateSkin();
 
  private:
   void SetWindowMode();
-  void SetBaseLayout();
-  void UpdateTextContent();
+  bool LoadDll(fs::path dllPath);
+  bool LoadCurrentSkin();
   void SetHideFullScreen();
   void InitNetCard();
   void UpdateNetCardMenu();

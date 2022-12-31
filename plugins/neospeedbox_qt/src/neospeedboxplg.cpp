@@ -85,7 +85,7 @@ void NeoSpeedboxPlg::InitFunctionMap() {
       if (!mimeData->hasUrls()) return;
       auto urls = mimeData->urls();
       auto uiUrlsView = urls | std::views::filter([](const QUrl& i) {
-          return i.isValid() && i.isLocalFile() && i.fileName().endsWith(".ui");
+          return i.isValid() && i.isLocalFile() && i.fileName().endsWith(".dll");
         }) | std::views::transform([](const QUrl& url){
           return fs::path(PluginObject::QString2Utf8(url.toLocalFile()));
         }) | std::views::filter([](const fs::path& url) {
@@ -164,18 +164,35 @@ YJson& NeoSpeedboxPlg::InitSettings(YJson& settings)
     };
   }
   std::u8string default_skins[][2] = {
-    {u8"经典火绒"s, u8":/skins/Huorong.ui"s},
-    {u8"电脑管家"s, u8":/skins/Guanjia.ui"s},
-    {u8"数字卫士"s, u8":/skins/360.ui"s},
-    {u8"独霸一方"s, u8":/skins/duba.ui"s},
-    {u8"果里果气"s, u8":/skins/Fruit.ui"s},
-    {u8"开源力量"s, u8":/skins/archlinux.ui"s},
+    {u8"经典火绒"s, u8"skin1"s},
+    {u8"电脑管家"s, u8"skin2"s},
+    {u8"数字卫士"s, u8"skin3"s},
+    {u8"独霸一方"s, u8"skin4"s},
+    {u8"开源力量"s, u8"skin5"s},
+    {u8"果里果气"s, u8"skin6"s},
   };
   auto& skins = settings[u8"UserSkins"];
   if (!skins.isObject()) skins = YJson::Object;
+
+  auto& curSkin = settings[u8"CurSkin"].getValueString();
+  if (auto iter = skins.find(curSkin); iter == skins.endO()) {
+    curSkin = u8"经典火绒";
+  } else {
+    fs::path curSkinPath = u8"skins/" + iter->second.getValueString() + u8".dll";
+    if (!fs::exists(curSkinPath)) {
+      skins.remove(curSkin);
+      curSkin = u8"经典火绒";
+    }
+  }
+  
   for (size_t i=0; i!=6; ++i) {
     skins[default_skins[i][0]] = default_skins[i][1];
   }
+
+  const auto& curFileName = Utf82QString(skins[curSkin].getValueString());
+  auto const curSkinPath = "skins/" + curFileName + ".dll";
+  auto const curResPath = ":/dlls/" + curFileName + ".dll";
+
   return settings;
   // we may not need to call SaveSettings;
 }
@@ -269,8 +286,11 @@ void NeoSpeedboxPlg::ChooseSkinConnect(QAction* action)
   QObject::connect(action, &QAction::triggered, m_ChooseSkinMenu, [action, this](){
     m_Settings[u8"CurSkin"] = PluginObject::QString2Utf8(action->text());
     mgr->SaveSettings();
-    m_Speedbox->UpdateSkin();
-    glb->glbShowMsg("更换皮肤成功！");
+    if (m_Speedbox->UpdateSkin()) {
+      glb->glbShowMsg("更换皮肤成功！");
+    } else {
+      glb->glbShowMsg("更换皮肤失败！");
+    }
   });
 }
 
@@ -320,11 +340,12 @@ void NeoSpeedboxPlg::AddSkin(const QString& name, const fs::path& path)
     fs::copy(path, u8FilePath);
   }
 
-  m_Settings[u8"UserSkins"].append(u8FilePath.u8string(), QString2Utf8(name));
+  const auto fileName = path.stem();
+  m_Settings[u8"UserSkins"].append(fileName.u8string(), QString2Utf8(name));
   mgr->SaveSettings();
 
   auto action = m_ChooseSkinMenu->addAction(name);
-  action->setToolTip(QString::fromStdU16String(path.u16string()));
+  action->setToolTip(QString::fromStdU16String(fileName.u16string()));
   action->setCheckable(true);
   ChooseSkinConnect(action);
 

@@ -26,7 +26,12 @@ NeoTranslateDlg::NeoTranslateDlg(YJson& settings)
       m_TextTo(new QTextEdit(this)),
       m_BoxFrom(new QComboBox(this)),
       m_BoxTo(new QComboBox(this)),
-      m_Translate(new Translate(m_Settings)),
+      m_Translate(new Translate(m_Settings, [this](const void* data, size_t size){
+        if (m_Translate->GetSource() == Translate::Baidu)
+          m_TextTo->setPlainText(QString::fromUtf8(reinterpret_cast<const char*>(data), size));
+        else
+          m_TextTo->setHtml(QString::fromUtf8(reinterpret_cast<const char*>(data), size));
+      })),
       m_BtnCopyFrom(new QPushButton(m_TextFrom)),
       m_BtnCopyTo(new QPushButton(m_TextTo)),
       m_BtnTransMode(new QPushButton(this)) {

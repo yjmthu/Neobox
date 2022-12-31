@@ -43,20 +43,11 @@ private:
 
 template<typename _Utf8Array>
 void NeoTranslateDlg::GetResultData(const _Utf8Array& text) {
-  // m_Translate->m_LanPair = { m_BoxFrom->currentIndex(), m_BoxTo->currentIndex() };
-  std::u8string s;
   if (!m_TextFromChanged) return;
-  if (text.size() == 0) {
-    m_TextTo->clear();
-    m_TextFromChanged = false;
-    return;
-  }
-  auto const& result = m_Translate->GetResult(text);
   m_TextTo->clear();
-  if (m_Translate->GetSource() == Translate::Baidu)
-    m_TextTo->setPlainText(PluginObject::Utf82QString(result));
-  else
-    m_TextTo->setHtml(PluginObject::Utf82QString(result));
+  if (text.size() != 0) {
+     m_Translate->GetResult(text);
+  }
   m_TextFromChanged = false;
 }
 

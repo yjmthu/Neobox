@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>100</width>
-    <height>40</height>
+    <height>44</height>
    </rect>
   </property>
   <property name="cursor">
@@ -19,12 +19,18 @@
   <property name="toolTip">
    <string>行動是治癒恐懼的良藥，而猶豫、拖延將不斷滋養恐懼</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">QWidget#center {
+  background-color: #33333377;
+  border-radius: 2px;
+}</string>
+  </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <property name="spacing">
     <number>0</number>
    </property>
    <property name="leftMargin">
-    <number>0</number>
+    <number>2</number>
    </property>
    <property name="topMargin">
     <number>0</number>
@@ -52,8 +58,15 @@
      <property name="cursor">
       <cursorShape>PointingHandCursor</cursorShape>
      </property>
-     <property name="text">
-      <string>{0}</string>
+     <property name="styleSheet">
+      <string notr="true">QLabel#memUse {
+  width: 26px;
+  color: #00FFFF;
+  font-size: 17pt;
+  font-family: Carattere;
+  font-weight: bold;
+  padding-left: 1px;
+}</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -82,8 +95,13 @@
        <property name="cursor">
         <cursorShape>PointingHandCursor</cursorShape>
        </property>
-       <property name="text">
-        <string>↑ {0:.1f} {1}</string>
+       <property name="styleSheet">
+        <string notr="true">QLabel#netUp {
+  color: #FAAA23;
+  font-family: Nickainley;
+  font-weight: bold;
+  margin-left: 1px;
+}</string>
        </property>
       </widget>
      </item>
@@ -98,8 +116,13 @@
        <property name="cursor">
         <cursorShape>PointingHandCursor</cursorShape>
        </property>
-       <property name="text">
-        <string>↓ {0:.1f} {1}</string>
+       <property name="styleSheet">
+        <string notr="true">QLabel#netDown {
+  color: #8CF01E;
+  font-family: Nickainley;
+  font-weight: bold;
+  margin-left: 1px;
+}</string>
        </property>
       </widget>
      </item>

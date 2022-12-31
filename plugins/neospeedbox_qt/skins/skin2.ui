@@ -127,10 +127,6 @@ border-radius: 21px;</string>
      <height>48</height>
     </size>
    </property>
-   <property name="styleSheet">
-    <string notr="true">background-color: qconicalgradient(cx:0.5, cy:0.5, angle:90, stop:0 #595c6b, stop:{2:4f} #595c6b, stop:{3:4f} transparent stop:1 transparent);
-border-radius: 21px;</string>
-   </property>
    <property name="frameShape">
     <enum>QFrame::StyledPanel</enum>
    </property>
@@ -164,9 +160,6 @@ border-radius: 21px;</string>
 border-radius: 19px;
 font: 16pt &quot;华文细黑&quot;;
 color: rgb(223, 223, 223);</string>
-   </property>
-   <property name="text">
-    <string>{0} </string>
    </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
@@ -285,9 +278,6 @@ color: #2fb634;</string>
          <string notr="true">font: 7pt &quot;Microsoft YaHei UI&quot;;
 color: rgb(223, 223, 223);</string>
         </property>
-        <property name="text">
-         <string>{0:.0f} {1}/s</string>
-        </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
@@ -298,9 +288,6 @@ color: rgb(223, 223, 223);</string>
         <property name="styleSheet">
          <string notr="true">font: 7pt &quot;Microsoft YaHei UI&quot;;
 color: rgb(223, 223, 223);</string>
-        </property>
-        <property name="text">
-         <string>{0:.0f} {1}/s</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>

@@ -2,14 +2,14 @@
 #define NETSPEEDHELPER_H
 
 #include <set>
-#include <string>
-#include <array>
 #include <vector>
 #ifdef _WIN32
 #include <Winsock2.h>
 // #include <Windows.h>
 #include <Iphlpapi.h>
 #endif
+
+#include <trafficinfo.h>
 
 class NetSpeedHelper {
  public:
@@ -29,11 +29,7 @@ class NetSpeedHelper {
   void GetSysInfo();
   std::set<std::string> m_AdapterBalckList; // ANSI
   std::vector<IpAdapter> m_Adapters;
-  std::array<std::string, 4> m_StrFmt;      // UTF8
-  std::array<std::string, 4> m_SysInfo;     // UTF8
-  float m_MemUse, m_CpuUse;
-  void ClearData();
-  void InitStrings();
+  TrafficInfo m_TrafficInfo;
 
  private:
   // uint64_t m_RecvBytes, m_SendBytes;

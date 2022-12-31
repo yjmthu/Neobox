@@ -9,7 +9,6 @@
 #include <QPropertyAnimation>
 #include <QTimer>
 #include <QVBoxLayout>
-#include <QUiLoader>
 #include <QSharedMemory>
 #include <QProcess>
 
@@ -21,6 +20,7 @@
 #include <appcode.hpp>
 #include <pluginobject.h>
 #include <neoapp.h>
+#include <skinobject.h>
 
 #include <array>
 #include <filesystem>
@@ -30,9 +30,6 @@
 #include <Windows.h>
 #endif
 
-extern PluginMgr* mgr;
-extern GlbObject* glb;
-
 SpeedBox::SpeedBox(PluginObject* plugin, YJson& settings, QMenu* netcardMenu)
     : QWidget(nullptr,
               Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool),
@@ -40,16 +37,22 @@ SpeedBox::SpeedBox(PluginObject* plugin, YJson& settings, QMenu* netcardMenu)
     m_Settings(settings),
     m_NetCardMenu(*netcardMenu),
     m_NetSpeedHelper(new NetSpeedHelper),
+    m_CentralWidget(nullptr),
+    m_SkinDll(nullptr),
     m_Timer(new QTimer(this)),
     m_Animation(new QPropertyAnimation(this, "geometry"))
 {
   SetWindowMode();
   SetHideFullScreen();
-  SetBaseLayout();
+  LoadCurrentSkin();
   InitNetCard();
+  setStyleSheet(glb->glbGetMenu()->styleSheet());
 }
 
 SpeedBox::~SpeedBox() {
+  delete m_CentralWidget;
+  FreeLibrary(m_SkinDll);
+
   SHAppBarMessage(ABM_REMOVE, reinterpret_cast<APPBARDATA*>(m_AppBarData));
   m_Timer->stop();
   delete m_Timer;
@@ -80,91 +83,84 @@ void SpeedBox::SetWindowMode() {
   move(position.front().getValueInt(), position.back().getValueInt());
 }
 
-void SpeedBox::UpdateSkin()
+bool SpeedBox::UpdateSkin()
 {
-  m_CentralWidget->hide();
-  m_CentralWidget->deleteLater();
-  SetBaseLayout();
-  UpdateTextContent();
-  m_CentralWidget->show();
+  delete m_CentralWidget;
+  FreeLibrary(m_SkinDll);
+  m_CentralWidget = nullptr;
+  m_SkinDll = nullptr;
+  return LoadCurrentSkin();
 }
 
-void SpeedBox::SetBaseLayout() {
+bool SpeedBox::LoadDll(fs::path dllPath)
+{
+  if (!fs::exists(dllPath)) return false;
 
-  QUiLoader loader(this);
-  const auto& skinName = m_Settings[u8"CurSkin"].getValueString();
-  auto const qSkinPath = PluginObject::Utf82QString(m_Settings[u8"UserSkins"][skinName].getValueString());
-  if (!QFile::exists(qSkinPath))
-    throw std::runtime_error("Can't find skin file!");
-  QFile file(qSkinPath);
-  file.open(QFile::ReadOnly);
-  m_CentralWidget = loader.load(&file, this);
-  file.close();
+  SkinObject* (*newSkin)(QWidget*, const TrafficInfo&);
+  bool (*skinVersion)(const std::string&);
+  dllPath.make_preferred();
+  auto wPath = dllPath.make_preferred().wstring();
+  wPath.push_back(L'\0');
+  m_SkinDll = LoadLibraryW(wPath.data());
 
-  m_CentralWidget->move(0, 0);
-  setMinimumSize(m_CentralWidget->size());
-  setMaximumSize(m_CentralWidget->size());
+  if (!m_SkinDll) return false;
 
-  m_TextMemUseage = m_CentralWidget->findChild<QLabel*>("memUse");
-  m_TextUploadSpeed = m_CentralWidget->findChild<QLabel*>("netUp");
-  m_TextDownloadSpeed = m_CentralWidget->findChild<QLabel*>("netDown");
-  m_TextCpuUseage = m_CentralWidget->findChild<QLabel*>("cpuUse");
-
-  QByteArray buffer;
-  if (m_TextUploadSpeed) {
-    buffer = m_TextUploadSpeed->text().toUtf8();
-    m_NetSpeedHelper->m_StrFmt[0].assign(buffer.begin(), buffer.end());
-  }
-  if (m_TextDownloadSpeed) {
-    buffer = m_TextDownloadSpeed->text().toUtf8();
-    m_NetSpeedHelper->m_StrFmt[1].assign(buffer.begin(), buffer.end());
-  }
-  if (m_TextMemUseage) {
-    buffer = m_TextMemUseage->text().toUtf8();
-    m_NetSpeedHelper->m_StrFmt[2].assign(buffer.begin(), buffer.end());
-  }
-  if (m_TextCpuUseage) {
-    buffer = m_TextCpuUseage->text().toUtf8();
-    m_NetSpeedHelper->m_StrFmt[3].assign(buffer.begin(), buffer.end());
+  skinVersion = reinterpret_cast<decltype(skinVersion)>(GetProcAddress(m_SkinDll, "skinVersion"));
+  if (!skinVersion || !skinVersion(__DATE__)) {
+    FreeLibrary(m_SkinDll);
+    m_SkinDll = nullptr;
+    return false;
   }
 
-  m_MemColorFrame = m_CentralWidget->findChild<QFrame*>("memColorFrame");
-  if (m_MemColorFrame != nullptr) {
-    buffer = m_MemColorFrame->styleSheet().toUtf8();
-    m_MemFrameStyle.assign(buffer.begin(), buffer.end());
-    const auto style = std::vformat(m_MemFrameStyle, std::make_format_args(
-        0.1, 0.2, 0.8, 0.9
-    ));
-    m_MemColorFrame->setStyleSheet(QString::fromUtf8(style.data(), style.size()));
+  newSkin = reinterpret_cast<decltype(newSkin)>(GetProcAddress(m_SkinDll, "newSkin"));
+  if (!newSkin) {
+    FreeLibrary(m_SkinDll);
+    m_SkinDll = nullptr;
+    return false;
   }
 
-  setStyleSheet(glb->glbGetMenu()->styleSheet());
+  m_CentralWidget = newSkin(this, m_NetSpeedHelper->m_TrafficInfo);
+
+  return true;
 }
 
-void SpeedBox::UpdateTextContent() {
-  static constexpr auto delta = 0.0002;
-  static const auto qstr = [](const auto& str) {
-    return QString::fromUtf8(str.data(), str.size());
-  };
+bool SpeedBox::LoadCurrentSkin() {
 
-  auto iter = m_NetSpeedHelper->m_SysInfo.cbegin();
-  if (m_TextUploadSpeed)
-    m_TextUploadSpeed->setText(qstr(iter[0]));
-  if (m_TextDownloadSpeed)
-    m_TextDownloadSpeed->setText(qstr(iter[1]));
-  if (m_TextMemUseage)
-    m_TextMemUseage->setText(qstr(iter[2]));
-  if (m_TextCpuUseage)
-    m_TextCpuUseage->setText(qstr(iter[3]));
+  auto& skinName = m_Settings[u8"CurSkin"].getValueString();
+  const auto& skinFileName = m_Settings[u8"UserSkins"][skinName].getValueString();
 
-  if (m_MemColorFrame != nullptr) {
-    const float x1 = m_NetSpeedHelper->m_MemUse > delta ? m_NetSpeedHelper->m_MemUse - delta : m_NetSpeedHelper->m_MemUse;
-    const float x2 = x1 + delta, y1 = 1 - x2, y2 = 1 - x1;
-    const auto style = std::vformat(m_MemFrameStyle, std::make_format_args(
-        x1, x2, y1, y2
-    ));
-    m_MemColorFrame->setStyleSheet(QString::fromUtf8(style.data(), style.size()));
+  auto skinPath = u8"skins/" + skinFileName + u8".dll";
+  auto qSkinPath = QString::fromUtf8(skinPath.data(), skinPath.size());
+  auto qResSkinPath = ":/dlls/" + QString::fromUtf8(skinFileName.data(), skinFileName.size()) + ".dll";
+
+  if (!fs::exists("skins"))
+    fs::create_directory("skins");
+  
+  
+  if (QFile::exists(qResSkinPath)) {
+    if (QFile::exists(qSkinPath)) {
+      QFile fileConst(qResSkinPath);
+      fileConst.open(QIODevice::ReadOnly);
+      auto const resData = fileConst.readAll();
+      fileConst.close();
+
+      QFile fileVar(qSkinPath);
+      fileVar.open(QIODevice::ReadOnly);
+      auto const varData = fileVar.readAll();
+      fileVar.close();
+
+      if (resData != varData) {
+        QFile::remove(qSkinPath);
+        QFile::copy(qResSkinPath, qSkinPath);
+        QFile::setPermissions(qSkinPath, QFile::ReadUser | QFile::WriteUser);
+      }
+    } else {
+      QFile::copy(qResSkinPath, qSkinPath);
+      QFile::setPermissions(qSkinPath, QFile::ReadUser | QFile::WriteUser);
+    }
   }
+
+  return LoadDll(skinPath);
 }
 
 void SpeedBox::SetHideFullScreen() {
@@ -332,8 +328,6 @@ void SpeedBox::InitNetCard()
     m_NetSpeedHelper->m_AdapterBalckList.emplace(array.begin(), array.end());
   }
 
-  m_NetSpeedHelper->InitStrings();
-  UpdateTextContent();
   connect(m_Timer, &QTimer::timeout, this, [this]() {
     static int count = 10;
     if (--count == 0) {
@@ -341,17 +335,9 @@ void SpeedBox::InitNetCard()
       UpdateNetCardMenu();
       count = 10;
     }
+    if (!m_CentralWidget) return;
     m_NetSpeedHelper->GetSysInfo();
-    UpdateTextContent();
-#if 0
-    const auto flag = glb->glbReadSharedFlag();
-    if (flag == 2) {
-      glb->glbWriteSharedFlag(0);
-      InitMove();
-    } else if (flag == 4) {
-      QApplication::quit();
-    }
-#endif
+    m_CentralWidget->UpdateText();
   });
   m_Timer->start(1000);
 }

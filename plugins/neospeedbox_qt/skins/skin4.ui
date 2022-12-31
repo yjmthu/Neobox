@@ -10,6 +10,9 @@
     <height>27</height>
    </rect>
   </property>
+  <property name="cursor">
+   <cursorShape>PointingHandCursor</cursorShape>
+  </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
@@ -33,21 +36,15 @@ QLabel {
      <height>16</height>
     </rect>
    </property>
-   <property name="text">
-    <string>{0}%</string>
-   </property>
   </widget>
   <widget class="QLabel" name="netUp">
    <property name="geometry">
     <rect>
-     <x>78</x>
+     <x>80</x>
      <y>7</y>
      <width>57</width>
      <height>16</height>
     </rect>
-   </property>
-   <property name="text">
-    <string>{0:.1f} {1}/s</string>
    </property>
   </widget>
   <widget class="QLabel" name="netDown">
@@ -59,9 +56,6 @@ QLabel {
      <height>16</height>
     </rect>
    </property>
-   <property name="text">
-    <string>{0:.1f} {1}/s</string>
-   </property>
   </widget>
   <widget class="QLabel" name="memUse">
    <property name="geometry">
@@ -71,9 +65,6 @@ QLabel {
      <width>57</width>
      <height>16</height>
     </rect>
-   </property>
-   <property name="text">
-    <string>{0}%</string>
    </property>
   </widget>
  </widget>
