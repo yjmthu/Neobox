@@ -2,6 +2,7 @@
 #include <translate.h>
 #include <pluginmgr.h>
 #include <pluginobject.h>
+#include <heightctrl.h>
 #include <neoapp.h>
 #include <yjson.h>
 
@@ -32,9 +33,11 @@ NeoTranslateDlg::NeoTranslateDlg(YJson& settings)
         else
           m_TextTo->setHtml(QString::fromUtf8(reinterpret_cast<const char*>(data), size));
       })),
+      m_HeightCtrl(new HeightCtrl(this, settings[u8"HeightRatio"])),
       m_BtnCopyFrom(new QPushButton(m_TextFrom)),
       m_BtnCopyTo(new QPushButton(m_TextTo)),
-      m_BtnTransMode(new QPushButton(this)) {
+      m_BtnTransMode(new QPushButton(this))
+{
   setWindowTitle("极简翻译");
   m_TextFrom->setObjectName("neoTextFrom");
   m_TextTo->setObjectName("neoTextTo");
@@ -123,6 +126,8 @@ void NeoTranslateDlg::showEvent(QShowEvent*) {
   m_BtnCopyTo->move(m_TextTo->width() - m_BtnCopyTo->width() - 4, 4);
   m_BtnCopyFrom->hide();
   m_BtnCopyTo->hide();
+
+  m_HeightCtrl->UpdateUi();
 
   m_TextFrom->setFocus();
   activateWindow();
@@ -273,6 +278,8 @@ void NeoTranslateDlg::ChangeLanguageSource(bool checked) {
       std::bind(&NeoTranslateDlg::ChangeLanguageTo, this, std::placeholders::_1));
 
   m_Settings[u8"Mode"] = checked ? 1 : 0;
+
+  m_HeightCtrl->UpdateUi();
   m_LanPairChanged = true;
 }
 
@@ -305,6 +312,7 @@ void NeoTranslateDlg::AddCombbox(QHBoxLayout* layout) {
   lable->setText(QStringLiteral("→"));
   layout->addWidget(lable);
   layout->addWidget(m_BoxTo);
+  layout->addWidget(m_HeightCtrl);
 
   m_BtnTransMode->setObjectName(QStringLiteral("btnTransMode"));
   m_BtnTransMode->setCheckable(true);

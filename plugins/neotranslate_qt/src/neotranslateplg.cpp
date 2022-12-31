@@ -148,6 +148,7 @@ YJson& NeoTranslatePlg::InitSettings(YJson& settings)
       { u8"AutoMove",      true  },    // 自动移动悬浮窗
       { u8"AutoSize",      true  },    // 自动移动悬浮窗
       { u8"Position", YJson::A { 100, 100 }},
+      { u8"HeightRatio", YJson:: A { 180, 180 }},
     };
   }
   auto& version = settings[u8"Version"];
@@ -162,6 +163,10 @@ YJson& NeoTranslatePlg::InitSettings(YJson& settings)
     version = 1;
     settings[u8"PairBaidu"] = YJson::A {0, 0};
     settings[u8"PairYoudao"] = YJson::A {0, 0};
+  }
+  if (version.getValueInt() == 1) {
+    version = 2;
+    settings[u8"HeightRatio"] = YJson::A {180, 180};
   }
   return settings;
   // we may not need to call SaveSettings;

@@ -22,11 +22,13 @@ class NeoTranslateDlg : public QWidget {
   void GetResultData(const _Utf8Array& text);
 
  private:
+  friend class HeightCtrl;
   class YJson& m_Settings;
   class QPlainTextEdit *m_TextFrom;
   class QTextEdit *m_TextTo;
   class QComboBox *m_BoxFrom, *m_BoxTo;
   class Translate* m_Translate;
+  class HeightCtrl* m_HeightCtrl;
   class QPushButton *m_BtnCopyFrom, *m_BtnCopyTo;
   class QPushButton* m_BtnTransMode;
   QPoint m_LastPostion;

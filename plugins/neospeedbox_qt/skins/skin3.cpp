@@ -52,7 +52,7 @@ void Skin::UpdateText()
 
 void Skin::SetStyleSheet()
 {
-  constexpr double delta = 0.0002f;
+  constexpr double delta = 0.0002;
   static const QString fmt {
     "background-color: "
       "qlineargradient("
