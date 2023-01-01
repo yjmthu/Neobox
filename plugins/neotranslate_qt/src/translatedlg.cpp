@@ -208,6 +208,24 @@ bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
             return true;
           }
           break;
+        case Qt::Key_Left:
+          if (keyEvent->modifiers() & Qt::AltModifier) {
+            int i = m_BoxFrom->currentIndex();
+            m_BoxFrom->setCurrentIndex(i == 0 ? m_BoxFrom->count() - 1 : --i);
+            m_Translate->m_LanPair->to = m_BoxFrom->currentIndex();
+            m_LanPairChanged = true;
+            return true;
+          }
+          break;
+        case Qt::Key_Right:
+          if (keyEvent->modifiers() & Qt::AltModifier) {
+            int i = m_BoxFrom->currentIndex();
+            m_BoxFrom->setCurrentIndex(++i == m_BoxFrom->count() ? 0 : i);
+            m_Translate->m_LanPair->to = m_BoxFrom->currentIndex();
+            m_LanPairChanged = true;
+            return true;
+          }
+          break;
         case Qt::Key_M:
           if (keyEvent->modifiers() & Qt::ControlModifier) {
             m_BtnTransMode->toggle();

@@ -86,6 +86,8 @@
 
 ![极简翻译](https://cloud.tsinghua.edu.cn/f/ce4fb5704e5748fea962/?dl=1)
 
+![新版极简翻译](https://user-images.githubusercontent.com/73242138/210152957-1220946e-8822-410a-87f0-8307df2cf5a6.png)
+
 
 - 极简翻译 **快捷键** 映射表
 
@@ -94,8 +96,10 @@
 | 热键信号 | 开启或关闭窗口 |
 | <kbd>enter</kbd> | *发送翻译请求* |
 | <kbd>ctrl</kbd> + <kbd>enter</kbd> | 换行 |
-| <kbd>alt</kbd> + <kbd>Down</kbd> | 向下切换To语言 |
-| <kbd>alt</kbd> + <kbd>Up</kbd> | 向上切换To语言 |
+| <kbd>alt</kbd> + <kbd>Left</kbd> | 向前切换from语言 |
+| <kbd>alt</kbd> + <kbd>Right</kbd> | 向后切换from语言 |
+| <kbd>alt</kbd> + <kbd>Up</kbd> | 向前切换to语言 |
+| <kbd>alt</kbd> + <kbd>Down</kbd> | 向后切换to语言 |
 | <kbd>ctrl</kbd> + <kbd>M</kbd> | 切换查词模式 |
 | <kbd>esc</kbd> | 关闭窗口 |
 
@@ -158,6 +162,8 @@
 
 ## 现有功能增强方向
 
+> 预计在 `v2.3.x` 的版本内完成。
+
 <!-- 1. 完善自定义皮肤功能，考虑使用 `Lua` 语言来编写动画；
 2. 逐步增加wxWidgets部分的代码，最终取代qt。 -->
 
@@ -166,7 +172,7 @@
 - [ ] 插件更新功能完善，可离线管理插件、调整插件顺序；
 - [ ] 热键管理加强，增加热键执行命令功能；
 - [x] 翻译功能记住from，to语言；
-- [ ] 翻译功能可调节文本区域高度。
+- [x] 翻译功能可调节文本区域高度。
 
 ## 插件开发计划
 
