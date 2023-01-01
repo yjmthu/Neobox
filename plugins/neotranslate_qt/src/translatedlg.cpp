@@ -191,7 +191,7 @@ bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
           return true;
         }
         case Qt::Key_Up:
-          if (keyEvent->modifiers() & Qt::ControlModifier) {
+          if (keyEvent->modifiers() & Qt::AltModifier) {
             int i = m_BoxTo->currentIndex();
             m_BoxTo->setCurrentIndex(i == 0 ? m_BoxTo->count() - 1 : --i);
             m_Translate->m_LanPair->to = m_BoxTo->currentIndex();
@@ -209,7 +209,7 @@ bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
           }
           break;
         case Qt::Key_M:
-          if (keyEvent->modifiers() & Qt::AltModifier) {
+          if (keyEvent->modifiers() & Qt::ControlModifier) {
             m_BtnTransMode->toggle();
             return true;
           }
