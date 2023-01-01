@@ -87,6 +87,7 @@ NeoTranslateDlg::NeoTranslateDlg(YJson& settings)
 }
 
 NeoTranslateDlg::~NeoTranslateDlg() {
+  delete m_HeightCtrl;
   delete m_Translate;
   delete m_TextFrom;
   delete m_TextTo;
@@ -189,17 +190,26 @@ bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
           }
           return true;
         }
-        case Qt::Key_Alt:
-          if (int i = m_BoxTo->currentIndex(); keyEvent->modifiers() & Qt::ShiftModifier) {
-            m_BoxTo->setCurrentIndex(i == 0 ? m_BoxTo->count() - 1 : --i);
-          } else {
-            m_BoxTo->setCurrentIndex(++i == m_BoxTo->count() ? 0 : i);
-          }
-          m_Translate->m_LanPair->to = m_BoxTo->currentIndex();
-          m_LanPairChanged = true;
-          return true;
-        case Qt::Key_M:
+        case Qt::Key_Up:
           if (keyEvent->modifiers() & Qt::ControlModifier) {
+            int i = m_BoxTo->currentIndex();
+            m_BoxTo->setCurrentIndex(i == 0 ? m_BoxTo->count() - 1 : --i);
+            m_Translate->m_LanPair->to = m_BoxTo->currentIndex();
+            m_LanPairChanged = true;
+            return true;
+          }
+          break;
+        case Qt::Key_Down:
+          if (keyEvent->modifiers() & Qt::AltModifier) {
+            int i = m_BoxTo->currentIndex();
+            m_BoxTo->setCurrentIndex(++i == m_BoxTo->count() ? 0 : i);
+            m_Translate->m_LanPair->to = m_BoxTo->currentIndex();
+            m_LanPairChanged = true;
+            return true;
+          }
+          break;
+        case Qt::Key_M:
+          if (keyEvent->modifiers() & Qt::AltModifier) {
             m_BtnTransMode->toggle();
             return true;
           }
@@ -287,6 +297,7 @@ void NeoTranslateDlg::ChangeLanguageFrom(int index) {
   m_Translate->m_LanPair->from = index;
   m_Translate->m_LanPair->to = 0;
   m_LanPairChanged = true;
+  m_TextFromChanged = true;
 
   m_BoxTo->disconnect(this);
   m_BoxTo->clear();
@@ -304,6 +315,7 @@ void NeoTranslateDlg::ChangeLanguageTo(int index)
 {
   m_Translate->m_LanPair->to = index;
   m_LanPairChanged = true;
+  m_TextFromChanged = true;
 }
 
 void NeoTranslateDlg::AddCombbox(QHBoxLayout* layout) {

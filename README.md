@@ -94,10 +94,10 @@
 | 热键信号 | 开启或关闭窗口 |
 | <kbd>enter</kbd> | *发送翻译请求* |
 | <kbd>ctrl</kbd> + <kbd>enter</kbd> | 换行 |
+| <kbd>alt</kbd> + <kbd>Down</kbd> | 向下切换To语言 |
+| <kbd>alt</kbd> + <kbd>Up</kbd> | 向上切换To语言 |
+| <kbd>ctrl</kbd> + <kbd>M</kbd> | 切换查词模式 |
 | <kbd>esc</kbd> | 关闭窗口 |
-| <kbd>alt</kbd> | 向下切换To语言 |
-| <kbd>shift</kbd> + <kbd>alt</kbd> | 向上切换To语言 |
-| <kbd>strl</kbd> + <kbd>M</kbd> | 切换查词模式 |
 
 </details>
 
