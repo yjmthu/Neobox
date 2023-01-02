@@ -55,7 +55,7 @@ YJson& Wallhaven::InitSetting(YJson& setting)
       {u8"动漫壁纸"s, true, u8"categories"s, u8"010"s},
       {u8"随机壁纸"s, false, u8"sorting"s, u8"random"s},
       {u8"极简壁纸"s, false, u8"q"s, u8"minimalism"s},
-      {u8"鬼刀壁纸"s, false, u8"q"s, u8"ghostblade"s}
+      // {u8"鬼刀壁纸"s, false, u8"q"s, u8"ghostblade"s}
   };
   auto& m_ApiObject = setting[u8"WallhavenApi"];
   const auto initDir = GetStantardDir(u8"壁纸天堂");

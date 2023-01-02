@@ -21,8 +21,8 @@ foreach(full_filepath ${_resource_files})
 endforeach()
 
 qt_add_resources(neospeedboxplg "neospeedboxplg"
-    PREFIX "/"
-    FILES ${resource_files}
+  PREFIX "/"
+  FILES ${resource_files}
 )
 
 target_link_libraries(neospeedboxplg PRIVATE

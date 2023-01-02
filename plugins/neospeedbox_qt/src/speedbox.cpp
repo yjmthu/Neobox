@@ -250,7 +250,7 @@ bool SpeedBox::nativeEvent(const QByteArray& eventType,
   return false;
 }
 
-constexpr int delta = 1;
+static constexpr int delta = 1;
 
 void SpeedBox::enterEvent(QEnterEvent* event) {
   auto rtScreen = QGuiApplication::primaryScreen()->geometry();

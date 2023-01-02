@@ -37,6 +37,8 @@ class NeoTranslateDlg : public QWidget {
   bool m_TextFromChanged = false;
 private:
   class QWidget* ReferenceObject() const;
+  void CreateFromRightMenu(QMouseEvent* event);
+  void CreateToRightMenu(QMouseEvent* event);
   void AddCombbox(class QHBoxLayout* layout);
   void ChangeLanguageSource(bool checked);
   void ChangeLanguageFrom(int index);

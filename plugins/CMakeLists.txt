@@ -12,7 +12,7 @@ endforeach()
 
 set(install_dir ${PROJECT_SOURCE_DIR}/install)
 
-install(TARGETS neoocrplg neospeedboxplg neosystemplg neotranslateplg neowallpaperplg neohotkeyplg  
+install(TARGETS neoocrplg neospeedboxplg neosystemplg neotranslateplg neowallpaperplg neohotkeyplg neousbplg 
   LIBRARY DESTINATION ${install_dir}/lib
   ARCHIVE DESTINATION ${install_dir}/lib
   RUNTIME DESTINATION ${install_dir}/plugins

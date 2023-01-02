@@ -21,6 +21,8 @@ HeightCtrl::HeightCtrl(NeoTranslateDlg* parent, YJson& setting)
   , m_TextFrom(*parent->m_TextFrom)
   , m_TextTo(*parent->m_TextTo)
 {
+  setMinimumWidth(15);
+  setMaximumWidth(35);
   if (m_Baidu > m_MaxRatio || m_Baidu < m_MinRatio) {
     m_Baidu = m_DefaultRatio;
   }

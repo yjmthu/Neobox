@@ -16,7 +16,7 @@ void SkinObject::InitSize(QWidget* parent)
 {
   auto const size = m_Center->frameSize();
   parent->setMinimumSize(size);
-  parent->setMinimumSize(size);
+  parent->setMaximumSize(size);
   UpdateText();
   m_Center->show();
 }

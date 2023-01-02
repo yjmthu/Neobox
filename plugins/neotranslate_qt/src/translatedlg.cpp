@@ -173,9 +173,9 @@ void NeoTranslateDlg::hideEvent(QHideEvent *event)
 bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
   // static bool bShiftDown = false, bCtrlDown = false;
   if (target == m_TextFrom || target == m_TextTo) {
-    if (event->type() == QEvent::KeyPress) {
-      auto const keyEvent = reinterpret_cast<QKeyEvent*>(event);
-      switch (keyEvent->key()) {
+    switch (event->type()) { 
+    case QEvent::KeyPress: 
+      switch (auto const keyEvent = reinterpret_cast<QKeyEvent*>(event); keyEvent->key()) {
         case Qt::Key_Escape:
           close();
           return true;
@@ -234,13 +234,15 @@ bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
         default:
           break;
       }
-    } else if (event->type() == QEvent::Enter) {
+      break;
+    case QEvent::Enter:
       if (target == m_TextFrom) {
         m_BtnCopyFrom->show();
       } else {
         m_BtnCopyTo->show();
       }
-    } else if (event->type() == QEvent::Leave) {
+      break;
+    case QEvent::Leave:
       if (target == m_TextFrom) {
         m_BtnCopyFrom->hide();
         m_BtnCopyFrom->setText(QStringLiteral("复制"));
@@ -248,6 +250,16 @@ bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
         m_BtnCopyTo->hide();
         m_BtnCopyTo->setText(QStringLiteral("复制"));
       }
+      break;
+    case QEvent::MouseButtonPress:
+      if (target == m_TextFrom) {
+        CreateFromRightMenu(dynamic_cast<QMouseEvent*>(event));
+      } else if (target == m_TextTo) {
+        CreateToRightMenu(dynamic_cast<QMouseEvent*>(event));
+      }
+      break;
+    default:
+      break;
     }
   }
   return QWidget::eventFilter(target, event);
@@ -334,6 +346,56 @@ void NeoTranslateDlg::ChangeLanguageTo(int index)
   m_Translate->m_LanPair->to = index;
   m_LanPairChanged = true;
   m_TextFromChanged = true;
+}
+
+void NeoTranslateDlg::CreateToRightMenu(QMouseEvent* event)
+{
+  if (!(event->buttons() & Qt::MouseButton::RightButton)) return;
+    // m_TextTo->setContextMenuPolicy(Qt::CustomContextMenu);
+  auto const toMenu = m_TextTo->createStandardContextMenu();
+  auto const clearAction = toMenu->addAction("Clear");
+  QObject::connect(clearAction, &QAction::triggered, m_TextTo, &QTextEdit::clear);
+  auto const searchAction = toMenu->addAction("Search");
+  QObject::connect(searchAction, &QAction::triggered, m_TextTo, [this](){
+    auto const text = m_TextTo->textCursor().selectedText();
+    if (text.isEmpty()) {
+      GetResultData(m_TextFrom->toPlainText().toUtf8());
+    } else {
+      m_TextFrom->setPlainText(text);
+      GetResultData(text.toUtf8());
+    }
+  });
+  toMenu->exec(event->globalPosition().toPoint());
+  delete toMenu;
+}
+
+void NeoTranslateDlg::CreateFromRightMenu(QMouseEvent* event)
+{
+  if (!(event->buttons() & Qt::MouseButton::RightButton)) return;
+  // m_TextFrom->setContextMenuPolicy(Qt::CustomContextMenu);
+  auto const fromMenu = m_TextFrom->createStandardContextMenu();
+  auto const clearAction = fromMenu->addAction("Clear");
+  QObject::connect(clearAction, &QAction::triggered, m_TextFrom, [this](){
+    auto cursor = m_TextFrom->textCursor();
+    if (cursor.selectedText().isEmpty()) {
+      m_TextFrom->clear();
+    } else {
+      cursor.removeSelectedText();
+      m_TextFrom->setTextCursor(cursor);
+    }
+  });
+  auto const searchAction = fromMenu->addAction("Search");
+  QObject::connect(searchAction, &QAction::triggered, m_TextFrom, [this](){
+    auto const text = m_TextFrom->textCursor().selectedText();
+    if (text.isEmpty()) {
+      GetResultData(m_TextFrom->toPlainText().toUtf8());
+    } else {
+      m_TextFrom->setPlainText(text);
+      GetResultData(text.toUtf8());
+    }
+  });
+  fromMenu->exec(event->globalPosition().toPoint());
+  delete fromMenu;
 }
 
 void NeoTranslateDlg::AddCombbox(QHBoxLayout* layout) {
