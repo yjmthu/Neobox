@@ -44,7 +44,7 @@ void UsbDlg::SetupUi()
 {
   setMinimumWidth(300);
   auto layout = new QHBoxLayout(this);
-  layout->setContentsMargins(0,0,0,0);
+  layout->setContentsMargins(0, 0, 0, 0);
   layout->addWidget(m_CenterWidget);
   m_CenterWidget->setStyleSheet("QWidget { background-color: white; border-radius: 3px; }");
 
@@ -53,6 +53,7 @@ void UsbDlg::SetupUi()
   auto const btnTop = new QPushButton(this);
   auto const btnClose = new QPushButton(this);
 
+  layout->setSizeConstraint(QLayout::SetFixedSize);    // 自动调节大小
   m_MainLayout->addLayout(titleLayout);
   titleLayout->setSpacing(13);
   titleLayout->addWidget(label);
@@ -186,6 +187,7 @@ void UsbDlg::DoDeviceRemoveComplete(const void* lpdb)
   for (auto c: GetDrives(lpdb)) {
     if (auto iter = m_Items.find(c); iter != m_Items.end()) {
       delete iter->second;
+      // if (isVisible()) adjustSize();
     }
   }
   if (m_Items.empty() && isVisible()) {
@@ -235,6 +237,7 @@ void UsbDlg::showEvent(QShowEvent* event)
       70
     );
   }
+  // adjustSize();
   event->accept();
 }
 

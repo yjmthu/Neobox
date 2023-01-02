@@ -44,6 +44,14 @@ void NeoUsbPlg::InitFunctionMap()
         }
       }, PluginEvent::Bool}
     },
+    {u8"moveInscreen",
+      {u8"还原位置", u8"找不到窗口时可使用还原位置", [this](PluginEvent, void*){
+        m_UsbDlg->hide();
+        m_Settings[u8"Position"] = YJson::Null;
+        m_UsbDlg->show();
+        // QMetaObject::invokeMethod(m_UsbDlg, &QWidget::show);
+      }, PluginEvent::Void}
+    },
     {u8"enableHideWhenFull",
       {u8"全屏隐藏", u8"有全屏程序运行时是否隐藏", [this](PluginEvent event, void* data){
         if (event == PluginEvent::Bool) {
