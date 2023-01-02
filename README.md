@@ -15,7 +15,7 @@
 
 ## Neobox 插件管理
 
-目前 Neobox 共有6款插件，源代码在 `plugins` 目录下。插件二进制文件可在 [![Gitlab](https://img.shields.io/badge/Gitlab-yellow.svg?logo=gitlab)](https://gitlab.com/yjmthu1/neoboxplg) 中查看。
+目前 Neobox 共有 **7** 款插件，源代码在 `plugins` 目录下。插件二进制文件可在 [![Gitlab](https://img.shields.io/badge/Gitlab-yellow.svg?logo=gitlab)](https://gitlab.com/yjmthu1/neoboxplg) 中查看。
 
 - 插件下载方式
     1. `托盘图标` `右键菜单` `设置中心` `插件管理`，打开 Neobox 插件管理；
@@ -28,7 +28,7 @@
 ## 插件详情
 
 <details open="open">
-<summary style="font-size:17pt;">网速悬浮插件</summary>
+<summary style="font-size:17pt;">网速悬浮</summary>
 
 功能：网速、内存、CPU占用显示。
 
@@ -49,7 +49,7 @@
 </details>
 
 <details>
-<summary style="font-size:17pt;">壁纸引擎插件</summary>
+<summary style="font-size:17pt;">壁纸引擎</summary>
 
 + 手动切换、定时切换、收藏夹、黑名单
 + 网络壁纸源
@@ -80,7 +80,7 @@
 
 
 <details>
-<summary style="font-size:17pt;">极简翻译插件</summary>
+<summary style="font-size:17pt;">极简翻译</summary>
 
 - 简介：普通模式调用百度翻译Api，查词模式调用有道翻译Api。
 
@@ -106,7 +106,7 @@
 </details>
 
 <details>
-<summary style="font-size:17pt;">文字识别插件</summary>
+<summary style="font-size:17pt;">文字识别</summary>
 
 - 简介：截图识别多种语言文字，需要自行下载相应语言的训练数据。目前依赖于极简翻译插件来输出识别结果。
 
@@ -124,7 +124,7 @@
 </details>
 
 <details>
-<summary style="font-size:17pt;">系统控制插件</summary>
+<summary style="font-size:17pt;">系统控制</summary>
 
 - 简介：提供防止息屏、右键复制、快速关机、重启、睡眠等功能。
 
@@ -133,7 +133,7 @@
 </details>
 
 <details>
-<summary style="font-size:17pt;">热键管理插件</summary>
+<summary style="font-size:17pt;">热键管理</summary>
 
 - 简介：注册并捕获系统全局热键，并将结果发送至相应插件。至于插件具体作何反应与此插件无关。
 
@@ -145,6 +145,21 @@
 | --- | --- |
 | 热键信号 | 打开热键管理 |
 
+
+</details>
+
+<details>
+<summary style="font-size:17pt;">U盘助手</summary>
+
+- 简介：U盘管理，打开、弹出U盘。
+
+![U盘助手](https://cloud.tsinghua.edu.cn/f/ab29d5893d9a4980999e/?dl=1)
+
+- U盘助手 **快捷键** 映射表
+
+| 按键 | 功能 |
+| --- | --- |
+| 热键信号 | 打开或关闭窗口 |
 
 </details>
 
@@ -183,5 +198,5 @@
 - [ ] 颜色拾取（PowerToys已具备，但为了跨平台还是先简单写一个吧）
 - [ ] 天气预报
 - [ ] 动态壁纸
-- [ ] U盘助手
+- [x] U盘助手
 - [ ] 任务栏网速
