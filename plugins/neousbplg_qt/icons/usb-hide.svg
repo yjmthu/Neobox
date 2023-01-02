@@ -9,6 +9,9 @@
    id="svg5"
    inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
    sodipodi:docname="usb-hide.svg"
+   inkscape:export-filename="usb-hide.png"
+   inkscape:export-xdpi="32"
+   inkscape:export-ydpi="32"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -26,7 +29,7 @@
      showgrid="false"
      inkscape:zoom="0.73940797"
      inkscape:cx="50.716251"
-     inkscape:cy="110.22332"
+     inkscape:cy="111.57575"
      inkscape:window-width="1920"
      inkscape:window-height="1013"
      inkscape:window-x="-9"
@@ -40,7 +43,7 @@
      inkscape:groupmode="layer"
      id="layer1">
     <ellipse
-       style="fill:#8dd35f;stroke:#8dd35f;stroke-width:0;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4.7;paint-order:stroke markers fill"
+       style="display:none;fill:#8dd35f;stroke:#8dd35f;stroke-width:0;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4.7;paint-order:stroke markers fill"
        id="path347"
        cx="39.690086"
        cy="39.688873"
@@ -49,10 +52,10 @@
     <rect
        style="fill:#ffffff;stroke:#8dd35f;stroke-width:0;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4.7;paint-order:stroke markers fill"
        id="rect453"
-       width="61.105526"
-       height="14.801956"
-       x="9.1373234"
-       y="32.286522"
-       ry="5.7177949" />
+       width="55.19672"
+       height="13.370631"
+       x="12.091726"
+       y="33.002186"
+       ry="5.1648936" />
   </g>
 </svg>

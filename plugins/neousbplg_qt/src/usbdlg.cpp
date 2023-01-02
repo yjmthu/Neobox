@@ -36,6 +36,7 @@ UsbDlg::UsbDlg(YJson& settings)
 
 UsbDlg::~UsbDlg()
 {
+  SHAppBarMessage(ABM_REMOVE, reinterpret_cast<APPBARDATA*>(m_AppBarData));
   delete m_CenterWidget;
   delete reinterpret_cast<APPBARDATA*>(m_AppBarData);
 }
@@ -46,14 +47,22 @@ void UsbDlg::SetupUi()
   auto layout = new QHBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->addWidget(m_CenterWidget);
-  m_CenterWidget->setStyleSheet("QWidget { background-color: white; border-radius: 3px; }");
+  m_CenterWidget->setStyleSheet(
+    "QWidget { background-color: white; border-radius: 3px; }"
+    "QPushButton { border-radius: 7px; }"
+    "QToolTip { font-size: 9pt; }"
+  );
+
+  m_MainLayout->setContentsMargins(5, 5, 5, 0);
+  m_MainLayout->setSpacing(0);
 
   auto const titleLayout = new QHBoxLayout;
-  auto const label = new QLabel("U盘助手", this);
+  auto const label = new QLabel("<span style='font-size:10pt;'>U盘助手</span>", this);
   auto const btnTop = new QPushButton(this);
   auto const btnClose = new QPushButton(this);
 
   layout->setSizeConstraint(QLayout::SetFixedSize);    // 自动调节大小
+  titleLayout->setContentsMargins(5, 0, 10, 0);
   m_MainLayout->addLayout(titleLayout);
   titleLayout->setSpacing(13);
   titleLayout->addWidget(label);
@@ -61,28 +70,39 @@ void UsbDlg::SetupUi()
   titleLayout->addWidget(btnTop);
   titleLayout->addWidget(btnClose);
 
-  auto const sizeBtn = QSize(15, 15);
+  auto const sizeBtn = QSize(14, 14);
   btnTop->setCheckable(true);
   btnTop->setChecked(m_Settings[u8"StayOnTop"].isTrue());
-  btnTop->setMinimumSize(sizeBtn);
-  btnTop->setMaximumSize(sizeBtn);
+  btnTop->setFixedSize(sizeBtn);
   btnTop->setStyleSheet(
     "QPushButton {"
-      "border-image: url(:/icons/usb-top-gray.png);"
+      "background-color: gray;"
     "}"
     "QPushButton:hover {"
-      "border-image: url(:/icons/usb-top-red.png);"
+      "background-color: #d35f5f;"
+      "border-image: url(:/icons/usb-top.png);"
     "}"
     "QPushButton:checked {"
-      "border-image: url(:/icons/usb-top-orange.png);"
+      "background-color: #ff9955;"
+    "}"
+    "QPushButton:checked:hover {"
+      "background-color: #ff9955;"
+      "border-image: url(:/icons/usb-top.png);"
     "}"
   );
+  btnTop->setToolTip("置顶");
 
-  btnClose->setMinimumSize(sizeBtn);
-  btnClose->setMaximumSize(sizeBtn);
+  btnClose->setFixedSize(sizeBtn);
   btnClose->setStyleSheet(
-    "border-image: url(:/icons/usb-hide.png);"
+    "QPushButton {"
+      "background-color: #8dd35f;"
+    "}"
+    "QPushButton:hover {"
+      "border-image: url(:/icons/usb-hide.png);"
+      "background-color: #8dd35f;"
+    "}"
   );
+  btnClose->setToolTip("隐藏");
 
   connect(btnClose, &QPushButton::clicked, this, &QDialog::hide);
   connect(btnTop, &QPushButton::clicked, this, [this](bool on) {
@@ -109,34 +129,33 @@ void UsbDlg::SetupAnimation()
 
 void UsbDlg::GetUsbInfo()
 {
-  wchar_t disk_path[] {
+  wchar_t szDiskPath[] {
     L' ', L':', L'\0'
   }; 
-  wchar_t device_path[] = {
+  wchar_t szDevicePath[] = {
     L'\\', L'\\', L'.', L'\\',
     L' ', L':', L'\0'
   };        
 		
 	wchar_t i = L'A';
-	DWORD bytes_returned = 0;
-	STORAGE_DEVICE_NUMBER device_num;
+	DWORD dwBytesReturned = 0;
+	STORAGE_DEVICE_NUMBER deviceNumber;
 
   // ++i 放在前面，防止 continue 跳过
-	for (DWORD all_disk = GetLogicalDrives(); all_disk; (all_disk >>= 1), ++i)
+	for (auto disksMask = GetLogicalDrives(); disksMask; (disksMask >>= 1), ++i)
   {
-		if (!(all_disk & 1)) continue;
+		if (!(disksMask & 1)) continue;
 
-    disk_path[0] = i;
-    device_path[4] = i;
-    if (GetDriveTypeW(disk_path) != DRIVE_REMOVABLE) continue;
+    szDiskPath[0] = szDevicePath[4] = i;
+    if (GetDriveTypeW(szDiskPath) != DRIVE_REMOVABLE) continue;
 
     // get this usb device id
-    HANDLE hDevice = CreateFileW(device_path, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+    auto const hDevice = CreateFileW(szDevicePath, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
     if (hDevice == INVALID_HANDLE_VALUE) continue;
 
     if (DeviceIoControl(hDevice, IOCTL_STORAGE_GET_DEVICE_NUMBER, NULL, 0,
-              &device_num, sizeof(device_num), 
-              &bytes_returned, (LPOVERLAPPED) NULL))
+              &deviceNumber, sizeof(deviceNumber), 
+              &dwBytesReturned, (LPOVERLAPPED) NULL))
     {
       // usb_list[usb_device_cnt].device_num = device_num.DeviceNumber;
       auto const item = new UsbDlgItem(this, i, m_Items);
@@ -209,15 +228,15 @@ bool UsbDlg::nativeEvent(const QByteArray& eventType,
                            void* message,
                            qintptr* result) {
   static YJson& bHide = m_Settings[u8"HideWhenFull"];
+  if (bHide.isFalse()) return false;
+  
   MSG* msg = static_cast<MSG*>(message);
   if (MsgCode::MSG_APPBAR_MSGID != static_cast<MsgCode>(msg->message)) return false;
-
   switch ((UINT)msg->wParam) {
     case ABN_FULLSCREENAPP:
       if (msg->lParam) {
-        if (bHide.isTrue())
-          hide();
-      } else {
+        hide();
+      } else if (!m_Items.empty()) {
         show();
       }
       return true;

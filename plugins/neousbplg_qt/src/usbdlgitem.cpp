@@ -9,7 +9,7 @@
 
 #include <QHBoxLayout>
 #include <QVBoxLayout>
-#include <QPushButton>
+#include <QToolButton>
 #include <QFrame>
 #include <QLabel>
 
@@ -38,26 +38,55 @@ void UsbDlgItem::SetupUi()
 {
   auto const size = QSize(40, 40);
   auto const mainLayout = new QHBoxLayout(this);
-  auto const usbSizeLogo = new QFrame(this);
-  usbSizeLogo->setMinimumSize(size);
-  usbSizeLogo->setMaximumSize(size);
-  usbSizeLogo->setStyleSheet("background-color: #ffa924; border-radius: 20px;");
+  mainLayout->setContentsMargins(0, 0, 0, 0);
+  auto const usbSizeLogo = new QWidget(this);
+  usbSizeLogo->setFixedSize(size);
+  usbSizeLogo->setStyleSheet(
+    "background-color: "
+      "qradialgradient("
+        "spread:pad, cx:0.5, cy:0.5, "
+        "radius:0.5, fx:0.5, fy:0.5, "
+        "stop:0 #ffa924, "
+        "stop:0.9840 #ffa924, "
+        "stop:0.9841 transparent, "
+        "stop:1 transparent"
+      ");"
+    "border-radius: 20px;"
+  );
   auto const usbSizeLogoColorMask = new QFrame(usbSizeLogo);
   usbSizeLogoColorMask->setGeometry(0, 0, size.width(), size.height());
   usbSizeLogoColorMask->setStyleSheet(GetStyleSheet());
   auto const usbSizeLogoImageMask = new QFrame(usbSizeLogo);
   usbSizeLogoImageMask->setGeometry(3, 3, size.width() - 6, size.height() - 6);
-  usbSizeLogoImageMask->setStyleSheet("background-color: white; border-radius: 17px; border-image:url(:/icons/usblogo.png);");
+  usbSizeLogoImageMask->setStyleSheet(
+    "background-color: white;"
+    "border-radius: 17px;"
+    "border-image:url(:/icons/usblogo.png);"
+  );
   auto const usbInfoText = new QLabel(GetUsbInfoText(), this);
-  auto const btnOpen = new QPushButton("打开", this);
-  auto const btnPop = new QPushButton("弹出", this);
+  usbInfoText->setToolTip(QStringLiteral("%1 : %2").arg(QChar(m_DriveId)).arg(m_DriveName));
+
+  usbInfoText->setFixedWidth(110);
+  auto const btnOpen = new QToolButton(this);
+  btnOpen->setText("打开");
+  btnOpen->setFixedWidth(45);
+  btnOpen->setIcon(QIcon(":/icons/usb-open.png"));
+  btnOpen->setIconSize(QSize(25, 25));
+  btnOpen->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+  auto const btnPop = new QToolButton(this);
+  btnPop->setText("弹出");
+  btnPop->setFixedWidth(45);
+  btnPop->setIcon(QIcon(":/icons/usb-eject.png"));
+  btnPop->setIconSize(QSize(25, 25));
+  btnPop->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+
   mainLayout->addWidget(usbSizeLogo);
   mainLayout->addWidget(usbInfoText);
   mainLayout->addWidget(btnOpen);
   mainLayout->addWidget(btnPop);
 
-  connect(btnOpen, &QPushButton::clicked, this, std::bind(ShellExecuteW, nullptr, L"open", L"explorer", m_DrivePath, nullptr, SW_SHOWNORMAL));
-  connect(btnPop, &QPushButton::clicked, this, std::bind(&UsbDlgItem::PopUsbDrive, this));
+  connect(btnOpen, &QToolButton::clicked, this, std::bind(ShellExecuteW, nullptr, L"open", L"explorer", m_DrivePath, nullptr, SW_SHOWNORMAL));
+  connect(btnPop, &QToolButton::clicked, this, std::bind(&UsbDlgItem::PopUsbDrive, this));
 }
 
 bool UsbDlgItem::IsDiskExist() const
@@ -68,8 +97,7 @@ bool UsbDlgItem::IsDiskExist() const
 QString UsbDlgItem::GetUsbInfoText() const
 {
   auto const str = std::format(
-    L"<p>{}: {}</p>"
-    "<p>{}/{}</p>",
+    L"<p>{} : {}</p><p>{}/{}</p>",
     m_DriveId, m_DriveName,
     FormatSize(m_SizeFree),
     FormatSize(m_SizeTotal)
@@ -142,15 +170,28 @@ QString UsbDlgItem::GetStyleSheet() const
 
 void UsbDlgItem::SetStyleSheet()
 {
+  // https://stackoverflow.com/questions/1418578/qt-qpushbutton-icon-above-text
   setStyleSheet(
-    "QPushButton {"
-      "background-color: rgba(200, 200, 200, 100);"
+    "QToolButton {"
+      "border-radius: 7px;"
+      // "background-color: rgba(200, 200, 200, 100);"
+      "background-color: transparent;"
+      "padding: 2px 8px;"
     "}"
-    "QPushButton:hover {"
+    "QToolButton:hover {"
+      "border-radius: 7px;"
       "background-color: rgba(150, 150, 150, 100);"
+      "padding: 2px 8px;"
     "}"
-    "QPushButton:pressed {"
+    "QToolButton:pressed {"
+      "border-radius: 7px;"
       "background-color: rgba(100, 100, 100, 100);"
+      "padding: 2px 8px;"
+    "}"
+    "QLabel {"
+      "font-size: 8pt;"
+      "padding-top: 15px;"
+      "padding-bottom: 15px;"
     "}"
   );
 }
