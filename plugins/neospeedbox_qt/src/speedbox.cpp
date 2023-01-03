@@ -31,8 +31,7 @@
 #endif
 
 SpeedBox::SpeedBox(PluginObject* plugin, YJson& settings, QMenu* netcardMenu)
-    : QWidget(nullptr,
-              Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool),
+    : QWidget(nullptr),
     m_PluginObject(plugin),
     m_Settings(settings),
     m_NetCardMenu(*netcardMenu),
@@ -54,12 +53,14 @@ SpeedBox::~SpeedBox() {
   FreeLibrary(m_SkinDll);
 
   SHAppBarMessage(ABM_REMOVE, reinterpret_cast<APPBARDATA*>(m_AppBarData));
-  m_Timer->stop();
+  delete reinterpret_cast<APPBARDATA*>(m_AppBarData);
+  
+  // m_Timer->stop();
   delete m_Timer;
   delete m_NetSpeedHelper;
 }
 
-void SpeedBox::InitShow() {
+void SpeedBox::InitShow(const PluginObject::FollowerFunction& callback) {
   show();
 
   m_Animation->setDuration(100);
@@ -71,12 +72,17 @@ void SpeedBox::InitShow() {
   });
 
   UpdateNetCardMenu();
+
+  auto buffer = m_Settings[u8"ColorEffect"].isTrue();
+  callback(PluginEvent::Bool, &buffer);
 }
 
 void SpeedBox::SetWindowMode() {
   setWindowTitle("Neobox");
   setWindowIcon(QIcon(QStringLiteral(":/icons/neobox.ico")));
+  setAttribute(Qt::WA_TransparentForMouseEvents, m_Settings[u8"MousePenetrate"].isTrue());
   setAttribute(Qt::WA_TranslucentBackground, true);
+  setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
   setAcceptDrops(true);
 
   const auto& position = m_Settings [u8"Position"].getArray();
@@ -97,7 +103,7 @@ bool SpeedBox::LoadDll(fs::path dllPath)
   if (!fs::exists(dllPath)) return false;
 
   SkinObject* (*newSkin)(QWidget*, const TrafficInfo&);
-  bool (*skinVersion)(const std::string&);
+  // bool (*skinVersion)(const std::string&);
   dllPath.make_preferred();
   auto wPath = dllPath.make_preferred().wstring();
   wPath.push_back(L'\0');
@@ -105,12 +111,12 @@ bool SpeedBox::LoadDll(fs::path dllPath)
 
   if (!m_SkinDll) return false;
 
-  skinVersion = reinterpret_cast<decltype(skinVersion)>(GetProcAddress(m_SkinDll, "skinVersion"));
-  if (!skinVersion || !skinVersion(__DATE__)) {
-    FreeLibrary(m_SkinDll);
-    m_SkinDll = nullptr;
-    return false;
-  }
+  // skinVersion = reinterpret_cast<decltype(skinVersion)>(GetProcAddress(m_SkinDll, "skinVersion"));
+  // if (!skinVersion || !skinVersion(__DATE__)) {
+  //   FreeLibrary(m_SkinDll);
+  //   m_SkinDll = nullptr;
+  //   return false;
+  // }
 
   newSkin = reinterpret_cast<decltype(newSkin)>(GetProcAddress(m_SkinDll, "newSkin"));
   if (!newSkin) {
@@ -164,13 +170,12 @@ bool SpeedBox::LoadCurrentSkin() {
 }
 
 void SpeedBox::SetHideFullScreen() {
-  static APPBARDATA appBarData {
+  m_AppBarData = new APPBARDATA {
     sizeof(APPBARDATA),
     reinterpret_cast<HWND>(winId()), 
     static_cast<UINT>(MsgCode::MSG_APPBAR_MSGID),
     0, 0, 0
   };
-  m_AppBarData = &appBarData;
   SHAppBarMessage(ABM_NEW, reinterpret_cast<APPBARDATA*>(m_AppBarData));
 }
 

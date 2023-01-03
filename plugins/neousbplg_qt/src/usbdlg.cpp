@@ -13,6 +13,7 @@
 #include <QScreen>
 #include <QWindow>
 #include <QPropertyAnimation>
+#include <QGraphicsDropShadowEffect>
 
 #include <windows.h>
 #include <dbt.h>
@@ -44,16 +45,24 @@ UsbDlg::~UsbDlg()
 
 void UsbDlg::SetupUi()
 {
-  setMinimumWidth(300);
+  // setMinimumWidth(300);
+
+  // 主控件设置
   auto layout = new QHBoxLayout(this);
-  layout->setContentsMargins(0, 0, 0, 0);
+  layout->setContentsMargins(2, 2, 2, 2);
   layout->addWidget(m_CenterWidget);
   m_CenterWidget->setStyleSheet(
     "QWidget { background-color: white; border-radius: 3px; }"
     "QPushButton { border-radius: 7px; }"
     "QToolTip { font-size: 9pt; }"
   );
+  auto const effect = new QGraphicsDropShadowEffect(this);
+  effect->setOffset(0, 0);
+  effect->setColor(Qt::darkGray);
+  effect->setBlurRadius(30);
+  m_CenterWidget->setGraphicsEffect(effect);
 
+  // 内容设置
   m_MainLayout->setContentsMargins(5, 5, 5, 0);
   m_MainLayout->setSpacing(0);
 
@@ -105,6 +114,7 @@ void UsbDlg::SetupUi()
   );
   btnClose->setToolTip("隐藏");
 
+  // 信号设置
   connect(btnClose, &QPushButton::clicked, this, &QWidget::hide);
   connect(btnTop, &QPushButton::clicked, this, [this](bool on) {
     // https://blog.csdn.net/wangw8507/article/details/116912796

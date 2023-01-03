@@ -11,18 +11,10 @@
 #include <string>
 #include <map>
 
-#if 0
-void NetSpeedHelper::FormatSpeed(uint64_t bytes, bool upload) {
-  // https://unicode-table.com/en/2192/
-  static constexpr auto units = "BKMGTP";
-  const char *u = units;
-  uint64_t size = 1;
-  for (auto const b = ((bytes &= ((1ull << 50) - 1)) >> 10); size < b; ++u) { size <<= 10; }
-  m_SysInfo[upload ? 0 : 1] = std::vformat(m_StrFmt[upload ? 0 : 1], std::make_format_args(static_cast<float>(bytes) / size, *u));
-}
-#endif
 
-NetSpeedHelper::NetSpeedHelper() {}
+NetSpeedHelper::NetSpeedHelper() {
+  GetSystemTimes(&m_PreIdleTime, &m_PreKernelTime, &m_PreUserTime);
+}
 
 #ifdef _WIN32
 
@@ -37,37 +29,29 @@ void NetSpeedHelper::SetMemInfo() {
   // m_SysInfo[2] = std::vformat(m_StrFmt[2], std::make_format_args(ms.dwMemoryLoad));
 }
 
+LONGLONG NetSpeedHelper::Filetime2Int64(const FILETIME &ftime)
+{
+  // https://blog.csdn.net/alwaysrun/article/details/106433080
+
+  static LARGE_INTEGER li;
+  li.LowPart = ftime.dwLowDateTime;
+  li.HighPart = ftime.dwHighDateTime;
+  return li.QuadPart;
+}
+
 void NetSpeedHelper::SetCpuInfo()
 {
-  static bool bFirstCall = true;
-  static FILETIME preIdleTime { 0 }, preKernelTime { 0 }, preUserTime { 0 };
   static FILETIME idleTime, kernelTime, userTime;
 
-  // https://blog.csdn.net/alwaysrun/article/details/106433080
-  static const auto Filetime2Int64 = [](const FILETIME &ftime)
-  {
-      static LARGE_INTEGER li;
-      li.LowPart = ftime.dwLowDateTime;
-      li.HighPart = ftime.dwHighDateTime;
-      return li.QuadPart;
-  };
-
   GetSystemTimes(&idleTime, &kernelTime, &userTime);
-  if (bFirstCall) {
-    preIdleTime = idleTime;
-    preKernelTime = kernelTime;
-    preUserTime = userTime;
-    bFirstCall = false;
+  const uint64_t free = Filetime2Int64(idleTime) - Filetime2Int64(m_PreIdleTime);
+  const uint64_t all = (Filetime2Int64(kernelTime) - Filetime2Int64(m_PreKernelTime))
+    + (Filetime2Int64(userTime) - Filetime2Int64(m_PreUserTime));
+  if (all == 0) {
+    m_TrafficInfo.cpuUsage = 100;
   } else {
-    const uint64_t free = Filetime2Int64(idleTime) - Filetime2Int64(preIdleTime);
-    const uint64_t all = (Filetime2Int64(kernelTime) - Filetime2Int64(preKernelTime))
-      + (Filetime2Int64(userTime) - Filetime2Int64(preUserTime));
-    if (all == 0) {
-      m_TrafficInfo.cpuUsage = 100;
-    } else {
-      m_TrafficInfo.cpuUsage = all - free;
-      m_TrafficInfo.cpuUsage /= all;
-    }
+    m_TrafficInfo.cpuUsage = all - free;
+    m_TrafficInfo.cpuUsage /= all;
   }
   // m_SysInfo[3] = std::vformat(m_StrFmt[3], std::make_format_args(
     // static_cast<int>(m_CpuUse * 100)));
@@ -105,7 +89,6 @@ void NetSpeedHelper::UpdateAdaptersAddresses()
 }
 
 void NetSpeedHelper::SetNetInfo() {
-  static DWORD m_last_in_bytes = 0, m_last_out_bytes = 0;
 
   DWORD dwMISize = 0;
   if (GetIfTable(m_IfTable, &dwMISize, FALSE) == ERROR_INSUFFICIENT_BUFFER) {
@@ -114,7 +97,7 @@ void NetSpeedHelper::SetNetInfo() {
     m_IfTable = (MIB_IFTABLE*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dwMISize);
     GetIfTable(m_IfTable, &dwMISize, FALSE);
   }
-  DWORD m_in_bytes = 0, m_out_bytes = 0;
+  DWORD inBytes = 0, outBytes = 0;
   const IpAdapter* ptr;
   auto find_fn = [&ptr](const MIB_IFROW& item)->bool{
       return ptr->enabled && item.dwIndex == ptr->index;
@@ -126,15 +109,15 @@ void NetSpeedHelper::SetNetInfo() {
     ptr = &adpt;               // pass it to find_fn.
     auto pIfRow = std::find_if(table_begin, table_end, find_fn);
     if (pIfRow != table_end) {
-      m_in_bytes += pIfRow->dwInOctets;
-      m_out_bytes += pIfRow->dwOutOctets;
+      inBytes += pIfRow->dwInOctets;
+      outBytes += pIfRow->dwOutOctets;
     }
   }
   
-  m_TrafficInfo.bytesUp = m_out_bytes - m_last_out_bytes;
-  m_TrafficInfo.bytesDown = m_in_bytes - m_last_in_bytes;
-  m_last_out_bytes = m_out_bytes;
-  m_last_in_bytes = m_in_bytes;
+  m_TrafficInfo.bytesUp = outBytes - m_LastOutBytes;
+  m_TrafficInfo.bytesDown = inBytes - m_LastInBytes;
+  m_LastOutBytes = outBytes;
+  m_LastInBytes = inBytes;
 }
 
 #elif defined(__linux__)

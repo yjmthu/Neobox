@@ -30,6 +30,7 @@ private:
   class SpeedBox* m_Speedbox;
   class QMenu* m_ChooseSkinMenu;
   class QMenu* m_RemoveSkinMenu;
+  class QMenu* m_NetCardMenu;
   class QActionGroup* m_ChooseSkinGroup;
   std::function<void(PluginEvent, void*)> m_ActiveWinodow;
 };

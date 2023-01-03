@@ -47,7 +47,6 @@ void NeoSpeedboxPlg::InitFunctionMap() {
     },
     {u8"enableBlur", {
       u8"模糊背景", u8"Windows10+或KDE下的模糊效果", [this](PluginEvent event, void* data){
-        static bool firstRun = true;
         if (event == PluginEvent::Bool) {
           m_Settings[u8"ColorEffect"] = *reinterpret_cast<bool *>(data);
           auto status = *reinterpret_cast<bool *>(data) ? ACCENT_ENABLE_BLURBEHIND : ACCENT_DISABLED;
@@ -56,10 +55,23 @@ void NeoSpeedboxPlg::InitFunctionMap() {
           SetWindowCompositionAttribute(hWnd, status,
             qRgba(col.blue(), col.green(), col.red(), col.alpha()));
           mgr->SaveSettings();
-          if (!firstRun) glb->glbShowMsg("设置颜色成功！");
-          firstRun = false;
         } else if (event == PluginEvent::BoolGet) {
           *reinterpret_cast<bool *>(data) = m_Settings[u8"ColorEffect"].isTrue();
+        }
+      }, PluginEvent::Bool}
+    },
+    {u8"enableMousePenetrate", {
+      u8"鼠标穿透", u8"鼠标操作穿透悬浮窗", [this](PluginEvent event, void* data){
+        if (event == PluginEvent::Bool) {
+          auto const on = *reinterpret_cast<bool *>(data);
+          m_Settings[u8"MousePenetrate"] = on;
+          delete m_Speedbox;
+          m_Speedbox = new SpeedBox(this, m_Settings, m_NetCardMenu);
+          AddMainObject(m_Speedbox);       // 添加到对象列表
+          m_Speedbox->InitShow(m_PluginMethod[u8"enableBlur"].function);
+          mgr->SaveSettings();
+        } else if (event == PluginEvent::BoolGet) {
+          *reinterpret_cast<bool *>(data) = m_Settings[u8"MousePenetrate"].isTrue();
         }
       }, PluginEvent::Bool}
     },
@@ -124,11 +136,11 @@ void NeoSpeedboxPlg::InitFunctionMap() {
 QAction* NeoSpeedboxPlg::InitMenuAction()
 {
   auto action = m_MainMenu->addAction("网卡选择");
-  auto menu = new QMenu(m_MainMenu);
-  menu->setAttribute(Qt::WA_TranslucentBackground, true);
-  menu->setToolTipsVisible(true);
-  action->setMenu(menu);
-  m_Speedbox = new SpeedBox(this, m_Settings, menu);
+  m_NetCardMenu = new QMenu(m_MainMenu);
+  m_NetCardMenu->setAttribute(Qt::WA_TranslucentBackground, true);
+  m_NetCardMenu->setToolTipsVisible(true);
+  action->setMenu(m_NetCardMenu);
+  m_Speedbox = new SpeedBox(this, m_Settings, m_NetCardMenu);
   AddMainObject(m_Speedbox);   // 添加到对象列表
   this->PluginObject::InitMenuAction();
   LoadHideAsideMenu(m_MainMenu);
@@ -140,11 +152,7 @@ QAction* NeoSpeedboxPlg::InitMenuAction()
   LoadRemoveSkinMenu(m_MainMenu);
   m_MainMenu->addAction("皮肤删除")->setMenu(m_RemoveSkinMenu);
 
-  m_Speedbox->InitShow();
-  bool buffer = false;
-  const auto& info = m_PluginMethod[u8"enableBlur"];
-  info.function(PluginEvent::BoolGet, &buffer);
-  info.function(PluginEvent::Bool, &buffer);
+  m_Speedbox->InitShow(m_PluginMethod[u8"enableBlur"].function);
   
   return nullptr;
 }
@@ -161,6 +169,7 @@ YJson& NeoSpeedboxPlg::InitSettings(YJson& settings)
       {u8"CurSkin", u8"经典火绒"},
       {u8"UserSkins", YJson::O {}},
       {u8"NetCardDisabled", YJson::A {}},
+      {u8"MousePenetrate", false}
     };
   }
   std::u8string default_skins[][2] = {
@@ -192,6 +201,12 @@ YJson& NeoSpeedboxPlg::InitSettings(YJson& settings)
   const auto& curFileName = Utf82QString(skins[curSkin].getValueString());
   auto const curSkinPath = "skins/" + curFileName + ".dll";
   auto const curResPath = ":/dlls/" + curFileName + ".dll";
+
+  auto& version = settings[u8"Version"];
+  if (!version.isNumber()) {
+    version = 0;
+    settings[u8"MousePenetrate"] = false;
+  }
 
   return settings;
   // we may not need to call SaveSettings;

@@ -10,6 +10,7 @@
 #include <QDir>
 #include <QWidget>
 #include <QMessageBox>
+#include <QProcess>
 
 #include <QClipboard>
 #include <QMimeData>
@@ -85,6 +86,9 @@ void NeoMenu::InitFunctionMap() {
   });
   connect(m_SettingMenu->addAction("配置目录"), &QAction::triggered, this, std::bind(QDesktopServices::openUrl,
                  QUrl::fromLocalFile(QDir::currentPath())));
+  connect(m_SettingMenu->addAction("重启软件"), &QAction::triggered, this, [](){
+    QProcess::startDetached(QApplication::applicationFilePath(), QStringList {});
+  });
   connect(m_SettingMenu->addAction("关于软件"), &QAction::triggered, this, [](){(new VersionDlg)->show();});
   connect(m_SettingMenu->addAction("退出软件"), &QAction::triggered, this, QApplication::quit);
 }

@@ -47,13 +47,17 @@ void ScreenFetch::mouseReleaseEvent(QMouseEvent* event) {
     if (m_bFirstClicked == 2) {
       if (hasMouseTracking())
         setMouseTracking(false);
-      auto temp = m_PixMap.toImage();
-      auto const kx = static_cast<float>(temp.width()) / width();
-      auto const ky = static_cast<float>(temp.height()) / height();
-      auto const x = std::min(m_LeftTop.x() + m_RectSize.x(), m_LeftTop.x());
-      auto const y = std::min(m_LeftTop.y() + m_RectSize.y(), m_LeftTop.y());
-      auto const w = std::abs(m_RectSize.x()), h = std::abs(m_RectSize.y());
-      m_Image = temp.copy(x * kx, y * ky, w * kx, h * ky);
+      if (m_RectSize.x() == 0 || m_RectSize.y() == 0) {
+        m_Image = m_PixMap.toImage();
+      } else {
+        auto temp = m_PixMap.toImage();
+        auto const kx = static_cast<float>(temp.width()) / width();
+        auto const ky = static_cast<float>(temp.height()) / height();
+        auto const x = std::min(m_LeftTop.x() + m_RectSize.x(), m_LeftTop.x());
+        auto const y = std::min(m_LeftTop.y() + m_RectSize.y(), m_LeftTop.y());
+        auto const w = std::abs(m_RectSize.x()), h = std::abs(m_RectSize.y());
+        m_Image = temp.copy(x * kx, y * ky, w * kx, h * ky);
+      }
       m_bHaveCatchImage = true;
       close();
     }

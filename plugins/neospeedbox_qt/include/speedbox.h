@@ -4,6 +4,7 @@
 #include <QWidget>
 
 #include <filesystem>
+#include <pluginobject.h>
 
 namespace fs = std::filesystem;
 
@@ -44,7 +45,7 @@ class SpeedBox : public QWidget {
  public:
   explicit SpeedBox(PluginObject* plugin, YJson& settings, QMenu* netcardMenu);
   ~SpeedBox();
-  void InitShow();
+  void InitShow(const PluginObject::FollowerFunction& callback);
   void InitMove();
   bool UpdateSkin();
 
