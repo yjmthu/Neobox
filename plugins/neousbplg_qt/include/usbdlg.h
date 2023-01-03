@@ -1,9 +1,9 @@
 #ifndef USBDLG_H
 #define USBDLG_H
 
-#include <QDialog>
+#include <QWidget>
 
-class UsbDlg: public QDialog
+class UsbDlg: public QWidget
 {
 public:
   typedef std::map<char, class UsbDlgItem*> ItemMap;

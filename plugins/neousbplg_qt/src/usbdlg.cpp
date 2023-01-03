@@ -11,6 +11,7 @@
 #include <QShowEvent>
 #include <QGuiApplication>
 #include <QScreen>
+#include <QWindow>
 #include <QPropertyAnimation>
 
 #include <windows.h>
@@ -19,7 +20,7 @@
 UsbDlg::ItemMap UsbDlg::m_Items;
 
 UsbDlg::UsbDlg(YJson& settings)
-  : QDialog(nullptr, Qt::FramelessWindowHint | Qt::Tool)
+  : QWidget(nullptr, Qt::FramelessWindowHint | Qt::Window | Qt::Tool)
   , m_Settings(settings)
   , m_CenterWidget(new QWidget(this))
   , m_MainLayout(new QVBoxLayout(m_CenterWidget))
@@ -104,8 +105,9 @@ void UsbDlg::SetupUi()
   );
   btnClose->setToolTip("隐藏");
 
-  connect(btnClose, &QPushButton::clicked, this, &QDialog::hide);
+  connect(btnClose, &QPushButton::clicked, this, &QWidget::hide);
   connect(btnTop, &QPushButton::clicked, this, [this](bool on) {
+    // https://blog.csdn.net/wangw8507/article/details/116912796
     m_Settings[u8"StayOnTop"] = on;
     setWindowFlag(Qt::WindowStaysOnTopHint, on);
     show();
@@ -130,39 +132,52 @@ void UsbDlg::SetupAnimation()
 void UsbDlg::GetUsbInfo()
 {
   wchar_t szDiskPath[] {
-    L' ', L':', L'\0'
+    L'*', L':', L'\0'
   }; 
   wchar_t szDevicePath[] = {
     L'\\', L'\\', L'.', L'\\',
-    L' ', L':', L'\0'
+    L'*', L':', L'\0'
   };        
 		
-	wchar_t i = L'A';
+	wchar_t driver = L'A';
 	DWORD dwBytesReturned = 0;
-	STORAGE_DEVICE_NUMBER deviceNumber;
+	// STORAGE_DEVICE_NUMBER deviceNumber;
+
+  STORAGE_DEVICE_DESCRIPTOR deviceDescriptor;
+  STORAGE_PROPERTY_QUERY   propertyQuery;
 
   // ++i 放在前面，防止 continue 跳过
-	for (auto disksMask = GetLogicalDrives(); disksMask; (disksMask >>= 1), ++i)
+	for (auto disksMask = GetLogicalDrives(); disksMask; (disksMask >>= 1), ++driver)
   {
 		if (!(disksMask & 1)) continue;
 
-    szDiskPath[0] = szDevicePath[4] = i;
-    if (GetDriveTypeW(szDiskPath) != DRIVE_REMOVABLE) continue;
+    szDiskPath[0] = szDevicePath[4] = driver;
+    auto const uDriveType = GetDriveTypeW(szDiskPath);
 
-    // get this usb device id
-    auto const hDevice = CreateFileW(szDevicePath, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
-    if (hDevice == INVALID_HANDLE_VALUE) continue;
+    // 光盘为 DRIVE_CDROM
+    
+    if (uDriveType != DRIVE_REMOVABLE) {
+      if (uDriveType != DRIVE_FIXED) continue;
 
-    if (DeviceIoControl(hDevice, IOCTL_STORAGE_GET_DEVICE_NUMBER, NULL, 0,
-              &deviceNumber, sizeof(deviceNumber), 
-              &dwBytesReturned, (LPOVERLAPPED) NULL))
-    {
-      // usb_list[usb_device_cnt].device_num = device_num.DeviceNumber;
-      auto const item = new UsbDlgItem(this, i, m_Items);
-      m_MainLayout->addWidget(item);
-      item->show();
+      // 移动硬盘检测
+      auto const hDevice = CreateFileW(szDevicePath, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+      if (hDevice == INVALID_HANDLE_VALUE) continue;
+
+      // https://blog.csdn.net/slfkj/article/details/90437411
+      BOOL bGetOk = FALSE;
+      propertyQuery.QueryType = PropertyStandardQuery;
+      propertyQuery.PropertyId = StorageDeviceProperty;
+      bGetOk = DeviceIoControl(hDevice, IOCTL_STORAGE_QUERY_PROPERTY, &propertyQuery, sizeof(propertyQuery),
+          &deviceDescriptor, sizeof(deviceDescriptor), &dwBytesReturned, NULL);
+      CloseHandle(hDevice);
+
+      if (!bGetOk || deviceDescriptor.BusType != BusTypeUsb) continue;
+      
     }
-    CloseHandle(hDevice);
+
+    auto const item = new UsbDlgItem(this, driver, m_Items);
+    m_MainLayout->addWidget(item);
+    item->show();
   }
 
   if (!m_Items.empty()) {
