@@ -34,7 +34,6 @@
   <property name="styleSheet">
    <string notr="true">QWidget#center{
 background-color: rgba(255, 255, 255, 0);
-border-image: url(:/icons/360_shadow_normal.png);
 }</string>
   </property>
   <widget class="QLabel" name="memUse">
@@ -73,26 +72,26 @@ border-radius: 25px;</string>
     <rect>
      <x>2</x>
      <y>7</y>
-     <width>117</width>
+     <width>118</width>
      <height>36</height>
     </rect>
    </property>
    <property name="minimumSize">
     <size>
-     <width>117</width>
+     <width>118</width>
      <height>36</height>
     </size>
    </property>
    <property name="maximumSize">
     <size>
-     <width>117</width>
+     <width>118</width>
      <height>36</height>
     </size>
    </property>
    <property name="styleSheet">
     <string notr="true">QFrame#frame{
 background-color: #FCFCFC;
-border: 1px solid gray;
+border: 2px solid gray;
 border-radius: 18px;
 }</string>
    </property>
@@ -110,7 +109,7 @@ border-radius: 18px;
      <number>0</number>
     </property>
     <property name="rightMargin">
-     <number>20</number>
+     <number>13</number>
     </property>
     <property name="bottomMargin">
      <number>0</number>
@@ -136,7 +135,8 @@ font: 7pt &quot;黑体&quot;;</string>
      <widget class="QLabel" name="netUp">
       <property name="styleSheet">
        <string notr="true">font: 7pt &quot;Microsoft YaHei UI&quot;;
-</string>
+color: #E09A13;
+font-weight: bold;</string>
       </property>
      </widget>
     </item>
@@ -160,7 +160,9 @@ font: 7pt &quot;黑体&quot;;</string>
     <item row="1" column="1">
      <widget class="QLabel" name="netDown">
       <property name="styleSheet">
-       <string notr="true">font: 7pt &quot;Microsoft YaHei UI&quot;;</string>
+       <string notr="true">font: 7pt &quot;Microsoft YaHei UI&quot;;
+color: #7CE00E;
+font-weight: bold;</string>
       </property>
      </widget>
     </item>
@@ -191,14 +193,8 @@ font: 7pt &quot;黑体&quot;;</string>
      <height>48</height>
     </rect>
    </property>
-   <property name="maximumSize">
-    <size>
-     <width>50</width>
-     <height>50</height>
-    </size>
-   </property>
    <property name="styleSheet">
-    <string notr="true">background-color: qradialgradient(spread:pad, cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 rgba(0, 255, 0, 255), stop:0.87 rgba(0, 100, 0, 255), stop:0.90 #eeeeee, stop:0.99 #99eeeeee, stop:1 #00ffffff);
+    <string notr="true">background-color: qradialgradient(spread:pad, cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 rgba(0, 255, 0, 255), stop:0.87 rgba(0, 100, 0, 255), stop:0.90 #eeeeee, stop:0.99 #ffffff, stop:1 #ffffff);
 border-radius: 24px;</string>
    </property>
    <property name="frameShape">

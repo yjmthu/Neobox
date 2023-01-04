@@ -62,7 +62,7 @@ void Skin::SetStyleSheet()
         "stop:%2 #51c55f, "
         "stop:1 #51c55f"
       ");"
-    "border-radius: 18px;"
+    "border-radius: 20px;"
   };
   double x1 = 1- m_TrafficInfo.memUsage;
   if (x1 > delta) x1 -= delta;

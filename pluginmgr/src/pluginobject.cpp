@@ -74,7 +74,8 @@ void PluginObject::AddMainObject(QObject* object)
 
 void PluginObject::RemoveMainObject()
 {
-  mgr->m_MainObjects[m_PluginName] = nullptr;
+  mgr->m_MainObjects.erase(m_PluginName);
+  // mgr->m_MainObjects[m_PluginName] = nullptr;
 }
 
 void PluginObject::SendBroadcast(PluginEvent event, void* data)
@@ -87,5 +88,5 @@ void PluginObject::SendBroadcast(PluginEvent event, void* data)
 QObject* PluginObject::GetMainObject(const std::u8string& pluginName)
 {
   auto const iter = mgr->m_MainObjects.find(pluginName);
-  return iter ==mgr->m_MainObjects.end() ? nullptr : iter->second;
+  return iter == mgr->m_MainObjects.end() ? nullptr : iter->second;
 }

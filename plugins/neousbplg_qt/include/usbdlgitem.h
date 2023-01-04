@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <map>
+#include <windows.h>
 
 #include <usbdlg.h>
 
@@ -22,8 +23,8 @@ private:
   QString GetStyleSheet() const;
   void SetStyleSheet();
   static std::wstring FormatSize(uint64_t size);
-  int EjectUsbDisk();
-  int GetDrivesDevInstByDiskNumber(const unsigned long diskNumber);
+  bool EjectUsbDisk();
+  DWORD GetDrivesDevInstByDiskNumber(const DWORD diskNumber);
 
 private:
   UsbDlg::ItemMap& m_Items;

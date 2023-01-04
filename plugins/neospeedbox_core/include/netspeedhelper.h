@@ -34,7 +34,7 @@ class NetSpeedHelper {
  private:
 #ifdef _WIN32
   static LONGLONG Filetime2Int64(const FILETIME &ftime);
-  MIB_IFTABLE* m_IfTable = nullptr;             // Network Speed
+  // MIB_IFTABLE* m_IfTable = nullptr;             // Network Speed
   DWORD m_LastInBytes = 0, m_LastOutBytes = 0;
   FILETIME m_PreIdleTime { 0 }, m_PreKernelTime { 0 }, m_PreUserTime { 0 };
 #endif

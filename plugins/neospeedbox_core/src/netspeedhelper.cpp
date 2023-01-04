@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <format>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <list>
 #include <regex>
@@ -19,7 +20,8 @@ NetSpeedHelper::NetSpeedHelper() {
 #ifdef _WIN32
 
 NetSpeedHelper::~NetSpeedHelper() {
-  HeapFree(GetProcessHeap(), 0, m_IfTable);
+  // delete[] reinterpret_cast<const char*>(m_IfTable);
+  // HeapFree(GetProcessHeap(), 0, m_IfTable);
 }
 
 void NetSpeedHelper::SetMemInfo() {
@@ -63,8 +65,7 @@ void NetSpeedHelper::UpdateAdaptersAddresses()
   DWORD dwIPSize = 0;
   if (GetAdaptersAddresses(AF_INET, 0, 0, nullptr, &dwIPSize) != ERROR_BUFFER_OVERFLOW) return;
   
-  auto const piaa = reinterpret_cast<PIP_ADAPTER_ADDRESSES>(
-    HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dwIPSize));
+  auto const piaa = reinterpret_cast<PIP_ADAPTER_ADDRESSES>(new unsigned char[dwIPSize]);
   
   // 检索的地址的地址系列: IPv4
   GetAdaptersAddresses(AF_INET, 0, 0, piaa, &dwIPSize);
@@ -85,30 +86,36 @@ void NetSpeedHelper::UpdateAdaptersAddresses()
     });
   }
 
-  HeapFree(GetProcessHeap(), 0, piaa);
+  delete[] reinterpret_cast<const unsigned char*>(piaa);
 }
 
 void NetSpeedHelper::SetNetInfo() {
+  static const IpAdapter* ptr;
+  
+  auto ifTableBuffer = std::make_unique_for_overwrite<unsigned char[]>(sizeof(MIB_IFTABLE));
+  auto pIfTable = reinterpret_cast<MIB_IFTABLE*>(ifTableBuffer.get());
 
-  DWORD dwMISize = 0;
-  if (GetIfTable(m_IfTable, &dwMISize, FALSE) == ERROR_INSUFFICIENT_BUFFER) {
-    dwMISize += sizeof(MIB_IFROW) * 2;
-    HeapFree(GetProcessHeap(), 0, m_IfTable);
-    m_IfTable = (MIB_IFTABLE*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dwMISize);
-    GetIfTable(m_IfTable, &dwMISize, FALSE);
+  DWORD dwMISize = sizeof(MIB_IFTABLE);
+  if (GetIfTable(pIfTable, &dwMISize, FALSE) == ERROR_INSUFFICIENT_BUFFER) {
+    ifTableBuffer.reset(new unsigned char[dwMISize]);
+    pIfTable = reinterpret_cast<MIB_IFTABLE*>(ifTableBuffer.get());
+    GetIfTable(pIfTable, &dwMISize, FALSE);
   }
-  DWORD inBytes = 0, outBytes = 0;
-  const IpAdapter* ptr;
-  auto find_fn = [&ptr](const MIB_IFROW& item)->bool{
-      return ptr->enabled && item.dwIndex == ptr->index;
-  };
 
-  for (const auto *table_begin = m_IfTable->table, *table_end = table_begin + m_IfTable->dwNumEntries;
-    const auto& adpt: m_Adapters) {
-    // if (!adpt.enabled) continue;
+  auto const tableBegin = pIfTable->table;
+  auto const tableEnd = tableBegin + pIfTable->dwNumEntries;
+  const auto find_fn = std::bind(
+      std::find_if<const MIB_IFROW*, bool(*)(const MIB_IFROW& item)>,
+      tableBegin, tableEnd,
+      [](const MIB_IFROW& item)->bool { return item.dwIndex == ptr->index;}
+  );
+
+  DWORD inBytes = 0, outBytes = 0;
+  for (const auto& adpt: m_Adapters) {
+    if (!adpt.enabled) continue;
     ptr = &adpt;               // pass it to find_fn.
-    auto pIfRow = std::find_if(table_begin, table_end, find_fn);
-    if (pIfRow != table_end) {
+    auto pIfRow = find_fn();
+    if (pIfRow != tableEnd) {
       inBytes += pIfRow->dwInOctets;
       outBytes += pIfRow->dwOutOctets;
     }

@@ -33,6 +33,7 @@ NeoSpeedboxPlg::NeoSpeedboxPlg(YJson& settings):
 
 NeoSpeedboxPlg::~NeoSpeedboxPlg()
 {
+  RemoveMainObject();
   auto& followers = glb->glbGetSystemTray()->m_Followers;
   followers.erase(&m_ActiveWinodow);
   delete m_Speedbox;

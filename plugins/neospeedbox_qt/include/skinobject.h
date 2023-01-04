@@ -13,6 +13,7 @@ public:
   
 public:
   virtual void UpdateText() = 0;
+  // virtual void UiSettingDlg() = 0;
 
 protected:
   void InitSize(QWidget* parent);

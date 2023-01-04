@@ -141,13 +141,11 @@ void UsbDlg::SetupAnimation()
 
 void UsbDlg::GetUsbInfo()
 {
-  wchar_t szDiskPath[] {
-    L'*', L':', L'\0'
-  }; 
   wchar_t szDevicePath[] = {
     L'\\', L'\\', L'.', L'\\',
     L'*', L':', L'\0'
   };        
+  wchar_t* szDiskPath = szDevicePath + 4;  // 有效节约空间
 		
 	wchar_t driver = L'A';
 	DWORD dwBytesReturned = 0;
@@ -161,7 +159,7 @@ void UsbDlg::GetUsbInfo()
   {
 		if (!(disksMask & 1)) continue;
 
-    szDiskPath[0] = szDevicePath[4] = driver;
+    *szDiskPath = driver;
     auto const uDriveType = GetDriveTypeW(szDiskPath);
 
     // 光盘为 DRIVE_CDROM

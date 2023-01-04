@@ -230,75 +230,57 @@ void UsbDlgItem::PopUsbDrive()
   deleteLater();
 }
 
-int UsbDlgItem::GetDrivesDevInstByDiskNumber(const unsigned long diskNumber)
+DWORD UsbDlgItem::GetDrivesDevInstByDiskNumber(const DWORD diskNumber)
 {
   // https://www.marxcbr.cn/archives/7fc2b650
 
-  const auto h_dev_info = SetupDiGetClassDevs(&GUID_DEVINTERFACE_DISK, NULL, NULL,
+  const auto hDevInfo = SetupDiGetClassDevs(&GUID_DEVINTERFACE_DISK, NULL, NULL,
                                             DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
 
-  if (h_dev_info == INVALID_HANDLE_VALUE)
-      return 0;
-  DWORD dw_index = 0;
-  SP_DEVICE_INTERFACE_DATA dev_interface_data = { 0 };
-  dev_interface_data.cbSize = sizeof(SP_DEVICE_INTERFACE_DATA);
+  if (hDevInfo == INVALID_HANDLE_VALUE)
+    return 0;
+  
+  const std::unique_ptr<void, BOOL(*)(HDEVINFO)> ptrDevInfo(hDevInfo, &SetupDiDestroyDeviceInfoList);
 
+  SP_DEVICE_INTERFACE_DATA deviceData { 0 };
+  SP_DEVINFO_DATA deviceInfo;
 
-  SP_DEVICE_INTERFACE_DATA sp_did;
-  SP_DEVINFO_DATA sp_dd;
-  DWORD dw_size;
+  deviceData.cbSize = sizeof(deviceData);
 
-  sp_did.cbSize = sizeof(sp_did);
+  for (DWORD dwIndex = 0, dwSize; 
+      SetupDiEnumInterfaceDevice(ptrDevInfo.get(), NULL, &GUID_DEVINTERFACE_DISK, dwIndex, &deviceData);
+      dwIndex++)
+  {
+    dwSize = 0;
+    SetupDiGetDeviceInterfaceDetailW(ptrDevInfo.get(), &deviceData, NULL, 0, &dwSize, NULL);
+    if (!dwSize) continue;
 
-  while (SetupDiEnumDeviceInterfaces(h_dev_info, NULL, &GUID_DEVINTERFACE_DISK, dw_index,
-                                        &dev_interface_data)) {
+    std::unique_ptr<char8_t[]> deviceDetailBuffer(new char8_t[dwSize] { 0 });
+    auto deviceDetail = reinterpret_cast<PSP_DEVICE_INTERFACE_DETAIL_DATA>(deviceDetailBuffer.get());
+    deviceDetail->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA_W);
+    deviceInfo.cbSize = sizeof(deviceInfo);
 
-    SetupDiEnumInterfaceDevice(h_dev_info, NULL, &GUID_DEVINTERFACE_DISK, dw_index, &sp_did);
+    auto res = SetupDiGetDeviceInterfaceDetailW(ptrDevInfo.get(), &deviceData, deviceDetail, dwSize, &dwSize, &deviceInfo);
+    if (!res) continue;
 
-    dw_size = 0;
-    SetupDiGetDeviceInterfaceDetail(h_dev_info, &sp_did, NULL, 0, &dw_size, NULL);
+    const auto hDrive = CreateFileW(deviceDetail->DevicePath, 0,
+                                    FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, NULL, NULL);
+    if (hDrive == INVALID_HANDLE_VALUE) continue;
 
-    if (dw_size) {
-      auto psp_did = static_cast<PSP_DEVICE_INTERFACE_DETAIL_DATA>(HeapAlloc(
-                          GetProcessHeap(), HEAP_ZERO_MEMORY, dw_size));
-      if (psp_did == NULL) {
-          continue; // autsch
-      }
-      psp_did->cbSize = sizeof(*psp_did);
-      ZeroMemory(static_cast<PVOID>(&sp_dd), sizeof(sp_dd));
-      sp_dd.cbSize = sizeof(sp_dd);
+    STORAGE_DEVICE_NUMBER sdn;
+    dwSize = 0;
+    res = DeviceIoControl(hDrive, IOCTL_STORAGE_GET_DEVICE_NUMBER, NULL, 0, &sdn, sizeof(sdn), &dwSize, NULL);
+    CloseHandle(hDrive);
 
-
-      auto res = SetupDiGetDeviceInterfaceDetailW(h_dev_info, &sp_did, psp_did, dw_size, &dw_size, &sp_dd);
-      if (res) {
-        const auto h_drive = CreateFileW(psp_did->DevicePath, 0,
-                                        FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, NULL, NULL);
-        if (h_drive != INVALID_HANDLE_VALUE) {
-            STORAGE_DEVICE_NUMBER sdn;
-          DWORD dw_bytes_returned = 0;
-          res = DeviceIoControl(h_drive, IOCTL_STORAGE_GET_DEVICE_NUMBER, NULL, 0, &sdn, sizeof(sdn), &dw_bytes_returned, NULL);
-          if (res) {
-            if (diskNumber == static_cast<long>(sdn.DeviceNumber)) {
-              CloseHandle(h_drive);
-              SetupDiDestroyDeviceInfoList(h_dev_info);
-              return sp_dd.DevInst;
-            }
-          }
-          CloseHandle(h_drive);
-        }
-      }
-      HeapFree(GetProcessHeap(), 0, psp_did);
+    if (res && diskNumber == sdn.DeviceNumber) {
+      return deviceInfo.DevInst;
     }
-    dw_index++;
   }
-
-  SetupDiDestroyDeviceInfoList(h_dev_info);
-
   return 0;
 }
 
 
-int UsbDlgItem::EjectUsbDisk()
+bool UsbDlgItem::EjectUsbDisk()
 {
   // https://forums.codeguru.com/showthread.php?499595-RESOLVED-Need-to-get-name-of-a-USB-flash-drive-device
   const wchar_t szVolumePath[] { L'\\', L'\\', L'.', L'\\', m_DriveId, L':', L'\0' };
@@ -318,37 +300,32 @@ int UsbDlgItem::EjectUsbDisk()
   }
   CloseHandle(hVolume);
 
-  unsigned long dev_inst = GetDrivesDevInstByDiskNumber(sdn.DeviceNumber);
-  if (dev_inst == 0) {
-      glb->glbShowMsg("GetDrivesDevInstDiskNumber failed！");
-      return 0;
+  DWORD devInst = GetDrivesDevInstByDiskNumber(sdn.DeviceNumber);
+  if (devInst == 0) {
+    glb->glbShowMsg("GetDrivesDevInstDiskNumber failed！");
+    return 0;
   }
 
   ULONG status = 0;
-  ULONG problem_number = 0;
-  auto veto_type = PNP_VetoTypeUnknown;
-  wchar_t veto_name[MAX_PATH];
+  // wchar_t pszVetoName[MAX_PATH] { 0 };
 
-  auto res = CM_Get_Parent(&dev_inst, dev_inst, 0);
+  auto res = CM_Get_Parent(&devInst, devInst, 0);
 
-	if (res != CR_SUCCESS)
+	if (res == CR_SUCCESS)
 	{
-		return 0;
+    ULONG problemNumber = 0;
+		res = CM_Get_DevNode_Status(&status, &problemNumber, devInst, 0);
 	}
-	res = CM_Get_DevNode_Status(&status, &problem_number, dev_inst, 0);
-	if (res != CR_SUCCESS)
+	if (res == CR_SUCCESS)
 	{
-		return 0;
-	}
-  const auto is_removable = ((status & DN_REMOVABLE) != 0);
+    auto vetoType = PNP_VetoTypeUnknown;
+    if (status & DN_REMOVABLE) {
+      res = CM_Request_Device_EjectW(devInst, &vetoType, NULL, MAX_PATH, 0);
+    } else {
+      res = CM_Query_And_Remove_SubTreeW(devInst, &vetoType, NULL, MAX_PATH, 0);
+      glb->glbShowMsg("磁盘正在使用中！");
+    }
+  }
 
-  if (!is_removable)
-    glb->glbShowMsg("磁盘正在使用中！");
-  
-  veto_name[0] = '\0';
-  if (is_removable)
-    res = CM_Request_Device_EjectW(dev_inst, &veto_type, veto_name, MAX_PATH, 0);
-  else
-    res = CM_Query_And_Remove_SubTreeW(dev_inst, &veto_type, veto_name, MAX_PATH, 0);
-  return (res == CR_SUCCESS && veto_name[0] == '\0');
+  return res == CR_SUCCESS;
 }

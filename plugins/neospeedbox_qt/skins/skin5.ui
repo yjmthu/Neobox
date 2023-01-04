@@ -16,6 +16,9 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
+  <property name="toolTip">
+   <string>行動是治癒恐懼的良藥，而猶豫、拖延將不斷滋養恐懼</string>
+  </property>
   <property name="styleSheet">
    <string notr="true">QWidget#center {
 	background-color: transparent;
@@ -29,15 +32,15 @@ QWidget:hover#center {
   <widget class="QLabel" name="memUse">
    <property name="geometry">
     <rect>
-     <x>3</x>
+     <x>2</x>
      <y>5</y>
      <width>40</width>
      <height>40</height>
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">font: 16pt &quot;华文细黑&quot;;
-color: rgb(42, 255, 202);</string>
+    <string notr="true">font: 16pt &quot;华文琥珀&quot;;
+color: rgb(30, 30, 30);</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
@@ -71,7 +74,7 @@ color: rgb(0, 0, 0);</string>
 color: rgb(0, 0, 0);</string>
    </property>
   </widget>
-  <widget class="QLabel" name="memUse_2">
+  <widget class="QLabel" name="percent">
    <property name="geometry">
     <rect>
      <x>35</x>
@@ -82,7 +85,7 @@ color: rgb(0, 0, 0);</string>
    </property>
    <property name="styleSheet">
     <string notr="true">font: 7pt &quot;华文细黑&quot;;
-color: rgb(42, 255, 202);</string>
+color: rgb(0, 0, 0);</string>
    </property>
    <property name="text">
     <string>%</string>
