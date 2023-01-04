@@ -165,7 +165,7 @@
 
 ## 编译环境
 
-> 如果只有 VS2022 + Qt6 + CMake 的环境，可以删除 `plugins` 和 `example` 目录，只编译主程序，不编译插件。 
+> 如果只有 VS2022 + Qt6 + CMake + YJson 的环境，可以删除 `plugins` 和 `example` 目录，只编译主程序，不编译插件。 
 
 - `Windows10+ x86_64`
     - <del>xmake+xrepo</del> **[CMake](https://cmake.org/download/)+Vcpkg**
