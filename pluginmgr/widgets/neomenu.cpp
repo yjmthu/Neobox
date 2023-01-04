@@ -88,6 +88,7 @@ void NeoMenu::InitFunctionMap() {
                  QUrl::fromLocalFile(QDir::currentPath())));
   connect(m_SettingMenu->addAction("重启软件"), &QAction::triggered, this, [](){
     QProcess::startDetached(QApplication::applicationFilePath(), QStringList {});
+    QApplication::quit();
   });
   connect(m_SettingMenu->addAction("关于软件"), &QAction::triggered, this, [](){(new VersionDlg)->show();});
   connect(m_SettingMenu->addAction("退出软件"), &QAction::triggered, this, QApplication::quit);

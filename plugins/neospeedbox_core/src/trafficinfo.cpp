@@ -6,7 +6,8 @@ std::string TrafficInfo::FormatSpeed(uint32_t bytes, const std::string& fmtStr, 
   // https://unicode-table.com/en/2192/
   auto iter = uints.cbegin();
   uint64_t size = 1;
-  for (auto const kb = (bytes >> 10); size < kb; ++iter) { size <<= 10; }
+  // 2^11 >> 10 = 2, 2^10 >> 10 = 1, 2^10 | 2^11-1 >> 10 = 1
+  for (auto const kb = (bytes >> 10); size <= kb; ++iter) { size <<= 10; }
 
   return std::vformat(fmtStr, std::make_format_args(
     static_cast<float>(bytes) / size, *iter

@@ -204,7 +204,7 @@ std::wstring UsbDlgItem::FormatSize(uint64_t size)
 
   size &= (((uint64_t)1 << 60) - 1);
 
-  for (auto const kb = (size >> 10); base < kb; ++iter)
+  for (auto const kb = (size >> 10); base <= kb; ++iter)
   {
     base <<= 10;
   }

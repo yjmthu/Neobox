@@ -1,4 +1,5 @@
 #include "netspeedhelper.h"
+#include <yjson.h>
 
 #include <algorithm>
 #include <array>
@@ -13,15 +14,23 @@
 #include <map>
 
 
-NetSpeedHelper::NetSpeedHelper() {
+NetSpeedHelper::NetSpeedHelper(const YJson& blacklist)
+  : m_IfTableBuffer(new unsigned char[sizeof(MIB_IFTABLE)])
+  , m_IfTableBufferSize(sizeof(MIB_IFTABLE))
+{
   GetSystemTimes(&m_PreIdleTime, &m_PreKernelTime, &m_PreUserTime);
+  for (const auto& item: blacklist.getArray()) {
+    m_AdapterBalckList.emplace(item.getValueString());
+  }
+  UpdateAdaptersAddresses();
+  SetNetInfo();
+  m_TrafficInfo.bytesUp = m_TrafficInfo.bytesDown = 0;
 }
 
 #ifdef _WIN32
 
 NetSpeedHelper::~NetSpeedHelper() {
-  // delete[] reinterpret_cast<const char*>(m_IfTable);
-  // HeapFree(GetProcessHeap(), 0, m_IfTable);
+  delete [] m_IfTableBuffer;
 }
 
 void NetSpeedHelper::SetMemInfo() {
@@ -55,8 +64,6 @@ void NetSpeedHelper::SetCpuInfo()
     m_TrafficInfo.cpuUsage = all - free;
     m_TrafficInfo.cpuUsage /= all;
   }
-  // m_SysInfo[3] = std::vformat(m_StrFmt[3], std::make_format_args(
-    // static_cast<int>(m_CpuUse * 100)));
 }
 
 void NetSpeedHelper::UpdateAdaptersAddresses()
@@ -65,18 +72,18 @@ void NetSpeedHelper::UpdateAdaptersAddresses()
   DWORD dwIPSize = 0;
   if (GetAdaptersAddresses(AF_INET, 0, 0, nullptr, &dwIPSize) != ERROR_BUFFER_OVERFLOW) return;
   
-  auto const piaa = reinterpret_cast<PIP_ADAPTER_ADDRESSES>(new unsigned char[dwIPSize]);
+  auto const pIpAdpAddress = reinterpret_cast<PIP_ADAPTER_ADDRESSES>(new unsigned char[dwIPSize]);
   
   // 检索的地址的地址系列: IPv4
-  GetAdaptersAddresses(AF_INET, 0, 0, piaa, &dwIPSize);
+  GetAdaptersAddresses(AF_INET, 0, 0, pIpAdpAddress, &dwIPSize);
   m_Adapters.clear();
-  std::string strAdapterName;
-  for (auto paa = piaa; paa; paa = paa->Next) {
+  std::u8string strAdapterName;
+  for (auto paa = pIpAdpAddress; paa; paa = paa->Next) {
     if (paa->IfType == IF_TYPE_SOFTWARE_LOOPBACK ||
         paa->IfType == IF_TYPE_TUNNEL) {
       continue;
     }
-    strAdapterName = paa->AdapterName;
+    strAdapterName = reinterpret_cast<const char8_t*>(paa->AdapterName);
     bool const enabled = m_AdapterBalckList.find(strAdapterName) == m_AdapterBalckList.end();
     m_Adapters.push_back(IpAdapter {
       std::move(strAdapterName),
@@ -86,20 +93,21 @@ void NetSpeedHelper::UpdateAdaptersAddresses()
     });
   }
 
-  delete[] reinterpret_cast<const unsigned char*>(piaa);
+  delete[] reinterpret_cast<const unsigned char*>(pIpAdpAddress);
 }
 
 void NetSpeedHelper::SetNetInfo() {
   static const IpAdapter* ptr;
   
-  auto ifTableBuffer = std::make_unique_for_overwrite<unsigned char[]>(sizeof(MIB_IFTABLE));
-  auto pIfTable = reinterpret_cast<MIB_IFTABLE*>(ifTableBuffer.get());
+  // static auto ifTableBuffer = std::make_unique_for_overwrite<unsigned char[]>(sizeof(MIB_IFTABLE));
+  auto pIfTable = reinterpret_cast<MIB_IFTABLE*>(m_IfTableBuffer);
 
-  DWORD dwMISize = sizeof(MIB_IFTABLE);
-  if (GetIfTable(pIfTable, &dwMISize, FALSE) == ERROR_INSUFFICIENT_BUFFER) {
-    ifTableBuffer.reset(new unsigned char[dwMISize]);
-    pIfTable = reinterpret_cast<MIB_IFTABLE*>(ifTableBuffer.get());
-    GetIfTable(pIfTable, &dwMISize, FALSE);
+  // static DWORD dwMISize = sizeof(MIB_IFTABLE);
+  if (GetIfTable(pIfTable, &m_IfTableBufferSize, FALSE) == ERROR_INSUFFICIENT_BUFFER) {
+    delete[] m_IfTableBuffer;
+    m_IfTableBuffer = new unsigned char[m_IfTableBufferSize];
+    pIfTable = reinterpret_cast<MIB_IFTABLE*>(m_IfTableBuffer);
+    GetIfTable(pIfTable, &m_IfTableBufferSize, FALSE);
   }
 
   auto const tableBegin = pIfTable->table;

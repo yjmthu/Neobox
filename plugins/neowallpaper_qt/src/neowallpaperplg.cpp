@@ -47,8 +47,12 @@ void NeoWallpaperPlg::InitFunctionMap()
   m_PluginMethod = {
     {u8"setTimeInterval",
       {u8"时间间隔", u8"设置更换壁纸的时间间隔", [this](PluginEvent, void*){
-        int iNewTime =
-            QInputDialog::getInt(glb->glbGetMenu(), "输入时间间隔", "时间间隔（分钟）：", m_Wallpaper->GetTimeInterval(), 5);
+        int const iOldTime = m_Wallpaper->GetTimeInterval();
+        int const iNewTime = 
+            QInputDialog::getInt(glb->glbGetMenu(), "输入时间间隔", "时间间隔（分钟）：", iOldTime, 5);
+        if (iOldTime == iNewTime) {
+          return;
+        }
         if (iNewTime < 5) {
           glb->glbShowMsg("设置时间间隔失败！");
           return;

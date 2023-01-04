@@ -35,7 +35,7 @@ SpeedBox::SpeedBox(PluginObject* plugin, YJson& settings, QMenu* netcardMenu)
     m_PluginObject(plugin),
     m_Settings(settings),
     m_NetCardMenu(*netcardMenu),
-    m_NetSpeedHelper(new NetSpeedHelper),
+    m_NetSpeedHelper(new NetSpeedHelper(m_Settings[u8"NetCardDisabled"])),
     m_CentralWidget(nullptr),
     m_SkinDll(nullptr),
     m_Timer(new QTimer(this)),
@@ -324,14 +324,6 @@ void SpeedBox::InitMove()
 
 void SpeedBox::InitNetCard()
 {
-  const auto& blacklistView = 
-    m_Settings[u8"NetCardDisabled"].getArray() |
-    std::views::transform([](const YJson& item)->const std::u8string&
-      { return item.getValueString(); });
-  for (auto i: blacklistView) {
-    const QByteArray array = QString::fromUtf8(i.data(), i.size()).toLocal8Bit();
-    m_NetSpeedHelper->m_AdapterBalckList.emplace(array.begin(), array.end());
-  }
 
   connect(m_Timer, &QTimer::timeout, this, [this]() {
     static int count = 10;
@@ -353,12 +345,12 @@ void SpeedBox::UpdateNetCardMenu()
   m_NetCardMenu.clear();
   for (const auto& i: m_NetSpeedHelper->m_Adapters) {
     const auto fName = QString::fromWCharArray(i.friendlyName.data(), i.friendlyName.size());
-    const auto aName = QString::fromLocal8Bit(i.adapterName.data(), i.adapterName.size());
+    // const auto aName = QString::fromLocal8Bit(i.adapterName.data(), i.adapterName.size());
     auto action = m_NetCardMenu.addAction(fName);
     action->setCheckable(true);
     action->setChecked(i.enabled);
-    action->setToolTip(aName);
-    action->setProperty("guid", aName);
+    action->setToolTip(QString::fromUtf8(i.adapterName.data(), i.adapterName.size()));
+    // action->setProperty("guid", aName);
     connect(action, &QAction::triggered, this, std::bind(
       &SpeedBox::UpdateNetCard, this, action, std::placeholders::_1
     ));
@@ -367,19 +359,17 @@ void SpeedBox::UpdateNetCardMenu()
 
 void SpeedBox::UpdateNetCard(QAction* action, bool checked)
 {
-  const QString data = action->property("guid").toString();
-  QByteArray buffer = data.toLocal8Bit();
-  std::string guid(buffer.cbegin(), buffer.cend());
-  buffer = data.toUtf8();
-  std::u8string name(buffer.cbegin(), buffer.cend());
+  const auto data = action->toolTip().toUtf8();
+  const std::u8string_view guid(reinterpret_cast<const char8_t*>(data.data()), data.size());
 
   if (checked) {
-    m_Settings[u8"NetCardDisabled"].removeByValA(name);
+    // 由于 m_AdapterBalckList 使用的是 u8string_view，所以顺序很重要。
     m_NetSpeedHelper->m_AdapterBalckList.erase(guid);
+    m_Settings[u8"NetCardDisabled"].removeByValA(guid);
     glb->glbShowMsg("添加网卡成功！"); // removed from blacklist
   } else {
-    m_Settings[u8"NetCardDisabled"].append(std::move(name));
-    m_NetSpeedHelper->m_AdapterBalckList.emplace(std::move(guid));
+    auto iter = m_Settings[u8"NetCardDisabled"].append(guid);
+    m_NetSpeedHelper->m_AdapterBalckList.emplace(iter->getValueString());
     glb->glbShowMsg("删除网卡成功！");
   }
   m_NetSpeedHelper->UpdateAdaptersAddresses();

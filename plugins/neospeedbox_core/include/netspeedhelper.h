@@ -3,6 +3,7 @@
 
 #include <set>
 #include <vector>
+#include <memory>
 #ifdef _WIN32
 #include <Winsock2.h>
 // #include <Windows.h>
@@ -13,13 +14,13 @@
 
 class NetSpeedHelper {
  public:
-  explicit NetSpeedHelper();
+  explicit NetSpeedHelper(const class YJson& balcklist);
 #ifdef WIN32
   ~NetSpeedHelper();
 #endif
 
   struct IpAdapter {
-    std::string adapterName;  // ANSI
+    std::u8string adapterName;  // ASCII
     std::wstring friendlyName;
     bool enabled;
     IF_INDEX index;
@@ -27,12 +28,14 @@ class NetSpeedHelper {
   
   void UpdateAdaptersAddresses();
   void GetSysInfo();
-  std::set<std::string> m_AdapterBalckList; // ANSI
+  std::set<std::u8string_view> m_AdapterBalckList; // ASCII
   std::vector<IpAdapter> m_Adapters;
   TrafficInfo m_TrafficInfo;
 
  private:
 #ifdef _WIN32
+  unsigned char* m_IfTableBuffer;
+  DWORD m_IfTableBufferSize;
   static LONGLONG Filetime2Int64(const FILETIME &ftime);
   // MIB_IFTABLE* m_IfTable = nullptr;             // Network Speed
   DWORD m_LastInBytes = 0, m_LastOutBytes = 0;
