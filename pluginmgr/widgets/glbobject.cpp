@@ -4,6 +4,7 @@
 #include <neosystemtray.h>
 #include <yjson.h>
 
+#include <QProcess>
 #include <QSharedMemory>
 #include <QMessageBox>
 #include <QApplication>
@@ -11,12 +12,12 @@
 extern GlbObject *glb;
 
 QMenu* GlbObject::glbGetMenu() {
-  return glbMenu;
+  return m_Menu;
 }
 
 NeoSystemTray* GlbObject::glbGetSystemTray()
 {
-  return glbTray;
+  return m_Tray;
 }
 
 void CompareJson(YJson& jsDefault, YJson& jsUser)
@@ -40,8 +41,8 @@ void CompareJson(YJson& jsDefault, YJson& jsUser)
 void GlbObject::glbShowMsgbox(const std::u8string& title,
                  const std::u8string& text,
                  int type) {
-  QMetaObject::invokeMethod(glbMenu, [=](){
-    QMessageBox::information(glbMenu,
+  QMetaObject::invokeMethod(m_Menu, [=](){
+    QMessageBox::information(m_Menu,
                              QString::fromUtf8(title.data(), title.size()),
                              QString::fromUtf8(text.data(), text.size()));
   });
@@ -49,44 +50,45 @@ void GlbObject::glbShowMsgbox(const std::u8string& title,
 
 void GlbObject::glbShowMsg(class QString text)
 {
-  glbMsgDlg->ShowMessage(text);
+  m_MsgDlg->ShowMessage(text);
 }
 
-#if 0
 void GlbObject::glbWriteSharedFlag(int flag) {
-  QSharedMemory mem;
-  mem.setKey(QStringLiteral("__Neobox__"));
-  mem.lock();
-  *reinterpret_cast<int *>(mem.data()) = flag;
-  mem.unlock();
+  //m_SharedMemory->setKey(QStringLiteral("__Neobox__"));
+  m_SharedMemory->lock();
+  *reinterpret_cast<int *>(m_SharedMemory->data()) = flag;
+  m_SharedMemory->unlock();
 }
 
 int GlbObject::glbReadSharedFlag() {
-  QSharedMemory mem;
-  mem.setKey(QStringLiteral("__Neobox__"));
-  mem.lock();
-  const auto state = *reinterpret_cast<const int*>(mem.constData());
-  mem.unlock();
+  //m_SharedMemory->setKey(QStringLiteral("__Neobox__"));
+  m_SharedMemory->lock();
+  const auto state = *reinterpret_cast<const int*>(m_SharedMemory->constData());
+  m_SharedMemory->unlock();
   return state;
 }
 
 bool GlbObject::glbCreateSharedMemory() {
-  QSharedMemory mem;
-  mem.setKey(QStringLiteral("__Neobox__"));
-  if(mem.attach()) {
-    /*
-    * 0: already have an instance;
-    * 1: previous app want to restart;
-    * 2: app should go to left top.
-    * 4: app should quit
-    */
-    if (glbReadSharedFlag() == 0) {
+  m_SharedMemory->setKey(QStringLiteral("__Neobox__"));
+  if(m_SharedMemory->attach()) {
+    auto const code = glbReadSharedFlag();
+    switch (code) {
+    case 0:   //  already have an instance;
       glbWriteSharedFlag(2);
-      mem.detach();
+      m_SharedMemory->detach();
       return false;
+    case 1:   // previous app want to restart;
+      break;
+    case 2:   // app should go to left top.
+      glbWriteSharedFlag(0);
+      m_SharedMemory->detach();
+      return false;
+    case 3:   // app should quit
+    default:
+      break;
     }
-  } else if (!mem.create(sizeof(int))) {
-    return false;
+  } else if (!m_SharedMemory->create(sizeof(int))) {
+    throw std::runtime_error("Already have an instance.");
   }
   glbWriteSharedFlag(0);
   return true;
@@ -94,31 +96,52 @@ bool GlbObject::glbCreateSharedMemory() {
 
 void GlbObject::glbDetachSharedMemory()
 {
-  QSharedMemory mem;
-  mem.setKey(QStringLiteral("__Neobox__"));
-  mem.detach();
+  // m_SharedMemory->setKey(QStringLiteral("__Neobox__"));
+  m_SharedMemory->detach();
 }
-#endif
 
 GlbObject::GlbObject()
+  : m_SharedMemory(new QSharedMemory)
+  , m_Tray(nullptr)
+  , m_Menu(nullptr)
+  , m_MsgDlg(nullptr)
 {
   glb = this;
-  // if (!glbCreateSharedMemory())
-  //   return;
+  if (!glbCreateSharedMemory()) {
+    throw std::runtime_error("Can not create QSharedMemory.");
+  }
   QApplication::setQuitOnLastWindowClosed(false);
-  // glbDetachSharedMemory();
-  glbTray = new NeoSystemTray;
-  glbMenu = new NeoMenu(this);
-  glbMsgDlg = new NeoMsgDlg(glbMenu);
-  glbMenu->InitPluginMgr();
-  glbTray->setContextMenu(glbMenu);
-  glbTray->show();
-  QApplication::exec();
+  m_Tray = new NeoSystemTray;
+  m_Menu = new NeoMenu(this);
+  m_MsgDlg = new NeoMsgDlg(m_Menu);
+  m_Menu->InitPluginMgr();
+  m_Tray->setContextMenu(m_Menu);
+  m_Tray->show();
 }
 
 GlbObject::~GlbObject()
 {
-  delete glbMenu;
-  delete glbTray;
+  glb = nullptr;
+  glbDetachSharedMemory();   // 在构造函数抛出异常后析构函数将不再被调用
+  delete m_Menu;
+  delete m_Tray;
 }
 
+int GlbObject::Exec()
+{
+  return QApplication::exec();
+}
+
+void GlbObject::Quit()
+{
+  QApplication::quit();
+}
+
+void GlbObject::Restart()
+{
+  glbWriteSharedFlag(1);
+  QProcess::startDetached(
+    QApplication::applicationFilePath(), QStringList {}
+  );
+  QApplication::quit();
+}

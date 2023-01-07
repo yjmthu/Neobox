@@ -193,9 +193,7 @@ void SpeedBox::mousePressEvent(QMouseEvent* event) {
   } else if (event->button() == Qt::RightButton) {
     glb->glbGetMenu()->popup(pos() + event->pos());
   } else if (event->button() == Qt::MiddleButton) {
-    // glb->glbWriteSharedFlag(1);
-    QProcess::startDetached(QApplication::applicationFilePath(), QStringList {});
-    qApp->quit();
+    glb->Restart();
   }
 }
 

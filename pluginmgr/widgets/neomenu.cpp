@@ -47,7 +47,6 @@ void NeoMenu::InitStyleSheet()
       return;
     }
   }
-  throw nullptr;
 }
 
 void NeoMenu::InitPluginMenu()
@@ -55,7 +54,8 @@ void NeoMenu::InitPluginMenu()
   m_PluginMenu = new QMenu(this);
   m_PluginMenu->setAttribute(Qt::WA_TranslucentBackground, true);
   m_PluginMenu->setToolTipsVisible(true);
-  addAction("插件设置")->setMenu(m_PluginMenu);
+  addAction("插件菜单")->setMenu(m_PluginMenu);
+  addSeparator();
 }
 
 void NeoMenu::InitPluginMgr()
@@ -86,10 +86,7 @@ void NeoMenu::InitFunctionMap() {
   });
   connect(m_SettingMenu->addAction("配置目录"), &QAction::triggered, this, std::bind(QDesktopServices::openUrl,
                  QUrl::fromLocalFile(QDir::currentPath())));
-  connect(m_SettingMenu->addAction("重启软件"), &QAction::triggered, this, [](){
-    QProcess::startDetached(QApplication::applicationFilePath(), QStringList {});
-    QApplication::quit();
-  });
+  connect(m_SettingMenu->addAction("重启软件"), &QAction::triggered, this, std::bind(&GlbObject::Restart, glb));
   connect(m_SettingMenu->addAction("关于软件"), &QAction::triggered, this, [](){(new VersionDlg)->show();});
   connect(m_SettingMenu->addAction("退出软件"), &QAction::triggered, this, QApplication::quit);
 }
