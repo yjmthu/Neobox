@@ -128,5 +128,4 @@ void ItemNative::GetContent(YJson& data) const
       static_cast<double>(m_PluginOldVersion[2]),
     }}
   }, m_PluginName);
-  data.toFile("Hello, world");
 }

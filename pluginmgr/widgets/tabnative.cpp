@@ -84,9 +84,7 @@ void TabNative::UpgradeAllPlugins()
 
 void TabNative::SaveContent()
 {
-  YJson data = YJson::O {
-    //
-  };
+  YJson data(YJson::Object);    // 不能是 YJson data = YJson::Object 或 YJson data { YJson::Object }
 
   for (auto i = 0; i != m_ListWidget->count(); ++i) {
     auto const w = m_ListWidget->itemWidget(m_ListWidget->item(i));
@@ -140,14 +138,15 @@ void TabNative::MoveUp()
   auto const curRow = m_ListWidget->currentRow();
   if(curRow <= 0) return;
 
-  // 暂时不能写成 { YJson::Object }，会出大问题
-  YJson data { YJson::O {  } };
+  // 不能写成 { YJson::Object }，会出大问题
+  YJson data(YJson::Object);
   auto const widget = qobject_cast<ItemNative*>(m_ListWidget->itemWidget(m_ListWidget->item(curRow)));
   widget->GetContent(data);
   auto& [pluginName, info] = data.frontO();
 
   auto item = m_ListWidget->takeItem(curRow);
   m_ListWidget->insertItem(curRow - 1, item);
+  // takeItem 会自动 delete 相应的 widget，所以要重新 new 一个
   m_ListWidget->setItemWidget(item, new ItemNative(pluginName, info, m_ListWidget));
   m_ListWidget->setCurrentRow(curRow - 1);
 }
@@ -159,7 +158,7 @@ void TabNative::MoveDown()
   auto const curRow = m_ListWidget->currentRow();
   if(curRow + 1 >= m_ListWidget->count()) return;
 
-  YJson data {YJson::O {}};
+  YJson data(YJson::Object);
   auto const widget = qobject_cast<ItemNative*>(m_ListWidget->itemWidget(m_ListWidget->item(curRow)));
   widget->GetContent(data);
   auto& [pluginName, info] = data.frontO();

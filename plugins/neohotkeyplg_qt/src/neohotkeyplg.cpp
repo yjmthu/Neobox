@@ -67,21 +67,35 @@ QAction* NeoHotKeyPlg::InitMenuAction()
 
 YJson& NeoHotKeyPlg::InitSettings(YJson& settings)
 {
-  if (settings.isObject()) {
-    return settings;
+  if (!settings.isObject()) {
+    settings = YJson::O {
+      {u8"HotKeys", YJson::A {
+        YJson::O {
+          {u8"KeySequence", u8"Shift+Z"},
+          {u8"Enabled", false},
+          {u8"Plugin", u8"neotranslateplg"},
+        },
+        YJson::O {
+          {u8"KeySequence", u8"Ctrl+Shift+A"},
+          {u8"Enabled", false},
+          {u8"Command", u8"打开文件资源管理器"},
+        },
+      }},
+    };
   }
-  return settings = YJson::O {
-    {u8"HotKeys", YJson::A {
-      YJson::O {
-        {u8"KeySequence", u8"Shift+Z"},
-        {u8"Enabled", false},
-        {u8"Plugin", u8"neotranslateplg"},
-      },
-      YJson::O {
-        {u8"KeySequence", u8"Ctrl+Shift+A"},
-        {u8"Enabled", false},
-        {u8"Plugin", u8"neoocrplg"},
-      },
-    }},
-  };
+  auto& version = settings[u8"Version"];
+  if (!version.isNumber()) {
+    version = 0;
+    settings[u8"Commands"] = YJson::O {
+      {u8"打开文件资源管理器", YJson::O {
+        {u8"Executable", u8"explorer.exe"},
+        {u8"Arguments", YJson::String}
+      }},
+      {u8"10秒后关机", YJson::O {
+        {u8"Executable", u8"shutdown.exe"},
+        {u8"Arguments", u8"-s -t 10"}
+      }},
+    };
+  }
+  return settings;
 }

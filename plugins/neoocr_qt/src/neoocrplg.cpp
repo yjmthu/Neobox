@@ -212,6 +212,7 @@ void NeoOcrPlg::ChooseLanguages()
   }
 
   auto const dialog = new QDialog;
+  dialog->setWindowTitle("语种选择");
   dialog->setAttribute(Qt::WidgetAttribute::WA_DeleteOnClose, true);
 
   auto const vlayout = new QVBoxLayout(dialog);
@@ -222,6 +223,7 @@ void NeoOcrPlg::ChooseLanguages()
       "<a href=\"https://github.com/tesseract-ocr/tessdata_best\">tessdata_best</a>，"
       "<a href=\"https://github.com/tesseract-ocr/tessdata\">tessdata</a>，"
       "点击进入相应的github页面即可下载。</p>", dialog);
+  label->setOpenExternalLinks(true);
   vlayout->addWidget(label);
   std::vector<QCheckBox*> chkboxs;
 
