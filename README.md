@@ -23,7 +23,7 @@
 
 - 插件下载界面
 
-<img width="350" alt="Neobox 本地插件" src="https://cloud.tsinghua.edu.cn/f/c5b662d65cf2474d94c5/?dl=1"><img width="350" alt="Neobox 网络插件" src="https://cloud.tsinghua.edu.cn/f/d91c6a5a26314764825f/?dl=1">
+<img width="400" alt="Neobox 本地插件" src="https://cloud.tsinghua.edu.cn/f/c5b662d65cf2474d94c5/?dl=1"><img width="390" alt="Neobox 网络插件" src="https://cloud.tsinghua.edu.cn/f/d91c6a5a26314764825f/?dl=1">
 
 ## 插件详情
 
