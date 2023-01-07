@@ -1,7 +1,7 @@
 #include <httplib.h>
 #include <systemapi.h>
 #include <neotimer.h>
-#include <neoapp.h>
+#include <glbobject.h>
 
 #include <wallpaper.h>
 #include <ranges>

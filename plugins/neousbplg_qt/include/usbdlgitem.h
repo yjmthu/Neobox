@@ -9,6 +9,8 @@
 
 class UsbDlgItem: public QWidget
 {
+protected:
+  bool eventFilter(QObject*, QEvent*) override;
 public:
   explicit UsbDlgItem(QWidget* parent, char id, UsbDlg::ItemMap& map);
   ~UsbDlgItem();
@@ -17,7 +19,7 @@ public:
 private:
   void SetupUi();
   bool IsDiskExist() const;
-  QString GetUsbInfoText() const;
+  void SetUsbInfoText();
   bool UpdateUsbSize();
   bool UpdateUsbName();
   QString GetStyleSheet() const;
@@ -33,6 +35,9 @@ private:
   std::wstring m_DriveName;
   uint64_t m_SizeTotal;
   uint64_t m_SizeFree;
+  QWidget* const m_UsbSizeLogo;
+  class QFrame* const m_UsbSizeLogoColorMask;
+  class QLabel* const m_UsbInfoText;
 };
 
 #endif // USBDLGITEM_H

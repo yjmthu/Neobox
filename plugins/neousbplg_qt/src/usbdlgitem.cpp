@@ -1,5 +1,5 @@
 #include <usbdlgitem.h>
-#include <neoapp.h>
+#include <glbobject.h>
 
 #include <Windows.h>
 #include <dbt.h>
@@ -12,6 +12,7 @@
 #include <QToolButton>
 #include <QFrame>
 #include <QLabel>
+#include <QEvent>
 
 #include <format>
 
@@ -20,6 +21,10 @@ UsbDlgItem::UsbDlgItem(QWidget* parent, char id, UsbDlg::ItemMap& map)
   , m_Items(map)
   , m_DriveId(id)
   , m_DrivePath(new wchar_t[] { m_DriveId, L':', L'\\', L'\0' })
+  , m_UsbSizeLogo(new QWidget(this))
+  , m_UsbSizeLogoColorMask(new QFrame(m_UsbSizeLogo))
+  , m_UsbInfoText(new QLabel(this))
+
 {
   m_Items[id] = this;
   UpdateUsbSize();
@@ -34,39 +39,56 @@ UsbDlgItem::~UsbDlgItem()
   delete [] m_DrivePath;
 }
 
+bool UsbDlgItem::eventFilter(QObject* target, QEvent* event)
+{
+  // static bool bShiftDown = false, bCtrlDown = false;
+  if (target == m_UsbSizeLogo) {
+    switch (event->type()) { 
+    case QEvent::MouseButtonDblClick:
+      UpdateUsbSize();
+      UpdateUsbName();
+      SetUsbInfoText();
+      m_UsbSizeLogoColorMask->setStyleSheet(GetStyleSheet());
+      glb->glbShowMsg("刷新成功！");
+      return true;
+    default:
+      break;
+    }
+  }
+  return false;
+}
+
 void UsbDlgItem::SetupUi()
 {
   auto const size = QSize(40, 40);
   auto const mainLayout = new QHBoxLayout(this);
   mainLayout->setContentsMargins(0, 0, 0, 0);
-  auto const usbSizeLogo = new QWidget(this);
-  usbSizeLogo->setFixedSize(size);
-  usbSizeLogo->setStyleSheet(
-    "background-color: "
-      "qradialgradient("
-        "spread:pad, cx:0.5, cy:0.5, "
-        "radius:0.5, fx:0.5, fy:0.5, "
-        "stop:0 #ffa924, "
-        "stop:0.9840 #ffa924, "
-        "stop:0.9841 transparent, "
-        "stop:1 transparent"
-      ");"
+  m_UsbSizeLogo->setFixedSize(size);
+  m_UsbSizeLogo->setStyleSheet(  // ffa924
+    "background-color: #8dd35f;"
+      // "qradialgradient("
+      //   "spread:pad, cx:0.5, cy:0.5, "
+      //   "radius:0.5, fx:0.5, fy:0.5, "
+      //   "stop:0 #8dd35f, "
+      //   "stop:0.98400 #8dd35f, "
+      //   "stop:0.98401 transparent, "
+      //   "stop:1 transparent"
+      // ");"
     "border-radius: 20px;"
   );
-  auto const usbSizeLogoColorMask = new QFrame(usbSizeLogo);
-  usbSizeLogoColorMask->setGeometry(0, 0, size.width(), size.height());
-  usbSizeLogoColorMask->setStyleSheet(GetStyleSheet());
-  auto const usbSizeLogoImageMask = new QFrame(usbSizeLogo);
+  m_UsbSizeLogoColorMask->setGeometry(0, 0, size.width(), size.height());
+  m_UsbSizeLogoColorMask->setStyleSheet(GetStyleSheet());
+
+  auto const usbSizeLogoImageMask = new QFrame(m_UsbSizeLogo);
   usbSizeLogoImageMask->setGeometry(3, 3, size.width() - 6, size.height() - 6);
   usbSizeLogoImageMask->setStyleSheet(
     "background-color: white;"
     "border-radius: 17px;"
     "border-image:url(:/icons/usblogo.png);"
   );
-  auto const usbInfoText = new QLabel(GetUsbInfoText(), this);
-  usbInfoText->setToolTip(QStringLiteral("%1 : %2").arg(QChar(m_DriveId)).arg(m_DriveName));
+  SetUsbInfoText();
 
-  usbInfoText->setFixedWidth(110);
+  m_UsbInfoText->setFixedWidth(110);
   auto const btnOpen = new QToolButton(this);
   btnOpen->setText("打开");
   btnOpen->setFixedWidth(45);
@@ -80,11 +102,12 @@ void UsbDlgItem::SetupUi()
   btnPop->setIconSize(QSize(25, 25));
   btnPop->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
-  mainLayout->addWidget(usbSizeLogo);
-  mainLayout->addWidget(usbInfoText);
+  mainLayout->addWidget(m_UsbSizeLogo);
+  mainLayout->addWidget(m_UsbInfoText);
   mainLayout->addWidget(btnOpen);
   mainLayout->addWidget(btnPop);
 
+  m_UsbSizeLogo->installEventFilter(this);
   connect(btnOpen, &QToolButton::clicked, this, std::bind(ShellExecuteW, nullptr, L"open", L"explorer", m_DrivePath, nullptr, SW_SHOWNORMAL));
   connect(btnPop, &QToolButton::clicked, this, std::bind(&UsbDlgItem::PopUsbDrive, this));
 }
@@ -94,7 +117,7 @@ bool UsbDlgItem::IsDiskExist() const
   return GetLogicalDrives() & (1 << (m_DriveId - 'A'));
 }
 
-QString UsbDlgItem::GetUsbInfoText() const
+void UsbDlgItem::SetUsbInfoText()
 {
   auto const str = std::format(
     L"<p>{} : {}</p><p>{}/{}</p>",
@@ -102,7 +125,9 @@ QString UsbDlgItem::GetUsbInfoText() const
     FormatSize(m_SizeFree),
     FormatSize(m_SizeTotal)
   );
-  return QString::fromStdWString(str);
+  auto text = QString::fromStdWString(str);
+  m_UsbInfoText->setText(text);
+  m_UsbInfoText->setToolTip(text.mid(3, text.lastIndexOf("<p>") - 4));
 }
 
 bool UsbDlgItem::UpdateUsbSize()
@@ -180,12 +205,12 @@ void UsbDlgItem::SetStyleSheet()
     "}"
     "QToolButton:hover {"
       "border-radius: 7px;"
-      "background-color: rgba(150, 150, 150, 100);"
+      "background-color: rgba(200, 200, 200, 100);"
       "padding: 2px 8px;"
     "}"
     "QToolButton:pressed {"
       "border-radius: 7px;"
-      "background-color: rgba(100, 100, 100, 100);"
+      "background-color: rgba(150, 150, 150, 100);"
       "padding: 2px 8px;"
     "}"
     "QLabel {"
@@ -221,6 +246,7 @@ void UsbDlgItem::PopUsbDrive()
   if (IsDiskExist()) {
     // 检测U盘是否占用，弹出U盘
     if (!EjectUsbDisk()) {
+      m_Items[m_DriveId] = this;
       glb->glbShowMsg("弹出失败");
       return;
     }

@@ -14,6 +14,8 @@ public:
   uint64_t storageSizeFree = 0;
   uint32_t bytesUp = 0;
   uint32_t bytesDown = 0;
+  uint32_t bytesTotalUp = 0;
+  uint32_t bytesTotalDown = 0;
   float memUsage = 0;
   float cpuUsage = 0;
   float batteryUsage = 0;

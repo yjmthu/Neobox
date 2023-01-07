@@ -7,7 +7,7 @@
 #include <neowallpaperplg.h>
 #include <wallpaper.h>
 #include <yjson.h>
-#include <neoapp.h>
+#include <glbobject.h>
 
 #include <QString>
 #include <QInputDialog>

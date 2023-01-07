@@ -1,4 +1,4 @@
-#include <neoapp.h>
+#include <glbobject.h>
 #include <neomenu.h>
 #include <neomsgdlg.h>
 #include <neosystemtray.h>
@@ -36,7 +36,6 @@ void CompareJson(YJson& jsDefault, YJson& jsUser)
     }
   }
 }
-
 
 void GlbObject::glbShowMsgbox(const std::u8string& title,
                  const std::u8string& text,

@@ -3,7 +3,7 @@
 #include <pluginobject.h>
 #include <hotkeyitemwidget.h>
 #include <yjson.h>
-#include <neoapp.h>
+#include <glbobject.h>
 
 #include <ui_shortcutdlg.h>
 

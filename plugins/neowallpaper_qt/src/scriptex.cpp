@@ -1,7 +1,7 @@
 #include <scriptex.h>
 #include <pluginobject.h>
 #include <listeditor.h>
-#include <neoapp.h>
+#include <glbobject.h>
 #include <yjson.h>
 
 #include <QFileDialog>

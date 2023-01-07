@@ -2,7 +2,7 @@
 #include <pluginobject.h>
 #include <listeditor.h>
 #include <yjson.h>
-#include <neoapp.h>
+#include <glbobject.h>
 
 #include <QAction>
 #include <QActionGroup>

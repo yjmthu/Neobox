@@ -1,5 +1,5 @@
 #include <neosystemtray.h>
-#include <neoapp.h>
+#include <glbobject.h>
 
 #include <QDir>
 #include <QStandardPaths>

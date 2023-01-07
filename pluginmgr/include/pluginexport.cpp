@@ -1,7 +1,7 @@
 #ifdef CLASS_NAME
 
 #include <pluginobject.h>
-#include <neoapp.h>
+#include <glbobject.h>
 #include <pluginmgr.h>
 #include <yjson.h>
 

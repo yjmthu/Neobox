@@ -4,7 +4,8 @@
 #include <yjson.h>
 #include <systemapi.h>
 #include <neosystemtray.h>
-#include <neoapp.h>
+#include <glbobject.h>
+#include <netspeedhelper.h>
 
 #include <QMenu>
 #include <QActionGroup>
@@ -13,6 +14,7 @@
 #include <QFontDatabase>
 #include <QDropEvent>
 #include <QMimeData>
+#include <QMessageBox>
 
 #include <Windows.h>
 #include <filesystem>
@@ -24,8 +26,9 @@
 namespace fs = std::filesystem;
 using namespace std::literals;
 
-NeoSpeedboxPlg::NeoSpeedboxPlg(YJson& settings):
-  PluginObject(InitSettings(settings), u8"neospeedboxplg", u8"网速悬浮")
+NeoSpeedboxPlg::NeoSpeedboxPlg(YJson& settings)
+  : PluginObject(InitSettings(settings), u8"neospeedboxplg", u8"网速悬浮")
+  , m_NetSpeedHelper(new NetSpeedHelper(m_Settings[u8"NetCardDisabled"]))
 {
   LoadFonts();
   InitFunctionMap();
@@ -37,6 +40,7 @@ NeoSpeedboxPlg::~NeoSpeedboxPlg()
   auto& followers = glb->glbGetSystemTray()->m_Followers;
   followers.erase(&m_ActiveWinodow);
   delete m_Speedbox;
+  delete m_NetSpeedHelper;
 }
 
 void NeoSpeedboxPlg::InitFunctionMap() {

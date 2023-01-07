@@ -7,7 +7,7 @@ configure_file(
   src/config.h.in include/config.h
 )
 
-file(GLOB source_files src/*.cpp widgets/*.cpp)
+file(GLOB source_files src/*.cpp widgets/*.cpp widgets/*.hpp)
 file(GLOB _resource_files fonts/*.ttf  icons/*  jsons/*.json scripts/* styles/*)
 
 set(system_shared_files Shell32)

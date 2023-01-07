@@ -3,7 +3,7 @@
 #include <pluginmgr.h>
 #include <pluginobject.h>
 #include <heightctrl.h>
-#include <neoapp.h>
+#include <glbobject.h>
 #include <yjson.h>
 
 #include <QApplication>

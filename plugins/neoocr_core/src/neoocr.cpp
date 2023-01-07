@@ -1,7 +1,7 @@
 #include <neoocr.h>
 #include <yjson.h>
 #include <httplib.h>
-#include <neoapp.h>
+#include <glbobject.h>
 
 #include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>

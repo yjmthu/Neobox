@@ -3,8 +3,7 @@
 #include <pluginmgr.h>
 #include <screenfetch.h>
 #include <yjson.h>
-#include <neoapp.h>
-#include <neoapp.h>
+#include <glbobject.h>
 
 #include <QMenu>
 #include <QDir>
@@ -217,7 +216,12 @@ void NeoOcrPlg::ChooseLanguages()
 
   auto const vlayout = new QVBoxLayout(dialog);
   QHBoxLayout* hlayout = nullptr;
-  auto label = new QLabel("如果为空不要慌，将下载好的语言文件(*.traineddata)拖拽到网速悬浮窗后，在这里就可以看到了~", dialog);
+  auto label = new QLabel("<p>如果为空不要慌，将下载好的语言文件(*.traineddata)拖拽到网速悬浮窗后，在这里就可以看到了~</p>"
+      "<p>官网提供了三种下载选择："
+      "<a href=\"https://github.com/tesseract-ocr/tessdata_fast\">tessdata_fast</a>，"
+      "<a href=\"https://github.com/tesseract-ocr/tessdata_best\">tessdata_best</a>，"
+      "<a href=\"https://github.com/tesseract-ocr/tessdata\">tessdata</a>，"
+      "点击进入相应的github页面即可下载。</p>", dialog);
   vlayout->addWidget(label);
   std::vector<QCheckBox*> chkboxs;
 
@@ -240,10 +244,11 @@ void NeoOcrPlg::ChooseLanguages()
 
   hlayout = new QHBoxLayout;
   vlayout->addLayout(hlayout);
-  auto const btnDownload = new QPushButton("语言包下载", dialog);
+  auto const btnDownload = new QPushButton("官方网站", dialog);
   auto const btnNo = new QPushButton("取消", dialog);
   auto const btnOk = new QPushButton("确认", dialog);
-  QObject::connect(btnDownload, &QPushButton::clicked, dialog, std::bind(&QDesktopServices::openUrl, QUrl("https://github.com/tesseract-ocr/tessdata")));
+  QObject::connect(btnDownload, &QPushButton::clicked, dialog, std::bind(
+        &QDesktopServices::openUrl, QUrl("https://tesseract-ocr.github.io/tessdoc/Data-Files.html")));
   QObject::connect(btnOk, &QPushButton::clicked, dialog, [&](){
     auto& object = m_Settings[u8"Languages"];
     object.clearA();

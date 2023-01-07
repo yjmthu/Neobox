@@ -1,8 +1,7 @@
 #include <pluginmgr.h>
 #include <pluginobject.h>
-#include <plugincenter.h>
 #include <yjson.h>
-#include <neoapp.h>
+#include <glbobject.h>
 #include <systemapi.h>
 
 #include <QMenu>
@@ -13,8 +12,11 @@
 #include <windows.h>
 #include <filesystem>
 
+#include "../widgets/plugincenter.hpp"
+
 namespace fs = std::filesystem;
 GlbObject *glb;
+PluginMgr *mgr;
 
 // #define WRITE_LOG(x) writelog((x))
 #define WRITE_LOG(x) 
@@ -26,7 +28,6 @@ void writelog(std::string data)
   file.close();
 }
 
-PluginMgr* mgr;
 
 PluginMgr::PluginMgr(GlbObject* glb, QMenu* pluginMainMenu):
   m_GlbObject(glb),
@@ -100,13 +101,16 @@ void PluginMgr::LoadPlugins()
 bool PluginMgr::TooglePlugin(const std::u8string& pluginName, bool on)
 {
   auto& info = m_Plugins[pluginName];
-  m_Settings->find(u8"Plugins")->second[pluginName][u8"Enabled"] = on;
-  SaveSettings();
+  auto& enabled = m_Settings->find(u8"Plugins")->second[pluginName][u8"Enabled"];
+  enabled = on;
+  SaveSettings();      // 尽量早保存，以免闪退
+
   if (on) {
     if (LoadPlugin(pluginName, info)) {
       UpdateBroadcast(info.plugin);
     } else {
       m_GlbObject->glbShowMsg("设置失败！");
+      enabled = false;
       return false;
     }
   } else {
@@ -158,8 +162,10 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
   try {
     pluginInfo.plugin = newPlugin(m_Settings->find(u8"PluginsConfig")->second[pluginName], this);      // nice
     auto const mainMenuAction = pluginInfo.plugin->InitMenuAction();
-    if (mainMenuAction)
+    if (mainMenuAction) {
+      mainMenuAction->setProperty("pluginName", QString::fromUtf8(pluginName.data(), pluginName.size()));
       glb->glbGetMenu()->addAction(mainMenuAction);
+    }
     return true;
   } catch (...) {
     pluginInfo.plugin = nullptr;
@@ -271,4 +277,72 @@ bool PluginMgr::UnInstallPlugin(const std::u8string& plugin)
   pluginsInfo.remove(infoIter);
   SaveSettings();
   return true;
+}
+
+
+bool PluginMgr::UpdatePlugin(const std::u8string& plugin, const YJson* info)
+{
+  auto& pluginsInfo = m_Settings->find(u8"Plugins")->second;
+  auto infoIter = pluginsInfo.find(plugin);
+
+  if (infoIter == pluginsInfo.endO()) {
+    return false;
+  }
+  auto& pluginInfo = infoIter->second;
+
+  if (info) {
+    if (const auto iter = m_Plugins.find(plugin); iter != m_Plugins.end() && iter->second.plugin) {
+      return false;
+    }
+    auto& enabled = (pluginInfo = *info)[u8"Enabled"];
+    if (enabled.isTrue()) {
+      auto& ptrInfo = m_Plugins[plugin];
+      if (LoadPlugin(plugin, ptrInfo)) {
+        UpdateBroadcast(ptrInfo.plugin);
+      } else {
+        enabled = false;
+        SaveSettings();
+        return false;
+      }
+    }
+    SaveSettings();
+  } else {
+    if (const auto iter = m_Plugins.find(plugin); iter != m_Plugins.end() && iter->second.plugin) {
+      FreePlugin(iter->second);
+      m_Plugins.erase(iter);
+    }
+    pluginInfo[u8"Enabled"] = false;
+  }
+  return true;
+}
+
+void PluginMgr::UpdatePluginOrder(YJson&& data)
+{
+  auto& pluginsInfo = m_Settings->find(u8"Plugins")->second;
+  pluginsInfo = std::move(data);
+  std::map<std::u8string, QAction*> actions;
+
+  auto const mainMenu = glb->glbGetMenu();
+  for (auto action: mainMenu->actions()) {
+    auto pluginName = action->property("pluginName");
+    if (!pluginName.isNull()) {
+      actions[PluginObject::QString2Utf8(pluginName.toString())] = action;
+    }
+  }
+
+  for (auto& [name, action]: actions) {
+    mainMenu->removeAction(action);
+  }
+
+  for (auto& [name, info]: pluginsInfo.getObject()) {
+    mainMenu->addAction(actions[name]);
+  }
+
+  glb->glbShowMsg("调整成功！");
+  SaveSettings();
+}
+
+bool PluginMgr::IsPluginEnabled(const std::u8string& plugin) const
+{
+  return m_Plugins.find(plugin) != m_Plugins.end();
 }

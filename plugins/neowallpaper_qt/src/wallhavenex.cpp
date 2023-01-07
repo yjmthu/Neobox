@@ -1,7 +1,7 @@
 #include <wallhavenex.h>
 #include <mapeditor.h>
 #include <pluginobject.h>
-#include <neoapp.h>
+#include <glbobject.h>
 #include <yjson.h>
 
 #include <QActionGroup>

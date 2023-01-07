@@ -2,7 +2,7 @@
 #include <pluginmgr.h>
 #include <systemapi.h>
 #include <versiondlg.h>
-#include <neoapp.h>
+#include <glbobject.h>
 
 #include <QApplication>
 #include <QDesktopServices>

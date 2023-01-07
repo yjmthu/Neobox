@@ -1,5 +1,5 @@
-#ifndef NEOAPP_H
-#define NEOAPP_H
+#ifndef GLBOBJECT_H
+#define GLBOBJECT_H
 
 #include <string>
 
@@ -26,4 +26,4 @@ public:
 
 extern GlbObject *glb;
 
-#endif // NEOAPP_H
+#endif // GLBOBJECT_H

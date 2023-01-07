@@ -13,14 +13,15 @@
 #include <QProcess>
 
 #include <neomenu.h>
-#include <netspeedhelper.h>
 #include <speedbox.h>
 #include <yjson.h>
 #include <pluginmgr.h>
 #include <appcode.hpp>
 #include <pluginobject.h>
-#include <neoapp.h>
+#include <neospeedboxplg.h>
+#include <glbobject.h>
 #include <skinobject.h>
+#include <netspeedhelper.h>
 
 #include <array>
 #include <filesystem>
@@ -34,8 +35,8 @@ SpeedBox::SpeedBox(PluginObject* plugin, YJson& settings, QMenu* netcardMenu)
     : QWidget(nullptr),
     m_PluginObject(plugin),
     m_Settings(settings),
+    m_NetSpeedHelper(*dynamic_cast<NeoSpeedboxPlg*>(plugin)->m_NetSpeedHelper),
     m_NetCardMenu(*netcardMenu),
-    m_NetSpeedHelper(new NetSpeedHelper(m_Settings[u8"NetCardDisabled"])),
     m_CentralWidget(nullptr),
     m_SkinDll(nullptr),
     m_Timer(new QTimer(this)),
@@ -57,7 +58,6 @@ SpeedBox::~SpeedBox() {
   
   // m_Timer->stop();
   delete m_Timer;
-  delete m_NetSpeedHelper;
 }
 
 void SpeedBox::InitShow(const PluginObject::FollowerFunction& callback) {
@@ -125,7 +125,7 @@ bool SpeedBox::LoadDll(fs::path dllPath)
     return false;
   }
 
-  m_CentralWidget = newSkin(this, m_NetSpeedHelper->m_TrafficInfo);
+  m_CentralWidget = newSkin(this, m_NetSpeedHelper.m_TrafficInfo);
 
   return true;
 }
@@ -328,12 +328,12 @@ void SpeedBox::InitNetCard()
   connect(m_Timer, &QTimer::timeout, this, [this]() {
     static int count = 10;
     if (--count == 0) {
-      m_NetSpeedHelper->UpdateAdaptersAddresses();
+      m_NetSpeedHelper.UpdateAdaptersAddresses();
       UpdateNetCardMenu();
       count = 10;
     }
     if (!m_CentralWidget) return;
-    m_NetSpeedHelper->GetSysInfo();
+    m_NetSpeedHelper.GetSysInfo();
     m_CentralWidget->UpdateText();
   });
   m_Timer->start(1000);
@@ -341,16 +341,13 @@ void SpeedBox::InitNetCard()
 
 void SpeedBox::UpdateNetCardMenu()
 {
-  // auto menu = m_MainMenu->m_ExMenus[u8"NetCardSelect"];
   m_NetCardMenu.clear();
-  for (const auto& i: m_NetSpeedHelper->m_Adapters) {
+  for (const auto& i: m_NetSpeedHelper.m_Adapters) {
     const auto fName = QString::fromWCharArray(i.friendlyName.data(), i.friendlyName.size());
-    // const auto aName = QString::fromLocal8Bit(i.adapterName.data(), i.adapterName.size());
-    auto action = m_NetCardMenu.addAction(fName);
+    auto const action = m_NetCardMenu.addAction(fName);
     action->setCheckable(true);
     action->setChecked(i.enabled);
     action->setToolTip(QString::fromUtf8(i.adapterName.data(), i.adapterName.size()));
-    // action->setProperty("guid", aName);
     connect(action, &QAction::triggered, this, std::bind(
       &SpeedBox::UpdateNetCard, this, action, std::placeholders::_1
     ));
@@ -363,15 +360,15 @@ void SpeedBox::UpdateNetCard(QAction* action, bool checked)
   const std::u8string_view guid(reinterpret_cast<const char8_t*>(data.data()), data.size());
 
   if (checked) {
-    // 由于 m_AdapterBalckList 使用的是 u8string_view，所以顺序很重要。
-    m_NetSpeedHelper->m_AdapterBalckList.erase(guid);
+    // 因为 m_AdapterBalckList 使用的是 u8string_view，所以顺序很重要。
+    m_NetSpeedHelper.m_AdapterBalckList.erase(guid);
     m_Settings[u8"NetCardDisabled"].removeByValA(guid);
     glb->glbShowMsg("添加网卡成功！"); // removed from blacklist
   } else {
     auto iter = m_Settings[u8"NetCardDisabled"].append(guid);
-    m_NetSpeedHelper->m_AdapterBalckList.emplace(iter->getValueString());
+    m_NetSpeedHelper.m_AdapterBalckList.emplace(iter->getValueString());
     glb->glbShowMsg("删除网卡成功！");
   }
-  m_NetSpeedHelper->UpdateAdaptersAddresses();
+  m_NetSpeedHelper.UpdateAdaptersAddresses();
   mgr->SaveSettings();
 }

@@ -4,16 +4,11 @@
 #include <set>
 #include <vector>
 #include <memory>
-#ifdef _WIN32
-#include <Winsock2.h>
-// #include <Windows.h>
-#include <Iphlpapi.h>
-#endif
 
 #include <trafficinfo.h>
 
 class NetSpeedHelper {
- public:
+public:
   explicit NetSpeedHelper(const class YJson& balcklist);
 #ifdef WIN32
   ~NetSpeedHelper();
@@ -23,25 +18,27 @@ class NetSpeedHelper {
     std::u8string adapterName;  // ASCII
     std::wstring friendlyName;
     bool enabled;
-    IF_INDEX index;
+    unsigned long index;
   };
   
   void UpdateAdaptersAddresses();
   void GetSysInfo();
+
+public:
+  TrafficInfo m_TrafficInfo;
   std::set<std::u8string_view> m_AdapterBalckList; // ASCII
   std::vector<IpAdapter> m_Adapters;
-  TrafficInfo m_TrafficInfo;
 
- private:
+private:
 #ifdef _WIN32
   unsigned char* m_IfTableBuffer;
-  DWORD m_IfTableBufferSize;
-  static LONGLONG Filetime2Int64(const FILETIME &ftime);
+  unsigned long m_IfTableBufferSize;
+  static uint64_t Filetime2Int64(const void* ftime);
   // MIB_IFTABLE* m_IfTable = nullptr;             // Network Speed
-  DWORD m_LastInBytes = 0, m_LastOutBytes = 0;
-  FILETIME m_PreIdleTime { 0 }, m_PreKernelTime { 0 }, m_PreUserTime { 0 };
+  uint64_t m_PreIdleTime { 0 }, m_PreKernelTime { 0 }, m_PreUserTime { 0 };
 #endif
-  // class QTimer* m_Timer;
+
+private:
   void SetMemInfo();
   void SetNetInfo();
   void SetCpuInfo();

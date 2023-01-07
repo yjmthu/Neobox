@@ -14,12 +14,11 @@ class SpeedBox : public QWidget {
   class YJson& m_Settings;
   class PluginObject* m_PluginObject;
   class SkinObject* m_CentralWidget;
-  class NetSpeedHelper* m_NetSpeedHelper;
   HINSTANCE m_SkinDll;
   class QTimer* m_Timer;
   class QMenu& m_NetCardMenu;
   void* m_AppBarData;
-
+  class NetSpeedHelper& m_NetSpeedHelper;
   std::string m_MemFrameStyle;
 
   class QPropertyAnimation* m_Animation;

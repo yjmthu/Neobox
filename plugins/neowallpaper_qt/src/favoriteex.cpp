@@ -1,7 +1,7 @@
 #include <favoriteex.h>
 #include <pluginobject.h>
 #include <yjson.h>
-#include <neoapp.h>
+#include <glbobject.h>
 
 #include <QInputDialog>
 #include <QActionGroup>

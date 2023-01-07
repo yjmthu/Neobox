@@ -14,6 +14,8 @@ protected:
 public:
   explicit NeoSpeedboxPlg(YJson& settings);
   virtual ~NeoSpeedboxPlg();
+public:
+  class NetSpeedHelper* m_NetSpeedHelper;
 private:
   YJson& InitSettings(YJson& settings);
   void InitFunctionMap() override;
