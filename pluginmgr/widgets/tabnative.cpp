@@ -67,12 +67,18 @@ void TabNative::UpgradeAllPlugins()
     return;
   }
 
+  std::vector<ItemNative*> vec;
   auto& pluginsInfo = m_PluginCenter.m_PluginData->find(u8"Plugins")->second;
   for (auto i = 0; i != m_ListWidget->count(); ++i) {
-    auto const w = m_ListWidget->itemWidget(m_ListWidget->item(i));
-    auto widget = qobject_cast<ItemNative*>(w);
+    auto const widget = qobject_cast<ItemNative*>(m_ListWidget->itemWidget(m_ListWidget->item(i)));
     widget->UpdateStatus(pluginsInfo);
-    widget->PluginUpgrade();
+    if (widget->CanUpgrade())
+      vec.push_back(widget);
+  }
+  if (vec.empty()) {
+    glb->glbShowMsg("全部插件已是最新！");
+  } else {
+    std::for_each(vec.begin(), vec.end(), std::bind(&ItemNative::PluginUpgrade, std::placeholders::_1));
   }
 }
 

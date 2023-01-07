@@ -108,6 +108,7 @@ void ItemNative::DoFinished(FinishedType type, bool ok)
         if (w == this) {
           delete this;
           delete item;
+          break;   // 在遍历循环中改变容器，break 非常重要！
         }
       }
     }

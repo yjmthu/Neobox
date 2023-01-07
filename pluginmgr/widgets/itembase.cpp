@@ -101,18 +101,20 @@ bool ItemBase::PluginDownload()
     glb->glbShowMsgbox(u8"失败", u8"请检查网络连接！");
     return false;
   }
-  bool result = true;
+  bool result = false, exit = false;
   const auto dialog = new DownloadingDlg(this);
   dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+  dialog->m_PreventClose = true;
   connect(this, &ItemBase::DownloadFinished, dialog, &QDialog::close);
   connect(this, &ItemBase::Downloading, dialog, &DownloadingDlg::SetPercent);
 
-  std::thread thread([this, &result, &dialog]() {
+  std::thread thread([&]() {
     HttpLib clt(PluginCenter::m_RawUrl + u8"plugins/" + m_PluginName + u8"/manifest.json");
     auto res = clt.Get();
+    dialog->m_PreventClose = false;
+
     if (res->status != 200) {
       glb->glbShowMsgbox(u8"失败", u8"下载清单失败！");
-      result = false;
       emit DownloadFinished();
       return;
     }
@@ -121,6 +123,8 @@ bool ItemBase::PluginDownload()
     const int size = GetFileCount(data);
     int count = 0;
     for (auto& [dir, info]: data.getObject()) {
+      if (exit) return;
+
       if (!fs::exists(dir)) {
         fs::create_directories(dir);
       }
@@ -132,22 +136,26 @@ bool ItemBase::PluginDownload()
         }
       }
       for (auto& file: info[u8"files"].getArray()) {
-        auto subpath = path / file.getValueString();
+        if (exit) return;
+
+        auto const subpath = path / file.getValueString();
         clt.SetUrl<char8_t>(
             PluginCenter::m_RawUrl + dir + u8"/" +
             file.getValueString());
         res = clt.Get(subpath);
         if (res->status != 200) {
           glb->glbShowMsgbox(u8"失败", u8"下载插件失败！");
-          result = false;
-          break;
+          emit DownloadFinished();
+          return;
         }
         emit Downloading(++count, size);
       }
     }
+    result = true;
     emit DownloadFinished();
   });
   dialog->exec();
+  exit = true;
   thread.join();
   return result;
 }
@@ -185,16 +193,16 @@ void ItemBase::PluginUninstall()
 
 void ItemBase::PluginUpgrade()
 {
-  bool result = m_PluginOldVersion < m_PluginNewVersion;
-  auto const pluginEnabled = mgr->IsPluginEnabled(m_PluginName);
-  result = result && PluginCenter::m_Instance->m_PluginData || PluginCenter::m_Instance->UpdatePluginData();
+  // bool result = m_PluginOldVersion < m_PluginNewVersion;
+  bool result = PluginCenter::m_Instance->UpdatePluginData();
   YJson* pluginsInfo = nullptr;
   if (result) {
     pluginsInfo = &PluginCenter::m_Instance->m_PluginData->find(u8"Plugins")->second;
     auto iter = pluginsInfo->find(m_PluginName);
     result = iter != pluginsInfo->endO();
   }
-
+  
+  auto const pluginEnabled = mgr->IsPluginEnabled(m_PluginName);
   result = result && mgr->UpdatePlugin(m_PluginName, nullptr);
 
   if (result) {

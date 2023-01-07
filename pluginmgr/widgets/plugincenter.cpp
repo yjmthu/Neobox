@@ -66,7 +66,7 @@ bool PluginCenter::UpdatePluginData()
 {
   if (m_PluginData) return true;
   
-  bool result = false;
+  bool result = false, exit = false;
 
   if (!HttpLib::IsOnline()) {
     glb->glbShowMsgbox(u8"失败", u8"请检查网络连接！");
@@ -75,6 +75,7 @@ bool PluginCenter::UpdatePluginData()
 
   const auto dialog = new DownloadingDlg(this);
   dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+  dialog->m_PreventClose = true;
   connect(this, &PluginCenter::DownloadFinished, dialog, &QDialog::close);
   // connect(this, &ItemBase::Downloading, dialog, &DownloadingDlg::SetPercent);
 
@@ -82,10 +83,10 @@ bool PluginCenter::UpdatePluginData()
     HttpLib clt(m_RawUrl + u8"plugins.json"s);
     auto res = clt.Get();
     if (res->status == 200) {
-      delete m_PluginData;
       m_PluginData = new YJson(res->body.begin(), res->body.end());
       result = true;
     }
+    dialog->m_PreventClose = false;
     emit DownloadFinished();
   });
 

@@ -31,6 +31,8 @@ public:
   explicit ItemBase(std::u8string_view pluginName, const YJson& data, QWidget* parent);
   virtual ~ItemBase() {}
 public:
+  bool CanUpgrade() const { return m_PluginOldVersion < m_PluginNewVersion; }
+public:
   // data member
   const std::u8string m_PluginName;
 protected:

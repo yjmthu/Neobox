@@ -5,9 +5,11 @@
 #include <QLabel>
 #include <QProgressBar>
 #include <QVBoxLayout>
+#include <QCloseEvent>
 
 DownloadingDlg::DownloadingDlg(QWidget* parent)
   : QDialog(parent)
+  , m_PreventClose(false)
   , m_ProgressBar(new QProgressBar(this))
   , m_Label(new QLabel(this))
 {
@@ -30,3 +32,8 @@ void DownloadingDlg::SetPercent(int count, int size)
   m_Label->setText(QString::fromStdWString(text));
 }
 
+void DownloadingDlg::closeEvent(QCloseEvent * event)
+{
+  if (m_PreventClose) event->ignore();
+  else event->accept();
+}

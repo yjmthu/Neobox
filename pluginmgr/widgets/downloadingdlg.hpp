@@ -7,9 +7,13 @@ class DownloadingDlg: public QDialog
 {
   Q_OBJECT
 
+protected:
+  void closeEvent(QCloseEvent *) override;
 public:
   explicit DownloadingDlg(QWidget* parent = nullptr);
   ~DownloadingDlg();
+public:
+  bool m_PreventClose;
 private:
   class QProgressBar* m_ProgressBar;
   class QLabel* m_Label;
