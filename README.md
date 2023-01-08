@@ -48,7 +48,7 @@
 
 > <del>原谅我的美术造诣，感觉都不是特别完美。</del>你可以使用内置的这几种皮肤，也可以自己创建一个独特的皮肤。皮肤相关问题 [![GitHub issue/pull request detail](https://img.shields.io/github/issues/detail/state/yjmthu/Neobox/5)](https://github.com/yjmthu/Neobox/issues/5)
 
-### 进程信息
+#### 进程信息查看
 
 ![进程内存](https://cloud.tsinghua.edu.cn/f/8705930894e940309bdf/?dl=1)
 
