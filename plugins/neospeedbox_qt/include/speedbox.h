@@ -9,7 +9,7 @@
 namespace fs = std::filesystem;
 
 class SpeedBox : public QWidget {
- private:
+private:
   QPoint m_ConstPos;
   class YJson& m_Settings;
   class PluginObject* m_PluginObject;
@@ -19,6 +19,7 @@ class SpeedBox : public QWidget {
   class QMenu& m_NetCardMenu;
   void* m_AppBarData;
   class NetSpeedHelper& m_NetSpeedHelper;
+  class ProcessForm* m_ProcessForm;
   std::string m_MemFrameStyle;
 
   class QPropertyAnimation* m_Animation;
@@ -28,7 +29,8 @@ class SpeedBox : public QWidget {
     None = 0
   } m_HideSide = HideSide::None;
 
- protected:
+protected:
+  void wheelEvent(QWheelEvent *event) override;
   void mousePressEvent(QMouseEvent* event) override;
   void mouseReleaseEvent(QMouseEvent* event) override;
   void mouseMoveEvent(QMouseEvent* event) override;
@@ -47,6 +49,7 @@ class SpeedBox : public QWidget {
   void InitShow(const PluginObject::FollowerFunction& callback);
   void InitMove();
   bool UpdateSkin();
+  void SetProgressMonitor(bool on);
 
  private:
   void SetWindowMode();

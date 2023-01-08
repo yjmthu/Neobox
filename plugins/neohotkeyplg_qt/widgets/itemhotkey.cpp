@@ -1,4 +1,4 @@
-#include <hotkeyitemwidget.h>
+#include "itemhotkey.hpp"
 #include <pluginmgr.h>
 #include <pluginobject.h>
 #include <yjson.h>
@@ -13,9 +13,9 @@
 #include <QCheckBox>
 #include <QLineEdit>
 
-bool HotKeyItemWidget::isChecked = false;
+bool ItemHotKey::isChecked = false;
 
-HotKeyItemWidget::HotKeyItemWidget(QWidget* parent, const YJson& data)
+ItemHotKey::ItemHotKey(QWidget* parent, const YJson& data)
     : QWidget(parent)
     , m_TargetPlugin(new QComboBox(this))
     , m_HotKey(new QPushButton(PluginObject::Utf82QString(data[u8"KeySequence"].getValueString()), this))
@@ -34,15 +34,15 @@ HotKeyItemWidget::HotKeyItemWidget(QWidget* parent, const YJson& data)
 
     m_HotKey->setCheckable(true);
     m_HotKey->installEventFilter(this);
-    connect(m_HotKey, &QPushButton::clicked, this, &HotKeyItemWidget::SetExlusive);
+    connect(m_HotKey, &QPushButton::clicked, this, &ItemHotKey::SetExlusive);
   }
 
-HotKeyItemWidget::~HotKeyItemWidget()
+ItemHotKey::~ItemHotKey()
 {
   isChecked = false;
 }
 
-void HotKeyItemWidget::InitCombox(const std::u8string& plugin)
+void ItemHotKey::InitCombox(const std::u8string& plugin)
 {
   int index = 0;
   for (int i = 0; auto [name, info]: mgr->GetPluginsInfo().getObject()) {
@@ -54,7 +54,7 @@ void HotKeyItemWidget::InitCombox(const std::u8string& plugin)
   m_TargetPlugin->setCurrentIndex(index);
 }
 
-bool HotKeyItemWidget::eventFilter(QObject *obj, QEvent *event)
+bool ItemHotKey::eventFilter(QObject *obj, QEvent *event)
 {
   // https://blog.csdn.net/sunflover454/article/details/50904815
   if(event->type() == QEvent::KeyPress && m_HotKey->isChecked())
@@ -84,7 +84,7 @@ bool HotKeyItemWidget::eventFilter(QObject *obj, QEvent *event)
   return QWidget::eventFilter(obj, event);
 }
 
-bool HotKeyItemWidget::WriteJson(YJson& data) const {
+bool ItemHotKey::WriteJson(YJson& data) const {
   auto const shortcut = m_HotKey->text();
   if (shortcut.isEmpty()) return false;
   auto friendlyName = PluginObject::QString2Utf8(m_TargetPlugin->currentText());
@@ -101,7 +101,7 @@ bool HotKeyItemWidget::WriteJson(YJson& data) const {
   return false;
 }
 
-void HotKeyItemWidget::SetExlusive(bool on)
+void ItemHotKey::SetExlusive(bool on)
 {
   if (on) {
     if (isChecked) {

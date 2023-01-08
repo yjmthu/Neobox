@@ -1,16 +1,16 @@
-#ifndef HOTKEYITEMWIDGET_H
-#define HOTKEYITEMWIDGET_H
+#ifndef ITEMHOTKEY_H
+#define ITEMHOTKEY_H
 
 #include <QWidget>
 
-class HotKeyItemWidget: public QWidget
+class ItemHotKey: public QWidget
 {
   Q_OBJECT
 protected:
   bool eventFilter(QObject *obj, QEvent *event) override;
 public:
-  explicit HotKeyItemWidget(QWidget* parent, const class YJson& data);
-  virtual ~HotKeyItemWidget();
+  explicit ItemHotKey(QWidget* parent, const class YJson& data);
+  virtual ~ItemHotKey();
 
 public:
   bool WriteJson(YJson& data) const;
@@ -29,4 +29,4 @@ private:
   static bool isChecked;
 };
 
-#endif // HOTKEYITEMWIDGET_H
+#endif // ITEMHOTKEY_H

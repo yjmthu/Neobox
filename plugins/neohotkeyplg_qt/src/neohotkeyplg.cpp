@@ -1,9 +1,15 @@
 #include <neohotkeyplg.h>
-#include <shortcutdlg.h>
 #include <shortcut.h>
+#include <systemapi.h>
+
+#include "..\widgets\shortcutdlg.hpp"
 
 #include <windows.h>
 #include <QApplication>
+
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 #define CLASS_NAME NeoHotKeyPlg
 #include <pluginexport.cpp>
@@ -33,8 +39,27 @@ bool NeoHotKeyPlg::nativeEventFilter(const QByteArray &eventType, void *message,
      * Modifiers = (UINT) LOWORD(lParam);
      * uVirtKey = (UINT) HIWORD(lParam);
      */
-    auto name = m_Shortcut->GetPluginName(msg->wParam);
-    SendBroadcast(PluginEvent::HotKey, &name);
+    auto& info = m_Shortcut->GetCallbackInfo(msg->wParam);
+    
+    if (info.type == Shortcut::Command) {
+      auto& data = m_Settings[u8"Commands"][info.name];
+      fs::path executable = data[u8"Executable"].getValueString();
+      executable.make_preferred();
+      auto& arguments = data[u8"Arguments"].getValueString();
+      fs::path directory = data[u8"Directory"].getValueString();
+      directory.make_preferred();
+
+      auto exe = executable.wstring();
+      auto arg = Utf82WideString(arguments);
+      auto dir = directory.wstring();
+
+      ShellExecute(nullptr, L"open", exe.c_str(), arg.c_str(),
+        dir.c_str(), SW_SHOWNORMAL);
+      
+    } else if (info.type == Shortcut::Plugin) {
+      auto name = info.name;
+      SendBroadcast(PluginEvent::HotKey, &name);
+    }
   }
   return false;
 }
@@ -89,10 +114,12 @@ YJson& NeoHotKeyPlg::InitSettings(YJson& settings)
     settings[u8"Commands"] = YJson::O {
       {u8"打开文件资源管理器", YJson::O {
         {u8"Executable", u8"explorer.exe"},
+        {u8"Directory", u8"."},
         {u8"Arguments", YJson::String}
       }},
       {u8"10秒后关机", YJson::O {
         {u8"Executable", u8"shutdown.exe"},
+        {u8"Directory", u8"."},
         {u8"Arguments", u8"-s -t 10"}
       }},
     };

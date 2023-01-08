@@ -6,7 +6,10 @@
 #include <map>
 
 class Shortcut {
+public:
+  enum CallbackType { None, Plugin, Command };
 private:
+
   struct KeyName {
     union {
       struct {
@@ -19,16 +22,20 @@ private:
       return big < other.big;
     }
   };
+  struct CallbackInfo {
+    std::u8string name;
+    CallbackType type;
+  };
 
 public:
   explicit Shortcut(const class YJson& m_Data);
   ~Shortcut();
   void RegisterAllHotKey();
   void UnregisterAllHotKey();
-  const std::u8string& GetPluginName(int id);
+  const CallbackInfo& GetCallbackInfo(int id);
 
 private:
-  bool RegisterHotKey(QString shortcut, std::u8string plugin);
+  bool RegisterHotKey(const YJson& plugin);
   bool UnregisterHotKey(QString shortcut);
   bool IsKeyRegistered(QString shortcut);
   bool IsKeyRegistered(const KeyName& keyName);
@@ -37,7 +44,7 @@ private:
   static uint32_t GetNativeKeycode(Qt::Key key);
 private:
   std::map<KeyName, int> m_HotKeys;
-  std::vector<std::u8string> m_Plugins;
+  std::vector<CallbackInfo> m_Plugins;
   const class YJson& m_Data;
 };
 

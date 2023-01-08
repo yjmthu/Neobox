@@ -5,12 +5,10 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # include_directories(${CMAKE_BINARY_DIR})
 
 file(GLOB
-  source_files src/*.cpp
-  include/shortcutdlg.h
-  include/hotkeyitemwidget.h
+  source_files src/*.cpp widgets/*.cpp widgets/*.hpp
 )
 
-qt_wrap_ui(WRAP_FILES src/shortcutdlg.ui) # 根据UI文件生成头文件
+qt_wrap_ui(WRAP_FILES widgets/shortcutdlg.ui) # 根据UI文件生成头文件
 
 # set(system_shared_files Shell32)
 set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui)

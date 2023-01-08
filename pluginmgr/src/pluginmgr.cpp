@@ -73,6 +73,11 @@ PluginMgr::~PluginMgr()
 void PluginMgr::LoadManageAction(QAction *action)
 {
   QObject::connect(action, &QAction::triggered, m_MainMenu, [this](){
+    auto instance = PluginCenter::m_Instance;
+    if (instance) {
+      instance->activateWindow();
+      return;
+    }
     PluginCenter center(m_Settings->find(u8"Plugins")->second);
     center.exec();
   });

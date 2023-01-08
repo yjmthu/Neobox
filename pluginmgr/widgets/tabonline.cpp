@@ -45,12 +45,13 @@ void TabOnline::UpdateItem(std::u8string_view pluginName, bool isUpdate)
 
 void TabOnline::UpdatePlugins()
 {
-  if (!m_PluginCenter.m_PluginData && !m_PluginCenter.UpdatePluginData()) {
+  if (!m_PluginCenter.UpdatePluginData()) {
     glb->glbShowMsg("下载插件信息失败！");
     return;
   }
 
-  InitPlugins();
+  if (m_ListWidget->count() == 0)
+    InitPlugins();
 }
 
 void TabOnline::InitPlugins()

@@ -18,6 +18,12 @@
 #include <string>
 #include <map>
 
+const DWORD g_ProcessorCount = [](){
+  SYSTEM_INFO info;
+  GetSystemInfo(&info);
+  return info.dwNumberOfProcessors;
+}();
+
 NetSpeedHelper::NetSpeedHelper(const YJson& blacklist)
   : m_IfTableBuffer(new unsigned char[sizeof(MIB_IFTABLE)])
   , m_IfTableBufferSize(sizeof(MIB_IFTABLE))
@@ -48,14 +54,13 @@ void NetSpeedHelper::SetMemInfo() {
   // m_SysInfo[2] = std::vformat(m_StrFmt[2], std::make_format_args(ms.dwMemoryLoad));
 }
 
-uint64_t NetSpeedHelper::Filetime2Int64(const void* ftime)
+uint64_t Filetime2Int64(const FILETIME& ftime)
 {
   // https://blog.csdn.net/alwaysrun/article/details/106433080
 
   static LARGE_INTEGER li;
-  auto pointer = reinterpret_cast<const FILETIME*>(ftime);
-  li.LowPart = pointer->dwLowDateTime;
-  li.HighPart = pointer->dwHighDateTime;
+  li.LowPart = ftime.dwLowDateTime;
+  li.HighPart = ftime.dwHighDateTime;
   return li.QuadPart;
 }
 
@@ -65,9 +70,9 @@ void NetSpeedHelper::SetCpuInfo()
   GetSystemTimes(&idleTime, &kernelTime, &userTime);
 
   static uint64_t curIdleTime, curKernelTime, curUserTime;
-  curIdleTime = Filetime2Int64(&idleTime);
-  curKernelTime = Filetime2Int64(&kernelTime);
-  curUserTime = Filetime2Int64(&userTime);
+  curIdleTime = Filetime2Int64(idleTime);
+  curKernelTime = Filetime2Int64(kernelTime);
+  curUserTime = Filetime2Int64(userTime);
 
   const uint64_t all = (curKernelTime - m_PreKernelTime) + (curUserTime - m_PreUserTime);
   if (all == 0) {

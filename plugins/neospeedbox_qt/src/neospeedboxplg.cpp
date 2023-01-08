@@ -80,6 +80,19 @@ void NeoSpeedboxPlg::InitFunctionMap() {
         }
       }, PluginEvent::Bool}
     },
+    {u8"enableProgressMonitor", {
+      u8"进程信息", u8"滚轮查看进程信息", [this](PluginEvent event, void* data){
+        if (event == PluginEvent::Bool) {
+          auto& on = *reinterpret_cast<bool *>(data);
+          m_Settings[u8"ProgressMonitor"] = on;
+          m_Speedbox->SetProgressMonitor(on);
+          mgr->SaveSettings();
+          glb->glbShowMsg("设置成功！");
+        } else if (event == PluginEvent::BoolGet) {
+          *reinterpret_cast<bool *>(data) = m_Settings[u8"ProgressMonitor"].isTrue();
+        }
+      }, PluginEvent::Bool}
+    },
   };
 
   m_ActiveWinodow = [this](PluginEvent event, void*){
@@ -211,6 +224,11 @@ YJson& NeoSpeedboxPlg::InitSettings(YJson& settings)
   if (!version.isNumber()) {
     version = 0;
     settings[u8"MousePenetrate"] = false;
+  }
+
+  if (version.getValueInt() < 1) {
+    version = 1;
+    settings[u8"ProgressMonitor"] = false;
   }
 
   return settings;

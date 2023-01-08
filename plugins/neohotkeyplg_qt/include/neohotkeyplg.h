@@ -14,7 +14,7 @@ public:
   explicit NeoHotKeyPlg(YJson& settings);
   virtual ~NeoHotKeyPlg();
 private:
-  YJson& InitSettings(YJson& settings);
+  static YJson& InitSettings(YJson& settings);
   void InitMenu();
 private:
   class Shortcut* m_Shortcut;

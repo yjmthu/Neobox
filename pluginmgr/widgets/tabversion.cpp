@@ -1,4 +1,5 @@
-#include <versiondlg.h>
+#include "tabversion.hpp"
+
 #include <yjson.h>
 #include <httplib.h>
 #include <config.h>
@@ -9,9 +10,7 @@
 
 #include <QFile>
 #include <QMessageBox>
-#include <QGuiApplication>
-#include <QScreen>
-#include <QLabel>
+#include <QTextBrowser>
 #include <QPushButton>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -48,52 +47,53 @@ namespace NeoGetDateTime {
 }
 #endif
 
-VersionDlg::VersionDlg():
-  QDialog(nullptr)
+TabVersion::TabVersion(QWidget* parent)
+  : QWidget(nullptr)
 {
-  setWindowTitle("关于 Neobox");
-  setAttribute(Qt::WA_DeleteOnClose, true);
   QVBoxLayout* layout1 = new QVBoxLayout(this);
-  setContentsMargins(9, 9, 9, 9);
-  m_text = new QLabel(this);
-  m_text->setTextFormat(Qt::RichText);
+  setContentsMargins(0, 0, 0, 0);
+  m_Text = new QTextBrowser(this);
+  // m_text->setTextFormat(Qt::RichText);
   // m_text->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  m_text->setOpenExternalLinks(true);
-  layout1->addWidget(m_text);
+  m_Text->setOpenExternalLinks(true);
+  layout1->addWidget(m_Text);
+  m_Text->setReadOnly(true);
+
   QHBoxLayout* layout2 =new QHBoxLayout;
   m_btnWeb = new QPushButton("开源网站", this);
+  m_btnBug = new QPushButton("报告问题", this);
   m_btnChk = new QPushButton("检查更新", this);
-  m_btnCls = new QPushButton("退出", this);
   layout2->addWidget(m_btnWeb);
+  layout2->addWidget(m_btnBug);
   layout2->addWidget(m_btnChk);
-  layout2->addWidget(m_btnCls);
   layout1->addLayout(layout2);
   LoadJson();
   Connect();
 }
 
-VersionDlg::~VersionDlg()
+TabVersion::~TabVersion()
 {
   // delete m_VersionInfo;
 }
 
 
-void VersionDlg::LoadJson()
+void TabVersion::LoadJson()
 {
   const auto name = std::format("<h2>当前版本</h2>Neobox {} {} <br> 发布日期：{}<br>{}",
     NEOBOX_VERSION, NEOBOX_BUILD_TYPE, NEOBOX_BUILD_TIME, NEOBOX_COPYRIGHT);
-  m_text->setText(QString::fromUtf8(name.data(), name.size()));
+  m_Text->setText(QString::fromUtf8(name.data(), name.size()));
 }
 
-void VersionDlg::Connect()
+void TabVersion::Connect()
 {
-  connect(m_btnCls, &QPushButton::clicked, this, &QWidget::close);
   connect(m_btnWeb, &QPushButton::clicked, this,
     std::bind(QDesktopServices::openUrl, QUrl(NEOBOX_WEBSITE_URL)));
-  connect(m_btnChk, &QPushButton::clicked, this, &VersionDlg::GetUpdate);
+  connect(m_btnBug, &QPushButton::clicked, this,
+    std::bind(QDesktopServices::openUrl, QUrl(NEOBOX_ISSUE_URL)));
+  connect(m_btnChk, &QPushButton::clicked, this, &TabVersion::GetUpdate);
 }
 
-void VersionDlg::GetUpdate()
+void TabVersion::GetUpdate()
 {
   if (!HttpLib::IsOnline()) {
     QMessageBox::information(this, "提示", "当前没有网络，请稍后再试！");
@@ -109,7 +109,7 @@ void VersionDlg::GetUpdate()
   }
 
   m_btnChk->setEnabled(false);
-  QString qhtml = m_text->text();
+  // QString qhtml = m_Text->text();
   const YJson jsAboutNew(res->body.begin(), res->body.end());
   std::u8string buffer(u8"<h2>最新版本</h2><p style='color: #FF00FF;'>");
   buffer.append(jsAboutNew[u8"name"].getValueString());
@@ -132,15 +132,14 @@ void VersionDlg::GetUpdate()
     buffer.append(u8"</ol>");
   }
 
-  qhtml += QString::fromUtf8(buffer.data(), buffer.size());
-  m_text->setText(qhtml);
+  m_Text->append(QString::fromUtf8(buffer.data(), buffer.size()));
 }
 
-void VersionDlg::showEvent(QShowEvent *event)
-{
-  const QScreen* screen = QGuiApplication::primaryScreen();
-  const QRect screenRect = screen->availableGeometry();
-  const QRect rect(screenRect.width() / 3, screenRect.height() / 3,
-      screenRect.width() / 3, screenRect.height() / 3);
-  setGeometry(rect);
-}
+// void TabVersion::showEvent(QShowEvent *event)
+// {
+//   const QScreen* screen = QGuiApplication::primaryScreen();
+//   const QRect screenRect = screen->availableGeometry();
+//   const QRect rect(screenRect.width() / 3, screenRect.height() / 3,
+//       screenRect.width() / 3, screenRect.height() / 3);
+//   setGeometry(rect);
+// }

@@ -2,6 +2,7 @@
 #include "downloadingdlg.hpp"
 #include "tabnative.hpp"
 #include "tabonline.hpp"
+#include "tabversion.hpp"
 
 #include <httplib.h>
 #include <yjson.h>
@@ -29,6 +30,7 @@ PluginCenter::PluginCenter(YJson& setting)
   , m_TabWidget(new QTabWidget(this))
   , m_TabNative(new TabNative(this))
   , m_TabOnline(new TabOnline(this))
+  , m_TabVersion(new TabVersion(this))
 {
   m_Instance = this;
   SetupUi();
@@ -50,6 +52,7 @@ void PluginCenter::SetupUi()
   m_MainLayout->addWidget(m_TabWidget);
   m_TabWidget->addTab(m_TabNative, "本地插件");
   m_TabWidget->addTab(m_TabOnline, "网络插件");
+  m_TabWidget->addTab(m_TabVersion, "关于软件");
 }
 
 void PluginCenter::InitConnect()

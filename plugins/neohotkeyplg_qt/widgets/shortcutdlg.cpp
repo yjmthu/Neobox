@@ -1,7 +1,7 @@
-#include <shortcutdlg.h>
+#include "shortcutdlg.hpp"
 #include <pluginmgr.h>
 #include <pluginobject.h>
-#include <hotkeyitemwidget.h>
+#include "itemhotkey.hpp"
 #include <yjson.h>
 #include <glbobject.h>
 
@@ -40,7 +40,7 @@ void ShortcutDlg::InitLayout()
     auto item = new QListWidgetItem;
     item->setSizeHint(QSize(400, 40));
     ui->listWidget->addItem(item);
-    ui->listWidget->setItemWidget(item, new HotKeyItemWidget(ui->listWidget, info));
+    ui->listWidget->setItemWidget(item, new ItemHotKey(ui->listWidget, info));
   }
 }
 
@@ -51,7 +51,7 @@ void ShortcutDlg::InitConnect()
     auto item = new QListWidgetItem;
     item->setSizeHint(QSize(400, 40));
     ui->listWidget->insertItem(ui->listWidget->currentRow(), item);
-    ui->listWidget->setItemWidget(item, new HotKeyItemWidget(ui->listWidget, YJson(YJson::O {
+    ui->listWidget->setItemWidget(item, new ItemHotKey(ui->listWidget, YJson(YJson::O {
       {u8"KeySequence", YJson::String},
       {u8"Enabled", false},
       {u8"Plugin", YJson::String}
@@ -69,7 +69,7 @@ void ShortcutDlg::SaveSetting()
 {
   m_Setting.clearA();
   for (int i = 0; i < ui->listWidget->count(); ++i) {
-    auto item = qobject_cast<HotKeyItemWidget*>(ui->listWidget->itemWidget(ui->listWidget->item(i)));
+    auto item = qobject_cast<ItemHotKey*>(ui->listWidget->itemWidget(ui->listWidget->item(i)));
     item->WriteJson(m_Setting);
   }
   mgr->SaveSettings();

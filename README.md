@@ -32,6 +32,8 @@
 
 功能：网速、内存、CPU占用显示。
 
+#### 内置皮肤
+
 ![经典火绒](https://cloud.tsinghua.edu.cn/f/cb162e06a23e4d42a772/?dl=1)
 
 ![数字卫士](https://cloud.tsinghua.edu.cn/f/42ef9aa2d55444759783/?dl=1)
@@ -45,6 +47,10 @@
 ![开源力量](https://cloud.tsinghua.edu.cn/f/a698f71195e34aefb794/?dl=1)
 
 > <del>原谅我的美术造诣，感觉都不是特别完美。</del>你可以使用内置的这几种皮肤，也可以自己创建一个独特的皮肤。皮肤相关问题 [![GitHub issue/pull request detail](https://img.shields.io/github/issues/detail/state/yjmthu/Neobox/5)](https://github.com/yjmthu/Neobox/issues/5)
+
+### 进程信息
+
+![进程内存](https://cloud.tsinghua.edu.cn/f/8705930894e940309bdf/?dl=1)
 
 </details>
 
@@ -185,7 +191,7 @@
 2. 逐步增加wxWidgets部分的代码，最终取代qt。 -->
 
 - [ ] 文字识别模仿微信加强，可在图片上选中文字；
-- [ ] 网速悬浮窗可滚轮查看每个进程网速；
+- [x] 网速悬浮窗可滚轮查看每个进程内存；
 - [x] 尽量解决网速悬浮窗的闪退情况；
 - [x] 插件更新功能完善，可离线管理插件、调整插件加载顺序；
 - [ ] 热键管理加强，增加注册失败提示，增加热键执行命令功能；

@@ -22,6 +22,7 @@
 #include <glbobject.h>
 #include <skinobject.h>
 #include <netspeedhelper.h>
+#include <processform.h>
 
 #include <array>
 #include <filesystem>
@@ -32,15 +33,16 @@
 #endif
 
 SpeedBox::SpeedBox(PluginObject* plugin, YJson& settings, QMenu* netcardMenu)
-    : QWidget(nullptr),
-    m_PluginObject(plugin),
-    m_Settings(settings),
-    m_NetSpeedHelper(*dynamic_cast<NeoSpeedboxPlg*>(plugin)->m_NetSpeedHelper),
-    m_NetCardMenu(*netcardMenu),
-    m_CentralWidget(nullptr),
-    m_SkinDll(nullptr),
-    m_Timer(new QTimer(this)),
-    m_Animation(new QPropertyAnimation(this, "geometry"))
+    : QWidget(nullptr)
+    , m_PluginObject(plugin)
+    , m_Settings(settings)
+    , m_NetSpeedHelper(*dynamic_cast<NeoSpeedboxPlg*>(plugin)->m_NetSpeedHelper)
+    , m_ProcessForm(m_Settings[u8"ProgressMonitor"].isTrue()?new ProcessForm(this) : nullptr)
+    , m_NetCardMenu(*netcardMenu)
+    , m_CentralWidget(nullptr)
+    , m_SkinDll(nullptr)
+    , m_Timer(new QTimer(this))
+    , m_Animation(new QPropertyAnimation(this, "geometry"))
 {
   SetWindowMode();
   SetHideFullScreen();
@@ -50,6 +52,7 @@ SpeedBox::SpeedBox(PluginObject* plugin, YJson& settings, QMenu* netcardMenu)
 }
 
 SpeedBox::~SpeedBox() {
+  delete m_ProcessForm;
   delete m_CentralWidget;
   FreeLibrary(m_SkinDll);
 
@@ -179,9 +182,41 @@ void SpeedBox::SetHideFullScreen() {
   SHAppBarMessage(ABM_NEW, reinterpret_cast<APPBARDATA*>(m_AppBarData));
 }
 
+void SpeedBox::SetProgressMonitor(bool on)
+{
+  if (on) {
+    if (!m_ProcessForm)
+      m_ProcessForm = new ProcessForm(this);
+  } else {
+    delete m_ProcessForm;
+    m_ProcessForm = nullptr;
+  }
+}
+
+void SpeedBox::wheelEvent(QWheelEvent *event)
+{
+  auto const numDegrees = event->angleDelta();
+
+  if (!numDegrees.isNull() && numDegrees.y()) {
+    if (numDegrees.y() > 0) {
+      if (m_ProcessForm && !m_ProcessForm->isVisible()) {
+        m_ProcessForm->show();
+      }
+    } else {
+      if (m_ProcessForm && m_ProcessForm->isVisible()) {
+        m_ProcessForm->hide();
+      }
+    }
+  }
+
+  event->accept();
+}
+
 void SpeedBox::mouseMoveEvent(QMouseEvent* event) {
   if (event->buttons() == Qt::LeftButton) {
     move(pos() + event->pos() - m_ConstPos);
+    if (m_ProcessForm && m_ProcessForm->isVisible())
+      m_ProcessForm->hide();
     m_PluginObject->SendBroadcast(PluginEvent::MouseMove, event);
   }
 }
@@ -333,6 +368,9 @@ void SpeedBox::InitNetCard()
     if (!m_CentralWidget) return;
     m_NetSpeedHelper.GetSysInfo();
     m_CentralWidget->UpdateText();
+    if (m_ProcessForm) {
+      m_ProcessForm->UpdateList();
+    }
   });
   m_Timer->start(1000);
 }

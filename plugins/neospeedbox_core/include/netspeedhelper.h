@@ -33,7 +33,6 @@ private:
 #ifdef _WIN32
   unsigned char* m_IfTableBuffer;
   unsigned long m_IfTableBufferSize;
-  static uint64_t Filetime2Int64(const void* ftime);
   // MIB_IFTABLE* m_IfTable = nullptr;             // Network Speed
   uint64_t m_PreIdleTime { 0 }, m_PreKernelTime { 0 }, m_PreUserTime { 0 };
 #endif

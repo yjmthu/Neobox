@@ -20,9 +20,7 @@ void Shortcut::RegisterAllHotKey()
 {
   for (const auto& infomation: m_Data.getArray()) {
     if (!infomation[u8"Enabled"].isTrue()) continue;
-    RegisterHotKey(
-      PluginObject::Utf82QString(infomation[u8"KeySequence"].getValueString()),
-      infomation[u8"Plugin"].getValueString());
+    RegisterHotKey(infomation);
   }
 }
 
@@ -34,9 +32,12 @@ void Shortcut::UnregisterAllHotKey() {
   m_Plugins.clear();
 }
 
-const std::u8string& Shortcut::GetPluginName(int id)
+const Shortcut::CallbackInfo& Shortcut::GetCallbackInfo(int id)
 {
-  static const std::u8string error(u8"errorplg");
+  static const CallbackInfo error {
+    u8"noneplg",
+    CallbackType::None
+  };
   if (id < 0 || id >= m_Plugins.size()) return error;
   return m_Plugins[id];
 }
@@ -49,8 +50,9 @@ Shortcut::KeyName Shortcut::GetKeyName(const QKeySequence& shortcut) {
   return KeyName { nativeKey, nativeMods };
 }
 
-bool Shortcut::RegisterHotKey(QString shortcuts, std::u8string plugin) 
+bool Shortcut::RegisterHotKey(const YJson& info) 
 {
+  auto shortcuts = PluginObject::Utf82QString(info[u8"KeySequence"].getValueString());
   KeyName keyName = GetKeyName(shortcuts);
   if (IsKeyRegistered(keyName))
     return false;
@@ -59,7 +61,17 @@ bool Shortcut::RegisterHotKey(QString shortcuts, std::u8string plugin)
   if (!ok)
     return false;
   m_HotKeys[keyName] = m_Plugins.size();
-  m_Plugins.emplace_back(std::move(plugin));
+  if (auto iter = info.find(u8"Plugin"); iter == info.endO()) {
+    m_Plugins.emplace_back(CallbackInfo {
+      info[u8"Command"].getValueString(),
+      CallbackType::Command
+    });
+  } else {
+    m_Plugins.emplace_back(CallbackInfo {
+      iter->second.getValueString(),
+      CallbackType::Plugin
+    });
+  }
   return true;
 }
 

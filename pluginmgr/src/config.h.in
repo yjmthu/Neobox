@@ -5,8 +5,9 @@
 #define NEOBOX_VERSION_MINOR @CMAKE_PROJECT_VERSION_MINOR@
 #define NEOBOX_VERSION_PATCH @CMAKE_PROJECT_VERSION_PATCH@
 
-#define NEOBOX_BUILD_TYPE "@CMAKE_BUILD_TYPE@"
-#define NEOBOX_BUILD_TIME "@NEOBOX_BUILD_TIME@"
-#define NEOBOX_LATEST_URL "https://api.github.com/repos/yjmthu/Neobox/releases/latest"
+#define NEOBOX_BUILD_TYPE  "@CMAKE_BUILD_TYPE@"
+#define NEOBOX_BUILD_TIME  "@NEOBOX_BUILD_TIME@"
+#define NEOBOX_LATEST_URL  "https://api.github.com/repos/yjmthu/Neobox/releases/latest"
 #define NEOBOX_WEBSITE_URL "https://github.com/yjmthu/Neobox"
-#define NEOBOX_COPYRIGHT "Copyright © 2022 yjmthu. All rights reserved."
+#define NEOBOX_ISSUE_URL   "https://github.com/yjmthu/Neobox/issues/new"
+#define NEOBOX_COPYRIGHT   "Copyright © 2022 yjmthu. All rights reserved."

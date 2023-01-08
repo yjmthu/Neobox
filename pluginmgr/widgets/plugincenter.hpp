@@ -28,6 +28,8 @@ private:
 public:
   class TabNative* m_TabNative;
   class TabOnline* m_TabOnline;
+private:
+  class TabVersion* m_TabVersion;
 };
 
 #endif // PLUGINCENTER_HPP
