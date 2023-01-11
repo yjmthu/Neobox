@@ -166,7 +166,7 @@ void HttpLib::SetProxyBefore()
   static const wchar_t regProxyPath[] = LR"(Software\Microsoft\Windows\CurrentVersion\Internet Settings)";
   if (m_Proxy.type == 3) return;
   if (m_Proxy.type == 0) {
-    if (!RegReadValue(HKEY_CURRENT_USER, regProxyPath, L"")) return;
+    if (!RegReadValue(HKEY_CURRENT_USER, regProxyPath, L"ProxyEnable")) return;
     m_Proxy.username.clear();
     m_Proxy.password.clear();
     auto domain = RegReadString(HKEY_CURRENT_USER, regProxyPath, L"ProxyServer");

@@ -22,6 +22,9 @@
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
        <widget class="QRadioButton" name="rBtnSystemProxy">
+        <property name="toolTip">
+         <string>跟随系统设置/取消代理</string>
+        </property>
         <property name="text">
          <string>系统代理</string>
         </property>
@@ -32,6 +35,9 @@
       </item>
       <item>
        <widget class="QRadioButton" name="rBtnUserProxy">
+        <property name="toolTip">
+         <string>始终使用用户自定义代理</string>
+        </property>
         <property name="text">
          <string>用户代理</string>
         </property>
@@ -39,6 +45,9 @@
       </item>
       <item>
        <widget class="QRadioButton" name="rBtnNoProxy">
+        <property name="toolTip">
+         <string>始终不使用代理</string>
+        </property>
         <property name="text">
          <string>无代理</string>
         </property>
@@ -49,6 +58,9 @@
    </item>
    <item>
     <widget class="QGroupBox" name="gBoxProxyInfo">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="title">
       <string>代理信息</string>
      </property>
@@ -125,6 +137,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="pBtnCancel">
+       <property name="toolTip">
+        <string>显示当前状态</string>
+       </property>
        <property name="text">
         <string>取消</string>
        </property>
@@ -132,6 +147,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="pBtnSave">
+       <property name="toolTip">
+        <string>保存并应用设置</string>
+       </property>
        <property name="text">
         <string>保存</string>
        </property>
