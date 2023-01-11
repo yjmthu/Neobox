@@ -159,16 +159,6 @@ void NeoOcrPlg::InitFunctionMap() {
         glb->glbShowMsg("复制数据文件成功。");
     }
   }});
-
-  m_Following.push_back({u8"neohotkeyplg", [this](PluginEvent event, void* data){
-    if (event == PluginEvent::HotKey) {
-      // 判断是否为想要的快捷键
-      if (*reinterpret_cast<std::u8string*>(data) == u8"neoocrplg") {
-        // MSG* msg = reinterpret_cast<MSG*>(data);
-        m_PluginMethod[u8"screenfetch"].function(event, data);
-      }
-    }
-  }});
 }
 
 QAction* NeoOcrPlg::InitMenuAction()

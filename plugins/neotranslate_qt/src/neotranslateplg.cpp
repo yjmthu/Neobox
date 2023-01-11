@@ -114,16 +114,6 @@ void NeoTranslatePlg::InitFunctionMap() {
       }, PluginEvent::Bool}
     },
   };
-
-  m_Following.push_back({u8"neohotkeyplg", [this](PluginEvent event, void* data){
-    if (event == PluginEvent::HotKey) {
-      // 判断是否为想要的快捷键
-      if (*reinterpret_cast<std::u8string*>(data) == u8"neotranslateplg") {
-        // MSG* msg = reinterpret_cast<MSG*>(data);
-        m_TranslateDlg->ToggleVisibility();
-      }
-    }
-  }});
 }
 
 QAction* NeoTranslatePlg::InitMenuAction()

@@ -1,45 +1,97 @@
 #include <shortcut.h>
 #include <pluginobject.h>
 #include <yjson.h>
+#include <systemapi.h>
+#include <pluginmgr.h>
+#include <../widgets/plugincenter.hpp>
 
 #include <QWidget>
+#include <QApplication>
 
 #include <Windows.h>
 
-Shortcut::Shortcut(const YJson& data)
+using namespace std::literals;
+namespace fs = std::filesystem;
+
+bool Shortcut::nativeEventFilter(const QByteArray &eventType, void *message, qintptr *)
+{
+  if(eventType != "windows_generic_MSG" && eventType != "windows_dispatcher_MSG")
+    return false;
+  MSG* msg = static_cast<MSG*>(message);
+
+  if (WM_HOTKEY == msg->message) {
+    /*
+     * idHotKey = wParam;
+     * Modifiers = (UINT) LOWORD(lParam);
+     * uVirtKey = (UINT) HIWORD(lParam);
+     */
+    if (PluginCenter::m_Instance) return false;
+
+    auto& keyString = GetCallbackInfo(msg->wParam);
+    for (auto& item: m_Data.getArray()) {
+    }
+    auto iter = std::find_if(m_Data.beginA(), m_Data.endA(), [&keyString](const YJson& info){
+      return info[u8"KeySequence"].getValueString() == keyString;
+    });
+
+    if (iter != m_Data.endA()) {
+      if (auto iterData = iter->find(u8"Command"); iterData != iter->endO()) {
+        auto& data = iterData->second;
+        fs::path executable = data[u8"Executable"].getValueString();
+        executable.make_preferred();
+        auto& arguments = data[u8"Arguments"].getValueString();
+        fs::path directory = data[u8"Directory"].getValueString();
+        directory = fs::absolute(directory);
+        directory.make_preferred();
+
+        auto exe = executable.wstring();
+        auto arg = Utf82WideString(arguments);
+        auto dir = directory.wstring();
+
+        ShellExecute(nullptr, L"open", exe.c_str(), arg.c_str(),
+          dir.c_str(), SW_SHOWNORMAL);
+      } else if (auto iterData = iter->find(u8"Plugin"); iterData != iter->endO()) {
+        auto& data = iterData->second;
+        auto& pluginName = data[u8"PluginName"].getValueString();
+        auto& function = data[u8"Function"].getValueString();
+        if (auto iter = mgr->m_Plugins.find(pluginName); iter != mgr->m_Plugins.end()) {
+          auto& funcMap = iter->second.plugin->m_PluginMethod;
+          auto iterFunc = funcMap.find(function);
+          if (iterFunc != funcMap.end()) {
+            iterFunc->second.function(PluginEvent::HotKey, nullptr);
+          }
+        }
+        // SendBroadcast(PluginEvent::HotKey, &name);
+      }
+    }
+  }
+  return false;
+
+}
+
+Shortcut::Shortcut(YJson& data)
   : m_Data(data)
 {
-  RegisterAllHotKey();
+  for (auto& infomation: m_Data.getArray()) {
+    auto& enabled = infomation[u8"Enabled"];
+    if (!enabled.isTrue()) continue;
+    enabled = RegisterHotKey(infomation[u8"KeySequence"].getValueString());
+  }
+  qApp->installNativeEventFilter(this);
 }
 
 Shortcut::~Shortcut() {
-  UnregisterAllHotKey();
-}
-
-void Shortcut::RegisterAllHotKey()
-{
-  for (const auto& infomation: m_Data.getArray()) {
-    if (!infomation[u8"Enabled"].isTrue()) continue;
-    RegisterHotKey(infomation);
-  }
-}
-
-void Shortcut::UnregisterAllHotKey() {
-  for (const auto& [_, id] : m_HotKeys) {
+  for (const auto& [_, id] : m_HotKeyIds) {
     ::UnregisterHotKey(NULL, id);
   }
-  m_HotKeys.clear();
-  m_Plugins.clear();
 }
 
-const Shortcut::CallbackInfo& Shortcut::GetCallbackInfo(int id)
+const std::u8string_view Shortcut::GetCallbackInfo(int id)
 {
-  static const CallbackInfo error {
-    u8"noneplg",
-    CallbackType::None
-  };
-  if (id < 0 || id >= m_Plugins.size()) return error;
-  return m_Plugins[id];
+  if (auto iter = m_HotKeyNames.find(id); iter != m_HotKeyNames.end()) {
+    return iter->second;
+  }
+  return u8""sv;
 }
 
 Shortcut::KeyName Shortcut::GetKeyName(const QKeySequence& shortcut) {
@@ -50,45 +102,36 @@ Shortcut::KeyName Shortcut::GetKeyName(const QKeySequence& shortcut) {
   return KeyName { nativeKey, nativeMods };
 }
 
-bool Shortcut::RegisterHotKey(const YJson& info) 
+bool Shortcut::RegisterHotKey(const std::u8string& keyString) 
 {
-  auto shortcuts = PluginObject::Utf82QString(info[u8"KeySequence"].getValueString());
+  auto shortcuts = PluginObject::Utf82QString(keyString);
   KeyName keyName = GetKeyName(shortcuts);
   if (IsKeyRegistered(keyName))
     return false;
-  bool ok = ::RegisterHotKey(NULL, m_Plugins.size(),
-      keyName.nativeMods, keyName.nativeKey);
-  if (!ok)
+  const auto id = GetHotKeyId();
+  if (!::RegisterHotKey(NULL, id,
+      keyName.nativeMods, keyName.nativeKey))
     return false;
-  m_HotKeys[keyName] = m_Plugins.size();
-  if (auto iter = info.find(u8"Plugin"); iter == info.endO()) {
-    m_Plugins.emplace_back(CallbackInfo {
-      info[u8"Command"].getValueString(),
-      CallbackType::Command
-    });
-  } else {
-    m_Plugins.emplace_back(CallbackInfo {
-      iter->second.getValueString(),
-      CallbackType::Plugin
-    });
-  }
+  m_HotKeyIds[keyName] = id;
+  m_HotKeyNames[id] = keyString;
   return true;
 }
 
-bool Shortcut::UnregisterHotKey(QString shortcut) {
-  const KeyName keyName = GetKeyName(shortcut);
+bool Shortcut::UnregisterHotKey(const std::u8string& keyString) {
+  const KeyName keyName = GetKeyName(PluginObject::Utf82QString(keyString));
 
-  auto iter = m_HotKeys.find(keyName);
-  if (iter != m_HotKeys.end()) {
+  auto iter = m_HotKeyIds.find(keyName);
+  if (iter != m_HotKeyIds.end()) {
     auto const ret = ::UnregisterHotKey(NULL, iter->second);
-    m_HotKeys.erase(iter);
+    m_HotKeyNames.erase(iter->second);
+    m_HotKeyIds.erase(iter);
     return ret;
   }
   return false;
 }
 
 bool Shortcut::IsKeyRegistered(const KeyName& keyName) {
-  return m_HotKeys.find(keyName) != m_HotKeys.end();
+  return m_HotKeyIds.find(keyName) != m_HotKeyIds.end();
 }
 
 uint32_t Shortcut::GetNativeModifiers(Qt::KeyboardModifiers modifiers) {
@@ -102,6 +145,15 @@ uint32_t Shortcut::GetNativeModifiers(Qt::KeyboardModifiers modifiers) {
   if (modifiers & Qt::MetaModifier)
     native |= MOD_WIN;
   return native;
+}
+
+int Shortcut::GetHotKeyId() const
+{
+  int lastId = 0;
+  for (const auto& [id, name]: m_HotKeyNames) {
+    if (id != ++lastId) return lastId;
+  }
+  return ++lastId;
 }
 
 uint32_t Shortcut::GetNativeKeycode(Qt::Key key) {

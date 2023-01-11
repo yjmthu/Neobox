@@ -2,12 +2,11 @@
 #define SHORTCUT_H
 
 #include <QKeySequence>
-
+#include <QAbstractNativeEventFilter>
 #include <map>
 
-class Shortcut {
-public:
-  enum CallbackType { None, Plugin, Command };
+class Shortcut: public QAbstractNativeEventFilter
+{
 private:
 
   struct KeyName {
@@ -22,30 +21,27 @@ private:
       return big < other.big;
     }
   };
-  struct CallbackInfo {
-    std::u8string name;
-    CallbackType type;
-  };
+protected:
+  bool nativeEventFilter(const QByteArray &eventType, void *message, qintptr *) override;
 
 public:
-  explicit Shortcut(const class YJson& m_Data);
+  explicit Shortcut(class YJson& m_Data);
   ~Shortcut();
-  void RegisterAllHotKey();
-  void UnregisterAllHotKey();
-  const CallbackInfo& GetCallbackInfo(int id);
+  bool RegisterHotKey(const std::u8string& keyString);
+  bool UnregisterHotKey(const std::u8string& keyString);
+  const std::u8string_view GetCallbackInfo(int id);
 
 private:
-  bool RegisterHotKey(const YJson& plugin);
-  bool UnregisterHotKey(QString shortcut);
   bool IsKeyRegistered(QString shortcut);
   bool IsKeyRegistered(const KeyName& keyName);
   static KeyName GetKeyName(const QKeySequence& shortcut);
   static uint32_t GetNativeModifiers(Qt::KeyboardModifiers modifiers);
   static uint32_t GetNativeKeycode(Qt::Key key);
+  int GetHotKeyId() const;
 private:
-  std::map<KeyName, int> m_HotKeys;
-  std::vector<CallbackInfo> m_Plugins;
-  const class YJson& m_Data;
+  class YJson& m_Data;
+  std::map<KeyName, int> m_HotKeyIds;
+  std::map<int, std::u8string> m_HotKeyNames;
 };
 
 #endif

@@ -3,6 +3,8 @@
 #include "tabnative.hpp"
 #include "tabonline.hpp"
 #include "tabversion.hpp"
+#include "tabnetproxy.hpp"
+#include "tabhotkey.hpp"
 
 #include <httplib.h>
 #include <yjson.h>
@@ -30,6 +32,8 @@ PluginCenter::PluginCenter(YJson& setting)
   , m_TabWidget(new QTabWidget(this))
   , m_TabNative(new TabNative(this))
   , m_TabOnline(new TabOnline(this))
+  , m_TabHotKey(new TabHotKey(this))
+  , m_TabNetProxy(new TabNetProxy(this))
   , m_TabVersion(new TabVersion(this))
 {
   m_Instance = this;
@@ -52,6 +56,8 @@ void PluginCenter::SetupUi()
   m_MainLayout->addWidget(m_TabWidget);
   m_TabWidget->addTab(m_TabNative, "本地插件");
   m_TabWidget->addTab(m_TabOnline, "网络插件");
+  m_TabWidget->addTab(m_TabHotKey, "热键管理");
+  m_TabWidget->addTab(m_TabNetProxy, "网络设置");
   m_TabWidget->addTab(m_TabVersion, "关于软件");
 }
 

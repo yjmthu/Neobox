@@ -6,7 +6,7 @@ file(GLOB source_files src/*.cpp)
 
 set(system_shared_files Shell32)
 set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Svg)
-set(pliugin_libfiles neoocr_core pluginmgr yjson)
+set(pliugin_libfiles neoocr_core)
 set(ocr_libfiles leptonica)
 
 add_library(neoocrplg SHARED ${source_files} 

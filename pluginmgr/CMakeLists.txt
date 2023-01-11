@@ -1,18 +1,35 @@
 cmake_minimum_required(VERSION 3.10.1)
 
+if (UNIX)
+  find_package(CURL CONFIG REQUIRED)
+endif()
+
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui)
 qt_standard_project_setup()
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 configure_file(
   src/config.h.in include/config.h
 )
+
+qt_wrap_ui(wrap_files
+  widgets/tabnetproxy.ui
+  widgets/tabhotkey.ui
+) # 根据UI文件生成头文件
 
 file(GLOB source_files src/*.cpp widgets/*.cpp widgets/*.hpp)
 file(GLOB _resource_files fonts/*.ttf  icons/*  jsons/*.json scripts/* styles/*)
 
 set(system_shared_files Shell32)
 set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui)
-set(pliugin_libfiles neocore yjson)
+set(pliugin_libfiles yjson)
+
+if(WIN32)
+  list(APPEND system_shared_files Iphlpapi Winhttp)
+else()
+  list(APPEND system_shared_files CURL::libcurl)
+endif()
 
 set(resource_files "")
 foreach(full_filepath ${_resource_files})
@@ -21,7 +38,10 @@ foreach(full_filepath ${_resource_files})
   list(APPEND resource_files ${file_path})
 endforeach()
 
-add_library(pluginmgr SHARED ${source_files})
+add_library(pluginmgr SHARED
+  ${source_files}
+  ${wrap_files}
+)
 
 target_link_libraries(pluginmgr PUBLIC
   ${pliugin_libfiles}

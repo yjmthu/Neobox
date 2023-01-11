@@ -29,6 +29,8 @@ public:
   class TabNative* m_TabNative;
   class TabOnline* m_TabOnline;
 private:
+  class TabHotKey* m_TabHotKey;
+  class TabNetProxy* m_TabNetProxy;
   class TabVersion* m_TabVersion;
 };
 

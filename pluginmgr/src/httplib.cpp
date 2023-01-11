@@ -16,6 +16,8 @@
 using namespace std::literals;
 namespace fs = std::filesystem;
 
+HttpProxy HttpLib::m_Proxy;
+
 bool HttpLib::IsOnline() {
 #ifdef _WIN32
   BOOL bResult = FALSE;
@@ -141,7 +143,9 @@ void HttpLib::HttpInit()
   if (m_hSession) {
     auto url = GetDomain();
     m_hConnect = WinHttpConnect(m_hSession, url.data(), INTERNET_DEFAULT_HTTP_PORT, 0);
+    SetProxyBefore();
   }
+
 #else
   m_Url.push_back('\0');
   if (m_hSession)
@@ -155,6 +159,45 @@ void HttpLib::HttpInit()
   curl_easy_setopt(m_hSession, CURLOPT_NOSIGNAL, 1L);
   curl_easy_setopt(m_hSession, CURLOPT_POST, 0L);
 #endif
+}
+
+void HttpLib::SetProxyBefore()
+{
+  static const wchar_t regProxyPath[] = LR"(Software\Microsoft\Windows\CurrentVersion\Internet Settings)";
+  if (m_Proxy.type == 3) return;
+  if (m_Proxy.type == 0) {
+    if (!RegReadValue(HKEY_CURRENT_USER, regProxyPath, L"")) return;
+    m_Proxy.username.clear();
+    m_Proxy.password.clear();
+    auto domain = RegReadString(HKEY_CURRENT_USER, regProxyPath, L"ProxyServer");
+    auto const pos = domain.find(L':');
+    m_Proxy.port = std::stoi(domain.substr(pos+1));
+    domain.erase(pos);
+    m_Proxy.domain.swap(domain);
+  }
+  std::wstring proxyString = std::format(L"{}:{}", m_Proxy.domain, m_Proxy.port);
+  proxyString.push_back(L'\0');
+  if (proxyString.starts_with(L"http://")) {
+    proxyString = L"http://" + proxyString;
+  }
+
+  WINHTTP_PROXY_INFO proxy { 
+    WINHTTP_ACCESS_TYPE_NAMED_PROXY,
+    proxyString.data(), nullptr
+  };
+
+  if (WinHttpSetOption(m_hSession, WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy)))
+  {
+    if (m_Proxy.password.empty() || m_Proxy.username.empty()) return;
+    m_ProxySet = true;
+  }
+}
+
+void HttpLib::SetProxyAfter()
+{
+  if (!m_ProxySet) return;
+  WinHttpSetOption(m_hRequest, WINHTTP_OPTION_PROXY_USERNAME, m_Proxy.username.data(), m_Proxy.username.size() * sizeof(wchar_t));
+  WinHttpSetOption(m_hRequest, WINHTTP_OPTION_PROXY_PASSWORD, m_Proxy.password.data(), m_Proxy.password.size() * sizeof(wchar_t));
 }
 
 void HttpLib::SetRedirect(long redirect)
@@ -228,6 +271,9 @@ void HttpLib::HttpPerform()
   m_hRequest = WinHttpOpenRequest (m_hConnect,
     m_PostData.data ? L"POST": L"GET",
     path.data(), L"HTTP/1.1", WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, 0);
+  if (m_hRequest) {
+    SetProxyAfter();
+  }
 #else
   curl_easy_setopt(m_hSession, CURLOPT_WRITEFUNCTION, m_CallBack);
   curl_easy_setopt(m_hSession, CURLOPT_WRITEDATA, m_DataBuffer);

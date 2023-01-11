@@ -160,6 +160,8 @@ bool RegWriteString(HKEY dwSubKey,
 
 bool RegRemoveValue(HKEY dwSubKey, LPCWSTR pPath, LPCWSTR pKeyName);
 
+DWORD RegReadValue(HKEY dwSubKey, LPCWSTR pPath, LPCWSTR pKeyName);
+
 enum ACCENT_STATE {
   ACCENT_DISABLED,
   ACCENT_ENABLE_GRADIENT,

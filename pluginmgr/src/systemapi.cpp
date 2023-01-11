@@ -89,6 +89,25 @@ std::wstring RegReadString(HKEY dwSubKey, LPCWSTR pPath, LPCWSTR pKeyName) {
   return result;
 }
 
+
+DWORD RegReadValue(HKEY dwSubKey, LPCWSTR pPath, LPCWSTR pKeyName) {
+  DWORD result = 0;
+  HKEY hKey = nullptr;
+  if (ERROR_SUCCESS != RegOpenKeyEx(dwSubKey, pPath, 0, KEY_READ, &hKey)) {
+    return result;
+  }
+
+  DWORD dwType = REG_DWORD;
+  DWORD dwDataSize = sizeof(DWORD);
+  if (ERROR_SUCCESS !=
+      RegQueryValueExW(hKey, pKeyName, 0, &dwType, (PBYTE)&result, &dwDataSize)) {
+    RegCloseKey(hKey);
+    return result;
+  }
+  RegCloseKey(hKey);
+  return result;
+}
+
 bool RegWriteString(HKEY dwSubKey,
                     LPCWSTR pPath,
                     LPCWSTR pKeyName,

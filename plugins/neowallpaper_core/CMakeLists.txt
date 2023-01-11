@@ -4,4 +4,4 @@ file(GLOB sources src/*.cpp)
 
 add_library(wallpaper_core STATIC ${sources})
 
-target_link_libraries(wallpaper_core PRIVATE yjson neocore)
+target_link_libraries(wallpaper_core PRIVATE yjson)

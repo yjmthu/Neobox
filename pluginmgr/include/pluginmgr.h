@@ -25,6 +25,8 @@ public:
   void LoadPlugins();
   void LoadManageAction(class QAction *action);
   const YJson& GetPluginsInfo() const;
+  YJson& GetEventMap();
+  YJson& GetNetProxy();
   bool InstallPlugin(const std::u8string& plugin, const YJson& info);
   bool UnInstallPlugin(const std::u8string& plugin);
   bool UpdatePlugin(const std::u8string& plugin, const YJson* info);
@@ -46,6 +48,8 @@ public:
 private:
   const std::u8string m_SettingFileName;
   YJson* m_Settings;
+  friend class TabHotKey;
+  class Shortcut* m_Shortcut;
 };
 
 extern PluginMgr* mgr;

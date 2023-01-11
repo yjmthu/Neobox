@@ -25,6 +25,7 @@ protected:
   void RemoveMainObject();
 protected:
   class YJson& m_Settings;
+public:
   FunctionMap m_PluginMethod;
 public:
   std::list<std::pair<std::u8string, FollowerFunction>> m_Following;

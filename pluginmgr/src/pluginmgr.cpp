@@ -3,6 +3,8 @@
 #include <yjson.h>
 #include <glbobject.h>
 #include <systemapi.h>
+#include <shortcut.h>
+#include <httplib.h>
 
 #include <QMenu>
 #include <QAction>
@@ -47,20 +49,58 @@ PluginMgr::PluginMgr(GlbObject* glb, QMenu* pluginMainMenu):
       }},
       { u8"EventMap", YJson::A {
         // YJson::O {
-        //   {u8"from", u8"" },
-        //   {u8"event", u8"" },
-        //   {u8"to", u8"" },
-        //   {u8"function", u8""},
+        //   {u8"KeySequence", u8"Shift+A"},
+        //   {u8"Enabled", false},
+        //   {u8"Plugin", YJson::O {
+        //     {u8"PluginName", u8"neospeedboxplg"},
+        //     {u8"Function", u8"show"},
+        //   }},
+        // },
+        // YJson::O {
+        //   {u8"KeySequence", u8"Shift+S"},
+        //   {u8"Enabled", false},
+        //   {u8"Command", YJson::O {
+        //     {u8"Executable", u8"shutdown.exe"},
+        //     {u8"Directory", u8"."},
+        //     {u8"Arguments", u8"-s -t 10"}
+        //   }},
         // }
       }},
       { u8"PluginsConfig", YJson::O {
       }},
+      { u8"NetProxy", YJson::O {
+        {u8"Type", HttpLib::m_Proxy.type},
+        {u8"Domain", YJson::String},
+        {u8"Port", HttpLib::m_Proxy.port},
+        {u8"Username", YJson::String},
+        {u8"Password", YJson::String}
+      }},
     }};
   }
+  auto& proxy = m_Settings->operator[](u8"NetProxy");
+  if (!proxy.isObject()) {
+    proxy = YJson::O {
+      {u8"Type", HttpLib::m_Proxy.type},
+      {u8"Domain", YJson::String},
+      {u8"Port", HttpLib::m_Proxy.port},
+      {u8"Username", YJson::String},
+      {u8"Password", YJson::String}
+    };
+  }
+
+
+  HttpLib::m_Proxy.domain = Utf82WideString(proxy[u8"Domain"].getValueString());
+  HttpLib::m_Proxy.username = Utf82WideString(proxy[u8"Username"].getValueString());
+  HttpLib::m_Proxy.password = Utf82WideString(proxy[u8"Password"].getValueString());
+  HttpLib::m_Proxy.port = proxy[u8"Port"].getValueInt();
+  HttpLib::m_Proxy.type = proxy[u8"Type"].getValueInt();
+
+  m_Shortcut = new Shortcut(m_Settings->find(u8"EventMap")->second);
 }
 
 PluginMgr::~PluginMgr()
 {
+  delete m_Shortcut;
   for (auto& [_, info]: m_Plugins) {
     if (!info.plugin) continue;
     delete info.plugin;
@@ -86,6 +126,15 @@ void PluginMgr::LoadManageAction(QAction *action)
 const YJson& PluginMgr::GetPluginsInfo() const
 {
   return m_Settings->find(u8"Plugins")->second;
+}
+
+YJson& PluginMgr::GetEventMap() {
+  return m_Settings->find(u8"EventMap")->second;
+}
+
+YJson& PluginMgr::GetNetProxy()
+{
+  return m_Settings->find(u8"NetProxy")->second;
 }
 
 void PluginMgr::LoadPlugins()

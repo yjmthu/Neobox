@@ -5,6 +5,15 @@
 #include <string>
 #include <map>
 
+struct HttpProxy 
+{
+  std::wstring domain;
+  std::wstring username;
+  std::wstring password;
+  int type = 0;
+  int port = 8080;
+};
+
 class HttpLib {
 private:
   struct PostData { void* data; size_t size; } m_PostData;
@@ -23,7 +32,8 @@ public:
   template<typename Char=char>
   explicit HttpLib(std::basic_string<Char> url):
     m_Url(url.cbegin(), url.cend()),
-    m_hSession(nullptr)
+    m_hSession(nullptr),
+    m_ProxySet(false)
   {
     HttpInit();
   }
@@ -43,6 +53,8 @@ public:
   Response* Get(const std::filesystem::path& path);
   Response* Get(pCallbackFunction callback, void* userData);
   static bool IsOnline();
+public:
+  static HttpProxy m_Proxy;
 private:
   Headers m_Headers;
   Response m_Response;
@@ -52,10 +64,13 @@ private:
   void* m_hConnect = nullptr;
   void* m_hRequest = nullptr;
 #endif
+  bool m_ProxySet;
 private:
   void HttpInit();
   void HttpPerform();
   void SendHeaders();
+  void SetProxyBefore();
+  void SetProxyAfter();
   bool SendRequestData();
   std::wstring GetDomain();
   std::wstring GetPath();
