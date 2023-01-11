@@ -24,6 +24,7 @@ TabNetProxy::TabNetProxy(QWidget* parent)
   auto validator = new QIntValidator;
   validator->setRange(1, 65535);
   ui->linePort->setValidator(validator);
+  InitSignals();
   InitData();
 }
 
@@ -36,13 +37,13 @@ void TabNetProxy::InitSignals()
 {
   connect(ui->pBtnSave, &QPushButton::clicked, this, &TabNetProxy::SaveData);
   connect(ui->pBtnCancel, &QPushButton::clicked, this, &TabNetProxy::InitData);
-  connect(ui->rBtnSystemProxy, &QRadioButton::clicked, this, [this](bool checked){
+  connect(ui->rBtnSystemProxy, &QRadioButton::toggled, this, [this](bool checked){
     if (checked) ui->gBoxProxyInfo->setEnabled(false);
   });
-  connect(ui->rBtnUserProxy, &QRadioButton::clicked, this, [this](bool checked){
+  connect(ui->rBtnUserProxy, &QRadioButton::toggled, this, [this](bool checked){
     if (checked) ui->gBoxProxyInfo->setEnabled(true);
   });
-  connect(ui->rBtnNoProxy, &QRadioButton::clicked, this, [this](bool checked){
+  connect(ui->rBtnNoProxy, &QRadioButton::toggled, this, [this](bool checked){
     if (checked) ui->gBoxProxyInfo->setEnabled(false);
   });
 }
