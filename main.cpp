@@ -1,11 +1,11 @@
 #include <QApplication>
-#include <glbobject.h>
+#include <pluginmgr.h>
 
 int main(int argc, char* argv[]) {
   QApplication a(argc, argv);
   try {
-    GlbObject glbObject;
-    glbObject.Exec();
+    PluginMgr mgr;
+    mgr.Exec();
   } catch (std::runtime_error err) {
     //
   } catch (...) {

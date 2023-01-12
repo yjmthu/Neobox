@@ -1,7 +1,7 @@
 #include <nativeex.h>
 #include <pluginobject.h>
+#include <pluginmgr.h>
 #include <yjson.h>
-#include <glbobject.h>
 
 #include <QInputDialog>
 #include <QActionGroup>
@@ -9,8 +9,8 @@
 
 namespace fs = std::filesystem;
 
-NativeExMenu::NativeExMenu(YJson& data, QMenu* parent, std::function<void(bool)> callback):
-  QMenu(parent),
+NativeExMenu::NativeExMenu(YJson& data, MenuBase* parent, std::function<void(bool)> callback):
+  MenuBase(parent),
   m_Data(data),
   m_CallBack(callback),
   m_ActionGroup(new QActionGroup(this)),
@@ -40,19 +40,19 @@ void NativeExMenu::LoadSettingMenu()
     auto& number = m_Data[u8"max"];
     int data = QInputDialog::getInt(this, "输入数字", "输入每次预先缓存的列表中壁纸的数量", number.getValueInt(), 20, 1000);
     if (number == data) {
-      glb->glbShowMsg("取消设置成功。");
+      mgr->ShowMsg("取消设置成功。");
       return;
     }
     number = data;
     m_CallBack(true);
-    glb->glbShowMsg("设置成功！");
+    mgr->ShowMsg("设置成功！");
   });
   connect(addAction("添加更多"), &QAction::triggered, this, &NativeExMenu::AddApi);
 }
 
 void NativeExMenu::LoadSubSettingMenu(QAction* action)
 {
-  QMenu* subMenu = new QMenu(this);
+  auto const subMenu = new MenuBase(this);
   action->setMenu(subMenu);
 
   connect(subMenu->addAction("修改名称"),
@@ -80,7 +80,7 @@ void NativeExMenu::LoadSubSettingMenu(QAction* action)
           delete (*iter)->menu();
           LoadSubSettingMenu(*iter);
         }
-        glb->glbShowMsg("修改成功！");
+        mgr->ShowMsg("修改成功！");
       });
     connect(subMenu->addAction("删除此项"),
       &QAction::triggered, this, [action, this, viewName]() {
@@ -90,7 +90,7 @@ void NativeExMenu::LoadSubSettingMenu(QAction* action)
         m_Data[u8"dirs"].remove(viewName);
         m_CallBack(false);
 
-        glb->glbShowMsg("修改成功！");
+        mgr->ShowMsg("修改成功！");
       });
   }
 
@@ -102,7 +102,7 @@ void NativeExMenu::LoadSubSettingMenu(QAction* action)
   connect(randomAction, &QAction::triggered, this, [this, viewName](bool on){
     m_Data[u8"dirs"][viewName][u8"random"] = on;
     m_CallBack(false);
-    glb->glbShowMsg("设置成功！");
+    mgr->ShowMsg("设置成功！");
   });
 
   auto const recursionAcion = subMenu->addAction("递归遍历");
@@ -111,52 +111,47 @@ void NativeExMenu::LoadSubSettingMenu(QAction* action)
   connect(recursionAcion, &QAction::triggered, this, [this, viewName](bool on){
     m_Data[u8"dirs"][viewName][u8"recursion"] = on;
     m_CallBack(false);
-    glb->glbShowMsg("设置成功！");
+    mgr->ShowMsg("设置成功！");
   });
 }
 
 void NativeExMenu::EditApi(QAction* action)
 {
-  auto& u8dir = m_Data[u8"dirs"][PluginObject::QString2Utf8(action->text())][u8"imgdir"].getValueString();
-  auto const newdir = QFileDialog::getExistingDirectory(this, "选择本地壁纸文件夹", PluginObject::Utf82QString(u8dir));
-
-  if (newdir.isEmpty()) {
-    glb->glbShowMsg("取消设置成功。");
-    return;
+  auto& u8Dir = m_Data[u8"dirs"][PluginObject::QString2Utf8(action->text())][u8"imgdir"].getValueString();
+  auto u8NewDir = GetExistingDirectory("选择本地壁纸文件夹", u8Dir);
+  if (!u8NewDir) {
+    mgr->ShowMsg("取消设置成功");
+  } else {
+    u8Dir.swap(*u8NewDir);
+    m_CallBack(false);
+    mgr->ShowMsg("设置成功");
   }
-
-  fs::path path = newdir.toStdU16String();
-  path.make_preferred();
-  u8dir = path.u8string();
-
-  m_CallBack(false);
-  glb->glbShowMsg("设置成功！");
 }
 
 void NativeExMenu::RenameApi(QAction* action)
 {
-  const auto qKeyName = action->text();
-  const auto qKeyNewName = QInputDialog::getText(this,
-      QStringLiteral("文字输入"),
-      QStringLiteral("请输入新名称"),
-      QLineEdit::Normal, qKeyName
-  );
-  if (qKeyNewName.isEmpty() || qKeyName == qKeyNewName)
-    return;
-  auto const viewName = PluginObject::QString2Utf8(qKeyName);
-  auto const viewNewName = PluginObject::QString2Utf8(qKeyNewName);
-  auto& jsApiData = m_Data[u8"dirs"];
-  auto iter = jsApiData.find(viewNewName);
-  if (iter != jsApiData.endO())
-    return;
-  if (action->isChecked()) {
-    m_Data[u8"curdir"] = viewNewName;
-  }
-  jsApiData.find(viewName)->first = viewNewName;
-  m_CallBack(false);
-  action->setText(qKeyNewName);
+  auto const oldString = PluginObject::QString2Utf8(action->text());
 
-  glb->glbShowMsg("修改成功！");
+  auto newString = GetNewU8String(
+    "文字输入", "请输入新名称", action->text());
+  if (!newString) return;
+  
+
+  auto& jsApiData = m_Data[u8"dirs"];
+  auto iter = jsApiData.find(*newString);
+  if (iter != jsApiData.endO()) {
+    mgr->ShowMsg("不能使用重复昵称");
+    return;
+  }
+  
+  if (action->isChecked()) {
+    m_Data[u8"curdir"] = *newString;
+  }
+  jsApiData.find(oldString)->first = oldString;
+  m_CallBack(false);
+  action->setText(QString::fromUtf8(newString->data(), newString->size()));
+
+  mgr->ShowMsg("修改成功！");
 }
 
 void NativeExMenu::AddApi()
@@ -169,13 +164,13 @@ void NativeExMenu::AddApi()
   auto viewKeyName(PluginObject::QString2Utf8(qKeyName));
   auto& obj = m_Data[u8"dirs"][viewKeyName];
   if (!obj.isNull()) {
-    glb->glbShowMsg("昵称不能重复！");
+    mgr->ShowMsg("昵称不能重复！");
     return;
   }
 
   auto qsFolder = QFileDialog::getExistingDirectory(this, "选择壁纸存放文件夹");
   if (qsFolder.isEmpty()) {
-    glb->glbShowMsg("取消成功。");
+    mgr->ShowMsg("取消成功。");
     return;
   }
   fs::path folder = qsFolder.toStdU16String();
@@ -193,5 +188,5 @@ void NativeExMenu::AddApi()
   m_CallBack(false);
   LoadSubSettingMenu(action);
 
-  glb->glbShowMsg("添加成功！");
+  mgr->ShowMsg("添加成功！");
 }

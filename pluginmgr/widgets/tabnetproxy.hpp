@@ -4,7 +4,7 @@
 #include <QWidget>
 
 namespace Ui {
-  class Form;
+  class FormProxy;
 }
 
 class TabNetProxy: public QWidget
@@ -17,6 +17,7 @@ public:
   explicit TabNetProxy(QWidget* parent);
   ~TabNetProxy();
 private:
+  void InitLayout();
   void InitSignals();
 private:
   class YJson& m_Settings;
@@ -25,7 +26,7 @@ private:
   std::u8string& m_Domain;
   double& m_Port;
   double& m_Type;
-  Ui::Form* ui;
+  Ui::FormProxy* ui;
 };
 
 #endif // TABNETPROXY_HPP

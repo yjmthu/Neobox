@@ -3,6 +3,8 @@
 
 #include <pluginobject.h>
 
+class MenuBase;
+
 namespace std::filesystem {
   class path;
 }
@@ -21,18 +23,18 @@ private:
   void InitFunctionMap() override;
   void InitMenu();
   static void LoadFonts();
-  void LoadRemoveSkinMenu(QMenu* parent);
-  void LoadChooseSkinMenu(QMenu* parent);
-  void LoadHideAsideMenu(QMenu* parent);
+  void LoadRemoveSkinMenu(MenuBase* parent);
+  void LoadChooseSkinMenu(MenuBase* parent);
+  void LoadHideAsideMenu(MenuBase* parent);
   void AddSkinConnect(class QAction* acion);
   void RemoveSkinConnect(QAction* action);
   void ChooseSkinConnect(QAction* action);
   void AddSkin(const QString& name, const std::filesystem::path& path);
 private:
   class SpeedBox* m_Speedbox;
-  class QMenu* m_ChooseSkinMenu;
-  class QMenu* m_RemoveSkinMenu;
-  class QMenu* m_NetCardMenu;
+  MenuBase* m_ChooseSkinMenu;
+  MenuBase* m_RemoveSkinMenu;
+  MenuBase* m_NetCardMenu;
   class QActionGroup* m_ChooseSkinGroup;
   std::function<void(PluginEvent, void*)> m_ActiveWinodow;
 };

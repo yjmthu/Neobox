@@ -17,6 +17,21 @@ using namespace std::literals;
 namespace fs = std::filesystem;
 
 HttpProxy HttpLib::m_Proxy;
+static const wchar_t regProxyPath[] = LR"(Software\Microsoft\Windows\CurrentVersion\Internet Settings)";
+
+void HttpProxy::GetSystemProxy()
+{
+  username.clear();
+  password.clear();
+  domain = RegReadString(HKEY_CURRENT_USER, regProxyPath, L"ProxyServer");
+  auto const pos = domain.find(L':');
+  if (pos == domain.npos) {
+    port = 1;
+  } else {
+    port = std::stoi(domain.substr(pos + 1));
+    domain.erase(pos);
+  }
+}
 
 bool HttpLib::IsOnline() {
 #ifdef _WIN32
@@ -163,23 +178,16 @@ void HttpLib::HttpInit()
 
 void HttpLib::SetProxyBefore()
 {
-  static const wchar_t regProxyPath[] = LR"(Software\Microsoft\Windows\CurrentVersion\Internet Settings)";
   if (m_Proxy.type == 3) return;
   if (m_Proxy.type == 0) {
     if (!RegReadValue(HKEY_CURRENT_USER, regProxyPath, L"ProxyEnable")) return;
-    m_Proxy.username.clear();
-    m_Proxy.password.clear();
-    auto domain = RegReadString(HKEY_CURRENT_USER, regProxyPath, L"ProxyServer");
-    auto const pos = domain.find(L':');
-    m_Proxy.port = std::stoi(domain.substr(pos+1));
-    domain.erase(pos);
-    m_Proxy.domain.swap(domain);
+    m_Proxy.GetSystemProxy();
   }
   std::wstring proxyString = std::format(L"{}:{}", m_Proxy.domain, m_Proxy.port);
   proxyString.push_back(L'\0');
-  if (proxyString.starts_with(L"http://")) {
-    proxyString = L"http://" + proxyString;
-  }
+  // if (proxyString.starts_with(L"http://")) {
+  //   proxyString = L"http://" + proxyString;
+  // }
 
   WINHTTP_PROXY_INFO proxy { 
     WINHTTP_ACCESS_TYPE_NAMED_PROXY,

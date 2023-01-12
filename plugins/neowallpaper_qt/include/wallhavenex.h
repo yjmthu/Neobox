@@ -2,7 +2,7 @@
 #define WALLHAVENEX_H
 
 #include <functional>
-#include <QMenu>
+#include <menubase.hpp>
 
 namespace std {
   namespace filesystem {
@@ -10,10 +10,10 @@ namespace std {
   }
 }
 
-class WallhavenExMenu: public QMenu
+class WallhavenExMenu: public MenuBase
 {
 public:
-  explicit WallhavenExMenu(class YJson& data, QMenu* parent, std::function<void(bool)> callback, std::function<const std::filesystem::path&()> getCurImg);
+  explicit WallhavenExMenu(class YJson& data, MenuBase* parent, std::function<void(bool)> callback, std::function<const std::filesystem::path&()> getCurImg);
   virtual ~WallhavenExMenu();
 private:
   static std::string GetImageName(const std::filesystem::path& path);

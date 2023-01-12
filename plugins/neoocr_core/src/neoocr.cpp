@@ -1,7 +1,7 @@
 #include <neoocr.h>
 #include <yjson.h>
 #include <httplib.h>
-#include <glbobject.h>
+#include <pluginmgr.h>
 
 #include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
@@ -10,7 +10,6 @@
 #include <set>
 #include <regex>
 
-extern GlbObject* glb;
 namespace fs = std::filesystem;
 
 NeoOcr::NeoOcr(YJson& settings, std::function<void()> callback):
@@ -46,12 +45,12 @@ std::u8string NeoOcr::GetText(Pix *pix)
 {
   std::u8string result;
   if (m_Languages.empty()) {
-    glb->glbShowMsgbox(u8"error", u8"You should set some language first!");
+    mgr->ShowMsgbox(u8"error", u8"You should set some language first!");
     m_TessApi->End();
     return result;
   }
   if (m_TessApi->Init(m_TrainedDataDir.c_str(), reinterpret_cast<const char*>(m_Languages.data()))) {
-    glb->glbShowMsgbox(u8"error", u8"Could not initialize tesseract.");
+    mgr->ShowMsgbox(u8"error", u8"Could not initialize tesseract.");
     return result;
   }
   m_TessApi->SetImage(pix);

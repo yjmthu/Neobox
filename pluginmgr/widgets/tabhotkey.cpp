@@ -6,7 +6,6 @@
 #include <yjson.h>
 #include <ui_tabhotkey.h>
 #include <shortcut.h>
-#include <glbobject.h>
 
 #include <QStandardItemModel>
 #include <QStandardItem>
@@ -34,13 +33,15 @@ TabHotKey::TabHotKey(PluginCenter* center)
   : QWidget(center)
   , m_Settings(mgr->GetEventMap())
   , m_Shortcut(*mgr->m_Shortcut)
-  , ui(new Ui::Widget)
+  , ui(new Ui::FormHotKey)
 {
-  ui->setupUi(this);
+  InitLayout();
   InitDataStruct();
   InitPluginCombox();
   InitSignals();
-  if (ui->cBoxPlugin->count()) UpdatePluginMethord(0);
+  if (ui->cBoxPlugin->count()) {
+    UpdatePluginMethord(0);
+  }
   if (ui->listWidget->count()) {
     ui->listWidget->setCurrentRow(0);
   }
@@ -49,6 +50,16 @@ TabHotKey::TabHotKey(PluginCenter* center)
 TabHotKey::~TabHotKey()
 {
   delete ui;
+}
+
+void TabHotKey::InitLayout()
+{
+  auto const background = new QWidget(this);
+  auto mainLayout  = new QVBoxLayout(this);
+  mainLayout->setContentsMargins(0,0,0,0);
+  mainLayout->addWidget(background);
+  ui->setupUi(background);
+  background->setObjectName("whiteBackground");
 }
 
 void TabHotKey::InitSignals()
@@ -345,9 +356,9 @@ bool TabHotKey::SaveHotKeyData()
   }
   if (needSave) {
     mgr->SaveSettings();
-    glb->glbShowMsg("保存成功！");
+    mgr->ShowMsg("保存成功！");
   } else {
-    // glb->glbShowMsg("无需保存！");
+    // mgr->ShowMsg("无需保存！");
   }
   return true;
 }

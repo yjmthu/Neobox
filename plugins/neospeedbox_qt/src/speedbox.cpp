@@ -12,14 +12,13 @@
 #include <QSharedMemory>
 #include <QProcess>
 
-#include <neomenu.h>
+#include <neomenu.hpp>
 #include <speedbox.h>
 #include <yjson.h>
 #include <pluginmgr.h>
 #include <appcode.hpp>
 #include <pluginobject.h>
 #include <neospeedboxplg.h>
-#include <glbobject.h>
 #include <skinobject.h>
 #include <netspeedhelper.h>
 #include <processform.h>
@@ -32,8 +31,8 @@
 #include <Windows.h>
 #endif
 
-SpeedBox::SpeedBox(PluginObject* plugin, YJson& settings, QMenu* netcardMenu)
-    : QWidget(nullptr)
+SpeedBox::SpeedBox(PluginObject* plugin, YJson& settings, MenuBase* netcardMenu)
+    : WidgetBase(nullptr)
     , m_PluginObject(plugin)
     , m_Settings(settings)
     , m_NetSpeedHelper(*dynamic_cast<NeoSpeedboxPlg*>(plugin)->m_NetSpeedHelper)
@@ -48,7 +47,6 @@ SpeedBox::SpeedBox(PluginObject* plugin, YJson& settings, QMenu* netcardMenu)
   SetHideFullScreen();
   LoadCurrentSkin();
   InitNetCard();
-  setStyleSheet(glb->glbGetMenu()->styleSheet());
 }
 
 SpeedBox::~SpeedBox() {
@@ -214,31 +212,29 @@ void SpeedBox::wheelEvent(QWheelEvent *event)
 
 void SpeedBox::mouseMoveEvent(QMouseEvent* event) {
   if (event->buttons() == Qt::LeftButton) {
-    move(pos() + event->pos() - m_ConstPos);
     if (m_ProcessForm && m_ProcessForm->isVisible())
       m_ProcessForm->hide();
     m_PluginObject->SendBroadcast(PluginEvent::MouseMove, event);
   }
+  this->WidgetBase::mouseMoveEvent(event);
 }
 
 void SpeedBox::mousePressEvent(QMouseEvent* event) {
-  if (event->button() == Qt::LeftButton) {
-    m_ConstPos = event->pos();
-    setMouseTracking(true);
-  } else if (event->button() == Qt::RightButton) {
-    glb->glbGetMenu()->popup(pos() + event->pos());
+  if (event->button() == Qt::RightButton) {
+    mgr->m_Menu->popup(pos() + event->pos());
   } else if (event->button() == Qt::MiddleButton) {
-    glb->Restart();
+    mgr->Restart();
   }
+  this->WidgetBase::mousePressEvent(event);
 }
 
 void SpeedBox::mouseReleaseEvent(QMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
-    setMouseTracking(false);
     m_Settings[u8"Position"].getArray() =
         YJson::A{x(), y()};
     mgr->SaveSettings();
   }
+  this->WidgetBase::mouseReleaseEvent(event);
 }
 
 void SpeedBox::mouseDoubleClickEvent(QMouseEvent* event) {
@@ -351,7 +347,7 @@ void SpeedBox::InitMove()
   mgr->SaveSettings();
   if (!isVisible())
     show();
-  glb->glbShowMsg("移动成功！");
+  mgr->ShowMsg("移动成功！");
 }
 
 
@@ -399,11 +395,11 @@ void SpeedBox::UpdateNetCard(QAction* action, bool checked)
     // 因为 m_AdapterBalckList 使用的是 u8string_view，所以顺序很重要。
     m_NetSpeedHelper.m_AdapterBalckList.erase(guid);
     m_Settings[u8"NetCardDisabled"].removeByValA(guid);
-    glb->glbShowMsg("添加网卡成功！"); // removed from blacklist
+    mgr->ShowMsg("添加网卡成功！"); // removed from blacklist
   } else {
     auto iter = m_Settings[u8"NetCardDisabled"].append(guid);
     m_NetSpeedHelper.m_AdapterBalckList.emplace(iter->getValueString());
-    glb->glbShowMsg("删除网卡成功！");
+    mgr->ShowMsg("删除网卡成功！");
   }
   m_NetSpeedHelper.UpdateAdaptersAddresses();
   mgr->SaveSettings();

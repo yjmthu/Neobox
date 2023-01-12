@@ -2,17 +2,17 @@
 #define DIRECTAPI_H
 
 #include <functional>
-#include <QMenu>
+#include <menubase.hpp>
 
-class DirectApiExMenu: public QMenu
+class DirectApiExMenu: public MenuBase
 {
 public:
-  explicit DirectApiExMenu(class YJson& data, QMenu* parent, std::function<void(bool)> callback);
+  explicit DirectApiExMenu(class YJson& data, MenuBase* parent, std::function<void(bool)> callback);
   virtual ~DirectApiExMenu();
 private:
   void LoadSettingMenu();
   void LoadSubSettingMenu(QAction* action);
-  void LoadPaths(QMenu* subMenu, const std::u8string& name);
+  void LoadPaths(MenuBase* subMenu, const std::u8string& name);
   void AddApi();
   void EditApi(QAction* action);
   void RenameApi(QAction* action);

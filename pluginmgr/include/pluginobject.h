@@ -32,7 +32,7 @@ public:
   std::set<const FollowerFunction*> m_Followers;
   std::u8string const m_PluginName;
   class QAction* const m_MainAction;
-  class QMenu* const m_MainMenu;
+  class MenuBase* const m_MainMenu;
 public:
   explicit PluginObject(class YJson& settings,
     std::u8string name, const std::u8string& friendlyName);

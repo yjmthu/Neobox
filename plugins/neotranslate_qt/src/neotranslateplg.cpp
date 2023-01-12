@@ -1,8 +1,8 @@
 #include <neotranslateplg.h>
 #include <translatedlg.h>
 #include <yjson.h>
+#include <menubase.hpp>
 
-#include <QMenu>
 #include <QPlainTextEdit>
 #include <QMimeData>
 #include <QDropEvent>
@@ -74,7 +74,7 @@ void NeoTranslatePlg::InitFunctionMap() {
         if (event == PluginEvent::Bool) {
           m_Settings[u8"ReadClipboard"] = *reinterpret_cast<bool*>(data);
           mgr->SaveSettings();
-          glb->glbShowMsg("设置成功");
+          mgr->ShowMsg("设置成功");
         } else if (event == PluginEvent::BoolGet) {
           *reinterpret_cast<bool*>(data) = m_Settings[u8"ReadClipboard"].isTrue();
         }
@@ -85,7 +85,7 @@ void NeoTranslatePlg::InitFunctionMap() {
         if (event == PluginEvent::Bool) {
           m_Settings[u8"AutoTranslate"] =  *reinterpret_cast<bool*>(data);
           mgr->SaveSettings();
-          glb->glbShowMsg("设置成功");
+          mgr->ShowMsg("设置成功");
         } else if (event == PluginEvent::BoolGet) {
           *reinterpret_cast<bool*>(data) = m_Settings[u8"AutoTranslate"].isTrue();
         }
@@ -96,7 +96,7 @@ void NeoTranslatePlg::InitFunctionMap() {
         if (event == PluginEvent::Bool) {
           m_Settings[u8"AutoMove"] =  *reinterpret_cast<bool*>(data);
           mgr->SaveSettings();
-          glb->glbShowMsg("设置成功");
+          mgr->ShowMsg("设置成功");
         } else if (event == PluginEvent::BoolGet) {
           *reinterpret_cast<bool*>(data) = m_Settings[u8"AutoMove"].isTrue();
         }
@@ -107,7 +107,7 @@ void NeoTranslatePlg::InitFunctionMap() {
         if (event == PluginEvent::Bool) {
           m_Settings[u8"AutoSize"] =  *reinterpret_cast<bool*>(data);
           mgr->SaveSettings();
-          glb->glbShowMsg("设置成功");
+          mgr->ShowMsg("设置成功");
         } else if (event == PluginEvent::BoolGet) {
           *reinterpret_cast<bool*>(data) = m_Settings[u8"AutoSize"].isTrue();
         }

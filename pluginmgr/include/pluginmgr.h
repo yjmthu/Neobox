@@ -6,9 +6,13 @@
 #include <filesystem>
 #include <functional>
 
+class NeoMenu;
 class YJson;
 class PluginObject;
-class GlbObject;
+class MenuBase;
+class QSharedMemory;
+class NeoSystemTray;
+class NeoMsgDlg;
 
 class PluginMgr {
 public:
@@ -17,14 +21,13 @@ public:
     void* handle = nullptr;
   };
 public:
-  explicit PluginMgr(GlbObject*, class QMenu* pluginManiMenu);
+  explicit PluginMgr();
   ~PluginMgr();
-  bool HasPlaugin(PluginObject* plugin);
-  void WritteSettings();
-  YJson* GetSettings(const char8_t* key);
+public:
+  void SaveSettings();
   void LoadPlugins();
-  void LoadManageAction(class QAction *action);
-  const YJson& GetPluginsInfo() const;
+  void LoadManageAction();
+  YJson& GetPluginsInfo();
   YJson& GetEventMap();
   YJson& GetNetProxy();
   bool InstallPlugin(const std::u8string& plugin, const YJson& info);
@@ -34,22 +37,39 @@ public:
   void UpdatePluginOrder(YJson&& data);
   bool IsPluginEnabled(const std::u8string& plugin) const;
 private:
+  static YJson* InitSettings();
   bool LoadPlugin(std::u8string pluginName, PluginInfo& info);
   bool FreePlugin(PluginInfo& info);
   bool LoadPlugEnv(const std::filesystem::path& path);
   void InitBroadcast();
   void UpdateBroadcast(PluginObject* plugin);
 public:
-  std::map<std::u8string, PluginInfo> m_Plugins;
-  std::function<void()> SaveSettings;
-  std::map<std::u8string, class QObject*> m_MainObjects;
-  GlbObject* const m_GlbObject;
-  QMenu* const m_MainMenu;
+  QSharedMemory* const m_SharedMemory;
+  NeoSystemTray* const m_Tray;
+  NeoMenu* const m_Menu;        // 菜单靠后加载
+  NeoMsgDlg* const m_MsgDlg;
+  // MenuBase* const m_PluginMainMenu;
 private:
-  const std::u8string m_SettingFileName;
+  static const std::u8string m_SettingFileName;
   YJson* m_Settings;
   friend class TabHotKey;
   class Shortcut* m_Shortcut;
+public:
+  std::map<std::u8string, PluginInfo> m_Plugins;
+  std::map<std::u8string, class QObject*> m_MainObjects;
+public:
+  static void WriteSharedFlag(QSharedMemory*, int flag);
+  static int ReadSharedFlag(QSharedMemory*);
+
+  void ShowMsg(class QString text);
+  void ShowMsgbox(const std::u8string& title,
+    const std::u8string& text, int type = 0);
+  static int Exec();
+  static void Quit();
+  void Restart();
+private:
+  static QSharedMemory* CreateSharedMemory();
+  void DetachSharedMemory();
 };
 
 extern PluginMgr* mgr;

@@ -12,10 +12,13 @@ public:
   ~TabVersion();
 private:
   // const class YJson* m_VersionInfo;
+  class QHBoxLayout* m_MainLayout;
   class QPushButton* m_btnWeb;
   class QPushButton* m_btnBug;
   class QPushButton* m_btnChk;
   class QTextBrowser* m_Text;
+private:
+  void InitLayout();
   void LoadJson();
   void Connect();
   void GetUpdate();

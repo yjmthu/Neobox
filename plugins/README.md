@@ -4,24 +4,24 @@
 
 ## neoocrplg
 
-- 文字识别插件
+- 文字识别
 
 ## neospeedboxplg
 
-- 网速显示插件
+- 网速显示
 
 ## neosystemplg
 
-- 系统管理插件
+- 系统管理
 
 ## neotranslateplg
 
-- 文本翻译插件
+- 极简翻译
 
 ## neowallpaperplg
 
-- 壁纸引擎插件
+- 壁纸引擎
 
-## neohotkeyplg
+## neousbplg
 
-- 热键管理插件
+- U盘助手

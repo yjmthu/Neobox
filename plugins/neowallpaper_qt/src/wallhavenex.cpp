@@ -1,8 +1,9 @@
 #include <wallhavenex.h>
 #include <mapeditor.h>
 #include <pluginobject.h>
-#include <glbobject.h>
 #include <yjson.h>
+#include <pluginmgr.h>
+
 
 #include <QActionGroup>
 #include <QFileDialog>
@@ -14,8 +15,8 @@
 
 namespace fs =std::filesystem;
 
-WallhavenExMenu::WallhavenExMenu(YJson& data, QMenu* parent, std::function<void(bool)> callback, std::function<const fs::path&()> getCurImg):
-  QMenu(parent),
+WallhavenExMenu::WallhavenExMenu(YJson& data, MenuBase* parent, std::function<void(bool)> callback, std::function<const fs::path&()> getCurImg):
+  MenuBase(parent),
   m_Data(data),
   m_CallBack(callback),
   GetCurImage(getCurImg),
@@ -58,8 +59,7 @@ void WallhavenExMenu::LoadWallpaperTypes()
 
 void WallhavenExMenu::LoadSubSettingMenu(QAction* action)
 {
-  QMenu* pSonMenu = new QMenu(this);
-  pSonMenu->setAttribute(Qt::WA_TranslucentBackground, true);
+  auto const pSonMenu = new MenuBase(this);
   action->setMenu(pSonMenu);
   const std::u8string viewName = PluginObject::QString2Utf8(action->text());
 
@@ -80,7 +80,7 @@ void WallhavenExMenu::LoadSubSettingMenu(QAction* action)
     }
 
     m_CallBack(true);
-    glb->glbShowMsg("设置成功！");
+    mgr->ShowMsg("设置成功！");
   });
   if (!action->isChecked()) {
     connect(pSonMenu->addAction("删除此项"), &QAction::triggered, pSonMenu, [pSonMenu, this, action](){
@@ -88,7 +88,7 @@ void WallhavenExMenu::LoadSubSettingMenu(QAction* action)
       m_CallBack(false);
       action->deleteLater();
       pSonMenu->deleteLater();
-      glb->glbShowMsg("删除配置成功！");
+      mgr->ShowMsg("删除配置成功！");
     });
   }
   connect(pSonMenu->addAction("参数设置"), &QAction::triggered, this,
@@ -98,7 +98,7 @@ void WallhavenExMenu::LoadSubSettingMenu(QAction* action)
     auto i = QInputDialog::getInt(this, "输入数字", "请输入壁纸起始页面，每页最多有24张壁纸", page.getValueInt(), 1, 100);
     page = i;
     m_CallBack(true);
-    glb->glbShowMsg("配置成功！");
+    mgr->ShowMsg("配置成功！");
   });
   connect(pSonMenu->addAction("存储路径"), &QAction::triggered, this, [this, viewName]() {
     fs::path curdir = m_Data[u8"WallhavenApi"][viewName][u8"Directory"].getValueString();
@@ -122,7 +122,7 @@ void WallhavenExMenu::LoadMoreActions()
     auto i = QInputDialog::getInt(this, "输入数字", "请输入每次缓存的最大页数，每页最多有24张壁纸", page.getValueInt(), 1, 5);
     page = i;
     m_CallBack(true);
-    glb->glbShowMsg("配置成功！");
+    mgr->ShowMsg("配置成功！");
   });
   connect(addAction("添加更多"), &QAction::triggered, this, std::bind(&WallhavenExMenu::AddNewType, this));
   connect(addAction("关于壁纸"), &QAction::triggered, this, [this]() {
@@ -176,7 +176,7 @@ void WallhavenExMenu::EditNewType(const std::u8string& typeName)
   auto const editor = new MapEditor("编辑参数", params, [this, typeName, &params](){
     if (params.emptyO()) {
       m_Data[u8"WallhavenApi"].removeByValO(typeName);
-      glb->glbShowMsg("取消设置成功！");
+      mgr->ShowMsg("取消设置成功！");
       return;
     }
     auto const action = new QAction(PluginObject::Utf82QString(typeName), this);
@@ -185,7 +185,7 @@ void WallhavenExMenu::EditNewType(const std::u8string& typeName)
     m_ActionGroup->addAction(action);
     LoadSubSettingMenu(action);
     m_CallBack(false);
-    glb->glbShowMsg("配置成功！");
+    mgr->ShowMsg("配置成功！");
   });
   editor->show();
 }
@@ -196,7 +196,7 @@ void WallhavenExMenu::EditCurType(const std::u8string& typeName)
   auto const editor = new MapEditor("编辑参数", params, [this, typeName, &params](){
     if (params.emptyO()) {
       m_Data[u8"WallhavenApi"].removeByValO(typeName);
-      glb->glbShowMsg("取消设置成功！");
+      mgr->ShowMsg("取消设置成功！");
       return;
     }
     auto const name = PluginObject::Utf82QString(typeName);
@@ -204,7 +204,7 @@ void WallhavenExMenu::EditCurType(const std::u8string& typeName)
     auto action = std::find_if(actions.begin(), actions.end(), [&name](QAction* a){return a->text() == name;});
     if (action == actions.end()) return;
     m_CallBack((*action)->isChecked());
-    glb->glbShowMsg("配置成功！");
+    mgr->ShowMsg("配置成功！");
   });
   editor->show();
 }

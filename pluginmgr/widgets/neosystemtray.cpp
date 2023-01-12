@@ -1,12 +1,9 @@
-#include <neosystemtray.h>
-#include <glbobject.h>
+#include <neosystemtray.hpp>
 
 #include <QDir>
 #include <QStandardPaths>
 #include <QProcess>
 #include <QApplication>
-
-// extern GlbObject* glb;
 
 NeoSystemTray::NeoSystemTray()
 {
@@ -30,7 +27,7 @@ void NeoSystemTray::InitDirs()
     QDir::setCurrent(dir.absolutePath());
   } else {
 #if 0
-    glb->glbWriteSharedFlag(1);
+    mgr->glbWriteSharedFlag(1);
     QProcess::startDetached(QApplication::applicationFilePath(), QStringList {});
 #endif
     qApp->quit();

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Widget</class>
- <widget class="QWidget" name="Widget">
+ <class>FormHotKey</class>
+ <widget class="QWidget" name="FormHotKey">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>557</width>
-    <height>417</height>
+    <width>600</width>
+    <height>446</height>
    </rect>
   </property>
   <property name="maximumSize">
@@ -57,21 +57,27 @@
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
        <widget class="QGroupBox" name="gBoxChooseType">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>50</height>
+         </size>
+        </property>
         <property name="title">
          <string>热键调用对象</string>
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <property name="leftMargin">
-          <number>5</number>
+          <number>11</number>
          </property>
          <property name="topMargin">
-          <number>2</number>
+          <number>22</number>
          </property>
          <property name="rightMargin">
-          <number>5</number>
+          <number>11</number>
          </property>
          <property name="bottomMargin">
-          <number>2</number>
+          <number>11</number>
          </property>
          <item>
           <widget class="QRadioButton" name="rBtnPlugin">
@@ -103,16 +109,16 @@
         </property>
         <layout class="QVBoxLayout" name="verticalLayout">
          <property name="leftMargin">
-          <number>5</number>
+          <number>11</number>
          </property>
          <property name="topMargin">
-          <number>2</number>
+          <number>22</number>
          </property>
          <property name="rightMargin">
-          <number>5</number>
+          <number>11</number>
          </property>
          <property name="bottomMargin">
-          <number>2</number>
+          <number>11</number>
          </property>
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_5">
@@ -175,21 +181,30 @@
       </item>
       <item>
        <widget class="QGroupBox" name="gBoxPlugin">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>60</height>
+         </size>
+        </property>
         <property name="title">
          <string>插件设置</string>
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout_4">
+         <property name="spacing">
+          <number>11</number>
+         </property>
          <property name="leftMargin">
-          <number>5</number>
+          <number>11</number>
          </property>
          <property name="topMargin">
-          <number>2</number>
+          <number>17</number>
          </property>
          <property name="rightMargin">
-          <number>5</number>
+          <number>11</number>
          </property>
          <property name="bottomMargin">
-          <number>2</number>
+          <number>11</number>
          </property>
          <item>
           <widget class="QLabel" name="label_7">
@@ -216,63 +231,52 @@
       </item>
       <item>
        <widget class="QGroupBox" name="groupBox_4">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>65</height>
+         </size>
+        </property>
         <property name="title">
          <string>热键设置</string>
         </property>
-        <layout class="QVBoxLayout" name="verticalLayout_4">
-         <property name="leftMargin">
-          <number>5</number>
-         </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
          <property name="topMargin">
-          <number>2</number>
-         </property>
-         <property name="rightMargin">
-          <number>5</number>
-         </property>
-         <property name="bottomMargin">
-          <number>2</number>
+          <number>17</number>
          </property>
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_3">
-           <item>
-            <widget class="QLabel" name="label_4">
-             <property name="text">
-              <string>热键录制按钮</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pBtnHotKey">
-             <property name="toolTip">
-              <string>选中按钮后，按住热键，然后放开即可。</string>
-             </property>
-             <property name="text">
-              <string/>
-             </property>
-             <property name="checkable">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-          </layout>
+          <widget class="QLabel" name="label_4">
+           <property name="text">
+            <string>热键</string>
+           </property>
+          </widget>
          </item>
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_10">
-           <item>
-            <widget class="QCheckBox" name="chkRegisterHotKey">
-             <property name="text">
-              <string>注册热键</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pBtnSaveContent">
-             <property name="text">
-              <string>保存</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
+          <widget class="QPushButton" name="pBtnHotKey">
+           <property name="toolTip">
+            <string>选中按钮后，按住热键，然后放开即可。</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="chkRegisterHotKey">
+           <property name="text">
+            <string>注册</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pBtnSaveContent">
+           <property name="text">
+            <string>保存</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>

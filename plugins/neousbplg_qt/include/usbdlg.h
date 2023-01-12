@@ -1,9 +1,9 @@
 #ifndef USBDLG_H
 #define USBDLG_H
 
-#include <QWidget>
+#include <widgetbase.hpp>
 
-class UsbDlg: public QWidget
+class UsbDlg: public WidgetBase
 {
 public:
   typedef std::map<char, class UsbDlgItem*> ItemMap;
@@ -12,9 +12,7 @@ protected:
                    void* message,
                    qintptr* result) override;
   void showEvent(QShowEvent*) override;
-  void mousePressEvent(QMouseEvent* event) override;
   void mouseReleaseEvent(QMouseEvent* event) override;
-  void mouseMoveEvent(QMouseEvent* event) override;
   void enterEvent(QEnterEvent* event) override;
   void leaveEvent(QEvent* event) override;
 public:

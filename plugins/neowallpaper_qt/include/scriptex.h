@@ -2,12 +2,12 @@
 #define SCRIPTEX_H
 
 #include <functional>
-#include <QMenu>
+#include <menubase.hpp>
 
-class ScriptExMenu: public QMenu
+class ScriptExMenu: public MenuBase
 {
 public:
-  explicit ScriptExMenu(class YJson& data, QMenu* parent, std::function<void(bool)> callback);
+  explicit ScriptExMenu(class YJson& data, MenuBase* parent, std::function<void(bool)> callback);
   virtual ~ScriptExMenu();
 private:
   void LoadSubSettingMenu(QAction* action);

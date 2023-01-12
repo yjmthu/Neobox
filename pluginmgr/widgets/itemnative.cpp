@@ -6,7 +6,6 @@
 #include <pluginobject.h>
 #include <pluginmgr.h>
 #include <yjson.h>
-#include <glbobject.h>
 
 #include <QListWidget>
 #include <QHBoxLayout>
@@ -28,7 +27,7 @@ ItemNative::ItemNative(std::u8string_view pluginName, const YJson& data, QWidget
 
 ItemNative::~ItemNative()
 {
-  // glb->glbShowMsg("delete native item");
+  // mgr->ShowMsg("delete native item");
 }
 
 void ItemNative::InitLayout()

@@ -2,12 +2,12 @@
 #define FAVORITEEX_H
 
 #include <functional>
-#include <QMenu>
+#include <menubase.hpp>
 
-class FavoriteExMenu: public QMenu
+class FavoriteExMenu: public MenuBase
 {
 public:
-  explicit FavoriteExMenu(class YJson& data, QMenu* parent, std::function<void(bool)> callback);
+  explicit FavoriteExMenu(class YJson& data, MenuBase* parent, std::function<void(bool)> callback);
   virtual ~FavoriteExMenu();
 private:
   void LoadSettingMenu();

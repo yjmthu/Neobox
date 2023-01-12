@@ -1,8 +1,8 @@
 #include <neosystemplg.h>
 #include <yjson.h>
 #include <systemapi.h>
+#include <menubase.hpp>
 
-#include <QMenu>
 #include <QDir>
 
 #include <windows.h>
@@ -65,10 +65,10 @@ void NeoSystemPlg::InitFunctionMap() {
           auto const on = *reinterpret_cast<bool *>(data);
           if (on) {
             SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED);
-            glb->glbShowMsg("开启成功");
+            mgr->ShowMsg("开启成功");
           } else {
             SetThreadExecutionState(ES_CONTINUOUS);
-            glb->glbShowMsg("关闭成功");
+            mgr->ShowMsg("关闭成功");
           }
           m_Settings[u8"StopSleep"] = on;
           mgr->SaveSettings();
@@ -89,9 +89,7 @@ QAction* NeoSystemPlg::LoadMainMenuAction()
   auto names = {u8"shutdownComputer", u8"restartComputer", u8"suspendedComputer"};
 
   m_MainMenuAction = new QAction("系统控制");
-  auto const menu = new QMenu(m_MainMenu);
-  menu->setAttribute(Qt::WA_TranslucentBackground, true);
-  menu->setToolTipsVisible(true);
+  auto const menu = new MenuBase(m_MainMenu);
   m_MainMenuAction->setMenu(menu);
 
   auto actions = m_MainMenu->actions();

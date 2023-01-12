@@ -16,41 +16,28 @@
 #include <QVBoxLayout>
 #include <QDesktopServices>
 
-#if 0
-namespace NeoGetDateTime {
-  template<const char* _Str, int _Index>
-  struct Month {
-    static constexpr int Value() {
-      return (Cmp() ? _Index + 1: Month<_Str, _Index + 1>::Value());
-    }
-    static constexpr bool Cmp() {
-      constexpr int i = _Index * 3;
-      return _Str[i] == __DATE__[0] && _Str[i+1] == __DATE__[1] && _Str[i+2] == __DATE__[2];
-    }
-  };
-  template<const char* _Str>
-  struct Month<_Str, 11> {
-    static constexpr int Value() {
-      return 12;
-    }
-  };
-
-  constexpr int GetValue(int i) { return __DATE__[i] == ' ' ? 0 : __DATE__[i] - '0'; }
-
-  constexpr int YearValue = GetValue(7) * 1000 + GetValue(8) * 100 + GetValue(9) * 10 + GetValue(10);
-
-  constexpr int DateValue = GetValue(4) * 10 + GetValue(5);
-
-  constexpr const char szMonths[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
-
-  constexpr int MonthValue = Month<szMonths, 0>::Value();
-}
-#endif
-
 TabVersion::TabVersion(QWidget* parent)
-  : QWidget(nullptr)
+  : QWidget(parent)
+  , m_MainLayout(new QHBoxLayout(this))
 {
-  QVBoxLayout* layout1 = new QVBoxLayout(this);
+  InitLayout();
+  LoadJson();
+  Connect();
+}
+
+TabVersion::~TabVersion()
+{
+  // delete m_VersionInfo;
+}
+
+void TabVersion::InitLayout()
+{
+  m_MainLayout->setContentsMargins(0, 0, 0, 0);
+  auto background = new QWidget(this);
+  m_MainLayout->addWidget(background);
+  background->setObjectName("whiteBackground");
+
+  QVBoxLayout* layout1 = new QVBoxLayout(background);
   setContentsMargins(0, 0, 0, 0);
   m_Text = new QTextBrowser(this);
   // m_text->setTextFormat(Qt::RichText);
@@ -67,15 +54,7 @@ TabVersion::TabVersion(QWidget* parent)
   layout2->addWidget(m_btnBug);
   layout2->addWidget(m_btnChk);
   layout1->addLayout(layout2);
-  LoadJson();
-  Connect();
 }
-
-TabVersion::~TabVersion()
-{
-  // delete m_VersionInfo;
-}
-
 
 void TabVersion::LoadJson()
 {

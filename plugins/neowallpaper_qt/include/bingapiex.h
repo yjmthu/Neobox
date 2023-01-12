@@ -2,12 +2,12 @@
 #define BINGAPIEX_H
 
 #include <functional>
-#include <QMenu>
+#include <menubase.hpp>
 
-class BingApiExMenu: public QMenu
+class BingApiExMenu: public MenuBase
 {
 public:
-  explicit BingApiExMenu(class YJson& data, QMenu* parent, std::function<void(bool)> callback);
+  explicit BingApiExMenu(class YJson& data, MenuBase* parent, std::function<void(bool)> callback);
   virtual ~BingApiExMenu();
 private:
   void LoadSettingMenu();

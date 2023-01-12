@@ -2,7 +2,6 @@
 #include "plugincenter.hpp"
 #include "itemonline.hpp"
 
-#include <glbobject.h>
 #include <pluginobject.h>
 #include <pluginmgr.h>
 #include <yjson.h>
@@ -46,7 +45,7 @@ void TabOnline::UpdateItem(std::u8string_view pluginName, bool isUpdate)
 void TabOnline::UpdatePlugins()
 {
   if (!m_PluginCenter.UpdatePluginData()) {
-    glb->glbShowMsg("下载插件信息失败！");
+    mgr->ShowMsg("下载插件信息失败！");
     return;
   }
 
@@ -61,22 +60,19 @@ void TabOnline::InitPlugins()
   
   for (const auto& [name, info]: m_PluginCenter.m_PluginData->find(u8"Plugins")->second.getObject()) {
     auto const item = new QListWidgetItem;
-    item->setSizeHint(QSize(400, 70));
+    item->setSizeHint(QSize(300, 70));
     m_ListWidget->addItem(item);
     m_ListWidget->setItemWidget(item, new ItemOnline(name, info, m_ListWidget));
   }
-  // m_UpdateButton->setEnabled(false);
 }
-
-// void TabOnline::InitControls()
-// {
-//   m_UpdateButton = new QPushButton("刷新", this);
-//   m_ControlLayout->addWidget(m_UpdateButton);
-//   connect(m_UpdateButton, &QPushButton::clicked, this, &TabOnline::UpdatePlugins);
-// }
 
 void TabOnline::InitLayout()
 {
-  m_MainLayout->addWidget(m_ListWidget);
+  auto const background = new QWidget(this);
+  background->setObjectName("whiteBackground");
+  m_MainLayout->setContentsMargins(0,0,0,0);
+  m_MainLayout->addWidget(background);
+  auto const layout = new QHBoxLayout(background);
+  layout->addWidget(m_ListWidget);
   // m_MainLayout->addLayout(m_ControlLayout);
 }

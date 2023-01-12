@@ -24,13 +24,13 @@ ItemOnline::~ItemOnline()
 
 void ItemOnline::InitLayout()
 {
-  // m_MainLayout->addSpacing(15);
+  m_MainLayout->addSpacing(5);
   m_LabelVersion = new QLabel(this);
   SetVersionLabel(L"版本", m_PluginNewVersion, m_LabelVersion);
   m_MainLayout->addWidget(m_LabelVersion);
-
+  m_MainLayout->addSpacing(45);
   m_MainLayout->addWidget(m_BtnContrl);
-
+  m_BtnContrl->setFixedWidth(60);
   if (m_Installed) {
     if (m_PluginOldVersion < m_PluginNewVersion) {
       m_BtnContrl->setText("更新");

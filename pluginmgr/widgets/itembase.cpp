@@ -4,7 +4,6 @@
 
 #include <httplib.h>
 #include <pluginmgr.h>
-#include <glbobject.h>
 
 #include <format>
 #include <filesystem>
@@ -98,7 +97,7 @@ int ItemBase::GetFileCount(const YJson& manifest)
 bool ItemBase::PluginDownload()
 {
   if (!HttpLib::IsOnline()) {
-    glb->glbShowMsgbox(u8"失败", u8"请检查网络连接！");
+    mgr->ShowMsgbox(u8"失败", u8"请检查网络连接！");
     return false;
   }
   bool result = false, exit = false;
@@ -114,7 +113,7 @@ bool ItemBase::PluginDownload()
     dialog->m_PreventClose = false;
 
     if (res->status != 200) {
-      glb->glbShowMsgbox(u8"失败", u8"下载清单失败！");
+      mgr->ShowMsgbox(u8"失败", u8"下载清单失败！");
       emit DownloadFinished();
       return;
     }
@@ -144,7 +143,7 @@ bool ItemBase::PluginDownload()
             file.getValueString());
         res = clt.Get(subpath);
         if (res->status != 200) {
-          glb->glbShowMsgbox(u8"失败", u8"下载插件失败！");
+          mgr->ShowMsgbox(u8"失败", u8"下载插件失败！");
           emit DownloadFinished();
           return;
         }
@@ -172,7 +171,7 @@ void ItemBase::PluginInstall()
     result = mgr->InstallPlugin(m_PluginName, PluginCenter::m_Instance->m_PluginData->find(u8"Plugins")->second.find(m_PluginName)->second);
   }
 
-  glb->glbShowMsg(result ? "安装成功！" : "安装失败！");
+  mgr->ShowMsg(result ? "安装成功！" : "安装失败！");
   DoFinished(FinishedType::Install, result);
 }
 
@@ -186,7 +185,7 @@ void ItemBase::PluginUninstall()
     result = error.value() == 0;
   }
 
-  glb->glbShowMsg(result ? "卸载成功！" : "卸载失败！");
+  mgr->ShowMsg(result ? "卸载成功！" : "卸载失败！");
 
   DoFinished(FinishedType::Uninstall, result);
 }
@@ -223,7 +222,7 @@ void ItemBase::PluginUpgrade()
     }
   }
 
-  glb->glbShowMsg(result ? "升级成功！" : "升级失败！");
+  mgr->ShowMsg(result ? "升级成功！" : "升级失败！");
   DoFinished(FinishedType::Upgrade, result);
 }
 

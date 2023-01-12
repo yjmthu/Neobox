@@ -1,0 +1,28 @@
+#ifndef MENUBASE_HPP
+#define MENUBASE_HPP
+
+#include <QMenu>
+
+class MenuBase: public QMenu
+{
+  Q_OBJECT
+
+public:
+  explicit MenuBase(QMenu* parent);
+  virtual ~MenuBase();
+public:
+  std::optional<std::u8string> GetExistingDirectory(
+    QString title, QAnyStringView oldDirectory
+  );
+  std::optional<std::u8string> GetNewU8String(
+    QString title, QString label, QAnyStringView oldString
+  );
+  std::optional<QString> GetNewString(
+    QString title, QString label, QAnyStringView oldString
+  );
+  std::optional<int> GetNewInt(
+    QString title, QString label, int min, int max, int val
+  );
+};
+
+#endif // MENUBASE_HPP

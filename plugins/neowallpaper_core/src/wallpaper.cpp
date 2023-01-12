@@ -1,14 +1,13 @@
 #include <httplib.h>
 #include <systemapi.h>
 #include <neotimer.h>
-#include <glbobject.h>
+#include <pluginmgr.h>
 
 #include <wallpaper.h>
 #include <ranges>
 #include <regex>
 #include <unordered_set>
 
-extern GlbObject* glb;
 namespace fs = std::filesystem;
 using namespace std::literals;
 
@@ -18,7 +17,7 @@ constexpr char Wallpaper::m_szWallScript[];
 
 bool Wallpaper::DownloadImage(const ImageInfoEx imageInfo) {
   if (imageInfo->ErrorCode != ImageInfo::NoErr) {
-    glb->glbShowMsgbox(u8"出错", imageInfo->ErrorMsg);
+    mgr->ShowMsgbox(u8"出错", imageInfo->ErrorMsg);
     return false;
   }
 
@@ -39,7 +38,7 @@ bool Wallpaper::DownloadImage(const ImageInfoEx imageInfo) {
   }
 
   if (!HttpLib::IsOnline()) {
-    glb->glbShowMsgbox(u8"出错"s, u8"网络异常"s);
+    mgr->ShowMsgbox(u8"出错"s, u8"网络异常"s);
     return false;
   }
   g_UsingFiles.emplace(u8FilePath);
@@ -53,7 +52,7 @@ bool Wallpaper::DownloadImage(const ImageInfoEx imageInfo) {
     if (fs::exists(u8FilePath))
       fs::remove(u8FilePath);
     g_UsingFiles.erase(u8FilePath);
-    glb->glbShowMsgbox(u8"出错"s, u8"网络异常或文件不能打开！\n文件名："s + u8FilePath +
+    mgr->ShowMsgbox(u8"出错"s, u8"网络异常或文件不能打开！\n文件名："s + u8FilePath +
                               u8"\n网址："s + imageInfo->ImageUrl);
     return false;
   }
@@ -86,11 +85,11 @@ bool Wallpaper::SetWallpaper(fs::path imagePath) {
 
   [[maybe_unused]] static auto m_DesktopType = GetDesktop();
   if (!fs::exists(imagePath)) {
-    glb->glbShowMsgbox(u8"出错", u8"找不到该文件：" + imagePath.u8string());
+    mgr->ShowMsgbox(u8"出错", u8"找不到该文件：" + imagePath.u8string());
     return false;
   }
   if (fs::is_directory(imagePath)) {
-    glb->glbShowMsgbox(u8"出错", u8"要使用的壁纸不是文件：" + imagePath.u8string());
+    mgr->ShowMsgbox(u8"出错", u8"要使用的壁纸不是文件：" + imagePath.u8string());
     return false;
   }
 #if defined(_WIN32)
@@ -155,7 +154,7 @@ Wallpaper::~Wallpaper() {
 
 void Wallpaper::SetSlot(int type) {
   if (WallBase::ms_IsWorking) {
-    glb->glbShowMsgbox(u8"提示", u8"后台正忙，请稍后！");
+    mgr->ShowMsgbox(u8"提示", u8"后台正忙，请稍后！");
     return;
   }
   WallBase::ms_IsWorking = true;
@@ -385,7 +384,7 @@ bool Wallpaper::IsImageFile(const fs::path& filesName) {
 
 bool Wallpaper::SetDropFile(std::vector<std::wstring> urls) {
   if (WallBase::ms_IsWorking) {
-    glb->glbShowMsgbox(u8"提示", u8"目前没空！");
+    mgr->ShowMsgbox(u8"提示", u8"目前没空！");
     return false;
   }
   WallBase::ms_IsWorking = true;

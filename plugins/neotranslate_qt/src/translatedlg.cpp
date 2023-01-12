@@ -3,15 +3,14 @@
 #include <pluginmgr.h>
 #include <pluginobject.h>
 #include <heightctrl.h>
-#include <glbobject.h>
 #include <yjson.h>
+#include <menubase.hpp>
 
 #include <QApplication>
 #include <QClipboard>
 #include <QComboBox>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QMenu>
 #include <QTextEdit>
 #include <QPlainTextEdit>
 #include <QPushButton>
@@ -21,7 +20,7 @@
 #include <QWidget>
 
 NeoTranslateDlg::NeoTranslateDlg(YJson& settings)
-    : QWidget(glb->glbGetMenu(), Qt::WindowStaysOnTopHint | Qt::Tool),
+    : QWidget(nullptr, Qt::WindowStaysOnTopHint | Qt::Tool),
       m_Settings(settings),
       m_TextFrom(new QPlainTextEdit(this)),
       m_TextTo(new QTextEdit(this)),
@@ -72,6 +71,7 @@ NeoTranslateDlg::NeoTranslateDlg(YJson& settings)
   m_BtnCopyTo->setObjectName("copyTextTo");
   m_BtnCopyFrom->setCursor(Qt::PointingHandCursor);
   m_BtnCopyTo->setCursor(Qt::PointingHandCursor);
+  SetStyleSheet();
 
   m_TextFrom->installEventFilter(this);
   m_TextTo->installEventFilter(this);
@@ -281,6 +281,37 @@ void NeoTranslateDlg::ToggleVisibility()
     }
     show();
   }
+}
+
+void NeoTranslateDlg::SetStyleSheet()
+{
+  setStyleSheet(
+    "QPushButton#copyTextTo,"
+    "QPushButton#copyTextFrom {"
+      "background-color: #9999AA;"
+      "color: #ffffff;"
+      "border-radius: 4px;"
+      "cursor: pointer;"
+      "padding: 2px 8px;"
+      "font-size: 12px;"
+    "}"
+
+    "QPushButton#btnTransMode {"
+      "border-radius: 2px;"
+      "background-color: white;"
+      "padding: 3px 7px 3px 7px;"
+    "}"
+
+    "QPushButton#btnTransMode::checked {"
+      "border-radius: 2px;"
+      "background-color: blueviolet;"
+    "}"
+
+    "QPushButton#btnTransMode:hover {"
+      "border-radius: 2px;"
+      "background-color: slategray;"
+    "}"
+  );
 }
 
 QWidget* NeoTranslateDlg::ReferenceObject() const

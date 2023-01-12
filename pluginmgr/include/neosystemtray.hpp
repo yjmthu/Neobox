@@ -1,11 +1,13 @@
-#ifndef NEOSYSTEMTRAY_H
-#define NEOSYSTEMTRAY_H
+#ifndef NEOSYSTEMTRAY_HPP
+#define NEOSYSTEMTRAY_HPP
 
 #include <QSystemTrayIcon>
 #include <pluginobject.h>
 
 class NeoSystemTray: public QSystemTrayIcon
 {
+  Q_OBJECT
+
 public:
   explicit NeoSystemTray();
   virtual ~NeoSystemTray();
@@ -15,4 +17,4 @@ private:
   void InitConnect();
 };
 
-#endif // NEOSYSTEMTRAY_H
+#endif // NEOSYSTEMTRAY_HPP

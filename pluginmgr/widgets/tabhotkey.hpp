@@ -7,7 +7,7 @@
 #include <yjson.h>
 
 namespace Ui {
-    class Widget;
+    class FormHotKey;
 } // namespace Ui
 
 struct HotKeyInfoPlugin {
@@ -48,6 +48,7 @@ public:
   explicit TabHotKey(class PluginCenter* center);
   virtual ~TabHotKey();
 private:
+  void InitLayout();
   void InitSignals();
   void InitDataStruct();
   void InitPluginCombox();
@@ -64,7 +65,7 @@ private:
   class Shortcut& m_Shortcut;
   MapCommand m_Commands;
   MapPlugin m_Plugins;
-  Ui::Widget* ui;
+  Ui::FormHotKey* ui;
   std::vector<std::u8string> m_PluginNames;
 };
 

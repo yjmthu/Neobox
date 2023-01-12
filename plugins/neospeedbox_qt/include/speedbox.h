@@ -1,22 +1,21 @@
 #ifndef SPEEDBOX_H
 #define SPEEDBOX_H
 
-#include <QWidget>
+#include <widgetbase.hpp>
 
 #include <filesystem>
 #include <pluginobject.h>
 
 namespace fs = std::filesystem;
 
-class SpeedBox : public QWidget {
+class SpeedBox : public WidgetBase {
 private:
-  QPoint m_ConstPos;
   class YJson& m_Settings;
   class PluginObject* m_PluginObject;
   class SkinObject* m_CentralWidget;
   HINSTANCE m_SkinDll;
   class QTimer* m_Timer;
-  class QMenu& m_NetCardMenu;
+  class MenuBase& m_NetCardMenu;
   void* m_AppBarData;
   class NetSpeedHelper& m_NetSpeedHelper;
   class ProcessForm* m_ProcessForm;
@@ -44,7 +43,7 @@ protected:
   void leaveEvent(QEvent* event) override;
 
  public:
-  explicit SpeedBox(PluginObject* plugin, YJson& settings, QMenu* netcardMenu);
+  explicit SpeedBox(PluginObject* plugin, YJson& settings, MenuBase* netcardMenu);
   ~SpeedBox();
   void InitShow(const PluginObject::FollowerFunction& callback);
   void InitMove();

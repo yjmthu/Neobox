@@ -1,11 +1,11 @@
 #include <neoocrplg.h>
 #include <neoocr.h>
 #include <pluginmgr.h>
+#include <neomenu.hpp>
 #include <screenfetch.h>
 #include <yjson.h>
-#include <glbobject.h>
+#include <menubase.hpp>
 
-#include <QMenu>
 #include <QDir>
 #include <QLabel>
 #include <QAction>
@@ -76,7 +76,7 @@ void NeoOcrPlg::InitFunctionMap() {
         auto str = m_Ocr->GetText(QImage2Pix(image));
         if (m_Settings[u8"WriteClipboard"].isTrue()) {
           QApplication::clipboard()->setText(Utf82QString(str));
-          glb->glbShowMsg("复制数据成功");
+          mgr->ShowMsg("复制数据成功");
         }
         if (m_Settings[u8"ShowWindow"].isTrue()) {
           SendBroadcast(PluginEvent::U8string, &str);
@@ -87,24 +87,15 @@ void NeoOcrPlg::InitFunctionMap() {
       {u8"设置路径", u8"设置训练数据（语言包）的存储位置", [this](PluginEvent, void*) {
         std::u8string& u8Path =
             m_Settings[u8"TessdataDir"].getValueString();
-        const QString folder =
-            QFileDialog::getExistingDirectory(
-                glb->glbGetMenu(), "请选择Tessdata数据文件存放位置",
-                QString::fromUtf8(u8Path.data(), u8Path.size()));
-        if (folder.isEmpty() || folder.isNull()) {
-          glb->glbShowMsg("取消设置成功！");
+        auto u8PathNew = mgr->m_Menu->GetExistingDirectory("请选择Tessdata数据文件存放位置", u8Path);
+        if (!u8PathNew) {
+          mgr->ShowMsg("取消设置成功！");
           return;
-        }
-        fs::path pNewPath = PluginObject::QString2Utf8(folder);
-        pNewPath.make_preferred();
-        std::u8string u8NewPath = pNewPath.u8string();
-        if (!u8NewPath.empty() && u8NewPath != u8Path) {
-          m_Ocr->SetDataDir(u8NewPath);
-          u8Path.swap(u8NewPath);
-          mgr->SaveSettings();
-          glb->glbShowMsg("设置数据文件失成功！");
         } else {
-          glb->glbShowMsg("设置数据文件失败！");
+          m_Ocr->SetDataDir(*u8PathNew);
+          u8Path.swap(*u8PathNew);
+          mgr->SaveSettings();
+          mgr->ShowMsg("设置数据文件失成功！");
         }
       }, PluginEvent::Void},
     },
@@ -119,7 +110,7 @@ void NeoOcrPlg::InitFunctionMap() {
         if (event == PluginEvent::Bool) {
           m_Settings[u8"WriteClipboard"] =  *reinterpret_cast<bool*>(data);
           mgr->SaveSettings();
-          glb->glbShowMsg("设置成功");
+          mgr->ShowMsg("设置成功");
         } else if (event == PluginEvent::BoolGet) {
           *reinterpret_cast<bool*>(data) = m_Settings[u8"WriteClipboard"].isTrue();
         }
@@ -130,7 +121,7 @@ void NeoOcrPlg::InitFunctionMap() {
         if (event == PluginEvent::Bool) {
           m_Settings[u8"ShowWindow"] =  *reinterpret_cast<bool*>(data);
           mgr->SaveSettings();
-          glb->glbShowMsg("设置成功");
+          mgr->ShowMsg("设置成功");
         } else if (event == PluginEvent::BoolGet) {
           *reinterpret_cast<bool*>(data) = m_Settings[u8"ShowWindow"].isTrue();
         }
@@ -156,7 +147,7 @@ void NeoOcrPlg::InitFunctionMap() {
         fs::copy(file, folder / file.filename());
       }
       if (!vec.empty())
-        glb->glbShowMsg("复制数据文件成功。");
+        mgr->ShowMsg("复制数据文件成功。");
     }
   }});
 }
@@ -250,7 +241,7 @@ void NeoOcrPlg::ChooseLanguages()
     }
     m_Ocr->InitLanguagesList();
     mgr->SaveSettings();
-    glb->glbShowMsg("保存成功！");
+    mgr->ShowMsg("保存成功！");
     dialog->close();
   });
   QObject::connect(btnNo, &QPushButton::clicked, dialog, &QDialog::close);

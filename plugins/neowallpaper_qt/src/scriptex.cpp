@@ -1,8 +1,8 @@
 #include <scriptex.h>
 #include <pluginobject.h>
 #include <listeditor.h>
-#include <glbobject.h>
 #include <yjson.h>
+#include <pluginmgr.h>
 
 #include <QFileDialog>
 #include <QActionGroup>
@@ -10,12 +10,10 @@
 
 #include <filesystem>
 
-extern GlbObject* glb;
-
 namespace fs = std::filesystem;
 
-ScriptExMenu::ScriptExMenu(YJson& data, QMenu* parent, std::function<void(bool)> callback):
-  QMenu(parent),
+ScriptExMenu::ScriptExMenu(YJson& data, MenuBase* parent, std::function<void(bool)> callback):
+  MenuBase(parent),
   m_Data(data),
   m_CallBack(callback),
   m_ActionGroup(new QActionGroup(this)),
@@ -46,7 +44,7 @@ void ScriptExMenu::LoadSettingMenu()
 
 void ScriptExMenu::LoadSubSettingMenu(QAction* action)
 {
-  QMenu* subMenu = new QMenu(this);
+  auto const subMenu = new MenuBase(this);
   action->setMenu(subMenu);
 
   connect(subMenu->addAction("修改名称"),
@@ -74,7 +72,7 @@ void ScriptExMenu::LoadSubSettingMenu(QAction* action)
           delete (*iter)->menu();
           LoadSubSettingMenu(*iter);
         }
-        glb->glbShowMsg("修改成功！");
+        mgr->ShowMsg("修改成功！");
       });
     connect(subMenu->addAction("删除此项"),
       &QAction::triggered, this, [action, this, viewName]() {
@@ -84,7 +82,7 @@ void ScriptExMenu::LoadSubSettingMenu(QAction* action)
         m_Data[u8"cmds"].remove(viewName);
         m_CallBack(false);
 
-        glb->glbShowMsg("修改成功！");
+        mgr->ShowMsg("修改成功！");
       });
   }
 
@@ -98,13 +96,13 @@ void ScriptExMenu::LoadSubSettingMenu(QAction* action)
         QLineEdit::Normal, PluginObject::Utf82QString(u8cmd)
     );
     if (qNewCmd.isEmpty()) {
-      glb->glbShowMsg("取消设置成功。");
+      mgr->ShowMsg("取消设置成功。");
       return;
     }
 
     u8cmd = PluginObject::QString2Utf8(qNewCmd);
     m_CallBack(false);
-    glb->glbShowMsg("设置成功！");
+    mgr->ShowMsg("设置成功！");
   });
 }
 
@@ -131,7 +129,7 @@ void ScriptExMenu::RenameApi(QAction* action)
   m_CallBack(false);
   action->setText(qKeyNewName);
 
-  glb->glbShowMsg("修改成功！");
+  mgr->ShowMsg("修改成功！");
 }
 
 void ScriptExMenu::EditApi(QAction* action)
@@ -140,7 +138,7 @@ void ScriptExMenu::EditApi(QAction* action)
   auto const newdir = QFileDialog::getExistingDirectory(this, "选择本地壁纸文件夹", PluginObject::Utf82QString(u8dir));
 
   if (newdir.isEmpty()) {
-    glb->glbShowMsg("取消设置成功。");
+    mgr->ShowMsg("取消设置成功。");
     return;
   }
 
@@ -149,7 +147,7 @@ void ScriptExMenu::EditApi(QAction* action)
   u8dir = path.u8string();
 
   m_CallBack(false);
-  glb->glbShowMsg("设置成功！");
+  mgr->ShowMsg("设置成功！");
 }
 
 void ScriptExMenu::AddApi()
@@ -163,7 +161,7 @@ void ScriptExMenu::AddApi()
   std::u8string viewKeyName(PluginObject::QString2Utf8(qKeyName));
   auto& obj = m_Data[u8"cmds"][viewKeyName];
   if (!obj.isNull()) {
-    glb->glbShowMsg("昵称不能重复！");
+    mgr->ShowMsg("昵称不能重复！");
     return;
   }
 
@@ -173,7 +171,7 @@ void ScriptExMenu::AddApi()
       QLineEdit::Normal, QStringLiteral("python.exe \"scripts/getpic.py\""));
   
   if (qCmd.isEmpty()) {
-    glb->glbShowMsg("取消设置成功！");
+    mgr->ShowMsg("取消设置成功！");
     return;
   }
 

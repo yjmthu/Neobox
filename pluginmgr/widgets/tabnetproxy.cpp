@@ -2,7 +2,6 @@
 
 #include <yjson.h>
 #include <pluginmgr.h>
-#include <glbobject.h>
 #include <systemapi.h>
 #include <ui_tabnetproxy.h>
 #include <pluginobject.h>
@@ -18,9 +17,9 @@ TabNetProxy::TabNetProxy(QWidget* parent)
   , m_Username(m_Settings[u8"Username"].getValueString())
   , m_Port(m_Settings[u8"Port"].getValueDouble())
   , m_Type(m_Settings[u8"Type"].getValueDouble())
-  , ui(new Ui::Form)
+  , ui(new Ui::FormProxy)
 {
-  ui->setupUi(this);
+  InitLayout();
   auto validator = new QIntValidator;
   validator->setRange(1, 65535);
   ui->linePort->setValidator(validator);
@@ -31,6 +30,16 @@ TabNetProxy::TabNetProxy(QWidget* parent)
 TabNetProxy::~TabNetProxy()
 {
   delete ui;
+}
+
+void TabNetProxy::InitLayout()
+{
+  auto const background = new QWidget(this);
+  auto mainLayout  = new QVBoxLayout(this);
+  mainLayout->setContentsMargins(0,0,0,0);
+  mainLayout->addWidget(background);
+  ui->setupUi(background);
+  background->setObjectName("whiteBackground");
 }
 
 void TabNetProxy::InitSignals()
@@ -68,7 +77,7 @@ void TabNetProxy::SaveData()
   HttpLib::m_Proxy.type = m_Type;
 
   mgr->SaveSettings();
-  glb->glbShowMsg("保存成功~");
+  mgr->ShowMsg("保存成功~");
 }
 
 void TabNetProxy::InitData()

@@ -1,7 +1,8 @@
 #include <pluginobject.h>
 #include <pluginmgr.h>
+#include <neomenu.hpp>
 
-#include <QMenu>
+#include <menubase.hpp>
 #include <QAction>
 
 #include <vector>
@@ -12,12 +13,9 @@ PluginObject::PluginObject(YJson& settings, std::u8string name,
   const std::u8string& friendlyName):
   m_Settings(settings),
   m_PluginName(std::move(name)),
-  m_MainAction(mgr->m_MainMenu->addAction((Utf82QString(friendlyName)))),
-  m_MainMenu(new QMenu(mgr->m_MainMenu)) //,
-  // m_PluginMethod(PluginMethod { m_FunctionMapVoid, m_FunctionMapBool })
+  m_MainAction(mgr->m_Menu->m_PluginMenu->addAction((Utf82QString(friendlyName)))),
+  m_MainMenu(new MenuBase(mgr->m_Menu->m_PluginMenu)) //,
 {
-  m_MainMenu->setAttribute(Qt::WA_TranslucentBackground, true);
-  m_MainMenu->setToolTipsVisible(true);
   m_MainAction->setMenu(m_MainMenu);
 }
 

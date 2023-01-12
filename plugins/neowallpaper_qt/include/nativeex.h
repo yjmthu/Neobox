@@ -2,12 +2,12 @@
 #define NATIVEEX_H
 
 #include <functional>
-#include <QMenu>
+#include <menubase.hpp>
 
-class NativeExMenu: public QMenu
+class NativeExMenu: public MenuBase
 {
 public:
-  explicit NativeExMenu(class YJson& data, QMenu* parent, std::function<void(bool)> callback);
+  explicit NativeExMenu(class YJson& data, MenuBase* parent, std::function<void(bool)> callback);
   virtual ~NativeExMenu();
 private:
   void LoadSubSettingMenu(QAction* action);

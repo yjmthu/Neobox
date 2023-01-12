@@ -7,14 +7,15 @@
 #include <neowallpaperplg.h>
 #include <wallpaper.h>
 #include <yjson.h>
-#include <glbobject.h>
+#include <menubase.hpp>
+#include <pluginmgr.h>
+#include <neomenu.hpp>
 
 #include <QString>
 #include <QInputDialog>
 #include <QDesktopServices>
 #include <QFileDialog>
 #include <QActionGroup>
-#include <QMenu>
 #include <QDropEvent>
 #include <QMimeData>
 
@@ -27,7 +28,7 @@
 
 NeoWallpaperPlg::NeoWallpaperPlg(YJson& settings):
   PluginObject(InitSettings(settings), u8"neowallpaperplg", u8"壁纸引擎"),
-  m_Wallpaper(new Wallpaper(m_Settings, mgr->SaveSettings))
+  m_Wallpaper(new Wallpaper(m_Settings, std::bind(&PluginMgr::SaveSettings, mgr)))
 {
   QDir dir;
   if (!dir.exists("junk"))
@@ -48,30 +49,26 @@ void NeoWallpaperPlg::InitFunctionMap()
     {u8"setTimeInterval",
       {u8"时间间隔", u8"设置更换壁纸的时间间隔", [this](PluginEvent, void*){
         int const iOldTime = m_Wallpaper->GetTimeInterval();
-        int const iNewTime = 
-            QInputDialog::getInt(glb->glbGetMenu(), "输入时间间隔", "时间间隔（分钟）：", iOldTime, 5);
-        if (iOldTime == iNewTime) {
-          return;
+        auto iNewTime = mgr->m_Menu->GetNewInt("输入时间间隔", "时间间隔（分钟）", 5, 65535, iOldTime);
+        if (!iNewTime) {
+          mgr->ShowMsg("设置时间间隔失败！");
+        } else {
+          m_Wallpaper->SetTimeInterval(*iNewTime);
+          mgr->ShowMsg("设置时间间隔成功！");
         }
-        if (iNewTime < 5) {
-          glb->glbShowMsg("设置时间间隔失败！");
-          return;
-        }
-        m_Wallpaper->SetTimeInterval(iNewTime);
-        glb->glbShowMsg("设置时间间隔成功！");
       }, PluginEvent::Void}
     },
     {u8"cleanRubish",
       { u8"清理垃圾", u8"删除垃圾箱内壁纸", [this](PluginEvent, void*){
         m_Wallpaper->ClearJunk();
-        glb->glbShowMsg("清除壁纸垃圾成功！");
+        mgr->ShowMsg("清除壁纸垃圾成功！");
       }, PluginEvent::Void
     }},
     {u8"setAutoChange",
       {u8"自动更换", u8"设置是否按照时间间隔自动切换壁纸", [this](PluginEvent event, void* data) {
         if (event == PluginEvent::Bool) {
           m_Wallpaper->SetAutoChange(*reinterpret_cast<bool*>(data));
-          glb->glbShowMsg("设置成功！");
+          mgr->ShowMsg("设置成功！");
         } else if (event == PluginEvent::BoolGet) {
           *reinterpret_cast<bool*>(data) = m_Wallpaper->GetAutoChange();
         }
@@ -82,7 +79,7 @@ void NeoWallpaperPlg::InitFunctionMap()
       {u8"首次更换", u8"设置是否在插件启动时更换一次壁纸", [this](PluginEvent event, void* data) {
         if (event == PluginEvent::Bool) {
           m_Wallpaper->SetFirstChange(*reinterpret_cast<bool*>(data));
-          glb->glbShowMsg("设置成功！");
+          mgr->ShowMsg("设置成功！");
         } else if (event == PluginEvent::BoolGet) {
           *reinterpret_cast<bool*>(data) = m_Wallpaper->GetFirstChange();
         }
@@ -121,9 +118,7 @@ QAction* NeoWallpaperPlg::InitMenuAction()
 void NeoWallpaperPlg::LoadMainMenuAction()
 {
   m_MainMenuAction = new QAction("壁纸切换");
-  auto const menu = new QMenu(m_MainMenu);
-  menu->setAttribute(Qt::WA_TranslucentBackground, true);
-  menu->setToolTipsVisible(true);
+  auto const menu = new MenuBase(m_MainMenu);
   m_MainMenuAction->setMenu(menu);
 
   std::vector<std::pair<std::u8string, FunctionInfo>> temp = {
@@ -154,13 +149,13 @@ void NeoWallpaperPlg::LoadMainMenuAction()
     {u8"collect",
       {u8"收藏图片", u8"把当前壁纸复制到收藏夹", [this](PluginEvent, void*) {
         m_Wallpaper->Wallpaper::SetFavorite();
-        glb->glbShowMsg("收藏壁纸成功！");
+        mgr->ShowMsg("收藏壁纸成功！");
       }, PluginEvent::Void},
     },
     {u8"undoCollect",
       {u8"撤销收藏", u8"如果当前壁纸在收藏夹内，则将其移出", [this](PluginEvent, void*) {
           m_Wallpaper->UnSetFavorite();
-          glb->glbShowMsg("撤销收藏壁纸成功！");
+          mgr->ShowMsg("撤销收藏壁纸成功！");
         }, PluginEvent::Void
       },
     },
@@ -204,7 +199,7 @@ YJson& NeoWallpaperPlg::InitSettings(YJson& settings)
   // we may not need to call SaveSettings;
 }
 
-void NeoWallpaperPlg::LoadWallpaperTypeMenu(QMenu* pluginMenu)
+void NeoWallpaperPlg::LoadWallpaperTypeMenu(MenuBase* pluginMenu)
 {
   static const char* sources[12] = {
     "壁纸天堂", "来自https://wallhaven.cc的壁纸",
@@ -216,9 +211,7 @@ void NeoWallpaperPlg::LoadWallpaperTypeMenu(QMenu* pluginMenu)
   };
   auto mainAction = pluginMenu->addAction("壁纸来源");
   mainAction->setToolTip("设置壁纸来源");
-  m_WallpaperTypesMenu = new QMenu(pluginMenu);
-  m_WallpaperTypesMenu->setAttribute(Qt::WA_TranslucentBackground, true);
-  m_WallpaperTypesMenu->setToolTipsVisible(true);
+  m_WallpaperTypesMenu = new MenuBase(pluginMenu);
   mainAction->setMenu(m_WallpaperTypesMenu);
   m_WallpaperTypesGroup = new QActionGroup(m_WallpaperTypesMenu);
 
@@ -233,10 +226,10 @@ void NeoWallpaperPlg::LoadWallpaperTypeMenu(QMenu* pluginMenu)
       const int oldType = m_Wallpaper->GetImageType();
       if (m_Wallpaper->SetImageType(i)) {
         LoadWallpaperExMenu(pluginMenu);
-        glb->glbShowMsg("设置壁纸来源成功！");
+        mgr->ShowMsg("设置壁纸来源成功！");
       } else {
         m_WallpaperTypesGroup->actions().at(oldType)->setChecked(true);
-        glb->glbShowMsg("当前正忙，设置失败！");
+        mgr->ShowMsg("当前正忙，设置失败！");
       }
     });
     action->setChecked(i == curType);   // very nice
@@ -245,9 +238,7 @@ void NeoWallpaperPlg::LoadWallpaperTypeMenu(QMenu* pluginMenu)
 
 void NeoWallpaperPlg::LoadDropMenu(QAction* action)
 {
-  auto const menu = new QMenu(m_MainMenu);
-  menu->setAttribute(Qt::WA_TranslucentBackground, true);
-  menu->setToolTipsVisible(true);
+  auto const menu = new MenuBase(m_MainMenu);
   action->setMenu(menu);
 
   // auto actionDrop2Cur = menu->addAction("拖拽至当前");
@@ -267,7 +258,7 @@ void NeoWallpaperPlg::LoadDropMenu(QAction* action)
     auto qFolder = QFileDialog::getExistingDirectory(m_MainMenu, "选择拖拽壁纸存放的文件夹", Utf82QString(u8Folder));
 
     if (qFolder.isEmpty()) {
-      glb->glbShowMsg("取消设置成功");
+      mgr->ShowMsg("取消设置成功");
       return;
     }
 
@@ -276,7 +267,7 @@ void NeoWallpaperPlg::LoadDropMenu(QAction* action)
 
     u8Folder = path.u8string();
     mgr->SaveSettings();
-    glb->glbShowMsg("设置成功！");
+    mgr->ShowMsg("设置成功！");
   });
 
   auto actionDefaultName = menu->addAction("使用链接名称");
@@ -294,18 +285,18 @@ void NeoWallpaperPlg::LoadDropMenu(QAction* action)
     auto& u8name = m_Settings[u8"DropNameFmt"].getValueString();
     auto qNewName = QInputDialog::getText(m_MainMenu, "请输入格式字符串", "输入拖拽壁纸的c++ format命名格式，错误输入会导致程序崩溃。0: 当前时间; 1: 链接自带名称.", QLineEdit::EchoMode::Normal, Utf82QString(u8name));
     if (qNewName.isEmpty()) {
-      glb->glbShowMsg("取消设置成功！");
+      mgr->ShowMsg("取消设置成功！");
       return;
     }
     u8name = QString2Utf8(qNewName);
     mgr->SaveSettings();
-    glb->glbShowMsg("设置成功！");
+    mgr->ShowMsg("设置成功！");
   });
 }
 
-void NeoWallpaperPlg::LoadWallpaperExMenu(QMenu* parent)
+void NeoWallpaperPlg::LoadWallpaperExMenu(MenuBase* parent)
 {
-  static QMenu* (NeoWallpaperPlg::*const m_MenuLoaders[6])(QMenu*) {
+  static MenuBase* (NeoWallpaperPlg::*const m_MenuLoaders[6])(MenuBase*) {
     &NeoWallpaperPlg::LoadWallavenMenu,
     &NeoWallpaperPlg::LoadBingApiMenu,
     &NeoWallpaperPlg::LoadDirectApiMenu,
@@ -315,12 +306,10 @@ void NeoWallpaperPlg::LoadWallpaperExMenu(QMenu* parent)
   };
   delete m_MoreSettingsAction->menu();
   auto const menu = (this->*m_MenuLoaders[m_Wallpaper->GetImageType()])(parent);
-  menu->setAttribute(Qt::WA_TranslucentBackground, true);
-  menu->setToolTipsVisible(true);
   m_MoreSettingsAction->setMenu(menu);
 }
 
-QMenu* NeoWallpaperPlg::LoadWallavenMenu(QMenu* parent)
+MenuBase* NeoWallpaperPlg::LoadWallavenMenu(MenuBase* parent)
 {
   return new WallhavenExMenu(
     m_Wallpaper->m_Wallpaper->m_Setting,
@@ -330,7 +319,7 @@ QMenu* NeoWallpaperPlg::LoadWallavenMenu(QMenu* parent)
   );
 }
 
-QMenu* NeoWallpaperPlg::LoadBingApiMenu(QMenu* parent)
+MenuBase* NeoWallpaperPlg::LoadBingApiMenu(MenuBase* parent)
 {
   return new BingApiExMenu(
     m_Wallpaper->m_Wallpaper->m_Setting,
@@ -339,7 +328,7 @@ QMenu* NeoWallpaperPlg::LoadBingApiMenu(QMenu* parent)
   );
 }
 
-QMenu* NeoWallpaperPlg::LoadDirectApiMenu(QMenu* parent)
+MenuBase* NeoWallpaperPlg::LoadDirectApiMenu(MenuBase* parent)
 {
   return new DirectApiExMenu(
     m_Wallpaper->m_Wallpaper->m_Setting,
@@ -348,7 +337,7 @@ QMenu* NeoWallpaperPlg::LoadDirectApiMenu(QMenu* parent)
   );
 }
 
-QMenu* NeoWallpaperPlg::LoadNativeMenu(QMenu* parent)
+MenuBase* NeoWallpaperPlg::LoadNativeMenu(MenuBase* parent)
 {
   return new NativeExMenu(
     m_Wallpaper->m_Wallpaper->m_Setting,
@@ -357,7 +346,7 @@ QMenu* NeoWallpaperPlg::LoadNativeMenu(QMenu* parent)
   );
 }
 
-QMenu* NeoWallpaperPlg::LoadScriptMenu(QMenu* parent)
+MenuBase* NeoWallpaperPlg::LoadScriptMenu(MenuBase* parent)
 {
   return new ScriptExMenu(
     m_Wallpaper->m_Wallpaper->m_Setting,
@@ -366,7 +355,7 @@ QMenu* NeoWallpaperPlg::LoadScriptMenu(QMenu* parent)
   );
 }
 
-QMenu* NeoWallpaperPlg::LoadFavoriteMenu(QMenu* parent)
+MenuBase* NeoWallpaperPlg::LoadFavoriteMenu(MenuBase* parent)
 {
   return new FavoriteExMenu(
     m_Wallpaper->m_Wallpaper->m_Setting,

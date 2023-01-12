@@ -12,6 +12,8 @@ struct HttpProxy
   std::wstring password;
   int type = 0;
   int port = 8080;
+public:
+  void GetSystemProxy();
 };
 
 class HttpLib {

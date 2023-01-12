@@ -1,16 +1,16 @@
 #ifndef PLUGINCENTER_HPP
 #define PLUGINCENTER_HPP
 
-#include <QDialog>
+#include <widgetbase.hpp>
 
-class PluginCenter: public QDialog
+class PluginCenter: public WidgetBase
 {
   Q_OBJECT 
 
 signals:
   void DownloadFinished();
 public:
-  explicit PluginCenter(class YJson& setting);
+  explicit PluginCenter();
   virtual ~PluginCenter();
 public:
   bool UpdatePluginData();

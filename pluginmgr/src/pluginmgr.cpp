@@ -1,24 +1,31 @@
 #include <pluginmgr.h>
 #include <pluginobject.h>
 #include <yjson.h>
-#include <glbobject.h>
 #include <systemapi.h>
 #include <shortcut.h>
 #include <httplib.h>
+#include <menubase.hpp>
+#include <config.h>
 
-#include <QMenu>
 #include <QAction>
 #include <QMessageBox>
 #include <QActionGroup>
+#include <QApplication>
+#include <QProcess>
+#include <QSharedMemory>
 
 #include <windows.h>
 #include <filesystem>
 
 #include "../widgets/plugincenter.hpp"
+#include <neomsgdlg.hpp>
+#include <neosystemtray.hpp>
+#include <neomenu.hpp>
 
 namespace fs = std::filesystem;
-GlbObject *glb;
 PluginMgr *mgr;
+
+const std::u8string PluginMgr::m_SettingFileName(u8"PluginSettings.json");
 
 // #define WRITE_LOG(x) writelog((x))
 #define WRITE_LOG(x) 
@@ -30,21 +37,16 @@ void writelog(std::string data)
   file.close();
 }
 
-
-PluginMgr::PluginMgr(GlbObject* glb, QMenu* pluginMainMenu):
-  m_GlbObject(glb),
-  m_SettingFileName(u8"PluginSettings.json"),
-  SaveSettings([this](){m_Settings->toFile(m_SettingFileName, false, YJson::UTF8);}),
-  m_MainMenu(pluginMainMenu)
+YJson* PluginMgr::InitSettings()
 {
-  mgr = this;
   if (!fs::exists("plugins")) {
     fs::create_directory("plugins");
   }
+  YJson* setting = nullptr;
   if (fs::exists(m_SettingFileName)) {
-    m_Settings = new YJson(m_SettingFileName, YJson::UTF8);
+    setting = new YJson(m_SettingFileName, YJson::UTF8);
   } else {
-    m_Settings = new YJson{ YJson::O{
+    setting = new YJson{ YJson::O{
       { u8"Plugins", YJson::O {
       }},
       { u8"EventMap", YJson::A {
@@ -77,14 +79,23 @@ PluginMgr::PluginMgr(GlbObject* glb, QMenu* pluginMainMenu):
       }},
     }};
   }
-  auto& proxy = m_Settings->operator[](u8"NetProxy");
-  if (!proxy.isObject()) {
+  auto& proxy = setting->operator[](u8"NetProxy");
+  auto& version = setting->operator[](u8"Version");
+
+  if (!version.isArray()) {
+    version = YJson::A {
+      NEOBOX_VERSION_MAJOR,
+      NEOBOX_VERSION_MINOR,
+      NEOBOX_VERSION_PATCH
+    };
+    HttpLib::m_Proxy.GetSystemProxy();
+
     proxy = YJson::O {
       {u8"Type", HttpLib::m_Proxy.type},
-      {u8"Domain", YJson::String},
+      {u8"Domain", Wide2Utf8String(HttpLib::m_Proxy.domain)},
       {u8"Port", HttpLib::m_Proxy.port},
-      {u8"Username", YJson::String},
-      {u8"Password", YJson::String}
+      {u8"Username", Wide2Utf8String(HttpLib::m_Proxy.username)},
+      {u8"Password", Wide2Utf8String(HttpLib::m_Proxy.password)}
     };
   }
 
@@ -95,7 +106,28 @@ PluginMgr::PluginMgr(GlbObject* glb, QMenu* pluginMainMenu):
   HttpLib::m_Proxy.port = proxy[u8"Port"].getValueInt();
   HttpLib::m_Proxy.type = proxy[u8"Type"].getValueInt();
 
+  return setting;
+}
+
+
+PluginMgr::PluginMgr()
+  : m_SharedMemory(CreateSharedMemory())
+  , m_Tray(new NeoSystemTray)
+  , m_Menu(new NeoMenu)
+  , m_MsgDlg(new NeoMsgDlg(m_Menu))
+  , m_Settings(InitSettings())
+  // , m_PluginMainMenu(nullptr)
+  // , m_PluginMainMenu(pluginMainMenu)
+{
+  mgr = this;
+  QApplication::setQuitOnLastWindowClosed(false);
+  m_Tray->setContextMenu(m_Menu);
+  m_Tray->show();
+
   m_Shortcut = new Shortcut(m_Settings->find(u8"EventMap")->second);
+
+  LoadPlugins();
+  LoadManageAction();
 }
 
 PluginMgr::~PluginMgr()
@@ -108,22 +140,36 @@ PluginMgr::~PluginMgr()
     FreeLibrary(reinterpret_cast<HINSTANCE>(info.handle));
   }
   delete m_Settings;
+
+  delete m_Menu;
+  delete m_Tray;
+
+  DetachSharedMemory();   // 在构造函数抛出异常后析构函数将不再被调用
 }
 
-void PluginMgr::LoadManageAction(QAction *action)
+void PluginMgr::SaveSettings()
 {
-  QObject::connect(action, &QAction::triggered, m_MainMenu, [this](){
+  static std::atomic_bool working = false;
+  while (working) ;
+  working = true;
+  m_Settings->toFile(m_SettingFileName, false, YJson::UTF8);
+  working = false;
+}
+
+void PluginMgr::LoadManageAction()
+{
+  QObject::connect(m_Menu->m_ControlPanel, &QAction::triggered, m_Menu, [this](){
     auto instance = PluginCenter::m_Instance;
     if (instance) {
       instance->activateWindow();
       return;
     }
-    PluginCenter center(m_Settings->find(u8"Plugins")->second);
-    center.exec();
+    auto const center = new PluginCenter;
+    center->show();
   });
 }
 
-const YJson& PluginMgr::GetPluginsInfo() const
+YJson& PluginMgr::GetPluginsInfo()
 {
   return m_Settings->find(u8"Plugins")->second;
 }
@@ -163,7 +209,7 @@ bool PluginMgr::TooglePlugin(const std::u8string& pluginName, bool on)
     if (LoadPlugin(pluginName, info)) {
       UpdateBroadcast(info.plugin);
     } else {
-      m_GlbObject->glbShowMsg("设置失败！");
+      ShowMsg("设置失败！");
       enabled = false;
       return false;
     }
@@ -171,7 +217,7 @@ bool PluginMgr::TooglePlugin(const std::u8string& pluginName, bool on)
     FreePlugin(info);
     m_Plugins.erase(pluginName);
   }
-  m_GlbObject->glbShowMsg("设置成功！");
+  ShowMsg("设置成功！");
   return true;
 }
 
@@ -189,13 +235,13 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
   fs::path path = u8"plugins";
   path /= pluginName;
   if (!LoadPlugEnv(path)) {
-    glb->glbShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件文件夹加载失败！"));
+    ShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件文件夹加载失败！"));
     return false;
   }
 // #endif
   path /= pluginName + u8".dll";
   if (!fs::exists(path)) {
-    glb->glbShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件文件加载失败！"));
+    ShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件文件加载失败！"));
     return false;
   }
   path.make_preferred();
@@ -203,13 +249,13 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
   wPath.push_back(L'\0');
   HINSTANCE hdll = LoadLibraryW(wPath.data());
   if (!hdll) {
-    glb->glbShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件动态库加载失败！"));
+    ShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件动态库加载失败！"));
     return false;
   }
   pluginInfo.handle = hdll;
   newPlugin = reinterpret_cast<decltype(newPlugin)>(GetProcAddress(hdll, "newPlugin"));
   if (!newPlugin) {
-    glb->glbShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件函数加载失败！"));
+    ShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件函数加载失败！"));
     FreeLibrary(hdll);
     return false;
   }
@@ -218,14 +264,14 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
     auto const mainMenuAction = pluginInfo.plugin->InitMenuAction();
     if (mainMenuAction) {
       mainMenuAction->setProperty("pluginName", QString::fromUtf8(pluginName.data(), pluginName.size()));
-      glb->glbGetMenu()->addAction(mainMenuAction);
+      m_Menu->addAction(mainMenuAction);
     }
     return true;
   } catch (...) {
     pluginInfo.plugin = nullptr;
     pluginInfo.handle = nullptr;
     FreeLibrary(hdll);
-    glb->glbShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件初始化失败！"));
+    ShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件初始化失败！"));
   }
   return false;
 }
@@ -376,8 +422,7 @@ void PluginMgr::UpdatePluginOrder(YJson&& data)
   pluginsInfo = std::move(data);
   std::map<std::u8string, QAction*> actions;
 
-  auto const mainMenu = glb->glbGetMenu();
-  for (auto action: mainMenu->actions()) {
+  for (auto action: m_Menu->actions()) {
     auto pluginName = action->property("pluginName");
     if (!pluginName.isNull()) {
       actions[PluginObject::QString2Utf8(pluginName.toString())] = action;
@@ -385,18 +430,120 @@ void PluginMgr::UpdatePluginOrder(YJson&& data)
   }
 
   for (auto& [name, action]: actions) {
-    mainMenu->removeAction(action);
+    m_Menu->removeAction(action);
   }
 
   for (auto& [name, info]: pluginsInfo.getObject()) {
-    mainMenu->addAction(actions[name]);
+    m_Menu->addAction(actions[name]);
   }
 
-  glb->glbShowMsg("调整成功！");
+  ShowMsg("调整成功！");
   SaveSettings();
 }
 
 bool PluginMgr::IsPluginEnabled(const std::u8string& plugin) const
 {
   return m_Plugins.find(plugin) != m_Plugins.end();
+}
+
+void PluginMgr::ShowMsgbox(const std::u8string& title,
+                 const std::u8string& text,
+                 int type) {
+  QMetaObject::invokeMethod(m_Menu, [=](){
+    QMessageBox::information(m_Menu,
+                             QString::fromUtf8(title.data(), title.size()),
+                             QString::fromUtf8(text.data(), text.size()));
+  });
+}
+
+void PluginMgr::ShowMsg(class QString text)
+{
+  m_MsgDlg->ShowMessage(text);
+}
+
+int PluginMgr::Exec()
+{
+  return QApplication::exec();
+}
+
+void PluginMgr::Quit()
+{
+  QApplication::quit();
+}
+
+void PluginMgr::Restart()
+{
+  WriteSharedFlag(m_SharedMemory, 1);
+  QProcess::startDetached(
+    QApplication::applicationFilePath(), QStringList {}
+  );
+  QApplication::quit();
+}
+
+static void CompareJson(YJson& jsDefault, YJson& jsUser)
+{
+  if (!jsDefault.isSameType(&jsUser))
+    return;
+  if (!jsUser.isObject()) {
+    YJson::swap(jsDefault, jsUser);
+    return;
+  }
+  for (auto& [key, val]: jsUser.getObject()) {
+    auto iter = jsDefault.find(key);
+    if (iter != jsDefault.endO()) {
+      CompareJson(iter->second, val);
+    } else {
+      YJson::swap(jsDefault[key], val);
+    }
+  }
+}
+
+void PluginMgr::WriteSharedFlag(class QSharedMemory* sharedMemory, int flag) {
+  //m_SharedMemory->setKey(QStringLiteral("__Neobox__"));
+  sharedMemory->lock();
+  *reinterpret_cast<int *>(sharedMemory->data()) = flag;
+  sharedMemory->unlock();
+}
+
+int PluginMgr::ReadSharedFlag(class QSharedMemory* sharedMemory) {
+  //m_SharedMemory->setKey(QStringLiteral("__Neobox__"));
+  sharedMemory->lock();
+  const auto state = *reinterpret_cast<const int*>(sharedMemory->constData());
+  sharedMemory->unlock();
+  return state;
+}
+
+QSharedMemory* PluginMgr::CreateSharedMemory() {
+  QSharedMemory* sharedMemory = new QSharedMemory;
+  sharedMemory->setKey(QStringLiteral("__Neobox__"));
+  if(sharedMemory->attach()) {
+    auto const code = ReadSharedFlag(sharedMemory);
+    switch (code) {
+    case 0:   //  already have an instance;
+      WriteSharedFlag(sharedMemory, 2);
+      sharedMemory->detach();
+      delete sharedMemory;
+      return nullptr;
+    case 1:   // previous app want to restart;
+      break;
+    case 2:   // app should go to left top.
+      WriteSharedFlag(sharedMemory, 0);
+      sharedMemory->detach();
+      delete sharedMemory;
+      return nullptr;
+    case 3:   // app should quit
+    default:
+      break;
+    }
+  } else if (!sharedMemory->create(sizeof(int))) {
+    throw std::runtime_error("Already have an instance.");
+  }
+  WriteSharedFlag(sharedMemory, 0);
+  return sharedMemory;
+}
+
+void PluginMgr::DetachSharedMemory()
+{
+  // m_SharedMemory->setKey(QStringLiteral("__Neobox__"));
+  m_SharedMemory->detach();
 }

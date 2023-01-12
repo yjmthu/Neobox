@@ -8,10 +8,11 @@
 
 #include <httplib.h>
 #include <yjson.h>
-#include <glbobject.h>
+#include <menubase.hpp>
+#include <pluginmgr.h>
+#include <neomenu.hpp>
 
 #include <QLabel>
-#include <QMenu>
 #include <QPushButton>
 #include <QTabWidget>
 #include <QListWidget>
@@ -24,9 +25,9 @@ using namespace std::literals;
 const std::u8string PluginCenter::m_RawUrl = u8"https://gitlab.com/yjmthu1/neoboxplg/-/raw/main/";
 PluginCenter* PluginCenter::m_Instance = nullptr;
 
-PluginCenter::PluginCenter(YJson& setting)
-  : QDialog(nullptr)
-  , m_Setting(setting)
+PluginCenter::PluginCenter()
+  : WidgetBase(nullptr)
+  , m_Setting(mgr->GetPluginsInfo())
   , m_PluginData(nullptr)
   , m_MainLayout(new QVBoxLayout(this))
   , m_TabWidget(new QTabWidget(this))
@@ -50,10 +51,23 @@ PluginCenter::~PluginCenter()
 
 void PluginCenter::SetupUi()
 {
-  setWindowTitle("Neobox 插件");
-  setMinimumSize(600, 500);
-  setStyleSheet(glb->glbGetMenu()->styleSheet());
-  m_MainLayout->addWidget(m_TabWidget);
+  setWindowTitle(QStringLiteral("Neobox-控制面板"));
+  setFixedSize(520, 360);
+  setWindowFlag(Qt::FramelessWindowHint);
+  setAttribute(Qt::WA_TranslucentBackground, true);
+  setAttribute(Qt::WA_DeleteOnClose, true);
+  setStyleSheet(mgr->m_Menu->styleSheet());
+  auto backGround = new QWidget(this);
+  backGround->setObjectName("emptyBackground");
+  m_MainLayout->setContentsMargins(3, 3, 3, 3);
+  m_MainLayout->addWidget(backGround);
+  
+  AddCloseButton();
+  AddMinButton();
+
+  auto layout = new QHBoxLayout(backGround);
+  layout->setContentsMargins(0, 0, 0, 0);
+  layout->addWidget(m_TabWidget);
   m_TabWidget->addTab(m_TabNative, "本地插件");
   m_TabWidget->addTab(m_TabOnline, "网络插件");
   m_TabWidget->addTab(m_TabHotKey, "热键管理");
@@ -78,7 +92,7 @@ bool PluginCenter::UpdatePluginData()
   bool result = false, exit = false;
 
   if (!HttpLib::IsOnline()) {
-    glb->glbShowMsgbox(u8"失败", u8"请检查网络连接！");
+    mgr->ShowMsgbox(u8"失败", u8"请检查网络连接！");
     return result;
   }
 

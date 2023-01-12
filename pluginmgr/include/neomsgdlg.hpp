@@ -1,11 +1,13 @@
-#ifndef NEOMSGDLG_H
-#define NEOMSGDLG_H
+#ifndef NEOMSGDLG_HPP
+#define NEOMSGDLG_HPP
 
 #include <QWidget>
 #include <queue>
 
 class NeoMsgDlg: QWidget
 {
+  Q_OBJECT
+  
 public:
   explicit NeoMsgDlg(QWidget* parent);
   ~NeoMsgDlg();
@@ -25,4 +27,4 @@ private:
   std::queue<QString> m_Data;
 };
 
-#endif
+#endif // NEOMSGDLG_HPP

@@ -2,7 +2,6 @@
 #include "itemnative.hpp"
 #include "tabnative.hpp"
 
-#include <glbobject.h>
 #include <pluginmgr.h>
 #include <yjson.h>
 
@@ -30,7 +29,7 @@ TabNative::~TabNative()
 void TabNative::AddItem(std::u8string_view pluginName, const YJson& data)
 {
   auto const item = new QListWidgetItem;
-  item->setSizeHint(QSize(400, 70));
+  item->setSizeHint(QSize(300, 70));
   m_ListWidget->addItem(item);
   m_ListWidget->setItemWidget(item, new ItemNative(pluginName, data, m_ListWidget));
 }
@@ -49,7 +48,7 @@ void TabNative::UpdateItem(std::u8string_view pluginName)
 void TabNative::UpdatePlugins()
 {
   if (!m_PluginCenter.UpdatePluginData()) {
-    glb->glbShowMsg("下载插件信息失败！");
+    mgr->ShowMsg("下载插件信息失败！");
     return;
   }
 
@@ -63,7 +62,7 @@ void TabNative::UpdatePlugins()
 void TabNative::UpgradeAllPlugins()
 {
   if (!m_PluginCenter.UpdatePluginData()) {
-    glb->glbShowMsg("下载插件信息失败！");
+    mgr->ShowMsg("下载插件信息失败！");
     return;
   }
 
@@ -76,7 +75,7 @@ void TabNative::UpgradeAllPlugins()
       vec.push_back(widget);
   }
   if (vec.empty()) {
-    glb->glbShowMsg("全部插件已是最新！");
+    mgr->ShowMsg("全部插件已是最新！");
   } else {
     std::for_each(vec.begin(), vec.end(), std::bind(&ItemNative::PluginUpgrade, std::placeholders::_1));
   }
@@ -117,15 +116,21 @@ void TabNative::InitControls()
 
 void TabNative::InitLayout()
 {
-  m_MainLayout->addWidget(m_ListWidget);
-  m_MainLayout->addLayout(m_ControlLayout);
+  m_MainLayout->setContentsMargins(0, 0, 0, 0);
+  m_MainLayout->setSpacing(0);
+  auto background = new QWidget(this);
+  background->setObjectName("whiteBackground");
+  m_MainLayout->addWidget(background);
+  auto layout = new QVBoxLayout(background);
+  layout->addWidget(m_ListWidget);
+  layout->addLayout(m_ControlLayout);
 }
 
 void TabNative::InitPlugins()
 {
   for (auto& [name, info]: mgr->GetPluginsInfo().getObject()) {
     auto const item = new QListWidgetItem;
-    item->setSizeHint(QSize(400, 70));
+    item->setSizeHint(QSize(300, 70));
     m_ListWidget->addItem(item);
     m_ListWidget->setItemWidget(item, new ItemNative(name, info, m_ListWidget));
   }

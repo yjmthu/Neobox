@@ -10,7 +10,7 @@ qt_standard_project_setup()
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 configure_file(
-  src/config.h.in include/config.h
+  src/config.h.in config.h
 )
 
 qt_wrap_ui(wrap_files
@@ -18,7 +18,7 @@ qt_wrap_ui(wrap_files
   widgets/tabhotkey.ui
 ) # 根据UI文件生成头文件
 
-file(GLOB source_files src/*.cpp widgets/*.cpp widgets/*.hpp)
+file(GLOB source_files include/*.hpp src/*.cpp widgets/*.cpp widgets/*.hpp)
 file(GLOB _resource_files fonts/*.ttf  icons/*  jsons/*.json scripts/* styles/*)
 
 set(system_shared_files Shell32)
@@ -53,12 +53,6 @@ qt_add_resources(pluginmgr "neobox"
   PREFIX "/"
   FILES ${resource_files}
 )
-
-if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-  # message(STATUS "============deBUG=================")
-  # target_link_libraries(pluginmgr PRIVATE neospeedboxplg)
-else()
-endif()
 
 install(TARGETS pluginmgr
   LIBRARY DESTINATION lib

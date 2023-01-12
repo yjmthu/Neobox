@@ -2,7 +2,7 @@
 #include <pluginobject.h>
 #include <listeditor.h>
 #include <yjson.h>
-#include <glbobject.h>
+#include <pluginmgr.h>
 
 #include <QAction>
 #include <QActionGroup>
@@ -13,8 +13,8 @@
 
 namespace fs = std::filesystem;
 
-DirectApiExMenu::DirectApiExMenu(YJson& data, QMenu* parent, std::function<void(bool)> callback):
-  QMenu(parent),
+DirectApiExMenu::DirectApiExMenu(YJson& data, MenuBase* parent, std::function<void(bool)> callback):
+  MenuBase(parent),
   m_Data(data),
   m_CallBack(callback),
   m_ActionGroup(new QActionGroup(this)),
@@ -44,7 +44,7 @@ void DirectApiExMenu::LoadSettingMenu()
 
 void DirectApiExMenu::LoadSubSettingMenu(QAction* action)
 {
-  QMenu* subMenu = new QMenu(this);
+  MenuBase* subMenu = new MenuBase(this);
   action->setMenu(subMenu);
 
   auto u8ViewName = PluginObject::QString2Utf8(action->text());
@@ -73,7 +73,7 @@ void DirectApiExMenu::LoadSubSettingMenu(QAction* action)
           delete (*iter)->menu();
           LoadSubSettingMenu(*iter);
         }
-        glb->glbShowMsg("修改成功！");
+        mgr->ShowMsg("修改成功！");
       });
     connect(subMenu->addAction("删除此项"),
       &QAction::triggered, this, [action, this, viewName]() {
@@ -83,7 +83,7 @@ void DirectApiExMenu::LoadSubSettingMenu(QAction* action)
         m_Data[u8"ApiData"].remove(viewName);
         m_CallBack(false);
 
-        glb->glbShowMsg("修改成功！");
+        mgr->ShowMsg("修改成功！");
       });
   }
 
@@ -97,7 +97,7 @@ void DirectApiExMenu::LoadSubSettingMenu(QAction* action)
       QLineEdit::Normal, qCurDomain
     );
     if (qNewDomain.isEmpty() || qCurDomain == qNewDomain) {
-      glb->glbShowMsg("取消成功");
+      mgr->ShowMsg("取消成功");
       return;
     }
 
@@ -105,7 +105,7 @@ void DirectApiExMenu::LoadSubSettingMenu(QAction* action)
     if (u8CurDomain.ends_with(u8"/")) {
       u8CurDomain.pop_back();
     }
-    glb->glbShowMsg("设置成功");
+    mgr->ShowMsg("设置成功");
     m_CallBack(true);
   });
 
@@ -113,25 +113,14 @@ void DirectApiExMenu::LoadSubSettingMenu(QAction* action)
 
   connect(subMenu->addAction("存储路径"), &QAction::triggered, this, [this, u8ViewName]() {
     auto& u8CurDir = m_Data[u8"ApiData"][u8ViewName][u8"Directory"].getValueString();
-    auto const qNewDir = QFileDialog::getExistingDirectory(
-      glb->glbGetMenu(),
-      QStringLiteral("选择存储壁纸的文件夹"),
-      PluginObject::Utf82QString(u8CurDir)
-    );
-    if(qNewDir.isEmpty()) {
-      glb->glbShowMsg("取消成功");
-      return;
+    auto u8NewDir = GetExistingDirectory("选择存储壁纸的文件夹", u8CurDir);
+    if(!u8NewDir) {
+      mgr->ShowMsg("取消成功");
+    } else {
+      u8CurDir.swap(*u8NewDir);
+      mgr->ShowMsg("设置成功");
+      m_CallBack(true);
     }
-    fs::path path = qNewDir.toStdU16String();
-    path.make_preferred();
-    
-    if (path.u8string() == u8CurDir) {
-      glb->glbShowMsg("取消成功");
-      return;
-    }
-    u8CurDir = path.u8string();
-    glb->glbShowMsg("设置成功");
-    m_CallBack(true);
   });
 
   subMenu->addSeparator();
@@ -174,10 +163,10 @@ void DirectApiExMenu::RenameApi(QAction* action)
   m_CallBack(false);
   action->setText(qKeyNewName);
 
-  glb->glbShowMsg("修改成功！");
+  mgr->ShowMsg("修改成功！");
 }
 
-void DirectApiExMenu::LoadPaths(QMenu* subMenu, const std::u8string& name)
+void DirectApiExMenu::LoadPaths(MenuBase* subMenu, const std::u8string& name)
 {
   QActionGroup* pSonGroup = new QActionGroup(subMenu);
   // for (const auto& [name, data] : m_Data[u8"ApiData"].getObject()) {
@@ -209,7 +198,7 @@ void DirectApiExMenu::AddApi()
   std::u8string viewKeyName(PluginObject::QString2Utf8(qKeyName));
   auto& obj = m_Data[u8"ApiData"][viewKeyName];
   if (!obj.isNull()) {
-    glb->glbShowMsg("昵称不能重复！");
+    mgr->ShowMsg("昵称不能重复！");
     return;
   }
 

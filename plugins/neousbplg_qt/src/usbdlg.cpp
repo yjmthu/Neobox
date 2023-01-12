@@ -21,7 +21,7 @@
 UsbDlg::ItemMap UsbDlg::m_Items;
 
 UsbDlg::UsbDlg(YJson& settings)
-  : QWidget(nullptr, Qt::FramelessWindowHint | Qt::Window | Qt::Tool)
+  : WidgetBase(nullptr)
   , m_Settings(settings)
   , m_CenterWidget(new QWidget(this))
   , m_MainLayout(new QVBoxLayout(m_CenterWidget))
@@ -29,6 +29,7 @@ UsbDlg::UsbDlg(YJson& settings)
   , m_Position(settings[u8"Position"])
 {
   setWindowFlag(Qt::WindowStaysOnTopHint, m_Settings[u8"StayOnTop"].isTrue());
+  setWindowFlags(Qt::FramelessWindowHint | Qt::Window | Qt::Tool);
   setWindowTitle("U盘助手");
   setAttribute(Qt::WA_TranslucentBackground, true);
   SetupUi();
@@ -283,28 +284,13 @@ void UsbDlg::showEvent(QShowEvent* event)
   event->accept();
 }
 
-void UsbDlg::mousePressEvent(QMouseEvent* event)
-{
-  if (event->button() == Qt::LeftButton) {
-    m_ConstPos = event->pos();
-    setMouseTracking(true);
-  }
-}
-
 void UsbDlg::mouseReleaseEvent(QMouseEvent* event)
 {
   if (event->button() == Qt::LeftButton) {
-    setMouseTracking(false);
     m_Position = YJson::A{x(), y()};
     mgr->SaveSettings();
   }
-}
-
-void UsbDlg::mouseMoveEvent(QMouseEvent* event)
-{
-  if (event->buttons() == Qt::LeftButton) {
-    move(pos() + event->pos() - m_ConstPos);
-  }
+  this->WidgetBase::mouseReleaseEvent(event);
 }
 
 static constexpr int delta = 1;

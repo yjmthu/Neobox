@@ -1,5 +1,5 @@
 #include <usbdlgitem.h>
-#include <glbobject.h>
+#include <pluginmgr.h>
 
 #include <Windows.h>
 #include <dbt.h>
@@ -49,7 +49,7 @@ bool UsbDlgItem::eventFilter(QObject* target, QEvent* event)
       UpdateUsbName();
       SetUsbInfoText();
       m_UsbSizeLogoColorMask->setStyleSheet(GetStyleSheet());
-      glb->glbShowMsg("刷新成功！");
+      mgr->ShowMsg("刷新成功！");
       return true;
     default:
       break;
@@ -247,11 +247,11 @@ void UsbDlgItem::PopUsbDrive()
     // 检测U盘是否占用，弹出U盘
     if (!EjectUsbDisk()) {
       m_Items[m_DriveId] = this;
-      glb->glbShowMsg("弹出失败");
+      mgr->ShowMsg("弹出失败");
       return;
     }
   }
-  glb->glbShowMsg("弹出成功");
+  mgr->ShowMsg("弹出成功");
 
   deleteLater();
 }
@@ -313,14 +313,14 @@ bool UsbDlgItem::EjectUsbDisk()
   HANDLE hVolume = CreateFileW(szVolumePath, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, NULL, NULL);
   DWORD dwBytesReturned = 0;
   if (hVolume == INVALID_HANDLE_VALUE) {
-    glb->glbShowMsg("获取磁盘标识失败！");
+    mgr->ShowMsg("获取磁盘标识失败！");
     return 0;
   }
 
   STORAGE_DEVICE_NUMBER sdn;
   if (!DeviceIoControl(hVolume, IOCTL_STORAGE_GET_DEVICE_NUMBER, NULL, 0, &sdn, sizeof(sdn), &dwBytesReturned, NULL))
   {
-    glb->glbShowMsg("获取磁盘序号失败！");
+    mgr->ShowMsg("获取磁盘序号失败！");
     CloseHandle(hVolume);
     return 0;
   }
@@ -328,7 +328,7 @@ bool UsbDlgItem::EjectUsbDisk()
 
   DWORD devInst = GetDrivesDevInstByDiskNumber(sdn.DeviceNumber);
   if (devInst == 0) {
-    glb->glbShowMsg("GetDrivesDevInstDiskNumber failed！");
+    mgr->ShowMsg("GetDrivesDevInstDiskNumber failed！");
     return 0;
   }
 
@@ -349,7 +349,7 @@ bool UsbDlgItem::EjectUsbDisk()
       res = CM_Request_Device_EjectW(devInst, &vetoType, NULL, MAX_PATH, 0);
     } else {
       res = CM_Query_And_Remove_SubTreeW(devInst, &vetoType, NULL, MAX_PATH, 0);
-      glb->glbShowMsg("磁盘正在使用中！");
+      mgr->ShowMsg("磁盘正在使用中！");
     }
   }
 

@@ -70,10 +70,10 @@ void NeoUsbPlg::InitFunctionMap()
       if (*reinterpret_cast<std::u8string*>(data) == u8"neousbplg") {
         if (m_UsbDlg->isVisible()) {
           m_UsbDlg->hide();
-          glb->glbShowMsg("隐藏成功！");
+          mgr->ShowMsg("隐藏成功！");
         } else {
           m_UsbDlg->show();
-          glb->glbShowMsg("显示成功！");
+          mgr->ShowMsg("显示成功！");
         }
       }
     }

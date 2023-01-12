@@ -9,19 +9,19 @@
 #include <pluginobject.h>
 
 class NeoTranslateDlg : public QWidget {
- protected:
+protected:
   void showEvent(QShowEvent*) override;
   void hideEvent(QHideEvent *event) override;
   bool eventFilter(QObject*, QEvent*) override;
 
- public:
+public:
   explicit NeoTranslateDlg(class YJson& setings);
   ~NeoTranslateDlg();
   void ToggleVisibility();
   template<typename _Utf8Array>
   void GetResultData(const _Utf8Array& text);
 
- private:
+private:
   friend class HeightCtrl;
   class YJson& m_Settings;
   class QPlainTextEdit *m_TextFrom;
@@ -36,6 +36,7 @@ class NeoTranslateDlg : public QWidget {
   bool m_LanPairChanged = false;
   bool m_TextFromChanged = false;
 private:
+  void SetStyleSheet();
   class QWidget* ReferenceObject() const;
   void CreateFromRightMenu(QMouseEvent* event);
   void CreateToRightMenu(QMouseEvent* event);

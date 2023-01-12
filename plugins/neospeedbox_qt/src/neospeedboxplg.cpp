@@ -3,11 +3,11 @@
 #include <pluginobject.h>
 #include <yjson.h>
 #include <systemapi.h>
-#include <neosystemtray.h>
-#include <glbobject.h>
+#include <neosystemtray.hpp>
 #include <netspeedhelper.h>
+#include <neomenu.hpp>
 
-#include <QMenu>
+#include <menubase.hpp>
 #include <QActionGroup>
 #include <QInputDialog>
 #include <QFileDialog>
@@ -37,7 +37,7 @@ NeoSpeedboxPlg::NeoSpeedboxPlg(YJson& settings)
 NeoSpeedboxPlg::~NeoSpeedboxPlg()
 {
   RemoveMainObject();
-  auto& followers = glb->glbGetSystemTray()->m_Followers;
+  auto& followers = mgr->m_Tray->m_Followers;
   followers.erase(&m_ActiveWinodow);
   delete m_Speedbox;
   delete m_NetSpeedHelper;
@@ -87,7 +87,7 @@ void NeoSpeedboxPlg::InitFunctionMap() {
           m_Settings[u8"ProgressMonitor"] = on;
           m_Speedbox->SetProgressMonitor(on);
           mgr->SaveSettings();
-          glb->glbShowMsg("设置成功！");
+          mgr->ShowMsg("设置成功！");
         } else if (event == PluginEvent::BoolGet) {
           *reinterpret_cast<bool *>(data) = m_Settings[u8"ProgressMonitor"].isTrue();
         }
@@ -99,10 +99,10 @@ void NeoSpeedboxPlg::InitFunctionMap() {
     if (event == PluginEvent::MouseDoubleClick) {
       if (m_Speedbox->isVisible()) {
         m_Speedbox->hide();
-        glb->glbShowMsg("隐藏悬浮窗成功！");
+        mgr->ShowMsg("隐藏悬浮窗成功！");
       } else {
         m_Speedbox->show();
-        glb->glbShowMsg("显示悬浮窗成功！");
+        mgr->ShowMsg("显示悬浮窗成功！");
       }
     } else if (event == PluginEvent::MouseClick) {
       m_Speedbox->raise();
@@ -126,16 +126,16 @@ void NeoSpeedboxPlg::InitFunctionMap() {
 
       for (auto& file: vec) {
         auto const msg = u8"请输入皮肤“" + file.filename().u8string() + u8"”的昵称";
-        const auto qSkinName = QInputDialog::getText(glb->glbGetMenu(), "悬浮窗皮肤", Utf82QString(msg));
+        const auto qSkinName = QInputDialog::getText(mgr->m_Menu, "悬浮窗皮肤", Utf82QString(msg));
 
         if (qSkinName.isEmpty()) {
-          glb->glbShowMsg("取消成功");
+          mgr->ShowMsg("取消成功");
           continue;
         }
 
         for (auto qobj: m_ChooseSkinMenu->actions()) {
           if (qobject_cast<QAction*>(qobj)->text() == qSkinName) {
-            glb->glbShowMsg("请勿输入已经存在的名称！");
+            mgr->ShowMsg("请勿输入已经存在的名称！");
             continue;
           }
         }
@@ -147,16 +147,14 @@ void NeoSpeedboxPlg::InitFunctionMap() {
   };
   m_Followers.insert(&setDropSkin);
 
-  auto& followers = glb->glbGetSystemTray()->m_Followers;
+  auto& followers = mgr->m_Tray->m_Followers;
   followers.insert(&m_ActiveWinodow);
 }
 
 QAction* NeoSpeedboxPlg::InitMenuAction()
 {
   auto action = m_MainMenu->addAction("网卡选择");
-  m_NetCardMenu = new QMenu(m_MainMenu);
-  m_NetCardMenu->setAttribute(Qt::WA_TranslucentBackground, true);
-  m_NetCardMenu->setToolTipsVisible(true);
+  m_NetCardMenu = new MenuBase(m_MainMenu);
   action->setMenu(m_NetCardMenu);
   m_Speedbox = new SpeedBox(this, m_Settings, m_NetCardMenu);
   AddMainObject(m_Speedbox);   // 添加到对象列表
@@ -235,11 +233,9 @@ YJson& NeoSpeedboxPlg::InitSettings(YJson& settings)
   // we may not need to call SaveSettings;
 }
 
-void NeoSpeedboxPlg::LoadRemoveSkinMenu(QMenu* parent)
+void NeoSpeedboxPlg::LoadRemoveSkinMenu(MenuBase* parent)
 {
-  m_RemoveSkinMenu = new QMenu(parent);
-  m_RemoveSkinMenu->setAttribute(Qt::WA_TranslucentBackground, true);
-  m_RemoveSkinMenu->setToolTipsVisible(true);
+  m_RemoveSkinMenu = new MenuBase(parent);
   const auto& curSkin = m_Settings[u8"CurSkin"].getValueString();
   for (const auto& [name, path]: m_Settings[u8"UserSkins"].getObject()) {
     auto const action = m_RemoveSkinMenu->addAction(PluginObject::Utf82QString(name));
@@ -248,12 +244,10 @@ void NeoSpeedboxPlg::LoadRemoveSkinMenu(QMenu* parent)
   }
 }
 
-void NeoSpeedboxPlg::LoadChooseSkinMenu(QMenu* parent)
+void NeoSpeedboxPlg::LoadChooseSkinMenu(MenuBase* parent)
 {
-  m_ChooseSkinMenu = new QMenu(parent);
+  m_ChooseSkinMenu = new MenuBase(parent);
   m_ChooseSkinGroup = new QActionGroup(m_ChooseSkinMenu);
-  m_ChooseSkinMenu->setToolTipsVisible(true);
-  m_ChooseSkinMenu->setAttribute(Qt::WA_TranslucentBackground, true);
 
   const std::u8string& curSkin = m_Settings[u8"CurSkin"].getValueString();
   for (const auto& [name, path]: m_Settings[u8"UserSkins"].getObject()) {
@@ -267,12 +261,10 @@ void NeoSpeedboxPlg::LoadChooseSkinMenu(QMenu* parent)
   }
 }
 
-void NeoSpeedboxPlg::LoadHideAsideMenu(QMenu* parent)
+void NeoSpeedboxPlg::LoadHideAsideMenu(MenuBase* parent)
 {
 
-  const auto menu = new QMenu(parent);
-  menu->setToolTipsVisible(true);
-  menu->setAttribute(Qt::WA_TranslucentBackground, true);
+  const auto menu = new MenuBase(parent);
   parent->addAction("贴边隐藏")->setMenu(menu);
 
   auto lst = {"上", "右", "下", "左"};
@@ -286,7 +278,7 @@ void NeoSpeedboxPlg::LoadHideAsideMenu(QMenu* parent)
       auto& obj = m_Settings[u8"HideAside"];
       obj = on ? (obj.getValueInt() | bit) : (obj.getValueInt() & ~bit);
       mgr->SaveSettings();
-      glb->glbShowMsg("设置成功！");
+      mgr->ShowMsg("设置成功！");
     });
     bit <<= 1;
   }
@@ -298,7 +290,7 @@ void NeoSpeedboxPlg::RemoveSkinConnect(QAction* action)
     const auto qname = action->text();
     const auto name = PluginObject::QString2Utf8(qname);
     if (name == m_Settings[u8"CurSkin"].getValueString()) {
-      glb->glbShowMsg("当前皮肤正在使用，无法删除！");
+      mgr->ShowMsg("当前皮肤正在使用，无法删除！");
       return;
     }
     m_Settings[u8"UserSkins"].remove(name);
@@ -315,7 +307,7 @@ void NeoSpeedboxPlg::RemoveSkinConnect(QAction* action)
       m_ChooseSkinGroup->removeAction(anotherAction);
       m_ChooseSkinMenu->removeAction(anotherAction);
     }
-    glb->glbShowMsg("删除皮肤成功！");
+    mgr->ShowMsg("删除皮肤成功！");
   });
 }
 
@@ -325,9 +317,9 @@ void NeoSpeedboxPlg::ChooseSkinConnect(QAction* action)
     m_Settings[u8"CurSkin"] = PluginObject::QString2Utf8(action->text());
     mgr->SaveSettings();
     if (m_Speedbox->UpdateSkin()) {
-      glb->glbShowMsg("更换皮肤成功！");
+      mgr->ShowMsg("更换皮肤成功！");
     } else {
-      glb->glbShowMsg("更换皮肤失败！");
+      mgr->ShowMsg("更换皮肤失败！");
     }
   });
 }
@@ -336,28 +328,28 @@ void NeoSpeedboxPlg::AddSkinConnect(QAction* action)
 {
   QObject::connect(action, &QAction::triggered, [action, this](){
       // const auto qname = action->text();
-      const auto qSkinName = QInputDialog::getText(glb->glbGetMenu(), "悬浮窗皮肤", "请输入皮肤昵称：");
+      const auto qSkinName = QInputDialog::getText(mgr->m_Menu, "悬浮窗皮肤", "请输入皮肤昵称：");
       if (qSkinName.isEmpty()) {
-        glb->glbShowMsg("取消成功");
+        mgr->ShowMsg("取消成功");
         return;
       }
 
       for (auto qobj: m_ChooseSkinMenu->actions()) {
         if (qobject_cast<QAction*>(qobj)->text() == qSkinName) {
-          glb->glbShowMsg("请勿输入已经存在的名称！");
+          mgr->ShowMsg("请勿输入已经存在的名称！");
           return;
         }
       }
 
-      const auto qFilePath = QFileDialog::getOpenFileName(glb->glbGetMenu(), "选择文件", ".", "(*.ui)");
+      const auto qFilePath = QFileDialog::getOpenFileName(mgr->m_Menu, "选择文件", ".", "(*.dll)");
       if (qFilePath.isEmpty()) {
-        glb->glbShowMsg("取消成功");
+        mgr->ShowMsg("取消成功");
         return;
       }
       fs::path path = qFilePath.toStdU16String();
       path.make_preferred();
       if (!path.has_filename()) {
-        glb->glbShowMsg("添加失败！");
+        mgr->ShowMsg("添加失败！");
         return;
       }
 
@@ -389,7 +381,7 @@ void NeoSpeedboxPlg::AddSkin(const QString& name, const fs::path& path)
 
   action = m_RemoveSkinMenu->addAction(name);
   RemoveSkinConnect(action);
-  glb->glbShowMsg("添加皮肤" + name + "成功！");
+  mgr->ShowMsg("添加皮肤" + name + "成功！");
 }
 
 void NeoSpeedboxPlg::LoadFonts() {
