@@ -32,19 +32,28 @@ public:
     std::string location; // Redirect location
   };
   template<typename Char=char>
-  explicit HttpLib(std::basic_string<Char> url):
+  explicit HttpLib(std::basic_string_view<Char> url):
     m_Url(url.cbegin(), url.cend()),
     m_hSession(nullptr),
     m_ProxySet(false)
   {
     HttpInit();
   }
+  template<typename Char=char>
+  explicit HttpLib(std::basic_string<Char> url)
+    : HttpLib(std::basic_string_view<Char>(url))
+  {
+  }
   ~HttpLib();
 public:
   template<typename Char=char>
-  void SetUrl(std::basic_string<Char> url) {
+  void SetUrl(std::basic_string_view<Char> url) {
     m_Url.assign(url.begin(), url.end());
     HttpInit();
+  }
+  template<typename Char=char>
+  void SetUrl(const std::basic_string<Char>& url) {
+    SetUrl(std::basic_string_view<Char>(url));
   }
   void SetHeader(std::string key, std::string value) {
     m_Headers[key] = value;

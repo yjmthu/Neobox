@@ -52,7 +52,7 @@ PluginCenter::~PluginCenter()
 void PluginCenter::SetupUi()
 {
   setWindowTitle(QStringLiteral("Neobox-控制面板"));
-  setFixedSize(520, 360);
+  setFixedSize(520, 380);
   setWindowFlag(Qt::FramelessWindowHint);
   setAttribute(Qt::WA_TranslucentBackground, true);
   setAttribute(Qt::WA_DeleteOnClose, true);
@@ -89,8 +89,20 @@ void PluginCenter::InitConnect()
 bool PluginCenter::UpdatePluginData()
 {
   if (m_PluginData) return true;
-  
-  bool result = false, exit = false;
+  auto const url = m_RawUrl + u8"plugins.json"s;
+  auto result = DownloadFile(url);
+  if (!result) {
+    return false;
+  }
+  // https://gitlab.com/yjmthu1/neoboxplg/-/raw/main/plugins/neohotkeyplg/manifest.json
+  m_PluginData = new YJson(result->begin(), result->end());
+
+  return true;
+}
+
+std::optional<std::string> PluginCenter::DownloadFile(std::u8string_view url)
+{
+  std::optional<std::string> result = std::nullopt;
 
   if (!HttpLib::IsOnline()) {
     mgr->ShowMsgbox(u8"失败", u8"请检查网络连接！");
@@ -100,15 +112,15 @@ bool PluginCenter::UpdatePluginData()
   const auto dialog = new DownloadingDlg(this);
   dialog->setAttribute(Qt::WA_DeleteOnClose, true);
   dialog->m_PreventClose = true;
-  connect(this, &PluginCenter::DownloadFinished, dialog, &QDialog::close);
+  connect(m_Instance, &PluginCenter::DownloadFinished, dialog, &QDialog::close);
   // connect(this, &ItemBase::Downloading, dialog, &DownloadingDlg::SetPercent);
 
   std::thread thread([&](){
-    HttpLib clt(m_RawUrl + u8"plugins.json"s);
+    HttpLib clt(url);
+    clt.SetHeader("User-Agent", "Libcurl in Neobox App/1.0");
     auto res = clt.Get();
     if (res->status == 200) {
-      m_PluginData = new YJson(res->body.begin(), res->body.end());
-      result = true;
+      result = std::move(res->body);
     }
     dialog->m_PreventClose = false;
     emit DownloadFinished();

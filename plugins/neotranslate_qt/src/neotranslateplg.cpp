@@ -1,5 +1,5 @@
 #include <neotranslateplg.h>
-#include <translatedlg.h>
+#include <translatedlg.hpp>
 #include <yjson.h>
 #include <menubase.hpp>
 

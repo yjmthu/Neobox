@@ -57,6 +57,8 @@ private slots:
   void UpdateHotKeyEditor(QString text);
   void UpdatePluginMethord(int index);
   void ChangeEnabled(bool on);
+  void ChooseDirectory();
+  void ChooseProgram();
   bool SaveHotKeyData();
   void AddEmptyItem();
   void RemoveItem();

@@ -9,7 +9,7 @@ set(CMAKE_INSTALL_PREFIX "install")
 # https://zhuanlan.zhihu.com/p/429849408
 # set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:DebugDLL>")
 
-project(Neobox VERSION 2.3.2 LANGUAGES CXX C)
+project(Neobox VERSION 2.3.3 LANGUAGES CXX C)
 
 string(TIMESTAMP COMPILE_TIME %Y-%m-%d)
 set(NEOBOX_BUILD_TIME ${COMPILE_TIME})

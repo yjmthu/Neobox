@@ -3,7 +3,13 @@
 
 #include <QWidget>
 
-class WidgetBase: public QWidget
+#if defined(MYSHAREDLIB_LIBRARY)
+#  define MYSHAREDLIB_EXPORT Q_DECL_IMPORT
+#else
+#  define MYSHAREDLIB_EXPORT Q_DECL_EXPORT
+#endif
+
+class MYSHAREDLIB_EXPORT WidgetBase: public QWidget
 {
   Q_OBJECT
 

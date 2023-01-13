@@ -1,5 +1,5 @@
-#ifndef HEIGHTCTRL_H
-#define HEIGHTCTRL_H
+#ifndef HEIGHTCTRL_HPP
+#define HEIGHTCTRL_HPP
 
 #include <QFrame>
 
@@ -9,6 +9,8 @@
 
 class HeightCtrl: public QFrame 
 {
+  Q_OBJECT
+
 protected:
   void wheelEvent(QWheelEvent *event) override;
 public:
@@ -35,4 +37,4 @@ protected:
   static constexpr int m_DefaultRatio = 180;
 };
 
-#endif // HEIGHTCTRL_H
+#endif // HEIGHTCTRL_HPP

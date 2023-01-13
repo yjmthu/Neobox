@@ -1,5 +1,5 @@
-#ifndef TRANSLATEDLG_H
-#define TRANSLATEDLG_H
+#ifndef TRANSLATEDLG_HPP
+#define TRANSLATEDLG_HPP
 
 #include <widgetbase.hpp>
 #include <QPlainTextEdit>
@@ -8,8 +8,12 @@
 #include <translate.h>
 #include <pluginobject.h>
 
+class QPushButton;
+
 class NeoTranslateDlg : public WidgetBase
 {
+  Q_OBJECT
+
 protected:
   void showEvent(QShowEvent*) override;
   void hideEvent(QHideEvent *event) override;
@@ -19,8 +23,7 @@ public:
   explicit NeoTranslateDlg(class YJson& setings);
   ~NeoTranslateDlg();
   void ToggleVisibility();
-  template<typename _Utf8Array>
-  void GetResultData(const _Utf8Array& text);
+  void GetResultData(QUtf8StringView text);
 
 private:
   friend class HeightCtrl;
@@ -31,8 +34,9 @@ private:
   class QComboBox *m_BoxFrom, *m_BoxTo;
   class Translate* m_Translate;
   class HeightCtrl* m_HeightCtrl;
-  class QPushButton *m_BtnCopyFrom, *m_BtnCopyTo;
-  class QPushButton* m_BtnTransMode;
+  QPushButton* m_BtnReverse;
+  QPushButton *m_BtnCopyFrom, *m_BtnCopyTo;
+  QPushButton* m_BtnTransMode;
   QPoint m_LastPostion;
   QSize m_LastSize;
   bool m_LanPairChanged = false;
@@ -44,19 +48,11 @@ private:
   void CreateFromRightMenu(QMouseEvent* event);
   void CreateToRightMenu(QMouseEvent* event);
   void AddCombbox(class QHBoxLayout* layout);
+private slots:
+  void ReverseLanguage();
   void ChangeLanguageSource(bool checked);
   void ChangeLanguageFrom(int index);
   void ChangeLanguageTo(int index);
 };
 
-template<typename _Utf8Array>
-void NeoTranslateDlg::GetResultData(const _Utf8Array& text) {
-  if (!m_TextFromChanged) return;
-  m_TextTo->clear();
-  if (text.size() != 0) {
-     m_Translate->GetResult(text);
-  }
-  m_TextFromChanged = false;
-}
-
-#endif // TRANSLATEDLG_H
+#endif // TRANSLATEDLG_HPP

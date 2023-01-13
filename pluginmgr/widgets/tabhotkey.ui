@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>600</width>
-    <height>446</height>
+    <height>448</height>
    </rect>
   </property>
   <property name="maximumSize">
@@ -36,6 +36,9 @@
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
         <widget class="QPushButton" name="pBtnRemove">
+         <property name="toolTip">
+          <string>删除选中热键及配置</string>
+         </property>
          <property name="text">
           <string>-</string>
          </property>
@@ -43,6 +46,9 @@
        </item>
        <item>
         <widget class="QPushButton" name="pBtnAdd">
+         <property name="toolTip">
+          <string>添加热键及配置</string>
+         </property>
          <property name="text">
           <string>+</string>
          </property>
@@ -130,10 +136,17 @@
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="lineProgram"/>
+            <widget class="QLineEdit" name="lineProgram">
+             <property name="toolTip">
+              <string>程序路径</string>
+             </property>
+            </widget>
            </item>
            <item>
             <widget class="QToolButton" name="tBtnProgram">
+             <property name="toolTip">
+              <string>选择程序</string>
+             </property>
              <property name="text">
               <string>...</string>
              </property>
@@ -151,7 +164,11 @@
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="lineArguments"/>
+            <widget class="QLineEdit" name="lineArguments">
+             <property name="toolTip">
+              <string>命令行参数</string>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>
@@ -165,10 +182,17 @@
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="lineDirectory"/>
+            <widget class="QLineEdit" name="lineDirectory">
+             <property name="toolTip">
+              <string>程序初始工作目录</string>
+             </property>
+            </widget>
            </item>
            <item>
             <widget class="QToolButton" name="tBtnDirectory">
+             <property name="toolTip">
+              <string>选择工作目录</string>
+             </property>
              <property name="text">
               <string>...</string>
              </property>
@@ -247,7 +271,7 @@
          <item>
           <widget class="QLabel" name="label_4">
            <property name="text">
-            <string>热键</string>
+            <string>热键录制</string>
            </property>
           </widget>
          </item>
@@ -267,7 +291,7 @@
          <item>
           <widget class="QCheckBox" name="chkRegisterHotKey">
            <property name="text">
-            <string>注册</string>
+            <string>是否注册</string>
            </property>
           </widget>
          </item>

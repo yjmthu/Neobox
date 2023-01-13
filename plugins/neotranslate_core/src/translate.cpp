@@ -150,6 +150,25 @@ void Translate::SetSource(Source dict) {
   m_LanPair = (dict == Baidu) ? &m_LanPairBaidu: &m_LanPairYoudao;
 }
 
+std::optional<std::pair<int, int>> Translate::ReverseLanguage()
+{
+  auto const& dict = m_LanguageCanFromTo[m_Source];
+  auto const& from = dict[m_LanPair->f()].first;
+  auto const& to = dict[m_LanPair->f()].second[m_LanPair->t()];
+  auto iterFrom = std::find_if(dict.cbegin(), dict.cend(), [&to](decltype(dict.front())& item){
+    return item.first == to;
+  });
+  if (iterFrom == dict.cend()) return std::nullopt;
+  auto iterTo = std::find_if(iterFrom->second.cbegin(), iterFrom->second.cend(), [&from](const std::u8string& item){
+    return item == from;
+  });
+  if (iterTo == iterFrom->second.cend()) return std::nullopt;
+  return std::pair {
+    static_cast<int>(iterFrom - dict.cbegin()),
+    static_cast<int>(iterTo - iterFrom->second.cbegin())
+  };
+}
+
 inline static std::u8string GetSalt() {
   auto const now = chrono::system_clock::now();
   auto const count = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();

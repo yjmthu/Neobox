@@ -11,6 +11,7 @@
 #include <QStandardItem>
 #include <QKeyEvent>
 #include <QMessageBox>
+#include <QFileDialog>
 
 using namespace std::literals;
 
@@ -64,6 +65,8 @@ void TabHotKey::InitLayout()
 
 void TabHotKey::InitSignals()
 {
+  connect(ui->tBtnDirectory, &QToolButton::clicked, this, &TabHotKey::ChooseDirectory);
+  connect(ui->tBtnProgram, &QToolButton::clicked, this, &TabHotKey::ChooseProgram);
   connect(ui->listWidget, &QListWidget::currentTextChanged, this, &TabHotKey::UpdateHotKeyEditor, Qt::DirectConnection);
   connect(ui->pBtnHotKey, &QPushButton::clicked, this, &TabHotKey::ChangeEnabled);
   connect(ui->pBtnSaveContent, &QPushButton::clicked, this, &TabHotKey::SaveHotKeyData);
@@ -209,8 +212,34 @@ void TabHotKey::ChangeEnabled(bool on)
   }
 }
 
+void TabHotKey::ChooseDirectory()
+{
+  auto curDir = ui->lineDirectory->text();
+  if (!QDir().exists(curDir)) curDir = ".";
+  auto dirString = QFileDialog::getExistingDirectory(this, "选择程序工作目录", curDir);
+  if (dirString.isEmpty()) return;
+  ui->lineDirectory->setText(QDir::toNativeSeparators(dirString));
+}
+
+void TabHotKey::ChooseProgram()
+{
+  auto curDir = ui->lineProgram->text();
+  if (!QFile::exists(curDir)) {
+    curDir = ".";
+  } else {
+    curDir.push_back("/..");
+  }
+  auto fileString = QFileDialog::getOpenFileName(this, "选择程序", curDir);
+  if (fileString.isEmpty()) return;
+  ui->lineProgram->setText(QDir::toNativeSeparators(fileString));
+}
+
 bool TabHotKey::SaveHotKeyData()
 {
+  if (!ui->listWidget->currentItem()) {
+    QMessageBox::information(this, "提示", "请先点击左下方加号，添加一个新的配置文件！");
+    return false;
+  }
   if (!IsDataInvalid()) {
     QMessageBox::information(this, "错误", "数据冲突或数据不完整，无法保存。");
     return false;
@@ -373,8 +402,9 @@ bool TabHotKey::SaveHotKeyData()
 
 bool TabHotKey::IsDataInvalid() const
 {
-  if (!ui->listWidget->currentItem())
+  if (!ui->listWidget->currentItem()) {
     return false;
+  }
   bool result = true;
   if (ui->rBtnProcess->isChecked()) {
     auto text = ui->lineProgram->text();
@@ -441,10 +471,14 @@ void TabHotKey::RemoveItem()
   m_Plugins.erase(text);
   m_Commands.erase(text);
   
+  if (text.isEmpty()) return;
+
   auto keyString = PluginObject::QString2Utf8(text);
   auto iter = std::find_if(m_Settings.beginA(), m_Settings.endA(), [&keyString](const YJson& data){
     return data[u8"KeySequence"].getValueString() == keyString;
   });
+
+  if (iter == m_Settings.endA()) return;
 
   if (iter->find(u8"Enabled")->second.isTrue()) {
     m_Shortcut.UnregisterHotKey(keyString);

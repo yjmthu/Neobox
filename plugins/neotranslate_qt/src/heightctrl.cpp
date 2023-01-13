@@ -1,5 +1,5 @@
-#include <heightctrl.h>
-#include <translatedlg.h>
+#include <heightctrl.hpp>
+#include <translatedlg.hpp>
 #include <yjson.h>
 
 #include <QWheelEvent>

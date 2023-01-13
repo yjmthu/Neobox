@@ -44,12 +44,13 @@ void WidgetBase::mouseReleaseEvent(QMouseEvent* event)
 {
   if (event->button() == Qt::LeftButton) {
     setMouseTracking(false);
+    m_ConstPos = QPoint();
   }
 }
 
 void WidgetBase::mouseMoveEvent(QMouseEvent* event)
 {
-  if(event->buttons() == Qt::LeftButton) {
+  if(event->buttons() == Qt::LeftButton && !m_ConstPos.isNull()) {
     move(this->pos() + event->pos() - m_ConstPos);
     event->accept();
   }

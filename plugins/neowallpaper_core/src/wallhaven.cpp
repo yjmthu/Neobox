@@ -269,9 +269,9 @@ size_t Wallhaven::DownloadUrl(const std::u8string& mainUrl) {
   auto Get = [&clt, &url](int i){
     auto curUrl = (i == 1 ? url : url + "&page=" + std::to_string(i));
     if (!clt)
-      clt = std::unique_ptr<HttpLib>(new HttpLib(std::move(curUrl)));
+      clt = std::unique_ptr<HttpLib>(new HttpLib(curUrl));
     else
-      clt->SetUrl(std::move(curUrl));
+      clt->SetUrl(curUrl);
     return clt->Get();
   };
 

@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.10.1)
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui)
 qt_standard_project_setup()
 
+add_definitions(-DMYSHAREDLIB_LIBRARY)
+
 file(GLOB plugin_subdirs */CMakeLists.txt)
 
 foreach(plugin_subdir_cmake ${plugin_subdirs})

@@ -1,6 +1,7 @@
 #ifndef TRANSLATE_H
 #define TRANSLATE_H
 
+#include <optional>
 #include <stdint.h>
 #include <map>
 #include <string>
@@ -43,6 +44,7 @@ public:
   }
   void SetSource(Source dict);
   inline Source GetSource() const { return m_Source; }
+  std::optional<std::pair<int, int>> ReverseLanguage();
 
 private:
   LanPair m_LanPairBaidu, m_LanPairYoudao;

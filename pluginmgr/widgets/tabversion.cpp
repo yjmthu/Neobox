@@ -1,4 +1,5 @@
 #include "tabversion.hpp"
+#include "plugincenter.hpp"
 
 #include <yjson.h>
 #include <httplib.h>
@@ -78,18 +79,15 @@ void TabVersion::GetUpdate()
     QMessageBox::information(this, "提示", "当前没有网络，请稍后再试！");
     return;
   }
-  HttpLib clt(std::string(NEOBOX_LATEST_URL));
-  clt.SetHeader("User-Agent", "Libcurl in Neobox App/1.0");
-  auto res = clt.Get();
-  if (200 != res->status)
-  {
-    QMessageBox::information(this, "提示", "获取信息失败，请稍后再试！");
+  const char url[] = NEOBOX_LATEST_URL;
+  auto res = PluginCenter::m_Instance->DownloadFile(std::u8string_view((const char8_t*)url));
+  if (!res) {
+    QMessageBox::information(this, "提示", "下载失败，请稍后再试！");
     return;
   }
-
   m_btnChk->setEnabled(false);
   // QString qhtml = m_Text->text();
-  const YJson jsAboutNew(res->body.begin(), res->body.end());
+  const YJson jsAboutNew(res->begin(), res->end());
   std::u8string buffer(u8"<h2>最新版本</h2><p style='color: #FF00FF;'>");
   buffer.append(jsAboutNew[u8"name"].getValueString());
 

@@ -157,29 +157,23 @@ QRadioButton::indicator:checked:hover {
 }
 
 QPushButton {
-  padding: 6px 12px 6px 12px;
+  padding: 6px 12px;
   border-radius: 4px;
   background-color: rgba(200, 220, 230, 235);
   color: #3498db;
 }
 
 QPushButton[enabled="false"] {
-  padding: 6px 12px 6px 12px;
-  border-radius: 4px;
   background-color: #D9D9D9;
   color: #64A8FF;
 }
 
 QPushButton:checked {
-  padding: 6px 12px 6px 12px;
-  border-radius: 4px;
   background-color: #cceeee;
   color: #3498db;
 }
 
 QPushButton:hover {
-  padding: 6px 12px 6px 12px;
-  border-radius: 4px;
   background-color: #c8e3f5;
   color: #3498db;
 }
@@ -203,7 +197,11 @@ QGroupBox {
 
 QComboBox {
   border-radius: 3px;
-  padding: 1px 5px;
+  padding: 6px 12px;
+  background-color: rgba(73, 255, 255, 100);
+}
+
+QComboBox:hover {
   background-color: rgba(23, 234, 234, 100);
 }
 
@@ -222,14 +220,30 @@ QComboBox::drop-down:on {
 */
 
 QComboBox::drop-down {
-  subcontrol-origin:padding;
+  subcontrol-origin: padding;
   subcontrol-position:top right;
   width:15px;
-  border-left-width:0px;
-  border-left-style:solid;
-  border-top-right-radius:3px;
-  border-bottom-right-radius:3px;
-  border-left-color:#242424;
+  border-left-width: 0px;
+  border-left-style: solid;
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
+  border-left-color: #242424;
+}
+
+QComboBox QAbstractItemView::item{
+	color: #666666;
+	padding: 6px 12px;
+	background-color: white;
+}
+
+QComboBox QAbstractItemView::item:hover {
+  background-color: #409CE1;
+  color: white;
+}
+
+QComboBox QAbstractItemView::item:selected {
+  background-color: #409CE1;
+  color: white;
 }
 
 QListView::item {
