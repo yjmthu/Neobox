@@ -7,6 +7,11 @@ QWidget#whiteBackground {
   background-color: white;
 }
 
+QWidget#grayBackground {
+  background-color: rgb(200, 200, 200);
+  border-radius: 3px;
+}
+
 QLabel {
   background-color: transparent;
 }
@@ -154,7 +159,7 @@ QRadioButton::indicator:checked:hover {
 QPushButton {
   padding: 6px 12px 6px 12px;
   border-radius: 4px;
-  background-color: rgba(229, 242, 250, 255);
+  background-color: rgba(200, 220, 230, 235);
   color: #3498db;
 }
 
@@ -234,26 +239,21 @@ QListView::item {
 
 QListView::item:hover {
   color: #DCDCDC;
-  background-color: #3da79d;
+  background-color: #6dd7cd;
 }
 
 QListView::item:selected {
   color: #DCDCDC;
-  background-color: #3da79d;
+  background-color: #4db7ad;
 }
 
 QProgressBar {
-  background-color: gray;
-  border-radius: 10px;
+  height: 6px;
+  background-color: #e8eaed;
+  border-radius: 6px;
 }
 
 QProgressBar::chunk {
-  background-color:
-    qlineargradient(
-      spread:pad,
-      x1:0, y1:0, x2:1, y2:0,
-      stop:0 purple,
-      stop:1 skyblue
-    );
-  border-radius: 10px;
+  background-color: #2f65b0;
+  border-radius: 6px;
 }

@@ -1,14 +1,15 @@
 #ifndef TRANSLATEDLG_H
 #define TRANSLATEDLG_H
 
-#include <QWidget>
+#include <widgetbase.hpp>
 #include <QPlainTextEdit>
 #include <QTextEdit>
 
 #include <translate.h>
 #include <pluginobject.h>
 
-class NeoTranslateDlg : public QWidget {
+class NeoTranslateDlg : public WidgetBase
+{
 protected:
   void showEvent(QShowEvent*) override;
   void hideEvent(QHideEvent *event) override;
@@ -24,6 +25,7 @@ public:
 private:
   friend class HeightCtrl;
   class YJson& m_Settings;
+  QWidget* m_CenterWidget;
   class QPlainTextEdit *m_TextFrom;
   class QTextEdit *m_TextTo;
   class QComboBox *m_BoxFrom, *m_BoxTo;
@@ -37,6 +39,7 @@ private:
   bool m_TextFromChanged = false;
 private:
   void SetStyleSheet();
+  void SetupUi();
   class QWidget* ReferenceObject() const;
   void CreateFromRightMenu(QMouseEvent* event);
   void CreateToRightMenu(QMouseEvent* event);

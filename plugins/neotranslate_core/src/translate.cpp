@@ -24,15 +24,20 @@ inline std::u8string GetTimeStamp() {
 }
 
 std::u8string Truncate(const Utf8Array& q) {
-  std::vector<char8_t const*> string;
+  std::vector<char const*> string;
   // char8_t const* start = q.begin, *stop = start + q.end;
   for (auto ptr = q.begin; ptr != q.end; ++ptr) {
-    if (*ptr >> 6 != 2) string.push_back(ptr);
+    if (*ptr >> 6 != 2) string.push_back(
+      reinterpret_cast<const char*>(ptr)
+    );
   }
   if (string.size() > 20) {
-    std::u8string result(q.begin, string[10]);
-    std::format_to(std::back_inserter(result), "{}", string.size());
-    result.append(string[string.size() - 10], q.end);
+    std::u8string result;
+    result.reserve(20);
+    std::format_to(std::back_inserter(result), "{}{}{}",
+      std::string_view(reinterpret_cast<const char*>(q.begin), string[10]),
+      string.size(),
+      std::string_view(string[string.size() - 10], reinterpret_cast<const char*>(q.end)));
     return result;
   }
   return std::u8string(q.begin, q.end);

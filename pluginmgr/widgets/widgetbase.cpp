@@ -2,9 +2,17 @@
 
 #include <QPushButton>
 #include <QMouseEvent>
+#include <QGraphicsDropShadowEffect>
+#include <QLabel>
+#include <QWindow>
+#include <QScreen>
 
-WidgetBase::WidgetBase(QWidget* parent)
+#include <Windows.h>
+#include <Windowsx.h>
+
+WidgetBase::WidgetBase(QWidget* parent, bool resizeAble)
   : QWidget(parent, Qt::FramelessWindowHint)
+  , m_ResizeAble(resizeAble)
 {
   setWindowIcon(QIcon(QStringLiteral(":/icons/neobox.ico")));
 }
@@ -17,7 +25,7 @@ WidgetBase::~WidgetBase()
 
 void WidgetBase::showEvent(QShowEvent *event)
 {
-  QPoint point(width() - 25, 12);
+  QPoint point(width() - 35, 20);
   for (auto button: m_Buttons) {
     button->move(point);
     point.rx() -= 30;
@@ -41,9 +49,11 @@ void WidgetBase::mouseReleaseEvent(QMouseEvent* event)
 
 void WidgetBase::mouseMoveEvent(QMouseEvent* event)
 {
-  if (event->buttons() == Qt::LeftButton) {
-    move(pos() + event->pos() - m_ConstPos);
+  if(event->buttons() == Qt::LeftButton) {
+    move(this->pos() + event->pos() - m_ConstPos);
+    event->accept();
   }
+  QWidget::mouseMoveEvent(event);
 }
 
 void WidgetBase::AddCloseButton()
@@ -86,3 +96,62 @@ void WidgetBase::AddMinButton()
   m_Buttons.push_back(button);
 }
 
+void WidgetBase::AddTitle(QString title)
+{
+  auto const label = new QLabel(title, this);
+  label->move(20, 12);
+}
+
+void WidgetBase::SetShadowAround(QWidget* widget, int radius)
+{
+  auto const effect = new QGraphicsDropShadowEffect(this);
+  effect->setOffset(0, 0);
+  effect->setColor(Qt::gray);
+  effect->setBlurRadius(radius);
+  widget->setGraphicsEffect(effect);
+}
+
+static constexpr int padding = 11;
+
+bool WidgetBase::nativeEvent(const QByteArray &eventType, void *message, qintptr *result)
+{
+  if (!m_ResizeAble) return false;
+
+  MSG* msg = (MSG*)message;   
+  switch(msg->message)
+  {
+  case WM_NCHITTEST:
+    int xPos = GET_X_LPARAM(msg->lParam);
+    int yPos = GET_Y_LPARAM(msg->lParam);
+    QWindow * handle = window()->windowHandle();
+    QScreen * screen = nullptr;
+    if(handle && (screen = handle->screen())) {
+      QScreen * screen = handle->screen();
+      QPoint offset = screen->geometry().topLeft();
+      xPos = (xPos - offset.x()) / screen->devicePixelRatio() + offset.x() - this->frameGeometry().x();
+      yPos = (yPos - offset.y()) / screen->devicePixelRatio() + offset.y() - this->frameGeometry().y();
+    } else {
+      return false;
+    }
+    if(xPos < padding && yPos < padding)
+      *result = HTTOPLEFT;
+    else if(xPos >= width() - padding && yPos < padding)
+      *result = HTTOPRIGHT;
+    else if(xPos < padding && yPos >= height() - padding)
+      *result = HTBOTTOMLEFT;
+    else if(xPos >= width() - padding && yPos >= height() - padding)
+      *result = HTBOTTOMRIGHT;
+    else if(xPos < padding)
+      *result =  HTLEFT;
+    else if(xPos >= width() - padding)
+      *result = HTRIGHT;
+    else if(yPos < padding)
+      *result = HTTOP;
+    else if(yPos >= height() - padding)
+      *result = HTBOTTOM;
+    else
+        break;
+    return true;
+  }
+  return false;
+}

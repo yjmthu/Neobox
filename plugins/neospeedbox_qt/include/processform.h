@@ -1,9 +1,9 @@
 #ifndef PROCESSFORM_H
 #define PROCESSFORM_H
 
-#include <QWidget>
+#include <widgetbase.hpp>
 
-class ProcessForm: public QWidget
+class ProcessForm: public WidgetBase
 {
 protected:
   void showEvent(QShowEvent*);

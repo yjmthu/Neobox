@@ -199,6 +199,14 @@ void TabHotKey::ChangeEnabled(bool on)
 
   ui->pBtnAdd->setEnabled(on);
   ui->pBtnRemove->setEnabled(on);
+
+  std::initializer_list<QWidget*> lst = {
+    ui->chkRegisterHotKey, ui->pBtnSaveContent, ui->pBtnAdd, ui->pBtnRemove
+  };
+  for (auto i: lst) {
+    style()->unpolish(i);
+    style()->polish(i);
+  }
 }
 
 bool TabHotKey::SaveHotKeyData()

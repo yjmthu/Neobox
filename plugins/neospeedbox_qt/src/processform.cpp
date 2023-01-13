@@ -11,7 +11,7 @@
 using namespace std::literals;
 
 ProcessForm::ProcessForm(SpeedBox* box)
-  : QWidget(nullptr, Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool)
+  : WidgetBase(nullptr)
   , m_ProcessCount(7)
   , m_SpeedBox(*box)
   , m_CenterWidget(new QWidget(this))
@@ -29,11 +29,13 @@ ProcessForm::~ProcessForm()
 
 void ProcessForm::SetupUi()
 {
+  setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
   setAttribute(Qt::WA_TranslucentBackground, true);
   auto const layout = new QVBoxLayout(this);
-  layout->setContentsMargins(0,0,0,0);
+  layout->setContentsMargins(11, 11, 11, 11);
   layout->addWidget(m_CenterWidget);
   m_CenterWidget->setStyleSheet("QWidget{background-color:white; border-radius: 3px;}");
+  SetShadowAround(m_CenterWidget);
 
   auto const begin = m_Labels, end = m_Labels + m_ProcessCount*3;
   for (auto ptr=begin; ptr != end; ++ptr) {
@@ -45,20 +47,20 @@ void ProcessForm::SetupUi()
   auto const titleLayout = new QHBoxLayout;
   QLabel* label = nullptr;
   label = new QLabel("名称", m_CenterWidget);
-  label->setFixedWidth(120);
+  label->setFixedWidth(130);
   titleLayout->addWidget(label);
   label = new QLabel("PID", m_CenterWidget);
-  label->setFixedWidth(60);
+  label->setFixedWidth(50);
   titleLayout->addWidget(label);
   label = new QLabel("内存", m_CenterWidget);
-  label->setFixedWidth(80);
+  label->setFixedWidth(60);
   titleLayout->addWidget(label);
   mainLayout->addLayout(titleLayout);
   }
 
   for (auto ptr = begin; ptr != end; ptr += 3) {
     auto const layout = new QHBoxLayout;
-    ptr[0].setFixedWidth(100);
+    ptr[0].setFixedWidth(130);
     ptr[1].setFixedWidth(50);
     ptr[2].setFixedWidth(60);
     layout->addWidget(ptr);

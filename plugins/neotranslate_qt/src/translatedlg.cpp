@@ -5,6 +5,7 @@
 #include <heightctrl.h>
 #include <yjson.h>
 #include <menubase.hpp>
+#include <neomenu.hpp>
 
 #include <QApplication>
 #include <QClipboard>
@@ -20,41 +21,25 @@
 #include <QWidget>
 
 NeoTranslateDlg::NeoTranslateDlg(YJson& settings)
-    : QWidget(nullptr, Qt::WindowStaysOnTopHint | Qt::Tool),
-      m_Settings(settings),
-      m_TextFrom(new QPlainTextEdit(this)),
-      m_TextTo(new QTextEdit(this)),
-      m_BoxFrom(new QComboBox(this)),
-      m_BoxTo(new QComboBox(this)),
-      m_Translate(new Translate(m_Settings, [this](const void* data, size_t size){
+    : WidgetBase(mgr->m_Menu, true)
+    , m_Settings(settings)
+    , m_CenterWidget(new QWidget(this))
+    , m_TextFrom(new QPlainTextEdit(m_CenterWidget))
+    , m_TextTo(new QTextEdit(m_CenterWidget))
+    , m_BoxFrom(new QComboBox(m_CenterWidget))
+    , m_BoxTo(new QComboBox(m_CenterWidget))
+    , m_Translate(new Translate(m_Settings, [this](const void* data, size_t size){
         if (m_Translate->GetSource() == Translate::Baidu)
           m_TextTo->setPlainText(QString::fromUtf8(reinterpret_cast<const char*>(data), size));
         else
           m_TextTo->setHtml(QString::fromUtf8(reinterpret_cast<const char*>(data), size));
-      })),
-      m_HeightCtrl(new HeightCtrl(this, settings[u8"HeightRatio"])),
-      m_BtnCopyFrom(new QPushButton(m_TextFrom)),
-      m_BtnCopyTo(new QPushButton(m_TextTo)),
-      m_BtnTransMode(new QPushButton(this))
+      }))
+    , m_HeightCtrl(new HeightCtrl(this, settings[u8"HeightRatio"]))
+    , m_BtnCopyFrom(new QPushButton(m_TextFrom))
+    , m_BtnCopyTo(new QPushButton(m_TextTo))
+    , m_BtnTransMode(new QPushButton(m_CenterWidget))
 {
-  setWindowTitle("极简翻译");
-  m_TextFrom->setObjectName("neoTextFrom");
-  m_TextTo->setObjectName("neoTextTo");
-  m_TextTo->setReadOnly(true);
-  m_TextFrom->setMinimumHeight(30);
-  m_TextFrom->setMaximumHeight(30);
-  auto const pvLayout = new QVBoxLayout(this);
-  pvLayout->addWidget(m_TextFrom);
-  pvLayout->addWidget(m_TextTo);
-  auto const phLayout = new QHBoxLayout;
-  AddCombbox(phLayout);
-  auto const pButtonGet = new QPushButton("翻译", this);
-  phLayout->addWidget(pButtonGet);
-  pvLayout->addLayout(phLayout);
-  connect(pButtonGet, &QPushButton::clicked, this, [this](){
-    GetResultData(m_TextFrom->toPlainText().toUtf8());
-  });
-
+  SetupUi();
   m_BtnCopyFrom->setText("复制");
   m_BtnCopyTo->setText("复制");
   connect(m_BtnCopyFrom, &QPushButton::clicked, this, [this]() {
@@ -93,7 +78,7 @@ NeoTranslateDlg::~NeoTranslateDlg() {
   delete m_TextTo;
 }
 
-void NeoTranslateDlg::showEvent(QShowEvent*) {
+void NeoTranslateDlg::showEvent(QShowEvent* event) {
   static auto const defaultSize = size();
 
   resize(m_Settings[u8"AutoSize"].isTrue() ? defaultSize : m_LastSize);
@@ -138,6 +123,7 @@ void NeoTranslateDlg::showEvent(QShowEvent*) {
       GetResultData(m_TextFrom->toPlainText().toUtf8());
     }
   }
+  this->WidgetBase::showEvent(event);
 }
 
 void NeoTranslateDlg::hideEvent(QHideEvent *event)
@@ -281,6 +267,37 @@ void NeoTranslateDlg::ToggleVisibility()
     }
     show();
   }
+}
+
+void NeoTranslateDlg::SetupUi()
+{
+  setWindowTitle("极简翻译");
+  setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint | Qt::Tool);
+  setAttribute(Qt::WA_TranslucentBackground);
+  auto const mainLayout = new QHBoxLayout(this);
+  mainLayout->addWidget(m_CenterWidget);
+  m_CenterWidget->setObjectName("grayBackground");
+  AddTitle("极简翻译");
+  AddCloseButton();
+  SetShadowAround(m_CenterWidget);
+
+  m_TextFrom->setObjectName("neoTextFrom");
+  m_TextTo->setObjectName("neoTextTo");
+  m_TextTo->setReadOnly(true);
+  m_TextFrom->setMinimumHeight(30);
+  m_TextFrom->setMaximumHeight(30);
+  auto const pvLayout = new QVBoxLayout(m_CenterWidget);
+  pvLayout->setContentsMargins(11, 30, 11, 11);
+  pvLayout->addWidget(m_TextFrom);
+  pvLayout->addWidget(m_TextTo);
+  auto const phLayout = new QHBoxLayout;
+  AddCombbox(phLayout);
+  auto const pButtonGet = new QPushButton("翻译", m_CenterWidget);
+  phLayout->addWidget(pButtonGet);
+  pvLayout->addLayout(phLayout);
+  connect(pButtonGet, &QPushButton::clicked, this, [this](){
+    GetResultData(m_TextFrom->toPlainText().toUtf8());
+  });
 }
 
 void NeoTranslateDlg::SetStyleSheet()

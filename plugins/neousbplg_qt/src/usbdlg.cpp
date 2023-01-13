@@ -50,18 +50,14 @@ void UsbDlg::SetupUi()
 
   // 主控件设置
   auto layout = new QHBoxLayout(this);
-  layout->setContentsMargins(2, 2, 2, 2);
+  layout->setContentsMargins(11, 11, 11, 11);
   layout->addWidget(m_CenterWidget);
   m_CenterWidget->setStyleSheet(
     "QWidget { background-color: white; border-radius: 3px; }"
     "QPushButton { border-radius: 7px; }"
     "QToolTip { font-size: 9pt; }"
   );
-  auto const effect = new QGraphicsDropShadowEffect(this);
-  effect->setOffset(0, 0);
-  effect->setColor(Qt::darkGray);
-  effect->setBlurRadius(30);
-  m_CenterWidget->setGraphicsEffect(effect);
+  SetShadowAround(m_CenterWidget, 30);
 
   // 内容设置
   m_MainLayout->setContentsMargins(5, 5, 5, 0);

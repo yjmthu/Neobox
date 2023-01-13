@@ -57,15 +57,16 @@ void PluginCenter::SetupUi()
   setAttribute(Qt::WA_TranslucentBackground, true);
   setAttribute(Qt::WA_DeleteOnClose, true);
   setStyleSheet(mgr->m_Menu->styleSheet());
-  auto backGround = new QWidget(this);
-  backGround->setObjectName("emptyBackground");
-  m_MainLayout->setContentsMargins(3, 3, 3, 3);
-  m_MainLayout->addWidget(backGround);
+  auto const background = new QWidget(this);
+  background->setObjectName("emptyBackground");
+  m_MainLayout->setContentsMargins(11, 11, 11, 11);
+  m_MainLayout->addWidget(background);
+  SetShadowAround(background);
   
   AddCloseButton();
   AddMinButton();
 
-  auto layout = new QHBoxLayout(backGround);
+  auto const layout = new QHBoxLayout(background);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->addWidget(m_TabWidget);
   m_TabWidget->addTab(m_TabNative, "本地插件");

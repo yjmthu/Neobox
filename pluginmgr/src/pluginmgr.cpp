@@ -116,13 +116,12 @@ PluginMgr::PluginMgr()
   , m_Menu(new NeoMenu)
   , m_MsgDlg(new NeoMsgDlg(m_Menu))
   , m_Settings(InitSettings())
-  // , m_PluginMainMenu(nullptr)
-  // , m_PluginMainMenu(pluginMainMenu)
 {
   mgr = this;
   QApplication::setQuitOnLastWindowClosed(false);
   m_Tray->setContextMenu(m_Menu);
   m_Tray->show();
+  // QObject::connect(m_Menu->addAction("托盘图标"), &QAction::triggered, m_Tray, &QSystemTrayIcon::show);
 
   m_Shortcut = new Shortcut(m_Settings->find(u8"EventMap")->second);
 

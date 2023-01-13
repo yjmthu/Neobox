@@ -19,7 +19,7 @@ qt_wrap_ui(wrap_files
 ) # 根据UI文件生成头文件
 
 file(GLOB source_files include/*.hpp src/*.cpp widgets/*.cpp widgets/*.hpp)
-file(GLOB _resource_files fonts/*.ttf  icons/*  jsons/*.json scripts/* styles/*)
+file(GLOB _resource_files fonts/*.ttf  icons/*.png icons/*.ico  jsons/*.json scripts/* styles/*.qss)
 
 set(system_shared_files Shell32)
 set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui)
