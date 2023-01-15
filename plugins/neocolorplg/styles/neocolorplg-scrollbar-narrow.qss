@@ -1,0 +1,35 @@
+QScrollBar:vertical
+{
+  width: 4px;
+  background-color: transparent;
+  margin: 0px;
+  padding: 4px 0px;
+}
+
+QScrollBar::handle:vertical
+{
+  width: 4px;
+  background-color: #858585;
+  border-radius: 2px;
+  min-height: 10;
+}
+
+QScrollBar::add-line:vertical
+{
+  width: 4px;
+  height: 4px;
+  border-image: url(:/icons/scrollbar-down.png);
+  subcontrol-position: bottom;
+}
+
+QScrollBar::sub-line:vertical
+{
+  width: 4px;
+  height: 4px;
+  border-image: url(:/icons/scrollbar-up.png);
+  subcontrol-position:top;
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: none;
+}

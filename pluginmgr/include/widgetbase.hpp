@@ -20,17 +20,20 @@ protected:
   void mouseReleaseEvent(QMouseEvent* event) override;
   void mouseMoveEvent(QMouseEvent* event) override;
 public:
-  explicit WidgetBase(QWidget* parent, bool resizeAble=false);
+  explicit WidgetBase(QWidget* parent, bool resizeAble=false, bool stayTop=false);
   virtual ~WidgetBase();
 protected:
+  virtual void SaveTopState(bool isTop) {}
+  void AddTopButton();
   void AddCloseButton();
   void AddMinButton();
   void AddTitle(QString title);
-  void SetShadowAround(QWidget* widget, int radius=20);
+  void SetShadowAround(QWidget* widget, int radius=20, QColor col=Qt::black, int dx=0, int dy=0);
 private:
   QPoint m_ConstPos;
   std::vector<class QPushButton*> m_Buttons;
   const bool m_ResizeAble;
+  bool m_StayTop;
 };
 
 #endif // WIDGETBASE_HPP

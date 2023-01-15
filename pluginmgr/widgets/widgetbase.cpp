@@ -10,11 +10,13 @@
 #include <Windows.h>
 #include <Windowsx.h>
 
-WidgetBase::WidgetBase(QWidget* parent, bool resizeAble)
+WidgetBase::WidgetBase(QWidget* parent, bool resizeAble, bool stayTop)
   : QWidget(parent, Qt::FramelessWindowHint)
   , m_ResizeAble(resizeAble)
+  , m_StayTop(stayTop)
 {
   setWindowIcon(QIcon(QStringLiteral(":/icons/neobox.ico")));
+  setWindowFlag(Qt::WindowStaysOnTopHint, m_StayTop);
 }
 
 WidgetBase::~WidgetBase()
@@ -30,6 +32,7 @@ void WidgetBase::showEvent(QShowEvent *event)
     button->move(point);
     point.rx() -= 30;
   }
+  QWidget::showEvent(event);
 }
 
 void WidgetBase::mousePressEvent(QMouseEvent* event)
@@ -55,6 +58,38 @@ void WidgetBase::mouseMoveEvent(QMouseEvent* event)
     event->accept();
   }
   QWidget::mouseMoveEvent(event);
+}
+
+void WidgetBase::AddTopButton()
+{
+  auto const button = new QPushButton(this);
+  button->setFixedSize(14, 14);
+  button->setCheckable(true);
+  button->setChecked(m_StayTop);
+  button->setStyleSheet(
+    "QPushButton {"
+      "background-color: #009999;"
+      "border-radius: 7px;"
+    "}"
+    "QPushButton:hover {"
+      "background-color: #00aaaa;"
+      "border-radius: 7px;"
+      "border-image: url(:/icons/button-top.png);"
+    "}"
+    "QPushButton:checked {"
+      "background-color: #00dddd;"
+      "border-radius: 7px;"
+      // "border-image: url(:/icons/button-top.png);"
+    "}"
+  );
+  button->setToolTip("置顶");
+  connect(button, &QPushButton::clicked, this, [this](bool on){
+    setWindowFlag(Qt::WindowStaysOnTopHint, on);
+    m_StayTop = on;
+    show();
+    SaveTopState(on);
+  });
+  m_Buttons.push_back(button);
 }
 
 void WidgetBase::AddCloseButton()
@@ -103,11 +138,11 @@ void WidgetBase::AddTitle(QString title)
   label->move(20, 12);
 }
 
-void WidgetBase::SetShadowAround(QWidget* widget, int radius)
+void WidgetBase::SetShadowAround(QWidget* widget, int radius, QColor col, int dx, int dy)
 {
   auto const effect = new QGraphicsDropShadowEffect(this);
-  effect->setOffset(0, 0);
-  effect->setColor(Qt::gray);
+  effect->setOffset(dx, dy);
+  effect->setColor(col);
   effect->setBlurRadius(radius);
   widget->setGraphicsEffect(effect);
 }
@@ -125,9 +160,7 @@ bool WidgetBase::nativeEvent(const QByteArray &eventType, void *message, qintptr
     int xPos = GET_X_LPARAM(msg->lParam);
     int yPos = GET_Y_LPARAM(msg->lParam);
     QWindow * handle = window()->windowHandle();
-    QScreen * screen = nullptr;
-    if(handle && (screen = handle->screen())) {
-      QScreen * screen = handle->screen();
+    if (QScreen * screen = nullptr; handle && (screen = handle->screen())) {
       QPoint offset = screen->geometry().topLeft();
       xPos = (xPos - offset.x()) / screen->devicePixelRatio() + offset.x() - this->frameGeometry().x();
       yPos = (yPos - offset.y()) / screen->devicePixelRatio() + offset.y() - this->frameGeometry().y();

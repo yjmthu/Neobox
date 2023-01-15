@@ -14,7 +14,7 @@ class MYSHAREDLIB_EXPORT MenuBase: public QMenu
   Q_OBJECT
 
 public:
-  explicit MenuBase(QMenu* parent);
+  explicit MenuBase(QWidget* parent);
   virtual ~MenuBase();
 public:
   std::optional<std::u8string> GetExistingDirectory(

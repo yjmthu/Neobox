@@ -8,9 +8,10 @@
 namespace fs = std::filesystem;
 
 
-MenuBase::MenuBase(QMenu* parent)
+MenuBase::MenuBase(QWidget* parent)
   : QMenu(parent)
 {
+  setWindowFlag(Qt::FramelessWindowHint);
   setAttribute(Qt::WA_TranslucentBackground, true);
   setToolTipsVisible(true);
 }
