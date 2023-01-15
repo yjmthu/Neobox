@@ -15,7 +15,7 @@
 
 ## Neobox 插件管理
 
-目前 Neobox 共有 **7** 款插件，源代码在 `plugins` 目录下。插件二进制文件可在 [![Gitlab](https://img.shields.io/badge/Gitlab-yellow.svg?logo=gitlab)](https://gitlab.com/yjmthu1/neoboxplg) 中查看。
+目前 Neobox 共有 **8** 款插件，源代码在 `plugins` 目录下。插件二进制文件可在 [![Gitlab](https://img.shields.io/badge/Gitlab-yellow.svg?logo=gitlab)](https://gitlab.com/yjmthu1/neoboxplg) 中查看。
 
 - 插件下载方式
     1. `托盘图标` `右键菜单` `设置中心` `插件管理`，打开 Neobox 插件管理；
@@ -76,12 +76,6 @@
 
 ![](https://cloud.tsinghua.edu.cn/f/7db62f1da80f4374b742/?dl=1)
 
-- 壁纸引擎 **快捷键** 映射表
-
-| 按键 | 功能 |
-| --- | --- |
-| 热键信号 | 切换下一张图 |
-
 </details>
 
 
@@ -99,7 +93,6 @@
 
 | 按键 | 功能 |
 | --- | --- |
-| 热键信号 | 开启或关闭窗口 |
 | <kbd>enter</kbd> | *发送翻译请求* |
 | <kbd>ctrl</kbd> + <kbd>enter</kbd> | 换行 |
 | <kbd>alt</kbd> + <kbd>Left</kbd> | 向前切换from语言 |
@@ -122,7 +115,6 @@
 
 | 按键 | 功能 |
 | --- | --- |
-| 热键信号 | 文字识别截屏 |
 | <kbd>esc</kbd> | 退出截屏 |
 
 > 技巧： 1. 如果只需要识别简体中文和英文，选择 `chi_sim` 即可，选的语言种类越多识别可能 **越不准确** 。2. 截屏时，按住鼠标中键可移动选框；3. 进入截屏模式后，双击截取全屏。
@@ -141,15 +133,9 @@
 <details>
 <summary style="font-size:17pt;">热键管理</summary>
 
-- 简介：注册并捕获系统全局热键，并将结果发送至相应插件。至于插件具体作何反应与此插件无关。
+- 简介：注册并捕获系统全局热键，可调用进程或者插件。由于太方便，目前此插件已经合并到主程序。
 
 ![热键管理](https://cloud.tsinghua.edu.cn/f/11eae0e195d6402685d9/?dl=1)
-
-- 热键管理 **快捷键** 映射表
-
-| 按键 | 功能 |
-| --- | --- |
-| 热键信号 | 打开热键管理 |
 
 
 </details>
@@ -161,13 +147,29 @@
 
 ![U盘助手](https://cloud.tsinghua.edu.cn/f/ab29d5893d9a4980999e/?dl=1)
 
-- U盘助手 **快捷键** 映射表
+</details>
+
+<details>
+<summary style="font-size:17pt;">颜色拾取</summary>
+
+- 简介：模仿PowerToys Color Picker写的一个颜色拾取插件，已经具备了基本功能，颜色调整功能待开发。
+
+### 主界面
+
+![颜色拾取](https://cloud.tsinghua.edu.cn/f/4459d8406481429a8aca/?dl=1)
+
+### 拾取界面
+
+![颜色拾取](https://cloud.tsinghua.edu.cn/f/32d86d6947f54835945d/?dl=1)
 
 | 按键 | 功能 |
 | --- | --- |
-| 热键信号 | 打开或关闭窗口 |
+| <kbd>esc</kbd> | 退出拾取 |
+| 滚轮 | 放大或缩小细节 |
 
 </details>
+
+
 
 ## 编译环境
 
@@ -204,7 +206,7 @@
 
 > 这是我目前打算新开发的插件，如果有什么建议或者想参与插件开发，可以联系我。
 
-- [ ] 颜色拾取（PowerToys已具备，但为了跨平台还是先简单写一个吧）
+- [x] 颜色拾取（PowerToys已具备，但为了跨平台还是先简单写一个吧）
 - [ ] 天气预报
 - [ ] 动态壁纸
 - [x] U盘助手
