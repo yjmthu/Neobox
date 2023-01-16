@@ -15,7 +15,6 @@
 #include <windows.h>
 
 ColorDlg* ColorDlg::m_Instance = nullptr;
-HHOOK ColorDlg::m_Hoock[2] { nullptr, nullptr };
 
 void ColorDlg::SaveTopState(bool isTop)
 {
@@ -23,13 +22,12 @@ void ColorDlg::SaveTopState(bool isTop)
   mgr->SaveSettings();
 }
 
-ColorDlg::ColorDlg(YJson& settings, QWidget* parent)
-  : WidgetBase(parent, false, settings[u8"StayTop"].isTrue())
+ColorDlg::ColorDlg(YJson& settings)
+  : WidgetBase(nullptr, false, settings[u8"StayTop"].isTrue())
   , m_Settings(settings)
   , m_ColorsArray(settings[u8"History"])
   , m_CenterWidget(new QWidget(this))
   , ui(new Ui::ColorForm)
-  , m_SmallForm(nullptr)
   , m_ColorsChanged(false)
 {
   delete m_Instance;
@@ -43,37 +41,8 @@ ColorDlg::ColorDlg(YJson& settings, QWidget* parent)
 ColorDlg::~ColorDlg()
 {
   delete ui;
-  if (m_SmallForm) {
-    m_SmallForm->close();
-    m_SmallForm = nullptr;
-  }
   SaveHistory();
-  if (!UninstallHook()) {
-    mgr->ShowMsg(QStringLiteral("卸载钩子失败！\n错误代码【%1】").arg(GetLastError()));
-  }
   m_Instance = nullptr;
-}
-
-void ColorDlg::PickColor()
-{
-  if (m_SmallForm) {
-    mgr->ShowMsg("正在拾取颜色！");
-    return;
-  }
-  if (!InstallHook()) {
-    mgr->ShowMsg(QStringLiteral("注册钩子失败！\n错误代码【%1】。").arg(GetLastError()));
-    return;
-  }
-  POINT pt;
-  if (!GetCursorPos(&pt)) {
-    mgr->ShowMsg(QStringLiteral("获取鼠标位置失败！\n错误代码【%1】。").arg(GetLastError()));
-    return;
-  }
-  m_SmallForm = new SmallForm;
-  m_SmallForm->m_Position = QPoint(pt.x, pt.y);
-  m_SmallForm->show();
-
-  hide();
 }
 
 void ColorDlg::SetStyleSheet(QWidget* target, const QColor& color)
@@ -200,7 +169,7 @@ void ColorDlg::InitSignals()
   connect(ui->widget3, &QPushButton::clicked, this, std::bind(fnSetColor, this, 150, &QColor::darker));
   connect(ui->widget4, &QPushButton::clicked, this, std::bind(fnSetColor, this, 200, &QColor::darker));
 
-  connect(ui->btnPick, &QPushButton::clicked, this, &ColorDlg::PickColor);
+  connect(ui->btnPick, &QPushButton::clicked, this, std::bind(&SmallForm::PickColor, std::ref(m_Settings)));
 
   connect(ui->listWidget, &QListWidget::currentItemChanged, this, [this](QListWidgetItem* item){
     if (!item) return;
@@ -292,113 +261,6 @@ bool ColorDlg::eventFilter(QObject *watched, QEvent *event)
 		}
 	}
   return QWidget::eventFilter(watched, event);
-}
-
-static LRESULT CALLBACK LowLevelProc(int nCode, WPARAM wParam, LPARAM lParam)
-{
-  switch (wParam) {
-  case WM_LBUTTONDOWN:
-    ColorDlg::DoMouseMove(lParam);
-    ColorDlg::m_Instance->QuitHook(true);
-    return 1;
-  case WM_MOUSEWHEEL:
-    ColorDlg::DoMouseWheel(lParam);
-    return 1;
-  case WM_MOUSEMOVE:
-    ColorDlg::DoMouseMove(lParam);
-    break;
-		// PostMessage(
-    //   reinterpret_cast<HWND>(ColorDlg::m_Instance->winId()),
-    //   wParam, MK_CONTROL, MAKELPARAM(pt.x, pt.y)
-    // );
-    // break;
-  case WM_KEYDOWN: {
-		auto const keyHookStruct = (KBDLLHOOKSTRUCT*)lParam;
-    if (keyHookStruct->vkCode != VK_ESCAPE) break;
-    ColorDlg::m_Instance->QuitHook(false);
-		// PostMessage(
-    //   reinterpret_cast<HWND>(ColorDlg::m_Instance->winId()),
-    //   WM_KEYDOWN, VK_ESCAPE, keyHookStruct->scanCode
-    // );
-    return 1;
-	}
-  default:
-    break;
-  }
-	return CallNextHookEx(ColorDlg::m_Hoock[0], nCode, wParam, lParam);
-}
-
-bool ColorDlg::InstallHook()
-{
-  // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowshookexw
-
-  if (!m_Hoock[0]) {
-    m_Hoock[0] = SetWindowsHookExW(WH_MOUSE_LL, LowLevelProc, GetModuleHandleW(NULL), 0);
-  }
-  if (!m_Hoock[1]) {
-    m_Hoock[1] = SetWindowsHookExW(WH_KEYBOARD_LL, LowLevelProc, GetModuleHandleW(NULL), 0);
-  }
-  return m_Hoock[0] && m_Hoock[1];
-}
-
-bool ColorDlg::UninstallHook()
-{
-  if (!m_Hoock[0] && !m_Hoock[1]) {
-    return true;
-  }
-  if ((!m_Hoock[0] || UnhookWindowsHookEx(m_Hoock[0]))
-      &&
-      (!m_Hoock[1] || UnhookWindowsHookEx(m_Hoock[1])))
-  {
-    m_Hoock[0] = m_Hoock[1] = nullptr;
-    return true;
-  }
-  return false;
-}
-
-void ColorDlg::DoMouseMove(LPARAM lParam)
-{
-  if (!m_Instance || !m_Instance->m_SmallForm) {
-    mgr->ShowMsg("失败，未能获取颜色悬浮窗！");
-    return;
-  }
-  auto const mouseHookStruct = (MSLLHOOKSTRUCT*)lParam;
-  POINT pt = mouseHookStruct->pt;
-  m_Instance->m_SmallForm->m_Position = QPoint(pt.x, pt.y);
-  m_Instance->m_SmallForm->GetScreenColor(pt.x, pt.y);
-  m_Instance->m_SmallForm->AutoPosition();
-}
-
-void ColorDlg::DoMouseWheel(LPARAM lParam)
-{
-  if (!m_Instance || !m_Instance->m_SmallForm) {
-    mgr->ShowMsg("失败，未能获取颜色悬浮窗！");
-    return;
-  }
-  auto const mouseHookStruct = (MSLLHOOKSTRUCT*)lParam;
-  POINT pt = mouseHookStruct->pt;
-  auto zDelta = GET_WHEEL_DELTA_WPARAM(mouseHookStruct->mouseData);
-  m_Instance->m_SmallForm->m_Position = QPoint(pt.x, pt.y);
-  m_Instance->m_SmallForm->GetScreenColor(pt.x, pt.y);
-  m_Instance->m_SmallForm->AutoPosition();
-  m_Instance->m_SmallForm->MouseWheel(zDelta / WHEEL_DELTA);
-}
-
-void ColorDlg::QuitHook(bool succeed)
-{
-  if (m_SmallForm) {
-    if (succeed) {
-      AddColor(m_SmallForm->m_Color);
-    }
-    m_SmallForm->close();
-    m_SmallForm = nullptr;
-  }
-  UninstallHook();
-  if (succeed) {
-    show();
-  } else {
-    delete this;
-  }
 }
 
 void ColorDlg::AddColor(const QColor& color)

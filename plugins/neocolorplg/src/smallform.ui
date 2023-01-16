@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>156</width>
+    <width>166</width>
     <height>79</height>
    </rect>
   </property>
@@ -65,13 +65,13 @@ border-radius: 4px;</string>
        <widget class="QLabel" name="label">
         <property name="minimumSize">
          <size>
-          <width>70</width>
+          <width>80</width>
           <height>0</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
-          <width>70</width>
+          <width>80</width>
           <height>16777215</height>
          </size>
         </property>

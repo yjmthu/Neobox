@@ -20,12 +20,11 @@ protected:
   bool eventFilter(QObject *target, QEvent *event) override;
   // bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 public:
-  explicit ColorDlg(YJson& settings, QWidget* parent=nullptr);
+  explicit ColorDlg(YJson& settings);
   virtual ~ColorDlg();
 public:
   static ColorDlg* m_Instance;
-public slots:
-  void PickColor();
+  void AddColor(const QColor& color);
 private slots:
   void SetCurItem(int index);
 private:
@@ -37,16 +36,7 @@ private:
   void SetCurColor(const QColor& color);
   void RemoveColor(const QColor& color);
   static void SetStyleSheet(QWidget* target, const QColor& color);
-private:
-  bool InstallHook();
-  bool UninstallHook();
-public:
-  // QPoint WinPoint2QPoint(int x, int y) const;
-  static void DoMouseMove(LPARAM lParam);
-  static void DoMouseWheel(LPARAM lParam);
-  void QuitHook(bool succeed);
-  void AddColor(const QColor& color);
-  void ScalTarget(int value);
+  // void ScalTarget(int value);
 private:
   YJson& m_Settings;
   YJson& m_ColorsArray;
@@ -56,9 +46,6 @@ private:
   std::set<QString> m_Colors;
   bool m_ColorsChanged;
   QString m_StyleWide, m_StyleNarrow;
-public:
-  static HHOOK m_Hoock[2];
-  class SmallForm* m_SmallForm;
 };
 
 #endif // COLORDLG_HPP

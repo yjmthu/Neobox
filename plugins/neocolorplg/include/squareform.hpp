@@ -23,8 +23,10 @@ private:
   QPoint m_Center;
   QPoint m_MouseGrid;
   const QSize m_BaseSize;
+  QSize m_CurrSize;
   const short m_BaseScal;
-  QPixmap m_PixMap;
+  // QPixmap m_PixMap;
+  QImage m_Image;
   // std::map<short, QPixmap> m_PixMaps;
   short m_ScalSize;
 };

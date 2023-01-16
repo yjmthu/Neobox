@@ -1,6 +1,7 @@
 #include <neocolorplg.h>
 #include <yjson.h>
 #include <colordlg.hpp>
+#include <smallform.hpp>
 #include <menubase.hpp>
 
 #include <QAction>
@@ -44,12 +45,7 @@ void NeoColorPlg::InitFunctionMap()
     {u8"pickColor",
       {u8"拾取颜色", u8"拾取屏幕颜色，拾取成功后打开编辑器。", [this](PluginEvent, void*)
         {
-          if (ColorDlg::m_Instance) {
-            ColorDlg::m_Instance->PickColor();
-            return;
-          }
-          auto colDlg = new ColorDlg(m_Settings);
-          colDlg->PickColor();
+          SmallForm::PickColor(m_Settings);
         }
       , PluginEvent::Void}
     },
