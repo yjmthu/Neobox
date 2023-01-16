@@ -5,10 +5,13 @@
 #include <colordlg.hpp>
 #include <yjson.h>
 
+#include <QKeyEvent>
+#include <QMouseEvent>
 #include <QWindow>
 #include <QScreen>
 
 #include <Windows.h>
+#include <Windowsx.h>
 
 SmallForm* SmallForm::m_Instance = nullptr;
 
@@ -26,10 +29,12 @@ SmallForm::SmallForm(YJson& settings)
   m_Instance = this;
   setAttribute(Qt::WA_TranslucentBackground);
   ui->setupUi(this);
+  setMouseTracking(true);
 }
 
 SmallForm::~SmallForm()
 {
+  setMouseTracking(false);
   if (m_SquareForm) {
     delete m_SquareForm;
   }
@@ -42,34 +47,22 @@ SmallForm::~SmallForm()
 
 LRESULT CALLBACK SmallForm::LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
-  if (!m_Instance) CallNextHookEx(SmallForm::m_Hoock[0], nCode, wParam, lParam);
+  if (!m_Instance) CallNextHookEx(m_Hoock[0], nCode, wParam, lParam);
 
+  auto const mouseHookStruct = (MSLLHOOKSTRUCT*)lParam;
   switch (wParam) {
   case WM_LBUTTONDOWN:
-    // m_Instance->DoMouseMove(lParam);
-    m_Instance->QuitHook(true);
-    return 1;
   case WM_MOUSEWHEEL:
-    m_Instance->DoMouseWheel(lParam);
+		PostMessageW(
+      reinterpret_cast<HWND>(m_Instance->winId()),
+      wParam, mouseHookStruct->mouseData, MAKELPARAM(mouseHookStruct->pt.x, mouseHookStruct->pt.y)
+    );
     return 1;
   case WM_MOUSEMOVE:
-    m_Instance->DoMouseMove(lParam);
-    break;
-		// PostMessage(
-    //   reinterpret_cast<HWND>(ColorDlg::m_Instance->winId()),
-    //   wParam, MK_CONTROL, MAKELPARAM(pt.x, pt.y)
-    // );
-    // break;
-  case WM_KEYDOWN: {
-		auto const keyHookStruct = (KBDLLHOOKSTRUCT*)lParam;
-    if (keyHookStruct->vkCode != VK_ESCAPE) break;
-    m_Instance->QuitHook(false);
-		// PostMessage(
-    //   reinterpret_cast<HWND>(ColorDlg::m_Instance->winId()),
-    //   WM_KEYDOWN, VK_ESCAPE, keyHookStruct->scanCode
-    // );
-    return 1;
-	}
+		PostMessageW(
+      reinterpret_cast<HWND>(m_Instance->winId()),
+      wParam, MK_CONTROL, MAKELPARAM(mouseHookStruct->pt.x, mouseHookStruct->pt.y)
+    );
   default:
     break;
   }
@@ -78,17 +71,17 @@ LRESULT CALLBACK SmallForm::LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM l
 
 LRESULT CALLBACK SmallForm::LowLevelKeyProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
-  if (!m_Instance) CallNextHookEx(SmallForm::m_Hoock[1], nCode, wParam, lParam);
+  if (!m_Instance) CallNextHookEx(m_Hoock[1], nCode, wParam, lParam);
 
   switch (wParam) {
   case WM_KEYDOWN: {
 		auto const keyHookStruct = (KBDLLHOOKSTRUCT*)lParam;
-    if (keyHookStruct->vkCode != VK_ESCAPE) break;
-    m_Instance->QuitHook(false);
-		// PostMessage(
-    //   reinterpret_cast<HWND>(ColorDlg::m_Instance->winId()),
-    //   WM_KEYDOWN, VK_ESCAPE, keyHookStruct->scanCode
-    // );
+    if (keyHookStruct->vkCode != VK_ESCAPE || !m_Instance) break;
+    // m_Instance->QuitHook(false);
+		PostMessage(
+      reinterpret_cast<HWND>(m_Instance->winId()),
+      WM_KEYDOWN, VK_ESCAPE, keyHookStruct->scanCode
+    );
     return 1;
 	}
   default:
@@ -124,48 +117,18 @@ bool SmallForm::UninstallHook()
   return !(m_Hoock[0] || m_Hoock[1]);
 }
 
-void SmallForm::DoMouseMove(LPARAM lParam)
-{
-  if (!m_Instance) {
-    mgr->ShowMsg("失败，未能获取颜色悬浮窗！");
-    return;
-  }
-  auto const mouseHookStruct = (MSLLHOOKSTRUCT*)lParam;
-  POINT pt = mouseHookStruct->pt;
-  m_Position = QPoint(pt.x, pt.y);
-  GetScreenColor(pt.x, pt.y);
-  AutoPosition();
-}
-
-void SmallForm::DoMouseWheel(LPARAM lParam)
-{
-  if (!m_Instance) {
-    mgr->ShowMsg("失败，未能获取颜色悬浮窗！");
-    return;
-  }
-  auto const mouseHookStruct = (MSLLHOOKSTRUCT*)lParam;
-  POINT pt = mouseHookStruct->pt;
-  auto zDelta = GET_WHEEL_DELTA_WPARAM(mouseHookStruct->mouseData);
-  m_Position = QPoint(pt.x, pt.y);
-  GetScreenColor(pt.x, pt.y);
-  AutoPosition();
-  MouseWheel(zDelta / WHEEL_DELTA);
-}
-
 void SmallForm::QuitHook(bool succeed)
 {
-  if (m_Instance) {
-    if (succeed) {
-      if (!ColorDlg::m_Instance) {
-        ColorDlg::m_Instance = new ColorDlg(m_Instance->m_Settings);
-      }
-      ColorDlg::m_Instance->AddColor(m_Instance->m_Color);
-      ColorDlg::m_Instance->show();
-    } else if (ColorDlg::m_Instance) {
-      delete ColorDlg::m_Instance;
+  if (succeed) {
+    if (!ColorDlg::m_Instance) {
+      ColorDlg::m_Instance = new ColorDlg(m_Instance->m_Settings);
     }
-    delete m_Instance;
+    ColorDlg::m_Instance->AddColor(m_Instance->m_Color);
+    ColorDlg::m_Instance->show();
+  } else if (ColorDlg::m_Instance) {
+    delete ColorDlg::m_Instance;
   }
+  delete this;
 }
 
 void SmallForm::PickColor(YJson& settings)
@@ -189,7 +152,7 @@ void SmallForm::PickColor(YJson& settings)
   }
 
   m_Instance = new SmallForm(settings);
-  m_Instance->m_Position = QPoint(pt.x, pt.y);
+  // m_Instance->m_Position = QPoint(pt.x, pt.y);
   m_Instance->show();
 }
 
@@ -198,9 +161,100 @@ void SmallForm::showEvent(QShowEvent *event)
   QWindow * handle = window()->windowHandle();
   if(handle) {
     m_Screen = handle->screen();
+    POINT pt;
+    if (GetCursorPos(&pt)) {
+      QPoint point(pt.x, pt.y);
+      TransformPoint(point);
+      move(point);
+    }
   }
-  AutoPosition();
   QWidget::showEvent(event);
+}
+
+void SmallForm::keyPressEvent(QKeyEvent *event)
+{
+  if (event->key() == Qt::Key_Escape) {
+    QuitHook(false);
+    event->accept();
+  }
+}
+
+void SmallForm::mousePressEvent(QMouseEvent *event)
+{
+  if (event->button() == Qt::LeftButton) {
+    QuitHook(true);
+  }
+}
+
+bool SmallForm::nativeEvent(const QByteArray &eventType, void *message, qintptr *result)
+{
+  if (eventType == "windows_generic_MSG" || eventType == "windows_dispatcher_MSG")
+  {
+    MSG* pMsg = reinterpret_cast<MSG*>(message);
+    switch (pMsg->message) {
+    case WM_MOUSEMOVE: {
+      QPoint point(GET_X_LPARAM(pMsg->lParam), GET_Y_LPARAM(pMsg->lParam));
+      GetScreenColor(point.x(), point.y());
+      TransformPoint(point);
+      AutoPosition(point);
+      if (m_SquareForm) {
+        m_SquareForm->MouseMove(point);
+      }
+      return true;
+    }
+    default:
+      break;
+    }
+  }
+  return QWidget::nativeEvent(eventType, message, result);
+}
+
+void SmallForm::wheelEvent(QWheelEvent *event)
+{
+  const QPoint& numDegrees = event->angleDelta() / 120;
+  const QPoint& point = event->globalPosition().toPoint();
+
+  if (numDegrees.isNull() || point.isNull()) {
+    mgr->ShowMsg("获取滚动信息失败！");
+    event->accept();
+    return;
+  }
+
+  if (!m_Screen) {
+    mgr->ShowMsg("获取当前屏幕失败！");
+    event->accept();
+    return;
+  }
+
+  constexpr int delta = 20;
+  const int value = numDegrees.y();
+
+  if (value > 0) {
+    if (!m_SquareForm) {
+      m_SquareForm = new SquareForm(m_Screen->grabWindow(0, point.x() - delta, point.y() - delta, delta * 2, delta * 2), point);
+      m_SquareForm->show();
+      m_ScaleTimes = 1;
+      raise();
+    } else {
+      if (m_ScaleTimes + value <= 4) {
+        m_ScaleTimes += value;
+        m_SquareForm->SetScaleSize(m_ScaleTimes);
+      }
+    }
+  } else if (value < 0) {
+    if (m_ScaleTimes + value > 0) {
+      m_ScaleTimes += value;
+      m_SquareForm->SetScaleSize(m_ScaleTimes);
+    } else {
+      m_ScaleTimes = 0;
+      if (m_SquareForm) {
+        delete m_SquareForm;
+        m_SquareForm = nullptr;
+      }
+    }
+  }
+
+  event->accept();
 }
 
 void SmallForm::GetScreenColor(int x, int y)
@@ -226,71 +280,38 @@ void SmallForm::SetColor(const QColor& color)
   ui->label->setText(text);
 }
 
-void SmallForm::TransformPoint()
+void SmallForm::TransformPoint(QPoint& point)
 {
   if(m_Screen) {
     QPoint offset = m_Screen->geometry().topLeft();
-    m_Position = (m_Position - offset) / m_Screen->devicePixelRatio() + offset;
+    point = (point - offset) / m_Screen->devicePixelRatio() + offset;
   } else {
-    m_Position = QPoint(0, 0);
+    point = QPoint(0, 0);
   }
 }
 
-void SmallForm::AutoPosition()
+void SmallForm::AutoPosition(const QPoint& point)
 {
   if (!m_Screen) return;
-  TransformPoint();
+  // TransformPoint();
 
   constexpr int delta = 20;
   auto frame = frameGeometry();
   QPoint destination = frame.topLeft();
   auto sizeScreen = m_Screen->size();
 
-  if (m_Position.y() + delta + frame.height() >= sizeScreen.height()) {
-    destination.ry() = m_Position.y() - delta - frame.height();
+  if (point.y() + delta + frame.height() >= sizeScreen.height()) {
+    destination.ry() = point.y() - delta - frame.height();
   } else {
-    destination.ry() = m_Position.y() + delta;
+    destination.ry() = point.y() + delta;
   }
 
-  if (m_Position.x() + delta + frame.width() >= sizeScreen.width()) {
-    destination.rx() = m_Position.x() - delta - frame.width();
+  if (point.x() + delta + frame.width() >= sizeScreen.width()) {
+    destination.rx() = point.x() - delta - frame.width();
   } else {
-    destination.rx() = m_Position.x() + delta;
+    destination.rx() = point.x() + delta;
   }
   move(destination);
 
   raise();
-}
-
-void SmallForm::MouseWheel(short value)
-{
-  constexpr int delta = 20;
-  if (!m_Screen) {
-    mgr->ShowMsg("获取当前屏幕失败！");
-    return;
-  }
-  if (value > 0) {
-    if (!m_SquareForm) {
-      m_SquareForm = new SquareForm(m_Screen->grabWindow(0, m_Position.x() - delta, m_Position.y() - delta, delta * 2, delta * 2), m_Position);
-      m_SquareForm->show();
-      m_ScaleTimes = 1;
-      raise();
-    } else {
-      if (m_ScaleTimes + value <= 4) {
-        m_ScaleTimes += value;
-        m_SquareForm->SetScaleSize(m_ScaleTimes);
-      }
-    }
-  } else if (value < 0) {
-    if (m_ScaleTimes + value > 0) {
-      m_ScaleTimes += value;
-      m_SquareForm->SetScaleSize(m_ScaleTimes);
-    } else {
-      m_ScaleTimes = 0;
-      if (m_SquareForm) {
-        delete m_SquareForm;
-        m_SquareForm = nullptr;
-      }
-    }
-  }
 }

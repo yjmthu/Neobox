@@ -16,31 +16,35 @@ class SmallForm: public QWidget
 
 protected:
   void showEvent(QShowEvent *event) override;
+  void mousePressEvent(QMouseEvent *event) override;
+  // void mouseMoveEvent(QMouseEvent *event) override;
+  void wheelEvent(QWheelEvent *event) override;
+  void keyPressEvent(QKeyEvent *event) override;
+  bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 public:
   explicit SmallForm(class YJson& settings);
   virtual ~SmallForm();
 public:
   static void PickColor(YJson& settings);
 private:
-  void TransformPoint();
+  void TransformPoint(QPoint& point);
   void SetColor(const QColor& color);
 private:
   void GetScreenColor(int x, int y);
-  void AutoPosition();
-  void MouseWheel(short value);
+  void AutoPosition(const QPoint& point);
   static bool InstallHook();
   static bool UninstallHook();
-  static void QuitHook(bool succeed);
+  void QuitHook(bool succeed);
 private:
   // QPoint WinPoint2QPoint(int x, int y) const;
   static LRESULT CALLBACK LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam);
   static LRESULT CALLBACK LowLevelKeyProc(int nCode, WPARAM wParam, LPARAM lParam);
 public slots:
-  void DoMouseMove(LPARAM lParam);
+  // void DoMouseMove(LPARAM lParam);
   void DoMouseWheel(LPARAM lParam);
   // void ScalTarget(int value);
 public:
-  QPoint m_Position;
+  // QPoint m_Position;
   QColor m_Color;
   static SmallForm* m_Instance;
   static HHOOK m_Hoock[2];
