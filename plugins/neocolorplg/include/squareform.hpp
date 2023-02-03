@@ -17,7 +17,7 @@ public:
   void SetScaleSize(short times);
   void MouseMove(const QPoint& global);
 private:
-  void DrawBorder(QPainter& painter) const;
+  // void DrawBorder(QPainter& painter) const;
   void DrawPicture();
 private:
   static constexpr int m_BorderWidth = 4;

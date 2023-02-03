@@ -12,18 +12,16 @@ class ColorBigger: public QWidget
 {
 protected:
   void paintEvent(QPaintEvent *event) override {
-    if (m_Mouse.isNull()) {
+    if (m_MouseGrid.isNull()) {
       return;
     }
-
     QPainter painter(this);
-    int x = m_Mouse.x() / m_ScalSize * m_ScalSize - (m_ScalSize << 1);
-    int y = m_Mouse.y() / m_ScalSize * m_ScalSize - (m_ScalSize << 1);
-    painter.drawPixmap(QPoint(x, y), m_Pixmap);
+    painter.drawPixmap(m_MouseGrid, m_Pixmap);
+    event->accept();
   }
 private:
   QPixmap m_Pixmap;
-  QPoint m_Mouse;
+  QPoint m_MouseGrid;
   short& m_ScalSize;
   float m_Radius = 0;
 public:
@@ -51,18 +49,29 @@ public:
     painter.drawRect(QRect(m_ScalSize * 2, m_ScalSize * 2, m_ScalSize, m_ScalSize));
   }
   void Update(const QPoint& point) {
-    m_Mouse = point;
-    update();
+    QPoint grid {
+      point.x() / m_ScalSize * m_ScalSize - (m_ScalSize << 1),
+      point.y() / m_ScalSize * m_ScalSize - (m_ScalSize << 1)
+    };
+    if (m_MouseGrid != grid) {
+      m_MouseGrid = grid;
+      // update();
+      repaint();
+    }
   }
   void Resize(const QSize& size) {
-    // m_RadialGradient.setRadius(m_ScalSize << 1);
     setFixedSize(size);
-    DrawGrids();
+    if (m_ScalSize < 9) {
+      m_MouseGrid = QPoint();
+    } else {
+      DrawGrids();
+    }
+    
   }
 };
 
 SquareForm::SquareForm(const QPixmap& pix, const QPoint& pos, QWidget* parent)
-  : QWidget(parent, Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool)
+  : QWidget(parent)
   , m_Center(pos)
   , m_BaseSize(pix.size())
   , m_BaseScal(3)
@@ -71,7 +80,9 @@ SquareForm::SquareForm(const QPixmap& pix, const QPoint& pos, QWidget* parent)
   , m_ColorBigger(new ColorBigger(m_ScalSize, this))
 {
   setWindowTitle("Neobox-颜色放大器");
+  setAttribute(Qt::WA_TransparentForMouseEvents);
   setAttribute(Qt::WA_TranslucentBackground);
+  setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
   // setAttribute(Qt::WA_OpaquePaintEvent);
   m_ColorBigger->move(m_BorderWidth, m_BorderWidth);
   SetScaleSize(1);
@@ -79,12 +90,12 @@ SquareForm::SquareForm(const QPixmap& pix, const QPoint& pos, QWidget* parent)
   if (m_Image.format() != QImage::Format_ARGB32 && m_Image.format() != QImage::Format_RGB32) {
     m_Image = m_Image.convertToFormat(QImage::Format_RGB32);
   }
-  setMouseTracking(true);
+  // setMouseTracking(true);
 }
 
 SquareForm::~SquareForm()
 {
-  setMouseTracking(false);
+  // setMouseTracking(false);
 }
 
 void SquareForm::SetScaleSize(short times)
@@ -117,46 +128,49 @@ void SquareForm::MouseMove(const QPoint& global)
   m_ColorBigger->Update(global - pos() - QPoint(m_BorderWidth, m_BorderWidth));
 }
 
-void SquareForm::DrawBorder(QPainter& painter) const
-{
-  QPainterPath path;
+// void SquareForm::DrawBorder(QPainter& painter) const
+// {
+//   QPainterPath path;
 
-  auto size = this->frameSize();
-  auto rect = QRect(0, 0, m_BorderWidth << 1, m_BorderWidth << 1);
-  path.moveTo(m_BorderWidth, 0);
-  path.arcTo(rect, 90, 90);
+//   auto size = this->frameSize();
+//   auto rect = QRect(0, 0, m_BorderWidth << 1, m_BorderWidth << 1);
+//   path.moveTo(m_BorderWidth, 0);
+//   path.arcTo(rect, 90, 90);
 
-	path.lineTo(0, size.height() - m_BorderWidth);
+// 	path.lineTo(0, size.height() - m_BorderWidth);
 
-  rect.moveTop(size.height() - m_BorderWidth * 2);
-	path.arcTo(rect, 180, 90);
+//   rect.moveTop(size.height() - m_BorderWidth * 2);
+// 	path.arcTo(rect, 180, 90);
 
-  path.lineTo(size.width() - m_BorderWidth, size.height());
+//   path.lineTo(size.width() - m_BorderWidth, size.height());
   
-  rect.moveLeft(size.width() - m_BorderWidth * 2);
-  path.arcTo(rect, 270, 90);
+//   rect.moveLeft(size.width() - m_BorderWidth * 2);
+//   path.arcTo(rect, 270, 90);
 
-  path.lineTo(size.width(), m_BorderWidth);
+//   path.lineTo(size.width(), m_BorderWidth);
 
-  rect.moveTop(0);
-  path.arcTo(rect, 0, 90);
+//   rect.moveTop(0);
+//   path.arcTo(rect, 0, 90);
 
-  path.lineTo(m_BorderWidth, 0);
+//   path.lineTo(m_BorderWidth, 0);
 
-	painter.fillPath(path, QColor(20, 20, 20, 200));
-}
+// 	painter.fillPath(path, QColor(20, 20, 20, 200));
+// }
 
 void SquareForm::DrawPicture()
 {
   m_PixMap = QPixmap(size());
+  m_PixMap.fill(Qt::transparent);
 
   QPainter painter(&m_PixMap);
-  // painter.setRenderHint(QPainter::Antialiasing, true);
-  DrawBorder(painter);
+  painter.setRenderHint(QPainter::Antialiasing, true);
+  QPainterPath path;
+  path.addRoundedRect(rect(), m_BorderWidth, m_BorderWidth);
+
+  painter.fillPath(path, QColor(20, 20, 20, 200));
 
   painter.setRenderHint(QPainter::Antialiasing, false);
   painter.translate(m_BorderWidth, m_BorderWidth);
-  // painter.drawPixmap(QRect(QPoint(m_BorderWidth, m_BorderWidth), m_CurrSize), m_PixMap);
 
   auto rect = QRect(0, 0, m_ScalSize, m_ScalSize);
   for (auto j=0; j!=m_Image.height(); ++j) {

@@ -187,6 +187,13 @@ bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
           }
           return true;
         }
+        case Qt::Key_Space: {
+          if (keyEvent->modifiers() & Qt::ShiftModifier) {
+            ReverseLanguage();
+            return true;
+          }
+          break;
+        }
         case Qt::Key_Up:
           if (keyEvent->modifiers() & Qt::AltModifier) {
             int i = m_BoxTo->currentIndex();

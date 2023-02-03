@@ -1,14 +1,16 @@
 #include <smallform.hpp>
 #include <squareform.hpp>
-#include <ui_smallform.h>
 #include <pluginmgr.h>
 #include <colordlg.hpp>
 #include <yjson.h>
 
 #include <QKeyEvent>
 #include <QMouseEvent>
+#include <QPaintEvent>
 #include <QWindow>
 #include <QScreen>
+#include <QPainter>
+#include <QPainterPath>
 
 #include <Windows.h>
 #include <Windowsx.h>
@@ -20,34 +22,44 @@ HHOOK SmallForm::m_Hoock[2] { nullptr, nullptr };
 SmallForm::SmallForm(YJson& settings)
   : QWidget(nullptr, Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool)
   , m_Settings(settings)
-  , m_Color(Qt::white)
-  , ui(new Ui::SmallForm)
+  , m_Color()
   , m_Screen(nullptr)
   , m_SquareForm(nullptr)
   , m_ScaleTimes(0)
+  , m_ColorPath()
+  , m_TextOption(Qt::AlignLeft | Qt::AlignVCenter)
+  , m_TextFont("Microsoft YaHei UI", 14, 700)
 {
   m_Instance = this;
   setAttribute(Qt::WA_TranslucentBackground);
-  ui->setupUi(this);
-  setMouseTracking(true);
+
+  setFixedSize(150, 50);
+  m_BackPixMap = QPixmap(size());
+  m_BackPixMap.fill(Qt::transparent);
+  m_ColorPath.addRoundedRect(QRect(0, 0, 34, 34), 8, 8);
+  QPainter painter(&m_BackPixMap);
+  painter.setRenderHint(QPainter::Antialiasing, true);
+  QPainterPath path;
+  path.addRoundedRect(rect(), 4, 4);
+  painter.fillPath(path, QColor(50, 50, 50, 240));
 }
 
 SmallForm::~SmallForm()
 {
-  setMouseTracking(false);
   if (m_SquareForm) {
     delete m_SquareForm;
   }
-  delete ui;
   m_Instance = nullptr;
   if (!UninstallHook()) {
     mgr->ShowMsg(QStringLiteral("卸载钩子失败！\n错误代码【%1】").arg(GetLastError()));
   }
 }
 
+static constexpr auto WM_USER_MOUSEMOVE = WM_USER + 1;
+
 LRESULT CALLBACK SmallForm::LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
-  if (!m_Instance) CallNextHookEx(m_Hoock[0], nCode, wParam, lParam);
+  if (!m_Instance || nCode != HC_ACTION) CallNextHookEx(m_Hoock[0], nCode, wParam, lParam);
 
   auto const mouseHookStruct = (MSLLHOOKSTRUCT*)lParam;
   switch (wParam) {
@@ -61,7 +73,7 @@ LRESULT CALLBACK SmallForm::LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM l
   case WM_MOUSEMOVE:
 		PostMessageW(
       reinterpret_cast<HWND>(m_Instance->winId()),
-      wParam, MK_CONTROL, MAKELPARAM(mouseHookStruct->pt.x, mouseHookStruct->pt.y)
+      WM_USER_MOUSEMOVE, MK_CONTROL, MAKELPARAM(mouseHookStruct->pt.x, mouseHookStruct->pt.y)
     );
   default:
     break;
@@ -186,13 +198,27 @@ void SmallForm::mousePressEvent(QMouseEvent *event)
   }
 }
 
+void SmallForm::paintEvent(QPaintEvent *event)
+{
+  QPainter painter(this);
+  painter.setRenderHint(QPainter::Antialiasing, true);
+  painter.drawPixmap(0, 0, m_BackPixMap);
+
+  painter.translate(8, 8);
+  painter.fillPath(m_ColorPath, m_Color);
+
+  painter.setPen(Qt::white);
+  painter.setFont(m_TextFont);
+  painter.drawText(QRect(45, 0, 90, 34), m_Color.name(), m_TextOption);
+}
+
 bool SmallForm::nativeEvent(const QByteArray &eventType, void *message, qintptr *result)
 {
   if (eventType == "windows_generic_MSG" || eventType == "windows_dispatcher_MSG")
   {
     MSG* pMsg = reinterpret_cast<MSG*>(message);
     switch (pMsg->message) {
-    case WM_MOUSEMOVE: {
+    case WM_USER_MOUSEMOVE: {
       QPoint point(GET_X_LPARAM(pMsg->lParam), GET_Y_LPARAM(pMsg->lParam));
       GetScreenColor(point.x(), point.y());
       TransformPoint(point);
@@ -273,11 +299,14 @@ void SmallForm::GetScreenColor(int x, int y)
 
 void SmallForm::SetColor(const QColor& color)
 {
+  if (m_Color == color) return;
+  
   m_Color = color;
+  update();
 
-  auto text = m_Color.name(QColor::NameFormat::HexRgb);
-  ui->frame->setStyleSheet(QStringLiteral("background-color:%1;").arg(text));
-  ui->label->setText(text);
+  // ui->frame->update();
+  // auto text = m_Color.name(QColor::NameFormat::HexRgb);
+  // ui->frame->setStyleSheet(QStringLiteral("background-color:%1;").arg(text));
 }
 
 void SmallForm::TransformPoint(QPoint& point)
@@ -313,5 +342,4 @@ void SmallForm::AutoPosition(const QPoint& point)
   }
   move(destination);
 
-  raise();
 }

@@ -145,6 +145,7 @@ void ColorDlg::SetStyleSheet()
   }
   ui->listWidget->verticalScrollBar()->setStyleSheet(m_StyleNarrow);
   ui->listWidget->verticalScrollBar()->installEventFilter(this);
+  ui->listWidget->verticalScrollBar()->setFixedWidth(4);
 }
 
 void ColorDlg::InitSignals()
@@ -295,36 +296,3 @@ void ColorDlg::AddColor(const QColor& color)
 
   SetCurColor(color);
 }
-
-/*
-bool ColorDlg::nativeEvent(const QByteArray &eventType, void *message, qintptr *result)
-{
-  if (eventType == "windows_generic_MSG" || eventType == "windows_dispatcher_MSG")
-  {
-    MSG* pMsg = reinterpret_cast<MSG*>(message);
-    if (pMsg->message == WM_RBUTTONDOWN)
-    {
-      POINT pt = pMsg->pt;
-      qDebug() << "x="<<pt.x << "y=" << pt.y;
-    }
-    switch (pMsg->message) {
-    case WM_LBUTTONDOWN: {
-      break;
-    }
-    case WM_MOUSEHWHEEL: {
-      break;
-    }
-    case WM_MOUSEMOVE: {
-      
-      break;
-    }
-    case WM_KEYDOWN: {
-      break;
-    }
-    default:
-      break;
-    }
-  }
-  return WidgetBase::nativeEvent(eventType, message, result);
-}
-*/

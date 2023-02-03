@@ -54,7 +54,7 @@ void WidgetBase::mouseReleaseEvent(QMouseEvent* event)
 void WidgetBase::mouseMoveEvent(QMouseEvent* event)
 {
   if(event->buttons() == Qt::LeftButton && !m_ConstPos.isNull()) {
-    move(this->pos() + event->pos() - m_ConstPos);
+    move(event->globalPosition().toPoint() - m_ConstPos);
     event->accept();
   }
   QWidget::mouseMoveEvent(event);
