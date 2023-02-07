@@ -1,0 +1,3 @@
+[submodule "thirdlib/YJson"]
+	path = thirdlib/YJson
+	url = https://github.com/yjmthu/YJson.git
