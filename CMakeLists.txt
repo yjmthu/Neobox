@@ -1,15 +1,12 @@
 cmake_minimum_required(VERSION 3.21.2)
 
+project(Neobox VERSION 2.3.5 LANGUAGES CXX C)
+
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_INSTALL_PREFIX "install")
-
-# https://zhuanlan.zhihu.com/p/429849408
-# set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:DebugDLL>")
-
-project(Neobox VERSION 2.3.5 LANGUAGES CXX C)
 
 string(TIMESTAMP COMPILE_TIME %Y-%m-%d)
 set(NEOBOX_BUILD_TIME ${COMPILE_TIME})
@@ -20,21 +17,11 @@ add_definitions(-DUNICODE -D_UNICODE)
 add_compile_options("/utf-8")
 
 link_directories(build/pluginmgr)
-file(GLOB project_includes */include */*/include)
-file(GLOB thrd_includes 3rdlib/*/include)
-file(GLOB project_subdirs */CMakeLists.txt)
-foreach(item ${project_includes})
-  message(STATUS "include dir is ${item}")
-endforeach()
-include_directories(${project_includes})
-include_directories(../YJson/include)
-add_subdirectory(../YJson yjson)
+include_directories(pluginmgr/include)
+include_directories(thirdlib/YJson/include)
 
-foreach(item ${project_subdirs})
-  string(REGEX REPLACE "/CMakeLists.txt" "" subdir ${item})
-  get_filename_component(subdir ${subdir} NAME)
-  add_subdirectory(${subdir})
-endforeach()
+add_subdirectory(thirdlib/YJson yjson)
+add_subdirectory(pluginmgr)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 add_executable(neobox WIN32 main.cpp logo.rc)

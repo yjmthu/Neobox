@@ -17,7 +17,8 @@ build-rel
 build-dbg
 install
 out
-3rdlib/YJson
+yjson
+CMakeCache.txt
 compile_commands.json
 CMakeSettings.json
 .clangd
