@@ -182,7 +182,7 @@
     - [vcpkg](https://github.com/microsoft/vcpkg) (libcurl[linux], leptonica, tesseract)
     - c++20 JSON库 [YJson](https://github.com/yjmthu/YJson)
 - `Arch Linux x86_64`
-    - 目前编译未成功，但CMake可正常生成缓存
+    - 目前主程序编译成功，但无法正常运行
     - 正在使用clang补写linux功能
     - 待 GCC13 发布后再切换到 GCC
 
@@ -194,6 +194,7 @@ git clone https://github.com/yjmthu/Neobox.git
 cd Neobox
 git submodule update --init --recursive
 cmake -GNinja -B build/debug -S . -DCMAKE_BUILD_TYPE="Debug"
+cmake --build build
 ```
 
 

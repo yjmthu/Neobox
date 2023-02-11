@@ -30,6 +30,7 @@ public:
   bool RegisterHotKey(const std::u8string& keyString);
   bool UnregisterHotKey(const std::u8string& keyString);
   const std::u8string_view GetCallbackInfo(int id);
+  const std::u8string_view GetCallbackInfo(KeyName keyName);
 
 private:
   bool IsKeyRegistered(QString shortcut);

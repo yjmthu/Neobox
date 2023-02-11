@@ -8,62 +8,100 @@
 #include <QWidget>
 #include <QApplication>
 
+#ifdef _WIN32
 #include <Windows.h>
+#else
+#include <unistd.h>
+#include <xcb/xcb.h>
+#include <X11/Xlib.h>
+#endif
 
 using namespace std::literals;
 namespace fs = std::filesystem;
 
 bool Shortcut::nativeEventFilter(const QByteArray &eventType, void *message, qintptr *)
 {
-  if(eventType != "windows_generic_MSG" && eventType != "windows_dispatcher_MSG")
+#ifdef _WIN32
+  if (PluginCenter::m_Instance) return false;
+  if(eventType != "windows_generic_MSG" && eventType != "windows_dispatcher_MSG") {
     return false;
+  }
   MSG* msg = static_cast<MSG*>(message);
 
-  if (WM_HOTKEY == msg->message) {
-    /*
-     * idHotKey = wParam;
-     * Modifiers = (UINT) LOWORD(lParam);
-     * uVirtKey = (UINT) HIWORD(lParam);
-     */
-    if (PluginCenter::m_Instance) return false;
+  if (WM_HOTKEY != msg->message) {
+    return false;
+  }
+  /*
+   * idHotKey = wParam;
+   * Modifiers = (UINT) LOWORD(lParam);
+   * uVirtKey = (UINT) HIWORD(lParam);
+   */
+  auto const hash = msg->wParam;
+  auto& keyString = GetCallbackInfo(hash);
+#else
+  if (eventType != "xcb_generic_event_t") 
+    return false;
+  auto const ev = reinterpret_cast<xcb_generic_event_t *>(message);
+  if (!ev || (ev->response_type & 127) != XCB_KEY_PRESS) {
+    return false;
+  }
+  auto const kev = reinterpret_cast<xcb_key_press_event_t *>(ev);
+  // unsigned char keycode = kev->detail;
+  KeyName keyName {0, 0};
+  // Mod1Mask == Alt, Mod4Mask == Meta
+  if(kev->state & XCB_MOD_MASK_1)
+      keyName.nativeMods |= Mod1Mask;
+  if(kev->state & XCB_MOD_MASK_CONTROL)
+      keyName.nativeMods |= ControlMask;
+  if(kev->state & XCB_MOD_MASK_4)
+      keyName.nativeMods |= Mod4Mask;
+  if(kev->state & XCB_MOD_MASK_SHIFT)
+      keyName.nativeMods |= ShiftMask;
+  keyName.nativeKey = kev->detail;
+#endif
+  // XGrabKey(nullptr, int, unsigned int, Window, int, int, int);
+  auto& keyString = GetCallbackInfo(1);
+  auto iter = std::find_if(m_Data.beginA(), m_Data.endA(), [&keyString](const YJson& info){
+    return info[u8"KeySequence"].getValueString() == keyString;
+  });
 
-    auto& keyString = GetCallbackInfo(msg->wParam);
-    for (auto& item: m_Data.getArray()) {
-    }
-    auto iter = std::find_if(m_Data.beginA(), m_Data.endA(), [&keyString](const YJson& info){
-      return info[u8"KeySequence"].getValueString() == keyString;
-    });
+  if (iter == m_Data.endA()) return false;
+  if (auto iterData = iter->find(u8"Command"); iterData != iter->endO()) {
+    auto& data = iterData->second;
+    fs::path executable = data[u8"Executable"].getValueString();
+    executable.make_preferred();
+    auto& arguments = data[u8"Arguments"].getValueString();
+    fs::path directory = data[u8"Directory"].getValueString();
+    directory = fs::absolute(directory);
+    directory.make_preferred();
 
-    if (iter != m_Data.endA()) {
-      if (auto iterData = iter->find(u8"Command"); iterData != iter->endO()) {
-        auto& data = iterData->second;
-        fs::path executable = data[u8"Executable"].getValueString();
-        executable.make_preferred();
-        auto& arguments = data[u8"Arguments"].getValueString();
-        fs::path directory = data[u8"Directory"].getValueString();
-        directory = fs::absolute(directory);
-        directory.make_preferred();
+#ifdef _WIN32
+    auto exe = executable.wstring();
+    auto arg = Utf82WideString(arguments);
+    auto dir = directory.wstring();
+#else
+    auto exe = executable.string();
+    auto arg = arguments;
+#endif
 
-        auto exe = executable.wstring();
-        auto arg = Utf82WideString(arguments);
-        auto dir = directory.wstring();
-
-        ShellExecute(nullptr, L"open", exe.c_str(), arg.c_str(),
-          dir.c_str(), SW_SHOWNORMAL);
-      } else if (auto iterData = iter->find(u8"Plugin"); iterData != iter->endO()) {
-        auto& data = iterData->second;
-        auto& pluginName = data[u8"PluginName"].getValueString();
-        auto& function = data[u8"Function"].getValueString();
-        if (auto iter = mgr->m_Plugins.find(pluginName); iter != mgr->m_Plugins.end()) {
-          auto& funcMap = iter->second.plugin->m_PluginMethod;
-          auto iterFunc = funcMap.find(function);
-          if (iterFunc != funcMap.end()) {
-            iterFunc->second.function(PluginEvent::HotKey, nullptr);
-          }
-        }
-        // SendBroadcast(PluginEvent::HotKey, &name);
+#ifdef _WIN32
+    ShellExecute(nullptr, L"open", exe.c_str(), arg.c_str(),
+      dir.c_str(), SW_SHOWNORMAL);
+#else
+    execlp(exe.c_str(), reinterpret_cast<const char*>(arg.c_str()));
+#endif
+  } else if (auto iterData = iter->find(u8"Plugin"); iterData != iter->endO()) {
+    auto& data = iterData->second;
+    auto& pluginName = data[u8"PluginName"].getValueString();
+    auto& function = data[u8"Function"].getValueString();
+    if (auto iter = mgr->m_Plugins.find(pluginName); iter != mgr->m_Plugins.end()) {
+      auto& funcMap = iter->second.plugin->m_PluginMethod;
+      auto iterFunc = funcMap.find(function);
+      if (iterFunc != funcMap.end()) {
+        iterFunc->second.function(PluginEvent::HotKey, nullptr);
       }
     }
+    // SendBroadcast(PluginEvent::HotKey, &name);
   }
   return false;
 
@@ -81,8 +119,17 @@ Shortcut::Shortcut(YJson& data)
 }
 
 Shortcut::~Shortcut() {
-  for (const auto& [_, id] : m_HotKeyIds) {
+#ifdef __linux__
+  auto const x11Application = qGuiApp->nativeInterface<QNativeInterface::QX11Application>();
+  auto const display = x11Application->display();
+  Window root = DefaultRootWindow(display);
+#endif
+  for (const auto& [name, id] : m_HotKeyIds) {
+#ifdef _WIN32
     ::UnregisterHotKey(NULL, id);
+#else
+    XUngrabKey(display, name.nativeKey, name.nativeMods, root);
+#endif
   }
 }
 
@@ -90,6 +137,16 @@ const std::u8string_view Shortcut::GetCallbackInfo(int id)
 {
   if (auto iter = m_HotKeyNames.find(id); iter != m_HotKeyNames.end()) {
     return iter->second;
+  }
+  return u8""sv;
+}
+
+const std::u8string_view Shortcut::GetCallbackInfo(KeyName keyName)
+{
+  if (auto i = m_HotKeyIds.find(keyName); i != m_HotKeyIds.end()) {
+    if (auto j = m_HotKeyNames.find(i->second); j != m_HotKeyNames.end()) {
+      return j->second;
+    }
   }
   return u8""sv;
 }
@@ -109,9 +166,16 @@ bool Shortcut::RegisterHotKey(const std::u8string& keyString)
   if (IsKeyRegistered(keyName))
     return false;
   const auto id = GetHotKeyId();
+#ifdef _WIN32
   if (!::RegisterHotKey(NULL, id,
       keyName.nativeMods, keyName.nativeKey))
     return false;
+#else
+  auto const x11Application = qGuiApp->nativeInterface<QNativeInterface::QX11Application>();
+  auto const display = x11Application->display();
+  Window root = DefaultRootWindow(display);
+  XGrabKey(display, keyName.nativeKey, keyName.nativeMods, root, True, GrabModeAsync, GrabModeAsync);
+#endif
   m_HotKeyIds[keyName] = id;
   m_HotKeyNames[id] = keyString;
   return true;
@@ -122,7 +186,14 @@ bool Shortcut::UnregisterHotKey(const std::u8string& keyString) {
 
   auto iter = m_HotKeyIds.find(keyName);
   if (iter != m_HotKeyIds.end()) {
+#ifdef __linux__
+    auto const x11Application = qGuiApp->nativeInterface<QNativeInterface::QX11Application>();
+    auto const display = x11Application->display();
+    Window root = DefaultRootWindow(display);
+    auto const ret = XUngrabKey(display, keyName.nativeKey, keyName.nativeMods, root) == 0;
+#else
     auto const ret = ::UnregisterHotKey(NULL, iter->second);
+#endif
     m_HotKeyNames.erase(iter->second);
     m_HotKeyIds.erase(iter);
     return ret;
@@ -136,6 +207,7 @@ bool Shortcut::IsKeyRegistered(const KeyName& keyName) {
 
 uint32_t Shortcut::GetNativeModifiers(Qt::KeyboardModifiers modifiers) {
   uint32_t native = 0;
+#ifdef _WIN32
   if (modifiers & Qt::ShiftModifier)
     native |= MOD_SHIFT;
   if (modifiers & Qt::ControlModifier)
@@ -144,6 +216,16 @@ uint32_t Shortcut::GetNativeModifiers(Qt::KeyboardModifiers modifiers) {
     native |= MOD_ALT;
   if (modifiers & Qt::MetaModifier)
     native |= MOD_WIN;
+#else
+  if (modifiers & Qt::ShiftModifier)
+    native |= ShiftMask;
+  if (modifiers & Qt::ControlModifier)
+    native |= ControlMask;
+  if (modifiers & Qt::AltModifier)
+    native |= Mod1Mask;
+  if (modifiers & Qt::MetaModifier)
+    native |= Mod4Mask;
+#endif
   return native;
 }
 
@@ -157,6 +239,15 @@ int Shortcut::GetHotKeyId() const
 }
 
 uint32_t Shortcut::GetNativeKeycode(Qt::Key key) {
+#ifdef __linux__
+  // https://doc.qt.io/qt-6/extras-changes-qt6.html
+  KeySym keysym = XStringToKeysym(QKeySequence(key).toString().toLatin1().data());
+  if (keysym == NoSymbol)
+      keysym = static_cast<ushort>(key);
+
+  auto *x11Application = qGuiApp->nativeInterface<QNativeInterface::QX11Application>();
+  return XKeysymToKeycode(x11Application->display(), keysym);
+#else
   switch (key) {
     case Qt::Key_Escape:
       return VK_ESCAPE;
@@ -317,4 +408,5 @@ uint32_t Shortcut::GetNativeKeycode(Qt::Key key) {
     default:
       return 0;
   }
+#endif
 }

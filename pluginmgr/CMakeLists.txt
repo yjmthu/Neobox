@@ -21,14 +21,14 @@ qt_wrap_ui(wrap_files
 file(GLOB source_files include/*.hpp src/*.cpp widgets/*.cpp widgets/*.hpp)
 file(GLOB _resource_files fonts/*.ttf  icons/*.png icons/*.ico  jsons/*.json scripts/* styles/*.qss)
 
-set(system_shared_files Shell32)
+set(system_shared_files "")
 set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui)
 set(pliugin_libfiles yjson)
 
 if(WIN32)
-  list(APPEND system_shared_files Iphlpapi Winhttp)
+  list(APPEND system_shared_files Iphlpapi Winhttp Shell32)
 else()
-  list(APPEND system_shared_files libcurl)
+  list(APPEND system_shared_files curl)
 endif()
 
 set(resource_files "")
