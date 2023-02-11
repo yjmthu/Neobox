@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.10.1)
 
-if (UNIX)
-  find_package(CURL CONFIG REQUIRED)
-endif()
+# if (UNIX)
+#   find_package(CURL CONFIG REQUIRED)
+# endif()
 
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui)
 qt_standard_project_setup()
@@ -28,7 +28,7 @@ set(pliugin_libfiles yjson)
 if(WIN32)
   list(APPEND system_shared_files Iphlpapi Winhttp)
 else()
-  list(APPEND system_shared_files CURL::libcurl)
+  list(APPEND system_shared_files libcurl)
 endif()
 
 set(resource_files "")

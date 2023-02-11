@@ -10,6 +10,7 @@
 #include <httplib.h>
 #include <filesystem>
 #include <stdexcept>
+#include <iostream>
 #include <fstream>
 #include <format>
 
@@ -23,14 +24,12 @@ void HttpProxy::GetSystemProxy()
 {
   username.clear();
   password.clear();
-  domain = RegReadString(HKEY_CURRENT_USER, regProxyPath, L"ProxyServer");
-  auto const pos = domain.find(L':');
-  if (pos == domain.npos) {
-    port = 1;
-  } else {
-    port = std::stoi(domain.substr(pos + 1));
-    domain.erase(pos);
-  }
+
+#ifdef _WIN32
+  proxy = RegReadString(HKEY_CURRENT_USER, regProxyPath, L"ProxyServer");
+#else
+  proxy = reinterpret_cast<const char8_t*>(std::getenv("HTTP_PROXY"));
+#endif
 }
 
 bool HttpLib::IsOnline() {
@@ -67,7 +66,7 @@ bool HttpLib::IsOnline() {
   std::cout << data << std::endl << "lostPacket: " << lostPacket << std::endl;
   return !std::atoi(lostPacket.c_str());
 #else
-  httplib::Client clt("https://www.baidu.com");
+  HttpLib clt("https://www.baidu.com"s);
   auto res = clt.Get("/");
   return res && res->status == 200;
 #endif
@@ -107,21 +106,35 @@ HttpLib::~HttpLib() {
 #endif
 }
 
-std::wstring HttpLib::GetDomain()
+HttpLib::String HttpLib::GetDomain()
 {
-  std::wstring result;
+  String result;
+#ifndef _WIN32
+  std::string::const_iterator iter;
+#endif
   if (m_Url.starts_with("https://")) {
+#ifdef _WIN32
     result = Ansi2WideString(m_Url.substr(8, m_Url.find('/', 8) - 8));
+#else
+    iter = m_Url.cbegin() + 8;
+#endif
   } else if (m_Url.starts_with("http://")) {
+#ifdef _WIN32
     result = Ansi2WideString(m_Url.substr(7, m_Url.find('/', 7) - 7));
+#else
+    iter = m_Url.cbegin() + 7;
+#endif
   } else {
     throw std::logic_error("Url should begin with 'http://' or 'http://'!");
   }
+#ifndef _WIN32
+  result.assign(iter, std::find(iter, m_Url.cend(), '/'));
+#endif
   result.push_back(L'\0');
   return result;
 }
 
-std::wstring HttpLib::GetPath()
+HttpLib::String HttpLib::GetPath()
 {
   size_t pos;
   if (m_Url.starts_with("https://")) {
@@ -132,21 +145,29 @@ std::wstring HttpLib::GetPath()
     throw std::logic_error("Url should begin with 'http://' or 'http://'!");
   }
   if (pos == std::string::npos) {
+#ifdef _WIN32
     return L"/"s;
+#else
+    return u8"/"s;
+#endif
   }
+#ifdef _WIN32
   auto result = Ansi2WideString(m_Url.substr(pos));
+#else
+  String result(m_Url.begin() + pos, m_Url.end());
+#endif
   result.push_back(L'\0');
   return result;
 }
 
 void HttpLib::HttpInit()
 {
-  if (!WinHttpCheckPlatform()) {
-    throw std::runtime_error("This platform is NOT supported by WinHTTP.");
-  }
   m_PostData.data = nullptr;
   m_PostData.size = 0;
 #ifdef _WIN32
+  if (!WinHttpCheckPlatform()) {
+    throw std::runtime_error("This platform is NOT supported by WinHTTP.");
+  }
   if (m_hConnect) WinHttpCloseHandle(m_hConnect);
   if (m_hSession) {
     WinHttpCloseHandle(m_hSession);
@@ -179,6 +200,8 @@ void HttpLib::HttpInit()
 void HttpLib::SetProxyBefore()
 {
   if (m_Proxy.type == 3) return;
+
+#ifdef _WIN32
   if (m_Proxy.type == 0) {
     if (!RegReadValue(HKEY_CURRENT_USER, regProxyPath, L"ProxyEnable")) return;
     m_Proxy.GetSystemProxy();
@@ -199,13 +222,26 @@ void HttpLib::SetProxyBefore()
     if (m_Proxy.password.empty() || m_Proxy.username.empty()) return;
     m_ProxySet = true;
   }
+#else
+  // https://curl.se/libcurl/c/CURLOPT_PROXY.html
+  // https://curl.se/libcurl/c/CURLOPT_PROXYAUTH.html
+  auto pwd = m_Proxy.username + u8":" + m_Proxy.password;
+  curl_easy_setopt(m_hSession, CURLOPT_PROXY, m_Proxy.proxy.c_str());
+  /* allow whatever auth the proxy speaks */
+  curl_easy_setopt(m_hSession, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
+  /* set the proxy credentials */
+  if (pwd.length() > 3)
+    curl_easy_setopt(m_hSession, CURLOPT_PROXYUSERPWD, pwd.c_str());
+#endif
 }
 
 void HttpLib::SetProxyAfter()
 {
   if (!m_ProxySet) return;
+#ifdef _WIN32
   WinHttpSetOption(m_hRequest, WINHTTP_OPTION_PROXY_USERNAME, m_Proxy.username.data(), m_Proxy.username.size() * sizeof(wchar_t));
   WinHttpSetOption(m_hRequest, WINHTTP_OPTION_PROXY_PASSWORD, m_Proxy.password.data(), m_Proxy.password.size() * sizeof(wchar_t));
+#endif
 }
 
 void HttpLib::SetRedirect(long redirect)

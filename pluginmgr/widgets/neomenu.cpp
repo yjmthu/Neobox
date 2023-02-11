@@ -13,9 +13,11 @@
 #include <QClipboard>
 #include <QMimeData>
 
+#include <format>
+
 #ifdef _WIN32
 #include <Windows.h>
-#elif def __linux__
+#elif defined (__linux__)
 #else
 #endif
 
@@ -69,10 +71,12 @@ void NeoMenu::InitSettingMenu()
 }
 
 void NeoMenu::InitFunctionMap() {
+#ifdef _WIN32
   connect(m_SettingMenu->addAction("程序位置"), &QAction::triggered, this, [](){
     std::wstring args = L"/select, " + GetExeFullPath();
     ShellExecuteW(nullptr, L"open", L"explorer", args.c_str(), NULL, SW_SHOWNORMAL);
   });
+#endif
   connect(m_SettingMenu->addAction("配置目录"), &QAction::triggered, this, std::bind(QDesktopServices::openUrl,
                  QUrl::fromLocalFile(QDir::currentPath())));
   connect(m_SettingMenu->addAction("重启软件"), &QAction::triggered, this, std::bind(&PluginMgr::Restart, mgr));
@@ -82,13 +86,18 @@ void NeoMenu::InitFunctionMap() {
 
 bool NeoMenu::IsAutoStart()
 {
+#ifdef _WIN32
   wchar_t pPath[] = LR"(SOFTWARE\Microsoft\Windows\CurrentVersion\Run)";
   return std::format(L"\"{}\"", GetExeFullPath()) ==
           RegReadString(HKEY_CURRENT_USER, pPath, L"Neobox");
+#else
+  return false;
+#endif
 }
 
 void NeoMenu::SetAutoSatrt(QAction* action, bool on)
 {
+#ifdef _WIN32
   wchar_t pPath[] = LR"(SOFTWARE\Microsoft\Windows\CurrentVersion\Run)";
   wchar_t pAppName[] = L"Neobox";
   std::wstring wsThisPath = std::format(L"\"{}\"", GetExeFullPath());
@@ -109,4 +118,8 @@ void NeoMenu::SetAutoSatrt(QAction* action, bool on)
       mgr->ShowMsg("设置成功！");
     }
   }
+#else
+  mgr->ShowMsg("功能不可用！");
+  return;
+#endif
 }

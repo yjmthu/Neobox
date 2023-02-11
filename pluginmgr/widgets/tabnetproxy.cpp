@@ -59,13 +59,20 @@ void TabNetProxy::InitSignals()
 
 void TabNetProxy::SaveData()
 {
-  HttpLib::m_Proxy.domain = Utf82WideString(m_Domain =
-    PluginObject::QString2Utf8(ui->lineDomain->text()));
-  HttpLib::m_Proxy.username = Utf82WideString(m_Username =
-    PluginObject::QString2Utf8(ui->lineUsername->text()));
-  HttpLib::m_Proxy.password = Utf82WideString(m_Password =
-    PluginObject::QString2Utf8(ui->linePassword->text()));
+  m_Domain = PluginObject::QString2Utf8(ui->lineDomain->text());
+  m_Username = PluginObject::QString2Utf8(ui->lineUsername->text());
+  m_Password = PluginObject::QString2Utf8(ui->linePassword->text());
+#ifdef _WIN32
+  HttpLib::m_Proxy.domain = Utf82WideString(m_Domain);
+  HttpLib::m_Proxy.username = Utf82WideString(m_Username);
+  HttpLib::m_Proxy.password = Utf82WideString(m_Password);
   HttpLib::m_Proxy.port = m_Port = ui->linePort->text().toInt();
+#elif defined (__linux__)
+  HttpLib::m_Proxy.proxy.assign(m_Domain.begin(), m_Domain.end());
+  HttpLib::m_Proxy.username.assign(m_Username.begin(), m_Username.end());
+  HttpLib::m_Proxy.password.assign(m_Password.begin(), m_Password.end());
+  // HttpLib::m_Proxy.port = m_Port = ui->linePort->text().toInt();
+#endif
 
   if (ui->rBtnSystemProxy->isChecked()) {
     m_Type = 0;

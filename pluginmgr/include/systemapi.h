@@ -175,7 +175,7 @@ BOOL SetWindowCompositionAttribute(HWND hWnd,
                                    ACCENT_STATE mode,
                                    DWORD GradientColor);
 
-#elif def __linux__
+#elif defined (__linux__)
 
 template <typename _Char, typename _Ty>
 void GetCmdOutput(const char* cmd, _Ty& result) {

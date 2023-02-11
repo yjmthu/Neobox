@@ -17,6 +17,8 @@
 #include <QVBoxLayout>
 #include <QDesktopServices>
 
+using namespace std::literals;
+
 TabVersion::TabVersion(QWidget* parent)
   : QWidget(parent)
   , m_MainLayout(new QHBoxLayout(this))
@@ -59,8 +61,8 @@ void TabVersion::InitLayout()
 
 void TabVersion::LoadJson()
 {
-  const auto name = std::format("<h2>当前版本</h2>Neobox {} {} <br> 发布日期：{}<br>{}",
-    NEOBOX_VERSION, NEOBOX_BUILD_TYPE, NEOBOX_BUILD_TIME, NEOBOX_COPYRIGHT);
+  const auto name = 
+    "<h2>当前版本</h2>Neobox " NEOBOX_VERSION " " NEOBOX_BUILD_TYPE " <br> 发布日期：" NEOBOX_BUILD_TIME "<br>" NEOBOX_COPYRIGHT ""s;
   m_Text->setText(QString::fromUtf8(name.data(), name.size()));
 }
 

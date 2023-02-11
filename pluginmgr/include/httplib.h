@@ -7,11 +7,15 @@
 
 struct HttpProxy 
 {
-  std::wstring domain;
-  std::wstring username;
-  std::wstring password;
+#ifdef _WIN32
+  typedef std::wstring String;
+#else
+  typedef std::u8string String;
+#endif
+  String proxy;
+  String username;
+  String password;
   int type = 0;
-  int port = 8080;
 public:
   void GetSystemProxy();
 };
@@ -19,6 +23,7 @@ public:
 class HttpLib {
 private:
   struct PostData { void* data; size_t size; } m_PostData;
+  typedef HttpProxy::String String;
 public:
   typedef std::map<std::string, std::string> Headers;
   typedef size_t( CallbackFunction )(void*, size_t, size_t, void*);
@@ -83,8 +88,8 @@ private:
   void SetProxyBefore();
   void SetProxyAfter();
   bool SendRequestData();
-  std::wstring GetDomain();
-  std::wstring GetPath();
+  String GetDomain();
+  String GetPath();
 private:
   static CallbackFunction WriteFile;
   static CallbackFunction WriteString;

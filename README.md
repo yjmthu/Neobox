@@ -181,8 +181,20 @@
     - [Qt 6.4.1](https://www.qt.io/download)（最新版本）
     - [vcpkg](https://github.com/microsoft/vcpkg) (libcurl[linux], leptonica, tesseract)
     - c++20 JSON库 [YJson](https://github.com/yjmthu/YJson)
-- `Linux x86_64`
-    - 更换系统后未曾尝试编译（待 GCC13 发布后再考虑用arch写linux部分代码）
+- `Arch Linux x86_64`
+    - 目前编译未成功，但CMake可正常生成缓存
+    - 正在使用clang补写linux功能
+    - 待 GCC13 发布后再切换到 GCC
+
+- CMake 命令【linux】
+
+```shell
+sudo pacman -S curl
+git clone https://github.com/yjmthu/Neobox.git
+cd Neobox
+git submodule update --init --recursive
+cmake -GNinja -B build/debug -S . -DCMAKE_BUILD_TYPE="Debug"
+```
 
 
 ## 现有功能增强方向

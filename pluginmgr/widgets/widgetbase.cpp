@@ -7,8 +7,11 @@
 #include <QWindow>
 #include <QScreen>
 
+#ifdef _WIN32
 #include <Windows.h>
 #include <Windowsx.h>
+#else
+#endif
 
 WidgetBase::WidgetBase(QWidget* parent, bool resizeAble, bool stayTop)
   : QWidget(parent, Qt::FramelessWindowHint)
@@ -152,7 +155,7 @@ static constexpr int padding = 11;
 bool WidgetBase::nativeEvent(const QByteArray &eventType, void *message, qintptr *result)
 {
   if (!m_ResizeAble) return false;
-
+#ifdef _WIN32
   MSG* msg = (MSG*)message;   
   switch(msg->message)
   {
@@ -187,5 +190,6 @@ bool WidgetBase::nativeEvent(const QByteArray &eventType, void *message, qintptr
         break;
     return true;
   }
+#endif
   return false;
 }

@@ -14,13 +14,19 @@
 #include <QProcess>
 #include <QSharedMemory>
 
-#include <windows.h>
+#include <cstdlib>
 #include <filesystem>
 
 #include "../widgets/plugincenter.hpp"
 #include <neomsgdlg.hpp>
 #include <neosystemtray.hpp>
 #include <neomenu.hpp>
+
+#ifdef _WIN32
+#include <windows.h>
+#elif defined(__linux__)
+#include <dlfcn.h>
+#endif
 
 namespace fs = std::filesystem;
 PluginMgr *mgr;
@@ -72,8 +78,7 @@ YJson* PluginMgr::InitSettings()
       }},
       { u8"NetProxy", YJson::O {
         {u8"Type", HttpLib::m_Proxy.type},
-        {u8"Domain", YJson::String},
-        {u8"Port", HttpLib::m_Proxy.port},
+        {u8"Proxy", HttpLib::m_Proxy.proxy},
         {u8"Username", YJson::String},
         {u8"Password", YJson::String}
       }},
@@ -92,18 +97,18 @@ YJson* PluginMgr::InitSettings()
 
     proxy = YJson::O {
       {u8"Type", HttpLib::m_Proxy.type},
-      {u8"Domain", Wide2Utf8String(HttpLib::m_Proxy.domain)},
-      {u8"Port", HttpLib::m_Proxy.port},
-      {u8"Username", Wide2Utf8String(HttpLib::m_Proxy.username)},
-      {u8"Password", Wide2Utf8String(HttpLib::m_Proxy.password)}
+      {u8"Proxy", HttpLib::m_Proxy.proxy},
+      {u8"Username", HttpLib::m_Proxy.username},
+      {u8"Password", HttpLib::m_Proxy.password}
     };
+  } else if (proxy.isObject() && proxy[u8"Proxy"].isNull()) {
+    proxy[u8"Proxy"] = HttpLib::m_Proxy.proxy;
   }
 
 
-  HttpLib::m_Proxy.domain = Utf82WideString(proxy[u8"Domain"].getValueString());
-  HttpLib::m_Proxy.username = Utf82WideString(proxy[u8"Username"].getValueString());
-  HttpLib::m_Proxy.password = Utf82WideString(proxy[u8"Password"].getValueString());
-  HttpLib::m_Proxy.port = proxy[u8"Port"].getValueInt();
+  HttpLib::m_Proxy.proxy = proxy[u8"Proxy"].getValueString();
+  HttpLib::m_Proxy.username = proxy[u8"Username"].getValueString();
+  HttpLib::m_Proxy.password = proxy[u8"Password"].getValueString();
   HttpLib::m_Proxy.type = proxy[u8"Type"].getValueInt();
 
   return setting;
@@ -134,9 +139,7 @@ PluginMgr::~PluginMgr()
   delete m_Shortcut;
   for (auto& [_, info]: m_Plugins) {
     if (!info.plugin) continue;
-    delete info.plugin;
-    info.plugin = nullptr;
-    FreeLibrary(reinterpret_cast<HINSTANCE>(info.handle));
+    FreePlugin(info);
   }
   delete m_Settings;
 
@@ -244,18 +247,29 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
     return false;
   }
   path.make_preferred();
-  std::wstring wPath = path.wstring();
+
+#ifdef _WIN32
+  auto wPath = path.wstring();
   wPath.push_back(L'\0');
   HINSTANCE hdll = LoadLibraryW(wPath.data());
+#else
+  auto cPath = path.string();
+  auto hdll = dlopen(cPath.c_str(), RTLD_LAZY);
+#endif
+
   if (!hdll) {
     ShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件动态库加载失败！"));
     return false;
   }
   pluginInfo.handle = hdll;
+#ifdef _WIN32
   newPlugin = reinterpret_cast<decltype(newPlugin)>(GetProcAddress(hdll, "newPlugin"));
+#else
+  newPlugin = reinterpret_cast<decltype(newPlugin)>(dlsym(hdll, "newPlugin"));
+#endif
   if (!newPlugin) {
     ShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件函数加载失败！"));
-    FreeLibrary(hdll);
+    FreePlugin(pluginInfo);
     return false;
   }
   try {
@@ -267,9 +281,9 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
     }
     return true;
   } catch (...) {
-    pluginInfo.plugin = nullptr;
+    // pluginInfo.plugin = nullptr;
+    FreePlugin(pluginInfo);
     pluginInfo.handle = nullptr;
-    FreeLibrary(hdll);
     ShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件初始化失败！"));
   }
   return false;
@@ -279,7 +293,11 @@ bool PluginMgr::FreePlugin(PluginInfo& info)
 {
   delete info.plugin;
   info.plugin = nullptr;
+#ifdef _WIN32
   return FreeLibrary(reinterpret_cast<HINSTANCE>(info.handle));
+#else
+  return dlclose(info.handle) == 0;
+#endif
 }
 
 void PluginMgr::InitBroadcast()
@@ -319,24 +337,28 @@ bool PluginMgr::LoadPlugEnv(const fs::path& dir)
     WRITE_LOG("dir not exsist\n");
     return false;
   }
-  constexpr auto const varName = L"PATH";
-  std::wstring strEnvPaths(GetEnvironmentVariableW(varName, nullptr, 0), L'\0');  
-  auto const dwSize = GetEnvironmentVariableW(varName, strEnvPaths.data(), strEnvPaths.size());
+#ifdef _WIN32
+  constexpr char seperator = ';';
+#else
+  constexpr char seperator = ':';
+#endif
+  std::string strEnvPaths(std::getenv("PATH"));  
+  // auto const dwSize = GetEnvironmentVariableW(varName, strEnvPaths.data(), strEnvPaths.size());
   strEnvPaths.pop_back();
-  if (!strEnvPaths.empty() && !strEnvPaths.ends_with(L';'))
-    strEnvPaths.push_back(L';');
+  if (!strEnvPaths.empty() && !strEnvPaths.ends_with(seperator))
+    strEnvPaths.push_back(seperator);
   auto path = fs::absolute(dir);
   path.make_preferred();
-  auto wpath = path.wstring();
-  for (auto pos = strEnvPaths.find(wpath); pos != std::wstring::npos; pos = strEnvPaths.find(wpath, pos)) {
-    pos += wpath.size();
-    if (pos == strEnvPaths.size() || strEnvPaths[pos] == L';') {
+  auto cpath = path.string();
+  for (auto pos = strEnvPaths.find(cpath); pos != std::string::npos; pos = strEnvPaths.find(cpath, pos)) {
+    pos += cpath.size();
+    if (pos == strEnvPaths.size() || strEnvPaths[pos] == seperator) {
       return true;
     }
   }
-  wpath.push_back(L'\0');
-  strEnvPaths.append(wpath);
-  auto const bRet = SetEnvironmentVariableW(varName, strEnvPaths.data());  
+  cpath.push_back('\0');
+  strEnvPaths.append(cpath);
+  auto const bRet = setenv("PATH", strEnvPaths.data(), 1) == 0;  
   return bRet;
 }
 

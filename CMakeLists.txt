@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.21.2)
 
-project(Neobox VERSION 2.3.5 LANGUAGES CXX C)
+# 写在所有project之前，对所有project生效
+if(UNIX)
+  set(CMAKE_C_COMPILER /usr/bin/clang)
+  set(CMAKE_CXX_COMPILER /usr/bin/clang++)
+endif()
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
@@ -13,8 +17,17 @@ set(NEOBOX_BUILD_TIME ${COMPILE_TIME})
 
 # list(APPEND CMAKE_PREFIX_PATH "C:/Qt/6.4.2/msvc2019_64")
 
-add_definitions(-DUNICODE -D_UNICODE)
-add_compile_options("/utf-8")
+project(Neobox VERSION 2.3.5 LANGUAGES CXX C)
+
+if(MSVC)
+  add_definitions(-DUNICODE -D_UNICODE)
+  add_compile_options("/utf-8")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT ANDROID)
+  add_compile_options(-stdlib=libc++)
+  # Presumably need the above for linking too, maybe other options missing as well
+  add_link_options(-stdlib=libc++)   # New command on CMake master, not in 3.12 release
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexperimental-library")  # std::format
+endif()
 
 link_directories(build/pluginmgr)
 include_directories(pluginmgr/include)

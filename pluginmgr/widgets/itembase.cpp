@@ -7,6 +7,7 @@
 
 #include <format>
 #include <filesystem>
+#include <thread>
 
 #include <QHBoxLayout>
 #include <QVBoxLayout>

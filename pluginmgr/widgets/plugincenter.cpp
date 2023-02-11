@@ -20,6 +20,8 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 
+#include <thread>
+
 using namespace std::literals;
 
 const std::u8string PluginCenter::m_RawUrl = u8"https://gitlab.com/yjmthu1/neoboxplg/-/raw/main/";
@@ -115,7 +117,7 @@ std::optional<std::string> PluginCenter::DownloadFile(std::u8string_view url)
   connect(m_Instance, &PluginCenter::DownloadFinished, dialog, &QDialog::close);
   // connect(this, &ItemBase::Downloading, dialog, &DownloadingDlg::SetPercent);
 
-  std::thread thread([&](){
+  std::thread thrd([&](){
     HttpLib clt(url);
     clt.SetHeader("User-Agent", "Libcurl in Neobox App/1.0");
     auto res = clt.Get();
@@ -127,7 +129,7 @@ std::optional<std::string> PluginCenter::DownloadFile(std::u8string_view url)
   });
 
   dialog->exec();
-  thread.join();
+  thrd.join();
   // https://gitlab.com/yjmthu1/neoboxplg/-/raw/main/plugins/neohotkeyplg/manifest.json
   return result;
 }
