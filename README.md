@@ -182,8 +182,8 @@
     - [vcpkg](https://github.com/microsoft/vcpkg) (libcurl[linux], leptonica, tesseract)
     - c++20 JSON库 [YJson](https://github.com/yjmthu/YJson)
 - `Arch Linux x86_64`
-    - 目前主程序编译成功，但无法正常运行
-    - 正在使用clang补写linux功能
+    - 目前主程序编译成功，但无可用插件
+    - 正在使用clang补写linux部分功能
     - 待 GCC13 发布后再切换到 GCC
 
 - CMake 命令【linux】

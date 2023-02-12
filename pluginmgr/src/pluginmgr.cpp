@@ -230,18 +230,17 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
 
   PluginObject* (*newPlugin)(YJson&, PluginMgr*)= nullptr;
 
-// #ifdef _DEBUG
-//   fs::path path = __FILEW__;
-//   path = path.parent_path().parent_path().parent_path() / "build/plugins";
-// #else
   fs::path path = u8"plugins";
   path /= pluginName;
   if (!LoadPlugEnv(path)) {
     ShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件文件夹加载失败！"));
     return false;
   }
-// #endif
+#ifdef _WIN32
   path /= pluginName + u8".dll";
+#else
+  path /= pluginName + u8".so";
+#endif
   if (!fs::exists(path)) {
     ShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件文件加载失败！"));
     return false;

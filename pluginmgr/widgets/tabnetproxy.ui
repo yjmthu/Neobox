@@ -82,22 +82,12 @@
         <item>
          <widget class="QLabel" name="label">
           <property name="text">
-           <string>主机</string>
+           <string>链接</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="lineDomain"/>
-        </item>
-        <item>
-         <widget class="QLabel" name="label_2">
-          <property name="text">
-           <string>端口</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLineEdit" name="linePort"/>
+         <widget class="QLineEdit" name="lineProxy"/>
         </item>
        </layout>
       </item>

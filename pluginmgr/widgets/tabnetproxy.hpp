@@ -23,8 +23,7 @@ private:
   class YJson& m_Settings;
   std::u8string& m_Username;
   std::u8string& m_Password;
-  std::u8string& m_Domain;
-  double& m_Port;
+  std::u8string& m_Proxy;
   double& m_Type;
   Ui::FormProxy* ui;
 };

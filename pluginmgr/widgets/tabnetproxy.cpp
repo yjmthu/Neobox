@@ -12,17 +12,13 @@
 TabNetProxy::TabNetProxy(QWidget* parent)
   : QWidget(parent)
   , m_Settings(mgr->GetNetProxy())
-  , m_Domain(m_Settings[u8"Domain"].getValueString())
+  , m_Proxy(m_Settings[u8"Proxy"].getValueString())
   , m_Password(m_Settings[u8"Password"].getValueString())
   , m_Username(m_Settings[u8"Username"].getValueString())
-  , m_Port(m_Settings[u8"Port"].getValueDouble())
   , m_Type(m_Settings[u8"Type"].getValueDouble())
   , ui(new Ui::FormProxy)
 {
   InitLayout();
-  auto validator = new QIntValidator;
-  validator->setRange(1, 65535);
-  ui->linePort->setValidator(validator);
   InitSignals();
   InitData();
 }
@@ -59,18 +55,17 @@ void TabNetProxy::InitSignals()
 
 void TabNetProxy::SaveData()
 {
-  m_Domain = PluginObject::QString2Utf8(ui->lineDomain->text());
+  m_Proxy = PluginObject::QString2Utf8(ui->lineProxy->text());
   m_Username = PluginObject::QString2Utf8(ui->lineUsername->text());
   m_Password = PluginObject::QString2Utf8(ui->linePassword->text());
 #ifdef _WIN32
-  HttpLib::m_Proxy.domain = Utf82WideString(m_Domain);
+  HttpLib::m_Proxy.proxy = Utf82WideString(m_Proxy);
   HttpLib::m_Proxy.username = Utf82WideString(m_Username);
   HttpLib::m_Proxy.password = Utf82WideString(m_Password);
-  HttpLib::m_Proxy.port = m_Port = ui->linePort->text().toInt();
 #elif defined (__linux__)
-  HttpLib::m_Proxy.proxy.assign(m_Domain.begin(), m_Domain.end());
-  HttpLib::m_Proxy.username.assign(m_Username.begin(), m_Username.end());
-  HttpLib::m_Proxy.password.assign(m_Password.begin(), m_Password.end());
+  HttpLib::m_Proxy.proxy = m_Proxy;
+  HttpLib::m_Proxy.username = m_Username;
+  HttpLib::m_Proxy.password = m_Password;
   // HttpLib::m_Proxy.port = m_Port = ui->linePort->text().toInt();
 #endif
 
@@ -100,8 +95,7 @@ void TabNetProxy::InitData()
       ui->rBtnNoProxy->setChecked(true);
       break;
   }
-  ui->lineDomain->setText(PluginObject::Utf82QString(m_Domain));
-  ui->linePort->setText(QString::number(static_cast<int>(m_Port)));
+  ui->lineProxy->setText(PluginObject::Utf82QString(m_Proxy));
   ui->linePassword->setText(PluginObject::Utf82QString(m_Password));
   ui->lineUsername->setText(PluginObject::Utf82QString(m_Username));
 }

@@ -7,11 +7,8 @@
         "name": "CodeLLDB",
         "type": "lldb",
         "request": "launch",
-        "program": "${workspaceFolder}/build/Debug/Neobox.exe",
+        "program": "${workspaceFolder}/build/Debug/neobox",
         "args": [ ],
-        "env": {
-          "PATH": "${PATH};C:/Qt/6.4.1/msvc2019_64/bin;${workspaceFolder}/install/bin;${workspaceFolder}/build/pluginmgr;${workspaceFolder}/build/yjson"
-        },
         "cwd": "${workspaceFolder}",
         "externalConsole": true,
         "MIMode": "lldb"

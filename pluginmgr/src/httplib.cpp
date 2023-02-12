@@ -28,7 +28,9 @@ void HttpProxy::GetSystemProxy()
 #ifdef _WIN32
   proxy = RegReadString(HKEY_CURRENT_USER, regProxyPath, L"ProxyServer");
 #else
-  proxy = reinterpret_cast<const char8_t*>(std::getenv("HTTP_PROXY"));
+  auto const str = reinterpret_cast<const char8_t*>(std::getenv("HTTP_PROXY"));
+  if (!str) return;
+  proxy = str;
 #endif
 }
 
