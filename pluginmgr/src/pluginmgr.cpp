@@ -340,8 +340,9 @@ bool PluginMgr::LoadPlugEnv(const fs::path& dir)
   constexpr char seperator = ';';
 #else
   constexpr char seperator = ':';
+  auto const pathEnv = std::getenv("PATH");
 #endif
-  std::string strEnvPaths(std::getenv("PATH"));  
+  std::string strEnvPaths(pathEnv ? pathEnv : "");  
   // auto const dwSize = GetEnvironmentVariableW(varName, strEnvPaths.data(), strEnvPaths.size());
   strEnvPaths.pop_back();
   if (!strEnvPaths.empty() && !strEnvPaths.ends_with(seperator))
