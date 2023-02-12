@@ -189,7 +189,7 @@
 - CMake 命令【linux】
 
 ```shell
-sudo pacman -S curl
+sudo pacman -S qt6-base curl cmake ninja clang libc++
 git clone https://github.com/yjmthu/Neobox.git
 cd Neobox
 git submodule update --init --recursive
