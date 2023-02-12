@@ -9,14 +9,14 @@
 #include <QHBoxLayout>
 #include <QInputDialog>
 
-ListEditor::ListEditor(QString title, YJson& data, const std::function<void()> callback):
-  QWidget(nullptr),
+ListEditor::ListEditor(QString title, YJson::ArrayType& data, const std::function<void()> callback):
+  QDialog(nullptr),
   m_Data(data),
   m_CallBack(callback),
   m_List(new QListWidget(this))
 {
   setWindowTitle(title);
-  setAttribute(Qt::WA_DeleteOnClose);
+  // setAttribute(Qt::WA_DeleteOnClose);
   SetBaseLayout();
 }
 
@@ -41,7 +41,7 @@ void ListEditor::SetBaseLayout()
   std::for_each(arButtons.begin(), arButtons.end(),
     std::bind(&QHBoxLayout::addWidget, pHout, std::placeholders::_1, 0, Qt::Alignment()));
   
-  for (const auto& item: m_Data.getArray()) {
+  for (const auto& item: m_Data) {
     std::u8string_view str = item.getValueString();
     m_List->addItem(QString::fromUtf8(str.data(), str.size()));
   }
@@ -76,7 +76,7 @@ void ListEditor::SetBaseLayout()
       if (arg.isEmpty()) continue;
       args.emplace_back(PluginObject::QString2Utf8(arg));
     }
-    m_Data.getArray() = std::move(args);
+    m_Data = std::move(args);
     close();
   });
 

@@ -70,7 +70,7 @@ YJson* PluginMgr::InitSettings()
         //   {u8"Command", YJson::O {
         //     {u8"Executable", u8"shutdown.exe"},
         //     {u8"Directory", u8"."},
-        //     {u8"Arguments", u8"-s -t 10"}
+        //     {u8"Arguments", YJson:A {u8"-s", u8"-t", u8"10"}}
         //   }},
         // }
       }},

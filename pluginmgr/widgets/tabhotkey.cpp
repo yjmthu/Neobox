@@ -6,6 +6,8 @@
 #include <yjson.h>
 #include <ui_tabhotkey.h>
 #include <shortcut.h>
+#include <neomenu.hpp>
+#include <listeditor.h>
 
 #include <QStandardItemModel>
 #include <QStandardItem>
@@ -24,9 +26,8 @@ HotKeyInfoPlugin::HotKeyInfoPlugin(const YJson& data, bool on)
 
 HotKeyInfoCommand::HotKeyInfoCommand(const YJson& data, bool on)
   : data(data)
-  , executable(this->data[u8"Executable"].getValueString())
   , directory(this->data[u8"Directory"].getValueString())
-  , arguments(this->data[u8"Arguments"].getValueString())
+  , arguments(this->data[u8"Arguments"].getArray())
   , enabled(on)
 {}
 
@@ -66,7 +67,7 @@ void TabHotKey::InitLayout()
 void TabHotKey::InitSignals()
 {
   connect(ui->tBtnDirectory, &QToolButton::clicked, this, &TabHotKey::ChooseDirectory);
-  connect(ui->tBtnProgram, &QToolButton::clicked, this, &TabHotKey::ChooseProgram);
+  connect(ui->pBtnArgList, &QToolButton::clicked, this, &TabHotKey::EditArgList);
   connect(ui->listWidget, &QListWidget::currentTextChanged, this, &TabHotKey::UpdateHotKeyEditor, Qt::DirectConnection);
   connect(ui->pBtnHotKey, &QPushButton::clicked, this, &TabHotKey::ChangeEnabled);
   connect(ui->pBtnSaveContent, &QPushButton::clicked, this, &TabHotKey::SaveHotKeyData);
@@ -88,13 +89,18 @@ void TabHotKey::InitSignals()
 
 void TabHotKey::InitDataStruct()
 {
-  for (const auto& info: m_Settings.getArray()) {
+  for (auto& info: m_Settings.getArray()) {
     auto keySequence = PluginObject::Utf82QString(info[u8"KeySequence"].getValueString());
     bool const enabled = info[u8"Enabled"].isTrue();
     ui->listWidget->addItem(keySequence);
     if (auto iter = info.find(u8"Plugin"); iter != info.endO()) {
       m_Plugins[keySequence] = std::make_unique<HotKeyInfoPlugin>(iter->second, enabled);
     } else if (auto iter = info.find(u8"Command"); iter != info.endO()) {
+      auto exe = iter->second.find(u8"Executable");
+      if (exe != iter->second.endO()) {
+        iter->second[u8"Arguments"] = YJson::A { exe->second.getValueString() };
+        iter->second.remove(exe);
+      }
       m_Commands[keySequence] = std::make_unique<HotKeyInfoCommand>(iter->second, enabled);
     }
   }
@@ -128,17 +134,14 @@ void TabHotKey::UpdateHotKeyEditor(QString text)
     const auto& info = *iter->second;
     ui->rBtnProcess->setChecked(true);
     ui->chkRegisterHotKey->setChecked(info.enabled);
-    ui->lineProgram->setText(PluginObject::Utf82QString(info.executable));
-    ui->lineArguments->setText(PluginObject::Utf82QString(info.arguments));
     ui->lineDirectory->setText(PluginObject::Utf82QString(info.directory));
+    m_ArgList = info.arguments;
     a = false;
   }
   if (a && b) {
     ui->chkRegisterHotKey->setChecked(false);
   }
   if (a) {
-    ui->lineProgram->setText("shutdown.exe");
-    ui->lineArguments->setText("-s -t 60");
     ui->lineDirectory->setText(".");
   }
   if (b) {
@@ -221,17 +224,23 @@ void TabHotKey::ChooseDirectory()
   ui->lineDirectory->setText(QDir::toNativeSeparators(dirString));
 }
 
-void TabHotKey::ChooseProgram()
+void TabHotKey::EditArgList()
 {
-  auto curDir = ui->lineProgram->text();
-  if (!QFile::exists(curDir)) {
-    curDir = ".";
-  } else {
-    curDir.push_back("/..");
-  }
-  auto fileString = QFileDialog::getOpenFileName(this, "选择程序", curDir);
-  if (fileString.isEmpty()) return;
-  ui->lineProgram->setText(QDir::toNativeSeparators(fileString));
+  // mgr->m_Menu->GetExistingDirectory(QString title, QAnyStringView oldDirectory);
+  // auto curDir = ui->lineProgram->text();
+  // if (!QFile::exists(curDir)) {
+  //   curDir = ".";
+  // } else {
+  //   curDir.push_back("/..");
+  // }
+  // auto fileString = QFileDialog::getOpenFileName(this, "选择程序", curDir);
+  // if (fileString.isEmpty()) return;
+  // ui->lineProgram->setText(QDir::toNativeSeparators(fileString));
+
+  ListEditor editor("输入程序参数列表", m_ArgList, []()->void {});
+  editor.m_ArgEditTitle = "文字输入";
+  editor.m_ArgEditLabel = "输入参数";
+  editor.exec();
 }
 
 bool TabHotKey::SaveHotKeyData()
@@ -279,9 +288,8 @@ bool TabHotKey::SaveHotKeyData()
           {u8"KeySequence", u8CurrKey},
           {u8"Enabled", enabled},
           {u8"Command", YJson::O {
-            {u8"Executable", PluginObject::QString2Utf8(ui->lineProgram->text())},
             {u8"Directory", PluginObject::QString2Utf8(ui->lineDirectory->text())},
-            {u8"Arguments", PluginObject::QString2Utf8(ui->lineArguments->text())}
+            {u8"Arguments", m_ArgList}
           }},
         }
       });
@@ -329,9 +337,8 @@ bool TabHotKey::SaveHotKeyData()
         m_Plugins.erase(iter);
         jsIter->first = u8"Command";
         jsIter->second = YJson::O {
-          {u8"Executable", PluginObject::QString2Utf8(ui->lineProgram->text())},
           {u8"Directory", PluginObject::QString2Utf8(ui->lineDirectory->text())},
-          {u8"Arguments", PluginObject::QString2Utf8(ui->lineArguments->text())}
+          {u8"Arguments", m_ArgList}
         };
         m_Commands[currKey] = std::make_unique<HotKeyInfoCommand>(
           jsIter->second, ui->chkRegisterHotKey->isChecked()
@@ -354,14 +361,11 @@ bool TabHotKey::SaveHotKeyData()
       auto jsIter = jsData.find(u8"Command");
 
       if (ui->rBtnProcess->isChecked()) {
-        auto executable = PluginObject::QString2Utf8(ui->lineProgram->text());
         auto directory = PluginObject::QString2Utf8(ui->lineDirectory->text());
-        auto arguments = PluginObject::QString2Utf8(ui->lineArguments->text());
 
-        if (executable != info.executable || directory != info.directory || arguments != info.arguments) {
-          info.executable = std::move(executable);
+        if (directory != info.directory || m_ArgList != info.arguments) {
           info.directory = std::move(directory);
-          info.arguments = std::move(arguments);
+          info.arguments = m_ArgList;
           jsIter->second = info.GetJson();
         } else {
           needSave = false;
@@ -407,12 +411,8 @@ bool TabHotKey::IsDataInvalid() const
   }
   bool result = true;
   if (ui->rBtnProcess->isChecked()) {
-    auto text = ui->lineProgram->text();
-    result = result && !text.isEmpty();
-    text = ui->lineArguments->text();
-    result = result && !text.isEmpty();
-    text = ui->lineDirectory->text();
-    result = result && !text.isEmpty();
+    result = result && !ui->lineDirectory->text().isEmpty();
+    result = result && !m_ArgList.empty() && !m_ArgList.front().getValueString().empty();
   } else {
     result = result && ui->cBoxPlugin->currentIndex() != -1 && ui->cBoxCallBack->currentIndex() != -1;
   }
@@ -424,26 +424,26 @@ bool TabHotKey::eventFilter(QObject *target, QEvent *event)
 {
   // https://blog.csdn.net/sunflover454/article/details/50904815
   if (target == ui->pBtnHotKey) {
-    if(event->type() == QEvent::KeyPress && ui->pBtnHotKey->isChecked())
+    if (event->type() == QEvent::KeyPress && ui->pBtnHotKey->isChecked())
     {
       auto keyevent = static_cast<QKeyEvent*>(event);
       int uKey = keyevent->key();
       Qt::Key key = static_cast<Qt::Key>(uKey);
-      if(key == Qt::Key_unknown)
+      if (key == Qt::Key_unknown)
       {
         //nothing { unknown key }
       }
 
-      if(key == Qt::Key_Control || key == Qt::Key_Shift || key == Qt::Key_Alt )
+      if (key == Qt::Key_Control || key == Qt::Key_Shift || key == Qt::Key_Alt )
       {
         return false;
       }
       auto modifiers = keyevent->modifiers();
-      if(modifiers & Qt::ShiftModifier)
+      if (modifiers & Qt::ShiftModifier)
         uKey += Qt::SHIFT;
-      if(modifiers & Qt::ControlModifier)
+      if (modifiers & Qt::ControlModifier)
         uKey += Qt::CTRL;
-      if(modifiers & Qt::AltModifier)
+      if (modifiers & Qt::AltModifier)
         uKey += Qt::ALT;
       ui->pBtnHotKey->setText(QKeySequence(uKey).toString(QKeySequence::NativeText));
       return true;

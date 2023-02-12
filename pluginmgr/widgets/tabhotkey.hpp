@@ -26,9 +26,8 @@ struct HotKeyInfoCommand {
 private:
   YJson data;
 public:
-  std::u8string& executable;
   std::u8string& directory;
-  std::u8string& arguments;
+  YJson::ArrayType& arguments;
   bool enabled;
 public:
   explicit HotKeyInfoCommand(const YJson& data, bool on);
@@ -58,7 +57,7 @@ private slots:
   void UpdatePluginMethord(int index);
   void ChangeEnabled(bool on);
   void ChooseDirectory();
-  void ChooseProgram();
+  void EditArgList();
   bool SaveHotKeyData();
   void AddEmptyItem();
   void RemoveItem();
@@ -68,6 +67,7 @@ private:
   MapCommand m_Commands;
   MapPlugin m_Plugins;
   Ui::FormHotKey* ui;
+  YJson::ArrayType m_ArgList;
   std::vector<std::u8string> m_PluginNames;
 };
 

@@ -16,8 +16,28 @@
 #include <X11/Xlib.h>
 #endif
 
+#include <ranges>
+
 using namespace std::literals;
 namespace fs = std::filesystem;
+
+std::vector<char*> LoadArgList(const YJson::ArrayType& array) {
+  std::vector<char*> result;
+  for (auto const& i: array | std::views::transform([](const YJson& item){ return item.getValueString(); })) {
+    auto const str = new char[i.size()+1];
+    str[i.size()] = 0;
+    std::copy_n(i.data(), i.size(), str);
+    result.push_back(str);
+  }
+  result.push_back(nullptr);
+  return result;
+}
+
+void FreeArgList(const std::vector<char*>& args) {
+  for (auto const str: args) {
+    delete [] str;
+  }
+}
 
 bool Shortcut::nativeEventFilter(const QByteArray &eventType, void *message, qintptr *)
 {
@@ -68,28 +88,23 @@ bool Shortcut::nativeEventFilter(const QByteArray &eventType, void *message, qin
   if (iter == m_Data.endA()) return false;
   if (auto iterData = iter->find(u8"Command"); iterData != iter->endO()) {
     auto& data = iterData->second;
-    fs::path executable = data[u8"Executable"].getValueString();
+    auto& arguments = data[u8"Arguments"].getArray();
+    fs::path executable = arguments.front().getValueString();
     executable.make_preferred();
-    auto& arguments = data[u8"Arguments"].getValueString();
     fs::path directory = data[u8"Directory"].getValueString();
     directory = fs::absolute(directory);
     directory.make_preferred();
 
-#ifdef _WIN32
-    auto exe = executable.wstring();
-    auto arg = Utf82WideString(arguments);
-    auto dir = directory.wstring();
-#else
     auto exe = executable.string();
-    auto arg = arguments;
-#endif
+    auto arg = LoadArgList(arguments);
 
 #ifdef _WIN32
     ShellExecute(nullptr, L"open", exe.c_str(), arg.c_str(),
       dir.c_str(), SW_SHOWNORMAL);
 #else
-    execlp(exe.c_str(), reinterpret_cast<const char*>(arg.c_str()));
+    execvp(exe.c_str(), arg.data());
 #endif
+    FreeArgList(arg);
   } else if (auto iterData = iter->find(u8"Plugin"); iterData != iter->endO()) {
     auto& data = iterData->second;
     auto& pluginName = data[u8"PluginName"].getValueString();
@@ -241,11 +256,12 @@ int Shortcut::GetHotKeyId() const
 uint32_t Shortcut::GetNativeKeycode(Qt::Key key) {
 #ifdef __linux__
   // https://doc.qt.io/qt-6/extras-changes-qt6.html
-  KeySym keysym = XStringToKeysym(QKeySequence(key).toString().toLatin1().data());
+  auto const keySequence = QKeySequence(key).toString().toLatin1();
+  KeySym keysym = XStringToKeysym(keySequence.data());
   if (keysym == NoSymbol)
       keysym = static_cast<ushort>(key);
 
-  auto *x11Application = qGuiApp->nativeInterface<QNativeInterface::QX11Application>();
+  auto const x11Application = qGuiApp->nativeInterface<QNativeInterface::QX11Application>();
   return XKeysymToKeycode(x11Application->display(), keysym);
 #else
   switch (key) {

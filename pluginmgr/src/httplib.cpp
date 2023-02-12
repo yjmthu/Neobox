@@ -69,7 +69,7 @@ bool HttpLib::IsOnline() {
   return !std::atoi(lostPacket.c_str());
 #else
   HttpLib clt("https://www.baidu.com"s);
-  auto res = clt.Get("/");
+  auto res = clt.Get();
   return res && res->status == 200;
 #endif
 }
