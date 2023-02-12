@@ -2,7 +2,10 @@
 #define COLORDLG_HPP
 
 #include <widgetbase.hpp>
+
+#ifdef _WIN32
 #include <windows.h>
+#endif
 
 #include <set>
 

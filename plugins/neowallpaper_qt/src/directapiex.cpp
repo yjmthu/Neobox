@@ -130,7 +130,7 @@ void DirectApiExMenu::LoadSubSettingMenu(QAction* action)
 void DirectApiExMenu::EditApi(QAction* action)
 {
   auto const editor = new ListEditor(
-    "列表编辑器", m_Data[u8"ApiData"][PluginObject::QString2Utf8(action->text())][u8"Paths"], [this, action](){
+    "列表编辑器", m_Data[u8"ApiData"][PluginObject::QString2Utf8(action->text())][u8"Paths"].getArray(), [this, action](){
       m_CallBack(false);
       delete action->menu();
       LoadSubSettingMenu(action);

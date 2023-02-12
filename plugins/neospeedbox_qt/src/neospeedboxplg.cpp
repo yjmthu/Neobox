@@ -16,7 +16,10 @@
 #include <QMimeData>
 #include <QMessageBox>
 
+#ifdef _WIN32
 #include <Windows.h>
+#endif
+
 #include <filesystem>
 #include <ranges>
 

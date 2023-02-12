@@ -40,7 +40,7 @@ YJson& BingApi::InitSetting(YJson& setting) {
       { u8"api", u8"https://global.bing.com"},
       { u8"curday"sv,    GetToday() },
       { u8"directory"sv,  initDir },
-      { u8"name-format"sv, u8"{0:%Y-%m-%d} {1}.jpg" },
+      { u8"name-format"sv, u8"{2:04d}-{3:02d}-{4:02d} {1}.jpg" },
       { u8"region"sv, u8"zh-CN" },
       { u8"auto-download"sv, false },
       { u8"copyrightlink"sv, YJson::String}
@@ -171,9 +171,18 @@ void BingApi::AutoDownload() {
 }
 
 std::u8string BingApi::GetToday() {
+#ifdef _WIN32
   auto utc = chrono::system_clock::now();
   std::string result =
       std::format("{0:%Y-%m-%d}", chrono::current_zone()->to_local(utc));
+#else
+  time_t timep;
+  time(&timep);
+
+  auto const p = gmtime(&timep);
+  std::string result =
+      std::format("{:04d}-{:02d}-{:02d}", p->tm_year + 1900, p->tm_mon + 1, p->tm_mday);
+#endif
   return StringAsUtf8(result);
 }
 
@@ -190,8 +199,22 @@ std::u8string BingApi::GetImageName(YJson& imgInfo) {
   chrono::system_clock::time_point timePoint  = {};
   timePoint += chrono::seconds(std::mktime(&tm)) + 24h;
 
+#ifdef _WIN32
   std::string result = std::vformat(fmt, 
     std::make_format_args(timePoint,
       Utf8AsString(title), Utf8AsString(copyright)));
+#else
+  time_t timep = chrono::system_clock::to_time_t(timePoint);
+  auto const p = gmtime(&timep);
+  std::string result = std::vformat(fmt, 
+    std::make_format_args(
+      0,
+      Utf8AsString(title), 
+      Utf8AsString(copyright),
+      p->tm_year + 1900,
+      p->tm_mon + 1,
+      p->tm_mday
+    ));
+#endif
   return StringAsUtf8(result);
 }

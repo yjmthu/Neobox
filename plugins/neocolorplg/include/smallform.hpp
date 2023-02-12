@@ -5,8 +5,9 @@
 #include <QPainterPath>
 #include <QTextOption>
 
+#ifdef _WIN32
 #include <windows.h>
-
+#endif
 
 namespace Ui {
   class SmallForm;

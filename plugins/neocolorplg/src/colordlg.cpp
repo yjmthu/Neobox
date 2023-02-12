@@ -12,7 +12,9 @@
 #include <QFile>
 #include <QScrollBar>
 
+#ifdef _WIN32
 #include <windows.h>
+#endif
 
 ColorDlg* ColorDlg::m_Instance = nullptr;
 

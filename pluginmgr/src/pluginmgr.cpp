@@ -239,7 +239,7 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
 #ifdef _WIN32
   path /= pluginName + u8".dll";
 #else
-  path /= pluginName + u8".so";
+  path /= u8"lib" + pluginName + u8".so";
 #endif
   if (!fs::exists(path)) {
     ShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件文件加载失败！"));
@@ -333,7 +333,7 @@ void PluginMgr::UpdateBroadcast(PluginObject* plugin)
 bool PluginMgr::LoadPlugEnv(const fs::path& dir)
 {
   if (!fs::exists(dir)) {
-    WRITE_LOG("dir not exsist\n");
+    ShowMsg("加载插件时找不到文件夹");
     return false;
   }
 #ifdef _WIN32
@@ -358,7 +358,8 @@ bool PluginMgr::LoadPlugEnv(const fs::path& dir)
   }
   cpath.push_back('\0');
   strEnvPaths.append(cpath);
-  auto const bRet = setenv("PATH", strEnvPaths.data(), 1) == 0;  
+  auto const bRet = setenv("PATH", strEnvPaths.data(), 1) == 0;
+  // ShowMsg(QStringLiteral("代码%1").arg(bRet));
   return bRet;
 }
 

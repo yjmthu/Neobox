@@ -19,7 +19,10 @@
 #include <QDropEvent>
 #include <QMimeData>
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#endif
 
 #include <ranges>
 
@@ -95,9 +98,14 @@ void NeoWallpaperPlg::InitFunctionMap()
       auto picUrlsView =
       urls | std::views::filter([](const QUrl& i) { return i.isValid() && (i.isLocalFile() || i.scheme().startsWith("http")); })
       | std::views::transform([](const QUrl& i) {
-      auto const data = i.isLocalFile() ? i.toLocalFile() : i.toString();
-      return data.toStdWString(); });
-      m_Wallpaper->SetDropFile(std::vector<std::wstring>(picUrlsView.begin(), picUrlsView.end()));
+        auto const data = i.isLocalFile() ? i.toLocalFile() : i.toString();
+#ifdef _WIN32
+        return data.toStdWString();
+#else
+        return data.toStdString();
+#endif
+      });
+      m_Wallpaper->SetDropFile(std::vector(picUrlsView.begin(), picUrlsView.end()));
     }
   }});
 }
@@ -161,8 +169,12 @@ void NeoWallpaperPlg::LoadMainMenuAction()
     },
     {u8"openCurrentDir",
       { u8"定位文件", u8"打开当前壁纸位置", [this](PluginEvent, void*) {
+#ifdef _WIN32
         std::wstring args = L"/select, " + m_Wallpaper->GetCurIamge().wstring();
         ShellExecuteW(nullptr, L"open", L"explorer", args.c_str(), NULL, SW_SHOWNORMAL);
+#else
+        QDesktopServices::openUrl(QUrl::fromLocalFile(QString::fromStdWString(m_Wallpaper->GetCurIamge().wstring())));
+#endif
       }, PluginEvent::Void
     }},
   };

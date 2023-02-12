@@ -80,6 +80,7 @@ private:
   void* m_hConnect = nullptr;
   void* m_hRequest = nullptr;
 #endif
+  int m_TimeOut = 30;
   bool m_ProxySet;
 private:
   void HttpInit();

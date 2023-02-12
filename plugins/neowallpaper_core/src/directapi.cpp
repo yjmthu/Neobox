@@ -50,7 +50,11 @@ YJson& DirectApi::InitSetting(YJson& setting)
           u8"/gqapi/gqapi.php"sv
         }},
         {u8"Directory"sv, GetStantardDir(u8"小歪壁纸")},
+#ifdef _WIN32
         {u8"ImageNameFormat"sv, u8"{0:%Y-%m-%d} {0:%H%M%S}.jpg"sv}
+#else
+        {u8"ImageNameFormat"sv, u8"{1:04d}-{2:02d}-{3:02d} {4:02d}{5:02d}{6:02d}.jpg"sv}
+#endif
       }}
     }},
   };
@@ -115,10 +119,29 @@ void DirectApi::SetJson(bool)
 
 std::u8string DirectApi::GetImageName() {
   auto& apiInfo = GetCurInfo();
+
+#ifdef _WIN32
   auto utc = floor<seconds>(system_clock::now());  // Exactly in seconds.
   const auto time = current_zone()->to_local(utc);
   const std::string result = std::vformat(
       Utf8AsString(apiInfo[u8"ImageNameFormat"].getValueString()),
       std::make_format_args(time));
+#else
+  time_t timep;
+  time(&timep);
+
+  const auto p = gmtime(&timep);
+
+  const std::string result = std::vformat(
+      Utf8AsString(apiInfo[u8"ImageNameFormat"].getValueString()),
+      std::make_format_args(
+        0,
+        p->tm_year + 1900,
+        p->tm_mon + 1,
+        p->tm_mday,
+        p->tm_hour,
+        p->tm_min,
+        p->tm_sec));
+#endif
   return StringAsUtf8(result);
 }

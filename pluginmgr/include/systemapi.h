@@ -177,7 +177,7 @@ BOOL SetWindowCompositionAttribute(HWND hWnd,
 
 #elif defined (__linux__)
 
-template <typename _Char, typename _Ty>
+template <typename _Ty>
 void GetCmdOutput(const char* cmd, _Ty& result) {
   char buffer[1024];
   FILE* ptr;

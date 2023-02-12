@@ -35,6 +35,7 @@ include_directories(thirdlib/YJson/include)
 
 add_subdirectory(thirdlib/YJson yjson)
 add_subdirectory(pluginmgr)
+add_subdirectory(plugins)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 add_executable(neobox WIN32 main.cpp logo.rc)

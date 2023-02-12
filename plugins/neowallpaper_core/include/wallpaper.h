@@ -31,6 +31,11 @@ class Wallpaper {
  private:
   YJson& m_Settings;
   YJson* const m_Config;
+#ifdef _WIN32
+  typedef std::string String;
+#else
+  typedef std::string String;
+#endif
 
  public:
   enum class Desktop { WIN, KDE, DDE, GNOME, XFCE, UNKNOWN };
@@ -44,7 +49,7 @@ class Wallpaper {
   bool ClearJunk();
   bool SetFavorite();
   bool UnSetFavorite();
-  bool SetDropFile(std::vector<std::wstring> urls);
+  bool SetDropFile(std::vector<String> urls);
   const fs::path& GetCurIamge() const { return m_CurImage; }
   void SetSlot(int type);
 
@@ -71,14 +76,13 @@ class Wallpaper {
   static Desktop GetDesktop();
   void StartTimer(bool start);
   // fs::path m_PicHomeDir;
-  static const std::wstring m_ImgNamePattern;
-  std::list<std::wstring> m_NextImgsBuffer;
+  static const String m_ImgNamePattern;
+  std::list<String> m_NextImgsBuffer;
   class WallBase* m_Wallpaper;
 
  private:
   std::function<void()> SettingsCallback;  // call this to save settings
-  fs::path GetImageName(const std::wstring& url);
-
+  fs::path GetImageName(const String& url);
   class NeoTimer* const m_Timer;
   class WallBase* const m_Favorites;
   class WallBase* const m_BingWallpaper;

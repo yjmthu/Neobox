@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10.1)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_package(Qt6 REQUIRED COMPONENTS UiTools)
+# find_package(Qt6 REQUIRED COMPONENTS UiTools)
 file(GLOB source_files src/*.cpp)
 
 set(system_shared_files Shell32)

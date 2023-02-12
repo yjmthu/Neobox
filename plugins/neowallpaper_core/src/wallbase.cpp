@@ -11,10 +11,18 @@
 #include <scriptoutput.h>
 #include <wallhaven.h>
 
-fs::path GetSpecialFolderPath(int type) {
+fs::path GetSpecialFolderPath() {
+#ifdef _WIN32
   std::wstring result(MAX_PATH, 0);
-  SHGetSpecialFolderPathW(nullptr, result.data(), type, TRUE);
+  SHGetSpecialFolderPathW(nullptr, result.data(), CSIDL_MYPICTURES, TRUE);
   result.erase(result.find(L'\0'));
+#else
+  fs::path result = std::getenv("HOME");
+  result /= "Pictures";
+  if (!fs::exists(result)) {
+    fs::create_directory(result);
+  }
+#endif
   return result;
 }
 
@@ -22,14 +30,13 @@ static WallBase* s_pFavorite = nullptr;
 static WallBase* s_pBingApi = nullptr;
 static WallBase* s_pOther = nullptr;
 
-std::unordered_set<fs::path> g_UsingFiles;
+// std::unordered_set<fs::path> g_UsingFiles;
 std::atomic_bool WallBase::ms_IsWorking = false;
 const fs::path WallBase::m_DataDir = u8"wallpaperData";
 const fs::path WallBase::m_ConfigPath = u8"wallpaperData/Wallpaper.json";
 std::function<void()> WallBase::SaveSetting = [](){};
 
-const fs::path WallBase::ms_HomePicLocation =
-    GetSpecialFolderPath(CSIDL_MYPICTURES) / L"桌面壁纸";
+const fs::path WallBase::ms_HomePicLocation = GetSpecialFolderPath() / u8"桌面壁纸";
 
 WallBase* WallBase::GetNewInstance(YJson& setting, int type) {
   if (s_pOther) {

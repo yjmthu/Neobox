@@ -175,7 +175,7 @@
 
 > 如果只有 VS2022 + Qt6 + CMake + YJson 的环境，可以删除 `plugins` 、 `example`、`wxui` 目录，只编译主程序，不编译插件。 
 
-- `Windows10+ x86_64`
+- `Windows 10/11 x86_64`
     - <del>xmake+xrepo</del> **[CMake](https://cmake.org/download/)+Vcpkg**
     - [MSVC 2022](https://visualstudio.microsoft.com/zh-hans/vs/)
     - [Qt 6.4.1](https://www.qt.io/download)（最新版本）

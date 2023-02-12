@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.10.1)
 
 find_package(Qt6 REQUIRED COMPONENTS Svg)
-find_package(Leptonica CONFIG REQUIRED)
+if(WIN32)
+  find_package(Leptonica CONFIG REQUIRED)
+endif()
 file(GLOB source_files src/*.cpp)
 
 set(system_shared_files Shell32)

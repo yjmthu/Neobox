@@ -74,8 +74,16 @@ void BingApiExMenu::LoadSettingMenu()
   });
 
   connect(addAction("关于壁纸"), &QAction::triggered, this, [this]() {
+#ifdef _WIN32
     const auto time = chrono::current_zone()->to_local(chrono::system_clock::now() - 24h);
     std::string curDate = std::format("&filters=HpDate:\"{0:%Y%m%d}_1600\"", time);
+#else
+    time_t timep;
+    time(&timep);
+
+    auto const p = gmtime(&timep);
+    std::string curDate = std::format("&filters=HpDate:\"{:04d}{:02d}{:02d}_1600\"", p->tm_year + 1900, p->tm_mon + 1, p->tm_mday);
+#endif
     auto const& copyrightlink = m_Data[u8"copyrightlink"];
     if (!copyrightlink.isString()) {
       mgr->ShowMsg("找不到当前图片信息！");

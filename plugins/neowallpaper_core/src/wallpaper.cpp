@@ -3,6 +3,9 @@
 #include <neotimer.h>
 #include <pluginmgr.h>
 
+#ifdef __linux__
+#include <unistd.h>
+#endif
 #include <wallpaper.h>
 #include <ranges>
 #include <regex>
@@ -11,7 +14,7 @@
 namespace fs = std::filesystem;
 using namespace std::literals;
 
-extern std::unordered_set<fs::path> g_UsingFiles;
+// extern std::unordered_set<fs::path> g_UsingFiles;
 
 constexpr char Wallpaper::m_szWallScript[];
 
@@ -41,17 +44,17 @@ bool Wallpaper::DownloadImage(const ImageInfoEx imageInfo) {
     mgr->ShowMsgbox(u8"出错"s, u8"网络异常"s);
     return false;
   }
-  g_UsingFiles.emplace(u8FilePath);
+  // g_UsingFiles.emplace(u8FilePath);
   HttpLib clt(imageInfo->ImageUrl);
   clt.SetRedirect(1);
   auto res = clt.Get(u8FilePath);
   if (res->status == 200) {
-    g_UsingFiles.erase(u8FilePath);
+    // g_UsingFiles.erase(u8FilePath);
     return true;
   } else {
     if (fs::exists(u8FilePath))
       fs::remove(u8FilePath);
-    g_UsingFiles.erase(u8FilePath);
+    // g_UsingFiles.erase(u8FilePath);
     mgr->ShowMsgbox(u8"出错"s, u8"网络异常或文件不能打开！\n文件名："s + u8FilePath +
                               u8"\n网址："s + imageInfo->ImageUrl);
     return false;
@@ -62,15 +65,18 @@ Wallpaper::Desktop Wallpaper::GetDesktop() {
 #ifdef _WIN32
   return Desktop::WIN;
 #elif defined(__linux__)
-  std::vector<std::string> vec;
-  GetCmdOutput<char>("echo $XDG_CURRENT_DESKTOP", vec);
-  if (vec[0].find("KDE") != std::string::npos) {
+  auto const ndeEnv = std::getenv("XDG_CURRENT_DESKTOP");
+  if (!ndeEnv) {
+    return Desktop::UNKNOWN;
+  }
+  std::string nde = ndeEnv;
+  if (nde.find("KDE") != std::string::npos) {
     return Desktop::KDE;
-  } else if (vec[0].find("GNOME") != std::string::npos) {
+  } else if (nde.find("GNOME") != std::string::npos) {
     return Desktop::DDE;
-  } else if (vec[0].find("DDE") != std::string::npos) {
+  } else if (nde.find("DDE") != std::string::npos) {
     return Desktop::DDE;
-  } else if (vec[0].find("XFCE") != std::string::npos) {
+  } else if (nde.find("XFCE") != std::string::npos) {
     return Desktop::XFCE;
   } else {
     return Desktop::UNKNOWN;
@@ -83,7 +89,7 @@ bool Wallpaper::SetWallpaper(fs::path imagePath) {
   // use preferred separator to prevent win32 api crash.
   imagePath.make_preferred();
 
-  [[maybe_unused]] static auto m_DesktopType = GetDesktop();
+  [[maybe_unused]] static auto const m_DesktopType = GetDesktop();
   if (!fs::exists(imagePath)) {
     mgr->ShowMsgbox(u8"出错", u8"找不到该文件：" + imagePath.u8string());
     return false;
@@ -98,14 +104,26 @@ bool Wallpaper::SetWallpaper(fs::path imagePath) {
                                  const_cast<WCHAR*>(str.c_str()),
                                  SPIF_SENDCHANGE | SPIF_UPDATEINIFILE);
 #elif defined(__linux__)
-  std::ostringstream sstr;
+  std::string argStr;
   switch (m_DesktopType) {
     case Desktop::KDE:
-      sstr << fs::current_path() / m_szWallScript << ' ';
-      break;
+      argStr = std::format("var allDesktops = desktops(); print(allDesktops); for (i=0; i < allDesktops.length; i++){{ d = allDesktops[i]; d.wallpaperPlugin = \"org.kde.image\"; d.currentConfigGroup = Array(\"Wallpaper\", \"org.kde.image\", \"General\"); d.writeConfig(\"Image\", \"file://{}\")}}", imagePath.string());
+      argStr.push_back('\0');
+      return execlp(
+        "qdbus", "qdbus",
+        "org.kde.plasmashell", "/PlasmaShell",
+        "org.kde.PlasmaShell.evaluateScript",
+        argStr.data(), nullptr
+      ) == 0;
     case Desktop::GNOME:
-      sstr << "gsettings set org.gnome.desktop.background picture-uri \"file:";
-      break;
+      argStr = std::format("\"file:{}\"", imagePath.string());
+      argStr.push_back('\0');
+      return execlp(
+        "gsettings", "gsettings",
+        "set", "org.gnome.desktop.background", "picture-uri",
+        argStr.data(), nullptr
+      ) == 0;
+      // cmdStr = "gsettings set org.gnome.desktop.background picture-uri \"file:" + imagePath.string();
     case Desktop::DDE:
     /*
       Old deepin:
@@ -113,18 +131,18 @@ bool Wallpaper::SetWallpaper(fs::path imagePath) {
       com.deepin.wrap.gnome.desktop.background picture-uri \"");
     */
       // xrandr|grep 'connected primary'|awk '{print $1}' ======> eDP
-      sstr << "dbus-send --dest=com.deepin.daemon.Appearance "
-              "/com/deepin/daemon/Appearance --print-reply "
-              "com.deepin.daemon.Appearance.SetMonitorBackground "
-              "string:\"eDP\" string:\"file://";
-      break;
+      argStr = std::format("string:\"file://\"", imagePath.string());
+      argStr.push_back('\0');
+      return execlp(
+        "dbus-send", "dbus-send",
+        "--dest=com.deepin.daemon.Appearance", "/com/deepin/daemon/Appearance", "--print-reply",
+        "com.deepin.daemon.Appearance.SetMonitorBackground", "string:\"eDP\"",
+        argStr.data(), nullptr
+      ) == 0;
     default:
       std::cerr << "不支持的桌面类型；\n";
       return false;
   }
-  sstr << imagePath;
-  std::string m_sCmd = sstr.str();
-  return system(m_sCmd.c_str()) == 0;
 #endif
 }
 
@@ -146,10 +164,10 @@ Wallpaper::Wallpaper(YJson& settings, std::function<void()> callback)
 Wallpaper::~Wallpaper() {
   delete m_Timer;
   WallBase::ClearInstatnce();
-  for (const auto& i: g_UsingFiles ) {
-    if (fs::exists(i))
-      fs::remove(i);
-  }
+  // for (const auto& i: g_UsingFiles ) {
+  //   if (fs::exists(i))
+  //     fs::remove(i);
+  // }
 }
 
 void Wallpaper::SetSlot(int type) {
@@ -182,10 +200,6 @@ void Wallpaper::SetSlot(int type) {
   }).detach();
 }
 
-// fs::path Wallpaper::GetImageDir() const {
-//   return m_Wallpaper->GetImageDir();
-// }
-
 void Wallpaper::SetTimeInterval(int minute) {
   auto& jsTimeInterval = m_Settings[u8"TimeInterval"];
   if (jsTimeInterval.getValueInt() != minute) {
@@ -199,7 +213,7 @@ void Wallpaper::SetTimeInterval(int minute) {
   m_Timer->StartTimer(minute, std::bind(&Wallpaper::SetSlot, this, 1));
 }
 
-std::filesystem::path Wallpaper::GetImageName(const std::wstring& url)
+std::filesystem::path Wallpaper::GetImageName(const String& url)
 {
   std::filesystem::path imagePath = m_Settings[u8"DropDir"].getValueString();
   if (imagePath.is_relative()) {
@@ -218,9 +232,30 @@ std::filesystem::path Wallpaper::GetImageName(const std::wstring& url)
     auto const extension = url.rfind(L'.');                       // all url is img file
     // auto pt = std::find(url.crbegin(), url.crend(), u8'.').base() - 1;
     auto utc = std::chrono::system_clock::now();
+
+#ifdef _WIN32
     auto const fmtedName = std::vformat(
       Utf82WideString(fmt) + url.substr(extension),
       std::make_wformat_args(std::chrono::current_zone()->to_local(utc), url.substr(iter, extension - iter)));
+#else
+    time_t timep;
+    time(&timep);
+    auto const p = gmtime(&timep);
+    auto fmtStr = std::string(fmt.begin(), fmt.end()) + url.substr(extension);
+    std::string const fmtedName = std::vformat(
+      fmtStr,
+      std::make_format_args(
+        0,
+        url.substr(iter, extension - iter),
+        p->tm_year + 1900,
+        p->tm_mon + 1,
+        p->tm_mday,
+        p->tm_hour,
+        p->tm_min,
+        p->tm_sec
+      )
+    );
+#endif
     imagePath.append(fmtedName);
   }
 
@@ -231,10 +266,15 @@ bool Wallpaper::SetNext() {
   if (!m_NextImgsBuffer.empty()) {
     auto const imgUrl = std::move(m_NextImgsBuffer.front());
     m_NextImgsBuffer.pop_front();
-    if (imgUrl.starts_with(L"http")) {
+#ifdef _WIN32
+    if (imgUrl.starts_with(L"http"))
+#else
+    if (imgUrl.starts_with("http"))
+#endif
+    {
       ImageInfoEx ptr(new ImageInfo{
         GetImageName(imgUrl).u8string(),
-        Wide2Utf8String(imgUrl),
+        std::u8string(imgUrl.begin(), imgUrl.end()),
         {/* ??? */},
         ImageInfo::Errors::NoErr,
       });
@@ -375,21 +415,32 @@ bool Wallpaper::UnSetFavorite() {
   }
 }
 
-const std::wstring Wallpaper::m_ImgNamePattern = L".*\\.(jpg|bmp|gif|jpeg|png)$";
+const Wallpaper::String Wallpaper::m_ImgNamePattern {
+#ifdef _WIN32
+  L""
+#endif
+  ".*\\.(jpg|bmp|gif|jpeg|png)$"
+};
+
 bool Wallpaper::IsImageFile(const fs::path& filesName) {
   // BMP, PNG, GIF, JPG
-  std::wregex pattern(m_ImgNamePattern, std::regex::icase);
+  std::basic_regex<String::value_type> pattern(m_ImgNamePattern, std::regex::icase);
+
+#ifdef _WIN32
   return std::regex_match(filesName.wstring(), pattern);
+#else
+  return std::regex_match(filesName.string(), pattern);
+#endif
 }
 
-bool Wallpaper::SetDropFile(std::vector<std::wstring> urls) {
+bool Wallpaper::SetDropFile(std::vector<String> urls) {
   if (WallBase::ms_IsWorking) {
     mgr->ShowMsgbox(u8"提示", u8"目前没空！");
     return false;
   }
   WallBase::ms_IsWorking = true;
-  const std::wregex pattern(m_ImgNamePattern, std::wregex::icase);
-  auto lst = urls | std::views::filter([&pattern](const std::wstring& i){ return std::regex_match(i, pattern);});
+  const std::basic_regex<String::value_type> pattern(m_ImgNamePattern, std::wregex::icase);
+  auto lst = urls | std::views::filter([&pattern](const String& i){ return std::regex_match(i, pattern);});
   m_NextImgsBuffer.insert(m_NextImgsBuffer.end(), lst.begin(), lst.end());
   if (!lst.empty()) {
     std::thread([this]() {

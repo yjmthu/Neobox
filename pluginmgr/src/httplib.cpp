@@ -185,6 +185,7 @@ void HttpLib::HttpInit()
   }
 
 #else
+  SetProxyBefore();
   m_Url.push_back('\0');
   if (m_hSession)
     curl_easy_cleanup(m_hSession);
@@ -196,6 +197,9 @@ void HttpLib::HttpInit()
   curl_easy_setopt(m_hSession, CURLOPT_READFUNCTION, NULL);
   curl_easy_setopt(m_hSession, CURLOPT_NOSIGNAL, 1L);
   curl_easy_setopt(m_hSession, CURLOPT_POST, 0L);
+  if (m_TimeOut > 0) {
+    curl_easy_setopt(m_hSession, CURLOPT_TIMEOUT, m_TimeOut);
+  }
 #endif
 }
 

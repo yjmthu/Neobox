@@ -62,10 +62,9 @@ ImageInfoEx ScriptOutput::GetNext()
     return ptr;
   }
   auto str = Wide2Utf8String(result.front());
-#elif def __linux__
+#elif defined (__linux__)
   std::vector<std::u8string> result;
-  auto cmd = GetCommandWithArg();
-  GetCmdOutput(reinterpret_cast<const char*>(cmd.c_str()), result);
+  GetCmdOutput(reinterpret_cast<const char*>(u8cmd.c_str()), result);
   if (result.empty())
     ptr->ErrorMsg = u8"Run command with empty output."s;
   ptr->ErrorCode = ImageInfo::RunErr;
@@ -78,12 +77,21 @@ ImageInfoEx ScriptOutput::GetNext()
     return ptr;
   }
   if (!fs::exists(str)) {
+#ifdef _WIN32
     auto wErMsg = std::accumulate(result.begin(), result.end(),
       L"程序运行输出不匹配，请确保输出图片路径！\n"s,
-      [](const std::wstring& a, const std::wstring& b){
+      [](const std::wstring& a, const std::wstring& b) {
         return a + L'\n' + b;
       });
     ptr->ErrorMsg = Wide2Utf8String(wErMsg);
+#else
+    auto wErMsg = std::accumulate(result.begin(), result.end(),
+      u8"程序运行输出不匹配，请确保输出图片路径！\n"s,
+      [](const std::u8string& a, const std::u8string& b) {
+        return a + u8'\n' + b;
+      });
+    ptr->ErrorMsg = std::move(wErMsg);
+#endif
     ptr->ErrorCode = ImageInfo::RunErr;
     return ptr;
   }

@@ -198,7 +198,11 @@ void Favorite::Dislike(const std::u8string& sImgPath)
   if (fs::exists(oldDir) && fs::equivalent(curDir, oldDir)) {
     fs::remove(oldPath);
   } else {
+#ifdef _WIN32
     const auto fmtStr = Utf82AnsiString(m_Setting[u8"NameFormat"].getValueString());
+#else
+    const auto fmtStr = Utf8AsString(m_Setting[u8"NameFormat"].getValueString());
+#endif
     const auto newName = std::vformat(fmtStr, std::make_format_args(oldPath.stem().string())) + oldPath.extension().string();
     fs::remove(curDir / newName);
   }
@@ -212,7 +216,11 @@ void Favorite::UndoDislike(const std::u8string& sImgPath)
   if (!fs::exists(curDir) && !fs::create_directories(curDir)) {
     return;
   }
+#ifdef _WIN32
   const auto fmtStr = Utf82AnsiString(m_Setting[u8"NameFormat"].getValueString());
+#else
+  const auto fmtStr = Utf8AsString(m_Setting[u8"NameFormat"].getValueString());
+#endif
   const auto newName = std::vformat(fmtStr, std::make_format_args(oldPath.stem().string())) + oldPath.extension().string();
   const auto newPath = curDir / newName;
   if (!fs::exists(newPath) && fs::exists(oldPath)) {
