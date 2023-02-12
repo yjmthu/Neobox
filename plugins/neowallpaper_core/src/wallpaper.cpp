@@ -109,20 +109,26 @@ bool Wallpaper::SetWallpaper(fs::path imagePath) {
     case Desktop::KDE:
       argStr = std::format("var allDesktops = desktops(); print(allDesktops); for (i=0; i < allDesktops.length; i++){{ d = allDesktops[i]; d.wallpaperPlugin = \"org.kde.image\"; d.currentConfigGroup = Array(\"Wallpaper\", \"org.kde.image\", \"General\"); d.writeConfig(\"Image\", \"file://{}\")}}", imagePath.string());
       argStr.push_back('\0');
-      return execlp(
-        "qdbus", "qdbus",
-        "org.kde.plasmashell", "/PlasmaShell",
-        "org.kde.PlasmaShell.evaluateScript",
-        argStr.data(), nullptr
-      ) == 0;
+      if (fork() == 0) {
+        execlp(
+          "qdbus", "qdbus",
+          "org.kde.plasmashell", "/PlasmaShell",
+          "org.kde.PlasmaShell.evaluateScript",
+          argStr.data(), nullptr
+        );
+      }
+      break;
     case Desktop::GNOME:
       argStr = std::format("\"file:{}\"", imagePath.string());
       argStr.push_back('\0');
-      return execlp(
-        "gsettings", "gsettings",
-        "set", "org.gnome.desktop.background", "picture-uri",
-        argStr.data(), nullptr
-      ) == 0;
+      if (fork() == 0) {
+        execlp(
+          "gsettings", "gsettings",
+          "set", "org.gnome.desktop.background", "picture-uri",
+          argStr.data(), nullptr
+        );
+      }
+      break;
       // cmdStr = "gsettings set org.gnome.desktop.background picture-uri \"file:" + imagePath.string();
     case Desktop::DDE:
     /*
@@ -133,16 +139,20 @@ bool Wallpaper::SetWallpaper(fs::path imagePath) {
       // xrandr|grep 'connected primary'|awk '{print $1}' ======> eDP
       argStr = std::format("string:\"file://\"", imagePath.string());
       argStr.push_back('\0');
-      return execlp(
-        "dbus-send", "dbus-send",
-        "--dest=com.deepin.daemon.Appearance", "/com/deepin/daemon/Appearance", "--print-reply",
-        "com.deepin.daemon.Appearance.SetMonitorBackground", "string:\"eDP\"",
-        argStr.data(), nullptr
-      ) == 0;
+      if (fork()) {
+        execlp(
+          "dbus-send", "dbus-send",
+          "--dest=com.deepin.daemon.Appearance", "/com/deepin/daemon/Appearance", "--print-reply",
+          "com.deepin.daemon.Appearance.SetMonitorBackground", "string:\"eDP\"",
+          argStr.data(), nullptr
+        );
+      }
+      break;
     default:
       std::cerr << "不支持的桌面类型；\n";
       return false;
   }
+  return true;
 #endif
 }
 

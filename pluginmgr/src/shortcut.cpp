@@ -102,7 +102,7 @@ bool Shortcut::nativeEventFilter(const QByteArray &eventType, void *message, qin
     ShellExecute(nullptr, L"open", exe.c_str(), arg.c_str(),
       dir.c_str(), SW_SHOWNORMAL);
 #else
-    execvp(exe.c_str(), arg.data());
+    if (fork() == 0) execvp(exe.c_str(), arg.data());
 #endif
     FreeArgList(arg);
   } else if (auto iterData = iter->find(u8"Plugin"); iterData != iter->endO()) {
