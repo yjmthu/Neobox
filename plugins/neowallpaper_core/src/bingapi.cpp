@@ -40,7 +40,7 @@ YJson& BingApi::InitSetting(YJson& setting) {
       { u8"api", u8"https://global.bing.com"},
       { u8"curday"sv,    GetToday() },
       { u8"directory"sv,  initDir },
-      { u8"name-format"sv, u8"{2:04d}-{3:02d}-{4:02d} {1}.jpg" },
+      { u8"name-format"sv, u8"{3:04d}-{4:02d}-{5:02d} {1}.jpg" },
       { u8"region"sv, u8"zh-CN" },
       { u8"auto-download"sv, false },
       { u8"copyrightlink"sv, YJson::String}
@@ -175,15 +175,20 @@ std::u8string BingApi::GetToday() {
   auto utc = chrono::system_clock::now();
   std::string result =
       std::format("{0:%Y-%m-%d}", chrono::current_zone()->to_local(utc));
+  return StringAsUtf8(result);
 #else
   time_t timep;
   time(&timep);
 
   auto const p = gmtime(&timep);
-  std::string result =
-      std::format("{:04d}-{:02d}-{:02d}", p->tm_year + 1900, p->tm_mon + 1, p->tm_mday);
+  std::u8string result(11, 0);
+      // std::format("{:4d}-{:2d}-{:2d}", p->tm_year + 1900, p->tm_mon + 1, p->tm_mday);
+  sprintf(
+    reinterpret_cast<char*>(result.data()), "%04d-%02d-%02d",
+    p->tm_year + 1900, p->tm_mon + 1, p->tm_mday);
+  result.pop_back();
+  return result;
 #endif
-  return StringAsUtf8(result);
 }
 
 std::u8string BingApi::GetImageName(YJson& imgInfo) {

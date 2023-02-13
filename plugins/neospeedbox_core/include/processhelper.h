@@ -56,6 +56,7 @@ public:
 private:
   bool HasProcess(ProcessInfo::Pid id) const;
   void ClearInfo();
+  static const size_t m_PageSize;
 #ifdef __linux__
   static std::string GetCmdLine(const std::filesystem::path& dir);
   static std::string GetExeName(const std::filesystem::path& dir);

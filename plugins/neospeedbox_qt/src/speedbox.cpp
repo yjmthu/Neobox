@@ -156,11 +156,12 @@ bool SpeedBox::LoadCurrentSkin() {
 
 #ifdef _WIN32
   auto skinPath = u8"skins/" + skinFileName + u8".dll";
+  auto qResSkinPath = ":/dlls/" + QString::fromUtf8(skinFileName.data(), skinFileName.size()) + ".dll";
 #else
   auto skinPath = u8"skins/lib" + skinFileName + u8".so";
+  auto qResSkinPath = ":/sos/lib" + QString::fromUtf8(skinFileName.data(), skinFileName.size()) + ".so";
 #endif
   auto qSkinPath = QString::fromUtf8(skinPath.data(), skinPath.size());
-  auto qResSkinPath = ":/dlls/" + QString::fromUtf8(skinFileName.data(), skinFileName.size()) + ".dll";
 
   if (!fs::exists("skins"))
     fs::create_directory("skins");
@@ -187,6 +188,8 @@ bool SpeedBox::LoadCurrentSkin() {
       QFile::copy(qResSkinPath, qSkinPath);
       QFile::setPermissions(qSkinPath, QFile::ReadUser | QFile::WriteUser);
     }
+  } else if (!QFile::exists(qSkinPath)) {
+    mgr->ShowMsg("找不到皮肤资源");
   }
 
   return LoadDll(skinPath);

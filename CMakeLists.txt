@@ -19,6 +19,19 @@ set(NEOBOX_BUILD_TIME ${COMPILE_TIME})
 
 project(Neobox VERSION 2.3.5 LANGUAGES CXX C)
 
+if (NOT CMAKE_BUILD_TYPE)
+  message("编译类型未定义，默认设置为Debug")
+  set(CMAKE_BUILD_TYPE "Debug")
+endif()
+
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+  add_definitions(-D_DEBUG)
+  message("定义Debug宏, 类型${CMAKE_BUILD_TYPE}。")
+else()
+  add_definitions(-D_RELEASE)
+  message("定义Rlease宏, 类型${CMAKE_BUILD_TYPE}。")
+endif()
+
 if(MSVC)
   add_definitions(-DUNICODE -D_UNICODE)
   add_compile_options("/utf-8")

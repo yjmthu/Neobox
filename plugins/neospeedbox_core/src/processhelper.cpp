@@ -4,6 +4,7 @@
 #include <tlhelp32.h>
 #include <psapi.h>
 #else
+#include <unistd.h>
 #include <fstream>
 namespace fs = std::filesystem;
 #endif
@@ -59,7 +60,7 @@ std::string ProcessHelper::GetCmdLine(const std::filesystem::path& dir) {
   return line;
 }
 
-std::string GetExeName(const std::filesystem::path& dir) {
+std::string ProcessHelper::GetExeName(const std::filesystem::path& dir) {
   std::ifstream file(dir / "comm");
   std::string name;
   std::getline(file, name);
@@ -72,9 +73,11 @@ size_t ProcessHelper::GetMemUsage(const std::filesystem::path& dir) {
   size_t value;
   file >> value >> value;
   file.close();
-  return value << 2;
+  return value * m_PageSize;
 }
 #endif
+
+const size_t ProcessHelper::m_PageSize = getpagesize();
 
 ProcessHelper::ProcessHelper()
 	: m_ProcessInfo([](const ProcessInfo* a, const ProcessInfo* b)->bool{
@@ -153,9 +156,10 @@ bool ProcessHelper::GetProcessInfo()
 #else
   for (auto& dirEntry: fs::directory_iterator("/proc")) {
     if (!dirEntry.is_directory()) continue;
-    try {
-      fs::path path = dirEntry.path();
-      pid_t pid = std::stoi(path.stem());
+    fs::path path = dirEntry.path();
+    std::string const name = path.stem().string();
+    if (!name.empty() && std::isdigit(name.front())) {
+      pid_t pid = std::stoi(path.stem().string());
       auto const info = new ProcessInfo {
         GetExeName(path),
         GetCmdLine(path),
@@ -163,10 +167,6 @@ bool ProcessHelper::GetProcessInfo()
         GetMemUsage(path)
       };
       m_ProcessInfo.insert(info);
-    } catch (std::invalid_argument const& ex) {
-      continue;
-    } catch (std::out_of_range const& ex) {
-      std::cerr << "Int can not hold the linux pid.";
     }
   }
 #endif

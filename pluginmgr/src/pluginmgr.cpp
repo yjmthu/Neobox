@@ -229,9 +229,13 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
   pluginInfo.handle = nullptr;
 
   PluginObject* (*newPlugin)(YJson&, PluginMgr*)= nullptr;
-
+#ifndef _DEBUG
   fs::path path = u8"plugins";
   path /= pluginName;
+#else
+  fs::path path = __FILE__;
+  path = path.parent_path().parent_path().parent_path() / "install/lib";
+#endif
   if (!LoadPlugEnv(path)) {
     ShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件文件夹加载失败！"));
     return false;
@@ -568,5 +572,5 @@ QSharedMemory* PluginMgr::CreateSharedMemory() {
 void PluginMgr::DetachSharedMemory()
 {
   // m_SharedMemory->setKey(QStringLiteral("__Neobox__"));
-  m_SharedMemory->detach();
+  // m_SharedMemory->detach();
 }

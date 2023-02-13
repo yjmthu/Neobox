@@ -36,7 +36,7 @@ void ProcessForm::SetupUi()
   auto const layout = new QVBoxLayout(this);
   layout->setContentsMargins(11, 11, 11, 11);
   layout->addWidget(m_CenterWidget);
-  m_CenterWidget->setStyleSheet("QWidget{background-color:white; border-radius: 3px;}");
+  m_CenterWidget->setStyleSheet("QWidget{background-color:white; color:black; border-radius: 3px;}");
   SetShadowAround(m_CenterWidget);
 
   auto const begin = m_Labels, end = m_Labels + m_ProcessCount*3;

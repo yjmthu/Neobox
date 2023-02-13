@@ -3,14 +3,14 @@
 
 int main(int argc, char* argv[]) {
   QApplication a(argc, argv);
-  try {
+  // try {
     PluginMgr mgr;
     mgr.Exec();
-  } catch (std::runtime_error err) {
-    //
-  } catch (...) {
-    //
-  }
+  // } catch (std::runtime_error err) {
+  //   //
+  // } catch (...) {
+  //   //
+  // }
   return 0;
 }
 
