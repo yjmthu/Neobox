@@ -8,6 +8,8 @@
 #include <QHBoxLayout>
 #include <QLabel>
 
+#include <format>
+
 using namespace std::literals;
 
 ProcessForm::ProcessForm(SpeedBox* box)
@@ -82,8 +84,13 @@ void ProcessForm::UpdateList()
       ptr[2].clear();
     } else {
       auto& info = **iter;
+#ifdef _WIN32
       ptr[0].setText(QString::fromStdWString(info.exeFile));
       ptr[0].setToolTip(QString::fromStdWString(info.commandLine));
+#else
+      ptr[0].setText(QString::fromStdString(info.exeFile));
+      ptr[0].setToolTip(QString::fromStdString(info.commandLine));
+#endif
       ptr[1].setText(QString::number(info.processID));
       ptr[2].setText(FormatBytes(info.workingSetSize));
     }

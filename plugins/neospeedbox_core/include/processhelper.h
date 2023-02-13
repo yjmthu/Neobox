@@ -1,19 +1,35 @@
 #ifndef PROCESSHELPER_H
 #define PROCESSHELPER_H
 
-#include <wtypes.h>
 #include <string>
 #include <set>
+#ifdef _WIN32
+#include <wtypes.h>
+#else
+#include <filesystem>
+#include <iostream>
+#endif
 
 #define PROCESS_SIMPLE_INFO
 
 struct ProcessInfo {
+#ifdef _WIN32
+  typedef std::wstring String;
+  typedef DWORD Pid;
+  typedef SIZE_T Size;
+#else
+  typedef std::string String;
+  typedef pid_t Pid;
+  typedef size_t Size;
+#endif
   // variables
-  std::wstring exeFile;
-  std::wstring commandLine;
+  String exeFile;
+  String commandLine;
+#ifdef WIN32
   HANDLE processHandle;
-  DWORD processID;
-  SIZE_T workingSetSize;
+#endif
+  Pid processID;
+  Size workingSetSize;
   // SIZE_T pagefileUsage;
 #ifndef PROCESS_SIMPLE_INFO
   DWORD cntThreads;
@@ -24,10 +40,9 @@ struct ProcessInfo {
   LONG netReceivedBytes;
   LONG netSentBytes;
 #endif
-
-  // functions
-  // explicit ProcessInfo(PROCESSENTRY32& pe32);
+#ifdef _WIN32
   bool GetMemoryUsage();
+#endif
 };
 
 class ProcessHelper {
@@ -39,8 +54,13 @@ public:
   explicit ProcessHelper();
   ~ProcessHelper();
 private:
-  bool HasProcess(DWORD id) const;
+  bool HasProcess(ProcessInfo::Pid id) const;
   void ClearInfo();
+#ifdef __linux__
+  static std::string GetCmdLine(const std::filesystem::path& dir);
+  static std::string GetExeName(const std::filesystem::path& dir);
+  static size_t GetMemUsage(const std::filesystem::path& dir);
+#endif
 };
 
 #endif // PROCESSHELPER_H

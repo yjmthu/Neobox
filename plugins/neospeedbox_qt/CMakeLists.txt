@@ -2,16 +2,26 @@ cmake_minimum_required(VERSION 3.10.1)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+# if(UNIX AND NOT MACOS)
+#   find_package(KF5WindowSystem REQUIRED)
+# endif()
+
 # find_package(Qt6 REQUIRED COMPONENTS UiTools)
 file(GLOB source_files src/*.cpp)
 
-set(system_shared_files Shell32)
+if(WIN32)
+  set(system_shared_files Shell32)
+elseif(UNIX)
+  # Qt6 和 KF5冲突
+  # set(system_shared_files KF5::WindowSystem)
+  set(system_shared_files "")
+endif()
 set(qt_shared_files Qt6::Core Qt6::Widgets)
 set(pliugin_libfiles neospeedbox_core pluginmgr yjson)
 
 add_library(neospeedboxplg SHARED ${source_files})
 
-file(GLOB _resource_files fonts/*.ttf icons/* dlls/*.dll)
+file(GLOB _resource_files fonts/*.ttf icons/* dlls/*.dll sos/*.so)
 
 set(resource_files "")
 foreach(full_filepath ${_resource_files})
@@ -25,7 +35,7 @@ qt_add_resources(neospeedboxplg "neospeedboxplg"
   FILES ${resource_files}
 )
 
-target_link_libraries(neospeedboxplg PRIVATE
+target_link_libraries(neospeedboxplg PUBLIC
   ${pliugin_libfiles}
   ${qt_shared_files}
   ${system_shared_files}

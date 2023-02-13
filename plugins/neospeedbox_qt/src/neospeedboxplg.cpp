@@ -15,9 +15,12 @@
 #include <QDropEvent>
 #include <QMimeData>
 #include <QMessageBox>
+#include <QWindow>
 
 #ifdef _WIN32
 #include <Windows.h>
+#else
+// #include <KF5/KWindowSystem/KWindowEffects>
 #endif
 
 #include <filesystem>
@@ -57,11 +60,17 @@ void NeoSpeedboxPlg::InitFunctionMap() {
       u8"模糊背景", u8"Windows10+或KDE下的模糊效果", [this](PluginEvent event, void* data){
         if (event == PluginEvent::Bool) {
           m_Settings[u8"ColorEffect"] = *reinterpret_cast<bool *>(data);
+#ifdef _WIN32
           auto status = *reinterpret_cast<bool *>(data) ? ACCENT_ENABLE_BLURBEHIND : ACCENT_DISABLED;
           auto hWnd = reinterpret_cast<HWND>(m_Speedbox->winId());
           const QColor col(Qt::transparent);
           SetWindowCompositionAttribute(hWnd, status,
             qRgba(col.blue(), col.green(), col.red(), col.alpha()));
+#else
+          // KWindowEffects::enableBlurBehind(
+          //   qobject_cast<QWindow*>(m_Speedbox), *reinterpret_cast<bool *>(data));
+          mgr->ShowMsg("暂不可用");
+#endif
           mgr->SaveSettings();
         } else if (event == PluginEvent::BoolGet) {
           *reinterpret_cast<bool *>(data) = m_Settings[u8"ColorEffect"].isTrue();
@@ -206,7 +215,11 @@ YJson& NeoSpeedboxPlg::InitSettings(YJson& settings)
   if (auto iter = skins.find(curSkin); iter == skins.endO()) {
     curSkin = u8"经典火绒";
   } else {
+#ifdef _WIN32
     fs::path curSkinPath = u8"skins/" + iter->second.getValueString() + u8".dll";
+#else
+    fs::path curSkinPath = u8"skins/lib" + iter->second.getValueString() + u8".so";
+#endif
     if (!fs::exists(curSkinPath)) {
       skins.remove(curSkin);
       curSkin = u8"经典火绒";
@@ -218,9 +231,13 @@ YJson& NeoSpeedboxPlg::InitSettings(YJson& settings)
   }
 
   const auto& curFileName = Utf82QString(skins[curSkin].getValueString());
+#ifdef _WIN32
   auto const curSkinPath = "skins/" + curFileName + ".dll";
   auto const curResPath = ":/dlls/" + curFileName + ".dll";
-
+#else
+  auto const curSkinPath = "skins/lib" + curFileName + ".so";
+  auto const curResPath = ":/dlls/lib" + curFileName + ".so";
+#endif
   auto& version = settings[u8"Version"];
   if (!version.isNumber()) {
     version = 0;
@@ -344,7 +361,8 @@ void NeoSpeedboxPlg::AddSkinConnect(QAction* action)
         }
       }
 
-      const auto qFilePath = QFileDialog::getOpenFileName(mgr->m_Menu, "选择文件", ".", "(*.dll)");
+      const auto qFilePath =
+        QFileDialog::getOpenFileName(mgr->m_Menu, "选择文件", ".", "(*.dll)");
       if (qFilePath.isEmpty()) {
         mgr->ShowMsg("取消成功");
         return;

@@ -16,12 +16,16 @@ public:
 
   struct IpAdapter {
     std::u8string adapterName;  // ASCII
+#ifdef _WIN32
     std::wstring friendlyName;
+#endif
     bool enabled;
     unsigned long index;
   };
-  
+
+#ifdef _WIN32
   void UpdateAdaptersAddresses();
+#endif
   void GetSysInfo();
 
 public:
@@ -34,8 +38,8 @@ private:
   unsigned char* m_IfTableBuffer;
   unsigned long m_IfTableBufferSize;
   // MIB_IFTABLE* m_IfTable = nullptr;             // Network Speed
-  uint64_t m_PreIdleTime { 0 }, m_PreKernelTime { 0 }, m_PreUserTime { 0 };
 #endif
+  uint64_t m_PreIdleTime { 0 }, m_PreAllTime { 0 };
 
 private:
   void SetMemInfo();

@@ -29,6 +29,8 @@
 
 #ifdef _WIN32
 #include <Windows.h>
+#else
+#include <dlfcn.h>
 #endif
 
 SpeedBox::SpeedBox(PluginObject* plugin, YJson& settings, MenuBase* netcardMenu)
@@ -44,7 +46,9 @@ SpeedBox::SpeedBox(PluginObject* plugin, YJson& settings, MenuBase* netcardMenu)
     , m_Animation(new QPropertyAnimation(this, "geometry"))
 {
   SetWindowMode();
+#ifdef _WIN32
   SetHideFullScreen();
+#endif
   LoadCurrentSkin();
   InitNetCard();
 }
@@ -52,10 +56,13 @@ SpeedBox::SpeedBox(PluginObject* plugin, YJson& settings, MenuBase* netcardMenu)
 SpeedBox::~SpeedBox() {
   delete m_ProcessForm;
   delete m_CentralWidget;
+#ifdef _WIN32
   FreeLibrary(m_SkinDll);
-
   SHAppBarMessage(ABM_REMOVE, reinterpret_cast<APPBARDATA*>(m_AppBarData));
   delete reinterpret_cast<APPBARDATA*>(m_AppBarData);
+#else
+  dlclose(m_SkinDll);
+#endif
   
   // m_Timer->stop();
   delete m_Timer;
@@ -93,7 +100,11 @@ void SpeedBox::SetWindowMode() {
 bool SpeedBox::UpdateSkin()
 {
   delete m_CentralWidget;
-  FreeLibrary(m_SkinDll);
+#ifdef _WIN32
+    FreeLibrary(m_SkinDll);
+#else
+    dlclose(m_SkinDll);
+#endif
   m_CentralWidget = nullptr;
   m_SkinDll = nullptr;
   return LoadCurrentSkin();
@@ -106,22 +117,29 @@ bool SpeedBox::LoadDll(fs::path dllPath)
   SkinObject* (*newSkin)(QWidget*, const TrafficInfo&);
   // bool (*skinVersion)(const std::string&);
   dllPath.make_preferred();
+#ifdef _WIN32
   auto wPath = dllPath.make_preferred().wstring();
   wPath.push_back(L'\0');
   m_SkinDll = LoadLibraryW(wPath.data());
-
+#else
+  auto cPath = dllPath.make_preferred().string();
+  cPath.push_back('\0');
+  m_SkinDll = dlopen(cPath.data(), RTLD_LAZY);
+#endif
   if (!m_SkinDll) return false;
 
-  // skinVersion = reinterpret_cast<decltype(skinVersion)>(GetProcAddress(m_SkinDll, "skinVersion"));
-  // if (!skinVersion || !skinVersion(__DATE__)) {
-  //   FreeLibrary(m_SkinDll);
-  //   m_SkinDll = nullptr;
-  //   return false;
-  // }
-
-  newSkin = reinterpret_cast<decltype(newSkin)>(GetProcAddress(m_SkinDll, "newSkin"));
+  newSkin = reinterpret_cast<decltype(newSkin)>
+#ifdef _WIN32
+  (GetProcAddress(m_SkinDll, "newSkin"));
+#else
+  (dlsym(m_SkinDll, "newSkin"));
+#endif
   if (!newSkin) {
+#ifdef _WIN32
     FreeLibrary(m_SkinDll);
+#else
+    dlclose(m_SkinDll);
+#endif
     m_SkinDll = nullptr;
     return false;
   }
@@ -136,7 +154,11 @@ bool SpeedBox::LoadCurrentSkin() {
   auto& skinName = m_Settings[u8"CurSkin"].getValueString();
   const auto& skinFileName = m_Settings[u8"UserSkins"][skinName].getValueString();
 
+#ifdef _WIN32
   auto skinPath = u8"skins/" + skinFileName + u8".dll";
+#else
+  auto skinPath = u8"skins/lib" + skinFileName + u8".so";
+#endif
   auto qSkinPath = QString::fromUtf8(skinPath.data(), skinPath.size());
   auto qResSkinPath = ":/dlls/" + QString::fromUtf8(skinFileName.data(), skinFileName.size()) + ".dll";
 
@@ -170,6 +192,7 @@ bool SpeedBox::LoadCurrentSkin() {
   return LoadDll(skinPath);
 }
 
+#ifdef _WIN32
 void SpeedBox::SetHideFullScreen() {
   m_AppBarData = new APPBARDATA {
     sizeof(APPBARDATA),
@@ -179,6 +202,7 @@ void SpeedBox::SetHideFullScreen() {
   };
   SHAppBarMessage(ABM_NEW, reinterpret_cast<APPBARDATA*>(m_AppBarData));
 }
+#endif
 
 void SpeedBox::SetProgressMonitor(bool on)
 {
@@ -257,6 +281,7 @@ void SpeedBox::dropEvent(QDropEvent* event) {
   event->accept();
 }
 
+#ifdef _WIN32
 bool SpeedBox::nativeEvent(const QByteArray& eventType,
                            void* message,
                            qintptr* result) {
@@ -273,16 +298,10 @@ bool SpeedBox::nativeEvent(const QByteArray& eventType,
       default:
         break;
     }
-  } else if (WM_HOTKEY == msg->message) {
-    /*
-     * idHotKey = wParam;
-     * Modifiers = (UINT) LOWORD(lParam);
-     * uVirtKey = (UINT) HIWORD(lParam);
-     */
-    // m_MainMenu->m_Shortcut->CallFunction(msg->wParam);
   }
   return false;
 }
+#endif
 
 static constexpr int delta = 1;
 
@@ -355,12 +374,14 @@ void SpeedBox::InitNetCard()
 {
 
   connect(m_Timer, &QTimer::timeout, this, [this]() {
+#ifdef _WIN32
     static int count = 10;
     if (--count == 0) {
       m_NetSpeedHelper.UpdateAdaptersAddresses();
       UpdateNetCardMenu();
       count = 10;
     }
+#endif
     if (!m_CentralWidget) return;
     m_NetSpeedHelper.GetSysInfo();
     m_CentralWidget->UpdateText();
@@ -375,11 +396,16 @@ void SpeedBox::UpdateNetCardMenu()
 {
   m_NetCardMenu.clear();
   for (const auto& i: m_NetSpeedHelper.m_Adapters) {
+#ifdef _WIN32
     const auto fName = QString::fromWCharArray(i.friendlyName.data(), i.friendlyName.size());
     auto const action = m_NetCardMenu.addAction(fName);
+#endif
+    auto const action = m_NetCardMenu.addAction(QString::fromUtf8(i.adapterName.data(), i.adapterName.size()));
     action->setCheckable(true);
     action->setChecked(i.enabled);
+#ifdef _WIN32
     action->setToolTip(QString::fromUtf8(i.adapterName.data(), i.adapterName.size()));
+#endif
     connect(action, &QAction::triggered, this, std::bind(
       &SpeedBox::UpdateNetCard, this, action, std::placeholders::_1
     ));
@@ -401,6 +427,8 @@ void SpeedBox::UpdateNetCard(QAction* action, bool checked)
     m_NetSpeedHelper.m_AdapterBalckList.emplace(iter->getValueString());
     mgr->ShowMsg("删除网卡成功！");
   }
+#ifdef _WIN32
   m_NetSpeedHelper.UpdateAdaptersAddresses();
+#endif
   mgr->SaveSettings();
 }

@@ -13,7 +13,11 @@ private:
   class YJson& m_Settings;
   class PluginObject* m_PluginObject;
   class SkinObject* m_CentralWidget;
+#ifdef _WIN32
   HINSTANCE m_SkinDll;
+#else
+  void* m_SkinDll;
+#endif
   class QTimer* m_Timer;
   class MenuBase& m_NetCardMenu;
   void* m_AppBarData;
@@ -36,9 +40,11 @@ protected:
   void mouseDoubleClickEvent(QMouseEvent* event) override;
   void dragEnterEvent(QDragEnterEvent* event) override;
   void dropEvent(QDropEvent* event) override;
+#ifdef _WIN32
   bool nativeEvent(const QByteArray& eventType,
                    void* message,
                    qintptr* result) override;
+#endif
   void enterEvent(QEnterEvent* event) override;
   void leaveEvent(QEvent* event) override;
 
@@ -54,7 +60,9 @@ protected:
   void SetWindowMode();
   bool LoadDll(fs::path dllPath);
   bool LoadCurrentSkin();
+#ifdef _WIN32
   void SetHideFullScreen();
+#endif
   void InitNetCard();
   void UpdateNetCardMenu();
   void UpdateNetCard(QAction* action, bool checked);

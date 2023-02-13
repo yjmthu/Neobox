@@ -76,6 +76,8 @@ void NeoMenu::InitFunctionMap() {
     std::wstring args = L"/select, " + GetExeFullPath();
     ShellExecuteW(nullptr, L"open", L"explorer", args.c_str(), NULL, SW_SHOWNORMAL);
   });
+#else
+  connect(m_SettingMenu->addAction("程序位置"), &QAction::triggered, this, std::bind(&QDesktopServices::openUrl, qApp->applicationDirPath()));
 #endif
   connect(m_SettingMenu->addAction("配置目录"), &QAction::triggered, this, std::bind(QDesktopServices::openUrl,
                  QUrl::fromLocalFile(QDir::currentPath())));

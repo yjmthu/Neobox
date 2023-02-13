@@ -2,7 +2,7 @@
 * https://github.com/System-Glitch/SHA256
 */
 
-#include "SHA256.h"
+#include "sha256.h"
 #include <cstring>
 
 SHA256::SHA256(): m_blocklen(0), m_bitlen(0), m_state

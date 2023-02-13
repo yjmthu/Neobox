@@ -10,7 +10,7 @@ foreach(full_filepath ${_resource_files})
   list(APPEND resource_files ${file_path})
 endforeach()
 
-set(system_shared_files Shell32)
+# set(system_shared_files Shell32)
 set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui)
 set(pliugin_libfiles translate_core yjson pluginmgr)
 
@@ -21,7 +21,7 @@ add_library(neotranslateplg SHARED
 target_link_libraries(neotranslateplg PUBLIC
   ${pliugin_libfiles}
   ${qt_shared_files}
-  ${system_shared_files}
+  # ${system_shared_files}
 )
 
 qt_add_resources(pluginmgr "neotranslateplg"

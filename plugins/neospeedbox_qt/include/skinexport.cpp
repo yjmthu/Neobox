@@ -6,12 +6,22 @@
 #include <skinobject.h>
 #include <trafficinfo.h>
 
-extern "C" _declspec(dllexport) bool skinVersion(const std::string& date)
+#ifdef _WIN32
+extern "C" _declspec(dllexport)
+#else
+extern "C"
+#endif
+bool skinVersion(const std::string& date)
 {
   return date == __DATE__;
 }
 
-extern "C" _declspec(dllexport) SkinObject * newSkin(QWidget* parent, const TrafficInfo& trafficinfo)
+#ifdef _WIN32
+extern "C" _declspec(dllexport)
+#else
+extern "C"
+#endif
+SkinObject * newSkin(QWidget* parent, const TrafficInfo& trafficinfo)
 {
   return new Skin(parent, trafficinfo);
 }

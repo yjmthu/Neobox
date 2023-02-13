@@ -4,10 +4,10 @@ find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui)
 qt_standard_project_setup()
 
 set(plugin_list
-  # neoocrplg
-  # neospeedboxplg
+  neoocrplg
+  neospeedboxplg
   # neosystemplg
-  # neotranslateplg
+  neotranslateplg
   neowallpaperplg
   # neousbplg
   # neocolorplg
@@ -34,10 +34,20 @@ include_sub_directories_recursively(${CMAKE_CURRENT_SOURCE_DIR})
 add_definitions(-DMYSHAREDLIB_LIBRARY)
 
 # file(GLOB plugin_subdirs */CMakeLists.txt)
-set(plugin_subdirs neowallpaper_core/CMakeLists.txt neowallpaper_qt/CMakeLists.txt)
+set(plugin_subdirs
+  neospeedbox_core
+  neospeedbox_qt
+  neoocr_core
+  neoocr_qt
+  neowallpaper_core
+  neowallpaper_qt
+  neotranslate_core
+  neotranslate_qt
+)
 
-foreach(plugin_subdir_cmake ${plugin_subdirs})
-  get_filename_component(subdir_name ${plugin_subdir_cmake} DIRECTORY)
+foreach(subdir_name ${plugin_subdirs})
+  # get_filename_component(subdir_name ${plugin_subdir_cmake} DIRECTORY)
+  # add_subdirectory(${subdir_name})
   add_subdirectory(${subdir_name})
 endforeach()
 

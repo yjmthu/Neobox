@@ -368,6 +368,10 @@ void Translate::FormatYoudaoResult(const YJson& data) {
   }
 
   // html << "<br>" << l;
+#ifdef _WIN32
   auto const view = html.rdbuf()->view();
+#else
+  auto const view = html.str();
+#endif
   m_Callback(view.data(), view.size());
 }

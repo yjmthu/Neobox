@@ -2,6 +2,8 @@
 
 #include <ui_skin2.h>
 
+#include <format>
+
 #define Skin Skin2
 
 class Skin: public SkinObject

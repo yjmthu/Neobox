@@ -1,10 +1,15 @@
 #include <processhelper.h>
 
+#ifdef _WIN32
 #include <tlhelp32.h>
 #include <psapi.h>
+#else
+#include <fstream>
+namespace fs = std::filesystem;
+#endif
 
-extern uint64_t Filetime2Int64(const FILETIME& ftime);
-extern const DWORD g_ProcessorCount;
+// extern uint64_t Filetime2Int64(const FILETIME& ftime);
+// extern const DWORD g_ProcessorCount;
 
 // https://blog.csdn.net/qq_41883523/article/details/109706056
 
@@ -34,6 +39,7 @@ bool ProcessInfo::GetCpuUsage()
 }
 */
 
+#ifdef _WIN32
 bool ProcessInfo::GetMemoryUsage()
 {
   static PROCESS_MEMORY_COUNTERS pmc;
@@ -44,6 +50,31 @@ bool ProcessInfo::GetMemoryUsage()
   }
   return false;
 }
+#else
+std::string ProcessHelper::GetCmdLine(const std::filesystem::path& dir) {
+  std::ifstream file(dir / "cmdline");
+  std::string line;
+  std::getline(file, line);
+  file.close();
+  return line;
+}
+
+std::string GetExeName(const std::filesystem::path& dir) {
+  std::ifstream file(dir / "comm");
+  std::string name;
+  std::getline(file, name);
+  file.close();
+  return name;
+}
+
+size_t ProcessHelper::GetMemUsage(const std::filesystem::path& dir) {
+  std::ifstream file(dir / "statm");
+  size_t value;
+  file >> value >> value;
+  file.close();
+  return value << 2;
+}
+#endif
 
 ProcessHelper::ProcessHelper()
 	: m_ProcessInfo([](const ProcessInfo* a, const ProcessInfo* b)->bool{
@@ -66,7 +97,7 @@ void ProcessHelper::ClearInfo()
 	m_ProcessInfo.clear();
 }
 
-bool ProcessHelper::HasProcess(DWORD id) const {
+bool ProcessHelper::HasProcess(ProcessInfo::Pid id) const {
   for (auto i: m_ProcessInfo) {
     if (i->processID == id) {
       return true;
@@ -79,6 +110,7 @@ bool ProcessHelper::GetProcessInfo()
 {
 	ClearInfo();
 
+#ifdef _WIN32
   // std::map<DWORD, ProcessInfo> mapPIdInfo{};
   PROCESSENTRY32 pe32;
   pe32.dwSize = sizeof(pe32);
@@ -118,5 +150,25 @@ bool ProcessHelper::GetProcessInfo()
 		CloseHandle(processHandle);
 	}
   CloseHandle(hProcessSnap);
+#else
+  for (auto& dirEntry: fs::directory_iterator("/proc")) {
+    if (!dirEntry.is_directory()) continue;
+    try {
+      fs::path path = dirEntry.path();
+      pid_t pid = std::stoi(path.stem());
+      auto const info = new ProcessInfo {
+        GetExeName(path),
+        GetCmdLine(path),
+        pid,
+        GetMemUsage(path)
+      };
+      m_ProcessInfo.insert(info);
+    } catch (std::invalid_argument const& ex) {
+      continue;
+    } catch (std::out_of_range const& ex) {
+      std::cerr << "Int can not hold the linux pid.";
+    }
+  }
+#endif
   return true;
 }
