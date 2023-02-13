@@ -182,6 +182,7 @@
     - [vcpkg](https://github.com/microsoft/vcpkg) (libcurl[linux], leptonica, tesseract)
     - c++20 JSON库 [YJson](https://github.com/yjmthu/YJson)
 - `Arch Linux x86_64`
+    - 主程序库依赖: `kde` `curl` `qt6-base`
     - 目前主程序编译成功，但无可用插件
     - 正在使用clang补写linux部分功能
     - 待 GCC13 发布后再切换到 GCC
@@ -193,8 +194,9 @@ sudo pacman -S qt6-base curl cmake ninja clang libc++
 git clone https://github.com/yjmthu/Neobox.git
 cd Neobox
 git submodule update --init --recursive
-cmake -GNinja -B build/debug -S . -DCMAKE_BUILD_TYPE="Debug"
+cmake -GNinja -B build/Debug -S . -DCMAKE_BUILD_TYPE="Debug"
 cmake --build build
+cmake -P build/Debug/cmake_install.cmake
 ```
 
 
