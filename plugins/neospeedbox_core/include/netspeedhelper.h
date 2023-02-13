@@ -18,14 +18,12 @@ public:
     std::u8string adapterName;  // ASCII
 #ifdef _WIN32
     std::wstring friendlyName;
+    unsigned long index;
 #endif
     bool enabled;
-    unsigned long index;
   };
 
-#ifdef _WIN32
   void UpdateAdaptersAddresses();
-#endif
   void GetSysInfo();
 
 public:

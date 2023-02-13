@@ -211,6 +211,7 @@ bool PluginMgr::TooglePlugin(const std::u8string& pluginName, bool on)
       UpdateBroadcast(info.plugin);
     } else {
       ShowMsg("设置失败！");
+      m_Plugins.erase(pluginName);
       enabled = false;
       return false;
     }
@@ -256,7 +257,7 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
   HINSTANCE hdll = LoadLibraryW(wPath.data());
 #else
   auto cPath = path.string();
-  auto hdll = dlopen(cPath.c_str(), RTLD_NOW | RTLD_GLOBAL);
+  auto hdll = dlopen(cPath.c_str(), RTLD_LAZY);
 #endif
 
   if (!hdll) {

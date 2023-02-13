@@ -266,7 +266,7 @@ bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
       break;
     }
   }
-  return QWidget::eventFilter(target, event);
+  return WidgetBase::eventFilter(target, event);
 }
 
 void NeoTranslateDlg::ToggleVisibility()
@@ -326,7 +326,6 @@ void NeoTranslateDlg::SetStyleSheet()
       "background-color: #9999AA;"
       "color: #ffffff;"
       "border-radius: 4px;"
-      "cursor: pointer;"
       "padding: 2px 8px;"
       "font-size: 12px;"
     "}"

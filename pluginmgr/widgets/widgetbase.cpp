@@ -6,11 +6,13 @@
 #include <QLabel>
 #include <QWindow>
 #include <QScreen>
+#include <QGuiApplication>
 
 #ifdef _WIN32
 #include <Windows.h>
 #include <Windowsx.h>
 #else
+#include <X11/Xlib.h>
 #endif
 
 WidgetBase::WidgetBase(QWidget* parent, bool resizeAble, bool stayTop)
@@ -20,6 +22,13 @@ WidgetBase::WidgetBase(QWidget* parent, bool resizeAble, bool stayTop)
 {
   setWindowIcon(QIcon(QStringLiteral(":/icons/neobox.ico")));
   setWindowFlag(Qt::WindowStaysOnTopHint, m_StayTop);
+#ifdef __linux__
+  // setWindowFlag(Qt::X11BypassWindowManagerHint);
+  if (resizeAble) {
+    setAttribute(Qt::WA_Hover, true);
+    installEventFilter(this);
+  }
+#endif
 }
 
 WidgetBase::~WidgetBase()
@@ -30,37 +39,168 @@ WidgetBase::~WidgetBase()
 
 void WidgetBase::showEvent(QShowEvent *event)
 {
-  QPoint point(width() - 35, 20);
-  for (auto button: m_Buttons) {
-    button->move(point);
-    point.rx() -= 30;
-  }
+  // UpdateBorderRect();
+  if (m_ResizeAble) setMouseTracking(true);
+
   QWidget::showEvent(event);
+}
+
+void WidgetBase::hideEvent(QHideEvent *event)
+{
+  if (m_ResizeAble) setMouseTracking(false);
 }
 
 void WidgetBase::mousePressEvent(QMouseEvent* event)
 {
+  // https://gitee.com/feiyangqingyun/QWidgetDemo/blob/master/widget/framelesswidget/framelesscore/framelesswidget.cpp
   if (event->button() == Qt::LeftButton) {
+    mouseRect = geometry();
     m_ConstPos = event->pos();
-    setMouseTracking(true);
+    if (pressedRect[0].contains(m_ConstPos)) {
+      pressedArea |= 1;
+    } else if (pressedRect[1].contains(m_ConstPos)) {
+      pressedArea |= 1 << 1;
+    } else if (pressedRect[2].contains(m_ConstPos)) {
+      pressedArea |= 1 << 2;
+    } else if (pressedRect[3].contains(m_ConstPos)) {
+      pressedArea |= 1 << 3;
+    } else if (pressedRect[4].contains(m_ConstPos)) {
+      pressedArea |= 1 << 4;
+    } else if (pressedRect[5].contains(m_ConstPos)) {
+      pressedArea |= 1 << 5;
+    } else if (pressedRect[6].contains(m_ConstPos)) {
+      pressedArea |= 1 << 6;
+    } else if (pressedRect[7].contains(m_ConstPos)) {
+      pressedArea |= 1 << 7;
+    } else {
+      pressedArea = 0;
+    }
+
   }
+
 }
 
 void WidgetBase::mouseReleaseEvent(QMouseEvent* event)
 {
   if (event->button() == Qt::LeftButton) {
-    setMouseTracking(false);
+    // if (hasMouseTracking()) {
+    //   setMouseTracking(false);
+    // }
+    pressedArea = 0;
     m_ConstPos = QPoint();
   }
 }
 
 void WidgetBase::mouseMoveEvent(QMouseEvent* event)
 {
-  if(event->buttons() == Qt::LeftButton && !m_ConstPos.isNull()) {
+  if(!m_ResizeAble && event->buttons() == Qt::LeftButton && !m_ConstPos.isNull()) {
     move(event->globalPosition().toPoint() - m_ConstPos);
     event->accept();
+    return;
+  }
+
+  if (m_ConstPos.isNull()) return;
+
+  QPoint point = event->position().toPoint();
+  //根据当前鼠标位置,计算 X Y 轴移动了多少
+  int offsetX = point.x() - m_ConstPos.x();
+  int offsetY = point.y() - m_ConstPos.y();
+
+  //根据按下处的位置判断是否是移动控件还是拉伸控件
+  if (!pressedArea) {
+    this->move(this->x() + offsetX, this->y() + offsetY);
+  }
+
+  int rectX = mouseRect.x();
+  int rectY = mouseRect.y();
+  int rectW = mouseRect.width();
+  int rectH = mouseRect.height();
+
+  if (pressedArea & 1) {
+    int resizeW = this->width() - offsetX;
+    if (this->minimumWidth() <= resizeW) {
+      this->setGeometry(this->x() + offsetX, rectY, resizeW, rectH);
+    }
+  } else if ((pressedArea >> 1) & 1) {
+    this->setGeometry(rectX, rectY, rectW + offsetX, rectH);
+  } else if ((pressedArea >> 2) & 1) {
+    int resizeH = this->height() - offsetY;
+    if (this->minimumHeight() <= resizeH) {
+      this->setGeometry(rectX, this->y() + offsetY, rectW, resizeH);
+    }
+  } else if ((pressedArea >> 3) & 1) {
+    this->setGeometry(rectX, rectY, rectW, rectH + offsetY);
+  } else if ((pressedArea >> 4) & 1) {
+    int resizeW = this->width() - offsetX;
+    int resizeH = this->height() - offsetY;
+    if (this->minimumWidth() <= resizeW) {
+      this->setGeometry(this->x() + offsetX, this->y(), resizeW, resizeH);
+    }
+    if (this->minimumHeight() <= resizeH) {
+      this->setGeometry(this->x(), this->y() + offsetY, resizeW, resizeH);
+    }
+  } else if ((pressedArea >> 5) & 1) {
+    int resizeW = rectW + offsetX;
+    int resizeH = this->height() - offsetY;
+    if (this->minimumHeight() <= resizeH) {
+      this->setGeometry(this->x(), this->y() + offsetY, resizeW, resizeH);
+    }
+  } else if ((pressedArea >> 6) & 1) {
+    int resizeW = this->width() - offsetX;
+    int resizeH = rectH + offsetY;
+    if (this->minimumWidth() <= resizeW) {
+      this->setGeometry(this->x() + offsetX, this->y(), resizeW, resizeH);
+    }
+    if (this->minimumHeight() <= resizeH) {
+      this->setGeometry(this->x(), this->y(), resizeW, resizeH);
+    }
+  } else if ((pressedArea >> 7) & 1) {
+    int resizeW = rectW + offsetX;
+    int resizeH = rectH + offsetY;
+    this->setGeometry(this->x(), this->y(), resizeW, resizeH);
   }
   QWidget::mouseMoveEvent(event);
+}
+
+void WidgetBase::resizeEvent(QResizeEvent* event) {
+  UpdateBorderRect();
+
+  QPoint point(width() - 35, 20);
+  for (auto button: m_Buttons) {
+    button->move(point);
+    point.rx() -= 30;
+  }
+
+  event->accept();
+}
+
+static constexpr int padding = 11;
+
+bool WidgetBase::eventFilter(QObject *watched, QEvent *event) {
+  if (watched == this && m_ResizeAble && event->type() == QEvent::HoverMove) {
+    QPoint point = reinterpret_cast<QHoverEvent*>(event)->position().toPoint();
+    if (pressedRect[0].contains(point)) {
+      setCursor(Qt::SizeHorCursor);
+    } else if (pressedRect[1].contains(point)) {
+      setCursor(Qt::SizeHorCursor);
+    } else if (pressedRect[2].contains(point)) {
+      setCursor(Qt::SizeVerCursor);
+    } else if (pressedRect[3].contains(point)) {
+      setCursor(Qt::SizeVerCursor);
+    } else if (pressedRect[4].contains(point)) {
+      setCursor(Qt::SizeFDiagCursor);
+    } else if (pressedRect[5].contains(point)) {
+      setCursor(Qt::SizeBDiagCursor);
+    } else if (pressedRect[6].contains(point)) {
+      setCursor(Qt::SizeBDiagCursor);
+    } else if (pressedRect[7].contains(point)) {
+      setCursor(Qt::SizeFDiagCursor);
+    } else {
+      setCursor(Qt::ArrowCursor);
+    }
+  }
+  return QWidget::eventFilter(watched, event);
+
 }
 
 void WidgetBase::AddTopButton()
@@ -150,7 +290,29 @@ void WidgetBase::SetShadowAround(QWidget* widget, int radius, QColor col, int dx
   widget->setGraphicsEffect(effect);
 }
 
-static constexpr int padding = 11;
+void WidgetBase::UpdateBorderRect()
+{
+  int width = this->width();
+  int height = this->height();
+
+  //左侧描点区域
+  pressedRect[0] = QRect(0, padding, padding, height - padding * 2);
+  //右侧描点区域
+  pressedRect[1] = QRect(width - padding, padding, padding, height - padding * 2);
+  //上侧描点区域
+  pressedRect[2] = QRect(padding, 0, width - padding * 2, padding);
+  //下侧描点区域
+  pressedRect[3] = QRect(padding, height - padding, width - padding * 2, padding);
+
+  //左上角描点区域
+  pressedRect[4] = QRect(0, 0, padding, padding);
+  //右上角描点区域
+  pressedRect[5] = QRect(width - padding, 0, padding, padding);
+  //左下角描点区域
+  pressedRect[6] = QRect(0, height - padding, padding, padding);
+  //右下角描点区域
+  pressedRect[7] = QRect(width - padding, height - padding, padding, padding);
+}
 
 bool WidgetBase::nativeEvent(const QByteArray &eventType, void *message, qintptr *result)
 {
@@ -162,14 +324,16 @@ bool WidgetBase::nativeEvent(const QByteArray &eventType, void *message, qintptr
   case WM_NCHITTEST:
     int xPos = GET_X_LPARAM(msg->lParam);
     int yPos = GET_Y_LPARAM(msg->lParam);
-    QWindow * handle = window()->windowHandle();
-    if (QScreen * screen = nullptr; handle && (screen = handle->screen())) {
-      QPoint offset = screen->geometry().topLeft();
-      xPos = (xPos - offset.x()) / screen->devicePixelRatio() + offset.x() - this->frameGeometry().x();
-      yPos = (yPos - offset.y()) / screen->devicePixelRatio() + offset.y() - this->frameGeometry().y();
-    } else {
-      return false;
-    }
+    auto const pos = mapFromGlobal(QPoint(xPos, yPos));
+    xPos = pos.x(), yPos = pos.y();
+    // QWindow * handle = window()->windowHandle();
+    // if (QScreen * screen = nullptr; handle && (screen = handle->screen())) {
+    //   QPoint offset = screen->geometry().topLeft();
+    //   xPos = (xPos - offset.x()) / screen->devicePixelRatio() + offset.x() - this->frameGeometry().x();
+    //   yPos = (yPos - offset.y()) / screen->devicePixelRatio() + offset.y() - this->frameGeometry().y();
+    // } else {
+    //   return false;
+    // }
     if(xPos < padding && yPos < padding)
       *result = HTTOPLEFT;
     else if(xPos >= width() - padding && yPos < padding)

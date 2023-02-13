@@ -15,10 +15,13 @@ class MYSHAREDLIB_EXPORT WidgetBase: public QWidget
 
 protected:
   void showEvent(QShowEvent *event) override;
+  void hideEvent(QHideEvent *event) override;
   bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
   void mousePressEvent(QMouseEvent* event) override;
   void mouseReleaseEvent(QMouseEvent* event) override;
   void mouseMoveEvent(QMouseEvent* event) override;
+  void resizeEvent(QResizeEvent *event) override;
+  bool eventFilter(QObject *watched, QEvent *event) override;
 public:
   explicit WidgetBase(QWidget* parent, bool resizeAble=false, bool stayTop=false);
   virtual ~WidgetBase();
@@ -33,6 +36,10 @@ private:
   QPoint m_ConstPos;
   std::vector<class QPushButton*> m_Buttons;
   const bool m_ResizeAble;
+  uint8_t pressedArea;
+  QRect mouseRect;
+  void UpdateBorderRect();
+  std::array<QRect, 8> pressedRect;
   bool m_StayTop;
 };
 

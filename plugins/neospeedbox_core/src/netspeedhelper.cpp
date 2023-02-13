@@ -2,6 +2,7 @@
 #include <ifaddrs.h>
 #include <linux/if_link.h>
 #include <netdb.h>
+#include <net/if.h>
 #else
 #include <iphlpapi.h>
 #include <winsock2.h>
@@ -44,9 +45,7 @@ NetSpeedHelper::NetSpeedHelper(const YJson &blacklist)
   for (const auto &item : blacklist.getArray()) {
     m_AdapterBalckList.emplace(item.getValueString());
   }
-#ifdef _WIN32
   UpdateAdaptersAddresses();
-#endif
   SetNetInfo();
   m_TrafficInfo.bytesUp = m_TrafficInfo.bytesDown = 0;
   SetCpuInfo();
@@ -178,6 +177,28 @@ void NetSpeedHelper::SetNetInfo() {
 
 #elif defined(__linux__)
 // https://github.com/doleron/cpp-linux-system-stats
+
+
+void NetSpeedHelper::UpdateAdaptersAddresses() {
+  if (auto const if_nidxs = if_nameindex())
+  {
+    m_Adapters.clear();
+    std::u8string strAdapterName;
+    for (auto intf = if_nidxs; intf->if_index != 0 || intf->if_name != NULL; intf++)
+    {
+      strAdapterName = reinterpret_cast<const char8_t*>(intf->if_name);
+      bool const enabled =
+        m_AdapterBalckList.find(strAdapterName) == m_AdapterBalckList.end();
+      m_Adapters.push_back(
+        IpAdapter {
+          std::move(strAdapterName),
+          enabled
+        }
+      );
+    }
+    if_freenameindex(if_nidxs);
+  }
+}
 
 void NetSpeedHelper::SetMemInfo() {
   uint8_t result = 0;

@@ -377,14 +377,12 @@ void SpeedBox::InitNetCard()
 {
 
   connect(m_Timer, &QTimer::timeout, this, [this]() {
-#ifdef _WIN32
     static int count = 10;
     if (--count == 0) {
       m_NetSpeedHelper.UpdateAdaptersAddresses();
       UpdateNetCardMenu();
       count = 10;
     }
-#endif
     if (!m_CentralWidget) return;
     m_NetSpeedHelper.GetSysInfo();
     m_CentralWidget->UpdateText();
@@ -430,8 +428,6 @@ void SpeedBox::UpdateNetCard(QAction* action, bool checked)
     m_NetSpeedHelper.m_AdapterBalckList.emplace(iter->getValueString());
     mgr->ShowMsg("删除网卡成功！");
   }
-#ifdef _WIN32
   m_NetSpeedHelper.UpdateAdaptersAddresses();
-#endif
   mgr->SaveSettings();
 }
