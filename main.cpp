@@ -3,14 +3,12 @@
 
 int main(int argc, char* argv[]) {
   QApplication a(argc, argv);
-  // try {
+  a.setQuitOnLastWindowClosed(false);
+  try {
     PluginMgr mgr;
     mgr.Exec();
-  // } catch (std::runtime_error err) {
-  //   //
-  // } catch (...) {
-  //   //
-  // }
+  } catch (std::runtime_error err) {
+    //
+  }
   return 0;
 }
-

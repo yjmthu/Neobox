@@ -6,7 +6,7 @@ qt_standard_project_setup()
 set(plugin_list
   neoocrplg
   neospeedboxplg
-  # neosystemplg
+  neosystemplg
   neotranslateplg
   neowallpaperplg
   # neousbplg
@@ -35,6 +35,7 @@ add_definitions(-DMYSHAREDLIB_LIBRARY)
 
 # file(GLOB plugin_subdirs */CMakeLists.txt)
 set(plugin_subdirs
+  neosystem_qt
   neospeedbox_core
   neospeedbox_qt
   neoocr_core

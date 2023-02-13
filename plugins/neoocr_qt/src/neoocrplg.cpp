@@ -208,7 +208,7 @@ void NeoOcrPlg::ChooseLanguages()
   vlayout->addWidget(label);
   std::vector<QCheckBox*> chkboxs;
 
-  for (size_t i=0; auto file: files) {
+  for (size_t i=0; const auto& file: files) {
     auto const name = file.left(file.indexOf('.'));
     auto const box = new QCheckBox(name, dialog);
     chkboxs.push_back(box);

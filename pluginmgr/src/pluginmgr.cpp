@@ -123,7 +123,6 @@ PluginMgr::PluginMgr()
   , m_Settings(InitSettings())
 {
   mgr = this;
-  QApplication::setQuitOnLastWindowClosed(false);
   m_Tray->setContextMenu(m_Menu);
   m_Tray->show();
   // QObject::connect(m_Menu->addAction("托盘图标"), &QAction::triggered, m_Tray, &QSystemTrayIcon::show);
@@ -257,7 +256,7 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
   HINSTANCE hdll = LoadLibraryW(wPath.data());
 #else
   auto cPath = path.string();
-  auto hdll = dlopen(cPath.c_str(), RTLD_LAZY);
+  auto hdll = dlopen(cPath.c_str(), RTLD_NOW | RTLD_GLOBAL);
 #endif
 
   if (!hdll) {
@@ -525,7 +524,7 @@ static void CompareJson(YJson& jsDefault, YJson& jsUser)
   }
 }
 
-void PluginMgr::WriteSharedFlag(class QSharedMemory* sharedMemory, int flag) {
+void PluginMgr::WriteSharedFlag(QSharedMemory* sharedMemory, int flag) {
   //m_SharedMemory->setKey(QStringLiteral("__Neobox__"));
   sharedMemory->lock();
   *reinterpret_cast<int *>(sharedMemory->data()) = flag;
@@ -541,8 +540,7 @@ int PluginMgr::ReadSharedFlag(class QSharedMemory* sharedMemory) {
 }
 
 QSharedMemory* PluginMgr::CreateSharedMemory() {
-  QSharedMemory* sharedMemory = new QSharedMemory;
-  sharedMemory->setKey(QStringLiteral("__Neobox__"));
+  QSharedMemory* sharedMemory = new QSharedMemory(QStringLiteral("__Neobox__"));
   if(sharedMemory->attach()) {
     auto const code = ReadSharedFlag(sharedMemory);
     switch (code) {
@@ -550,15 +548,7 @@ QSharedMemory* PluginMgr::CreateSharedMemory() {
       WriteSharedFlag(sharedMemory, 2);
       sharedMemory->detach();
       delete sharedMemory;
-      return nullptr;
-    case 1:   // previous app want to restart;
-      break;
-    case 2:   // app should go to left top.
-      WriteSharedFlag(sharedMemory, 0);
-      sharedMemory->detach();
-      delete sharedMemory;
-      return nullptr;
-    case 3:   // app should quit
+      throw std::runtime_error("Already have an instance.");
     default:
       break;
     }
@@ -572,5 +562,5 @@ QSharedMemory* PluginMgr::CreateSharedMemory() {
 void PluginMgr::DetachSharedMemory()
 {
   // m_SharedMemory->setKey(QStringLiteral("__Neobox__"));
-  // m_SharedMemory->detach();
+  m_SharedMemory->detach();
 }

@@ -223,9 +223,9 @@ void NetSpeedHelper::SetCpuInfo() {
   CpuTimes curTimes;
 
   std::ifstream fs("/proc/stat", std::ios::in);
-  fs >> name >> curTimes.userTime >> curTimes.niceTime >> curTimes.systemTime;
-  fs >> curTimes.idleTime >> curTimes.iowaitTime >> curTimes.irqTime >> curTimes.softirqTime;
-  fs >> curTimes.stealTime >> curTimes.guestTime >> curTimes.guestNiceTime;
+  fs >> name >> curTimes.userTime >> curTimes.niceTime >> curTimes.systemTime
+    >> curTimes.idleTime >> curTimes.iowaitTime >> curTimes.irqTime >> curTimes.softirqTime
+    >> curTimes.stealTime >> curTimes.guestTime >> curTimes.guestNiceTime;
   fs.close();
 
   uint64_t idleTime = std::accumulate<const uint64_t*>(

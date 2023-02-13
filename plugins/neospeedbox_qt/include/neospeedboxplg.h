@@ -22,7 +22,7 @@ private:
   YJson& InitSettings(YJson& settings);
   void InitFunctionMap() override;
   void InitMenu();
-  static void LoadFonts();
+  // static void LoadFonts();
   void LoadRemoveSkinMenu(MenuBase* parent);
   void LoadChooseSkinMenu(MenuBase* parent);
   void LoadHideAsideMenu(MenuBase* parent);

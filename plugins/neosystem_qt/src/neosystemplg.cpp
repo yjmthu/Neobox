@@ -5,8 +5,10 @@
 
 #include <QDir>
 
+#ifdef _WIN32
 #include <windows.h>
 #include <powrprof.h>
+#endif
 
 #define CLASS_NAME NeoSystemPlg
 #include <pluginexport.cpp>
@@ -21,9 +23,11 @@ NeoSystemPlg::NeoSystemPlg(YJson& settings):
 
 NeoSystemPlg::~NeoSystemPlg()
 {
+#ifdef _WIN32
   if (m_Settings[u8"StopSleep"].isTrue()) {
     SetThreadExecutionState(ES_CONTINUOUS);
   }
+#endif
   delete m_MainMenuAction;
 }
 
@@ -31,25 +35,42 @@ void NeoSystemPlg::InitFunctionMap() {
   m_PluginMethod = {
     {u8"shutdownComputer",
       {u8"快速关机", u8"关闭计算机", [](PluginEvent, void*) {
+#ifdef _WIN32
         ShellExecuteW(nullptr, L"open", L"shutdown", L"-s -t 0", nullptr, 0);
+#else
+        system("systemctl poweroff");
+#endif
       }, PluginEvent::Void},
     },
     {u8"restartComputer",
       {u8"快捷重启", u8"重启计算机", [](PluginEvent, void*){
+#ifdef _WIN32
         ShellExecuteW(nullptr, L"open", L"shutdown", L"-r -t 0", nullptr, 0);
+#else
+        system("systemctl reboot");
+#endif
       }, PluginEvent::Void},
     },
     {u8"suspendedComputer",
       {u8"进入睡眠", u8"计算机进入睡眠模式", [](PluginEvent, void*){
+#ifdef _WIN32
         SetSuspendState(FALSE, TRUE, FALSE);
+#else
+        system("systemctl suspend");
+#endif
       }, PluginEvent::Void},
     },
     {u8"hibernateComputer",
       {u8"开启休眠", u8"计算机进入休眠模式", [](PluginEvent, void*){
+#ifdef _WIN32
         SetSuspendState(TRUE, TRUE, TRUE);
+#else
+        system("systemctl hibernate");
+#endif
       }, PluginEvent::Void},
     },
 
+#ifdef _WIN32
     {u8"enableCopyPath",
       {u8"复制路径", u8"在文件资源管理器右键菜单添加“复制路径选项”", [](PluginEvent event, void* data) {
         if (event == PluginEvent::Bool) {
@@ -81,6 +102,7 @@ void NeoSystemPlg::InitFunctionMap() {
         }
       }, PluginEvent::Bool}
     },
+#endif
   };
 }
 
@@ -123,6 +145,7 @@ YJson& NeoSystemPlg::InitSettings(YJson& settings)
   // we may not need to call SaveSettings;
 }
 
+#ifdef _WIN32
 void NeoSystemPlg::SetDesktopRightMenu(bool on)
 {
   constexpr auto prefix = L"Software\\Classes\\{}\\shell";
@@ -179,6 +202,7 @@ bool NeoSystemPlg::HasDesktopRightMenu()
   }
   return true;
 }
+#endif
 
 void NeoSystemPlg::LoadResources()
 {

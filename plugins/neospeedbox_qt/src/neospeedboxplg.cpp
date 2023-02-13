@@ -11,7 +11,7 @@
 #include <QActionGroup>
 #include <QInputDialog>
 #include <QFileDialog>
-#include <QFontDatabase>
+// #include <QFontDatabase>
 #include <QDropEvent>
 #include <QMimeData>
 #include <QMessageBox>
@@ -36,7 +36,7 @@ NeoSpeedboxPlg::NeoSpeedboxPlg(YJson& settings)
   : PluginObject(InitSettings(settings), u8"neospeedboxplg", u8"网速悬浮")
   , m_NetSpeedHelper(new NetSpeedHelper(m_Settings[u8"NetCardDisabled"]))
 {
-  LoadFonts();
+  // LoadFonts();
   InitFunctionMap();
 }
 
@@ -405,7 +405,7 @@ void NeoSpeedboxPlg::AddSkin(const QString& name, const fs::path& path)
   mgr->ShowMsg("添加皮肤" + name + "成功！");
 }
 
-void NeoSpeedboxPlg::LoadFonts() {
-  QFontDatabase::addApplicationFont(":/fonts/Nickainley-Normal-small.ttf");
-  QFontDatabase::addApplicationFont(":/fonts/Carattere-Regular-small.ttf");
-}
+// void NeoSpeedboxPlg::LoadFonts() {
+//   QFontDatabase::addApplicationFont(":/fonts/Nickainley-Normal-small.ttf");
+//   QFontDatabase::addApplicationFont(":/fonts/Carattere-Regular-small.ttf");
+// }

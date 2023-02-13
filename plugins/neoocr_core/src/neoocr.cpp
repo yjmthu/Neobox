@@ -38,7 +38,7 @@ void NeoOcr::InitLanguagesList()
   if (m_Languages.empty()) {
     return;
   }
-  m_Languages.back() = u8'\0';
+//  m_Languages.back() = u8'\0';
 }
 
 std::u8string NeoOcr::GetText(Pix *pix)
@@ -46,10 +46,10 @@ std::u8string NeoOcr::GetText(Pix *pix)
   std::u8string result;
   if (m_Languages.empty()) {
     mgr->ShowMsgbox(u8"error", u8"You should set some language first!");
-    m_TessApi->End();
+//    m_TessApi->End();
     return result;
   }
-  if (m_TessApi->Init(m_TrainedDataDir.c_str(), reinterpret_cast<const char*>(m_Languages.data()))) {
+  if (m_TessApi->Init(m_TrainedDataDir.c_str(), reinterpret_cast<const char*>(m_Languages.c_str()))) {
     mgr->ShowMsgbox(u8"error", u8"Could not initialize tesseract.");
     return result;
   }
