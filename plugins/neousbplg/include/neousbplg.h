@@ -5,12 +5,16 @@
 #include <QAbstractNativeEventFilter>
 #include <map>
 
-#include <windows.h>
-
+#ifdef _WIN32
 class NeoUsbPlg: public QAbstractNativeEventFilter, public PluginObject
+#else
+class NeoUsbPlg: public PluginObject
+#endif
 {
 protected:
+#ifdef _WIN32
   bool nativeEventFilter(const QByteArray &eventType, void *message, qintptr *) override;
+#endif
   class QAction* InitMenuAction() override;
 public:
   explicit NeoUsbPlg(YJson& settings);

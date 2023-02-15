@@ -9,7 +9,7 @@ set(plugin_list
   neosystemplg
   neotranslateplg
   neowallpaperplg
-  # neousbplg
+  neousbplg
   # neocolorplg
 )
 
@@ -35,7 +35,8 @@ add_definitions(-DMYSHAREDLIB_LIBRARY)
 
 # file(GLOB plugin_subdirs */CMakeLists.txt)
 set(plugin_subdirs
-  neosystem_qt
+  neousbplg
+  neosystemplg
   neospeedbox_core
   neospeedbox_qt
   neoocr_core

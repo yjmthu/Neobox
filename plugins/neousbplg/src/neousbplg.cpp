@@ -1,20 +1,24 @@
 #include <neousbplg.h>
-#include <usbdlg.h>
+#include <usbdlg.hpp>
 
 #define CLASS_NAME NeoUsbPlg
 #include <pluginexport.cpp>
 
 #include <QApplication>
 
+#ifdef _WIN32
 #include <windows.h>
 #include <dbt.h>
+#endif
 
 NeoUsbPlg::NeoUsbPlg(YJson& settings)
   : PluginObject(InitSettings(settings), u8"neousbplg", u8"U盘助手")
   , m_UsbDlg(new UsbDlg(m_Settings))
 {
   InitFunctionMap();
+#ifdef _WIN32
   qApp->installNativeEventFilter(this);
+#endif
 }
 
 NeoUsbPlg::~NeoUsbPlg()
@@ -97,6 +101,7 @@ YJson& NeoUsbPlg::InitSettings(YJson& settings)
   };
 }
 
+#ifdef _WIN32
 bool NeoUsbPlg::nativeEventFilter(const QByteArray& eventType, void *message, qintptr *result)
 {
   if(eventType != "windows_generic_MSG" && eventType != "windows_dispatcher_MSG")
@@ -132,3 +137,4 @@ bool NeoUsbPlg::nativeEventFilter(const QByteArray& eventType, void *message, qi
   }
   return false;
 }
+#endif

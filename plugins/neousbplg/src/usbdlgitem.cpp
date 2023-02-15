@@ -1,12 +1,26 @@
-#include <usbdlgitem.h>
+#include <usbdlgitem.hpp>
 #include <pluginmgr.h>
 
+#ifdef _WIN32
 #include <Windows.h>
 #include <dbt.h>
 #include <cfg.h>
 #include <SetupAPI.h>
 #include <cfgmgr32.h>
+#else
+#include <fstream>
+#include <filesystem>
+#include <mntent.h>
+#include <sys/vfs.h>
+#include <sys/mount.h>
+#include <unistd.h>
+#include <pwd.h>
 
+namespace fs = std::filesystem;
+using namespace std::literals;
+#endif
+
+#include <QDesktopServices>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QToolButton>
@@ -16,27 +30,54 @@
 
 #include <format>
 
+#ifdef _WIN32
 UsbDlgItem::UsbDlgItem(QWidget* parent, char id, UsbDlg::ItemMap& map)
+#else
+UsbDlgItem::UsbDlgItem(QWidget* parent, std::string id, UsbDlg::ItemMap& map)
+#endif
   : QWidget(parent)
   , m_Items(map)
+#ifdef _WIN32
   , m_DriveId(id)
   , m_DrivePath(new wchar_t[] { m_DriveId, L':', L'\\', L'\0' })
+#else
+  , m_DriveId(id)
+#endif
   , m_UsbSizeLogo(new QWidget(this))
   , m_UsbSizeLogoColorMask(new QFrame(m_UsbSizeLogo))
   , m_UsbInfoText(new QLabel(this))
-
+  , m_BtnOpen(new QToolButton(this))
+  , m_BtnEject(new QToolButton(this))
 {
   m_Items[id] = this;
   UpdateUsbSize();
   UpdateUsbName();
   SetupUi();
   SetStyleSheet();
+#ifdef __linux__
+  QObject::connect(qobject_cast<UsbDlg*>(parent), &UsbDlg::UsbChange, this, &UsbDlgItem::DoUsbChange);
+#endif
 }
 
 UsbDlgItem::~UsbDlgItem()
 {
   m_Items.erase(m_DriveId);
+#ifdef _WIN32
   delete [] m_DrivePath;
+#endif
+}
+
+void UsbDlgItem::DoUsbChange(QString id)
+{
+  auto const name = id.toStdString();
+  if (name != m_DriveId) {
+    return;
+  }
+  if (IsMounted()) {
+    m_BtnOpen->setText("打开");
+  } else {
+    m_BtnOpen->setText("挂载");
+  }
 }
 
 bool UsbDlgItem::eventFilter(QObject* target, QEvent* event)
@@ -89,49 +130,97 @@ void UsbDlgItem::SetupUi()
   SetUsbInfoText();
 
   m_UsbInfoText->setFixedWidth(110);
-  auto const btnOpen = new QToolButton(this);
-  btnOpen->setText("打开");
-  btnOpen->setFixedWidth(45);
-  btnOpen->setIcon(QIcon(":/icons/usb-open.png"));
-  btnOpen->setIconSize(QSize(25, 25));
-  btnOpen->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-  auto const btnPop = new QToolButton(this);
-  btnPop->setText("弹出");
-  btnPop->setFixedWidth(45);
-  btnPop->setIcon(QIcon(":/icons/usb-eject.png"));
-  btnPop->setIconSize(QSize(25, 25));
-  btnPop->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+  m_BtnOpen->setText("打开");
+  m_BtnOpen->setFixedWidth(45);
+  m_BtnOpen->setIcon(QIcon(":/icons/usb-open.png"));
+  m_BtnOpen->setIconSize(QSize(25, 25));
+  m_BtnOpen->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+  m_BtnEject->setText("弹出");
+  m_BtnEject->setFixedWidth(45);
+  m_BtnEject->setIcon(QIcon(":/icons/usb-eject.png"));
+  m_BtnEject->setIconSize(QSize(25, 25));
+  m_BtnEject->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
   mainLayout->addWidget(m_UsbSizeLogo);
   mainLayout->addWidget(m_UsbInfoText);
-  mainLayout->addWidget(btnOpen);
-  mainLayout->addWidget(btnPop);
+  mainLayout->addWidget(m_BtnOpen);
+  mainLayout->addWidget(m_BtnEject);
 
   m_UsbSizeLogo->installEventFilter(this);
-  connect(btnOpen, &QToolButton::clicked, this, std::bind(ShellExecuteW, nullptr, L"open", L"explorer", m_DrivePath, nullptr, SW_SHOWNORMAL));
-  connect(btnPop, &QToolButton::clicked, this, std::bind(&UsbDlgItem::PopUsbDrive, this));
+  connect(m_BtnOpen, &QToolButton::clicked, this, [this](){
+#ifdef _WIN32
+    ShellExecuteW(nullptr, L"open", L"explorer", m_DrivePath, nullptr, SW_SHOWNORMAL);
+#else
+    if (fs::exists(m_MountPoint)) {
+      QDesktopServices::openUrl(QUrl::fromLocalFile(QString::fromStdString(m_MountPoint)));
+    } else {
+      MountUsb();
+      // mgr->ShowMsg("请先挂载磁盘！");
+    }
+#endif
+  });
+  connect(m_BtnEject, &QToolButton::clicked, this, std::bind(&UsbDlgItem::PopUsbDrive, this));
 }
 
 bool UsbDlgItem::IsDiskExist() const
 {
+#ifdef _WIN32
   return GetLogicalDrives() & (1 << (m_DriveId - 'A'));
+#else
+  return fs::exists("/dev/" + m_DriveId);
+#endif
 }
 
 void UsbDlgItem::SetUsbInfoText()
 {
   auto const str = std::format(
-    L"<p>{} : {}</p><p>{}/{}</p>",
+#ifdef _WIN32
+    L""
+#endif
+    "<p>{} : {} </p><p>{}/{} </p>",
     m_DriveId, m_DriveName,
     FormatSize(m_SizeFree),
     FormatSize(m_SizeTotal)
   );
+#ifdef _WIN32
   auto text = QString::fromStdWString(str);
+#else
+  auto text = QString::fromStdString(str);
+#endif
   m_UsbInfoText->setText(text);
   m_UsbInfoText->setToolTip(text.mid(3, text.lastIndexOf("<p>") - 4));
 }
 
+#ifdef __linux__
+static std::string GetMountPoint(const char* path) {
+  std::string result;
+  struct mntent *mntent = nullptr;
+  auto const mntfile = setmntent("/proc/mounts", "r");
+  if (!mntfile) {
+    return result;
+  }
+
+  while ((mntent = getmntent(mntfile))) {
+    if (strcmp(mntent->mnt_fsname, path) == 0) {
+      result = mntent->mnt_dir;
+      printf("%s, %s, %s, %s\n",
+        mntent->mnt_dir,
+        mntent->mnt_fsname,
+        mntent->mnt_type,
+        mntent->mnt_opts);
+      break;
+    }
+  }
+  endmntent(mntfile);
+
+  return result;
+}
+
+#endif
+
 bool UsbDlgItem::UpdateUsbSize()
 {
+#ifdef _WIN32
   //得出磁盘的可用空间
   DWORD dwTotalClusters;   //总的簇
   DWORD dwFreeClusters;    //可用的簇
@@ -153,12 +242,32 @@ bool UsbDlgItem::UpdateUsbSize()
   m_SizeTotal = dwTotalClusters * (uint64_t)dwSectPerClust * dwBytesPerSect;
 
   m_SizeFree = dwFreeClusters * (uint64_t)dwSectPerClust * dwBytesPerSect;
-
+#else
+#endif
+  if (IsMounted()) {
+    m_BtnOpen->setText("打开");
+    struct statfs diskInfo;
+    if (statfs(m_MountPoint.c_str(), &diskInfo) < 0) {
+      return false;
+    }
+    const size_t totalBlocks = diskInfo.f_bsize;  
+    m_SizeTotal = totalBlocks * diskInfo.f_blocks;  
+    m_SizeFree = diskInfo.f_bfree * totalBlocks;  
+  } else if (UpdateMountPoint()) {
+    m_BtnOpen->setText("挂载");
+    std::ifstream file("/sys/class/block/" + m_DriveId + "/size");
+    if (!file.is_open()) return false;
+    file >> m_SizeTotal;
+    file.close();
+    m_SizeTotal <<= 9;
+    m_SizeFree = m_SizeTotal;
+  }
   return true;
 }
 
 bool UsbDlgItem::UpdateUsbName()
 {
+#ifdef _WIN32
   // https://www.cnblogs.com/james1207/p/3423990.html
   m_DriveName = std::wstring(MAX_PATH + 1, 0);
   BOOL bSucceeded = GetVolumeInformationW(
@@ -169,6 +278,67 @@ bool UsbDlgItem::UpdateUsbName()
     m_DriveName = L"存储设备";
   }
   return bSucceeded;
+#else
+  for (auto& dirEntrey: fs::directory_iterator("/dev/disk/by-label")) {
+    if (!dirEntrey.is_symlink()) continue;
+
+    auto path = fs::read_symlink(dirEntrey);
+    if (path.stem().string() == m_DriveId) {
+      m_DriveName = dirEntrey.path().filename();
+      return UpdateMountPoint();
+    }
+  }
+  return false;
+#endif
+}
+
+bool UsbDlgItem::UpdateMountPoint()
+{
+	auto const pwd = getpwuid(getuid());
+  if (!pwd) return false;
+
+  m_MountPoint = "/run/media/"s + pwd->pw_name + "/"s + m_DriveName;
+  return true;
+}
+
+bool UsbDlgItem::IsMounted()
+{
+  auto path = "/dev/" + m_DriveId;
+  m_MountPoint = GetMountPoint(path.c_str());
+  return !m_MountPoint.empty();
+}
+
+bool UsbDlgItem::MountUsb()
+{
+  if (IsMounted()) {
+    m_BtnOpen->setText("打开");
+    return true;
+  }
+  if (UpdateMountPoint()) {
+    auto const path = "/dev/" + m_DriveId;
+    if (mount(
+      path.c_str(), m_MountPoint.c_str(),
+      "ext4", 0, nullptr
+      ) >= 0) {
+      m_BtnOpen->setText("打开");
+      return true;
+    }
+  }
+  m_BtnOpen->setText("挂载");
+  return false;
+}
+
+bool UsbDlgItem::UmountUsb()
+{
+  if (IsMounted()) {
+    auto const path = "/dev/" + m_DriveId;
+    if (umount(path.c_str()) < 0) {
+      m_BtnOpen->setText("打开");
+      return false;
+    }
+  }
+  m_BtnOpen->setText("挂载");
+  return true;
 }
 
 QString UsbDlgItem::GetStyleSheet() const
@@ -221,9 +391,15 @@ void UsbDlgItem::SetStyleSheet()
   );
 }
 
-std::wstring UsbDlgItem::FormatSize(uint64_t size)
+UsbDlgItem::String UsbDlgItem::FormatSize(uint64_t size)
 {
-  const std::array<std::wstring, 6> uints { L"B", L"KB", L"MB", L"GB", L"TB", L"PB" };
+  const std::array<String, 6> uints { 
+#ifdef _WIN32
+    L"B", L"KB", L"MB", L"GB", L"TB", L"PB"
+#else
+    "B", "KB", "MB", "GB", "TB", "PB"
+#endif
+  };
   auto iter = uints.begin();
   uint64_t base = 1;
 
@@ -235,7 +411,11 @@ std::wstring UsbDlgItem::FormatSize(uint64_t size)
   }
 
   return std::format(
-    L"{:.1f} {}", static_cast<double>(size) / base, *iter);
+#ifdef _WIN32
+    L""
+#endif
+    "{:.1f} {}",
+    static_cast<double>(size) / base, *iter);
 }
 
 void UsbDlgItem::PopUsbDrive()
@@ -256,6 +436,7 @@ void UsbDlgItem::PopUsbDrive()
   deleteLater();
 }
 
+#ifdef _WIN32
 DWORD UsbDlgItem::GetDrivesDevInstByDiskNumber(const DWORD diskNumber)
 {
   // https://www.marxcbr.cn/archives/7fc2b650
@@ -304,10 +485,11 @@ DWORD UsbDlgItem::GetDrivesDevInstByDiskNumber(const DWORD diskNumber)
   }
   return 0;
 }
-
+#endif
 
 bool UsbDlgItem::EjectUsbDisk()
 {
+#ifdef _WIN32
   // https://forums.codeguru.com/showthread.php?499595-RESOLVED-Need-to-get-name-of-a-USB-flash-drive-device
   const wchar_t szVolumePath[] { L'\\', L'\\', L'.', L'\\', m_DriveId, L':', L'\0' };
   HANDLE hVolume = CreateFileW(szVolumePath, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, NULL, NULL);
@@ -354,4 +536,14 @@ bool UsbDlgItem::EjectUsbDisk()
   }
 
   return res == CR_SUCCESS;
+#else
+  bool res = false;
+  std::ifstream busy("/sys/class/block/" + m_DriveId + "/device/device_busy");
+  res = busy.get() == '0';
+  busy.close();
+
+  if (!res) return false;
+
+  return res;
+#endif
 }

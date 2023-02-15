@@ -1,6 +1,6 @@
-#include <usbdlg.h>
+#include <usbdlg.hpp>
 #include <yjson.h>
-#include <usbdlgitem.h>
+#include <usbdlgitem.hpp>
 #include <pluginmgr.h>
 #include <appcode.hpp>
 
@@ -14,9 +14,22 @@
 #include <QWindow>
 #include <QPropertyAnimation>
 #include <QGraphicsDropShadowEffect>
+#include <QSocketNotifier>
 
+#ifdef _WIN32
 #include <windows.h>
 #include <dbt.h>
+#else
+#include <linux/netlink.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+#include <fstream>
+#include <map>
+#include <numeric>
+
+// namespace fs = std::filesystem;
+#endif
 
 UsbDlg::ItemMap UsbDlg::m_Items;
 
@@ -27,6 +40,8 @@ UsbDlg::UsbDlg(YJson& settings)
   , m_MainLayout(new QVBoxLayout(m_CenterWidget))
   , m_Animation(new QPropertyAnimation(this, "geometry"))
   , m_Position(settings[u8"Position"])
+  , m_NetlinkSocket(-1)
+  , m_SocketNotifier(nullptr)
 {
   setWindowFlag(Qt::WindowStaysOnTopHint, m_Settings[u8"StayOnTop"].isTrue());
   setWindowFlags(Qt::FramelessWindowHint | Qt::Window | Qt::Tool);
@@ -35,13 +50,125 @@ UsbDlg::UsbDlg(YJson& settings)
   SetupUi();
   SetupAnimation();
   GetUsbInfo();
+
+  MessageLoop();
+
+  connect(this, &UsbDlg::UsbAdd, this, &UsbDlg::DoDeviceArrival);
+  connect(this, &UsbDlg::UsbRemove, this, &UsbDlg::DoDeviceRemoveComplete);
+  // connect(this, &UsbDlg::UsbAdd, this, &UsbDlg::DoDeviceArrival);
 }
 
 UsbDlg::~UsbDlg()
 {
+#ifdef _WIN32
   SHAppBarMessage(ABM_REMOVE, reinterpret_cast<APPBARDATA*>(m_AppBarData));
+#else
+  if (m_SocketNotifier) {
+    m_SocketNotifier->setEnabled(false);
+    delete m_SocketNotifier;
+  }
+  if (m_NetlinkSocket != -1) {
+    ::close(m_NetlinkSocket);
+  }
+#endif
   delete m_CenterWidget;
+#ifdef _WIN32
   delete reinterpret_cast<APPBARDATA*>(m_AppBarData);
+#endif
+}
+
+void UsbDlg::MessageLoop()
+{
+  // https://blog.csdn.net/qq_40602000/article/details/109553334
+  constexpr auto BUF_SIZE = 4096;
+  struct sockaddr_nl nls {
+    .nl_family = AF_NETLINK,
+    .nl_pad = 0,
+    .nl_pid = static_cast<__u32>(getpid()),
+    .nl_groups = NETLINK_KOBJECT_UEVENT,
+  };
+
+  m_NetlinkSocket = ::socket(PF_NETLINK, SOCK_RAW, NETLINK_KOBJECT_UEVENT);
+  if (m_NetlinkSocket == -1) {
+    return;
+  }
+
+  if (bind(m_NetlinkSocket, (struct sockaddr *)&nls, sizeof(nls)) == -1) {
+    return;
+  }
+
+  m_SocketNotifier = new QSocketNotifier(m_NetlinkSocket, QSocketNotifier::Read, this);
+  connect(m_SocketNotifier, &QSocketNotifier::activated, this, [this](int value){
+    std::vector<char> buf(BUF_SIZE, 0);
+    // auto const len = recvmsg(sock, &smsg, 0);
+    auto const len = read(m_SocketNotifier->socket(), buf.data(), BUF_SIZE*2);
+
+    if (len < 0) {
+      std::cout << "error receiving message.\n";
+      return;
+    }
+
+    if (len > BUF_SIZE - 1) {
+      std::cout << "buffer size " << len << " is too small\n";
+      return;
+    }
+
+    buf[len] = '\0';
+    if (strncmp(buf.data(), "libudev", 7)) {
+       return;
+    }
+
+    std::string_view view(buf.data() + 40, len - 40);
+
+    if (view.find("SUBSYSTEM=block") == std::string_view::npos) {
+      return;
+    }
+
+    if (view.find("ID_FS_TYPE") == std::string_view::npos) {
+      return;
+    }
+
+    // std::map<std::string, std::string> infoMap;
+    printf("Received %ld bytes\n", len);
+
+    auto action = view.find("ACTION");
+    if (action == std::string_view::npos) {
+      return;
+    }
+    action += 7;
+
+    auto devName = view.find("DEVNAME");
+
+    if (devName == std::string_view::npos) {
+      return;
+    }
+    devName += 13;
+
+    if (!strcmp("add", view.data() + action)) {
+      emit UsbAdd(QString::fromLocal8Bit(view.data() + devName));
+    } else if (!strcmp("change", view.data() + action)) {
+      emit UsbChange(QString::fromLocal8Bit(view.data() + devName));
+    } else if (!strcmp("remove", view.data() + action)) {
+      emit UsbRemove(QString::fromLocal8Bit(view.data() + devName));
+    }
+
+    // for(auto i = view.begin(), j = i, k = i; i != view.end(); ++i) {
+    //   if (*i == '=') k = i;
+    //   if (*i != '\0') continue;
+    //   if (k > j) {
+    //     infoMap.insert(std::pair {
+    //       std::string(j, k),
+    //       std::string(k + 1, i)
+    //     });
+    //   }
+    //   j = i + 1;
+    // }
+    // for (auto& [i, j]: infoMap) {
+    //   std::cout << i << ": " << j << std::endl;
+    // }
+    // std::cout.put('\n');
+  }); //will always active
+  m_SocketNotifier->setEnabled(true);
 }
 
 void UsbDlg::SetupUi()
@@ -53,7 +180,7 @@ void UsbDlg::SetupUi()
   layout->setContentsMargins(11, 11, 11, 11);
   layout->addWidget(m_CenterWidget);
   m_CenterWidget->setStyleSheet(
-    "QWidget { background-color: white; border-radius: 3px; }"
+    "QWidget { background-color: white; color: black; border-radius: 3px; }"
     "QPushButton { border-radius: 7px; }"
     "QToolTip { font-size: 9pt; }"
   );
@@ -133,11 +260,14 @@ void UsbDlg::SetupAnimation()
   if (m_Position.isArray()) {
     move(m_Position[0].getValueInt(), m_Position[1].getValueInt());
   }
+#ifdef _WIN32
   SetHideFullScreen();
+#endif
 }
 
 void UsbDlg::GetUsbInfo()
 {
+#ifdef _WIN32
   wchar_t szDevicePath[] = {
     L'\\', L'\\', L'.', L'\\',
     L'*', L':', L'\0'
@@ -184,12 +314,51 @@ void UsbDlg::GetUsbInfo()
     m_MainLayout->addWidget(item);
     item->show();
   }
+#else
+  std::ifstream file("/proc/partitions");
+  std::string line;
+  int magor, minor;
+  uint64_t blocks;
+  std::string name;
+  std::map<std::string, std::pair<bool, int>> removable;
+
+  while (std::getline(file, line)) {
+    if (line.empty()) continue;
+    if (!std::isdigit(line.front())) continue;
+    std::istringstream(line) >> magor >> minor >> blocks >> name;
+    if (!std::isdigit(name.back())) {
+      std::ifstream f("/sys/class/block/" + name + "/removable");
+      removable[name] = { f.get() == '1', 0 };
+      f.close();
+    } else {
+      auto iter = name.crbegin();
+      while (std::isdigit(*iter)) --iter;
+      auto& data = removable[name.substr(0, name.crend() - iter)];
+      data.second += data.first;
+    }
+  }
+  file.close();
+
+  for (auto& [name, data]: removable) {
+    if (!data.first) continue;
+
+    for (auto i = data.second ? 1 : 0; i <= data.second; ++i) {
+      auto id = name;
+      if (i) id += std::to_string(i);
+      auto const item = new UsbDlgItem(this, id, m_Items);
+      m_MainLayout->addWidget(item);
+      item->show();
+    }
+  }
+
+#endif
 
   if (!m_Items.empty()) {
     show();
   }
 }
 
+#ifdef _WIN32
 std::string UsbDlg::GetDrives(const void* lpdb)
 {
   auto const lpdbv = reinterpret_cast<const DEV_BROADCAST_VOLUME*>(lpdb);
@@ -206,9 +375,15 @@ std::string UsbDlg::GetDrives(const void* lpdb)
 
   return drives;
 }
+#endif
 
-void UsbDlg::DoDeviceArrival(const void* lpdb)
+#ifdef _WIN32
+void UsbDlg::DoDeviceArrival(void const* lpdb)
+#else
+void UsbDlg::DoDeviceArrival(const QString& lpdb)
+#endif
 {
+#ifdef _WIN32
   for (auto c: GetDrives(lpdb)) {
     if (auto iter = m_Items.find(c); iter != m_Items.end())
       continue;
@@ -216,24 +391,49 @@ void UsbDlg::DoDeviceArrival(const void* lpdb)
     m_MainLayout->addWidget(item);
     item->show();
   }
+#else
+  // auto const id = std::string("sdb");
+  auto bits = lpdb.toLocal8Bit();
+  std::string const id(bits.begin(), bits.end());
+  if (auto iter = m_Items.find(id); iter != m_Items.end())
+    return;
+  auto const item = new UsbDlgItem(this, id, m_Items);
+  m_MainLayout->addWidget(item);
+  item->show();
+#endif
   if (m_Items.size() == 1 && !isVisible()) {
     show();
   }
 }
 
+#ifdef _WIN32
 void UsbDlg::DoDeviceRemoveComplete(const void* lpdb)
+#else
+void UsbDlg::DoDeviceRemoveComplete(const QString& lpdb)
+#endif
 {
+#ifdef _WIN32
   for (auto c: GetDrives(lpdb)) {
     if (auto iter = m_Items.find(c); iter != m_Items.end()) {
       delete iter->second;
       // if (isVisible()) adjustSize();
     }
   }
+#else
+  // auto const id = std::string("sdb");
+  auto bits = lpdb.toLocal8Bit();
+  std::string const id(bits.begin(), bits.end());
+  if (auto iter = m_Items.find(id); iter != m_Items.end()) {
+    delete iter->second;
+    // if (isVisible()) adjustSize();
+  }
+#endif
   if (m_Items.empty() && isVisible()) {
     hide();
   }
 }
 
+#ifdef _WIN32
 void UsbDlg::SetHideFullScreen() {
   m_AppBarData = new APPBARDATA {
     sizeof(APPBARDATA),
@@ -243,7 +443,9 @@ void UsbDlg::SetHideFullScreen() {
   };
   SHAppBarMessage(ABM_NEW, reinterpret_cast<APPBARDATA*>(m_AppBarData));
 }
+#endif
 
+#ifdef _WIN32
 bool UsbDlg::nativeEvent(const QByteArray& eventType,
                            void* message,
                            qintptr* result) {
@@ -265,6 +467,7 @@ bool UsbDlg::nativeEvent(const QByteArray& eventType,
   }
   return false;
 }
+#endif
 
 void UsbDlg::showEvent(QShowEvent* event)
 {
