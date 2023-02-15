@@ -8,13 +8,15 @@
 #include <SetupAPI.h>
 #include <cfgmgr32.h>
 #else
+#include <iostream>
 #include <fstream>
 #include <filesystem>
 #include <mntent.h>
 #include <sys/vfs.h>
-#include <sys/mount.h>
+// #include <sys/mount.h>
 #include <unistd.h>
 #include <pwd.h>
+#include <wait.h>
 
 namespace fs = std::filesystem;
 using namespace std::literals;
@@ -50,8 +52,8 @@ UsbDlgItem::UsbDlgItem(QWidget* parent, std::string id, UsbDlg::ItemMap& map)
   , m_BtnEject(new QToolButton(this))
 {
   m_Items[id] = this;
-  UpdateUsbSize();
   UpdateUsbName();
+  UpdateUsbSize();
   SetupUi();
   SetStyleSheet();
 #ifdef __linux__
@@ -69,15 +71,11 @@ UsbDlgItem::~UsbDlgItem()
 
 void UsbDlgItem::DoUsbChange(QString id)
 {
-  auto const name = id.toStdString();
-  if (name != m_DriveId) {
+  auto const name = id.toLocal8Bit();
+  if (!std::equal(name.begin(), name.end(), m_DriveId.begin(), m_DriveId.end())) {
     return;
   }
-  if (IsMounted()) {
-    m_BtnOpen->setText("打开");
-  } else {
-    m_BtnOpen->setText("挂载");
-  }
+  UpdateUsbSize();
 }
 
 bool UsbDlgItem::eventFilter(QObject* target, QEvent* event)
@@ -130,7 +128,7 @@ void UsbDlgItem::SetupUi()
   SetUsbInfoText();
 
   m_UsbInfoText->setFixedWidth(110);
-  m_BtnOpen->setText("打开");
+  // m_BtnOpen->setText("打开");
   m_BtnOpen->setFixedWidth(45);
   m_BtnOpen->setIcon(QIcon(":/icons/usb-open.png"));
   m_BtnOpen->setIconSize(QSize(25, 25));
@@ -151,11 +149,11 @@ void UsbDlgItem::SetupUi()
 #ifdef _WIN32
     ShellExecuteW(nullptr, L"open", L"explorer", m_DrivePath, nullptr, SW_SHOWNORMAL);
 #else
+    // std::cout << m_MountPoint << std::endl;
     if (fs::exists(m_MountPoint)) {
       QDesktopServices::openUrl(QUrl::fromLocalFile(QString::fromStdString(m_MountPoint)));
     } else {
-      MountUsb();
-      // mgr->ShowMsg("请先挂载磁盘！");
+      mgr->ShowMsg(MountUsb() ? "挂载成功": "挂载失败");
     }
 #endif
   });
@@ -194,20 +192,19 @@ void UsbDlgItem::SetUsbInfoText()
 #ifdef __linux__
 static std::string GetMountPoint(const char* path) {
   std::string result;
-  struct mntent *mntent = nullptr;
   auto const mntfile = setmntent("/proc/mounts", "r");
   if (!mntfile) {
     return result;
   }
 
-  while ((mntent = getmntent(mntfile))) {
+  for (mntent *mntent = nullptr; (mntent = getmntent(mntfile));) {
     if (strcmp(mntent->mnt_fsname, path) == 0) {
       result = mntent->mnt_dir;
-      printf("%s, %s, %s, %s\n",
-        mntent->mnt_dir,
-        mntent->mnt_fsname,
-        mntent->mnt_type,
-        mntent->mnt_opts);
+      // printf("%s, %s, %s, %s\n",
+      //   mntent->mnt_dir,
+      //   mntent->mnt_fsname,
+      //   mntent->mnt_type,
+      //   mntent->mnt_opts);
       break;
     }
   }
@@ -265,6 +262,16 @@ bool UsbDlgItem::UpdateUsbSize()
   return true;
 }
 
+static std::optional<char> Hex2Char(const char* str)
+{
+  std::string c = { '0', str[1], str[2], str[3], '\0' };
+  try {
+    return std::stoi(c, nullptr, 16);
+  } catch (...) {
+    return std::nullopt;
+  }
+}
+
 bool UsbDlgItem::UpdateUsbName()
 {
 #ifdef _WIN32
@@ -284,8 +291,22 @@ bool UsbDlgItem::UpdateUsbName()
 
     auto path = fs::read_symlink(dirEntrey);
     if (path.stem().string() == m_DriveId) {
-      m_DriveName = dirEntrey.path().filename();
-      return UpdateMountPoint();
+      auto buffer = dirEntrey.path().stem().string();
+      m_DriveName.clear();
+      for (auto iter=buffer.begin(); iter != buffer.end(); ++iter) {
+        if (*iter == '\\' && iter + 3 < buffer.end()) {
+          auto opt = Hex2Char(iter.base());
+          if (opt) {
+            m_DriveName.push_back(*opt);
+          } else {
+            m_DriveName.push_back(' ');
+          }
+          iter += 3;
+        } else {
+          m_DriveName.push_back(*iter);
+        }
+      }
+      break;
     }
   }
   return false;
@@ -294,7 +315,7 @@ bool UsbDlgItem::UpdateUsbName()
 
 bool UsbDlgItem::UpdateMountPoint()
 {
-	auto const pwd = getpwuid(getuid());
+  auto const pwd = getpwuid(getuid());
   if (!pwd) return false;
 
   m_MountPoint = "/run/media/"s + pwd->pw_name + "/"s + m_DriveName;
@@ -316,13 +337,23 @@ bool UsbDlgItem::MountUsb()
   }
   if (UpdateMountPoint()) {
     auto const path = "/dev/" + m_DriveId;
-    if (mount(
-      path.c_str(), m_MountPoint.c_str(),
-      "ext4", 0, nullptr
-      ) >= 0) {
-      m_BtnOpen->setText("打开");
-      return true;
+    int chRetrun;
+    pid_t pid = fork();
+  
+    if (pid == 0){
+      execlp("udisksctl", "udisksctl", "mount", "-b", path.c_str(), nullptr);
+    } else if (pid > 0) {
+      wait(&chRetrun);
+      // printf("wait process's pid=%d,status=0x%X,exit value=%d(0x%X)\n", pid2, child_ret,
+      //     (child_ret), WEXITSTATUS(child_ret));
+      if (WIFEXITED(chRetrun)) {
+        m_BtnOpen->setText("打开");
+        return true;
+      }
+    } else {
+      mgr->ShowMsg("该功能需要安装 udisks2");
     }
+
   }
   m_BtnOpen->setText("挂载");
   return false;
@@ -331,10 +362,27 @@ bool UsbDlgItem::MountUsb()
 bool UsbDlgItem::UmountUsb()
 {
   if (IsMounted()) {
+    // auto const path = "/dev/" + m_DriveId;
+    // if (umount(path.c_str()) < 0) {
+    //   m_BtnOpen->setText("打开");
+    //   return false;
+    // }
     auto const path = "/dev/" + m_DriveId;
-    if (umount(path.c_str()) < 0) {
-      m_BtnOpen->setText("打开");
-      return false;
+    int chRetrun;
+    pid_t pid = fork();
+  
+    if (pid == 0){
+      execlp("udisksctl", "udisksctl", "unmount", "-b", path.c_str(), nullptr);
+    } else if (pid > 0) {
+      wait(&chRetrun);
+      // printf("wait process's pid=%d,status=0x%X,exit value=%d(0x%X)\n", pid2, child_ret,
+      //     (child_ret), WEXITSTATUS(child_ret));
+      if (WIFEXITED(chRetrun) == 0) {
+        m_BtnOpen->setText("打开");
+        return false;
+      }
+    } else {
+      mgr->ShowMsg("该功能需要安装 udisks2");
     }
   }
   m_BtnOpen->setText("挂载");
@@ -429,6 +477,25 @@ void UsbDlgItem::PopUsbDrive()
       m_Items[m_DriveId] = this;
       mgr->ShowMsg("弹出失败");
       return;
+    } else {
+      auto const path = "/dev/" + m_DriveId;
+      int chRetrun;
+      pid_t pid = fork();
+    
+      if (pid == 0){
+        execlp("udisksctl", "udisksctl", "power-off", "-b", path.c_str(), nullptr);
+      } else if (pid > 0) {
+        wait(&chRetrun);
+        // printf("wait process's pid=%d,status=0x%X,exit value=%d(0x%X)\n", pid2, child_ret,
+        //     (child_ret), WEXITSTATUS(child_ret));
+        if (WIFEXITED(chRetrun) == 0) {
+          m_Items[m_DriveId] = this;
+          mgr->ShowMsg("弹出失败");
+          return;
+        }
+      } else {
+        mgr->ShowMsg("该功能需要安装 udisks2");
+      }
     }
   }
   mgr->ShowMsg("弹出成功");
@@ -519,13 +586,13 @@ bool UsbDlgItem::EjectUsbDisk()
 
   auto res = CM_Get_Parent(&devInst, devInst, 0);
 
-	if (res == CR_SUCCESS)
-	{
+  if (res == CR_SUCCESS)
+  {
     ULONG problemNumber = 0;
-		res = CM_Get_DevNode_Status(&status, &problemNumber, devInst, 0);
-	}
-	if (res == CR_SUCCESS)
-	{
+    res = CM_Get_DevNode_Status(&status, &problemNumber, devInst, 0);
+  }
+  if (res == CR_SUCCESS)
+  {
     auto vetoType = PNP_VetoTypeUnknown;
     if (status & DN_REMOVABLE) {
       res = CM_Request_Device_EjectW(devInst, &vetoType, NULL, MAX_PATH, 0);
@@ -544,6 +611,6 @@ bool UsbDlgItem::EjectUsbDisk()
 
   if (!res) return false;
 
-  return res;
+  return UmountUsb();
 #endif
 }

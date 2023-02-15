@@ -15,6 +15,7 @@
 #include <QPropertyAnimation>
 #include <QGraphicsDropShadowEffect>
 #include <QSocketNotifier>
+// #include <QDebug>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -316,13 +317,12 @@ void UsbDlg::GetUsbInfo()
   }
 #else
   std::ifstream file("/proc/partitions");
-  std::string line;
   int magor, minor;
   uint64_t blocks;
-  std::string name;
   std::map<std::string, std::pair<bool, int>> removable;
 
-  while (std::getline(file, line)) {
+  for (std::string line, name; std::getline(file, line);) {
+    line.erase(0, line.find_first_not_of(' '));
     if (line.empty()) continue;
     if (!std::isdigit(line.front())) continue;
     std::istringstream(line) >> magor >> minor >> blocks >> name;
