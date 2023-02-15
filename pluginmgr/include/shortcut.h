@@ -20,6 +20,9 @@ private:
     bool operator<(const KeyName& other) const {
       return big < other.big;
     }
+    bool operator==(const KeyName& other) const {
+      return big == other.big;
+    }
   };
 protected:
   bool nativeEventFilter(const QByteArray &eventType, void *message, qintptr *) override;

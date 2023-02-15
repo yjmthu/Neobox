@@ -59,6 +59,7 @@ bool Shortcut::nativeEventFilter(const QByteArray &eventType, void *message, qin
   auto const hash = msg->wParam;
   auto& keyString = GetCallbackInfo(hash);
 #else
+  // https://stackoverflow.com/questions/4037230/global-hotkey-with-x11-xlib
   if (eventType != "xcb_generic_event_t") 
     return false;
   auto const ev = reinterpret_cast<xcb_generic_event_t *>(message);
@@ -68,24 +69,32 @@ bool Shortcut::nativeEventFilter(const QByteArray &eventType, void *message, qin
   auto const kev = reinterpret_cast<xcb_key_press_event_t *>(ev);
   // unsigned char keycode = kev->detail;
   KeyName keyName {0, 0};
-  // Mod1Mask == Alt, Mod4Mask == Meta
-  if(kev->state & XCB_MOD_MASK_1)
-      keyName.nativeMods |= Mod1Mask;
-  if(kev->state & XCB_MOD_MASK_CONTROL)
-      keyName.nativeMods |= ControlMask;
-  if(kev->state & XCB_MOD_MASK_4)
-      keyName.nativeMods |= Mod4Mask;
-  if(kev->state & XCB_MOD_MASK_SHIFT)
-      keyName.nativeMods |= ShiftMask;
+  // Mod1Mask == Alt, Mod4Mask == Meta, Mod2Mask == Num Lock, Mod3Mask = Scroll Lock
+  if (kev->state & XCB_MOD_MASK_1)
+    keyName.nativeMods |= Mod1Mask;
+  // if (kev->state & XCB_MOD_MASK_2)
+  //   keyName.nativeMods |= Mod2Mask;
+  // if (kev->state & XCB_MOD_MASK_3)
+  //   keyName.nativeMods |= Mod3Mask;
+  if (kev->state & XCB_MOD_MASK_4)
+    keyName.nativeMods |= Mod4Mask;
+  
+  if (kev->state & XCB_MOD_MASK_CONTROL)
+    keyName.nativeMods |= ControlMask;
+  if (kev->state & XCB_MOD_MASK_SHIFT)
+    keyName.nativeMods |= ShiftMask;
+  
   keyName.nativeKey = kev->detail;
 #endif
-  // XGrabKey(nullptr, int, unsigned int, Window, int, int, int);
-  auto& keyString = GetCallbackInfo(1);
+  auto& keyString = GetCallbackInfo(keyName);
+  // std::cout << "called: " << std::string(keyString.begin(), keyString.end()) << " " << keyName.nativeMods << " " << keyName.nativeKey << std::endl;
   auto iter = std::find_if(m_Data.beginA(), m_Data.endA(), [&keyString](const YJson& info){
     return info[u8"KeySequence"].getValueString() == keyString;
   });
 
-  if (iter == m_Data.endA()) return false;
+  if (iter == m_Data.endA()) {
+    return false;
+  }
   if (auto iterData = iter->find(u8"Command"); iterData != iter->endO()) {
     auto& data = iterData->second;
     auto& arguments = data[u8"Arguments"].getArray();
@@ -186,6 +195,7 @@ bool Shortcut::RegisterHotKey(const std::u8string& keyString)
       keyName.nativeMods, keyName.nativeKey))
     return false;
 #else
+  // qDebug() << "register: " << keyString << keyName.nativeMods << keyName.nativeKey;
   auto const x11Application = qGuiApp->nativeInterface<QNativeInterface::QX11Application>();
   auto const display = x11Application->display();
   Window root = DefaultRootWindow(display);
