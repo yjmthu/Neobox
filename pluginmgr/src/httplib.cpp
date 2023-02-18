@@ -111,8 +111,8 @@ HttpLib::~HttpLib() {
 HttpLib::String HttpLib::GetDomain()
 {
   String result;
-#ifndef _WIN32
-  std::string::const_iterator iter;
+#ifdef __linux__
+  std::u8string::const_iterator iter;
 #endif
   if (m_Url.starts_with(u8"https://")) {
 #ifdef _WIN32

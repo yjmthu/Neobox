@@ -7,16 +7,13 @@
 
 struct HttpProxy 
 {
-#ifdef _WIN32
   typedef std::u8string String;
-#else
-  typedef std::u8string String;
-#endif
+
   String proxy;
   String username;
   String password;
   int type = 0;
-public:
+
   void GetSystemProxy();
 };
 
