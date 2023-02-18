@@ -6,7 +6,9 @@
 
 class UsbDlg: public WidgetBase
 {
+#ifdef __linux__
   Q_OBJECT
+#endif
 
 public:
 #ifdef _WIN32
@@ -27,12 +29,12 @@ protected:
 public:
   explicit UsbDlg(class YJson& settings);
   ~UsbDlg();
-public slots:
 #ifdef _WIN32
   static std::string GetDrives(const void* lpdb);
   void DoDeviceArrival(const void* lpdb);
   void DoDeviceRemoveComplete(const void* lpdb);
 #else
+public slots:
   void DoDeviceArrival(const QString& lpdb);
   void DoDeviceRemoveComplete(const QString& lpdb);
 #endif
@@ -58,12 +60,13 @@ private:
 #ifdef __linux__
   int m_NetlinkSocket;
   class QSocketNotifier* m_SocketNotifier;
-#endif
 
 signals:
   void UsbChange(QString name);
   void UsbAdd(QString name);
   void UsbRemove(QString name);
+  
+#endif
 };
 
 #endif // USBDLG_HPP

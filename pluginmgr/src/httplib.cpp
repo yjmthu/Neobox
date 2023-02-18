@@ -26,7 +26,7 @@ void HttpProxy::GetSystemProxy()
   password.clear();
 
 #ifdef _WIN32
-  proxy = RegReadString(HKEY_CURRENT_USER, regProxyPath, L"ProxyServer");
+  proxy = Wide2Utf8String(RegReadString(HKEY_CURRENT_USER, regProxyPath, L"ProxyServer"));
 #else
   auto const str = reinterpret_cast<const char8_t*>(std::getenv("HTTP_PROXY"));
   if (!str) return;
@@ -114,15 +114,15 @@ HttpLib::String HttpLib::GetDomain()
 #ifndef _WIN32
   std::string::const_iterator iter;
 #endif
-  if (m_Url.starts_with("https://")) {
+  if (m_Url.starts_with(u8"https://")) {
 #ifdef _WIN32
-    result = Ansi2WideString(m_Url.substr(8, m_Url.find('/', 8) - 8));
+    result = m_Url.substr(8, m_Url.find('/', 8) - 8);
 #else
     iter = m_Url.cbegin() + 8;
 #endif
-  } else if (m_Url.starts_with("http://")) {
+  } else if (m_Url.starts_with(u8"http://")) {
 #ifdef _WIN32
-    result = Ansi2WideString(m_Url.substr(7, m_Url.find('/', 7) - 7));
+    result = m_Url.substr(7, m_Url.find('/', 7) - 7);
 #else
     iter = m_Url.cbegin() + 7;
 #endif
@@ -132,33 +132,28 @@ HttpLib::String HttpLib::GetDomain()
 #ifndef _WIN32
   result.assign(iter, std::find(iter, m_Url.cend(), '/'));
 #endif
-  result.push_back(L'\0');
+  // result.push_back(L'\0');
   return result;
 }
 
 HttpLib::String HttpLib::GetPath()
 {
   size_t pos;
-  if (m_Url.starts_with("https://")) {
+  if (m_Url.starts_with(u8"https://")) {
     pos = m_Url.find('/', 8);
-  } else if (m_Url.starts_with("http://")) {
+  } else if (m_Url.starts_with(u8"http://")) {
     pos = m_Url.find('/', 7);
   } else {
     throw std::logic_error("Url should begin with 'http://' or 'http://'!");
   }
   if (pos == std::string::npos) {
-#ifdef _WIN32
-    return L"/"s;
-#else
     return u8"/"s;
-#endif
   }
 #ifdef _WIN32
-  auto result = Ansi2WideString(m_Url.substr(pos));
+  auto result = m_Url.substr(pos);
 #else
   String result(m_Url.begin() + pos, m_Url.end());
 #endif
-  result.push_back(L'\0');
   return result;
 }
 
@@ -179,8 +174,8 @@ void HttpLib::HttpInit()
     WINHTTP_NO_PROXY_NAME, 
     WINHTTP_NO_PROXY_BYPASS, 0);
   if (m_hSession) {
-    auto url = GetDomain();
-    m_hConnect = WinHttpConnect(m_hSession, url.data(), INTERNET_DEFAULT_HTTP_PORT, 0);
+    auto url = Utf82WideString(GetDomain());
+    m_hConnect = WinHttpConnect(m_hSession, url.c_str(), INTERNET_DEFAULT_HTTP_PORT, 0);
     SetProxyBefore();
   }
 
@@ -212,7 +207,7 @@ void HttpLib::SetProxyBefore()
     if (!RegReadValue(HKEY_CURRENT_USER, regProxyPath, L"ProxyEnable")) return;
     m_Proxy.GetSystemProxy();
   }
-  std::wstring proxyString = std::format(L"{}:{}", m_Proxy.domain, m_Proxy.port);
+  auto proxyString = Utf82WideString(m_Proxy.proxy);
   proxyString.push_back(L'\0');
   // if (proxyString.starts_with(L"http://")) {
   //   proxyString = L"http://" + proxyString;
@@ -317,10 +312,10 @@ void HttpLib::HttpPerform()
 {
   bool bResults = false;
 #ifdef _WIN32
-  auto path = GetPath();
+  auto path = Utf82WideString(GetPath());
   m_hRequest = WinHttpOpenRequest (m_hConnect,
     m_PostData.data ? L"POST": L"GET",
-    path.data(), L"HTTP/1.1", WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, 0);
+    path.c_str(), L"HTTP/1.1", WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, 0);
   if (m_hRequest) {
     SetProxyAfter();
   }

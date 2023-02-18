@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.10.1)
-
-file(GLOB source_files src/*.cpp include/*.hpp)
+if(WIN32)
+  file(GLOB source_files src/*.cpp)
+else()
+  file(GLOB source_files src/*.cpp include/*.hpp)
+endif()
 
 if(WIN32)
   set(system_shared_files SetupAPI Cfgmgr32)

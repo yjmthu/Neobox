@@ -1,11 +1,13 @@
+#ifdef _WIN32
+#include <winsock2.h>
+#include <iphlpapi.h>
+#endif
+
 #ifdef __linux__
 #include <ifaddrs.h>
 #include <linux/if_link.h>
 #include <netdb.h>
 #include <net/if.h>
-#else
-#include <iphlpapi.h>
-#include <winsock2.h>
 #endif
 
 #include "netspeedhelper.h"
@@ -39,7 +41,7 @@ NetSpeedHelper::NetSpeedHelper(const YJson &blacklist)
 #ifdef _WIN32
     : m_IfTableBuffer(new unsigned char[sizeof(MIB_IFTABLE)]),
       m_IfTableBufferSize(sizeof(MIB_IFTABLE)), m_PreIdleTime(0),
-      m_PreKernelTime(0), m_PreUserTime(0)
+      m_PreAllTime(0)
 #endif
 {
   for (const auto &item : blacklist.getArray()) {
@@ -82,8 +84,7 @@ void NetSpeedHelper::SetCpuInfo() {
   curKernelTime = Filetime2Int64(kernelTime);
   curUserTime = Filetime2Int64(userTime);
 
-  const uint64_t all =
-      (curKernelTime - m_PreKernelTime) + (curUserTime - m_PreUserTime);
+  const uint64_t all = curKernelTime + curUserTime;
   if (all == 0) {
     m_TrafficInfo.cpuUsage = 100;
   } else {
@@ -92,8 +93,7 @@ void NetSpeedHelper::SetCpuInfo() {
   }
 
   m_PreIdleTime = curIdleTime;
-  m_PreKernelTime = curKernelTime;
-  m_PreUserTime = curUserTime;
+  m_PreAllTime = all;
 }
 
 void NetSpeedHelper::UpdateAdaptersAddresses() {
@@ -127,8 +127,9 @@ void NetSpeedHelper::UpdateAdaptersAddresses() {
     bool const enabled =
         m_AdapterBalckList.find(strAdapterName) == m_AdapterBalckList.end();
     m_Adapters.push_back(IpAdapter{std::move(strAdapterName),
-                                   pAdapter->FriendlyName, enabled,
-                                   pAdapter->IfIndex});
+                                   pAdapter->FriendlyName,
+                                   pAdapter->IfIndex,
+                                   enabled});
   }
 
   delete[] reinterpret_cast<const unsigned char *>(pIpAdpAddress);

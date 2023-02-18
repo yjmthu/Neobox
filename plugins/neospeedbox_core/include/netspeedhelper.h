@@ -3,7 +3,6 @@
 
 #include <set>
 #include <vector>
-#include <memory>
 
 #include <trafficinfo.h>
 

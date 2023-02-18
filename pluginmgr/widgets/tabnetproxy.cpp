@@ -58,16 +58,10 @@ void TabNetProxy::SaveData()
   m_Proxy = PluginObject::QString2Utf8(ui->lineProxy->text());
   m_Username = PluginObject::QString2Utf8(ui->lineUsername->text());
   m_Password = PluginObject::QString2Utf8(ui->linePassword->text());
-#ifdef _WIN32
-  HttpLib::m_Proxy.proxy = Utf82WideString(m_Proxy);
-  HttpLib::m_Proxy.username = Utf82WideString(m_Username);
-  HttpLib::m_Proxy.password = Utf82WideString(m_Password);
-#elif defined (__linux__)
   HttpLib::m_Proxy.proxy = m_Proxy;
   HttpLib::m_Proxy.username = m_Username;
   HttpLib::m_Proxy.password = m_Password;
   // HttpLib::m_Proxy.port = m_Port = ui->linePort->text().toInt();
-#endif
 
   if (ui->rBtnSystemProxy->isChecked()) {
     m_Type = 0;

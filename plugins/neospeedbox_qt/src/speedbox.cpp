@@ -400,8 +400,9 @@ void SpeedBox::UpdateNetCardMenu()
 #ifdef _WIN32
     const auto fName = QString::fromWCharArray(i.friendlyName.data(), i.friendlyName.size());
     auto const action = m_NetCardMenu.addAction(fName);
-#endif
+#else
     auto const action = m_NetCardMenu.addAction(QString::fromUtf8(i.adapterName.data(), i.adapterName.size()));
+#endif
     action->setCheckable(true);
     action->setChecked(i.enabled);
 #ifdef _WIN32

@@ -13,7 +13,10 @@
 
 class UsbDlgItem: public QWidget
 {
+#ifdef __linux__
   Q_OBJECT
+#endif
+
 #ifdef _WIN32
   typedef wchar_t Char;
 #else
@@ -31,8 +34,10 @@ public:
   ~UsbDlgItem();
 public:
   void PopUsbDrive();
+#ifdef __linux__
 public slots:
   void DoUsbChange(QString id);
+#endif
 private:
   void SetupUi();
   void SetUsbInfoText();

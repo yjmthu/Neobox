@@ -41,8 +41,10 @@ UsbDlg::UsbDlg(YJson& settings)
   , m_MainLayout(new QVBoxLayout(m_CenterWidget))
   , m_Animation(new QPropertyAnimation(this, "geometry"))
   , m_Position(settings[u8"Position"])
+#ifdef __linux__
   , m_NetlinkSocket(-1)
   , m_SocketNotifier(nullptr)
+#endif
 {
   setWindowFlag(Qt::WindowStaysOnTopHint, m_Settings[u8"StayOnTop"].isTrue());
   setWindowFlags(Qt::FramelessWindowHint | Qt::Window | Qt::Tool);
@@ -51,12 +53,12 @@ UsbDlg::UsbDlg(YJson& settings)
   SetupUi();
   SetupAnimation();
   GetUsbInfo();
-
+#ifdef __linux__
   MessageLoop();
-
   connect(this, &UsbDlg::UsbAdd, this, &UsbDlg::DoDeviceArrival);
   connect(this, &UsbDlg::UsbRemove, this, &UsbDlg::DoDeviceRemoveComplete);
   // connect(this, &UsbDlg::UsbAdd, this, &UsbDlg::DoDeviceArrival);
+#endif
 }
 
 UsbDlg::~UsbDlg()
@@ -78,6 +80,7 @@ UsbDlg::~UsbDlg()
 #endif
 }
 
+#ifdef __linux__
 void UsbDlg::MessageLoop()
 {
   // https://blog.csdn.net/qq_40602000/article/details/109553334
@@ -171,6 +174,7 @@ void UsbDlg::MessageLoop()
   }); //will always active
   m_SocketNotifier->setEnabled(true);
 }
+#endif
 
 void UsbDlg::SetupUi()
 {
