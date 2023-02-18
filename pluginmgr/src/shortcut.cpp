@@ -8,6 +8,8 @@
 #include <QWidget>
 #include <QApplication>
 
+#include <QProcess>
+
 #ifdef _WIN32
 #include <Windows.h>
 #else
@@ -19,7 +21,6 @@
 #include <ranges>
 
 using namespace std::literals;
-namespace fs = std::filesystem;
 
 std::vector<char*> LoadArgList(const YJson::ArrayType& array) {
   std::vector<char*> result;
@@ -85,8 +86,8 @@ bool Shortcut::nativeEventFilter(const QByteArray &eventType, void *message, qin
     keyName.nativeMods |= ShiftMask;
   
   keyName.nativeKey = kev->detail;
-#endif
   auto& keyString = GetCallbackInfo(keyName);
+#endif
   // std::cout << "called: " << std::string(keyString.begin(), keyString.end()) << " " << keyName.nativeMods << " " << keyName.nativeKey << std::endl;
   auto iter = std::find_if(m_Data.beginA(), m_Data.endA(), [&keyString](const YJson& info){
     return info[u8"KeySequence"].getValueString() == keyString;
@@ -98,22 +99,16 @@ bool Shortcut::nativeEventFilter(const QByteArray &eventType, void *message, qin
   if (auto iterData = iter->find(u8"Command"); iterData != iter->endO()) {
     auto& data = iterData->second;
     auto& arguments = data[u8"Arguments"].getArray();
-    fs::path executable = arguments.front().getValueString();
-    executable.make_preferred();
-    fs::path directory = data[u8"Directory"].getValueString();
-    directory = fs::absolute(directory);
-    directory.make_preferred();
 
-    auto exe = executable.string();
-    auto arg = LoadArgList(arguments);
-
-#ifdef _WIN32
-    ShellExecute(nullptr, L"open", exe.c_str(), arg.c_str(),
-      dir.c_str(), SW_SHOWNORMAL);
-#else
-    if (fork() == 0) execvp(exe.c_str(), arg.data());
-#endif
-    FreeArgList(arg);
+    auto& directory = data[u8"Directory"].getValueString();
+    QStringList arglist;
+    for (auto& i: arguments) {
+      auto& str = i.getValueString();
+      arglist.push_back(QString::fromUtf8(str.data(), str.size()));
+    }
+    QString exe = arglist.front();
+    arglist.pop_front();
+    QProcess:: startDetached(exe, arglist, QString::fromUtf8(directory.data(), directory.size()));
   } else if (auto iterData = iter->find(u8"Plugin"); iterData != iter->endO()) {
     auto& data = iterData->second;
     auto& pluginName = data[u8"PluginName"].getValueString();

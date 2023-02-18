@@ -32,7 +32,7 @@ class Wallpaper {
   YJson& m_Settings;
   YJson* const m_Config;
 #ifdef _WIN32
-  typedef std::string String;
+  typedef std::wstring String;
 #else
   typedef std::string String;
 #endif

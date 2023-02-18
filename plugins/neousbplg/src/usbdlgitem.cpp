@@ -69,6 +69,7 @@ UsbDlgItem::~UsbDlgItem()
 #endif
 }
 
+#ifdef __linux__
 void UsbDlgItem::DoUsbChange(QString id)
 {
   auto const name = id.toLocal8Bit();
@@ -77,6 +78,7 @@ void UsbDlgItem::DoUsbChange(QString id)
   }
   UpdateUsbSize();
 }
+#endif
 
 bool UsbDlgItem::eventFilter(QObject* target, QEvent* event)
 {
@@ -240,7 +242,6 @@ bool UsbDlgItem::UpdateUsbSize()
 
   m_SizeFree = dwFreeClusters * (uint64_t)dwSectPerClust * dwBytesPerSect;
 #else
-#endif
   if (IsMounted()) {
     m_BtnOpen->setText("打开");
     struct statfs diskInfo;
@@ -259,6 +260,8 @@ bool UsbDlgItem::UpdateUsbSize()
     m_SizeTotal <<= 9;
     m_SizeFree = m_SizeTotal;
   }
+#endif
+
   return true;
 }
 
@@ -313,6 +316,7 @@ bool UsbDlgItem::UpdateUsbName()
 #endif
 }
 
+#ifdef __linux__
 bool UsbDlgItem::UpdateMountPoint()
 {
   auto const pwd = getpwuid(getuid());
@@ -388,6 +392,7 @@ bool UsbDlgItem::UmountUsb()
   m_BtnOpen->setText("挂载");
   return true;
 }
+#endif
 
 QString UsbDlgItem::GetStyleSheet() const
 {
@@ -477,6 +482,7 @@ void UsbDlgItem::PopUsbDrive()
       m_Items[m_DriveId] = this;
       mgr->ShowMsg("弹出失败");
       return;
+#ifdef __linux__
     } else {
       auto const path = "/dev/" + m_DriveId;
       int chRetrun;
@@ -496,6 +502,7 @@ void UsbDlgItem::PopUsbDrive()
       } else {
         mgr->ShowMsg("该功能需要安装 udisks2");
       }
+#endif
     }
   }
   mgr->ShowMsg("弹出成功");

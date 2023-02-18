@@ -94,7 +94,6 @@ YJson* PluginMgr::InitSettings()
       NEOBOX_VERSION_PATCH
     };
     HttpLib::m_Proxy.GetSystemProxy();
-
     proxy = YJson::O {
       {u8"Type", HttpLib::m_Proxy.type},
       {u8"Proxy", HttpLib::m_Proxy.proxy},
@@ -105,12 +104,10 @@ YJson* PluginMgr::InitSettings()
     proxy[u8"Proxy"] = HttpLib::m_Proxy.proxy;
   }
 
-
   HttpLib::m_Proxy.proxy = proxy[u8"Proxy"].getValueString();
   HttpLib::m_Proxy.username = proxy[u8"Username"].getValueString();
   HttpLib::m_Proxy.password = proxy[u8"Password"].getValueString();
   HttpLib::m_Proxy.type = proxy[u8"Type"].getValueInt();
-
   return setting;
 }
 
@@ -343,13 +340,16 @@ bool PluginMgr::LoadPlugEnv(const fs::path& dir)
   }
 #ifdef _WIN32
   constexpr char seperator = ';';
+  auto const dwSize = GetEnvironmentVariableA("PATH", nullptr, 0); // GetEnvironmentVariableA(varName, strEnvPaths.data(), strEnvPaths.size());
+  std::string strEnvPaths(dwSize, 0);
+  auto const pathEnv = GetEnvironmentVariableA("PATH", strEnvPaths.data(), dwSize);
+  if (strEnvPaths.ends_with('\0'))
+    strEnvPaths.pop_back();
 #else
   constexpr char seperator = ':';
   auto const pathEnv = std::getenv("PATH");
+  std::string strEnvPaths(pathEnv ? pathEnv : "");
 #endif
-  std::string strEnvPaths(pathEnv ? pathEnv : "");  
-  // auto const dwSize = GetEnvironmentVariableW(varName, strEnvPaths.data(), strEnvPaths.size());
-  strEnvPaths.pop_back();
   if (!strEnvPaths.empty() && !strEnvPaths.ends_with(seperator))
     strEnvPaths.push_back(seperator);
   auto path = fs::absolute(dir);
@@ -363,7 +363,11 @@ bool PluginMgr::LoadPlugEnv(const fs::path& dir)
   }
   cpath.push_back('\0');
   strEnvPaths.append(cpath);
+#ifdef _WIN32
+  auto const bRet = SetEnvironmentVariableA("PATH", strEnvPaths.data());
+#else
   auto const bRet = setenv("PATH", strEnvPaths.data(), 1) == 0;
+#endif
   // ShowMsg(QStringLiteral("代码%1").arg(bRet));
   return bRet;
 }

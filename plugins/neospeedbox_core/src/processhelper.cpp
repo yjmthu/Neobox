@@ -77,7 +77,15 @@ size_t ProcessHelper::GetMemUsage(const std::filesystem::path& dir) {
 }
 #endif
 
+#ifdef _WIN32
+const size_t ProcessHelper::m_PageSize = []() {
+  SYSTEM_INFO info;
+  GetSystemInfo(&info);
+  return info.dwPageSize;
+}();
+#else
 const size_t ProcessHelper::m_PageSize = getpagesize();
+#endif
 
 ProcessHelper::ProcessHelper()
 	: m_ProcessInfo([](const ProcessInfo* a, const ProcessInfo* b)->bool{

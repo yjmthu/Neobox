@@ -8,7 +8,7 @@
 struct HttpProxy 
 {
 #ifdef _WIN32
-  typedef std::wstring String;
+  typedef std::u8string String;
 #else
   typedef std::u8string String;
 #endif
@@ -74,7 +74,7 @@ public:
 private:
   Headers m_Headers;
   Response m_Response;
-  std::string m_Url;
+  std::u8string m_Url;
   void* m_hSession = nullptr;
 #ifdef _WIN32
   void* m_hConnect = nullptr;
