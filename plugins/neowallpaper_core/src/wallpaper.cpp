@@ -33,7 +33,6 @@ fs::path FileNameFilter(std::u8string& path) {
     }
   }
   path = std::move(result);
-  mgr->ShowMsgbox(u8"文件名已经被替换", path);
   return path;
 }
 
