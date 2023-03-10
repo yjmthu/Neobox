@@ -6,7 +6,7 @@ file(GLOB source_files src/*.cpp include/*.hpp)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # set(system_shared_files Shell32)
 set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui)
-set(pliugin_libfiles neoocr_core pluginmgr)
+set(pliugin_libfiles pluginmgr)
 
 qt_wrap_ui(wrap_files
   src/colordlg.ui

@@ -4,6 +4,7 @@ find_package(Qt6 REQUIRED COMPONENTS Svg)
 if(WIN32)
   find_package(Leptonica CONFIG REQUIRED)
 endif()
+
 file(GLOB source_files src/*.cpp)
 
 # set(system_shared_files Shell32)
@@ -11,8 +12,7 @@ set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Svg)
 set(pliugin_libfiles neoocr_core)
 set(ocr_libfiles leptonica)
 
-add_library(neoocrplg SHARED ${source_files} 
-)
+add_library(neoocrplg SHARED ${source_files})
 
 file(GLOB _resource_files icons/*)
 set(resource_files "")
@@ -27,7 +27,7 @@ qt_add_resources(neoocrplg "neoocrplg"
   FILES ${resource_files}
 )
 
-target_link_libraries(neoocrplg PRIVATE
+target_link_libraries(neoocrplg PUBLIC
   ${pliugin_libfiles}
   ${qt_shared_files}
   ${ocr_libfiles}

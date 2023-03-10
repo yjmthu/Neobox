@@ -18,6 +18,25 @@ using namespace std::literals;
 
 constexpr char Wallpaper::m_szWallScript[];
 
+fs::path FileNameFilter(std::u8string& path) {
+  std::u8string_view pattern(u8":*?\"<>|");
+  std::u8string result;
+  result.reserve(path.size());
+  for (int count=0; auto c : path) {
+    if (pattern.find(c) == pattern.npos) {
+      result.push_back(c);
+    } else if (c == u8':') {
+      // 当路径为相对路径时，可能会有Bug
+      if (++count == 1) {
+        result.push_back(c);
+      }
+    }
+  }
+  path = std::move(result);
+  mgr->ShowMsgbox(u8"文件名已经被替换", path);
+  return path;
+}
+
 bool Wallpaper::DownloadImage(const ImageInfoEx imageInfo) {
   if (imageInfo->ErrorCode != ImageInfo::NoErr) {
     mgr->ShowMsgbox(u8"出错", imageInfo->ErrorMsg);
@@ -25,14 +44,14 @@ bool Wallpaper::DownloadImage(const ImageInfoEx imageInfo) {
   }
 
   // Check image dir and file.
-  const auto& u8FilePath = imageInfo->ImagePath;
-  const auto& dir = fs::path(u8FilePath).parent_path();
+  const auto& filePath = FileNameFilter(imageInfo->ImagePath);
+  const auto& dir = filePath.parent_path();
 
   if (!fs::exists(dir))
     fs::create_directories(dir);
-  if (fs::exists(u8FilePath)) {
-    if (!fs::file_size(u8FilePath))
-      fs::remove(u8FilePath);
+  if (fs::exists(filePath)) {
+    if (!fs::file_size(filePath))
+      fs::remove(filePath);
     else
       return true;
   }
@@ -47,15 +66,15 @@ bool Wallpaper::DownloadImage(const ImageInfoEx imageInfo) {
   // g_UsingFiles.emplace(u8FilePath);
   HttpLib clt(imageInfo->ImageUrl);
   clt.SetRedirect(1);
-  auto res = clt.Get(u8FilePath);
-  if (res->status == 200) {
+  auto res = clt.Get(filePath);
+  if (res && res->status == 200) {
     // g_UsingFiles.erase(u8FilePath);
     return true;
   } else {
-    if (fs::exists(u8FilePath))
-      fs::remove(u8FilePath);
+    if (fs::exists(filePath))
+      fs::remove(filePath);
     // g_UsingFiles.erase(u8FilePath);
-    mgr->ShowMsgbox(u8"出错"s, u8"网络异常或文件不能打开！\n文件名："s + u8FilePath +
+    mgr->ShowMsgbox(u8"出错"s, u8"网络异常或文件不能打开！\n文件名："s + filePath.u8string() +
                               u8"\n网址："s + imageInfo->ImageUrl);
     return false;
   }

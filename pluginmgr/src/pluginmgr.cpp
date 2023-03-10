@@ -231,7 +231,11 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
   path /= pluginName;
 #else
   fs::path path = __FILE__;
+#ifdef _WIN32
+  path = path.parent_path().parent_path().parent_path() / "install/plugins";
+#else
   path = path.parent_path().parent_path().parent_path() / "install/lib";
+#endif
 #endif
   if (!LoadPlugEnv(path)) {
     ShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件文件夹加载失败！"));

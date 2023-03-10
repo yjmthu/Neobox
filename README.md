@@ -187,6 +187,17 @@
     - 正在使用clang补写linux部分功能
     - 待 GCC13 发布后再切换到 GCC
 
+- CMake 命令【windows】
+
+```powershell
+vcpkg install Leptonica:x64-windows Tesseract:x64-windows
+git clone https://github.com/yjmthu/Neobox.git
+cd Neobox
+git submodule update --init --recursive
+```
+
+> 需要在VS的提供命令行环境下执行上述命令。
+
 - CMake 命令【linux】
 
 ```shell

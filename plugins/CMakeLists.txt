@@ -4,13 +4,13 @@ find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui)
 qt_standard_project_setup()
 
 set(plugin_list
-  neoocrplg
+  # neoocrplg
   neospeedboxplg
   neosystemplg
   neotranslateplg
   neowallpaperplg
   neousbplg
-  # neocolorplg
+  neocolorplg
 )
 
 function(include_sub_directories_recursively root_dir)
@@ -39,12 +39,13 @@ set(plugin_subdirs
   neosystemplg
   neospeedbox_core
   neospeedbox_qt
-  neoocr_core
-  neoocr_qt
+  # neoocr_core
+  # neoocr_qt
   neowallpaper_core
   neowallpaper_qt
   neotranslate_core
   neotranslate_qt
+  neocolorplg
 )
 
 foreach(subdir_name ${plugin_subdirs})

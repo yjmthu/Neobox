@@ -9,11 +9,14 @@ file(GLOB source_files src/*.cpp)
 
 add_library(neoocr_core STATIC ${source_files})
 
+set(ocr_libfiles leptonica)
+
 if(WIN32)
-  set(ocr_libfiles leptonica Tesseract::libtesseract)
+  list(APPEND ocr_libfiles Tesseract::libtesseract)
 else()
-  set(ocr_libfiles leptonica tesseract)
+  list(APPEND ocr_libfiles tesseract)
 endif()
+
 target_link_libraries(neoocr_core PUBLIC
   ${ocr_libfiles}
   pluginmgr yjson

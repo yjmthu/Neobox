@@ -8,6 +8,7 @@
 #include <string>
 #include <array>
 #include <format>
+#include <algorithm>
 
 class SHA256 {
 

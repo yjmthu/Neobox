@@ -6,10 +6,14 @@ if(UNIX)
   set(CMAKE_CXX_COMPILER /usr/bin/clang++)
 endif()
 
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# C++20标准
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# 导出动态库
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+# 导出ninja编译命令
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# 安装目录
 set(CMAKE_INSTALL_PREFIX "install")
 
 string(TIMESTAMP COMPILE_TIME %Y-%m-%d)
@@ -17,13 +21,14 @@ set(NEOBOX_BUILD_TIME ${COMPILE_TIME})
 
 # list(APPEND CMAKE_PREFIX_PATH "C:/Qt/6.4.2/msvc2019_64")
 
-project(Neobox VERSION 2.3.5 LANGUAGES CXX C)
+project(neobox VERSION 2.3.5 LANGUAGES CXX C)
 
 if (NOT CMAKE_BUILD_TYPE)
   message("编译类型未定义，默认设置为Debug")
   set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
+message("编译类型：${CMAKE_BUILD_TYPE}")
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
   add_definitions(-D_DEBUG)
   message("定义Debug宏, 类型${CMAKE_BUILD_TYPE}。")
