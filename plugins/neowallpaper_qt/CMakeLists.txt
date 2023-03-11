@@ -12,20 +12,6 @@ set(pliugin_libfiles wallpaper_core pluginmgr yjson)
 
 add_library(neowallpaperplg SHARED ${source_files})
 
-# file(GLOB _resource_files scripts/*)
-
-# set(resource_files "")
-# foreach(full_filepath ${_resource_files})
-#   file(RELATIVE_PATH file_path ${CMAKE_CURRENT_SOURCE_DIR} ${full_filepath})
-#   message(STATUS "res='${file_path}'")
-#   list(APPEND resource_files ${file_path})
-# endforeach()
-
-# qt_add_resources(neowallpaperplg "neowallpaperplg"
-#   PREFIX "/"
-#   FILES ${resource_files}
-# )
-
 target_link_libraries(neowallpaperplg PRIVATE
   ${pliugin_libfiles}
   ${qt_shared_files}

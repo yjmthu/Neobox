@@ -6,7 +6,6 @@ if(WIN32)
 endif()
 
 file(GLOB source_files src/*.cpp)
-
 add_library(neoocr_core STATIC ${source_files})
 
 set(ocr_libfiles leptonica)
@@ -18,6 +17,5 @@ else()
 endif()
 
 target_link_libraries(neoocr_core PUBLIC
-  ${ocr_libfiles}
-  pluginmgr yjson
+  ${ocr_libfiles} pluginmgr yjson
 )

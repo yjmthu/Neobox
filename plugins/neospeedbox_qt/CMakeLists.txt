@@ -21,19 +21,9 @@ set(pliugin_libfiles neospeedbox_core pluginmgr yjson)
 
 add_library(neospeedboxplg SHARED ${source_files})
 
-file(GLOB _resource_files fonts/*.ttf icons/* dlls/*.dll sos/*.so)
-
-set(resource_files "")
-foreach(full_filepath ${_resource_files})
-  file(RELATIVE_PATH file_path ${CMAKE_CURRENT_SOURCE_DIR} ${full_filepath})
-  message(STATUS "res='${file_path}'")
-  list(APPEND resource_files ${file_path})
-endforeach()
-
-qt_add_resources(neospeedboxplg "neospeedboxplg"
-  PREFIX "/"
-  FILES ${resource_files}
-)
+set(resource_files fonts/*.ttf icons/* dlls/*.dll sos/*.so)
+# add_subdirectory(..)
+load_resources(neospeedboxplg ${resource_files})
 
 target_link_libraries(neospeedboxplg PUBLIC
   ${pliugin_libfiles}

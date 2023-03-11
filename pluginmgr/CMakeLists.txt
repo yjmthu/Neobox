@@ -19,9 +19,8 @@ qt_wrap_ui(wrap_files
 ) # 根据UI文件生成头文件
 
 file(GLOB source_files include/*.hpp src/*.cpp widgets/*.cpp widgets/*.hpp)
-file(GLOB _resource_files fonts/*.ttf  icons/*.png icons/*.ico  jsons/*.json scripts/* styles/*.qss)
 
-set(system_shared_files "")
+set(system_shared_files)
 set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui)
 set(pliugin_libfiles yjson)
 
@@ -31,27 +30,19 @@ else()
   list(APPEND system_shared_files curl)
 endif()
 
-set(resource_files "")
-foreach(full_filepath ${_resource_files})
-  file(RELATIVE_PATH file_path ${CMAKE_CURRENT_SOURCE_DIR} ${full_filepath})
-  message(STATUS "res='${file_path}'")
-  list(APPEND resource_files ${file_path})
-endforeach()
+set(resource_files fonts/*.ttf  icons/*.png icons/*.ico  jsons/*.json scripts/* styles/*.qss)
 
 add_library(pluginmgr SHARED
   ${source_files}
   ${wrap_files}
 )
 
+load_resources(pluginmgr ${resource_files})
+
 target_link_libraries(pluginmgr PUBLIC
   ${pliugin_libfiles}
   ${qt_shared_files}
   ${system_shared_files}
-)
-
-qt_add_resources(pluginmgr "neobox"
-  PREFIX "/"
-  FILES ${resource_files}
 )
 
 install(TARGETS pluginmgr

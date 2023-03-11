@@ -302,7 +302,7 @@ bool Wallpaper::SetNext() {
     {
       ImageInfoEx ptr(new ImageInfo{
         GetImageName(imgUrl).u8string(),
-        std::u8string(imgUrl.begin(), imgUrl.end()),
+        Wide2Utf8String(imgUrl),
         {/* ??? */},
         ImageInfo::Errors::NoErr,
       });

@@ -21,7 +21,7 @@ set(NEOBOX_BUILD_TIME ${COMPILE_TIME})
 
 # list(APPEND CMAKE_PREFIX_PATH "C:/Qt/6.4.2/msvc2019_64")
 
-project(neobox VERSION 2.3.5 LANGUAGES CXX C)
+project(neobox VERSION 2.3.6 LANGUAGES CXX C)
 
 if (NOT CMAKE_BUILD_TYPE)
   message("编译类型未定义，默认设置为Debug")
@@ -46,6 +46,21 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT ANDROID)
   add_link_options(-stdlib=libc++)   # New command on CMake master, not in 3.12 release
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexperimental-library")  # std::format
 endif()
+
+function(load_resources plugin_name files_list)
+  file(GLOB _resource_files ${files_list})
+  set(resource_files)
+  foreach(full_filepath ${_resource_files})
+    file(RELATIVE_PATH file_path ${CMAKE_CURRENT_SOURCE_DIR} ${full_filepath})
+    message(STATUS "plugin ${plugin_name} resource_files: '${file_path}'")
+    list(APPEND resource_files ${file_path})
+  endforeach()
+
+  qt_add_resources(${plugin_name} "${plugin_name}"
+    PREFIX "/"
+    FILES ${resource_files}
+  )
+endfunction()
 
 link_directories(build/pluginmgr)
 include_directories(pluginmgr/include)

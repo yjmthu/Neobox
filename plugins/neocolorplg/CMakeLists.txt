@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.10.1)
 
-# find_package(Leptonica CONFIG REQUIRED)
 file(GLOB source_files src/*.cpp include/*.hpp)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -18,19 +17,8 @@ add_library(neocolorplg SHARED
   ${wrap_files}
 )
 
-file(GLOB _resource_files icons/*.png styles/*.qss)
-set(resource_files "")
-foreach(full_filepath ${_resource_files})
-  file(RELATIVE_PATH file_path ${CMAKE_CURRENT_SOURCE_DIR} ${full_filepath})
-  message(STATUS "res='${file_path}'")
-  list(APPEND resource_files ${file_path})
-endforeach()
-
-qt_add_resources(neocolorplg "neocolorplg"
-  PREFIX "/"
-  FILES ${resource_files}
-)
-
+set(resource_files icons/*.png styles/*.qss)
+load_resources(neocolorplg ${resource_files})
 
 target_link_libraries(neocolorplg PRIVATE
   ${pliugin_libfiles}

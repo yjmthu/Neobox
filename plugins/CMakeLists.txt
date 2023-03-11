@@ -54,9 +54,6 @@ foreach(subdir_name ${plugin_subdirs})
   add_subdirectory(${subdir_name})
 endforeach()
 
-# add_subdirectory(neowallpaper_core)
-# add_subdirectory(neowallpaper_qt)
-
 set(install_dir ${PROJECT_SOURCE_DIR}/install)
 
 install(TARGETS ${plugin_list}
