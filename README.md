@@ -191,9 +191,13 @@
 
 ```powershell
 vcpkg install Leptonica:x64-windows Tesseract:x64-windows
+vcpkg integrate install
 git clone https://github.com/yjmthu/Neobox.git
 cd Neobox
 git submodule update --init --recursive
+cmake -S . -GNinja -DCMAKE_TOOLCHAIN_FILE=${GITHUB_PATH}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE="Debug" -B build/Debug
+cmake --build "./build/Debug"
+cmake -P "./build/Debug/cmake_install.cmake"
 ```
 
 > 需要在VS的提供命令行环境下执行上述命令。
@@ -206,7 +210,7 @@ git clone https://github.com/yjmthu/Neobox.git
 cd Neobox
 git submodule update --init --recursive
 cmake -GNinja -B build/Debug -S . -DCMAKE_BUILD_TYPE="Debug"
-cmake --build build
+cmake --build build/Debug
 cmake -P build/Debug/cmake_install.cmake
 ```
 

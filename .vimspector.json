@@ -12,7 +12,7 @@
         "cwd": "${workspaceFolder}",
         "externalConsole": true,
         "env": {
-          "PATH": "${env:PATH};${workspaceFolder}\\build\\Debug\\yjson;${workspaceFolder}\\build\\Debug\\pluginmgr"
+          "PATH": "${workspaceFolder}\\build\\Debug\\yjson;${workspaceFolder}\\build\\Debug\\pluginmgr"
         },
         "MIMode": "lldb"
       }
