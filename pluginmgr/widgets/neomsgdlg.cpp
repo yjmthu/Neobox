@@ -59,17 +59,13 @@ void NeoMsgDlg::InitWindowStyle()
 
   setStyleSheet(
     "QFrame {"
-      // "background-color: #2870ea;"
-    "  background-color: rgba(100, 100, 100, 100);"
-    "  border-radius: 5px;"
+      "background-color: #2870ea;"
+      "border-radius: 5px;"
     "}"
     "QLabel {"
-    "  background-color: transparent;"
-    "  color: skyblue;"
-    "  font-size: 15pt;"
-      // "background-color: transparent;"
-      // "color: #ffffff;"
-      // "font-size: 15pt;"
+      "background-color: transparent;"
+      "color: #ffffff;"
+      "font-size: 15pt;"
     "}"
   );
 }
