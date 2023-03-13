@@ -554,7 +554,7 @@ QSharedMemory* PluginMgr::CreateSharedMemory() {
     auto const code = ReadSharedFlag(sharedMemory);
     switch (code) {
     case 0:   //  already have an instance;
-      WriteSharedFlag(sharedMemory, 2);
+      // WriteSharedFlag(sharedMemory, 2);
       sharedMemory->detach();
       delete sharedMemory;
       throw std::runtime_error("Already have an instance.");
