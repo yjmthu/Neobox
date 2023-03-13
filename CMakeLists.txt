@@ -50,9 +50,10 @@ endif()
 function(load_resources plugin_name files_list)
   file(GLOB _resource_files ${files_list})
   set(resource_files)
+  message("- <${plugin_name}> ${files_list}")
   foreach(full_filepath ${_resource_files})
     file(RELATIVE_PATH file_path ${CMAKE_CURRENT_SOURCE_DIR} ${full_filepath})
-    message(STATUS "plugin ${plugin_name} resource_files: '${file_path}'")
+    message(STATUS "res: '${file_path}'")
     list(APPEND resource_files ${file_path})
   endforeach()
 
@@ -60,6 +61,7 @@ function(load_resources plugin_name files_list)
     PREFIX "/"
     FILES ${resource_files}
   )
+  message("- <${plugin_name}>")
 endfunction()
 
 link_directories(build/pluginmgr)

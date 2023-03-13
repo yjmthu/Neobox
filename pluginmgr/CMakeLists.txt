@@ -30,14 +30,22 @@ else()
   list(APPEND system_shared_files curl)
 endif()
 
-set(resource_files fonts/*.ttf  icons/*.png icons/*.ico  jsons/*.json scripts/* styles/*.qss)
-
 add_library(pluginmgr SHARED
   ${source_files}
   ${wrap_files}
 )
 
-load_resources(pluginmgr ${resource_files})
+set(resource_files
+  fonts/*.ttf
+  icons/*.png
+  icons/*.ico
+  jsons/*.json
+  scripts/*.desktop
+  styles/*.qss
+)
+load_resources(pluginmgr
+  "${resource_files}"
+)
 
 target_link_libraries(pluginmgr PUBLIC
   ${pliugin_libfiles}

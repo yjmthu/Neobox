@@ -18,7 +18,7 @@ add_library(neocolorplg SHARED
 )
 
 set(resource_files icons/*.png styles/*.qss)
-load_resources(neocolorplg ${resource_files})
+load_resources(neocolorplg "${resource_files}")
 
 target_link_libraries(neocolorplg PRIVATE
   ${pliugin_libfiles}

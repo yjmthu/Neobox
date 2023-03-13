@@ -22,8 +22,7 @@ set(pliugin_libfiles neospeedbox_core pluginmgr yjson)
 add_library(neospeedboxplg SHARED ${source_files})
 
 set(resource_files fonts/*.ttf icons/* dlls/*.dll sos/*.so)
-# add_subdirectory(..)
-load_resources(neospeedboxplg ${resource_files})
+load_resources(neospeedboxplg "${resource_files}")
 
 target_link_libraries(neospeedboxplg PUBLIC
   ${pliugin_libfiles}
