@@ -24,7 +24,9 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 
+#include <curl/curl.h>
 #include <leptonica/allheaders.h>
+
 #include <filesystem>
 #include <ranges>
 

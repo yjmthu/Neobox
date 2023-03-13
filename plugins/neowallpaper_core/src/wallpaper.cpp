@@ -375,7 +375,7 @@ bool Wallpaper::SetPrevious() {
 bool Wallpaper::UndoDelete() {
   if (m_BlackList.empty())
     return false;
-  const auto& back = m_BlackList.back();
+  auto& back = m_BlackList.back();
   if (!back.second.has_parent_path()) {
     m_BlackList.pop_back();
     WriteBlackList();

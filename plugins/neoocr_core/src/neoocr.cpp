@@ -6,6 +6,8 @@
 #include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 
+// #include <tesseract/baseapi.h>
+
 #include <ranges>
 #include <set>
 #include <regex>
