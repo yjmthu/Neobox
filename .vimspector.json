@@ -7,12 +7,12 @@
         "name": "CodeLLDB",
         "type": "lldb",
         "request": "launch",
-        "program": "${workspaceFolder}\\build\\Debug\\neobox.exe",
+        "program": "${workspaceFolder}/build/Debug/Neobox.exe",
         "args": [ ],
         "cwd": "${workspaceFolder}",
         "externalConsole": true,
         "env": {
-          "PATH": "${workspaceFolder}\\build\\Debug\\yjson;${workspaceFolder}\\build\\Debug\\pluginmgr"
+          "PATH": "${PATH};${workspaceFolder}/install/bin;${workspaceFolder}/build/Debug/pluginmgr;${workspaceFolder}/build/Debug/yjson"
         },
         "MIMode": "lldb"
       }

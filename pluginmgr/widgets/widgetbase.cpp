@@ -324,16 +324,18 @@ bool WidgetBase::nativeEvent(const QByteArray &eventType, void *message, qintptr
   case WM_NCHITTEST:
     int xPos = GET_X_LPARAM(msg->lParam);
     int yPos = GET_Y_LPARAM(msg->lParam);
-    auto const pos = mapFromGlobal(QPoint(xPos, yPos));
-    xPos = pos.x(), yPos = pos.y();
-    // QWindow * handle = window()->windowHandle();
-    // if (QScreen * screen = nullptr; handle && (screen = handle->screen())) {
-    //   QPoint offset = screen->geometry().topLeft();
-    //   xPos = (xPos - offset.x()) / screen->devicePixelRatio() + offset.x() - this->frameGeometry().x();
-    //   yPos = (yPos - offset.y()) / screen->devicePixelRatio() + offset.y() - this->frameGeometry().y();
-    // } else {
-    //   return false;
-    // }
+    // QWindow* window = QWindow::fromWinId((WId)QWidget::winId());
+    // auto const pos = window->mapFromGlobal(QPoint(xPos, yPos));
+    // xPos = pos.x(), yPos = pos.y();
+    QWindow * handle = window()->windowHandle();
+    if (QScreen * screen = nullptr; handle && (screen = handle->screen())) {
+      xPos = xPos / screen->devicePixelRatio();
+      yPos = yPos / screen->devicePixelRatio();
+      auto const pos = handle->mapFromGlobal(QPoint(xPos, yPos));
+      xPos = pos.x(), yPos = pos.y();
+    } else {
+      return false;
+    }
     if(xPos < padding && yPos < padding)
       *result = HTTOPLEFT;
     else if(xPos >= width() - padding && yPos < padding)
@@ -351,7 +353,7 @@ bool WidgetBase::nativeEvent(const QByteArray &eventType, void *message, qintptr
     else if(yPos >= height() - padding)
       *result = HTBOTTOM;
     else
-        break;
+      break;
     return true;
   }
 #endif

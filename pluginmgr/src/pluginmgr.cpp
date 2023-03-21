@@ -147,11 +147,10 @@ PluginMgr::~PluginMgr()
 
 void PluginMgr::SaveSettings()
 {
-  static std::atomic_bool working = false;
-  while (working) ;
-  working = true;
+  static std::mutex mtx;
+  mtx.lock();
   m_Settings->toFile(m_SettingFileName, false, YJson::UTF8);
-  working = false;
+  mtx.unlock();
 }
 
 void PluginMgr::LoadManageAction()
