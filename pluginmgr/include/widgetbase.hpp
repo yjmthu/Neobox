@@ -3,6 +3,8 @@
 
 #include <QWidget>
 
+#include <set>
+
 #if defined(MYSHAREDLIB_LIBRARY)
 #  define MYSHAREDLIB_EXPORT Q_DECL_IMPORT
 #else
@@ -31,6 +33,8 @@ protected:
   void AddCloseButton();
   void AddMinButton();
   void AddTitle(QString title);
+  void AddScrollBar(class QScrollBar* bar);
+  void RemoveScrollBar(class QScrollBar* bar);
   void SetShadowAround(QWidget* widget, int radius=20, QColor col=Qt::black, int dx=0, int dy=0);
 private:
   QPoint m_ConstPos;
@@ -40,6 +44,7 @@ private:
   QRect mouseRect;
   void UpdateBorderRect();
   std::array<QRect, 8> pressedRect;
+  std::set<class QScrollBar*> m_ScrollBars;
   bool m_StayTop;
 };
 

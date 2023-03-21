@@ -7,6 +7,10 @@
 #include <QWindow>
 #include <QScreen>
 #include <QGuiApplication>
+#include <QScrollBar>
+#include <QFile>
+#include <QMessageBox>
+#include <QStyle>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -14,6 +18,14 @@
 #else
 #include <X11/Xlib.h>
 #endif
+
+static QString ReadStyle(QString path) {
+  QFile file(path);
+  file.open(QFile::ReadOnly);
+  QString res = file.readAll();
+  file.close();
+  return res;
+}
 
 WidgetBase::WidgetBase(QWidget* parent, bool resizeAble, bool stayTop)
   : QWidget(parent, Qt::FramelessWindowHint)
@@ -177,6 +189,10 @@ void WidgetBase::resizeEvent(QResizeEvent* event) {
 static constexpr int padding = 11;
 
 bool WidgetBase::eventFilter(QObject *watched, QEvent *event) {
+
+  static const QString styleWide { ReadStyle(":/styles/ScrollbarWide.qss") };
+  static const QString styleNarrow { ReadStyle(":/styles/ScrollbarNarrow.qss") };
+
   if (watched == this && m_ResizeAble && event->type() == QEvent::HoverMove) {
     QPoint point = reinterpret_cast<QHoverEvent*>(event)->position().toPoint();
     if (pressedRect[0].contains(point)) {
@@ -198,9 +214,27 @@ bool WidgetBase::eventFilter(QObject *watched, QEvent *event) {
     } else {
       setCursor(Qt::ArrowCursor);
     }
+  } else {
+    auto iter = m_ScrollBars.find(reinterpret_cast<QScrollBar *>(watched));
+    if (iter != m_ScrollBars.end()) {
+      auto const bar = *iter;
+      if (event->type() == QEvent::HoverEnter)
+      {
+        bar->setFixedWidth(16); //重新定义宽度
+        bar->setProperty("STYLE_KEY", QString("SETTINGSSWBG_SCROLL_HOVER")); //重载样式
+        bar->setStyleSheet(styleWide);
+        bar->style()->polish(bar); //强制刷新样式
+      }
+      else if (event->type() == QEvent::HoverLeave)
+      {
+        bar->setFixedWidth(4);
+        bar->setProperty("STYLE_KEY", QString("SETTINGSSWBG_SCROLL"));
+        bar->setStyleSheet(styleNarrow);
+        bar->style()->polish(bar);
+      }
+    }
   }
   return QWidget::eventFilter(watched, event);
-
 }
 
 void WidgetBase::AddTopButton()
@@ -279,6 +313,20 @@ void WidgetBase::AddTitle(QString title)
 {
   auto const label = new QLabel(title, this);
   label->move(20, 12);
+}
+
+void WidgetBase::AddScrollBar(QScrollBar* bar)
+{
+  m_ScrollBars.insert(bar);
+  bar->installEventFilter(this);
+  bar->setStyleSheet(ReadStyle(":/styles/ScrollbarNarrow.qss"));
+  bar->setFixedWidth(4);
+}
+
+void WidgetBase::RemoveScrollBar(QScrollBar* bar)
+{
+  m_ScrollBars.erase(bar);
+  bar->removeEventFilter(bar);
 }
 
 void WidgetBase::SetShadowAround(QWidget* widget, int radius, QColor col, int dx, int dy)

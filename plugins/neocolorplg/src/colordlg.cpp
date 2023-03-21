@@ -133,21 +133,7 @@ void ColorDlg::SetupUi()
 
 void ColorDlg::SetStyleSheet()
 {
-  {
-    QFile file(":/styles/neocolorplg-scrollbar-wide.qss");
-    file.open(QFile::ReadOnly);
-    m_StyleWide = file.readAll();
-    file.close();
-  }
-  {
-    QFile file(":/styles/neocolorplg-scrollbar-narrow.qss");
-    file.open(QFile::ReadOnly);
-    m_StyleNarrow = file.readAll();
-    file.close();
-  }
-  ui->listWidget->verticalScrollBar()->setStyleSheet(m_StyleNarrow);
-  ui->listWidget->verticalScrollBar()->installEventFilter(this);
-  ui->listWidget->verticalScrollBar()->setFixedWidth(4);
+  AddScrollBar(ui->listWidget->verticalScrollBar());
 }
 
 void ColorDlg::InitSignals()
@@ -243,6 +229,7 @@ void ColorDlg::SaveHistory()
   mgr->SaveSettings();
 }
 
+#if 0
 bool ColorDlg::eventFilter(QObject *watched, QEvent *event)
 {
   auto const bar = ui->listWidget->verticalScrollBar();
@@ -265,6 +252,7 @@ bool ColorDlg::eventFilter(QObject *watched, QEvent *event)
 	}
   return QWidget::eventFilter(watched, event);
 }
+#endif
 
 void ColorDlg::AddColor(const QColor& color)
 {

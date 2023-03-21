@@ -10,6 +10,8 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
+#include <QFile>
+#include <QScrollBar>
 
 TabOnline::TabOnline(PluginCenter* center)
   : QWidget(center)
@@ -57,7 +59,7 @@ void TabOnline::InitPlugins()
 {
   if (!m_PluginCenter.m_PluginData)
     return;
-  
+
   for (const auto& [name, info]: m_PluginCenter.m_PluginData->find(u8"Plugins")->second.getObject()) {
     auto const item = new QListWidgetItem;
     item->setSizeHint(QSize(300, 70));
@@ -74,5 +76,8 @@ void TabOnline::InitLayout()
   m_MainLayout->addWidget(background);
   auto const layout = new QHBoxLayout(background);
   layout->addWidget(m_ListWidget);
+
+  m_ListWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+  m_PluginCenter.AddScrollBar(m_ListWidget->verticalScrollBar());
   // m_MainLayout->addLayout(m_ControlLayout);
 }

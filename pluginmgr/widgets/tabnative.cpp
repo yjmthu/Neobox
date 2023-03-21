@@ -9,6 +9,8 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QPushButton>
+#include <QFile>
+#include <QScrollBar>
 
 TabNative::TabNative(PluginCenter* center)
   : QWidget(center)
@@ -124,6 +126,9 @@ void TabNative::InitLayout()
   auto layout = new QVBoxLayout(background);
   layout->addWidget(m_ListWidget);
   layout->addLayout(m_ControlLayout);
+
+  m_ListWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+  m_PluginCenter.AddScrollBar(m_ListWidget->verticalScrollBar());
 }
 
 void TabNative::InitPlugins()

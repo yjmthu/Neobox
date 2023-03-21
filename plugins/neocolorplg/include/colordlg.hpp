@@ -20,7 +20,7 @@ class ColorDlg: public WidgetBase
 
 protected:
   void SaveTopState(bool isTop) override;
-  bool eventFilter(QObject *target, QEvent *event) override;
+  // bool eventFilter(QObject *target, QEvent *event) override;
   // bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 public:
   explicit ColorDlg(YJson& settings);
@@ -39,7 +39,6 @@ private:
   void SetCurColor(const QColor& color);
   void RemoveColor(const QColor& color);
   static void SetStyleSheet(QWidget* target, const QColor& color);
-  // void ScalTarget(int value);
 private:
   YJson& m_Settings;
   YJson& m_ColorsArray;

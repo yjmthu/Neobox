@@ -22,6 +22,7 @@ public:
   static const std::u8string m_RawUrl;
   static PluginCenter* m_Instance;
   class YJson* m_PluginData;
+  using WidgetBase::AddScrollBar;
 private:
   class YJson& m_Setting;
   class QVBoxLayout* m_MainLayout;
