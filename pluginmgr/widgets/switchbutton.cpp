@@ -52,7 +52,7 @@ void SwitchButton::SetChecked(bool on)
     }
     update();
   });
-  timer->start(5);
+  timer->start(1);
 }
 
 bool SwitchButton::IsChecked() const
