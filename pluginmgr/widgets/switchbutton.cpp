@@ -6,16 +6,20 @@
 #include <QBrush>
 #include <QTimer>
 
-static constexpr int h = 20;
-static constexpr int w = h * 2;
 static constexpr int r = 9;
+static constexpr int d = 1;
+static constexpr int h = 2 * (r + d);
+static constexpr int w = 3 * (r + d) + r;
+static constexpr int from = d;
+static constexpr int to = w - d - 2 * r;
 
 SwitchButton::SwitchButton(QWidget* parent)
   : QWidget(parent)
   , checked(false)
-  , value(0)
+  , value(::from)
 {
   setFixedSize(QSize(::w, ::h));
+  setCursor(Qt::PointingHandCursor);
 }
 
 SwitchButton::~SwitchButton()
@@ -24,51 +28,66 @@ SwitchButton::~SwitchButton()
 
 void SwitchButton::SetChecked(bool on)
 {
-  int to, d;
+  int x, k;
   if ((this->checked = on)) {
-    if (value != 0) {
+    if (value != ::from) {
       return;
     }
-    to = r;
-    d = 1;
+    x = ::to;
+    k = 1;
   } else {
-    if (value != r) {
+    if (value != ::to) {
       return;
     }
-    to = 0;
-    d = -1;
+    x = ::from;
+    k = -1;
   }
 
   auto const timer = new QTimer;
-  connect(timer, &QTimer::timeout, this, [this, to, d, timer](){
-    value += d;
-    if (value == to) {
+  connect(timer, &QTimer::timeout, this, [this, x, k, timer](){
+    value += k;
+    if (value == x) {
       timer->stop();
       timer->deleteLater();
     }
     update();
   });
-  timer->start(15);
+  timer->start(5);
 }
 
-bool SwitchButton::Checked() const
+bool SwitchButton::IsChecked() const
 {
   return checked;
 }
 
-void SwitchButton::paintEvent(QPaintEvent* event)
+void SwitchButton::Toggle()
 {
-  constexpr int delta = h / 2 - r;
-  QPainter painter(this);
-
-  if (value) {
-    painter.setBrush(QBrush(Qt::red));
-  } else {
-    painter.setBrush(QBrush(Qt::gray));
-  }
-  painter.drawRoundedRect(rect(), ::r, ::r);
-  painter.translate(delta, delta);
-  painter.setBrush(QBrush(Qt::blue));
-  painter.drawEllipse(value, 0, r * 2, r * 2);
+  SetChecked(!checked);
 }
 
+void SwitchButton::paintEvent(QPaintEvent* event)
+{
+  QPainter painter(this);
+  painter.setRenderHint(QPainter::Antialiasing);
+  painter.setPen(Qt::transparent);
+  if (value == ::to) {
+    painter.setBrush(QBrush(QColor(202, 147, 211)));
+    painter.drawRoundedRect(rect(), h / 2.0, h / 2.0);
+    painter.setBrush(QBrush(QColor(209, 209, 209)));
+  } else {
+    painter.setBrush(QBrush(QColor(72, 72, 72)));
+    painter.drawRoundedRect(rect(), h / 2.0, h / 2.0);
+    painter.setBrush(QBrush(QColor(0, 0, 0)));
+  }
+  painter.drawEllipse(value, d, r * 2, r * 2);
+}
+
+void SwitchButton::mousePressEvent(QMouseEvent *event)
+{
+  if (event->button() == Qt::LeftButton) {
+    Toggle();
+    emit Clicked(checked);
+  }
+
+  return QWidget::mousePressEvent(event);
+}

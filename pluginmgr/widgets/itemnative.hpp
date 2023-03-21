@@ -26,7 +26,7 @@ private:
 private:
   QPushButton* m_BtnUpgrade;
   QPushButton* m_BtnUninstall;
-  QCheckBox* m_ChkEnable;
+  class SwitchButton* m_ChkEnable;
   QLabel* m_LabelNewVersion;
   QLabel* m_LabelOldVersion;
 };

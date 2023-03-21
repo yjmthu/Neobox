@@ -12,9 +12,13 @@ public:
   ~SwitchButton();
 public:
   void SetChecked(bool checked);
-  bool Checked() const;
+  bool IsChecked() const;
+  void Toggle();
+signals:
+  void Clicked(bool);
 protected:
-  void paintEvent(QPaintEvent *) override;
+  void paintEvent(QPaintEvent *event) override;
+  void mousePressEvent(QMouseEvent *event) override;
 private:
   int value;
   bool checked;

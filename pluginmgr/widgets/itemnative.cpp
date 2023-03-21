@@ -9,18 +9,20 @@
 
 #include <QListWidget>
 #include <QHBoxLayout>
-#include <QCheckBox>
+// #include <QCheckBox>
 #include <QPushButton>
 #include <QLabel>
+
+#include <switchbutton.hpp>
 
 
 ItemNative::ItemNative(std::u8string_view pluginName, const YJson& data, QWidget* parent)
   : ItemBase(pluginName, data, parent)
   , m_BtnUninstall(new QPushButton("卸载", this))
   , m_BtnUpgrade(new QPushButton("更新", this))
-  , m_ChkEnable(new QCheckBox("激活", this))
+  , m_ChkEnable(new SwitchButton(this))
 {
-  m_ChkEnable->setChecked(data[u8"Enabled"].isTrue());
+  m_ChkEnable->SetChecked(data[u8"Enabled"].isTrue());
   InitLayout();
   InitConnect();
 }
@@ -73,16 +75,16 @@ void ItemNative::InitConnect()
   connect(m_BtnUninstall, &QPushButton::clicked, this, &ItemBase::PluginUninstall);
   m_MainLayout->addWidget(m_BtnUninstall);
 
-  connect(m_ChkEnable, &QCheckBox::clicked, this, [this](bool on){
+  connect(m_ChkEnable, &SwitchButton::Clicked, this, [this](bool on){
     if (!mgr->TooglePlugin(m_PluginName, on)) {
-      m_ChkEnable->toggle();
+      m_ChkEnable->Toggle();
     }
   });
 }
 
 void ItemNative::SetUpdated()
 {
-  m_ChkEnable->setChecked(mgr->IsPluginEnabled(m_PluginName));
+  m_ChkEnable->SetChecked(mgr->IsPluginEnabled(m_PluginName));
   m_BtnUpgrade->setEnabled(false);
   m_LabelOldVersion->setText(m_LabelNewVersion->text());
   m_PluginOldVersion = m_PluginNewVersion;
@@ -117,7 +119,7 @@ void ItemNative::DoFinished(FinishedType type, bool ok)
 void ItemNative::GetContent(YJson& data) const
 {
   data.append(YJson::O {
-    {u8"Enabled", m_ChkEnable->isChecked()},
+    {u8"Enabled", m_ChkEnable->IsChecked()},
     {u8"FriendlyName", m_PluginFriendlyName},
     {u8"Description", m_PluginDescription},
     {u8"Author", m_PluginAuthor},
