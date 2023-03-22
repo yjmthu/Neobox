@@ -93,14 +93,17 @@
 
 | 按键 | 功能 |
 | --- | --- |
-| <kbd>enter</kbd> | *发送翻译请求* |
-| <kbd>ctrl</kbd> + <kbd>enter</kbd> | 换行 |
-| <kbd>alt</kbd> + <kbd>Left</kbd> | 向前切换from语言 |
-| <kbd>alt</kbd> + <kbd>Right</kbd> | 向后切换from语言 |
-| <kbd>alt</kbd> + <kbd>Up</kbd> | 向前切换to语言 |
-| <kbd>alt</kbd> + <kbd>Down</kbd> | 向后切换to语言 |
-| <kbd>ctrl</kbd> + <kbd>M</kbd> | 切换查词模式 |
-| <kbd>esc</kbd> | 关闭窗口 |
+| <kbd>Enter</kbd> | *发送翻译请求* |
+| <kbd>Ctrl</kbd> + <kbd>Enter</kbd> | 换行 |
+| <kbd>Alt</kbd> + <kbd>Left</kbd> | 向前切换from语言 |
+| <kbd>Alt</kbd> + <kbd>Right</kbd> | 向后切换from语言 |
+| <kbd>Alt</kbd> + <kbd>Up</kbd> | 向前切换to语言 |
+| <kbd>Alt</kbd> + <kbd>Down</kbd> | 向后切换to语言 |
+| <kbd>Ctrl</kbd> + <kbd>M</kbd> | 切换查词模式 |
+| <kbd>Tab</kbd> | 反转语言 |
+| <kbd>Ctrl</kbd> + <kbd>Space</kbd> | 反转语言 |
+| <kbd>Ctrl</kbd> + <kbd>Tab</kbd> | tab |
+| <kbd>Esc</kbd> | 关闭窗口 |
 
 </details>
 

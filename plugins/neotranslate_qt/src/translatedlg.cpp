@@ -63,6 +63,9 @@ NeoTranslateDlg::NeoTranslateDlg(YJson& settings)
   m_TextFrom->installEventFilter(this);
   m_TextTo->installEventFilter(this);
 
+  AddScrollBar(m_TextFrom->verticalScrollBar());
+  AddScrollBar(m_TextTo->verticalScrollBar());
+
   const auto& position = m_Settings[u8"Position"].getArray();
   auto const& size = m_Settings[u8"Size"].getArray();
   m_LastPostion = QPoint {
@@ -186,6 +189,17 @@ bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
             GetResultData(m_TextFrom->toPlainText().toUtf8());
           }
           return true;
+        }
+        case Qt::Key_Tab: {
+          if (target == m_TextFrom) {
+            if (keyEvent->modifiers() & Qt::ControlModifier) {
+              m_TextFrom->insertPlainText("\t");
+            } else {
+              ReverseLanguage();
+              return true;
+            }
+          }
+          break;
         }
         case Qt::Key_Space: {
           if (keyEvent->modifiers() & Qt::ShiftModifier) {

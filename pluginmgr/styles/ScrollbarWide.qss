@@ -1,14 +1,14 @@
 QScrollBar:vertical
 {
-  width: 16px;
+  width: 10px;
   background-color: transparent;
   margin: 0px;
-  padding: 16px 0px;
+  padding: 10px 0px;
 }
 
 QScrollBar::handle:vertical
 {
-  width: 16px;
+  width: 10px;
   background-color: #858585;
   border-radius: 0px;
   min-height: 10;
@@ -16,15 +16,15 @@ QScrollBar::handle:vertical
 
 QScrollBar:vertical:hover
 {
-  width: 16px;
+  width: 10px;
   background-color: #222222;
   margin: 0px;
-  padding: 16px 0px;
+  padding: 10px 0px;
 }
 
 QScrollBar::handle:vertical:hover
 {
-  width: 16px;
+  width: 10px;
   background-color: #7a7a7a;
   border-radius: 0px;
   min-height: 10;
@@ -32,32 +32,32 @@ QScrollBar::handle:vertical:hover
 
 QScrollBar::add-line:vertical
 {
-  width: 16px;
-  height: 16px;
+  width: 10px;
+  height: 10px;
   border-image: url(:/icons/scrollbar-down.png);
   subcontrol-position: bottom;
 }
 
 QScrollBar::sub-line:vertical
 {
-  width: 16px;
-  height: 16px;
+  width: 10px;
+  height: 10px;
   border-image: url(:/icons/scrollbar-up.png);
   subcontrol-position:top;
 }
 
 QScrollBar::add-line:vertical:hover
 {
-  width: 16px;
-  height: 16px;
+  width: 10px;
+  height: 10px;
   border-image: url(:/icons/scrollbar-down-dark.png);
   subcontrol-position: bottom;
 }
 
 QScrollBar::sub-line:vertical:hover
 {
-  width: 16px;
-  height: 16px;
+  width: 10px;
+  height: 10px;
   border-image: url(:/icons/scrollbar-up-dark.png);
   subcontrol-position: top;
 }

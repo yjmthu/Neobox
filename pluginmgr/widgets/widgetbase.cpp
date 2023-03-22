@@ -220,7 +220,7 @@ bool WidgetBase::eventFilter(QObject *watched, QEvent *event) {
       auto const bar = *iter;
       if (event->type() == QEvent::HoverEnter)
       {
-        bar->setFixedWidth(16); //重新定义宽度
+        bar->setFixedWidth(10); //重新定义宽度
         bar->setProperty("STYLE_KEY", QString("SETTINGSSWBG_SCROLL_HOVER")); //重载样式
         bar->setStyleSheet(styleWide);
         bar->style()->polish(bar); //强制刷新样式

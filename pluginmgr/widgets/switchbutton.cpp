@@ -16,6 +16,7 @@ static constexpr int to = w - d - 2 * r;
 SwitchButton::SwitchButton(QWidget* parent)
   : QWidget(parent)
   , checked(false)
+  , animating(false)
   , value(::from)
 {
   setFixedSize(QSize(::w, ::h));
@@ -26,7 +27,7 @@ SwitchButton::~SwitchButton()
 {
 }
 
-void SwitchButton::SetChecked(bool on)
+void SwitchButton::SetChecked(bool on, bool animate)
 {
   int x, k;
   if ((this->checked = on)) {
@@ -43,16 +44,22 @@ void SwitchButton::SetChecked(bool on)
     k = -1;
   }
 
-  auto const timer = new QTimer;
-  connect(timer, &QTimer::timeout, this, [this, x, k, timer](){
-    value += k;
-    if (value == x) {
-      timer->stop();
-      timer->deleteLater();
-    }
+  if (animate) {
+    auto const timer = new QTimer;
+    connect(timer, &QTimer::timeout, this, [this, x, k, timer](){
+      value += k;
+      if (value == x) {
+        timer->stop();
+        timer->deleteLater();
+        animating = false;
+      }
+      update();
+    });
+    timer->start(10);
+  } else {
+    value = x;
     update();
-  });
-  timer->start(1);
+  }
 }
 
 bool SwitchButton::IsChecked() const
@@ -60,9 +67,9 @@ bool SwitchButton::IsChecked() const
   return checked;
 }
 
-void SwitchButton::Toggle()
+void SwitchButton::Toggle(bool animate)
 {
-  SetChecked(!checked);
+  SetChecked(!checked, animate);
 }
 
 void SwitchButton::paintEvent(QPaintEvent* event)
@@ -84,8 +91,9 @@ void SwitchButton::paintEvent(QPaintEvent* event)
 
 void SwitchButton::mousePressEvent(QMouseEvent *event)
 {
-  if (event->button() == Qt::LeftButton) {
-    Toggle();
+  if (event->button() == Qt::LeftButton && !animating) {
+    animating = true;
+    Toggle(true);
     emit Clicked(checked);
   }
 

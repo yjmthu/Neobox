@@ -11,9 +11,9 @@ public:
   explicit SwitchButton(QWidget* parent);
   ~SwitchButton();
 public:
-  void SetChecked(bool checked);
+  void SetChecked(bool checked, bool animate=false);
   bool IsChecked() const;
-  void Toggle();
+  void Toggle(bool animate=false);
 signals:
   void Clicked(bool);
 protected:
@@ -22,6 +22,7 @@ protected:
 private:
   int value;
   bool checked;
+  bool animating;
 };
 
 #endif // SWITCHBUTTON_HPP
