@@ -108,7 +108,9 @@
 <details>
 <summary style="font-size:17pt;">文字识别</summary>
 
-- 简介：截图识别多种语言文字，需要自行下载相应语言的训练数据。目前依赖于极简翻译插件来输出识别结果。
+- 简介：截图识别多种语言文字，目前依赖于极简翻译插件来输出识别结果。
+
+> 在 Windows 10/11 下可直接调用内置 Ocr 引擎，也可以使用 Tesseract。使用Tesseract需要[下载语言数据](https://tesseract-ocr.github.io/tessdoc/Data-Files.html)。
 
 ![文字识别](https://cloud.tsinghua.edu.cn/f/612106e8c64c49c393c8/?dl=1)
 
@@ -187,10 +189,12 @@
 - CMake 命令【windows】
 
 ```powershell
+vcpkg install leptonica:x64-windows Tesseract:x64-windows
+vcpkg integrate install
 git clone https://github.com/yjmthu/Neobox.git
 cd Neobox
 git submodule update --init --recursive
-cmake -S . -GNinja -DCMAKE_BUILD_TYPE="Debug" -B build/Debug
+cmake -S . -GNinja -DCMAKE_BUILD_TYPE="Debug" -B build/Debug -DCMAKE_TOOLCHAIN_FILE=${VCPKG_PATH}/scripts/buildsystems/vcpkg.cmake
 cmake --build "./build/Debug"
 cmake -P "./build/Debug/cmake_install.cmake"
 ```
