@@ -19,7 +19,7 @@
 namespace fs = std::filesystem;
 
 class Wallpaper {
- private:
+private:
   void ReadSettings();
   void WriteSettings() const;
   void AppendBlackList(const fs::path& path);
@@ -28,7 +28,7 @@ class Wallpaper {
   bool SetPrevious();
   bool RemoveCurrent();
 
- private:
+private:
   YJson& m_Settings;
   YJson* const m_Config;
 #ifdef _WIN32
@@ -37,7 +37,7 @@ class Wallpaper {
   typedef std::string String;
 #endif
 
- public:
+public:
   enum class Desktop { WIN, KDE, DDE, GNOME, XFCE, UNKNOWN };
   explicit Wallpaper(class YJson& settings, std::function<void()>);
   virtual ~Wallpaper();
@@ -47,6 +47,9 @@ class Wallpaper {
   static bool IsWorking();
   bool UndoDelete();
   bool ClearJunk();
+#ifdef _WIN32
+  void UpdateRegString(bool forward=false);
+#endif
   bool SetFavorite();
   bool UnSetFavorite();
   bool SetDropFile(std::vector<String> urls);
@@ -72,7 +75,7 @@ class Wallpaper {
 
   static constexpr char m_szWallScript[16]{"SetWallpaper.sh"};
 
- public:
+public:
   static Desktop GetDesktop();
   void StartTimer(bool start);
   // fs::path m_PicHomeDir;
@@ -80,7 +83,7 @@ class Wallpaper {
   std::list<String> m_NextImgsBuffer;
   class WallBase* m_Wallpaper;
 
- private:
+private:
   std::function<void()> SettingsCallback;  // call this to save settings
   fs::path GetImageName(const String& url);
   class NeoTimer* const m_Timer;

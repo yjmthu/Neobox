@@ -148,6 +148,9 @@ void BingApi::AutoDownload() {
     std::this_thread::sleep_for(30s);
     while (ms_IsWorking || !HttpLib::IsOnline()) {
       std::this_thread::sleep_for(1s);
+      if (m_Setting[u8"auto-download"sv].isFalse()) {
+        return;
+      }
     }
 
     ms_IsWorking = true;

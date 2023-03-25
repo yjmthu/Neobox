@@ -106,8 +106,9 @@ Wallpaper::Desktop Wallpaper::GetDesktop() {
 bool Wallpaper::SetWallpaper(fs::path imagePath) {
   // use preferred separator to prevent win32 api crash.
   imagePath.make_preferred();
-
-  [[maybe_unused]] static auto const m_DesktopType = GetDesktop();
+#ifdef __linux__
+  static auto const m_DesktopType = GetDesktop();
+#endif
   if (!fs::exists(imagePath)) {
     mgr->ShowMsgbox(u8"出错", u8"找不到该文件：" + imagePath.u8string());
     return false;
@@ -291,6 +292,8 @@ std::filesystem::path Wallpaper::GetImageName(const String& url)
 }
 
 bool Wallpaper::SetNext() {
+  UpdateRegString(false);
+
   if (!m_NextImgsBuffer.empty()) {
     auto const imgUrl = std::move(m_NextImgsBuffer.front());
     m_NextImgsBuffer.pop_front();
@@ -357,6 +360,8 @@ bool Wallpaper::SetNext() {
 }
 
 bool Wallpaper::SetPrevious() {
+  UpdateRegString(true);
+
   if (!m_PrevImgs.empty()) {
     if (SetWallpaper(m_PrevImgs.back())) {
       m_NextImgs.push(m_CurImage);
@@ -373,6 +378,8 @@ bool Wallpaper::SetPrevious() {
 }
 
 bool Wallpaper::UndoDelete() {
+  UpdateRegString(false);
+
   if (m_BlackList.empty())
     return false;
   auto& back = m_BlackList.back();
@@ -408,6 +415,8 @@ bool Wallpaper::ClearJunk() {
 }
 
 bool Wallpaper::SetFavorite() {
+  UpdateRegString(false);
+
   if (m_Wallpaper != m_Favorites) {
     m_Favorites->UndoDislike(m_CurImage.u8string());
     return true;
@@ -417,6 +426,8 @@ bool Wallpaper::SetFavorite() {
 }
 
 bool Wallpaper::UnSetFavorite() {
+  UpdateRegString(false);
+
   if (m_Wallpaper != m_Favorites) {
     m_Favorites->Dislike(m_CurImage.u8string());
     return true;
@@ -484,6 +495,8 @@ bool Wallpaper::SetDropFile(std::vector<String> urls) {
 }
 
 bool Wallpaper::RemoveCurrent() {
+  UpdateRegString(false);
+
   if (m_NextImgs.empty()) {
     if (!SetNext())
       return false;
@@ -531,17 +544,27 @@ void Wallpaper::ReadSettings() {
     file.close();
   }
 #ifdef _WIN32
+  UpdateRegString(false);
+#endif
+}
+
+#ifdef _WIN32
+void Wallpaper::UpdateRegString(bool forward)
+{
   fs::path const curWallpaper = RegReadString(HKEY_CURRENT_USER, L"Control Panel\\Desktop", L"WallPaper");
   if (!curWallpaper.empty() && fs::exists(curWallpaper)) {
     fs::path temp = m_CurImage;
     temp.make_preferred();
     if (temp != curWallpaper) {
-      m_PrevImgs.push_back(temp);
+      if (forward)
+        m_NextImgs.push(temp);
+      else
+        m_PrevImgs.push_back(temp);
       m_CurImage = curWallpaper.u8string();
     }
   }
-#endif
 }
+#endif
 
 void Wallpaper::WriteSettings() const {
   int m_CountLimit = 100;
@@ -570,6 +593,7 @@ void Wallpaper::AppendBlackList(const fs::path& path) {
   if (!file.is_open())
     return;
   file << back.first.string() << std::endl << back.second.string() << std::endl;
+  file.close();
 }
 
 void Wallpaper::WriteBlackList() const {

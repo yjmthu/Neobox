@@ -170,6 +170,7 @@ void NeoWallpaperPlg::LoadMainMenuAction()
     {u8"openCurrentDir",
       { u8"定位文件", u8"打开当前壁纸位置", [this](PluginEvent, void*) {
 #ifdef _WIN32
+        m_Wallpaper->UpdateRegString();
         std::wstring args = L"/select, " + m_Wallpaper->GetCurIamge().wstring();
         ShellExecuteW(nullptr, L"open", L"explorer", args.c_str(), NULL, SW_SHOWNORMAL);
 #else
