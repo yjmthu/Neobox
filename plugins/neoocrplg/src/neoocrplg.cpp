@@ -197,16 +197,14 @@ void NeoOcrPlg::ChooseLanguages()
   dialog->setAttribute(Qt::WidgetAttribute::WA_DeleteOnClose, true);
 
   auto const vlayout = new QVBoxLayout(dialog);
-  QHBoxLayout* hlayout = nullptr;
 #ifdef _WIN32
   vlayout->addWidget(new QLabel("目前支持下列语言，如果想要支持更多语言，请在 Windows 设置中安装。", dialog));
-  hlayout = new QHBoxLayout;
 
   for (const auto name: m_Ocr->GetLanguages()) {
-    hlayout->addWidget(new QLabel(QString::fromStdWString(L"- " + name), dialog));
+    vlayout->addWidget(new QLabel(QString::fromStdWString(L"· " + name), dialog));
   }
-  vlayout->addLayout(hlayout);
 #elif defined(__linux__)
+  QHBoxLayout* hlayout = nullptr;
   auto label = new QLabel("<p>如果为空不要慌，将下载好的语言文件(*.traineddata)拖拽到网速悬浮窗后，在这里就可以看到了~</p>"
       "<p>官网提供了三种下载选择："
       "<a href=\"https://github.com/tesseract-ocr/tessdata_fast\">tessdata_fast</a>，"
