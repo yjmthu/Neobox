@@ -24,9 +24,6 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 
-#include <curl/curl.h>
-#include <leptonica/allheaders.h>
-
 #include <filesystem>
 #include <ranges>
 
@@ -34,7 +31,6 @@
 #include <pluginexport.cpp>
 
 namespace fs = std::filesystem;
-Pix* QImage2Pix(const QImage& qImage);
 
 /*
  * NeoOcrPlg Class
@@ -75,9 +71,9 @@ void NeoOcrPlg::InitFunctionMap() {
         busy = false;
         if (!box->HaveCatchImage())
           return;
-        auto str = m_Ocr->GetText(QImage2Pix(image));
+        std::u8string str = m_Ocr->GetText(image.format() == QImage::Format_RGBA8888 ? image : image.convertToFormat(QImage::Format_RGBA8888));
         if (m_Settings[u8"WriteClipboard"].isTrue()) {
-          QApplication::clipboard()->setText(Utf82QString(str));
+          QApplication::clipboard()->setText(QString::fromUtf8(str.data(), str.size()));
           mgr->ShowMsg("复制数据成功");
         }
         if (m_Settings[u8"ShowWindow"].isTrue()) {
@@ -85,6 +81,7 @@ void NeoOcrPlg::InitFunctionMap() {
         }
       }, PluginEvent::Void},
     },
+#ifdef __linux__
     {u8"setDataDir",
       {u8"设置路径", u8"设置训练数据（语言包）的存储位置", [this](PluginEvent, void*) {
         std::u8string& u8Path =
@@ -101,6 +98,7 @@ void NeoOcrPlg::InitFunctionMap() {
         }
       }, PluginEvent::Void},
     },
+#endif
     {u8"chooseDataFiles",
       {u8"选择语言", u8"可批量选择训练数据文件", [this](PluginEvent, void*){
         ChooseLanguages();
@@ -200,6 +198,15 @@ void NeoOcrPlg::ChooseLanguages()
 
   auto const vlayout = new QVBoxLayout(dialog);
   QHBoxLayout* hlayout = nullptr;
+#ifdef _WIN32
+  vlayout->addWidget(new QLabel("目前支持下列语言，如果想要支持更多语言，请在 Windows 设置中安装。", dialog));
+  hlayout = new QHBoxLayout;
+
+  for (const auto name: m_Ocr->GetLanguages()) {
+    hlayout->addWidget(new QLabel(QString::fromStdWString(L"- " + name), dialog));
+  }
+  vlayout->addLayout(hlayout);
+#elif defined(__linux__)
   auto label = new QLabel("<p>如果为空不要慌，将下载好的语言文件(*.traineddata)拖拽到网速悬浮窗后，在这里就可以看到了~</p>"
       "<p>官网提供了三种下载选择："
       "<a href=\"https://github.com/tesseract-ocr/tessdata_fast\">tessdata_fast</a>，"
@@ -226,7 +233,6 @@ void NeoOcrPlg::ChooseLanguages()
     }
     hlayout->addWidget(box);
   }
-
   hlayout = new QHBoxLayout;
   vlayout->addLayout(hlayout);
   auto const btnDownload = new QPushButton("官方网站", dialog);
@@ -250,72 +256,7 @@ void NeoOcrPlg::ChooseLanguages()
   hlayout->addWidget(btnDownload);
   hlayout->addWidget(btnNo);
   hlayout->addWidget(btnOk);
+#endif
   dialog->exec();
 }
 
-static inline bool IsBigDuan() {
-  const uint16_t s = 1;
-  return *reinterpret_cast<const uint8_t*>(&s);
-}
-
-Pix* QImage2Pix(const QImage& qImage) {
-  static const bool bIsBigDuan = IsBigDuan();
-  if (qImage.isNull())
-    return nullptr;
-  const int width = qImage.width(), height = qImage.height();
-  const int depth = qImage.depth(), bytePerLine = qImage.bytesPerLine();
-  PIX* pix = pixCreate(width, height, depth);
-
-  if (qImage.colorCount()) {
-    PIXCMAP* map = pixcmapCreate(8);
-    if (bIsBigDuan) {  // b g r a
-      for (const auto& i : qImage.colorTable()) {
-        auto cols = reinterpret_cast<const uchar*>(&i);
-        pixcmapAddColor(map, cols[2], cols[1], cols[0]);
-      }
-    } else {  // a r g b
-      for (const auto& i : qImage.colorTable()) {
-        auto cols = reinterpret_cast<const uchar*>(&i);
-        pixcmapAddColor(map, cols[1], cols[2], cols[3]);
-      }
-    }
-    pixSetColormap(pix, map);
-  }
-
-  auto start = pixGetData(pix);
-  auto wpld = pixGetWpl(pix);
-
-  switch (qImage.format()) {
-    case QImage::Format_Mono:
-    case QImage::Format_Indexed8:
-    case QImage::Format_RGB888:
-      for (int i = 0; i < height; ++i) {
-        std::copy_n(qImage.scanLine(i), bytePerLine,
-                    reinterpret_cast<uchar*>(start + wpld * i));
-      }
-      break;
-    case QImage::Format_RGB32:
-    case QImage::Format_ARGB32:
-      for (int i = 0; i < height; ++i) {
-        auto lines = qImage.scanLine(i);
-        l_uint32* lined = start + wpld * i;
-        if (bIsBigDuan) {
-          for (int j = 0; j < width; ++j, lines += 4) {
-            l_uint32 pixel;
-            composeRGBPixel(lines[2], lines[1], lines[0], &pixel);
-            lined[j] = pixel;
-          }
-        } else {
-          for (int j = 0; j < width; ++j, lines += 4) {
-            l_uint32 pixel;
-            composeRGBPixel(lines[1], lines[2], lines[3], &pixel);
-            lined[j] = pixel;
-          }
-        }
-      }
-      break;
-    default:
-      break;
-  }
-  return pix;
-}

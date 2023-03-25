@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.10.1)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui Svg)
 qt_standard_project_setup()
 
 set(plugin_list
-  # neoocrplg
+  neoocrplg
   neospeedboxplg
   neosystemplg
   neotranslateplg
@@ -39,8 +39,7 @@ set(plugin_subdirs
   neosystemplg
   neospeedbox_core
   neospeedbox_qt
-  # neoocr_core
-  # neoocr_qt
+  neoocrplg
   neowallpaper_core
   neowallpaper_qt
   neotranslate_core

@@ -193,7 +193,7 @@
 - CMake 命令【windows】
 
 ```powershell
-vcpkg install Leptonica:x64-windows Tesseract:x64-windows
+vcpkg install Leptonica Tesseract
 vcpkg integrate install
 git clone https://github.com/yjmthu/Neobox.git
 cd Neobox
