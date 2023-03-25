@@ -3,6 +3,9 @@
 
 #include <pluginobject.h>
 
+class QWidget;
+class QVBoxLayout;
+
 class NeoOcrPlg: public PluginObject
 {
 protected:
@@ -15,6 +18,9 @@ private:
   YJson& InitSettings(YJson& settings);
   void ChooseLanguages();
   void InitMenu();
+  void AddServerMenu();
+  void AddWindowsSection(QWidget* parent, QVBoxLayout* layout);
+  void AddTesseractSection(QWidget* parent, QVBoxLayout* layout);
 private:
   QAction* m_MainMenuAction;
   class NeoOcr* const m_Ocr;

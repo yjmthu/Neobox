@@ -9,31 +9,32 @@ namespace tesseract {
   class TessBaseAPI;
 }
 
+class QImage;
+
 class NeoOcr {
 public:
+  enum class Server { Windows, Tesseract, Paddle, Other };
   NeoOcr(class YJson& settings, std::function<void()> callback);
   ~NeoOcr();
-#ifdef _WIN32
-  std::u8string GetText(const class QImage& image);
-  static std::vector<std::wstring> GetLanguages();
-#elif defined(__linux__)
-  std::u8string GetText(class Pix* pix);
+  std::u8string GetText(QImage image);
+  static std::vector<std::pair<std::wstring, std::wstring>> GetLanguages();
   void InitLanguagesList();
   void AddLanguages(const std::vector<std::u8string>& urls);
   void RmoveLanguages(const std::vector<std::u8string>& names);
   void SetDataDir(const std::u8string& dirname);
-#endif
+private:
+  std::u8string OcrWindows(const QImage& image);
+  std::u8string OcrTesseract(const QImage& image);
 private:
   class YJson& m_Settings;
+  double& m_Server;
   const std::function<void()> CallBackFunction;
-#ifdef __linux__
   std::u8string GetLanguageName(const std::u8string& url);
   void DownloadFile(const std::u8string& url,
       const std::filesystem::path& path);
   tesseract::TessBaseAPI* m_TessApi;
   std::u8string m_Languages;
   std::string m_TrainedDataDir;
-#endif
 };
 
 #endif

@@ -10,7 +10,6 @@
 [![Latest release version](https://img.shields.io/github/v/release/yjmthu/Neobox?color=red)](https://github.com/yjmthu/Neobox/releases/latest)
 ![GitHub all releases](https://img.shields.io/github/downloads/yjmthu/Neobox/total)
 
-
 - Qt6和C++20写的一个插件管理工具。安装相关插件后可获取网速显示、壁纸切换、文本翻译、文字识别、天气预报等任何功能。
 
 ## Neobox 插件管理
@@ -88,7 +87,6 @@
 
 ![新版极简翻译](https://user-images.githubusercontent.com/73242138/210152957-1220946e-8822-410a-87f0-8307df2cf5a6.png)
 
-
 - 极简翻译 **快捷键** 映射表
 
 | 按键 | 功能 |
@@ -140,7 +138,6 @@
 
 ![热键管理](https://cloud.tsinghua.edu.cn/f/11eae0e195d6402685d9/?dl=1)
 
-
 </details>
 
 <details>
@@ -172,17 +169,14 @@
 
 </details>
 
-
-
 ## 编译环境
 
 > 如果只有 VS2022 + Qt6 + CMake + YJson 的环境，可以删除 `plugins` 、 `example`、`wxui` 目录，只编译主程序，不编译插件。 
 
 - `Windows 10/11 x86_64`
     - <del>xmake+xrepo</del> **[CMake](https://cmake.org/download/)+Vcpkg**
-    - [MSVC 2022](https://visualstudio.microsoft.com/zh-hans/vs/)
+    - [VS 2022](https://visualstudio.microsoft.com/zh-hans/vs/)
     - [Qt 6.4.1](https://www.qt.io/download)（最新版本）
-    - [vcpkg](https://github.com/microsoft/vcpkg) (libcurl[linux], leptonica, tesseract)
     - c++20 JSON库 [YJson](https://github.com/yjmthu/YJson)
 - `Arch Linux x86_64`
     - 主程序库依赖: `kde` `curl` `qt6-base`
@@ -193,12 +187,10 @@
 - CMake 命令【windows】
 
 ```powershell
-vcpkg install Leptonica Tesseract
-vcpkg integrate install
 git clone https://github.com/yjmthu/Neobox.git
 cd Neobox
 git submodule update --init --recursive
-cmake -S . -GNinja -DCMAKE_TOOLCHAIN_FILE=${GITHUB_PATH}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE="Debug" -B build/Debug
+cmake -S . -GNinja -DCMAKE_BUILD_TYPE="Debug" -B build/Debug
 cmake --build "./build/Debug"
 cmake -P "./build/Debug/cmake_install.cmake"
 ```

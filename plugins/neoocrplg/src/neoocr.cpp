@@ -12,6 +12,12 @@
 #include <QImage>
 #include <QBuffer>
 
+#include <tesseract/baseapi.h>
+#include <leptonica/allheaders.h>
+
+Pix* QImage2Pix(const QImage& qImage);
+namespace fs = std::filesystem;
+
 #ifdef _WIN32
 #include <Unknwn.h>
 #include <MemoryBuffer.h>
@@ -19,8 +25,6 @@
 #include <winrt/Windows.Globalization.h>
 #include <winrt/Windows.Media.h>
 #include <winrt/Windows.Media.Ocr.h>
-// #include <winrt/Windows.Media.Effects.h>
-// #include <winrt/Windows.Media.MediaProperties.h>
 #include <winrt/windows.Graphics.imaging.h>
 #include <winrt/Windows.Storage.h>
 #include <winrt/Windows.Storage.Streams.h>
@@ -48,22 +52,16 @@ using namespace winrt::Windows::Security::Cryptography;
 #include <leptonica/allheaders.h>
 #include <tesseract/baseapi.h>
 
-namespace fs = std::filesystem;
 #endif
 
 NeoOcr::NeoOcr(YJson& settings, std::function<void()> callback)
   : CallBackFunction(callback)
   , m_Settings(settings)
-#ifdef __linux__
+  , m_Server(settings[u8"OcrServer"].getValueDouble())
   , m_TessApi(new tesseract::TessBaseAPI)
   , m_TrainedDataDir(fs::path(settings[u8"TessdataDir"].getValueString()).string())
-#endif
 {
-#ifdef _WIN32
-  // init_apartment();
-#elif defined(__linux__)
   InitLanguagesList();
-#endif
 }
 
 NeoOcr::~NeoOcr()
@@ -93,9 +91,31 @@ void SaveSoftwareBitmapToFile(SoftwareBitmap& softwareBitmap)
   writestream.Close();
 }
 
-std::u8string NeoOcr::GetText(const QImage &image)
+std::u8string NeoOcr::GetText(QImage image)
 {
-  static auto engine = OcrEngine::TryCreateFromUserProfileLanguages();
+  const auto server = static_cast<Server>((int)m_Server);
+  if (server == Server::Windows) {
+    if (image.format() != QImage::Format_RGBA8888) {
+      image = image.convertToFormat(QImage::Format_RGBA8888);
+    }
+    return OcrWindows(image);
+  } else if (server == Server::Tesseract) {
+    return OcrTesseract(image);
+  } else {
+    return u8"~未知服务器~";
+  }
+}
+
+std::u8string NeoOcr::OcrWindows(const QImage& image)
+{
+  std::function engine = OcrEngine::TryCreateFromUserProfileLanguages;
+  auto name = m_Settings[u8"WinLan"].getValueString();
+  if (name != u8"user-Profile") {
+    const Language lan(Utf82WideString(name));
+    if (OcrEngine::IsLanguageSupported(lan)) {
+      engine = std::bind(&OcrEngine::TryCreateFromLanguage, std::ref(lan));
+    }
+  }
 
   SoftwareBitmap softwareBitmap(
       BitmapPixelFormat::Rgba8,
@@ -128,7 +148,7 @@ std::u8string NeoOcr::GetText(const QImage &image)
   wchar_t back;
   auto notZh = [](wchar_t c) { return 0x4e00 > c || c > 0x9fa5; };
   std::wstring result;
-  auto ocrResult = engine.RecognizeAsync(softwareBitmap).get();
+  auto ocrResult = engine().RecognizeAsync(softwareBitmap).get();
   for (const auto& line : ocrResult.Lines()) {
     back = 0;
     for (const auto& word: line.Words()) {
@@ -144,40 +164,10 @@ std::u8string NeoOcr::GetText(const QImage &image)
     // }
     result.push_back(L'\n');
   }
-
   return Wide2Utf8String(result);
 }
 
-std::vector<std::wstring> NeoOcr::GetLanguages()
-{
-  auto languages = OcrEngine::AvailableRecognizerLanguages();
-  std::vector<std::wstring> result;
-  for (const auto& language : languages)
-  {
-    auto text = language.NativeName();
-    result.emplace_back(text.begin(), text.end());
-  }
-
-  return result;
-}
-
-#ifdef __linux__
-void NeoOcr::InitLanguagesList()
-{
-  m_Languages.clear();
-
-  for (const auto& i: m_Settings[u8"Languages"].getArray()) {
-    m_Languages += i.getValueString();
-    m_Languages.push_back(u8'+');
-  }
-  
-  if (m_Languages.empty()) {
-    return;
-  }
-//  m_Languages.back() = u8'\0';
-}
-
-std::u8string NeoOcr::GetText(Pix *pix)
+std::u8string NeoOcr::OcrTesseract(const QImage& image)
 {
   std::u8string result;
   if (m_Languages.empty()) {
@@ -189,12 +179,46 @@ std::u8string NeoOcr::GetText(Pix *pix)
     mgr->ShowMsgbox(u8"error", u8"Could not initialize tesseract.");
     return result;
   }
-  m_TessApi->SetImage(pix);
+  m_TessApi->SetImage(QImage2Pix(image));
   char* szText = m_TessApi->GetUTF8Text();
   result = reinterpret_cast<const char8_t*>(szText);
   m_TessApi->End();
   delete [] szText;
   return result;
+}
+
+std::vector<std::pair<std::wstring, std::wstring>> NeoOcr::GetLanguages()
+{
+  auto languages = OcrEngine::AvailableRecognizerLanguages();
+  std::vector<std::pair<std::wstring, std::wstring>> result = {
+    {L"user-Profile", L"用户语言"}
+  };
+  for (const auto& language : languages) {
+    result.emplace_back(decltype(result)::value_type {
+      language.LanguageTag(), language.NativeName(),
+    });
+  }
+
+  return result;
+}
+
+void NeoOcr::InitLanguagesList()
+{
+  m_Languages.clear();
+
+  const auto& array = m_Settings[u8"Languages"].getArray();
+
+  if (array.empty()) {
+    return;
+  }
+
+  m_Languages = std::accumulate(
+    std::next(array.begin()), array.end(),
+    array.front().getValueString(),
+    [](const std::u8string& a, const YJson& b){
+      return a + u8"+" + b.getValueString();
+    }
+  );
 }
 
 void NeoOcr::DownloadFile(const std::u8string& url, const fs::path& path)
@@ -320,4 +344,3 @@ Pix* QImage2Pix(const QImage& qImage) {
   }
   return pix;
 }
-#endif
