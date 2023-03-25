@@ -82,6 +82,17 @@ static auto OpenImageFile(std::wstring uriImage) {
   return softwareBitmap;
 }
 
+void SaveSoftwareBitmapToFile(SoftwareBitmap& softwareBitmap)
+{
+  StorageFolder currentfolder = StorageFolder::GetFolderFromPathAsync(std::filesystem::current_path().wstring()).get();
+  StorageFile outimagefile = currentfolder.CreateFileAsync(L"NEOOCR.jpg", CreationCollisionOption::ReplaceExisting).get();
+  IRandomAccessStream writestream = outimagefile.OpenAsync(FileAccessMode::ReadWrite).get();
+  BitmapEncoder encoder = BitmapEncoder::CreateAsync(BitmapEncoder::JpegEncoderId(), writestream).get();
+  encoder.SetSoftwareBitmap(softwareBitmap);
+  encoder.FlushAsync().get();
+  writestream.Close();
+}
+
 std::u8string NeoOcr::GetText(const QImage &image)
 {
   static auto engine = OcrEngine::TryCreateFromUserProfileLanguages();
@@ -111,6 +122,8 @@ std::u8string NeoOcr::GetText(const QImage &image)
 
   reference.Close();
   buffer.Close();
+
+  // SaveSoftwareBitmapToFile(softwareBitmap);
 
   wchar_t back;
   auto notZh = [](wchar_t c) { return 0x4e00 > c || c > 0x9fa5; };

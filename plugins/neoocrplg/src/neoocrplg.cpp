@@ -71,7 +71,10 @@ void NeoOcrPlg::InitFunctionMap() {
         busy = false;
         if (!box->HaveCatchImage())
           return;
-        std::u8string str = m_Ocr->GetText(image.format() == QImage::Format_RGBA8888 ? image : image.convertToFormat(QImage::Format_RGBA8888));
+        std::u8string str = m_Ocr->GetText(
+            image.format() == QImage::Format_RGBA8888 ?
+              image : image.convertToFormat(QImage::Format_RGBA8888)
+        );
         if (m_Settings[u8"WriteClipboard"].isTrue()) {
           QApplication::clipboard()->setText(QString::fromUtf8(str.data(), str.size()));
           mgr->ShowMsg("复制数据成功");
@@ -198,11 +201,14 @@ void NeoOcrPlg::ChooseLanguages()
 
   auto const vlayout = new QVBoxLayout(dialog);
 #ifdef _WIN32
-  vlayout->addWidget(new QLabel("目前支持下列语言，如果想要支持更多语言，请在 Windows 设置中安装。", dialog));
+  vlayout->addWidget(new QLabel("<h3>目前支持下列语言</h3>", dialog));
 
+  QString text = "<ul>";
   for (const auto name: m_Ocr->GetLanguages()) {
-    vlayout->addWidget(new QLabel(QString::fromStdWString(L"· " + name), dialog));
+    text += QString::fromStdWString(L"<li>" + name + L"</li>");
   }
+  text += "</ul><p>如果想要支持更多语言，请在 Windows 设置中安装。</p>";
+  vlayout->addWidget(new QLabel(text, dialog));
 #elif defined(__linux__)
   QHBoxLayout* hlayout = nullptr;
   auto label = new QLabel("<p>如果为空不要慌，将下载好的语言文件(*.traineddata)拖拽到网速悬浮窗后，在这里就可以看到了~</p>"
