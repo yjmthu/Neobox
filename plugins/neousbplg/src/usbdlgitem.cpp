@@ -130,7 +130,9 @@ void UsbDlgItem::SetupUi()
   SetUsbInfoText();
 
   m_UsbInfoText->setFixedWidth(110);
-  // m_BtnOpen->setText("打开");
+#ifdef _WIN32
+  m_BtnOpen->setText("打开");
+#endif
   m_BtnOpen->setFixedWidth(45);
   m_BtnOpen->setIcon(QIcon(":/icons/usb-open.png"));
   m_BtnOpen->setIconSize(QSize(25, 25));
