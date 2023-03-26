@@ -20,9 +20,9 @@ protected:
   void paintEvent(QPaintEvent *event) override;
   void mousePressEvent(QMouseEvent *event) override;
 private:
+  class QVariantAnimation *m_Animation;
   int value;
   bool checked;
-  bool animating;
 };
 
 #endif // SWITCHBUTTON_HPP

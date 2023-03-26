@@ -113,7 +113,7 @@ std::u8string NeoOcr::OcrWindows(const QImage& image)
   if (name != u8"user-Profile") {
     const Language lan(Utf82WideString(name));
     if (OcrEngine::IsLanguageSupported(lan)) {
-      engine = std::bind(&OcrEngine::TryCreateFromLanguage, std::ref(lan));
+      engine = std::bind(&OcrEngine::TryCreateFromLanguage, lan);
     }
   }
 

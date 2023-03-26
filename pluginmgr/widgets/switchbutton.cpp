@@ -4,7 +4,8 @@
 #include <QPainterPath>
 #include <QPaintEvent>
 #include <QBrush>
-#include <QTimer>
+#include <QAbstractAnimation>
+#include <QVariantAnimation>
 
 static constexpr int r = 9;
 static constexpr int d = 1;
@@ -16,48 +17,49 @@ static constexpr int to = w - d - 2 * r;
 SwitchButton::SwitchButton(QWidget* parent)
   : QWidget(parent)
   , checked(false)
-  , animating(false)
   , value(::from)
+  , m_Animation(new QVariantAnimation(this))
 {
   setFixedSize(QSize(::w, ::h));
   setCursor(Qt::PointingHandCursor);
+
+  m_Animation->setStartValue(from);
+  m_Animation->setEndValue(to);
+  m_Animation->setDuration(150);
+
+  connect(m_Animation, &QVariantAnimation::valueChanged, this, [this](const QVariant & val){
+    value = val.toInt();
+    update();
+  });
 }
 
 SwitchButton::~SwitchButton()
 {
+  delete m_Animation;
 }
 
 void SwitchButton::SetChecked(bool on, bool animate)
 {
-  int x, k;
-  if ((this->checked = on)) {
-    if (value != ::from) {
-      return;
-    }
-    x = ::to;
-    k = 1;
-  } else {
-    if (value != ::to) {
-      return;
-    }
-    x = ::from;
-    k = -1;
+  if (on == checked) {
+    return;
   }
-
+  checked = on;
+  auto const direction = checked ? QAbstractAnimation::Forward : QAbstractAnimation::Backward;
+  auto const running = m_Animation->state() == QAbstractAnimation::Running;
   if (animate) {
-    auto const timer = new QTimer;
-    connect(timer, &QTimer::timeout, this, [this, x, k, timer](){
-      value += k;
-      if (value == x) {
-        timer->stop();
-        timer->deleteLater();
-        animating = false;
-      }
-      update();
-    });
-    timer->start(10);
+    m_Animation->setDirection(direction);
+    if(running) {
+      m_Animation->pause();
+      m_Animation->resume();
+    } else {
+      m_Animation->start(QAbstractAnimation::KeepWhenStopped);
+    }
+    update();
   } else {
-    value = x;
+    if (running) {
+      m_Animation->pause();
+    }
+    value = checked ? ::to : ::from;
     update();
   }
 }
@@ -80,19 +82,18 @@ void SwitchButton::paintEvent(QPaintEvent* event)
   if (value == ::to) {
     painter.setBrush(QBrush(QColor(202, 147, 211)));
     painter.drawRoundedRect(rect(), h / 2.0, h / 2.0);
-    painter.setBrush(QBrush(QColor(209, 209, 209)));
+    painter.setBrush(QBrush(QColor(0, 0, 0)));
   } else {
     painter.setBrush(QBrush(QColor(72, 72, 72)));
     painter.drawRoundedRect(rect(), h / 2.0, h / 2.0);
-    painter.setBrush(QBrush(QColor(0, 0, 0)));
+    painter.setBrush(QBrush(QColor(209, 209, 209)));
   }
   painter.drawEllipse(value, d, r * 2, r * 2);
 }
 
 void SwitchButton::mousePressEvent(QMouseEvent *event)
 {
-  if (event->button() == Qt::LeftButton && !animating) {
-    animating = true;
+  if (event->button() == Qt::LeftButton) {
     Toggle(true);
     emit Clicked(checked);
   }

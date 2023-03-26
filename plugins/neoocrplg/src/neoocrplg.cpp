@@ -34,7 +34,7 @@
 #include <pluginexport.cpp>
 
 namespace fs = std::filesystem;
-
+using namespace std::literals;
 /*
  * NeoOcrPlg Class
  *
@@ -160,10 +160,15 @@ void NeoOcrPlg::AddServerMenu() {
   auto const group = new QActionGroup(menu);
   group->setExclusive(true);
   static const QStringList servers = { "Windows", "Tesseract" };
+  const std::array description = {
+    QStringLiteral("Windows原生的Ocr引擎"),
+    QStringLiteral("非常优秀的开源Ocr引擎，识别结果更加准确"),
+  };
 
-  for (const auto& name: servers) {
+  for (auto iter =description.cbegin(); const auto& name: servers) {
     auto const action = menu->addAction(name);
     action->setCheckable(true);
+    action->setToolTip(*iter++);
     group->addAction(action);
   }
 
