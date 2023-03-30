@@ -44,6 +44,8 @@ YJson& ScriptOutput::InitSetting(YJson& setting)
 
 ImageInfoEx ScriptOutput::GetNext()
 {
+  LockerEx locker(m_DataMutex);
+
   ImageInfoEx ptr(new ImageInfo);
   auto const & u8cmd = GetCurInfo()[u8"command"].getValueString();
 
@@ -55,7 +57,11 @@ ImageInfoEx ScriptOutput::GetNext()
 #ifdef _WIN32
   std::vector<std::wstring> result;
   const std::wstring wcmd = Utf82WideString(u8cmd);
+
+  locker.unlock();
   GetCmdOutput(wcmd.c_str(), result);
+  locker.lock();
+
   if (result.empty()) {
     ptr->ErrorMsg = u8"Invalid command to get wallpaper path."s;
     ptr->ErrorCode = ImageInfo::CfgErr;
@@ -103,20 +109,4 @@ ImageInfoEx ScriptOutput::GetNext()
 YJson& ScriptOutput::GetCurInfo() 
 {
   return m_Setting[u8"cmds"][m_Setting[u8"curcmd"].getValueString()];
-}
-
-// fs::path ScriptOutput::GetImageDir() const
-// {
-//   return GetCurInfo()[u8"directory"].getValueString();
-// }
-
-// void ScriptOutput::SetCurDir(const std::u8string &sImgDir)
-// {  
-//   GetCurInfo()[u8"directory"] = sImgDir;
-//   SaveSetting();
-// }
-
-void ScriptOutput::SetJson(bool update)
-{
-  SaveSetting();
 }

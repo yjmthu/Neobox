@@ -32,6 +32,8 @@ bool Wallhaven::IsPngFile(std::u8string& str) {
   auto res = clt.Get();
   if (res->status != 200)
     return false;
+
+  Locker locker(m_DataMutex);
   YJson js(res->body.begin(), res->body.end());
   str = js[u8"data"][u8"path"].getValueString().substr(31);
   return true;
@@ -96,6 +98,8 @@ YJson& Wallhaven::GetCurInfo()
 
 bool Wallhaven::CheckData(ImageInfoEx ptr)
 {
+  LockerEx locker(m_DataMutex);
+
   auto const apiUrl = GetApiPathUrl();
   std::u8string curUrl;
   if (m_Data) {
@@ -138,13 +142,14 @@ bool Wallhaven::CheckData(ImageInfoEx ptr)
   }
 
   m_Data->find(u8"Api")->second = apiUrl;
-  if (DownloadUrl(apiUrl)) {
-    return true;
-  }
 
-  ptr->ErrorMsg = u8"Bad data has been downloaded.";
-  ptr->ErrorCode = ImageInfo::DataErr;
-  return false;
+  locker.unlock();
+  if (!DownloadUrl(apiUrl)) {
+    ptr->ErrorMsg = u8"Bad data has been downloaded.";
+    ptr->ErrorCode = ImageInfo::DataErr;
+    return false;
+  }
+  return true;
 }
 
 ImageInfoEx Wallhaven::GetNext()
@@ -154,10 +159,13 @@ ImageInfoEx Wallhaven::GetNext()
   ImageInfoEx ptr(new ImageInfo);
 
   if (!CheckData(ptr)) {
+    m_DataMutex.lock();
     m_Data->toFile(m_DataPath);
+    m_DataMutex.unlock();
     return ptr;
   }
 
+  LockerEx locker(m_DataMutex);
   auto& val = m_Data->find(u8"Unused")->second;
   if (val.emptyA()) {
     YJson::swap(val, m_Data->find(u8"Used")->second);
@@ -171,11 +179,13 @@ ImageInfoEx Wallhaven::GetNext()
   }
   std::u8string name = val.backA().getValueString();
   if (name.length() == 6) {
+    locker.unlock();
     if (!IsPngFile(name)) {
       ptr->ErrorMsg = u8"Can't get filetype.";
       ptr->ErrorCode = ImageInfo::NetErr;
       return ptr;
     }
+    locker.lock();
   }
   ptr->ImagePath = GetCurInfo()[u8"Directory"].getValueString() + u8"/" + name;
   ptr->ImageUrl =
@@ -199,6 +209,8 @@ std::string Wallhaven::IsWallhavenFile(std::string name)
 
 void Wallhaven::Dislike(const std::u8string& sImgPath)
 {
+  Locker locker(m_DataMutex);
+
   fs::path img = sImgPath;
   if (!img.has_filename()) return;
   auto const id = IsWallhavenFile(img.filename().string());
@@ -215,6 +227,8 @@ void Wallhaven::Dislike(const std::u8string& sImgPath)
 
 void Wallhaven::UndoDislike(const std::u8string& sImgPath)
 {
+  Locker locker(m_DataMutex);
+
   fs::path path = sImgPath;
   if (!path.has_filename())
     return;
@@ -230,31 +244,20 @@ void Wallhaven::UndoDislike(const std::u8string& sImgPath)
   data.toFile(m_DataPath);
 }
 
-// fs::path Wallhaven::GetImageDir() const
-// {
-//   return ;
-// }
-
-// void Wallhaven::SetCurDir(const std::u8string& str)
-// {
-//   GetCurInfo()[u8"Directory"].setText(str);
-//   SaveSetting();
-// }
-
-void Wallhaven::SetJson(bool update)
+void Wallhaven::SetJson(YJson json)
 {
-  SaveSetting();
-  if (!update)
-    return;
+  WallBase::SetJson(json);
+
+  Locker locker(m_DataMutex);
   if (m_Data) {
     m_Data->find(u8"Api")->second.getValueString().clear();
     m_Data->toFile(m_DataPath);
-  // } else if (fs::exists(m_DataPath)) {
-  //   fs::remove(m_DataPath);
   }
 }
 
 size_t Wallhaven::DownloadUrl(const std::u8string& mainUrl) {
+  LockerEx locker(m_DataMutex);
+
   size_t m_TotalDownload = 0;
   std::vector<std::u8string> m_Array;
   auto& m_BlackArray = m_Data->find(u8"Blacklist")->second;
@@ -277,7 +280,11 @@ size_t Wallhaven::DownloadUrl(const std::u8string& mainUrl) {
 
   if (mainUrl.substr(20, 4) == u8"/api") {
     for (size_t n = first; n != last; ++n) {
+
+      locker.unlock();
       auto res = Get(n);
+      locker.lock();
+
       if (res->status != 200)
         break;
       YJson root(res->body.begin(), res->body.end());
@@ -299,7 +306,11 @@ size_t Wallhaven::DownloadUrl(const std::u8string& mainUrl) {
     };
     std::cregex_iterator end;
     for (size_t n = first; n < last; ++n) {
+
+      locker.unlock();
       auto res = Get(n);
+      locker.lock();
+
       if (res->status != 200)
         break;
       std::string_view body = res->body;

@@ -148,9 +148,8 @@ PluginMgr::~PluginMgr()
 void PluginMgr::SaveSettings()
 {
   static std::mutex mtx;
-  mtx.lock();
+  std::lock_guard<std::mutex> locker(mtx);
   m_Settings->toFile(m_SettingFileName, false, YJson::UTF8);
-  mtx.unlock();
 }
 
 void PluginMgr::LoadManageAction()

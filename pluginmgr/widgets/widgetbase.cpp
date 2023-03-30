@@ -183,7 +183,7 @@ void WidgetBase::resizeEvent(QResizeEvent* event) {
     point.rx() -= 30;
   }
 
-  event->accept();
+  QWidget::resizeEvent(event);
 }
 
 static constexpr int padding = 11;

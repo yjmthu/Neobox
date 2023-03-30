@@ -18,6 +18,7 @@ protected:
   void showEvent(QShowEvent*) override;
   void hideEvent(QHideEvent *event) override;
   bool eventFilter(QObject*, QEvent*) override;
+  void resizeEvent(QResizeEvent *event) override;
 
 public:
   explicit NeoTranslateDlg(class YJson& setings);
@@ -44,6 +45,7 @@ private:
 private:
   void SetStyleSheet();
   void SetupUi();
+  void UpdateToolButtons();
   class QWidget* ReferenceObject() const;
   void CreateFromRightMenu(QMouseEvent* event);
   void CreateToRightMenu(QMouseEvent* event);

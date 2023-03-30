@@ -18,13 +18,11 @@ public:
 
   void Dislike(const std::u8string& sImgPath) override;
   void UndoDislike(const std::u8string& sImgPath) override;
-  void SetJson(bool update) override;
 
 private:
   size_t GetFileCount() const;
   bool GetFileList();
-  // YJson* m_Data;
-  // const fs::path m_DataPath = m_DataDir / u8"FavoriteData.json";
+
 private:
   std::vector<std::u8string> m_FileList;
 };

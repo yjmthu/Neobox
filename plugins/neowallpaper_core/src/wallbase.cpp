@@ -30,13 +30,11 @@ static WallBase* s_pFavorite = nullptr;
 static WallBase* s_pBingApi = nullptr;
 static WallBase* s_pOther = nullptr;
 
-// std::unordered_set<fs::path> g_UsingFiles;
-std::atomic_bool WallBase::ms_IsWorking = false;
+std::mutex WallBase::m_DataMutex;
 const fs::path WallBase::m_DataDir = u8"wallpaperData";
 const fs::path WallBase::m_ConfigPath = u8"wallpaperData/Wallpaper.json";
+std::atomic_bool WallBase::m_QuitFlag = false;
 std::function<void()> WallBase::SaveSetting = [](){};
-
-const fs::path WallBase::ms_HomePicLocation = GetSpecialFolderPath() / u8"桌面壁纸";
 
 WallBase* WallBase::GetNewInstance(YJson& setting, int type) {
   if (s_pOther) {
@@ -80,9 +78,25 @@ void WallBase::Dislike(const std::u8string& sImgPath) {}
 
 void WallBase::UndoDislike(const std::u8string& sImgPath) {}
 
+void WallBase::SetJson(YJson json) {
+  m_DataMutex.lock();
+  m_Setting = json;
+  SaveSetting();
+  m_DataMutex.unlock();
+}
+
+YJson WallBase::GetJson() const {
+  Locker locker(m_DataMutex);
+  return m_Setting;
+}
+
+fs::path WallBase::GetHomePicLocation() {
+  return GetSpecialFolderPath() / u8"桌面壁纸";
+}
+
 std::u8string WallBase::GetStantardDir(const std::u8string& name)
 {
-  auto initDir = ms_HomePicLocation / name;
+  auto initDir = GetHomePicLocation() / name;
   initDir.make_preferred();
   return initDir.u8string();
 }

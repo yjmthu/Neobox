@@ -8,8 +8,7 @@ public:
 
 public:
   ImageInfoEx GetNext() override;
-  void SetJson(bool update) override;
-  // fs::path GetImageDir() const override;
+  void SetJson(YJson json) override;
 
 private:
   YJson& InitSetting(YJson& setting);

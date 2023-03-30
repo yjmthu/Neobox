@@ -14,9 +14,11 @@ namespace fs = std::filesystem;
 namespace chrono = std::chrono;
 using namespace std::literals;
 
+static std::mutex s_AutoDownloadMutex;
+
 BingApi::BingApi(YJson& setting)
-  : WallBase(InitSetting(setting)),
-  m_Data(nullptr)
+  : WallBase(InitSetting(setting))
+  , m_Data(nullptr)
 {
   InitData();
   AutoDownload();
@@ -24,6 +26,8 @@ BingApi::BingApi(YJson& setting)
 
 BingApi::~BingApi()
 {
+  m_QuitFlag = true;
+  Locker locker(s_AutoDownloadMutex);
   delete m_Data;
 }
 
@@ -66,6 +70,7 @@ bool BingApi::CheckData()
     return false;
   // https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8
 
+  LockerEx locker(m_DataMutex);
   if (m_Setting[u8"curday"].getValueString() != GetToday()) {
     delete m_Data;
     m_Data = nullptr;
@@ -75,11 +80,13 @@ bool BingApi::CheckData()
 
   const auto url = m_Setting[u8"api"].getValueString() + u8"/HPImageArchive.aspx?format=js&idx=0&n=8&mkt="s + m_Setting[u8"region"].getValueString();
 
+  m_DataMutex.unlock();
   HttpLib clt(url);
   auto res = clt.Get();
   if (res->status != 200)
     return false;
 
+  m_DataMutex.lock();
   m_Data = new YJson(res->body.begin(), res->body.end());
 
   m_Setting[u8"curday"] = GetToday();
@@ -102,6 +109,7 @@ ImageInfoEx BingApi::GetNext() {
     return ptr;
   }
 
+  Locker locker(m_DataMutex);
   const fs::path imgDir = m_Setting[u8"directory"].getValueString();
   if (!fs::exists(imgDir) && !fs::create_directories(imgDir)) {
     ptr->ErrorMsg = u8"Can not creat the image directory.";
@@ -120,24 +128,14 @@ ImageInfoEx BingApi::GetNext() {
   return ptr;
 }
 
-// fs::path BingApi::GetImageDir() const
-// {
-//   return m_Setting[u8"directory"].getValueString();
-// }
-
-// void BingApi::SetCurDir(const std::u8string& str)
-// {
-//   m_Setting[u8"directory"] = str;
-//   SaveSetting();
-// }
-
-void BingApi::SetJson(bool update)
+void BingApi::SetJson(YJson json)
 {
-  SaveSetting();
+  WallBase::SetJson(json);
 
-  // 等待重写
+  m_DataMutex.lock();
   delete m_Data;
   m_Data = nullptr;
+  m_DataMutex.unlock();
   return;
 }
 
@@ -145,20 +143,24 @@ void BingApi::AutoDownload() {
   if (m_Setting[u8"auto-download"sv].isFalse())
     return;
   std::thread([this](){
-    std::this_thread::sleep_for(30s);
-    while (ms_IsWorking || !HttpLib::IsOnline()) {
-      std::this_thread::sleep_for(1s);
-      if (m_Setting[u8"auto-download"sv].isFalse()) {
-        return;
-      }
+    Locker _(s_AutoDownloadMutex);
+
+    for (int i=0; i!=300; i++) {
+      std::this_thread::sleep_for(100ms);
+      if (m_QuitFlag) return;
     }
 
-    ms_IsWorking = true;
-    if (!CheckData()) {
-      ms_IsWorking = false;
+    LockerEx locker(m_DataMutex);
+    if (m_Setting[u8"auto-download"sv].isFalse()) {
       return;
     }
+    locker.unlock();
 
+    if (!CheckData()) {
+      return;
+    }
+    
+    locker.lock();
     const fs::path imgDir = m_Setting[u8"directory"].getValueString();
     for (auto& item: m_Data->find(u8"images")->second.getArray()) {
       ImageInfoEx ptr(new ImageInfo);
@@ -167,9 +169,10 @@ void BingApi::AutoDownload() {
                       item[u8"urlbase"].getValueString() +
                       u8"_UHD.jpg";
       ptr->ErrorCode = ImageInfo::NoErr;
+      locker.unlock();
       Wallpaper::DownloadImage(ptr);
+      locker.lock();
     }
-    ms_IsWorking = false;
   }).detach();
 }
 

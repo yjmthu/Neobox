@@ -12,9 +12,7 @@ public:
 
 public:
   ImageInfoEx GetNext() override;
-  // void SetCurDir(const std::u8string& str) override;
-  void SetJson(bool update) override;
-  // fs::path GetImageDir() const override;
+  void SetJson(YJson json) override;
 
 private:
   void AutoDownload();
@@ -26,6 +24,5 @@ private:
 
 private:
   YJson* m_Data;
-  // const std::u8string m_u8strApiUrl;
   const fs::path m_DataPath = m_DataDir / u8"BingApiData.json";
 };

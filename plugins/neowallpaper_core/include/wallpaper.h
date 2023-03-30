@@ -18,18 +18,60 @@
 
 namespace fs = std::filesystem;
 
+enum class OperatorType {
+  Next, UNext, Dislike, UDislike, Favorite, UFavorite
+};
+
+struct WallConfig {
+  explicit WallConfig(YJson& settings, std::function<void()> callback)
+    : ImageType(settings[u8"ImageType"].getValueDouble())
+    , TimeInterval(settings[u8"TimeInterval"].getValueDouble())
+    , AutoChange(settings[u8"AutoChange"])
+    , FirstChange(settings[u8"FirstChange"])
+    , DropImgUseUrlName(settings[u8"DropImgUseUrlName"])
+    , DropDir(settings[u8"DropDir"].getValueString())
+    , DropNameFmt(settings[u8"DropNameFmt"].getValueString())
+    , SaveData(std::move(callback))
+  { }
+  double& ImageType;
+  double& TimeInterval;
+  YJson& AutoChange;
+  YJson& FirstChange;
+  YJson& DropImgUseUrlName;
+
+  std::u8string& DropDir;
+  std::u8string& DropNameFmt;
+
+  const std::function<void()> SaveData;
+};
+
 class Wallpaper {
+public:
+  using Locker = WallBase::Locker;
+  using LockerEx = WallBase::LockerEx;
+  static bool DownloadImage(const ImageInfoEx imageInfo);
+  static bool SetWallpaper(fs::path imagePath);
+  static bool IsImageFile(const fs::path& fileName);
 private:
   void ReadSettings();
-  void WriteSettings() const;
+  void WriteSettings();
   void AppendBlackList(const fs::path& path);
-  void WriteBlackList() const;
-  bool SetNext();
-  bool SetPrevious();
-  bool RemoveCurrent();
+  void WriteBlackList();
+  bool PushBack(ImageInfoEx ptr);
+  bool MoveRight();
+private:
+  void SetNext();
+  void UnSetNext();
+  void SetDislike();
+  void UnSetDislike();
+  void SetFavorite();
+  void UnSetFavorite();
+
+public:
+  void ClearJunk();
+  WallConfig m_Settings;
 
 private:
-  YJson& m_Settings;
   YJson* const m_Config;
 #ifdef _WIN32
   typedef std::wstring String;
@@ -41,37 +83,18 @@ public:
   enum class Desktop { WIN, KDE, DDE, GNOME, XFCE, UNKNOWN };
   explicit Wallpaper(class YJson& settings, std::function<void()>);
   virtual ~Wallpaper();
-  static bool DownloadImage(const ImageInfoEx imageInfo);
-  static bool SetWallpaper(fs::path imagePath);
-  static bool IsImageFile(const fs::path& fileName);
-  static bool IsWorking();
-  bool UndoDelete();
-  bool ClearJunk();
 #ifdef _WIN32
   void UpdateRegString(bool forward=false);
 #endif
-  bool SetFavorite();
-  bool UnSetFavorite();
-  bool SetDropFile(std::vector<String> urls);
+
+  void SetDropFile(std::u8string url);
   const fs::path& GetCurIamge() const { return m_CurImage; }
-  void SetSlot(int type);
+  void SetSlot(OperatorType type);
 
   bool SetImageType(int type);
-  int GetImageType() const {
-    return m_Settings[u8"ImageType"].getValueInt();
-  }
   void SetFirstChange(bool val);
-  bool GetFirstChange() const {
-    return m_Settings[u8"FirstChange"].isTrue();
-  }
   void SetTimeInterval(int minute);
-  int GetTimeInterval() const {
-    return m_Settings[u8"TimeInterval"].getValueInt();
-  }
   void SetAutoChange(bool val);
-  bool GetAutoChange() const {
-    return m_Settings[u8"AutoChange"].isTrue();
-  }
 
   static constexpr char m_szWallScript[16]{"SetWallpaper.sh"};
 
@@ -80,12 +103,13 @@ public:
   void StartTimer(bool start);
   // fs::path m_PicHomeDir;
   static const String m_ImgNamePattern;
-  std::list<String> m_NextImgsBuffer;
   class WallBase* m_Wallpaper;
 
 private:
-  std::function<void()> SettingsCallback;  // call this to save settings
-  fs::path GetImageName(const String& url);
+  fs::path GetImageName(const std::u8string& url);
+  std::mutex m_DataMutex;
+  std::mutex m_ThreadMutex;
+
   class NeoTimer* const m_Timer;
   class WallBase* const m_Favorites;
   class WallBase* const m_BingWallpaper;

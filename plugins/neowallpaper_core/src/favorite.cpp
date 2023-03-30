@@ -4,14 +4,11 @@
 
 Favorite::Favorite(YJson& setting):
   WallBase(InitSetting(setting))
-  // , m_Data(nullptr)
 {
-  // InitData();
 }
 
 Favorite::~Favorite()
 {
-  // delete m_Data;
 }
 
 YJson& Favorite::InitSetting(YJson& setting)
@@ -57,24 +54,6 @@ size_t Favorite::GetFileCount() const
   return m_iCount;
 }
 
-// void Favorite::InitData()
-// {
-//   if (fs::exists(m_DataPath)) {
-//     m_Data = new YJson(m_DataPath, YJson::UTF8);
-//     if (m_Data->isObject()) {
-//       return;
-//     }
-//     delete m_Data;
-//     m_Data = nullptr;
-//   }
-//   m_Data = new YJson(
-//     YJson::O{
-//       {u8"Unused", YJson::Array}, 
-//       {u8"Used", YJson::Array},
-//     });
-//   m_Data->toFile(m_DataPath);
-// }
-
 bool Favorite::GetFileList()
 {
   size_t m_Toltal = GetFileCount(), m_Index = 0;
@@ -119,53 +98,13 @@ bool Favorite::GetFileList()
 
 ImageInfoEx Favorite::GetNext()
 {
+  Locker locker(m_DataMutex);
+
   ImageInfoEx ptr(new ImageInfo);
-
-#if 0
-  auto& arrayA = m_Data->find(u8"Unused")->second.getArray();
-  auto& arrayB = m_Data->find(u8"Used")->second.getArray();
-  if (arrayA.empty() && arrayB.empty()) {
-    ptr->ErrorMsg = u8"Empty data content.";
-    ptr->ErrorCode = ImageInfo::DataErr;
-    return ptr;
-  }
-  if (arrayA.empty()) {
-    std::vector<std::u8string> temp;
-    for (auto& i : arrayB) {
-      temp.emplace_back(std::move(i.getValueString()));
-    }
-    std::mt19937 g(std::random_device{}());
-    std::shuffle(temp.begin(), temp.end(), g);
-    arrayB.clear();
-    for (auto& i : temp) {
-      arrayA.emplace_back(std::move(i));
-    }
-  }
-
-  ptr->ImagePath = std::move(arrayA.back().getValueString());
-  arrayA.pop_back();
-  arrayB.push_back(ptr->ImagePath);
-  m_Data->toFile(m_DataPath);
-  ptr->ErrorCode = ImageInfo::NoErr;
-
-  fs::path pImgPath = ptr->ImagePath;
-  if (fs::exists(pImgPath) && pImgPath.has_filename()) {
-    pImgPath = GetImageDir() / pImgPath.filename();
-    if (!fs::exists(pImgPath)) {
-      fs::copy(ptr->ImagePath, pImgPath);
-    }
-  }
-#endif
 
   while (!m_FileList.empty() && !fs::exists(m_FileList.back())) {
     m_FileList.pop_back();
   }
-
-  // if (m_FileList.empty() && !GetFileList()) {
-  //   ptr->ErrorMsg = u8"Empty folder with no wallpaper in it.";
-  //   ptr->ErrorCode = ImageInfo::FileErr;
-  //   return ptr;
-  // }
 
   while (!m_FileList.empty()) {
     if (!fs::exists(m_FileList.back()))
@@ -188,6 +127,8 @@ ImageInfoEx Favorite::GetNext()
 
 void Favorite::Dislike(const std::u8string& sImgPath)
 {
+  Locker locker(m_DataMutex);
+
   const fs::path oldPath = sImgPath;
   const fs::path oldDir = oldPath.parent_path();
   // oldDir.make_preferred();
@@ -209,8 +150,9 @@ void Favorite::Dislike(const std::u8string& sImgPath)
 }
 
 void Favorite::UndoDislike(const std::u8string& sImgPath)
-{
-  
+{  
+  Locker locker(m_DataMutex);
+
   const fs::path oldPath = sImgPath;
   const auto curDir = GetImageDir();
   if (!fs::exists(curDir) && !fs::create_directories(curDir)) {
@@ -232,14 +174,3 @@ fs::path Favorite::GetImageDir() const
 {
   return m_Setting[u8"Directory"].getValueString();
 }
-
-void Favorite::SetJson(bool)
-{
-  SaveSetting();
-}
-
-// void Favorite::SetCurDir(const std::u8string& str)
-// {
-//   m_Setting[u8"Directory"] = str;
-//   SaveSetting();
-// }

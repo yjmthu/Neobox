@@ -51,7 +51,7 @@ void NeoWallpaperPlg::InitFunctionMap()
   m_PluginMethod = {
     {u8"setTimeInterval",
       {u8"时间间隔", u8"设置更换壁纸的时间间隔", [this](PluginEvent, void*){
-        int const iOldTime = m_Wallpaper->GetTimeInterval();
+        int const iOldTime = m_Wallpaper->m_Settings.TimeInterval;
         auto iNewTime = mgr->m_Menu->GetNewInt("输入时间间隔", "时间间隔（分钟）", 5, 65535, iOldTime);
         if (!iNewTime) {
           mgr->ShowMsg("设置时间间隔失败！");
@@ -73,7 +73,7 @@ void NeoWallpaperPlg::InitFunctionMap()
           m_Wallpaper->SetAutoChange(*reinterpret_cast<bool*>(data));
           mgr->ShowMsg("设置成功！");
         } else if (event == PluginEvent::BoolGet) {
-          *reinterpret_cast<bool*>(data) = m_Wallpaper->GetAutoChange();
+          *reinterpret_cast<bool*>(data) = m_Wallpaper->m_Settings.AutoChange.isTrue();
         }
       },
       PluginEvent::Bool }
@@ -84,7 +84,7 @@ void NeoWallpaperPlg::InitFunctionMap()
           m_Wallpaper->SetFirstChange(*reinterpret_cast<bool*>(data));
           mgr->ShowMsg("设置成功！");
         } else if (event == PluginEvent::BoolGet) {
-          *reinterpret_cast<bool*>(data) = m_Wallpaper->GetFirstChange();
+          *reinterpret_cast<bool*>(data) = m_Wallpaper->m_Settings.FirstChange.isTrue();
         }
       }, PluginEvent::Bool },
     }
@@ -95,17 +95,26 @@ void NeoWallpaperPlg::InitFunctionMap()
       const auto mimeData = reinterpret_cast<QDropEvent*>(data)->mimeData();
       if (!mimeData->hasUrls()) return;
       auto urls = mimeData->urls();
-      auto picUrlsView =
-      urls | std::views::filter([](const QUrl& i) { return i.isValid() && (i.isLocalFile() || i.scheme().startsWith("http")); })
-      | std::views::transform([](const QUrl& i) {
-        auto const data = i.isLocalFile() ? i.toLocalFile() : i.toString();
-#ifdef _WIN32
-        return data.toStdWString();
-#else
-        return data.toStdString();
-#endif
-      });
-      m_Wallpaper->SetDropFile(std::vector(picUrlsView.begin(), picUrlsView.end()));
+      // auto picUrlsView =
+      // urls | std::views::filter([](const QUrl& i) { return i.isValid() && (i.isLocalFile() || i.scheme().startsWith("http")); })
+      // | std::views::transform([](const QUrl& i) {
+      //   auto const data = i.isLocalFile() ? i.toLocalFile() : i.toString();
+      // });
+      if (urls.empty()) return;
+      auto& url = urls.front();
+      if (url.isValid()) {
+        QByteArray buffer;
+        if (url.isLocalFile()) {
+          buffer = url.toLocalFile().toUtf8();
+        } else if (url.scheme().startsWith("http")) {
+          buffer = url.toString().toUtf8();
+        }
+        if (!buffer.isEmpty() && buffer.isValidUtf8()) {
+          m_Wallpaper->SetDropFile(
+            std::u8string(buffer.begin(), buffer.end())
+          );
+        }
+      }
     }
   }});
 }
@@ -132,37 +141,37 @@ void NeoWallpaperPlg::LoadMainMenuAction()
   std::vector<std::pair<std::u8string, FunctionInfo>> temp = {
     { u8"prev",
       {u8"上一张图", u8"切换到上一张壁纸", [this](PluginEvent, void*) {
-          m_Wallpaper->SetSlot(-1);
+          m_Wallpaper->SetSlot(OperatorType::UNext);
         }, PluginEvent::Void }
     },
     {u8"next",
       {u8"下一张图", u8"切换到下一张壁纸", [this](PluginEvent, void*) {
-          m_Wallpaper->SetSlot(1);
+          m_Wallpaper->SetSlot(OperatorType::Next);
         }, PluginEvent::Void
       },
     },
     {u8"dislike",
       {u8"不看此图", u8"把这张图移动到垃圾桶", [this](PluginEvent, void*) {
-          m_Wallpaper->SetSlot(0);
+          m_Wallpaper->SetSlot(OperatorType::Dislike);
         }, PluginEvent::Void
       },
     },
     {u8"undoDislike",
       {u8"撤销删除", u8"撤销上次的删除操作",
        [this](PluginEvent, void*){
-          m_Wallpaper->UndoDelete();
+          m_Wallpaper->SetSlot(OperatorType::UDislike);
         }, PluginEvent::Void
       },
     },
     {u8"collect",
       {u8"收藏图片", u8"把当前壁纸复制到收藏夹", [this](PluginEvent, void*) {
-        m_Wallpaper->Wallpaper::SetFavorite();
+        m_Wallpaper->SetSlot(OperatorType::Favorite);
         mgr->ShowMsg("收藏壁纸成功！");
       }, PluginEvent::Void},
     },
     {u8"undoCollect",
       {u8"撤销收藏", u8"如果当前壁纸在收藏夹内，则将其移出", [this](PluginEvent, void*) {
-          m_Wallpaper->UnSetFavorite();
+          m_Wallpaper->SetSlot(OperatorType::UFavorite);
           mgr->ShowMsg("撤销收藏壁纸成功！");
         }, PluginEvent::Void
       },
@@ -228,7 +237,7 @@ void NeoWallpaperPlg::LoadWallpaperTypeMenu(MenuBase* pluginMenu)
   mainAction->setMenu(m_WallpaperTypesMenu);
   m_WallpaperTypesGroup = new QActionGroup(m_WallpaperTypesMenu);
 
-  const int curType = m_Wallpaper->GetImageType();
+  const int curType = m_Wallpaper->m_Settings.ImageType;
 
   for (size_t i = 0; i != 6; ++i) {
     QAction* action = m_WallpaperTypesMenu->addAction(sources[2*i]);
@@ -236,7 +245,7 @@ void NeoWallpaperPlg::LoadWallpaperTypeMenu(MenuBase* pluginMenu)
     action->setCheckable(true);
     m_WallpaperTypesGroup->addAction(action);
     QObject::connect(action, &QAction::triggered, m_WallpaperTypesMenu, [this, i, pluginMenu]() {
-      const int oldType = m_Wallpaper->GetImageType();
+      const int oldType = m_Wallpaper->m_Settings.ImageType;
       if (m_Wallpaper->SetImageType(i)) {
         LoadWallpaperExMenu(pluginMenu);
         mgr->ShowMsg("设置壁纸来源成功！");
@@ -318,7 +327,7 @@ void NeoWallpaperPlg::LoadWallpaperExMenu(MenuBase* parent)
     &NeoWallpaperPlg::LoadFavoriteMenu,
   };
   delete m_MoreSettingsAction->menu();
-  auto const menu = (this->*m_MenuLoaders[m_Wallpaper->GetImageType()])(parent);
+  auto const menu = (this->*m_MenuLoaders[static_cast<size_t>(m_Wallpaper->m_Settings.ImageType)])(parent);
   m_MoreSettingsAction->setMenu(menu);
 }
 

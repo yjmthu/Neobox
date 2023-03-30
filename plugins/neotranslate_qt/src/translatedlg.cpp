@@ -122,10 +122,9 @@ void NeoTranslateDlg::showEvent(QShowEvent* event) {
 
   move(m_LastPostion);
 
-  m_BtnCopyFrom->move(m_TextFrom->width() - m_BtnCopyFrom->width() - 4, 4);
-  m_BtnCopyTo->move(m_TextTo->width() - m_BtnCopyTo->width() - 4, 4);
-  m_BtnCopyFrom->hide();
-  m_BtnCopyTo->hide();
+  m_BtnCopyFrom->show();
+  m_BtnCopyTo->show();
+  UpdateToolButtons();
 
   m_HeightCtrl->UpdateUi();
 
@@ -168,6 +167,13 @@ void NeoTranslateDlg::hideEvent(QHideEvent *event)
   }
   if (save) mgr->SaveSettings();
   event->accept();
+}
+
+void NeoTranslateDlg::resizeEvent(QResizeEvent *event)
+{
+  UpdateToolButtons();
+
+  WidgetBase::resizeEvent(event);
 }
 
 bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
@@ -330,6 +336,14 @@ void NeoTranslateDlg::SetupUi()
   connect(pButtonGet, &QPushButton::clicked, this, [this](){
     GetResultData(m_TextFrom->toPlainText().toUtf8());
   });
+}
+
+void NeoTranslateDlg::UpdateToolButtons()
+{
+  m_BtnCopyFrom->move(m_TextFrom->width() - m_BtnCopyFrom->width() - 4, 4);
+  m_BtnCopyTo->move(m_TextTo->width() - m_BtnCopyTo->width() - 4, 4);
+  m_BtnCopyFrom->hide();
+  m_BtnCopyTo->hide();
 }
 
 void NeoTranslateDlg::SetStyleSheet()

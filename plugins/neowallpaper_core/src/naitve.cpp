@@ -31,7 +31,7 @@ YJson& Native::InitSetting(YJson& setting)
     {u8"max", 100},
     {u8"dirs", YJson::O {
       {u8"默认位置", YJson::O {
-        {u8"imgdir"sv, ms_HomePicLocation.u8string() },
+        {u8"imgdir"sv, GetHomePicLocation().u8string() },
         {u8"random"sv, true},
         {u8"recursion"sv, false},
       }}
@@ -133,6 +133,8 @@ bool Native::GetFileList()
 
 ImageInfoEx Native::GetNext()
 {
+  Locker locker(m_DataMutex);
+
   ImageInfoEx ptr(new ImageInfo);
 
   while (!m_FileList.empty() && !fs::exists(m_FileList.back())) {
@@ -151,14 +153,10 @@ ImageInfoEx Native::GetNext()
   return ptr;
 }
 
-// void Native::SetCurDir(const std::u8string& str)
-// {
-//   GetCurInfo()[u8"imgdir"] = str;
-//   m_FileList.clear();
-//   SaveSetting();
-// }
-
-void Native::SetJson(bool update) {
+void Native::SetJson(YJson json) {
+  m_DataMutex.lock();
   m_FileList.clear();
-  SaveSetting();
+  m_DataMutex.unlock();
+
+  WallBase::SetJson(json);
 }

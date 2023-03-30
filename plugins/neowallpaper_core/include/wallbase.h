@@ -27,9 +27,12 @@ struct ImageInfo {
 typedef std::shared_ptr<ImageInfo> ImageInfoEx;
 
 class WallBase {
+public:
+  typedef std::lock_guard<std::mutex> Locker;
+  typedef std::unique_lock<std::mutex> LockerEx;
 protected:
-  static std::atomic_bool ms_IsWorking;
-  static const fs::path ms_HomePicLocation;
+  static std::mutex m_DataMutex;
+  static fs::path GetHomePicLocation();
   static const fs::path m_DataDir;
   static std::function<void()> SaveSetting;
   static std::string Utf8AsString(const std::u8string& str) { return std::string(str.begin(), str.end()); };
@@ -49,13 +52,15 @@ public:
     }
   virtual ~WallBase() {}
   static const fs::path m_ConfigPath;
+  static std::atomic_bool m_QuitFlag;
+  YJson& m_Setting;
 
 public:
   virtual ImageInfoEx GetNext() = 0;
   virtual void Dislike(const std::u8string& sImgPath);
   virtual void UndoDislike(const std::u8string& sImgPath);
-  virtual void SetJson(bool update) = 0;
-  YJson& m_Setting;
+  virtual void SetJson(YJson json);
+  YJson GetJson() const;
 
  private:
   friend class Wallpaper;

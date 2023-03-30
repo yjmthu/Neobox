@@ -11,7 +11,7 @@ public:
 
 public:
   ImageInfoEx GetNext() override;
-  void SetJson(bool update) override;
+  void SetJson(YJson json) override;
 
 private:
   YJson& InitSetting(YJson& setting);
