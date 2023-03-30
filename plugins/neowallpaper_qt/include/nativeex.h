@@ -2,12 +2,12 @@
 #define NATIVEEX_H
 
 #include <functional>
-#include <menubase.hpp>
+#include <wallbaseex.h>
 
-class NativeExMenu: public MenuBase
+class NativeExMenu: public WallBaseEx
 {
 public:
-  explicit NativeExMenu(class YJson& data, MenuBase* parent, std::function<void(bool)> callback);
+  explicit NativeExMenu(YJson data, MenuBase* parent, Callback callback);
   virtual ~NativeExMenu();
 private:
   void LoadSubSettingMenu(QAction* action);
@@ -16,10 +16,8 @@ private:
   void EditApi(QAction* action);
   void RenameApi(QAction* action);
 private:
-  const std::function<void(bool)> m_CallBack;
   class QAction* const m_Separator;
   class QActionGroup* m_ActionGroup;
-  YJson& m_Data;
 };
 
 #endif // NATIVEEX_H

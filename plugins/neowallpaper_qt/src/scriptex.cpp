@@ -12,12 +12,10 @@
 
 namespace fs = std::filesystem;
 
-ScriptExMenu::ScriptExMenu(YJson& data, MenuBase* parent, std::function<void(bool)> callback):
-  MenuBase(parent),
-  m_Data(data),
-  m_CallBack(callback),
-  m_ActionGroup(new QActionGroup(this)),
-  m_Separator(addSeparator())
+ScriptExMenu::ScriptExMenu(YJson data, MenuBase* parent, Callback callback)
+  : WallBaseEx(callback, data, parent)
+  , m_ActionGroup(new QActionGroup(this))
+  , m_Separator(addSeparator())
 {
   LoadSettingMenu();
 }
@@ -63,7 +61,7 @@ void ScriptExMenu::LoadSubSettingMenu(QAction* action)
         });
 
         curdir = viewName;
-        m_CallBack(false);
+        SaveSettings();
 
         action->setChecked(true);
         delete action->menu();
@@ -80,7 +78,7 @@ void ScriptExMenu::LoadSubSettingMenu(QAction* action)
         m_ActionGroup->removeAction(action);
         delete action;
         m_Data[u8"cmds"].remove(viewName);
-        m_CallBack(false);
+        SaveSettings();
 
         mgr->ShowMsg("修改成功！");
       });
@@ -101,7 +99,7 @@ void ScriptExMenu::LoadSubSettingMenu(QAction* action)
     }
 
     u8cmd = PluginObject::QString2Utf8(qNewCmd);
-    m_CallBack(false);
+    SaveSettings();
     mgr->ShowMsg("设置成功！");
   });
 }
@@ -126,7 +124,7 @@ void ScriptExMenu::RenameApi(QAction* action)
     m_Data[u8"curcmd"] = viewNewName;
   }
   jsApiData.find(viewName)->first = viewNewName;
-  m_CallBack(false);
+  SaveSettings();
   action->setText(qKeyNewName);
 
   mgr->ShowMsg("修改成功！");
@@ -146,7 +144,7 @@ void ScriptExMenu::EditApi(QAction* action)
   path.make_preferred();
   u8dir = path.u8string();
 
-  m_CallBack(false);
+  SaveSettings();
   mgr->ShowMsg("设置成功！");
 }
 

@@ -10,7 +10,7 @@ class Wallhaven : public WallBase {
 public:
   explicit Wallhaven(YJson& setting);
   virtual ~Wallhaven();
-  void SetJson(YJson json) override;
+  void SetJson(const YJson& json) override;
 
 private:
   YJson& InitSetting(YJson& setting);

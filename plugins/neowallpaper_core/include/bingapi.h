@@ -12,7 +12,7 @@ public:
 
 public:
   ImageInfoEx GetNext() override;
-  void SetJson(YJson json) override;
+  void SetJson(const YJson& json) override;
 
 private:
   void AutoDownload();

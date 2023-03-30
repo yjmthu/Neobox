@@ -237,7 +237,18 @@ void TabHotKey::EditArgList()
   // if (fileString.isEmpty()) return;
   // ui->lineProgram->setText(QDir::toNativeSeparators(fileString));
 
-  ListEditor editor("输入程序参数列表", m_ArgList, []()->void {});
+  ListEditor editor("输入程序参数列表", m_ArgList, [this](bool changed, const YJson& data)->void {
+    if (!changed) {
+      mgr->ShowMsg("取消输入成功！");
+      return;
+    }
+    if (data.emptyA()) {
+      mgr->ShowMsg("列表不能为空！");
+    }
+
+    m_ArgList = data.getArray();
+
+  });
   editor.m_ArgEditTitle = "文字输入";
   editor.m_ArgEditLabel = "输入参数";
   editor.exec();

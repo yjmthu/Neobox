@@ -2,20 +2,18 @@
 #define MAPEDITOR_H
 
 #include <QWidget>
+#include <yjson.h>
+#include <editorbase.hpp>
 
-#include <functional>
-
-class MapEditor: public QWidget
+class MapEditor: public EditorBase, public QWidget
 {
 public:
-  explicit MapEditor(QString title, class YJson& data, const std::function<void()> callback);
+  explicit MapEditor(QString title, YJson data, Callback callback);
   virtual ~MapEditor();
 private:
   void SetBaseLayout();
   void SaveData();
-  YJson& m_Data;
   class QTableWidget* m_Table;
-  const std::function<void()> m_CallBack;
 };
 
 #endif // MAPEDITOR_H

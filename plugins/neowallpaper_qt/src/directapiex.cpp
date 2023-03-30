@@ -13,19 +13,16 @@
 
 namespace fs = std::filesystem;
 
-DirectApiExMenu::DirectApiExMenu(YJson& data, MenuBase* parent, std::function<void(bool)> callback):
-  MenuBase(parent),
-  m_Data(data),
-  m_CallBack(callback),
-  m_ActionGroup(new QActionGroup(this)),
-  m_Separator(addSeparator())
+DirectApiExMenu::DirectApiExMenu(YJson data, MenuBase* parent, Callback callback)
+  : WallBaseEx(callback, std::move(data), parent)
+  , m_ActionGroup(new QActionGroup(this))
+  , m_Separator(addSeparator())
 {
   LoadSettingMenu();
 }
 
 DirectApiExMenu::~DirectApiExMenu()
 {
-  //
 }
 
 void DirectApiExMenu::LoadSettingMenu()
@@ -64,7 +61,7 @@ void DirectApiExMenu::LoadSubSettingMenu(QAction* action)
         });
 
         m_Data[u8"ApiUrl"] = viewName;
-        m_CallBack(false);
+        SaveSettings();
 
         action->setChecked(true);
         delete action->menu();
@@ -81,7 +78,7 @@ void DirectApiExMenu::LoadSubSettingMenu(QAction* action)
         m_ActionGroup->removeAction(action);
         delete action;
         m_Data[u8"ApiData"].remove(viewName);
-        m_CallBack(false);
+        SaveSettings();
 
         mgr->ShowMsg("修改成功！");
       });
@@ -105,8 +102,8 @@ void DirectApiExMenu::LoadSubSettingMenu(QAction* action)
     if (u8CurDomain.ends_with(u8"/")) {
       u8CurDomain.pop_back();
     }
+    SaveSettings();
     mgr->ShowMsg("设置成功");
-    m_CallBack(true);
   });
 
   connect(subMenu->addAction("网址编辑"), &QAction::triggered, this, std::bind(&DirectApiExMenu::EditApi, this, action));
@@ -118,8 +115,8 @@ void DirectApiExMenu::LoadSubSettingMenu(QAction* action)
       mgr->ShowMsg("取消成功");
     } else {
       u8CurDir.swap(*u8NewDir);
+      SaveSettings();
       mgr->ShowMsg("设置成功");
-      m_CallBack(true);
     }
   });
 
@@ -129,15 +126,27 @@ void DirectApiExMenu::LoadSubSettingMenu(QAction* action)
 
 void DirectApiExMenu::EditApi(QAction* action)
 {
-  auto const editor = new ListEditor(
-    "列表编辑器", m_Data[u8"ApiData"][PluginObject::QString2Utf8(action->text())][u8"Paths"].getArray(), [this, action](){
-      m_CallBack(false);
+  auto& paths = m_Data[u8"ApiData"][PluginObject::QString2Utf8(action->text())][u8"Paths"];
+  ListEditor editor(
+    "列表编辑器", paths, [this, action, &paths](bool changed, const YJson& data){
+      if (!changed) {
+        mgr->ShowMsg("取消设置成功！");
+        return;
+      }
+
+      if (data.emptyA()) {
+        mgr->ShowMsg("列表不能为空！");
+        return;
+      }
+
+      paths = data;
+      SaveSettings();
       delete action->menu();
       LoadSubSettingMenu(action);
     });
-    editor->m_ArgEditTitle = "输入该域名下的网址路径(path)";
-    editor->m_ArgEditLabel = "路径：";
-  editor->show();
+  editor.m_ArgEditTitle = "输入该域名下的网址路径(path)";
+  editor.m_ArgEditLabel = "路径：";
+  editor.exec();
 }
 
 void DirectApiExMenu::RenameApi(QAction* action)
@@ -160,7 +169,7 @@ void DirectApiExMenu::RenameApi(QAction* action)
     m_Data[u8"ApiUrl"] = viewNewName;
   }
   jsApiData.find(viewName)->first = viewNewName;
-  m_CallBack(false);
+  SaveSettings();
   action->setText(qKeyNewName);
 
   mgr->ShowMsg("修改成功！");
@@ -181,7 +190,7 @@ void DirectApiExMenu::LoadPaths(MenuBase* subMenu, const std::u8string& name)
       pSonGroup->addAction(action);
       connect(action, &QAction::triggered, this, [&curPath, this, index](bool checked) {
         curPath = index;
-        m_CallBack(false);
+        SaveSettings();
       });
       action->setChecked(cIndex == index++);
     }

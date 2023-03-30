@@ -46,13 +46,16 @@ struct WallConfig {
 };
 
 class Wallpaper {
+  enum class Desktop { WIN, KDE, DDE, GNOME, XFCE, UNKNOWN };
 public:
   using Locker = WallBase::Locker;
   using LockerEx = WallBase::LockerEx;
   static bool DownloadImage(const ImageInfoEx imageInfo);
-  static bool SetWallpaper(fs::path imagePath);
   static bool IsImageFile(const fs::path& fileName);
 private:
+  static bool SetWallpaper(fs::path imagePath);
+  static Desktop GetDesktop();
+  fs::path Url2Name(const std::u8string& url);
   void ReadSettings();
   void WriteSettings();
   void AppendBlackList(const fs::path& path);
@@ -68,7 +71,18 @@ private:
   void UnSetFavorite();
 
 public:
+  void SetDropFile(std::u8string url);
+  void UpdateRegString(bool forward=false);
+  void SetSlot(OperatorType type);
+  bool SetImageType(int type);
+  void SetFirstChange(bool val);
+  void SetTimeInterval(int minute);
+  void SetAutoChange(bool val);
   void ClearJunk();
+  const fs::path& GetCurIamge() const { return m_CurImage; }
+  WallBase* Engine() { return m_Wallpaper; }
+
+public:
   WallConfig m_Settings;
 
 private:
@@ -78,41 +92,21 @@ private:
 #else
   typedef std::string String;
 #endif
-
-public:
-  enum class Desktop { WIN, KDE, DDE, GNOME, XFCE, UNKNOWN };
-  explicit Wallpaper(class YJson& settings, std::function<void()>);
-  virtual ~Wallpaper();
-#ifdef _WIN32
-  void UpdateRegString(bool forward=false);
-#endif
-
-  void SetDropFile(std::u8string url);
-  const fs::path& GetCurIamge() const { return m_CurImage; }
-  void SetSlot(OperatorType type);
-
-  bool SetImageType(int type);
-  void SetFirstChange(bool val);
-  void SetTimeInterval(int minute);
-  void SetAutoChange(bool val);
-
+  static const String m_ImgNamePattern;
   static constexpr char m_szWallScript[16]{"SetWallpaper.sh"};
 
 public:
-  static Desktop GetDesktop();
-  void StartTimer(bool start);
-  // fs::path m_PicHomeDir;
-  static const String m_ImgNamePattern;
-  class WallBase* m_Wallpaper;
+  explicit Wallpaper(class YJson& settings, std::function<void()>);
+  virtual ~Wallpaper();
 
 private:
-  fs::path GetImageName(const std::u8string& url);
   std::mutex m_DataMutex;
   std::mutex m_ThreadMutex;
 
   class NeoTimer* const m_Timer;
   class WallBase* const m_Favorites;
   class WallBase* const m_BingWallpaper;
+  class WallBase* m_Wallpaper;
   std::deque<fs::path> m_PrevImgs;
   std::stack<fs::path> m_NextImgs;
   std::list<std::pair<fs::path, fs::path>> m_BlackList;

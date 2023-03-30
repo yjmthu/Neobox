@@ -153,7 +153,7 @@ ImageInfoEx Native::GetNext()
   return ptr;
 }
 
-void Native::SetJson(YJson json) {
+void Native::SetJson(const YJson& json) {
   m_DataMutex.lock();
   m_FileList.clear();
   m_DataMutex.unlock();

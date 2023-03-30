@@ -334,9 +334,9 @@ void NeoWallpaperPlg::LoadWallpaperExMenu(MenuBase* parent)
 MenuBase* NeoWallpaperPlg::LoadWallavenMenu(MenuBase* parent)
 {
   return new WallhavenExMenu(
-    m_Wallpaper->m_Wallpaper->m_Setting,
+    m_Wallpaper->Engine()->m_Setting,
     parent,
-    std::bind(&WallBase::SetJson, m_Wallpaper->m_Wallpaper, std::placeholders::_1),
+    std::bind(&WallBase::SetJson, m_Wallpaper->Engine(), std::placeholders::_1),
     std::bind(&Wallpaper::GetCurIamge, m_Wallpaper)
   );
 }
@@ -344,44 +344,44 @@ MenuBase* NeoWallpaperPlg::LoadWallavenMenu(MenuBase* parent)
 MenuBase* NeoWallpaperPlg::LoadBingApiMenu(MenuBase* parent)
 {
   return new BingApiExMenu(
-    m_Wallpaper->m_Wallpaper->m_Setting,
+    m_Wallpaper->Engine()->m_Setting,
     parent,
-    std::bind(&WallBase::SetJson, m_Wallpaper->m_Wallpaper, std::placeholders::_1)
+    std::bind(&WallBase::SetJson, m_Wallpaper->Engine(), std::placeholders::_1)
   );
 }
 
 MenuBase* NeoWallpaperPlg::LoadDirectApiMenu(MenuBase* parent)
 {
   return new DirectApiExMenu(
-    m_Wallpaper->m_Wallpaper->m_Setting,
+    m_Wallpaper->Engine()->m_Setting,
     parent,
-    std::bind(&WallBase::SetJson, m_Wallpaper->m_Wallpaper, std::placeholders::_1)
+    std::bind(&WallBase::SetJson, m_Wallpaper->Engine(), std::placeholders::_1)
   );
 }
 
 MenuBase* NeoWallpaperPlg::LoadNativeMenu(MenuBase* parent)
 {
   return new NativeExMenu(
-    m_Wallpaper->m_Wallpaper->m_Setting,
+    m_Wallpaper->Engine()->m_Setting,
     parent,
-    std::bind(&WallBase::SetJson, m_Wallpaper->m_Wallpaper, std::placeholders::_1)
+    std::bind(&WallBase::SetJson, m_Wallpaper->Engine(), std::placeholders::_1)
   );
 }
 
 MenuBase* NeoWallpaperPlg::LoadScriptMenu(MenuBase* parent)
 {
   return new ScriptExMenu(
-    m_Wallpaper->m_Wallpaper->m_Setting,
+    m_Wallpaper->Engine()->m_Setting,
     parent,
-    std::bind(&WallBase::SetJson, m_Wallpaper->m_Wallpaper, std::placeholders::_1)
+    std::bind(&WallBase::SetJson, m_Wallpaper->Engine(), std::placeholders::_1)
   );
 }
 
 MenuBase* NeoWallpaperPlg::LoadFavoriteMenu(MenuBase* parent)
 {
   return new FavoriteExMenu(
-    m_Wallpaper->m_Wallpaper->m_Setting,
+    m_Wallpaper->Engine()->m_Setting,
     parent,
-    std::bind(&WallBase::SetJson, m_Wallpaper->m_Wallpaper, std::placeholders::_1)
+    std::bind(&WallBase::SetJson, m_Wallpaper->Engine(), std::placeholders::_1)
   );
 }

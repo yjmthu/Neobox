@@ -9,21 +9,17 @@
 #include <QHBoxLayout>
 #include <QInputDialog>
 
-ListEditor::ListEditor(QString title, YJson::ArrayType& data, const std::function<void()> callback):
-  QDialog(nullptr),
-  m_Data(data),
-  m_CallBack(callback),
-  m_List(new QListWidget(this))
+ListEditor::ListEditor(QString title, YJson data, Callback callback)
+  : EditorBase(std::move(data), callback)
+  , QDialog(nullptr)
+  , m_List(new QListWidget(this))
 {
   setWindowTitle(title);
-  // setAttribute(Qt::WA_DeleteOnClose);
   SetBaseLayout();
 }
 
 ListEditor::~ListEditor()
 {
-  m_CallBack();
-  // m_Wallpaper->m_Wallpaper->SetJson(true);
 }
 
 void ListEditor::SetBaseLayout()
@@ -41,7 +37,7 @@ void ListEditor::SetBaseLayout()
   std::for_each(arButtons.begin(), arButtons.end(),
     std::bind(&QHBoxLayout::addWidget, pHout, std::placeholders::_1, 0, Qt::Alignment()));
   
-  for (const auto& item: m_Data) {
+  for (const auto& item: m_Data.getArray()) {
     std::u8string_view str = item.getValueString();
     m_List->addItem(QString::fromUtf8(str.data(), str.size()));
   }
@@ -50,7 +46,12 @@ void ListEditor::SetBaseLayout()
 
   connect(arButtons[0], &QPushButton::clicked, this, [this]() {
     auto const item = new QListWidgetItem("New Item");
-    m_List->insertItem(m_List->currentRow(), item);
+    auto const currentItems = m_List->selectedItems();
+    if (currentItems.empty()) {
+      m_List->addItem(item);
+    } else {
+      m_List->insertItem(m_List->currentRow(), item);
+    }
     const QString str = QInputDialog::getText(
         this, m_ArgEditTitle, m_ArgEditLabel, 
         QLineEdit::Normal, item->text());
@@ -66,19 +67,7 @@ void ListEditor::SetBaseLayout()
 
   connect(arButtons[2], &QPushButton::clicked, this, &ListEditor::close);
 
-  connect(arButtons[3], &QPushButton::clicked, this,
-  [this]() {
-    std::list<YJson> args;
-    for (int i = 0; i < m_List->count(); ++i) {
-      auto ptr = m_List->item(i);
-      if (ptr == nullptr) continue;
-      const QString arg = ptr->text();
-      if (arg.isEmpty()) continue;
-      args.emplace_back(PluginObject::QString2Utf8(arg));
-    }
-    m_Data = std::move(args);
-    close();
-  });
+  connect(arButtons[3], &QPushButton::clicked, this, &ListEditor::SaveData);
 
   connect(m_List, &QListWidget::itemDoubleClicked, this, [this](QListWidgetItem* item){
     const QString str = QInputDialog::getText(
@@ -87,4 +76,18 @@ void ListEditor::SetBaseLayout()
     if (!str.isEmpty() && str != item->text())
       item->setText(str);
   });
+}
+
+void ListEditor::SaveData() {
+  std::list<YJson> args;
+  for (int i = 0; i < m_List->count(); ++i) {
+    auto ptr = m_List->item(i);
+    if (ptr == nullptr) continue;
+    const QString arg = ptr->text();
+    if (arg.isEmpty()) continue;
+    args.emplace_back(PluginObject::QString2Utf8(arg));
+  }
+  m_Data.getArray() = std::move(args);
+  m_DataChanged = true;
+  close();
 }

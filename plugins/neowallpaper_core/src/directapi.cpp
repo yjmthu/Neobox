@@ -107,17 +107,18 @@ YJson& DirectApi::GetCurInfo()
 //   SaveSetting();
 // }
 
-void DirectApi::SetJson(YJson json)
+void DirectApi::SetJson(const YJson& json)
 {
   WallBase::SetJson(json);
 
-  Locker locker(m_DataMutex);
+  m_DataMutex.lock();
   auto& apiInfo = GetCurInfo();
   auto& curPaths = apiInfo[u8"Paths"];
   auto& curIndex = apiInfo[u8"CurPath"];
   if (curIndex.getValueInt() >= curPaths.sizeA()) {
     curIndex = 0;
   }
+  m_DataMutex.unlock();
 }
 
 std::u8string DirectApi::GetImageName() {

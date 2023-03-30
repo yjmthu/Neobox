@@ -2,12 +2,12 @@
 #define DIRECTAPI_H
 
 #include <functional>
-#include <menubase.hpp>
+#include <wallbaseex.h>
 
-class DirectApiExMenu: public MenuBase
+class DirectApiExMenu: public WallBaseEx
 {
 public:
-  explicit DirectApiExMenu(class YJson& data, MenuBase* parent, std::function<void(bool)> callback);
+  explicit DirectApiExMenu(YJson data, MenuBase* parent, Callback callback);
   virtual ~DirectApiExMenu();
 private:
   void LoadSettingMenu();
@@ -16,8 +16,6 @@ private:
   void AddApi();
   void EditApi(QAction* action);
   void RenameApi(QAction* action);
-  const std::function<void(bool)> m_CallBack;
-  YJson& m_Data;
   class QAction* const m_Separator;
   class QActionGroup* m_ActionGroup;
 };

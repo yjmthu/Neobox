@@ -15,13 +15,11 @@
 
 namespace fs =std::filesystem;
 
-WallhavenExMenu::WallhavenExMenu(YJson& data, MenuBase* parent, std::function<void(bool)> callback, std::function<const fs::path&()> getCurImg):
-  MenuBase(parent),
-  m_Data(data),
-  m_CallBack(callback),
-  GetCurImage(getCurImg),
-  m_ActionGroup(new QActionGroup(this)),
-  m_Separator(addSeparator())
+WallhavenExMenu::WallhavenExMenu(YJson data, MenuBase* parent, Callback callback, std::function<const fs::path&()> getCurImg)
+  : WallBaseEx(callback, std::move(data), parent)
+  , GetCurImage(getCurImg)
+  , m_ActionGroup(new QActionGroup(this))
+  , m_Separator(addSeparator())
 {
   m_ActionGroup->setExclusive(true);
   LoadWallpaperTypes();
@@ -78,14 +76,13 @@ void WallhavenExMenu::LoadSubSettingMenu(QAction* action)
       delete action->menu();
       LoadSubSettingMenu(action);
     }
-
-    m_CallBack(true);
+    SaveSettings();
     mgr->ShowMsg("设置成功！");
   });
   if (!action->isChecked()) {
     connect(pSonMenu->addAction("删除此项"), &QAction::triggered, pSonMenu, [pSonMenu, this, action](){
       m_Data[u8"WallhavenApi"].remove(PluginObject::QString2Utf8(action->text()));
-      m_CallBack(false);
+      SaveSettings();
       action->deleteLater();
       pSonMenu->deleteLater();
       mgr->ShowMsg("删除配置成功！");
@@ -97,7 +94,7 @@ void WallhavenExMenu::LoadSubSettingMenu(QAction* action)
     auto& page = m_Data[u8"WallhavenApi"][viewName][u8"StartPage"];
     auto i = QInputDialog::getInt(this, "输入数字", "请输入壁纸起始页面，每页最多有24张壁纸", page.getValueInt(), 1, 100);
     page = i;
-    m_CallBack(true);
+    SaveSettings();
     mgr->ShowMsg("配置成功！");
   });
   connect(pSonMenu->addAction("存储路径"), &QAction::triggered, this, [this, viewName]() {
@@ -111,7 +108,7 @@ void WallhavenExMenu::LoadSubSettingMenu(QAction* action)
     curdir = qCurDir.toStdU16String();
     curdir.make_preferred();
     m_Data[u8"WallhavenApi"][viewName][u8"Directory"] = curdir.u8string();
-    m_CallBack(false);
+    SaveSettings();
   });
 }
 
@@ -121,7 +118,7 @@ void WallhavenExMenu::LoadMoreActions()
     auto& page = m_Data[u8"WallhavenApi"][u8"PageSize"];
     auto i = QInputDialog::getInt(this, "输入数字", "请输入每次缓存的最大页数，每页最多有24张壁纸", page.getValueInt(), 1, 5);
     page = i;
-    m_CallBack(true);
+    SaveSettings();
     mgr->ShowMsg("配置成功！");
   });
   connect(addAction("添加更多"), &QAction::triggered, this, std::bind(&WallhavenExMenu::AddNewType, this));
@@ -173,18 +170,27 @@ void WallhavenExMenu::AddNewType()
 void WallhavenExMenu::EditNewType(const std::u8string& typeName)
 {
   auto& params = m_Data[u8"WallhavenApi"][typeName][u8"Parameter"];
-  auto const editor = new MapEditor("编辑参数", params, [this, typeName, &params](){
-    if (params.emptyO()) {
+  auto const editor = new MapEditor("编辑参数", params, [this, typeName, &params](bool changed, const YJson& data){
+    if (!changed) {
       m_Data[u8"WallhavenApi"].removeByValO(typeName);
       mgr->ShowMsg("取消设置成功！");
       return;
     }
+
+    if (data.emptyO()) {
+      m_Data[u8"WallhavenApi"].removeByValO(typeName);
+      mgr->ShowMsg("参数列表不能为空！");
+      return;
+    }
+  
+    params = data;
     auto const action = new QAction(PluginObject::Utf82QString(typeName), this);
     insertAction(m_Separator, action);
     action->setCheckable(true);
     m_ActionGroup->addAction(action);
     LoadSubSettingMenu(action);
-    m_CallBack(false);
+
+    SaveSettings();
     mgr->ShowMsg("配置成功！");
   });
   editor->show();
@@ -193,17 +199,24 @@ void WallhavenExMenu::EditNewType(const std::u8string& typeName)
 void WallhavenExMenu::EditCurType(const std::u8string& typeName)
 {
   auto& params = m_Data[u8"WallhavenApi"][typeName][u8"Parameter"];
-  auto const editor = new MapEditor("编辑参数", params, [this, typeName, &params](){
-    if (params.emptyO()) {
-      m_Data[u8"WallhavenApi"].removeByValO(typeName);
+  auto const editor = new MapEditor("编辑参数", params, [this, typeName, &params](bool changed, const YJson& data){
+    if (!changed) {
       mgr->ShowMsg("取消设置成功！");
       return;
     }
+    if (data.emptyO()) {
+      mgr->ShowMsg("参数列表不能为空！");
+      return;
+    }
+
+    params = data;
+
     auto const name = PluginObject::Utf82QString(typeName);
     auto actions = m_ActionGroup->actions();
     auto action = std::find_if(actions.begin(), actions.end(), [&name](QAction* a){return a->text() == name;});
     if (action == actions.end()) return;
-    m_CallBack((*action)->isChecked());
+
+    SaveSettings();
     mgr->ShowMsg("配置成功！");
   });
   editor->show();

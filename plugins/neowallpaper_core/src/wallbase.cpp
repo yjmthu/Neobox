@@ -78,7 +78,7 @@ void WallBase::Dislike(const std::u8string& sImgPath) {}
 
 void WallBase::UndoDislike(const std::u8string& sImgPath) {}
 
-void WallBase::SetJson(YJson json) {
+void WallBase::SetJson(const YJson& json) {
   m_DataMutex.lock();
   m_Setting = json;
   SaveSetting();

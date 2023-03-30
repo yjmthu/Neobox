@@ -9,12 +9,10 @@
 
 namespace fs = std::filesystem;
 
-NativeExMenu::NativeExMenu(YJson& data, MenuBase* parent, std::function<void(bool)> callback):
-  MenuBase(parent),
-  m_Data(data),
-  m_CallBack(callback),
-  m_ActionGroup(new QActionGroup(this)),
-  m_Separator(addSeparator())
+NativeExMenu::NativeExMenu(YJson data, MenuBase* parent, Callback callback)
+  : WallBaseEx(callback, std::move(data), parent)
+  , m_ActionGroup(new QActionGroup(this))
+  , m_Separator(addSeparator())
 {
   LoadSettingMenu();
 }
@@ -44,7 +42,7 @@ void NativeExMenu::LoadSettingMenu()
       return;
     }
     number = data;
-    m_CallBack(true);
+    SaveSettings();
     mgr->ShowMsg("设置成功！");
   });
   connect(addAction("添加更多"), &QAction::triggered, this, &NativeExMenu::AddApi);
@@ -71,7 +69,7 @@ void NativeExMenu::LoadSubSettingMenu(QAction* action)
         });
 
         curdir = viewName;
-        m_CallBack(false);
+        SaveSettings();
 
         action->setChecked(true);
         delete action->menu();
@@ -88,7 +86,7 @@ void NativeExMenu::LoadSubSettingMenu(QAction* action)
         m_ActionGroup->removeAction(action);
         delete action;
         m_Data[u8"dirs"].remove(viewName);
-        m_CallBack(false);
+        SaveSettings();
 
         mgr->ShowMsg("修改成功！");
       });
@@ -101,7 +99,7 @@ void NativeExMenu::LoadSubSettingMenu(QAction* action)
   randomAction->setChecked(m_Data[u8"dirs"][viewName][u8"random"].isTrue());
   connect(randomAction, &QAction::triggered, this, [this, viewName](bool on){
     m_Data[u8"dirs"][viewName][u8"random"] = on;
-    m_CallBack(false);
+    SaveSettings();
     mgr->ShowMsg("设置成功！");
   });
 
@@ -110,7 +108,7 @@ void NativeExMenu::LoadSubSettingMenu(QAction* action)
   recursionAcion->setChecked(m_Data[u8"dirs"][viewName][u8"recursion"].isTrue());
   connect(recursionAcion, &QAction::triggered, this, [this, viewName](bool on){
     m_Data[u8"dirs"][viewName][u8"recursion"] = on;
-    m_CallBack(false);
+    SaveSettings();
     mgr->ShowMsg("设置成功！");
   });
 }
@@ -123,7 +121,7 @@ void NativeExMenu::EditApi(QAction* action)
     mgr->ShowMsg("取消设置成功");
   } else {
     u8Dir.swap(*u8NewDir);
-    m_CallBack(false);
+    SaveSettings();
     mgr->ShowMsg("设置成功");
   }
 }
@@ -148,7 +146,7 @@ void NativeExMenu::RenameApi(QAction* action)
     m_Data[u8"curdir"] = *newString;
   }
   jsApiData.find(oldString)->first = oldString;
-  m_CallBack(false);
+  SaveSettings();
   action->setText(QString::fromUtf8(newString->data(), newString->size()));
 
   mgr->ShowMsg("修改成功！");
@@ -185,7 +183,7 @@ void NativeExMenu::AddApi()
   insertAction(m_Separator, action);
   action->setCheckable(true);
   m_ActionGroup->addAction(action);
-  m_CallBack(false);
+  SaveSettings();
   LoadSubSettingMenu(action);
 
   mgr->ShowMsg("添加成功！");

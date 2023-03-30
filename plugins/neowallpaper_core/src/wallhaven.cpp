@@ -244,7 +244,7 @@ void Wallhaven::UndoDislike(const std::u8string& sImgPath)
   data.toFile(m_DataPath);
 }
 
-void Wallhaven::SetJson(YJson json)
+void Wallhaven::SetJson(const YJson& json)
 {
   WallBase::SetJson(json);
 

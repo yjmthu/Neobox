@@ -13,10 +13,8 @@
 namespace chrono = std::chrono;
 using namespace std::literals;
 
-BingApiExMenu::BingApiExMenu(YJson& data, MenuBase* parent, std::function<void(bool)> callback):
-  MenuBase(parent),
-  m_Data(data),
-  m_CallBack(callback)
+BingApiExMenu::BingApiExMenu(YJson data, MenuBase* parent, Callback callback)
+  : WallBaseEx(callback, std::move(data), parent)
 {
   LoadSettingMenu();
 }
@@ -39,7 +37,7 @@ void BingApiExMenu::LoadSettingMenu()
     } else {
       u8CurDir.swap(*u8NewDir);
       mgr->ShowMsg("设置成功");
-      m_CallBack(true);
+      SaveSettings();
     }
   });
 
@@ -50,7 +48,7 @@ void BingApiExMenu::LoadSettingMenu()
       mgr->ShowMsg("取消成功");
     } else {
       u8ImgFmtOld.swap(*u8ImgFmtNew);
-      m_CallBack(true);
+      SaveSettings();
     }
   });
 
@@ -59,7 +57,7 @@ void BingApiExMenu::LoadSettingMenu()
     auto u8MktNew =  GetNewU8String("图片地区", "输入图片所在地区", u8MktOld);
     if (u8MktNew) {
       u8MktOld.swap(*u8MktNew);
-      m_CallBack(true);
+      SaveSettings();
       mgr->ShowMsg("设置成功");
     } else {
       mgr->ShowMsg("取消成功");
@@ -70,7 +68,7 @@ void BingApiExMenu::LoadSettingMenu()
   action->setChecked(m_Data[u8"auto-download"].isTrue());
   connect(action, &QAction::triggered, this, [this](bool checked) {
     m_Data[u8"auto-download"] = checked;
-    m_CallBack(true);
+    SaveSettings();
   });
 
   connect(addAction("关于壁纸"), &QAction::triggered, this, [this]() {

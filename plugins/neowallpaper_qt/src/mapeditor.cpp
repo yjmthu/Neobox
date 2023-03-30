@@ -1,6 +1,5 @@
 #include <mapeditor.h>
 #include <pluginobject.h>
-#include <yjson.h>
 
 #include <QWidget>
 #include <QTableWidget>
@@ -9,11 +8,10 @@
 #include <QHBoxLayout>
 #include <QInputDialog>
 
-MapEditor::MapEditor(QString title, YJson& data, const std::function<void()> callback):
-  QWidget(nullptr),
-  m_Data(data),
-  m_CallBack(callback),
-  m_Table(new QTableWidget(data.sizeO(), 2, this))
+MapEditor::MapEditor(QString title, YJson data, Callback callback)
+  : EditorBase(std::move(data), callback)
+  , QWidget(nullptr)
+  , m_Table(new QTableWidget(data.sizeO(), 2, this))
 {
   setWindowTitle(title);
   setAttribute(Qt::WA_DeleteOnClose);
@@ -22,8 +20,6 @@ MapEditor::MapEditor(QString title, YJson& data, const std::function<void()> cal
 
 MapEditor::~MapEditor()
 {
-  SaveData();
-  m_CallBack();
 }
 
 void MapEditor::SetBaseLayout()
@@ -31,8 +27,11 @@ void MapEditor::SetBaseLayout()
   auto const pVLayout = new QVBoxLayout(this);
   auto const pHLayout = new QHBoxLayout;
   std::array arButtons = {
-      new QPushButton("添加", this), new QPushButton("删除", this),
-      new QPushButton("确认", this), new QPushButton("取消", this)};
+      new QPushButton("添加", this), 
+      new QPushButton("删除", this),
+      new QPushButton("确认", this), 
+      new QPushButton("取消", this)
+  };
   std::for_each(arButtons.begin(), arButtons.end(),
                 std::bind(&QHBoxLayout::addWidget, pHLayout,
                           std::placeholders::_1, 0, Qt::Alignment()));
@@ -55,7 +54,7 @@ void MapEditor::SetBaseLayout()
 
   connect(arButtons[0], &QPushButton::clicked, this,
       [this]() {
-          if (m_Table->currentRow() == -1) {
+          if (m_Table->selectedItems().empty()) {
             m_Table->insertRow(m_Table->rowCount());
           } else {
             m_Table->insertRow(m_Table->currentRow());
@@ -83,5 +82,6 @@ void MapEditor::SaveData()
                   PluginObject::QString2Utf8(qsKeyArray));
   }
   m_Data.swap(jsData);
+  m_DataChanged = true;
   close();
 }

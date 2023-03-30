@@ -2,17 +2,15 @@
 #define BINGAPIEX_H
 
 #include <functional>
-#include <menubase.hpp>
+#include <wallbaseex.h>
 
-class BingApiExMenu: public MenuBase
+class BingApiExMenu: public WallBaseEx
 {
 public:
-  explicit BingApiExMenu(class YJson& data, MenuBase* parent, std::function<void(bool)> callback);
+  explicit BingApiExMenu(YJson data, MenuBase* parent, Callback callback);
   virtual ~BingApiExMenu();
 private:
   void LoadSettingMenu();
-  const std::function<void(bool)> m_CallBack;
-  YJson& m_Data;
 };
 
 #endif // BINGAPIEX_H

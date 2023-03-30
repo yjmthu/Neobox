@@ -7,10 +7,8 @@
 #include <QActionGroup>
 #include <QFileDialog>
 
-FavoriteExMenu::FavoriteExMenu(YJson& data, MenuBase* parent, std::function<void(bool)> callback):
-  MenuBase(parent),
-  m_Data(data),
-  m_CallBack(callback)
+FavoriteExMenu::FavoriteExMenu(YJson data, MenuBase* parent, Callback callback)
+  : WallBaseEx(callback, std::move(data), parent)
 {
   LoadSettingMenu();
 }
@@ -30,7 +28,7 @@ void FavoriteExMenu::LoadSettingMenu()
     } else {
       u8CurDir.swap(*u8NewDir);
       mgr->ShowMsg("设置成功");
-      m_CallBack(true);
+      SaveSettings();
     }
   });
 
@@ -40,6 +38,6 @@ void FavoriteExMenu::LoadSettingMenu()
   connect(actionRandom, &QAction::triggered, this, [this](bool on) {
     m_Data[u8"Random"] = on;
     mgr->ShowMsg("设置成功");
-    m_CallBack(true);
+    SaveSettings();
   });
 }

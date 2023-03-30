@@ -59,7 +59,7 @@ public:
   virtual ImageInfoEx GetNext() = 0;
   virtual void Dislike(const std::u8string& sImgPath);
   virtual void UndoDislike(const std::u8string& sImgPath);
-  virtual void SetJson(YJson json);
+  virtual void SetJson(const YJson& json);
   YJson GetJson() const;
 
  private:

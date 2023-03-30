@@ -128,7 +128,7 @@ ImageInfoEx BingApi::GetNext() {
   return ptr;
 }
 
-void BingApi::SetJson(YJson json)
+void BingApi::SetJson(const YJson& json)
 {
   WallBase::SetJson(json);
 

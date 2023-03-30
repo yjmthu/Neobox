@@ -2,18 +2,15 @@
 #define FAVORITEEX_H
 
 #include <functional>
-#include <menubase.hpp>
+#include <wallbaseex.h>
 
-class FavoriteExMenu: public MenuBase
+class FavoriteExMenu: public WallBaseEx
 {
 public:
-  explicit FavoriteExMenu(class YJson& data, MenuBase* parent, std::function<void(bool)> callback);
+  explicit FavoriteExMenu(YJson data, MenuBase* parent, Callback callback);
   virtual ~FavoriteExMenu();
 private:
   void LoadSettingMenu();
-private:
-  const std::function<void(bool)> m_CallBack;
-  YJson& m_Data;
 };
 
 #endif // FAVORITEEX_H

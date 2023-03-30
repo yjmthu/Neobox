@@ -238,7 +238,7 @@ void Wallpaper::SetTimeInterval(int minute) {
   m_Timer->StartTimer(minute, std::bind(&Wallpaper::SetSlot, this, OperatorType::Next));
 }
 
-std::filesystem::path Wallpaper::GetImageName(const std::u8string& url)
+std::filesystem::path Wallpaper::Url2Name(const std::u8string& url)
 {
   std::filesystem::path imagePath = m_Settings.DropDir;
   if (imagePath.is_relative()) {
@@ -388,17 +388,20 @@ bool Wallpaper::IsImageFile(const fs::path& filesName) {
 }
 
 void Wallpaper::SetDropFile(std::u8string url) {
-  std::thread([this, url]() {
+  // 在线程外使用 Url2Name 函数
+  auto imageName = Url2Name(url);
+
+  std::thread([this, url, imageName]() {
     if (url.starts_with(u8"http")) {
       ImageInfoEx ptr(new ImageInfo{
-        GetImageName(url).u8string(),
+        imageName.u8string(),
         url,
         {/* ??? */},
         ImageInfo::Errors::NoErr,
       });
       PushBack(ptr);
     } else if (url.starts_with(u8"file")) {
-      auto newName { GetImageName(url) };
+      auto newName { imageName };
       auto oldName { fs::path { url } };
       oldName.make_preferred();
 
