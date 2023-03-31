@@ -10,11 +10,9 @@
 
 MapEditor::MapEditor(QString title, YJson data, Callback callback)
   : EditorBase(std::move(data), callback)
-  , QWidget(nullptr)
   , m_Table(new QTableWidget(data.sizeO(), 2, this))
 {
   setWindowTitle(title);
-  setAttribute(Qt::WA_DeleteOnClose);
   SetBaseLayout();
 }
 

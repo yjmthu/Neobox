@@ -463,6 +463,7 @@ void Wallpaper::SetDislike() {
     auto path = std::move(m_PrevImgs.back());
     m_Wallpaper->Dislike(path.u8string());
     m_PrevImgs.pop_back();
+    locker.unlock();
     if (fs::exists(path)) {
       AppendBlackList(path);
     }

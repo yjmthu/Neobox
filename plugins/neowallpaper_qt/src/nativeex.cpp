@@ -7,8 +7,6 @@
 #include <QActionGroup>
 #include <QFileDialog>
 
-namespace fs = std::filesystem;
-
 NativeExMenu::NativeExMenu(YJson data, MenuBase* parent, Callback callback)
   : WallBaseEx(callback, std::move(data), parent)
   , m_ActionGroup(new QActionGroup(this))
@@ -154,32 +152,29 @@ void NativeExMenu::RenameApi(QAction* action)
 
 void NativeExMenu::AddApi()
 {
-  const QString qKeyName = QInputDialog::getText(this,
-      QStringLiteral("请输入文字"), 
-      QStringLiteral("请输自定义昵称"),
-      QLineEdit::Normal, QStringLiteral("例：风景图片"));
-  if (qKeyName.isEmpty()) return;
-  auto viewKeyName(PluginObject::QString2Utf8(qKeyName));
-  auto& obj = m_Data[u8"dirs"][viewKeyName];
+  auto keyName = GetNewU8String("请输入文字", "请输入自定义昵称", QStringLiteral("例：风景图片"));
+  if (!keyName) {
+    mgr->ShowMsg("取消成功。");
+    return;
+  }
+  auto& obj = m_Data[u8"dirs"][*keyName];
   if (!obj.isNull()) {
     mgr->ShowMsg("昵称不能重复！");
     return;
   }
 
-  auto qsFolder = QFileDialog::getExistingDirectory(this, "选择壁纸存放文件夹");
-  if (qsFolder.isEmpty()) {
+  auto const folder = GetExistingDirectory(u8"选择壁纸存放的文件夹", u8".");
+  if (!folder) {
     mgr->ShowMsg("取消成功。");
     return;
   }
-  fs::path folder = qsFolder.toStdU16String();
-  folder.make_preferred();     // nice
   obj = YJson(YJson::O {
-    {u8"imgdir", folder.u8string()},
+    {u8"imgdir", *folder},
     {u8"random", true},
     {u8"recursion", false},
   });
 
-  auto const action = new QAction(qKeyName, this);
+  auto const action = new QAction(QString::fromUtf8(keyName->data(), keyName->size()), this);
   insertAction(m_Separator, action);
   action->setCheckable(true);
   m_ActionGroup->addAction(action);

@@ -3,15 +3,17 @@
 
 #include <yjson.h>
 #include <functional>
+#include <QDialog>
 
-class EditorBase {
+class EditorBase: public QDialog {
 public:
   typedef std::function<void(bool, const YJson&)> Callback;
   explicit EditorBase(YJson data, Callback calllback)
-    : m_Data(std::move(data))
+    : QDialog(nullptr)
+    , m_Data(std::move(data))
     , m_CallBack(calllback)
   { }
-  ~EditorBase() {
+  virtual ~EditorBase() {
     m_CallBack(m_DataChanged, m_Data);
   }
 protected:

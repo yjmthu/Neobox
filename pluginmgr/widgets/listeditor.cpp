@@ -11,7 +11,6 @@
 
 ListEditor::ListEditor(QString title, YJson data, Callback callback)
   : EditorBase(std::move(data), callback)
-  , QDialog(nullptr)
   , m_List(new QListWidget(this))
 {
   setWindowTitle(title);

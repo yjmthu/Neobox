@@ -1,11 +1,11 @@
 #ifndef MAPEDITOR_H
 #define MAPEDITOR_H
 
-#include <QWidget>
+#include <QDialog>
 #include <yjson.h>
 #include <editorbase.hpp>
 
-class MapEditor: public EditorBase, public QWidget
+class MapEditor: public EditorBase
 {
 public:
   explicit MapEditor(QString title, YJson data, Callback callback);

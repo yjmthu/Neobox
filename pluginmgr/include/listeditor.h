@@ -7,7 +7,7 @@
 
 #include <yjson.h>
 
-class ListEditor: public EditorBase, public QDialog
+class ListEditor: public EditorBase
 {
 public:
   explicit ListEditor(QString title, YJson data, Callback callback);

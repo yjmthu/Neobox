@@ -21,8 +21,8 @@ private:
   void LoadSubSettingMenu(QAction* action);
   void LoadMoreActions();
   void AddNewType();
-  void EditNewType(const std::u8string& typeName);
-  void EditCurType(const std::u8string& typeName);
+  void EditNewType(std::u8string typeName);
+  void EditCurType(std::u8string typeName);
   const std::function<const std::filesystem::path &()> GetCurImage;
   class QAction* const m_Separator;
   class QActionGroup* m_ActionGroup;

@@ -14,15 +14,30 @@
 
 using namespace std::literals;
 
+YJson WallhavenData::InitData() {
+  if (fs::exists(m_DataPath)) {
+    return YJson(m_DataPath, YJson::UTF8);
+  }
+  return YJson::O {
+    {u8"Api"s,        YJson::String},
+    {u8"Unused"s,     YJson::Array},
+    {u8"Used"s,       YJson::Array},
+    {u8"Blacklist"s,  YJson::Array}
+  };
+}
+
+void WallhavenData::SaveData() {
+  m_Data.toFile(m_DataPath);
+}
+
 Wallhaven::Wallhaven(YJson& setting):
   WallBase(InitSetting(setting)),
-  m_Data(nullptr)
+  m_Data(m_DataDir / u8"WallhaveData.json")
 {
 }
 
 Wallhaven::~Wallhaven()
 {
-  delete m_Data;
 }
 
 
@@ -73,7 +88,8 @@ YJson& Wallhaven::InitSetting(YJson& setting)
   return setting;
 }
 
-std::u8string Wallhaven::GetApiPathUrl() const {
+std::u8string Wallhaven::GetApiPathUrl() const
+{
   const auto& apiInfo = GetCurInfo();
   std::u8string result;
   auto& param = apiInfo[u8"Parameter"];
@@ -102,16 +118,11 @@ bool Wallhaven::CheckData(ImageInfoEx ptr)
 
   auto const apiUrl = GetApiPathUrl();
   std::u8string curUrl;
-  if (m_Data) {
-    curUrl = m_Data->find(u8"Api")->second.getValueString();
-  } else if (fs::exists(m_DataPath)) {
-    m_Data = new YJson(m_DataPath, YJson::UTF8);
-    curUrl = m_Data->find(u8"Api")->second.getValueString();
-  }
+  curUrl = m_Data.m_ApiUrl;
 
   if (curUrl == apiUrl) {
-    if (m_Data->find(u8"Unused")->second.emptyA() &&
-      m_Data->find(u8"Used")->second.emptyA()) {
+    if (m_Data.m_Unused.empty() &&
+      m_Data.m_Used.empty()) {
       ptr->ErrorMsg = u8"No data has been downloaded.";
       ptr->ErrorCode = ImageInfo::DataErr;
       return false;
@@ -126,22 +137,9 @@ bool Wallhaven::CheckData(ImageInfoEx ptr)
     return false;
   }
 
-  if (m_Data) {
-    m_Data->find(u8"Api")->second.getValueString().clear();
-    m_Data->find(u8"Unused")->second.clearA();
-    m_Data->find(u8"Used")->second.clearA();
-  } else {
-    m_Data = new YJson {
-      YJson::O {
-        {u8"Api"s,        YJson::String},
-        {u8"Unused"s,     YJson::Array},
-        {u8"Used"s,       YJson::Array},
-        {u8"Blacklist"s,  YJson::Array}
-      }
-    };
-  }
-
-  m_Data->find(u8"Api")->second = apiUrl;
+  m_Data.m_Unused.clear();
+  m_Data.m_Used.clear();
+  m_Data.m_ApiUrl = apiUrl;
 
   locker.unlock();
   if (!DownloadUrl(apiUrl)) {
@@ -160,24 +158,23 @@ ImageInfoEx Wallhaven::GetNext()
 
   if (!CheckData(ptr)) {
     m_DataMutex.lock();
-    m_Data->toFile(m_DataPath);
+    m_Data.SaveData();
     m_DataMutex.unlock();
     return ptr;
   }
 
   LockerEx locker(m_DataMutex);
-  auto& val = m_Data->find(u8"Unused")->second;
-  if (val.emptyA()) {
-    YJson::swap(val, m_Data->find(u8"Used")->second);
+  if (m_Data.m_Unused.empty()) {
+    m_Data.m_Unused.swap(m_Data.m_Used);
     std::vector<std::u8string> temp;
-    for (auto& i : val.getArray()) {
+    for (auto& i : m_Data.m_Unused) {
       temp.emplace_back(std::move(i.getValueString()));
     }
     std::mt19937 g(std::random_device{}());
     std::shuffle(temp.begin(), temp.end(), g);
-    val.assignA(std::move(temp).begin(), std::move(temp).end());
+    m_Data.m_Unused.assign(temp.begin(), temp.end());
   }
-  std::u8string name = val.backA().getValueString();
+  std::u8string name = m_Data.m_Unused.back().getValueString();
   if (name.length() == 6) {
     locker.unlock();
     if (!IsPngFile(name)) {
@@ -190,9 +187,9 @@ ImageInfoEx Wallhaven::GetNext()
   ptr->ImagePath = GetCurInfo()[u8"Directory"].getValueString() + u8"/" + name;
   ptr->ImageUrl =
       u8"https://w.wallhaven.cc/full/"s + name.substr(10, 2) + u8"/"s + name;
-  m_Data->find(u8"Used")->second.append(name);
-  val.popBackA();
-  m_Data->toFile(m_DataPath);
+  m_Data.m_Used.push_back(name);
+  m_Data.m_Unused.pop_back();
+  m_Data.SaveData();
   ptr->ErrorCode = ImageInfo::NoErr;
   return ptr;
 }
@@ -216,13 +213,12 @@ void Wallhaven::Dislike(const std::u8string& sImgPath)
   auto const id = IsWallhavenFile(img.filename().string());
   if (id.empty())
     return;
-  
-  auto const u8Id = StringAsUtf8(id);
-  auto& data =*m_Data;
-  data[u8"Unused"].removeByValA(u8Id);
-  data[u8"Used"].removeByValA(u8Id);
-  data[u8"Blacklist"].append(u8Id);
-  data.toFile(m_DataPath);
+
+  YJson const u8Id = StringAsUtf8(id);
+  m_Data.m_Unused.remove(u8Id);
+  m_Data.m_Used.remove(u8Id);
+  m_Data.m_Blacklist.push_back(u8Id);
+  m_Data.SaveData();
 }
 
 void Wallhaven::UndoDislike(const std::u8string& sImgPath)
@@ -237,11 +233,11 @@ void Wallhaven::UndoDislike(const std::u8string& sImgPath)
   if (id.empty())
     return;
 
-  auto const u8Id = StringAsUtf8(id);
-  auto& data = *m_Data;
-  data[u8"Blacklist"].removeByValA(u8Id);
-  data[u8"Used"].append(u8Id);
-  data.toFile(m_DataPath);
+  YJson const u8Id = StringAsUtf8(id);
+
+  m_Data.m_Blacklist.remove(u8Id);
+  m_Data.m_Used.push_back(u8Id);
+  m_Data.SaveData();
 }
 
 void Wallhaven::SetJson(const YJson& json)
@@ -249,10 +245,9 @@ void Wallhaven::SetJson(const YJson& json)
   WallBase::SetJson(json);
 
   Locker locker(m_DataMutex);
-  if (m_Data) {
-    m_Data->find(u8"Api")->second.getValueString().clear();
-    m_Data->toFile(m_DataPath);
-  }
+
+  m_Data.m_ApiUrl.clear();
+  m_Data.SaveData();
 }
 
 size_t Wallhaven::DownloadUrl(const std::u8string& mainUrl) {
@@ -260,7 +255,6 @@ size_t Wallhaven::DownloadUrl(const std::u8string& mainUrl) {
 
   size_t m_TotalDownload = 0;
   std::vector<std::u8string> m_Array;
-  auto& m_BlackArray = m_Data->find(u8"Blacklist")->second;
 
   auto const first = 
     GetCurInfo()[u8"StartPage"].getValueInt();
@@ -290,17 +284,19 @@ size_t Wallhaven::DownloadUrl(const std::u8string& mainUrl) {
       YJson root(res->body.begin(), res->body.end());
       YJson& data = root[u8"data"sv];
       for (auto& i : data.getArray()) {
-        std::u8string name =
+        auto name =
             i.find(u8"path")->second.getValueString().substr(31);
-        if (m_BlackArray.findByValA(name) == m_BlackArray.endA()) {
-          m_Array.emplace_back(name);
+        auto const iter = std::find_if(m_Data.m_Blacklist.cbegin(), m_Data.m_Blacklist.cend(), [&name](const YJson& j){
+          return j.getValueString() == name;
+        });
+        if (m_Data.m_Blacklist.cend() == iter) {
+          m_Array.emplace_back(std::move(name));
           ++m_TotalDownload;
         }
       }
     }
   } else {  // wallhaven-6ozrgw.png
     const std::regex pattern("<li><figure.*?data-wallpaper-id=\"(\\w{6})\"");
-    const auto& blackList = m_BlackArray.getArray();
     auto cmp = [](const YJson& i, const std::u8string_view& name) -> bool {
       return i.getValueString().find(name) != std::u8string::npos;
     };
@@ -319,8 +315,8 @@ size_t Wallhaven::DownloadUrl(const std::u8string& mainUrl) {
         const auto& i_ = iter->str(1);
         std::u8string_view i(reinterpret_cast<const char8_t*>(i_.data()),
                               i_.size());
-        if (std::find_if(blackList.begin(), blackList.end(), std::bind(cmp,
-          std::placeholders::_1, std::ref(i))) == blackList.end() && std::find_if(m_Array.begin(), m_Array.end(), [&i](const YJson& j) -> bool {
+        if (std::find_if(m_Data.m_Blacklist.begin(), m_Data.m_Blacklist.end(), std::bind(cmp,
+          std::placeholders::_1, std::ref(i))) == m_Data.m_Blacklist.end() && std::find_if(m_Array.begin(), m_Array.end(), [&i](const YJson& j) -> bool {
             return i == j.getValueString();}) == m_Array.end()) {
           m_Array.emplace_back(i);
           ++m_TotalDownload;
@@ -332,10 +328,10 @@ size_t Wallhaven::DownloadUrl(const std::u8string& mainUrl) {
   if (m_TotalDownload) {
     std::mt19937 g(std::random_device{}());
     std::shuffle(m_Array.begin(), m_Array.end(), g);
-    m_Data->find(u8"Unused")->second.assignA(m_Array.begin(), m_Array.end());
+    m_Data.m_Unused.assign(m_Array.begin(), m_Array.end());
   }
 
-  m_Data->toFile(m_DataPath);
+  m_Data.SaveData();
   return m_TotalDownload;
 }
 

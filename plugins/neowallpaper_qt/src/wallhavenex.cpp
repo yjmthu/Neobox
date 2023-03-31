@@ -167,10 +167,10 @@ void WallhavenExMenu::AddNewType()
   EditNewType(u8KeyName);
 }
 
-void WallhavenExMenu::EditNewType(const std::u8string& typeName)
+void WallhavenExMenu::EditNewType(std::u8string typeName)
 {
   auto& params = m_Data[u8"WallhavenApi"][typeName][u8"Parameter"];
-  auto const editor = new MapEditor("编辑参数", params, [this, typeName, &params](bool changed, const YJson& data){
+  MapEditor editor("编辑参数", params, [this, typeName, &params](bool changed, const YJson& data){
     if (!changed) {
       m_Data[u8"WallhavenApi"].removeByValO(typeName);
       mgr->ShowMsg("取消设置成功！");
@@ -193,10 +193,10 @@ void WallhavenExMenu::EditNewType(const std::u8string& typeName)
     SaveSettings();
     mgr->ShowMsg("配置成功！");
   });
-  editor->show();
+  editor.exec();
 }
 
-void WallhavenExMenu::EditCurType(const std::u8string& typeName)
+void WallhavenExMenu::EditCurType(std::u8string typeName)
 {
   auto& params = m_Data[u8"WallhavenApi"][typeName][u8"Parameter"];
   auto const editor = new MapEditor("编辑参数", params, [this, typeName, &params](bool changed, const YJson& data){
@@ -210,12 +210,6 @@ void WallhavenExMenu::EditCurType(const std::u8string& typeName)
     }
 
     params = data;
-
-    auto const name = PluginObject::Utf82QString(typeName);
-    auto actions = m_ActionGroup->actions();
-    auto action = std::find_if(actions.begin(), actions.end(), [&name](QAction* a){return a->text() == name;});
-    if (action == actions.end()) return;
-
     SaveSettings();
     mgr->ShowMsg("配置成功！");
   });
