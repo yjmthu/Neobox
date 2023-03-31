@@ -22,7 +22,7 @@ file(GLOB source_files include/*.hpp src/*.cpp widgets/*.cpp widgets/*.hpp)
 
 set(system_shared_files)
 set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui)
-set(pliugin_libfiles yjson)
+set(pliugin_libfiles yjson zip)
 
 if(WIN32)
   list(APPEND system_shared_files Iphlpapi Winhttp Shell32)

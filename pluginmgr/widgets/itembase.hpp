@@ -20,7 +20,6 @@ protected:
   static void GetVersion(Version& version, const YJson& array);
   static void SetVersionLabel(std::wstring_view preText,
       Version& version, class QLabel*);
-  static int GetFileCount(const YJson& manifest);
   bool PluginDownload();
   virtual void DoFinished(FinishedType type, bool ok) = 0;
 public slots:

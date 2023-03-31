@@ -67,8 +67,10 @@ endfunction()
 link_directories(build/pluginmgr)
 include_directories(pluginmgr/include)
 include_directories(thirdlib/YJson/include)
+include_directories(thirdlib/zip/src)
 
 add_subdirectory(thirdlib/YJson yjson)
+add_subdirectory(thirdlib/zip zip)
 add_subdirectory(pluginmgr)
 add_subdirectory(plugins)
 

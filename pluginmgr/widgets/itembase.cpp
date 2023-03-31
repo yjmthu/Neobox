@@ -9,6 +9,8 @@
 #include <filesystem>
 #include <thread>
 
+#include <zip.h>
+
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -86,13 +88,11 @@ void ItemBase::SetVersionLabel(std::wstring_view preText, Version& version, QLab
  *
  */
 
-int ItemBase::GetFileCount(const YJson& manifest)
-{
-  int result = 0;
-  for (auto& [dir, info]: manifest.getObject()) {
-    result += static_cast<int>(info[u8"files"].sizeA());
-  }
-  return result;
+int on_extract_entry(const char *filename, void *arg) {
+    // static int i = 0;
+    // int n = *(int *)arg;
+    // printf("Extracted: %s (%d of %d)\n", filename, ++i, n);
+    return 0;
 }
 
 bool ItemBase::PluginDownload()
@@ -101,7 +101,7 @@ bool ItemBase::PluginDownload()
     mgr->ShowMsgbox(u8"失败", u8"请检查网络连接！");
     return false;
   }
-  bool result = false, exit = false;
+  bool result = false;
   const auto dialog = new DownloadingDlg(this);
   dialog->setAttribute(Qt::WA_DeleteOnClose, true);
   dialog->m_PreventClose = true;
@@ -109,53 +109,32 @@ bool ItemBase::PluginDownload()
   connect(this, &ItemBase::Downloading, dialog, &DownloadingDlg::SetPercent);
 
   std::thread thread([&]() {
-    HttpLib clt(PluginCenter::m_RawUrl + u8"plugins/" + m_PluginName + u8"/manifest.json");
-    auto res = clt.Get();
+    auto const plugin = m_PluginName + u8".zip";
+    fs::path pluginTemp = u8"junk";
+    fs::create_directory(pluginTemp);
+    pluginTemp /= plugin;
+    fs::path pluginDst = u8"plugins/" + m_PluginName;
+    HttpLib clt(PluginCenter::m_RawUrl + plugin);
+    auto res = clt.Get(pluginTemp);
     dialog->m_PreventClose = false;
 
     if (res->status != 200) {
       mgr->ShowMsgbox(u8"失败", u8"下载清单失败！");
-      emit DownloadFinished();
-      return;
-    }
-
-    const YJson data(res->body.begin(), res->body.end());
-    const int size = GetFileCount(data);
-    int count = 0;
-    for (auto& [dir, info]: data.getObject()) {
-      if (exit) return;
-
-      if (!fs::exists(dir)) {
-        fs::create_directories(dir);
-      }
-      fs::path path = dir;
-      for (auto& subdir: info[u8"dirs"].getArray()) {
-        auto subpath = path / subdir.getValueString();
-        if (!fs::exists(subpath)) {
-          fs::create_directory(subpath);
-        }
-      }
-      for (auto& file: info[u8"files"].getArray()) {
-        if (exit) return;
-
-        auto const subpath = path / file.getValueString();
-        clt.SetUrl<char8_t>(
-            PluginCenter::m_RawUrl + dir + u8"/" +
-            file.getValueString());
-        res = clt.Get(subpath);
-        if (res->status != 200) {
-          mgr->ShowMsgbox(u8"失败", u8"下载插件失败！");
-          emit DownloadFinished();
-          return;
-        }
-        emit Downloading(++count, size);
+    } else {
+      result = true;
+      auto temp = pluginTemp.string();
+      auto dst = pluginDst.string();
+      if (zip_extract(temp.c_str(), dst.c_str(), nullptr, nullptr) < 0) {
+        mgr->ShowMsgbox(u8"失败", u8"无法解压文件");
       }
     }
-    result = true;
+
+    if (fs::exists(pluginTemp)) {
+      fs::remove(pluginTemp);
+    }
     emit DownloadFinished();
   });
   dialog->exec();
-  exit = true;
   thread.join();
   return result;
 }

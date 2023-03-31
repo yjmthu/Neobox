@@ -16,23 +16,7 @@
 
 using namespace std::literals;
 namespace fs = std::filesystem;
-
-HttpProxy HttpLib::m_Proxy;
-static const wchar_t regProxyPath[] = LR"(Software\Microsoft\Windows\CurrentVersion\Internet Settings)";
-
-void HttpProxy::GetSystemProxy()
-{
-  username.clear();
-  password.clear();
-
-#ifdef _WIN32
-  proxy = Wide2Utf8String(RegReadString(HKEY_CURRENT_USER, regProxyPath, L"ProxyServer"));
-#else
-  auto const str = reinterpret_cast<const char8_t*>(std::getenv("HTTP_PROXY"));
-  if (!str) return;
-  proxy = str;
-#endif
-}
+std::optional<HttpProxy> HttpLib::m_Proxy = std::nullopt;
 
 bool HttpLib::IsOnline() {
 #ifdef _WIN32
@@ -200,14 +184,17 @@ void HttpLib::HttpInit()
 
 void HttpLib::SetProxyBefore()
 {
-  if (m_Proxy.type == 3) return;
+  if (!m_Proxy) return;
+
+  auto const type = static_cast<int>(m_Proxy->GetType());
+  if (type == 3) return;
 
 #ifdef _WIN32
-  if (m_Proxy.type == 0) {
-    if (!RegReadValue(HKEY_CURRENT_USER, regProxyPath, L"ProxyEnable")) return;
-    m_Proxy.GetSystemProxy();
+  if (type == 0) {
+    if (!m_Proxy->IsSystemProxy()) return;
+    m_Proxy->UpdateSystemProxy();
   }
-  auto proxyString = Utf82WideString(m_Proxy.proxy);
+  auto proxyString = Utf82WideString(m_Proxy->GetProxy());
   proxyString.push_back(L'\0');
   // if (proxyString.starts_with(L"http://")) {
   //   proxyString = L"http://" + proxyString;
@@ -220,7 +207,7 @@ void HttpLib::SetProxyBefore()
 
   if (WinHttpSetOption(m_hSession, WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy)))
   {
-    if (m_Proxy.password.empty() || m_Proxy.username.empty()) return;
+    if (m_Proxy->IsUserEmpty()) return;
     m_ProxySet = true;
   }
 #else
@@ -238,10 +225,13 @@ void HttpLib::SetProxyBefore()
 
 void HttpLib::SetProxyAfter()
 {
-  if (!m_ProxySet) return;
+  if (!m_ProxySet || !m_Proxy) return;
 #ifdef _WIN32
-  WinHttpSetOption(m_hRequest, WINHTTP_OPTION_PROXY_USERNAME, m_Proxy.username.data(), m_Proxy.username.size() * sizeof(wchar_t));
-  WinHttpSetOption(m_hRequest, WINHTTP_OPTION_PROXY_PASSWORD, m_Proxy.password.data(), m_Proxy.password.size() * sizeof(wchar_t));
+  auto username = Utf82WideString(m_Proxy->GetUsername());
+  auto password = Utf82WideString(m_Proxy->GetPassword());
+
+  WinHttpSetOption(m_hRequest, WINHTTP_OPTION_PROXY_USERNAME, username.data(), username.size() * sizeof(wchar_t));
+  WinHttpSetOption(m_hRequest, WINHTTP_OPTION_PROXY_PASSWORD, password.data(), password.size() * sizeof(wchar_t));
 #endif
 }
 
@@ -398,7 +388,7 @@ void HttpLib::HttpPerform()
 
     if (bResults) {
       std::string strBuffer;
-      for (DWORD dwDownloaded = 0;;) {
+      for (DWORD dwDownloaded = 0; !m_Exit; ) {
         bResults = WinHttpQueryDataAvailable(m_hRequest, &dwSize);
         if (!bResults) {
           std::wcerr << L"WinHttpQueryDataAvailable failed: " << GetLastError() << std::endl;

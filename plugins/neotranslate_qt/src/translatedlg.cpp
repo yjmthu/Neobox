@@ -172,7 +172,7 @@ void NeoTranslateDlg::hideEvent(QHideEvent *event)
 void NeoTranslateDlg::resizeEvent(QResizeEvent *event)
 {
   UpdateToolButtons();
-
+  m_HeightCtrl->UpdateUi();
   WidgetBase::resizeEvent(event);
 }
 

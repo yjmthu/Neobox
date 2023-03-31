@@ -24,7 +24,13 @@
 
 using namespace std::literals;
 
-const std::u8string PluginCenter::m_RawUrl = u8"https://gitlab.com/yjmthu1/neoboxplg/-/raw/main/";
+#ifdef _WIN32
+#define PLAT "windows"
+#elif defined(__linux__)
+#define PLAT "linux"
+#endif
+
+const std::u8string PluginCenter::m_RawUrl = u8"https://gitlab.com/yjmthu1/neoboxplg/-/raw/main/" PLAT "/";
 PluginCenter* PluginCenter::m_Instance = nullptr;
 
 PluginCenter::PluginCenter()

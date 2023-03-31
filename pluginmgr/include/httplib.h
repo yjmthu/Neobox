@@ -4,18 +4,7 @@
 #include <filesystem>
 #include <string>
 #include <map>
-
-struct HttpProxy 
-{
-  typedef std::u8string String;
-
-  String proxy;
-  String username;
-  String password;
-  int type = 0;
-
-  void GetSystemProxy();
-};
+#include <httpproxy.h>
 
 class HttpLib {
 private:
@@ -65,10 +54,12 @@ public:
   Response* Get();
   Response* Get(const std::filesystem::path& path);
   Response* Get(pCallbackFunction callback, void* userData);
+  void Exit();
   static bool IsOnline();
 public:
-  static HttpProxy m_Proxy;
+  static std::optional<HttpProxy> m_Proxy;
 private:
+  std::atomic_bool m_Exit = false;
   Headers m_Headers;
   Response m_Response;
   std::u8string m_Url;

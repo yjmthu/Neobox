@@ -34,14 +34,14 @@ PluginMgr *mgr;
 const std::u8string PluginMgr::m_SettingFileName(u8"PluginSettings.json");
 
 // #define WRITE_LOG(x) writelog((x))
-#define WRITE_LOG(x) 
+// #define WRITE_LOG(x) 
 
-void writelog(std::string data)
-{
-  std::ofstream file("neobox.log", std::ios::app);
-  file.write(data.data(), data.size());
-  file.close();
-}
+// void writelog(std::string data)
+// {
+//   std::ofstream file("neobox.log", std::ios::app);
+//   file.write(data.data(), data.size());
+//   file.close();
+// }
 
 YJson* PluginMgr::InitSettings()
 {
@@ -52,7 +52,7 @@ YJson* PluginMgr::InitSettings()
   if (fs::exists(m_SettingFileName)) {
     setting = new YJson(m_SettingFileName, YJson::UTF8);
   } else {
-    setting = new YJson{ YJson::O{
+    setting = new YJson{ YJson::O {
       { u8"Plugins", YJson::O {
       }},
       { u8"EventMap", YJson::A {
@@ -76,12 +76,7 @@ YJson* PluginMgr::InitSettings()
       }},
       { u8"PluginsConfig", YJson::O {
       }},
-      { u8"NetProxy", YJson::O {
-        {u8"Type", HttpLib::m_Proxy.type},
-        {u8"Proxy", HttpLib::m_Proxy.proxy},
-        {u8"Username", YJson::String},
-        {u8"Password", YJson::String}
-      }},
+      { u8"NetProxy", nullptr },
     }};
   }
   auto& proxy = setting->operator[](u8"NetProxy");
@@ -93,24 +88,11 @@ YJson* PluginMgr::InitSettings()
       NEOBOX_VERSION_MINOR,
       NEOBOX_VERSION_PATCH
     };
-    HttpLib::m_Proxy.GetSystemProxy();
-    proxy = YJson::O {
-      {u8"Type", HttpLib::m_Proxy.type},
-      {u8"Proxy", HttpLib::m_Proxy.proxy},
-      {u8"Username", HttpLib::m_Proxy.username},
-      {u8"Password", HttpLib::m_Proxy.password}
-    };
-  } else if (proxy.isObject() && proxy[u8"Proxy"].isNull()) {
-    proxy[u8"Proxy"] = HttpLib::m_Proxy.proxy;
   }
 
-  HttpLib::m_Proxy.proxy = proxy[u8"Proxy"].getValueString();
-  HttpLib::m_Proxy.username = proxy[u8"Username"].getValueString();
-  HttpLib::m_Proxy.password = proxy[u8"Password"].getValueString();
-  HttpLib::m_Proxy.type = proxy[u8"Type"].getValueInt();
+  HttpLib::m_Proxy.emplace(proxy);
   return setting;
 }
-
 
 PluginMgr::PluginMgr()
   : m_SharedMemory(CreateSharedMemory())
@@ -370,7 +352,6 @@ bool PluginMgr::LoadPlugEnv(const fs::path& dir)
 #else
   auto const bRet = setenv("PATH", strEnvPaths.data(), 1) == 0;
 #endif
-  // ShowMsg(QStringLiteral("代码%1").arg(bRet));
   return bRet;
 }
 

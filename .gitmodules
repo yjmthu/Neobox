@@ -1,3 +1,6 @@
 [submodule "thirdlib/YJson"]
 	path = thirdlib/YJson
 	url = https://github.com/yjmthu/YJson.git
+[submodule "thirdlib/zip"]
+	path = thirdlib/zip
+	url = https://github.com/kuba--/zip.git
