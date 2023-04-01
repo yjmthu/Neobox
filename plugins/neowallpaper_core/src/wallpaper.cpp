@@ -245,7 +245,6 @@ std::filesystem::path Wallpaper::Url2Name(const std::u8string& url)
     imagePath = fs::absolute(imagePath);
     imagePath.make_preferred();
     m_Settings.SetDropDir(imagePath.u8string());
-    // m_Settings.SaveData();
   }
   // }
   auto const iter = url.rfind(u8'/') + 1;
@@ -391,7 +390,8 @@ void Wallpaper::SetDropFile(std::u8string url) {
   // 在线程外使用 Url2Name 函数
   auto imageName = Url2Name(url);
 
-  std::thread([this, url, imageName]() {
+  std::thread([this, url, imageName]() mutable {
+    Locker locker(m_ThreadMutex);
     if (url.starts_with(u8"http")) {
       ImageInfoEx ptr(new ImageInfo{
         imageName.u8string(),
@@ -400,20 +400,18 @@ void Wallpaper::SetDropFile(std::u8string url) {
         ImageInfo::Errors::NoErr,
       });
       PushBack(ptr);
-    } else if (url.starts_with(u8"file")) {
-      auto newName { imageName };
-      auto oldName { fs::path { url } };
+    } else if (fs::path oldName = url; fs::exists(oldName)) {
       oldName.make_preferred();
 
-      if (oldName.parent_path() != newName.parent_path()) {
-        newName = std::move(oldName);
+      if (oldName.parent_path() != imageName.parent_path()) {
+        imageName = std::move(oldName);
       } else {                     // don't move wallpaper to the same directory.
-        fs::copy(oldName, newName);
+        fs::copy(oldName, imageName);
       }
-      if (SetWallpaper(newName)) {
+      if (SetWallpaper(imageName)) {
         m_DataMutex.lock();
         m_PrevImgs.push_back(m_CurImage);
-        m_CurImage = std::move(newName);
+        m_CurImage = std::move(imageName);
         m_DataMutex.unlock();
       }
     }
