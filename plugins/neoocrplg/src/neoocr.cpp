@@ -14,8 +14,9 @@
 
 #include <tesseract/baseapi.h>
 #include <leptonica/allheaders.h>
+#include <leptonica/pix_internal.h>
 
-Pix* QImage2Pix(const QImage& qImage);
+std::unique_ptr<Pix, void(*)(Pix*)> QImage2Pix(const QImage& qImage);
 namespace fs = std::filesystem;
 
 #ifdef _WIN32
@@ -44,7 +45,7 @@ using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Storage::Streams;
 using namespace winrt::Windows::Globalization;
-using namespace winrt::Windows::Media::Ocr;
+namespace WinOcr = winrt::Windows::Media::Ocr;
 using namespace winrt::Windows::Graphics::Imaging;
 using namespace winrt::Windows::Security::Cryptography;
 #else
@@ -107,14 +108,54 @@ std::u8string NeoOcr::GetText(QImage image)
   }
 }
 
+std::vector<OcrResult> NeoOcr::GetTextEx(QImage image)
+{
+  std::vector<OcrResult> result;
+  if (m_Languages.empty()) {
+    mgr->ShowMsgbox(u8"error", u8"You should set some language first!");
+//    m_TessApi->End();
+    return result;
+  }
+  if (m_TessApi->Init(m_TrainedDataDir.c_str(), reinterpret_cast<const char*>(m_Languages.c_str()))) {
+    mgr->ShowMsgbox(u8"error", u8"Could not initialize tesseract.");
+    return result;
+  }
+
+  auto const pix = QImage2Pix(image);
+  m_TessApi->SetImage(pix.get());
+
+  // RIL_TEXTLINE 表示识别文本行
+  const auto boxes = m_TessApi->GetComponentImages(tesseract::RIL_TEXTLINE, true, NULL, NULL);
+
+  for (int i = 0; i != boxes->n; ++i) {
+    auto box = boxaGetBox(boxes, i, L_CLONE);
+    m_TessApi->SetRectangle(box->x, box->y, box->w, box->h);
+    char* ocrResult = m_TessApi->GetUTF8Text();
+    int conf = m_TessApi->MeanTextConf();
+    result.push_back(OcrResult {
+      .text = reinterpret_cast<char8_t*>(ocrResult),
+      .x = box->x,
+      .y = box->y,
+      .w = box->w,
+      .h = box->h,
+      .confidence = conf,
+    });
+    boxDestroy(&box);
+    delete[] ocrResult;
+  }
+
+  m_TessApi->End();
+  return result;
+}
+
 std::u8string NeoOcr::OcrWindows(const QImage& image)
 {
-  std::function engine = OcrEngine::TryCreateFromUserProfileLanguages;
+  std::function engine = WinOcr::OcrEngine::TryCreateFromUserProfileLanguages;
   auto name = m_Settings[u8"WinLan"].getValueString();
   if (name != u8"user-Profile") {
     const Language lan(Utf82WideString(name));
-    if (OcrEngine::IsLanguageSupported(lan)) {
-      engine = std::bind(&OcrEngine::TryCreateFromLanguage, lan);
+    if (WinOcr::OcrEngine::IsLanguageSupported(lan)) {
+      engine = std::bind(&WinOcr::OcrEngine::TryCreateFromLanguage, lan);
     }
   }
 
@@ -180,7 +221,8 @@ std::u8string NeoOcr::OcrTesseract(const QImage& image)
     mgr->ShowMsgbox(u8"error", u8"Could not initialize tesseract.");
     return result;
   }
-  m_TessApi->SetImage(QImage2Pix(image));
+  auto const pix = QImage2Pix(image);
+  m_TessApi->SetImage(pix.get());
   char* szText = m_TessApi->GetUTF8Text();
   result = reinterpret_cast<const char8_t*>(szText);
   m_TessApi->End();
@@ -190,7 +232,7 @@ std::u8string NeoOcr::OcrTesseract(const QImage& image)
 
 std::vector<std::pair<std::wstring, std::wstring>> NeoOcr::GetLanguages()
 {
-  auto languages = OcrEngine::AvailableRecognizerLanguages();
+  auto languages = WinOcr::OcrEngine::AvailableRecognizerLanguages();
   std::vector<std::pair<std::wstring, std::wstring>> result = {
     {L"user-Profile", L"用户语言"}
   };
@@ -284,10 +326,10 @@ static inline bool IsBigDuan() {
   return *reinterpret_cast<const uint8_t*>(&s);
 }
 
-Pix* QImage2Pix(const QImage& qImage) {
+std::unique_ptr<Pix, void(*)(Pix*)> QImage2Pix(const QImage& qImage) {
   static const bool bIsBigDuan = IsBigDuan();
   if (qImage.isNull())
-    return nullptr;
+    return std::unique_ptr<Pix, void(*)(Pix*)>(nullptr, [](Pix* pix){pixDestroy(&pix);});
   const int width = qImage.width(), height = qImage.height();
   const int depth = qImage.depth(), bytePerLine = qImage.bytesPerLine();
   PIX* pix = pixCreate(width, height, depth);
@@ -343,5 +385,5 @@ Pix* QImage2Pix(const QImage& qImage) {
     default:
       break;
   }
-  return pix;
+    return std::unique_ptr<Pix, void(*)(Pix*)>(pix, [](Pix* pix){pixDestroy(&pix);});
 }

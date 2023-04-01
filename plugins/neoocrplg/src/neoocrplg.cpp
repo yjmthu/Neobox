@@ -5,6 +5,7 @@
 #include <screenfetch.h>
 #include <yjson.h>
 #include <menubase.hpp>
+#include <ocrdialog.h>
 
 #include <QDir>
 #include <QLabel>
@@ -41,9 +42,10 @@ using namespace std::literals;
  *
  */
 
-PluginName::PluginName(YJson& settings):
-  PluginObject(InitSettings(settings), u8"neoocrplg", u8"文字识别"),
-  m_Ocr(new NeoOcr(settings, std::bind(&PluginMgr::SaveSettings, std::ref(mgr))))
+PluginName::PluginName(YJson& settings)
+  : PluginObject(InitSettings(settings), u8"neoocrplg", u8"文字识别")
+  , m_Ocr(new NeoOcr(settings, std::bind(&PluginMgr::SaveSettings, std::ref(mgr))))
+  , m_OcrDialog(nullptr)
 {
   std::array<fs::path, 1> lst = { u8"tessdata"s };
   for (auto i: lst) {
@@ -56,12 +58,24 @@ PluginName::PluginName(YJson& settings):
 
 PluginName::~PluginName()
 {
+  delete m_OcrDialog;
   delete m_MainMenuAction;
   delete m_Ocr;
 }
 
 void PluginName::InitFunctionMap() {
   m_PluginMethod = {
+    {u8"scanImage",
+      {u8"图片扫描", u8"扫描图片中的文字。", [this](PluginEvent, void*) {
+        if (m_OcrDialog) {
+          // m_OcrDialog->show();
+          m_OcrDialog->activateWindow();
+        } else {
+          m_OcrDialog = new OcrDialog(*m_Ocr, m_OcrDialog);
+          m_OcrDialog->show();
+        }
+      }, PluginEvent::Void }
+    },
     {u8"screenfetch",
       {u8"截取屏幕", u8"截取屏幕区域，识别其中文字。", [this](PluginEvent, void*) {
         static bool busy = false;

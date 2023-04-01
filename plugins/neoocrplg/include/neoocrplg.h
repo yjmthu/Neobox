@@ -22,6 +22,7 @@ private:
   void AddWindowsSection(QWidget* parent, QVBoxLayout* layout);
   void AddTesseractSection(QWidget* parent, QVBoxLayout* layout);
 private:
+  class OcrDialog* m_OcrDialog;
   QAction* m_MainMenuAction;
   class NeoOcr* const m_Ocr;
 };

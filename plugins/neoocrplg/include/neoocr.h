@@ -11,12 +11,19 @@ namespace tesseract {
 
 class QImage;
 
+struct OcrResult {
+  std::u8string text;
+  int x, y, w, h;
+  int confidence;
+};
+
 class NeoOcr {
 public:
   enum class Engine { Windows, Tesseract, Paddle, Other };
   NeoOcr(class YJson& settings, std::function<void()> callback);
   ~NeoOcr();
   std::u8string GetText(QImage image);
+  std::vector<OcrResult> GetTextEx(QImage image);
   static std::vector<std::pair<std::wstring, std::wstring>> GetLanguages();
   void InitLanguagesList();
   void AddLanguages(const std::vector<std::u8string>& urls);
