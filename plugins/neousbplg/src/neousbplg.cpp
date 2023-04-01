@@ -1,7 +1,7 @@
 #include <neousbplg.h>
 #include <usbdlg.hpp>
 
-#define CLASS_NAME NeoUsbPlg
+#define PluginName NeoUsbPlg
 #include <pluginexport.cpp>
 
 #include <QApplication>
@@ -11,7 +11,7 @@
 #include <dbt.h>
 #endif
 
-NeoUsbPlg::NeoUsbPlg(YJson& settings)
+PluginName::PluginName(YJson& settings)
   : PluginObject(InitSettings(settings), u8"neousbplg", u8"U盘助手")
   , m_UsbDlg(new UsbDlg(m_Settings))
 {
@@ -21,12 +21,12 @@ NeoUsbPlg::NeoUsbPlg(YJson& settings)
 #endif
 }
 
-NeoUsbPlg::~NeoUsbPlg()
+PluginName::~PluginName()
 {
   delete m_UsbDlg;
 }
 
-void NeoUsbPlg::InitFunctionMap()
+void PluginName::InitFunctionMap()
 {
   m_PluginMethod = {
     {u8"openWindow",
@@ -84,12 +84,12 @@ void NeoUsbPlg::InitFunctionMap()
   }});
 }
 
-QAction* NeoUsbPlg::InitMenuAction()
+QAction* PluginName::InitMenuAction()
 {
   return this->PluginObject::InitMenuAction();
 }
 
-YJson& NeoUsbPlg::InitSettings(YJson& settings)
+YJson& PluginName::InitSettings(YJson& settings)
 {
   if (settings.isObject()) {
     return settings;
@@ -102,7 +102,7 @@ YJson& NeoUsbPlg::InitSettings(YJson& settings)
 }
 
 #ifdef _WIN32
-bool NeoUsbPlg::nativeEventFilter(const QByteArray& eventType, void *message, qintptr *result)
+bool PluginName::nativeEventFilter(const QByteArray& eventType, void *message, qintptr *result)
 {
   if(eventType != "windows_generic_MSG" && eventType != "windows_dispatcher_MSG")
     return false;

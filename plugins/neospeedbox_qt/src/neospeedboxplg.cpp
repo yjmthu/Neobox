@@ -26,13 +26,13 @@
 #include <filesystem>
 #include <ranges>
 
-#define CLASS_NAME NeoSpeedboxPlg
+#define PluginName NeoSpeedboxPlg
 #include <pluginexport.cpp>
 
 namespace fs = std::filesystem;
 using namespace std::literals;
 
-NeoSpeedboxPlg::NeoSpeedboxPlg(YJson& settings)
+PluginName::PluginName(YJson& settings)
   : PluginObject(InitSettings(settings), u8"neospeedboxplg", u8"网速悬浮")
   , m_NetSpeedHelper(new NetSpeedHelper(m_Settings[u8"NetCardDisabled"]))
 {
@@ -40,7 +40,7 @@ NeoSpeedboxPlg::NeoSpeedboxPlg(YJson& settings)
   InitFunctionMap();
 }
 
-NeoSpeedboxPlg::~NeoSpeedboxPlg()
+PluginName::~PluginName()
 {
   RemoveMainObject();
   auto& followers = mgr->m_Tray->m_Followers;
@@ -49,7 +49,7 @@ NeoSpeedboxPlg::~NeoSpeedboxPlg()
   delete m_NetSpeedHelper;
 }
 
-void NeoSpeedboxPlg::InitFunctionMap() {
+void PluginName::InitFunctionMap() {
   m_PluginMethod = {
     {u8"moveLeftTop", {
       u8"还原位置", u8"将窗口移动到左上方位置", [this](PluginEvent, void*){
@@ -163,7 +163,7 @@ void NeoSpeedboxPlg::InitFunctionMap() {
   followers.insert(&m_ActiveWinodow);
 }
 
-QAction* NeoSpeedboxPlg::InitMenuAction()
+QAction* PluginName::InitMenuAction()
 {
   auto action = m_MainMenu->addAction("网卡选择");
   m_NetCardMenu = new MenuBase(m_MainMenu);
@@ -185,7 +185,7 @@ QAction* NeoSpeedboxPlg::InitMenuAction()
   return nullptr;
 }
 
-YJson& NeoSpeedboxPlg::InitSettings(YJson& settings)
+YJson& PluginName::InitSettings(YJson& settings)
 {
   if (!settings.isObject()) {
     settings = YJson::O {
@@ -253,7 +253,7 @@ YJson& NeoSpeedboxPlg::InitSettings(YJson& settings)
   // we may not need to call SaveSettings;
 }
 
-void NeoSpeedboxPlg::LoadRemoveSkinMenu(MenuBase* parent)
+void PluginName::LoadRemoveSkinMenu(MenuBase* parent)
 {
   m_RemoveSkinMenu = new MenuBase(parent);
   const auto& curSkin = m_Settings[u8"CurSkin"].getValueString();
@@ -264,7 +264,7 @@ void NeoSpeedboxPlg::LoadRemoveSkinMenu(MenuBase* parent)
   }
 }
 
-void NeoSpeedboxPlg::LoadChooseSkinMenu(MenuBase* parent)
+void PluginName::LoadChooseSkinMenu(MenuBase* parent)
 {
   m_ChooseSkinMenu = new MenuBase(parent);
   m_ChooseSkinGroup = new QActionGroup(m_ChooseSkinMenu);
@@ -281,7 +281,7 @@ void NeoSpeedboxPlg::LoadChooseSkinMenu(MenuBase* parent)
   }
 }
 
-void NeoSpeedboxPlg::LoadHideAsideMenu(MenuBase* parent)
+void PluginName::LoadHideAsideMenu(MenuBase* parent)
 {
 
   const auto menu = new MenuBase(parent);
@@ -304,7 +304,7 @@ void NeoSpeedboxPlg::LoadHideAsideMenu(MenuBase* parent)
   }
 }
 
-void NeoSpeedboxPlg::RemoveSkinConnect(QAction* action)
+void PluginName::RemoveSkinConnect(QAction* action)
 {
   QObject::connect(action, &QAction::triggered, m_RemoveSkinMenu, [action, this](){
     const auto qname = action->text();
@@ -331,7 +331,7 @@ void NeoSpeedboxPlg::RemoveSkinConnect(QAction* action)
   });
 }
 
-void NeoSpeedboxPlg::ChooseSkinConnect(QAction* action)
+void PluginName::ChooseSkinConnect(QAction* action)
 {
   QObject::connect(action, &QAction::triggered, m_ChooseSkinMenu, [action, this](){
     m_Settings[u8"CurSkin"] = PluginObject::QString2Utf8(action->text());
@@ -344,7 +344,7 @@ void NeoSpeedboxPlg::ChooseSkinConnect(QAction* action)
   });
 }
 
-void NeoSpeedboxPlg::AddSkinConnect(QAction* action)
+void PluginName::AddSkinConnect(QAction* action)
 {
   QObject::connect(action, &QAction::triggered, [action, this](){
       // const auto qname = action->text();
@@ -378,7 +378,7 @@ void NeoSpeedboxPlg::AddSkinConnect(QAction* action)
   });
 }
 
-void NeoSpeedboxPlg::AddSkin(const QString& name, const fs::path& path)
+void PluginName::AddSkin(const QString& name, const fs::path& path)
 {
 
   if (!fs::exists("skins")) {

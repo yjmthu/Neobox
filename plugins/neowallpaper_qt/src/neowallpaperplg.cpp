@@ -26,10 +26,10 @@
 
 #include <ranges>
 
-#define CLASS_NAME NeoWallpaperPlg
+#define PluginName NeoWallpaperPlg
 #include <pluginexport.cpp>
 
-NeoWallpaperPlg::NeoWallpaperPlg(YJson& settings):
+PluginName::PluginName(YJson& settings):
   PluginObject(InitSettings(settings), u8"neowallpaperplg", u8"壁纸引擎"),
   m_Wallpaper(new Wallpaper(m_Settings, std::bind(&PluginMgr::SaveSettings, std::ref(mgr))))
 {
@@ -39,14 +39,14 @@ NeoWallpaperPlg::NeoWallpaperPlg(YJson& settings):
   InitFunctionMap();
 }
 
-NeoWallpaperPlg::~NeoWallpaperPlg()
+PluginName::~PluginName()
 {
   delete m_MainMenuAction;
   // delete m_MainMenu;
   delete m_Wallpaper;
 }
 
-void NeoWallpaperPlg::InitFunctionMap()
+void PluginName::InitFunctionMap()
 {
   m_PluginMethod = {
     {u8"setTimeInterval",
@@ -113,7 +113,7 @@ void NeoWallpaperPlg::InitFunctionMap()
   }});
 }
 
-QAction* NeoWallpaperPlg::InitMenuAction()
+QAction* PluginName::InitMenuAction()
 {
   m_MoreSettingsAction = new QAction("更多设置", m_MainMenu);
   LoadWallpaperTypeMenu(m_MainMenu);
@@ -126,7 +126,7 @@ QAction* NeoWallpaperPlg::InitMenuAction()
   return m_MainMenuAction;
 }
 
-void NeoWallpaperPlg::LoadMainMenuAction()
+void PluginName::LoadMainMenuAction()
 {
   m_MainMenuAction = new QAction("壁纸切换");
   auto const menu = new MenuBase(m_MainMenu);
@@ -194,7 +194,7 @@ void NeoWallpaperPlg::LoadMainMenuAction()
   menu->addAction(m_MoreSettingsAction);
 }
 
-YJson& NeoWallpaperPlg::InitSettings(YJson& settings)
+YJson& PluginName::InitSettings(YJson& settings)
 {
   if (!settings.isObject()) {
     settings = YJson::O {
@@ -215,7 +215,7 @@ YJson& NeoWallpaperPlg::InitSettings(YJson& settings)
   // we may not need to call SaveSettings;
 }
 
-void NeoWallpaperPlg::LoadWallpaperTypeMenu(MenuBase* pluginMenu)
+void PluginName::LoadWallpaperTypeMenu(MenuBase* pluginMenu)
 {
   static const char* sources[12] = {
     "壁纸天堂", "来自https://wallhaven.cc的壁纸",
@@ -252,7 +252,7 @@ void NeoWallpaperPlg::LoadWallpaperTypeMenu(MenuBase* pluginMenu)
   }
 }
 
-void NeoWallpaperPlg::LoadDropMenu(QAction* action)
+void PluginName::LoadDropMenu(QAction* action)
 {
   auto const menu = new MenuBase(m_MainMenu);
   action->setMenu(menu);
@@ -303,22 +303,22 @@ void NeoWallpaperPlg::LoadDropMenu(QAction* action)
   });
 }
 
-void NeoWallpaperPlg::LoadWallpaperExMenu(MenuBase* parent)
+void PluginName::LoadWallpaperExMenu(MenuBase* parent)
 {
-  static MenuBase* (NeoWallpaperPlg::*const m_MenuLoaders[6])(MenuBase*) {
-    &NeoWallpaperPlg::LoadWallavenMenu,
-    &NeoWallpaperPlg::LoadBingApiMenu,
-    &NeoWallpaperPlg::LoadDirectApiMenu,
-    &NeoWallpaperPlg::LoadNativeMenu,
-    &NeoWallpaperPlg::LoadScriptMenu,
-    &NeoWallpaperPlg::LoadFavoriteMenu,
+  static MenuBase* (PluginName::*const m_MenuLoaders[6])(MenuBase*) {
+    &PluginName::LoadWallavenMenu,
+    &PluginName::LoadBingApiMenu,
+    &PluginName::LoadDirectApiMenu,
+    &PluginName::LoadNativeMenu,
+    &PluginName::LoadScriptMenu,
+    &PluginName::LoadFavoriteMenu,
   };
   delete m_MoreSettingsAction->menu();
   auto const menu = (this->*m_MenuLoaders[static_cast<size_t>(m_Wallpaper->m_Settings.GetImageType())])(parent);
   m_MoreSettingsAction->setMenu(menu);
 }
 
-MenuBase* NeoWallpaperPlg::LoadWallavenMenu(MenuBase* parent)
+MenuBase* PluginName::LoadWallavenMenu(MenuBase* parent)
 {
   return new WallhavenExMenu(
     m_Wallpaper->Engine()->m_Setting,
@@ -328,7 +328,7 @@ MenuBase* NeoWallpaperPlg::LoadWallavenMenu(MenuBase* parent)
   );
 }
 
-MenuBase* NeoWallpaperPlg::LoadBingApiMenu(MenuBase* parent)
+MenuBase* PluginName::LoadBingApiMenu(MenuBase* parent)
 {
   return new BingApiExMenu(
     m_Wallpaper->Engine()->m_Setting,
@@ -337,7 +337,7 @@ MenuBase* NeoWallpaperPlg::LoadBingApiMenu(MenuBase* parent)
   );
 }
 
-MenuBase* NeoWallpaperPlg::LoadDirectApiMenu(MenuBase* parent)
+MenuBase* PluginName::LoadDirectApiMenu(MenuBase* parent)
 {
   return new DirectApiExMenu(
     m_Wallpaper->Engine()->m_Setting,
@@ -346,7 +346,7 @@ MenuBase* NeoWallpaperPlg::LoadDirectApiMenu(MenuBase* parent)
   );
 }
 
-MenuBase* NeoWallpaperPlg::LoadNativeMenu(MenuBase* parent)
+MenuBase* PluginName::LoadNativeMenu(MenuBase* parent)
 {
   return new NativeExMenu(
     m_Wallpaper->Engine()->m_Setting,
@@ -355,7 +355,7 @@ MenuBase* NeoWallpaperPlg::LoadNativeMenu(MenuBase* parent)
   );
 }
 
-MenuBase* NeoWallpaperPlg::LoadScriptMenu(MenuBase* parent)
+MenuBase* PluginName::LoadScriptMenu(MenuBase* parent)
 {
   return new ScriptExMenu(
     m_Wallpaper->Engine()->m_Setting,
@@ -364,7 +364,7 @@ MenuBase* NeoWallpaperPlg::LoadScriptMenu(MenuBase* parent)
   );
 }
 
-MenuBase* NeoWallpaperPlg::LoadFavoriteMenu(MenuBase* parent)
+MenuBase* PluginName::LoadFavoriteMenu(MenuBase* parent)
 {
   return new FavoriteExMenu(
     m_Wallpaper->Engine()->m_Setting,

@@ -1,4 +1,4 @@
-#ifdef CLASS_NAME
+#ifdef PluginName
 
 #include <pluginobject.h>
 #include <pluginmgr.h>
@@ -13,9 +13,7 @@ _declspec(dllexport)
 PluginObject* newPlugin(YJson& settings, PluginMgr* _mgr)
 {
   mgr = _mgr;
-  return new CLASS_NAME(settings);
+  return new PluginName(settings);
 }
-
-#undef CLASS_NAME
 
 #endif

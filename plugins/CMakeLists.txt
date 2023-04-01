@@ -11,6 +11,7 @@ set(plugin_list
   neowallpaperplg
   neousbplg
   neocolorplg
+  weather
 )
 
 function(include_sub_directories_recursively root_dir)
@@ -45,6 +46,7 @@ set(plugin_subdirs
   neotranslate_core
   neotranslate_qt
   neocolorplg
+  weather
 )
 
 foreach(subdir_name ${plugin_subdirs})

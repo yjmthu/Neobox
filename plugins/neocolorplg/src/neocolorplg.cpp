@@ -7,26 +7,26 @@
 #include <QAction>
 #include <QMenu>
 
-#define CLASS_NAME NeoColorPlg
+#define PluginName NeoColorPlg
+
 #include <pluginexport.cpp>
 
-
-NeoColorPlg::NeoColorPlg(YJson& settings)
+PluginName::PluginName(YJson& settings)
   : PluginObject(InitSettings(settings), u8"neocolorplg", u8"颜色拾取")
 {
   InitFunctionMap();
 }
 
-NeoColorPlg::~NeoColorPlg()
+PluginName::~PluginName()
 {
 }
 
-QAction* NeoColorPlg::InitMenuAction()
+QAction* PluginName::InitMenuAction()
 {
   return PluginObject::InitMenuAction();
 }
 
-YJson& NeoColorPlg::InitSettings(YJson& settings)
+YJson& PluginName::InitSettings(YJson& settings)
 {
   if (!settings.isObject()) {
     settings = YJson::O {
@@ -39,7 +39,7 @@ YJson& NeoColorPlg::InitSettings(YJson& settings)
   return settings;
 }
 
-void NeoColorPlg::InitFunctionMap()
+void PluginName::InitFunctionMap()
 {
   m_PluginMethod = {
     {u8"pickColor",
@@ -77,4 +77,3 @@ void NeoColorPlg::InitFunctionMap()
     }
   };
 }
-

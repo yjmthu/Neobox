@@ -7,14 +7,14 @@
 #include <QMimeData>
 #include <QDropEvent>
 
-#define CLASS_NAME NeoTranslatePlg
+#define PluginName NeoTranslatePlg
 #include <pluginexport.cpp>
 
 /*
  * NeoTranslatePlugin
  */
 
-NeoTranslatePlg::NeoTranslatePlg(YJson& settings):
+PluginName::PluginName(YJson& settings):
   PluginObject(InitSettings(settings), u8"neotranslateplg", u8"极简翻译"),
   m_TranslateDlg(new NeoTranslateDlg(settings))
 {
@@ -56,13 +56,13 @@ NeoTranslatePlg::NeoTranslatePlg(YJson& settings):
   }});
 }
 
-NeoTranslatePlg::~NeoTranslatePlg()
+PluginName::~PluginName()
 {
   delete m_MainMenuAction;
   delete m_TranslateDlg;  // must delete the dlg when plugin destroying.
 }
 
-void NeoTranslatePlg::InitFunctionMap() {
+void PluginName::InitFunctionMap() {
   m_PluginMethod = {
     {u8"toggleVisibility",
       {u8"打开窗口", u8"打开或关闭极简翻译界面", [this](PluginEvent, void* data){
@@ -116,7 +116,7 @@ void NeoTranslatePlg::InitFunctionMap() {
   };
 }
 
-QAction* NeoTranslatePlg::InitMenuAction()
+QAction* PluginName::InitMenuAction()
 {
   m_MainMenuAction = new QAction("极简翻译");
   PluginObject::InitMenuAction();
@@ -124,7 +124,7 @@ QAction* NeoTranslatePlg::InitMenuAction()
   return m_MainMenuAction;
 }
 
-YJson& NeoTranslatePlg::InitSettings(YJson& settings)
+YJson& PluginName::InitSettings(YJson& settings)
 {
   if (!settings.isObject()) {
     return settings = YJson::O {

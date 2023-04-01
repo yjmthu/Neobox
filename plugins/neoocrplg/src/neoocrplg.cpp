@@ -31,7 +31,7 @@
 #include <filesystem>
 #include <ranges>
 
-#define CLASS_NAME NeoOcrPlg
+#define PluginName NeoOcrPlg
 #include <pluginexport.cpp>
 
 namespace fs = std::filesystem;
@@ -41,7 +41,7 @@ using namespace std::literals;
  *
  */
 
-NeoOcrPlg::NeoOcrPlg(YJson& settings):
+PluginName::PluginName(YJson& settings):
   PluginObject(InitSettings(settings), u8"neoocrplg", u8"文字识别"),
   m_Ocr(new NeoOcr(settings, std::bind(&PluginMgr::SaveSettings, std::ref(mgr))))
 {
@@ -54,13 +54,13 @@ NeoOcrPlg::NeoOcrPlg(YJson& settings):
   InitFunctionMap();
 }
 
-NeoOcrPlg::~NeoOcrPlg()
+PluginName::~PluginName()
 {
   delete m_MainMenuAction;
   delete m_Ocr;
 }
 
-void NeoOcrPlg::InitFunctionMap() {
+void PluginName::InitFunctionMap() {
   m_PluginMethod = {
     {u8"screenfetch",
       {u8"截取屏幕", u8"截取屏幕区域，识别其中文字。", [this](PluginEvent, void*) {
@@ -154,7 +154,7 @@ void NeoOcrPlg::InitFunctionMap() {
   }});
 }
 
-void NeoOcrPlg::AddEngineMenu() {
+void PluginName::AddEngineMenu() {
   auto const typeAction = m_MainMenu->addAction("引擎选择");
   auto const menu = new MenuBase(m_MainMenu);
   typeAction->setMenu(menu);
@@ -184,7 +184,7 @@ void NeoOcrPlg::AddEngineMenu() {
   });
 }
 
-QAction* NeoOcrPlg::InitMenuAction()
+QAction* PluginName::InitMenuAction()
 {
   AddEngineMenu();
   this->PluginObject::InitMenuAction();
@@ -194,7 +194,7 @@ QAction* NeoOcrPlg::InitMenuAction()
   return m_MainMenuAction;
 }
 
-YJson& NeoOcrPlg::InitSettings(YJson& settings)
+YJson& PluginName::InitSettings(YJson& settings)
 {
   if (!settings.isObject()) {
     settings = YJson::O {
@@ -218,7 +218,7 @@ YJson& NeoOcrPlg::InitSettings(YJson& settings)
   // we may not need to call SaveSettings;
 }
 
-void NeoOcrPlg::ChooseLanguages()
+void PluginName::ChooseLanguages()
 {
   auto const dialog = new QDialog;
   dialog->setWindowTitle("语种选择");
@@ -230,7 +230,7 @@ void NeoOcrPlg::ChooseLanguages()
   dialog->exec();
 }
 
-void NeoOcrPlg::AddWindowsSection(QWidget* parent, QVBoxLayout* layout) {
+void PluginName::AddWindowsSection(QWidget* parent, QVBoxLayout* layout) {
   layout->addWidget(new QLabel("<h3>Windows Ocr目前支持下列语言</h3>", parent));
 
   QHBoxLayout* hlayout = nullptr;

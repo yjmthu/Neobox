@@ -10,18 +10,18 @@
 #include <powrprof.h>
 #endif
 
-#define CLASS_NAME NeoSystemPlg
+#define PluginName NeoSystemPlg
 #include <pluginexport.cpp>
 
 
-NeoSystemPlg::NeoSystemPlg(YJson& settings):
+PluginName::PluginName(YJson& settings):
   PluginObject(InitSettings(settings), u8"neosystemplg", u8"系统控制")
 {
   LoadResources();
   InitFunctionMap();
 }
 
-NeoSystemPlg::~NeoSystemPlg()
+PluginName::~PluginName()
 {
 #ifdef _WIN32
   if (m_Settings[u8"StopSleep"].isTrue()) {
@@ -31,7 +31,7 @@ NeoSystemPlg::~NeoSystemPlg()
   delete m_MainMenuAction;
 }
 
-void NeoSystemPlg::InitFunctionMap() {
+void PluginName::InitFunctionMap() {
   m_PluginMethod = {
     {u8"shutdownComputer",
       {u8"快速关机", u8"关闭计算机", [](PluginEvent, void*) {
@@ -106,7 +106,7 @@ void NeoSystemPlg::InitFunctionMap() {
   };
 }
 
-QAction* NeoSystemPlg::LoadMainMenuAction()
+QAction* PluginName::LoadMainMenuAction()
 {
   auto names = {u8"shutdownComputer", u8"restartComputer", u8"suspendedComputer"};
 
@@ -130,13 +130,13 @@ QAction* NeoSystemPlg::LoadMainMenuAction()
   return m_MainMenuAction;
 }
 
-QAction* NeoSystemPlg::InitMenuAction()
+QAction* PluginName::InitMenuAction()
 {
   this->PluginObject::InitMenuAction();
   return LoadMainMenuAction();
 }
 
-YJson& NeoSystemPlg::InitSettings(YJson& settings)
+YJson& PluginName::InitSettings(YJson& settings)
 {
   if (settings.isObject()) return settings;
   return settings = YJson::O {
@@ -146,7 +146,7 @@ YJson& NeoSystemPlg::InitSettings(YJson& settings)
 }
 
 #ifdef _WIN32
-void NeoSystemPlg::SetDesktopRightMenu(bool on)
+void PluginName::SetDesktopRightMenu(bool on)
 {
   constexpr auto prefix = L"Software\\Classes\\{}\\shell";
   const std::initializer_list<std::pair<std::wstring, wchar_t>> lst = {
@@ -188,7 +188,7 @@ void NeoSystemPlg::SetDesktopRightMenu(bool on)
   }
 }
 
-bool NeoSystemPlg::HasDesktopRightMenu()
+bool PluginName::HasDesktopRightMenu()
 {
   constexpr auto prefix = L"Software\\Classes\\{}\\shell";
   const auto lst = {L"*", L"Directory", L"Directory\\Background"};
@@ -204,7 +204,7 @@ bool NeoSystemPlg::HasDesktopRightMenu()
 }
 #endif
 
-void NeoSystemPlg::LoadResources()
+void PluginName::LoadResources()
 {
   QDir dir;
   if (!dir.exists("icons"))
