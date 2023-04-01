@@ -25,6 +25,10 @@ YJson& HttpProxy::InitSettings(YJson& settings)
       { u8"Password", YJson::String }
     };
   }
+  auto& proxy = settings[u8"Proxy"];
+  if (!proxy.isString()) {
+    proxy = GetSystemProxy();
+  }
   return settings;
 }
 
