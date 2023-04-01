@@ -139,7 +139,7 @@ void ColorDlg::SetStyleSheet()
 void ColorDlg::InitSignals()
 {
   auto const fnCopy = [](QLabel* label) {
-    QApplication::clipboard()->setText(label->text());
+    QGuiApplication::clipboard()->setText(label->text());
     mgr->ShowMsg("复制成功");
   };
   auto const fnSetColor = [](ColorDlg* that, int ratio, QColor(QColor::* const callback)(int) const) {

@@ -57,11 +57,12 @@ using namespace winrt::Windows::Security::Cryptography;
 NeoOcr::NeoOcr(YJson& settings, std::function<void()> callback)
   : CallBackFunction(callback)
   , m_Settings(settings)
-  , m_Server(settings[u8"OcrServer"].getValueDouble())
+  , m_Engine(settings[u8"OcrEngine"].getValueDouble())
   , m_TessApi(new tesseract::TessBaseAPI)
   , m_TrainedDataDir(fs::path(settings[u8"TessdataDir"].getValueString()).string())
 {
   InitLanguagesList();
+  // winrt::init_apartment();
 }
 
 NeoOcr::~NeoOcr()
@@ -93,13 +94,13 @@ void SaveSoftwareBitmapToFile(SoftwareBitmap& softwareBitmap)
 
 std::u8string NeoOcr::GetText(QImage image)
 {
-  const auto server = static_cast<Server>((int)m_Server);
-  if (server == Server::Windows) {
+  const auto engine = static_cast<Engine>((int)m_Engine);
+  if (engine == Engine::Windows) {
     if (image.format() != QImage::Format_RGBA8888) {
       image = image.convertToFormat(QImage::Format_RGBA8888);
     }
     return OcrWindows(image);
-  } else if (server == Server::Tesseract) {
+  } else if (engine == Engine::Tesseract) {
     return OcrTesseract(image);
   } else {
     return u8"~未知服务器~";

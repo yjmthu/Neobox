@@ -11,7 +11,6 @@
 #include <array>
 #include <filesystem>
 
-
 using namespace std::literals;
 
 YJson WallhavenData::InitData() {

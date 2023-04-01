@@ -44,12 +44,12 @@ NeoTranslateDlg::NeoTranslateDlg(YJson& settings)
   m_BtnCopyFrom->setText("复制");
   m_BtnCopyTo->setText("复制");
   connect(m_BtnCopyFrom, &QPushButton::clicked, this, [this]() {
-    QClipboard* clip = QApplication::clipboard();
+    auto const clip = QGuiApplication::clipboard();
     clip->setText(m_TextFrom->toPlainText());
     m_BtnCopyFrom->setText("成功");
   });
   connect(m_BtnCopyTo, &QPushButton::clicked, this, [this]() {
-    QClipboard* clip = QApplication::clipboard();
+    auto const clip = QGuiApplication::clipboard();
     clip->setText(m_TextTo->toPlainText());
     m_BtnCopyTo->setText("成功");
   });
@@ -296,8 +296,8 @@ void NeoTranslateDlg::ToggleVisibility()
   } else {
     const auto set = m_Settings[u8"ReadClipboard"];
     if (set.isTrue()) {
-      const auto *clipbord = QGuiApplication::clipboard();
-      const auto *mimeData = clipbord->mimeData();
+      const auto clipbord = QGuiApplication::clipboard();
+      const auto mimeData = clipbord->mimeData();
       if (mimeData->hasText()) {
         m_TextFrom->setPlainText(mimeData->text());
         return show();

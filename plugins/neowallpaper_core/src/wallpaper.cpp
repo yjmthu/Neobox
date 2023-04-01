@@ -181,9 +181,9 @@ Wallpaper::Wallpaper(YJson& settings, std::function<void()> callback)
       m_Favorites(WallBase::GetNewInstance(*m_Config, WallBase::FAVORITE)),
       m_BingWallpaper(WallBase::GetNewInstance(*m_Config, WallBase::BINGAPI)) {
   ReadSettings();
-  SetImageType(m_Settings.ImageType);
-  SetTimeInterval(m_Settings.TimeInterval);
-  SetFirstChange(m_Settings.FirstChange.isTrue());
+  SetImageType(m_Settings.GetImageType());
+  SetTimeInterval(m_Settings.GetTimeInterval());
+  SetFirstChange(m_Settings.GetFirstChange());
 }
 
 Wallpaper::~Wallpaper() {
@@ -228,32 +228,32 @@ void Wallpaper::SetSlot(OperatorType type) {
 }
 
 void Wallpaper::SetTimeInterval(int minute) {
-  if (static_cast<int>(m_Settings.TimeInterval) != minute) {
-    m_Settings.TimeInterval = minute;
-    m_Settings.SaveData();
+  if (m_Settings.GetTimeInterval() != minute) {
+    m_Settings.SetTimeInterval(minute);
+    // m_Settings.SaveData();
   }
   m_Timer->Expire();
-  if (!m_Settings.AutoChange.isTrue())
+  if (!m_Settings.GetAutoChange())
     return;
   m_Timer->StartTimer(minute, std::bind(&Wallpaper::SetSlot, this, OperatorType::Next));
 }
 
 std::filesystem::path Wallpaper::Url2Name(const std::u8string& url)
 {
-  std::filesystem::path imagePath = m_Settings.DropDir;
+  std::filesystem::path imagePath = m_Settings.GetDropDir();
   if (imagePath.is_relative()) {
     imagePath = fs::absolute(imagePath);
     imagePath.make_preferred();
-    m_Settings.DropDir = imagePath.u8string();
-    m_Settings.SaveData();
+    m_Settings.SetDropDir(imagePath.u8string());
+    // m_Settings.SaveData();
   }
   // }
   auto const iter = url.rfind(u8'/') + 1;
-  if (m_Settings.DropImgUseUrlName.isTrue()) {
+  if (m_Settings.GetDropImgUseUrlName()) {
     // url's separator is the '/'.
     imagePath /= url.substr(iter);
   } else {
-    const auto& fmt = m_Settings.DropNameFmt;
+    auto fmt = m_Settings.GetDropNameFmt();
     auto const extension = url.rfind(u8'.');                       // all url is img file
     auto utc = std::chrono::system_clock::now();
 
@@ -565,18 +565,19 @@ void Wallpaper::SetAutoChange(bool flag) {
   m_Timer->Expire();
 
   Locker locker(m_DataMutex);
-  m_Settings.AutoChange = flag;
-  m_Settings.SaveData();
+  m_Settings.SetAutoChange(flag);
+  // m_Settings.SaveData();
   if (flag) {
-    m_Timer->ResetTime(m_Settings.TimeInterval,
-                        std::bind(&Wallpaper::SetSlot, this, OperatorType::Next));
+    m_Timer->ResetTime(
+    m_Settings.GetTimeInterval(),
+        std::bind(&Wallpaper::SetSlot, this, OperatorType::Next));
   }
 }
 
 void Wallpaper::SetFirstChange(bool flag) {
   m_DataMutex.lock();
-  m_Settings.FirstChange = flag;
-  m_Settings.SaveData();
+  m_Settings.SetFirstChange(flag);
+  // m_Settings.SaveData();
   m_DataMutex.unlock();
 
   if (flag) {
@@ -601,9 +602,9 @@ bool Wallpaper::SetImageType(int index) {
     return false;
   }
 
-  if (static_cast<int>(m_Settings.ImageType) != index) {
-    m_Settings.ImageType = index;
-    m_Settings.SaveData();
+  if (m_Settings.GetImageType() != index) {
+    m_Settings.SetImageType(index);
+    // m_Settings.SaveData();
   }
 
   m_Wallpaper = WallBase::GetNewInstance(*m_Config, index);

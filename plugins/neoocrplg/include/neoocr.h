@@ -13,7 +13,7 @@ class QImage;
 
 class NeoOcr {
 public:
-  enum class Server { Windows, Tesseract, Paddle, Other };
+  enum class Engine { Windows, Tesseract, Paddle, Other };
   NeoOcr(class YJson& settings, std::function<void()> callback);
   ~NeoOcr();
   std::u8string GetText(QImage image);
@@ -27,7 +27,7 @@ private:
   std::u8string OcrTesseract(const QImage& image);
 private:
   class YJson& m_Settings;
-  double& m_Server;
+  double& m_Engine;
   const std::function<void()> CallBackFunction;
   std::u8string GetLanguageName(const std::u8string& url);
   void DownloadFile(const std::u8string& url,

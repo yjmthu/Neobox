@@ -14,7 +14,7 @@
 #include <functional>
 
 #include <wallbase.h>
-#include <yjson.h>
+#include <wallcongig.h>
 
 namespace fs = std::filesystem;
 
@@ -22,28 +22,6 @@ enum class OperatorType {
   Next, UNext, Dislike, UDislike, Favorite, UFavorite
 };
 
-struct WallConfig {
-  explicit WallConfig(YJson& settings, std::function<void()> callback)
-    : ImageType(settings[u8"ImageType"].getValueDouble())
-    , TimeInterval(settings[u8"TimeInterval"].getValueDouble())
-    , AutoChange(settings[u8"AutoChange"])
-    , FirstChange(settings[u8"FirstChange"])
-    , DropImgUseUrlName(settings[u8"DropImgUseUrlName"])
-    , DropDir(settings[u8"DropDir"].getValueString())
-    , DropNameFmt(settings[u8"DropNameFmt"].getValueString())
-    , SaveData(std::move(callback))
-  { }
-  double& ImageType;
-  double& TimeInterval;
-  YJson& AutoChange;
-  YJson& FirstChange;
-  YJson& DropImgUseUrlName;
-
-  std::u8string& DropDir;
-  std::u8string& DropNameFmt;
-
-  const std::function<void()> SaveData;
-};
 
 class Wallpaper {
   enum class Desktop { WIN, KDE, DDE, GNOME, XFCE, UNKNOWN };

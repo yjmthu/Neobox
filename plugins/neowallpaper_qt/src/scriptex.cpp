@@ -133,16 +133,14 @@ void ScriptExMenu::RenameApi(QAction* action)
 void ScriptExMenu::EditApi(QAction* action)
 {
   auto& u8dir = m_Data[u8"cmds"][PluginObject::QString2Utf8(action->text())][u8"directory"].getValueString();
-  auto const newdir = QFileDialog::getExistingDirectory(this, "选择本地壁纸文件夹", PluginObject::Utf82QString(u8dir));
+  auto newdir = GetExistingDirectory("选择本地壁纸文件夹", u8dir);
 
-  if (newdir.isEmpty()) {
+  if (!newdir) {
     mgr->ShowMsg("取消设置成功。");
     return;
   }
 
-  fs::path path = newdir.toStdU16String();
-  path.make_preferred();
-  u8dir = path.u8string();
+  u8dir.swap(*newdir);
 
   SaveSettings();
   mgr->ShowMsg("设置成功！");

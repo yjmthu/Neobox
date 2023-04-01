@@ -7,7 +7,6 @@
 
 namespace fs = std::filesystem;
 
-
 MenuBase::MenuBase(QWidget* parent)
   : QMenu(parent)
 {
@@ -24,6 +23,7 @@ MenuBase::~MenuBase()
 std::optional<std::u8string> MenuBase::GetExistingDirectory(
   QString title, const QAnyStringView oldDirectory
 ) {
+
   auto oldDir = oldDirectory.toString();
   auto const newDir = QFileDialog::getExistingDirectory(this, title, oldDir);
 

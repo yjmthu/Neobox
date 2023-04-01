@@ -18,7 +18,7 @@ private:
   YJson& InitSettings(YJson& settings);
   void ChooseLanguages();
   void InitMenu();
-  void AddServerMenu();
+  void AddEngineMenu();
   void AddWindowsSection(QWidget* parent, QVBoxLayout* layout);
   void AddTesseractSection(QWidget* parent, QVBoxLayout* layout);
 private:

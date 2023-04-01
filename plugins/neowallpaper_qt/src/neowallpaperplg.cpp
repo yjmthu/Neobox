@@ -31,11 +31,11 @@
 
 NeoWallpaperPlg::NeoWallpaperPlg(YJson& settings):
   PluginObject(InitSettings(settings), u8"neowallpaperplg", u8"壁纸引擎"),
-  m_Wallpaper(new Wallpaper(m_Settings, std::bind(&PluginMgr::SaveSettings, mgr)))
+  m_Wallpaper(new Wallpaper(m_Settings, std::bind(&PluginMgr::SaveSettings, std::ref(mgr))))
 {
-  QDir dir;
-  if (!dir.exists("junk"))
-    dir.mkdir("junk");
+  if (!fs::exists("junk")) {
+    fs::create_directory("junk");
+  }
   InitFunctionMap();
 }
 
@@ -51,7 +51,7 @@ void NeoWallpaperPlg::InitFunctionMap()
   m_PluginMethod = {
     {u8"setTimeInterval",
       {u8"时间间隔", u8"设置更换壁纸的时间间隔", [this](PluginEvent, void*){
-        int const iOldTime = m_Wallpaper->m_Settings.TimeInterval;
+        int const iOldTime = m_Wallpaper->m_Settings.GetTimeInterval();
         auto iNewTime = mgr->m_Menu->GetNewInt("输入时间间隔", "时间间隔（分钟）", 5, 65535, iOldTime);
         if (!iNewTime) {
           mgr->ShowMsg("设置时间间隔失败！");
@@ -73,7 +73,7 @@ void NeoWallpaperPlg::InitFunctionMap()
           m_Wallpaper->SetAutoChange(*reinterpret_cast<bool*>(data));
           mgr->ShowMsg("设置成功！");
         } else if (event == PluginEvent::BoolGet) {
-          *reinterpret_cast<bool*>(data) = m_Wallpaper->m_Settings.AutoChange.isTrue();
+          *reinterpret_cast<bool*>(data) = m_Wallpaper->m_Settings.GetAutoChange();
         }
       },
       PluginEvent::Bool }
@@ -84,7 +84,7 @@ void NeoWallpaperPlg::InitFunctionMap()
           m_Wallpaper->SetFirstChange(*reinterpret_cast<bool*>(data));
           mgr->ShowMsg("设置成功！");
         } else if (event == PluginEvent::BoolGet) {
-          *reinterpret_cast<bool*>(data) = m_Wallpaper->m_Settings.FirstChange.isTrue();
+          *reinterpret_cast<bool*>(data) = m_Wallpaper->m_Settings.GetFirstChange();
         }
       }, PluginEvent::Bool },
     }
@@ -95,14 +95,8 @@ void NeoWallpaperPlg::InitFunctionMap()
       const auto mimeData = reinterpret_cast<QDropEvent*>(data)->mimeData();
       if (!mimeData->hasUrls()) return;
       auto urls = mimeData->urls();
-      // auto picUrlsView =
-      // urls | std::views::filter([](const QUrl& i) { return i.isValid() && (i.isLocalFile() || i.scheme().startsWith("http")); })
-      // | std::views::transform([](const QUrl& i) {
-      //   auto const data = i.isLocalFile() ? i.toLocalFile() : i.toString();
-      // });
       if (urls.empty()) return;
-      auto& url = urls.front();
-      if (url.isValid()) {
+      if (auto& url = urls.front(); url.isValid()) {
         QByteArray buffer;
         if (url.isLocalFile()) {
           buffer = url.toLocalFile().toUtf8();
@@ -237,7 +231,7 @@ void NeoWallpaperPlg::LoadWallpaperTypeMenu(MenuBase* pluginMenu)
   mainAction->setMenu(m_WallpaperTypesMenu);
   m_WallpaperTypesGroup = new QActionGroup(m_WallpaperTypesMenu);
 
-  const int curType = m_Wallpaper->m_Settings.ImageType;
+  const int curType = m_Wallpaper->m_Settings.GetImageType();
 
   for (size_t i = 0; i != 6; ++i) {
     QAction* action = m_WallpaperTypesMenu->addAction(sources[2*i]);
@@ -245,7 +239,7 @@ void NeoWallpaperPlg::LoadWallpaperTypeMenu(MenuBase* pluginMenu)
     action->setCheckable(true);
     m_WallpaperTypesGroup->addAction(action);
     QObject::connect(action, &QAction::triggered, m_WallpaperTypesMenu, [this, i, pluginMenu]() {
-      const int oldType = m_Wallpaper->m_Settings.ImageType;
+      const int oldType = m_Wallpaper->m_Settings.GetImageType();
       if (m_Wallpaper->SetImageType(i)) {
         LoadWallpaperExMenu(pluginMenu);
         mgr->ShowMsg("设置壁纸来源成功！");
@@ -275,20 +269,14 @@ void NeoWallpaperPlg::LoadDropMenu(QAction* action)
   auto actionDir = menu->addAction("拖拽文件夹");
   actionDir->setToolTip("当\"拖拽至当前\"取消勾选时，拖拽壁纸存放的文件夹。");
   QObject::connect(actionDir, &QAction::triggered, m_MainMenu, [this](){
-    auto& u8Folder = m_Settings[u8"DropDir"].getValueString();
+    auto u8Folder = m_Wallpaper->m_Settings.GetDropDir();
+    auto qFolder = m_MainMenu->GetExistingDirectory("选择拖拽壁纸存放的文件夹", u8Folder);
 
-    auto qFolder = QFileDialog::getExistingDirectory(m_MainMenu, "选择拖拽壁纸存放的文件夹", Utf82QString(u8Folder));
-
-    if (qFolder.isEmpty()) {
+    if (!qFolder) {
       mgr->ShowMsg("取消设置成功");
       return;
     }
-
-    fs::path path = qFolder.toStdU16String();
-    path.make_preferred();
-
-    u8Folder = path.u8string();
-    mgr->SaveSettings();
+    m_Wallpaper->m_Settings.SetDropDir(std::move(*qFolder));
     mgr->ShowMsg("设置成功！");
   });
 
@@ -297,21 +285,20 @@ void NeoWallpaperPlg::LoadDropMenu(QAction* action)
   actionDefaultName->setToolTip("拖拽壁纸后，使用链接中的名称作为壁纸文件名称");
   actionDefaultName->setChecked(m_Settings[u8"DropImgUseUrlName"].isTrue());
   QObject::connect(actionDefaultName, &QAction::triggered, m_MainMenu, [this](bool on){
-    m_Settings[u8"DropImgUseUrlName"] = on;
-    mgr->SaveSettings();
+    m_Wallpaper->m_Settings.SetDropImgUseUrlName(on);
+    mgr->ShowMsg("保存成功！");
   });
 
   auto const actionNameFmt = menu->addAction("自定义名称");
   actionNameFmt->setToolTip("当\"使用链接名称\"取消勾选时，拖拽壁纸存使用的名称。");
   QObject::connect(actionNameFmt, &QAction::triggered, m_MainMenu, [this](){
-    auto& u8name = m_Settings[u8"DropNameFmt"].getValueString();
-    auto qNewName = QInputDialog::getText(m_MainMenu, "请输入格式字符串", "输入拖拽壁纸的c++ format命名格式，错误输入会导致程序崩溃。0: 当前时间; 1: 链接自带名称.", QLineEdit::EchoMode::Normal, Utf82QString(u8name));
-    if (qNewName.isEmpty()) {
+    auto u8name = m_Wallpaper->m_Settings.GetDropNameFmt();
+    auto qNewName = m_MainMenu->GetNewU8String("请输入格式字符串", "输入拖拽壁纸的c++ format命名格式，错误输入会导致程序崩溃。0: 当前时间; 1: 链接自带名称.", u8name);
+    if (!qNewName) {
       mgr->ShowMsg("取消设置成功！");
       return;
     }
-    u8name = QString2Utf8(qNewName);
-    mgr->SaveSettings();
+    m_Wallpaper->m_Settings.SetDropNameFmt(std::move(*qNewName));
     mgr->ShowMsg("设置成功！");
   });
 }
@@ -327,7 +314,7 @@ void NeoWallpaperPlg::LoadWallpaperExMenu(MenuBase* parent)
     &NeoWallpaperPlg::LoadFavoriteMenu,
   };
   delete m_MoreSettingsAction->menu();
-  auto const menu = (this->*m_MenuLoaders[static_cast<size_t>(m_Wallpaper->m_Settings.ImageType)])(parent);
+  auto const menu = (this->*m_MenuLoaders[static_cast<size_t>(m_Wallpaper->m_Settings.GetImageType())])(parent);
   m_MoreSettingsAction->setMenu(menu);
 }
 

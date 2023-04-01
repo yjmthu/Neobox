@@ -26,6 +26,7 @@
 #include <QActionGroup>
 #include <QRadioButton>
 #include <QButtonGroup>
+#include <QMessageBox>
 
 #include <filesystem>
 #include <ranges>
@@ -42,13 +43,13 @@ using namespace std::literals;
 
 NeoOcrPlg::NeoOcrPlg(YJson& settings):
   PluginObject(InitSettings(settings), u8"neoocrplg", u8"文字识别"),
-  m_Ocr(new NeoOcr(settings, std::bind(&PluginMgr::SaveSettings, mgr)))
+  m_Ocr(new NeoOcr(settings, std::bind(&PluginMgr::SaveSettings, std::ref(mgr))))
 {
-  QDir dir;
-  auto lst = {"tessdata"};
-  for (auto i : lst) {
-    if (!dir.exists(i))
-      dir.mkdir(i);
+  std::array<fs::path, 1> lst = { u8"tessdata"s };
+  for (auto i: lst) {
+    if (!fs::exists(i)) {
+      fs::create_directory(i);
+    }
   }
   InitFunctionMap();
 }
@@ -76,7 +77,7 @@ void NeoOcrPlg::InitFunctionMap() {
           return;
         std::u8string str = m_Ocr->GetText(std::move(image));
         if (m_Settings[u8"WriteClipboard"].isTrue()) {
-          QApplication::clipboard()->setText(QString::fromUtf8(str.data(), str.size()));
+          QGuiApplication::clipboard()->setText(QString::fromUtf8(str.data(), str.size()));
           mgr->ShowMsg("复制数据成功");
         }
         if (m_Settings[u8"ShowWindow"].isTrue()) {
@@ -153,8 +154,8 @@ void NeoOcrPlg::InitFunctionMap() {
   }});
 }
 
-void NeoOcrPlg::AddServerMenu() {
-  auto const typeAction = m_MainMenu->addAction("谁在识别");
+void NeoOcrPlg::AddEngineMenu() {
+  auto const typeAction = m_MainMenu->addAction("引擎选择");
   auto const menu = new MenuBase(m_MainMenu);
   typeAction->setMenu(menu);
   auto const group = new QActionGroup(menu);
@@ -172,12 +173,12 @@ void NeoOcrPlg::AddServerMenu() {
     group->addAction(action);
   }
 
-  // servers.at(m_Settings[u8"OcrServer"].getValueInt())
-  group->actions().at(m_Settings[u8"OcrServer"].getValueInt())->setChecked(true);
+  // servers.at(m_Settings[u8"OcrEngine"].getValueInt())
+  group->actions().at(m_Settings[u8"OcrEngine"].getValueInt())->setChecked(true);
 
   QObject::connect(group, &QActionGroup::triggered, menu, [this](QAction* action){
     // 目前必须是.getValueDouble()
-    m_Settings[u8"OcrServer"].getValueDouble() = static_cast<int>(servers.indexOf(action->text()));
+    m_Settings[u8"OcrEngine"].getValueDouble() = static_cast<int>(servers.indexOf(action->text()));
     mgr->ShowMsg("保存成功");
     mgr->SaveSettings();
   });
@@ -185,35 +186,34 @@ void NeoOcrPlg::AddServerMenu() {
 
 QAction* NeoOcrPlg::InitMenuAction()
 {
-  AddServerMenu();
+  AddEngineMenu();
   this->PluginObject::InitMenuAction();
   m_MainMenuAction = new QAction("文字识别");
-  QObject::connect(m_MainMenuAction, &QAction::triggered, m_MainMenu, std::bind(m_PluginMethod[u8"screenfetch"].function, PluginEvent::Void, nullptr));
+  QObject::connect(m_MainMenuAction, &QAction::triggered, m_MainMenu,
+      std::bind(m_PluginMethod[u8"screenfetch"].function, PluginEvent::Void, nullptr));
   return m_MainMenuAction;
 }
 
 YJson& NeoOcrPlg::InitSettings(YJson& settings)
 {
   if (!settings.isObject()) {
-    return settings = YJson::O {
+    settings = YJson::O {
       { u8"TessdataDir", u8"tessdata" },
-      { u8"Languages", YJson::A { u8"chi_sim", u8"eng" } },
-      { u8"WriteClipboard", false },
-      { u8"ShowWindow", true },
-      { u8"Version", 0},
+      { u8"Languages", YJson::A { u8"chi_sim", u8"eng" } }
     };
   }
   auto& version = settings[u8"Version"];
   if (!version.isNumber()) {
-    version = 0;
+    version = 0;  // 非number不能使用getValueDouble
     settings[u8"WriteClipboard"] = false;
     settings[u8"ShowWindow"] = true;
   }
   if (version.getValueInt() == 0) {
-    version = 1;
-    settings[u8"OcrServer"] = 0;
+    version.getValueDouble() = 1;
+    settings[u8"OcrEngine"] = 0;
     settings[u8"WinLan"] = u8"user-Profile";
   }
+
   return settings;
   // we may not need to call SaveSettings;
 }
