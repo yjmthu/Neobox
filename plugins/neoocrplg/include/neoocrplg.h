@@ -2,6 +2,7 @@
 #define NEOOCRPLG_H
 
 #include <pluginobject.h>
+#include <ocrconfig.h>
 
 class QWidget;
 class QVBoxLayout;
@@ -22,6 +23,7 @@ private:
   void AddWindowsSection(QWidget* parent, QVBoxLayout* layout);
   void AddTesseractSection(QWidget* parent, QVBoxLayout* layout);
 private:
+  OcrConfig m_Settings;
   class OcrDialog* m_OcrDialog;
   QAction* m_MainMenuAction;
   class NeoOcr* const m_Ocr;

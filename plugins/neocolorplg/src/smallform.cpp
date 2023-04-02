@@ -3,6 +3,7 @@
 #include <pluginmgr.h>
 #include <colordlg.hpp>
 #include <yjson.h>
+#include <colorconfig.h>
 
 #include <QKeyEvent>
 #include <QMouseEvent>
@@ -19,7 +20,7 @@ SmallForm* SmallForm::m_Instance = nullptr;
 
 HHOOK SmallForm::m_Hoock[2] { nullptr, nullptr };
 
-SmallForm::SmallForm(YJson& settings)
+SmallForm::SmallForm(ColorConfig& settings)
   : QWidget(nullptr, Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool)
   , m_Settings(settings)
   , m_Color()
@@ -143,7 +144,7 @@ void SmallForm::QuitHook(bool succeed)
   delete this;
 }
 
-void SmallForm::PickColor(YJson& settings)
+void SmallForm::PickColor(ColorConfig& settings)
 {
   if (m_Instance) {
     mgr->ShowMsg("正在拾取颜色！");

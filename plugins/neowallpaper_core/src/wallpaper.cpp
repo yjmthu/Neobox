@@ -172,14 +172,14 @@ bool Wallpaper::SetWallpaper(fs::path imagePath) {
 #endif
 }
 
-Wallpaper::Wallpaper(YJson& settings, std::function<void()> callback)
-    :
-      m_Settings(settings, callback),
-      m_Config(fs::exists(WallBase::m_ConfigPath) ? new YJson(WallBase::m_ConfigPath, YJson::UTF8): new YJson(YJson::Object)),
-      m_Wallpaper(nullptr),
-      m_Timer(new NeoTimer),
-      m_Favorites(WallBase::GetNewInstance(*m_Config, WallBase::FAVORITE)),
-      m_BingWallpaper(WallBase::GetNewInstance(*m_Config, WallBase::BINGAPI)) {
+Wallpaper::Wallpaper(YJson& settings)
+  : m_Settings(settings)
+  , m_Config(fs::exists(WallBase::m_ConfigPath) ? new YJson(WallBase::m_ConfigPath, YJson::UTF8): new YJson(YJson::Object))
+  , m_Wallpaper(nullptr)
+  , m_Timer(new NeoTimer)
+  , m_Favorites(WallBase::GetNewInstance(*m_Config, WallBase::FAVORITE))
+  , m_BingWallpaper(WallBase::GetNewInstance(*m_Config, WallBase::BINGAPI))
+{
   ReadSettings();
   SetImageType(m_Settings.GetImageType());
   SetTimeInterval(m_Settings.GetTimeInterval());

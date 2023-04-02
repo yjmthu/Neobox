@@ -2,6 +2,7 @@
 #define NEOSPEEDBOXPLG_H
 
 #include <pluginobject.h>
+#include <speedboxcfg.h>
 
 class MenuBase;
 
@@ -16,6 +17,8 @@ protected:
 public:
   explicit NeoSpeedboxPlg(YJson& settings);
   virtual ~NeoSpeedboxPlg();
+private:
+  SpeedBoxCfg m_Settings;
 public:
   class NetSpeedHelper* m_NetSpeedHelper;
 private:

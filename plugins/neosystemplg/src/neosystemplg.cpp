@@ -2,6 +2,7 @@
 #include <yjson.h>
 #include <systemapi.h>
 #include <menubase.hpp>
+#include <neoconfig.h>
 
 #include <QDir>
 
@@ -13,9 +14,14 @@
 #define PluginName NeoSystemPlg
 #include <pluginexport.cpp>
 
+class SystemCfg: public NeoConfig {
+  ConfigConsruct(SystemCfg)
+  CfgBool(StopSleep)
+};
 
-PluginName::PluginName(YJson& settings):
-  PluginObject(InitSettings(settings), u8"neosystemplg", u8"系统控制")
+PluginName::PluginName(YJson& settings)
+  : PluginObject(InitSettings(settings), u8"neosystemplg", u8"系统控制")
+  , m_Settings(new SystemCfg(settings))
 {
   LoadResources();
   InitFunctionMap();
@@ -24,11 +30,12 @@ PluginName::PluginName(YJson& settings):
 PluginName::~PluginName()
 {
 #ifdef _WIN32
-  if (m_Settings[u8"StopSleep"].isTrue()) {
+  if (m_Settings->GetStopSleep()) {
     SetThreadExecutionState(ES_CONTINUOUS);
   }
 #endif
   delete m_MainMenuAction;
+  delete m_Settings;
 }
 
 void PluginName::InitFunctionMap() {
@@ -91,11 +98,10 @@ void PluginName::InitFunctionMap() {
             SetThreadExecutionState(ES_CONTINUOUS);
             mgr->ShowMsg("关闭成功");
           }
-          m_Settings[u8"StopSleep"] = on;
-          mgr->SaveSettings();
+          m_Settings->SetStopSleep(on);
         } else if (event == PluginEvent::BoolGet) {
           auto& on = *reinterpret_cast<bool *>(data);
-          on = m_Settings[u8"StopSleep"].isTrue();
+          on = m_Settings->GetStopSleep();
           if (on) {
             SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED);
           }

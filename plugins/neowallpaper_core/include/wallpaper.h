@@ -14,7 +14,7 @@
 #include <functional>
 
 #include <wallbase.h>
-#include <wallcongig.h>
+#include <wallconfig.h>
 
 namespace fs = std::filesystem;
 
@@ -74,7 +74,7 @@ private:
   static constexpr char m_szWallScript[16]{"SetWallpaper.sh"};
 
 public:
-  explicit Wallpaper(class YJson& settings, std::function<void()>);
+  explicit Wallpaper(class YJson& settings);
   virtual ~Wallpaper();
 
 private:

@@ -5,6 +5,8 @@
 #include <QAbstractNativeEventFilter>
 #include <map>
 
+#include <usbconfig.h>
+
 #ifdef _WIN32
 class NeoUsbPlg: public QAbstractNativeEventFilter, public PluginObject
 #else
@@ -23,6 +25,7 @@ private:
   YJson& InitSettings(YJson& settings);
   void InitFunctionMap() override;
 private:
+  UsbConfig m_Settings;
   class QAction* m_MainMenuAction;
   class UsbDlg* m_UsbDlg;
   // std::map<char, class UsbDlg*> m_Items;

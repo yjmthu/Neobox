@@ -13,6 +13,7 @@
 
 PluginName::PluginName(YJson& settings)
   : PluginObject(InitSettings(settings), u8"neousbplg", u8"U盘助手")
+  , m_Settings(settings)
   , m_UsbDlg(new UsbDlg(m_Settings))
 {
   InitFunctionMap();
@@ -41,17 +42,16 @@ void PluginName::InitFunctionMap()
     {u8"enableHideAside",
       {u8"贴边隐藏", u8"靠是否右贴边隐藏", [this](PluginEvent event, void* data){
         if (event == PluginEvent::Bool) {
-          m_Settings[u8"HideAside"] = *reinterpret_cast<bool *>(data);
-          mgr->SaveSettings();
+          m_Settings.SetHideAside(*reinterpret_cast<bool *>(data));
         } else if (event == PluginEvent::BoolGet) {
-          *reinterpret_cast<bool *>(data) = m_Settings[u8"HideAside"].isTrue();
+          *reinterpret_cast<bool *>(data) = m_Settings.GetHideAside();
         }
       }, PluginEvent::Bool}
     },
     {u8"moveInscreen",
       {u8"还原位置", u8"找不到窗口时可使用还原位置", [this](PluginEvent, void*){
         m_UsbDlg->hide();
-        m_Settings[u8"Position"] = YJson::Null;
+        m_Settings.SetPosition(YJson::Null);
         m_UsbDlg->show();
         // QMetaObject::invokeMethod(m_UsbDlg, &QWidget::show);
       }, PluginEvent::Void}
@@ -59,10 +59,9 @@ void PluginName::InitFunctionMap()
     {u8"enableHideWhenFull",
       {u8"全屏隐藏", u8"有全屏程序运行时是否隐藏", [this](PluginEvent event, void* data){
         if (event == PluginEvent::Bool) {
-          m_Settings[u8"HideWhenFull"] = *reinterpret_cast<bool *>(data);
-          mgr->SaveSettings();
+          m_Settings.SetHideWhenFull(*reinterpret_cast<bool *>(data));
         } else if (event == PluginEvent::BoolGet) {
-          *reinterpret_cast<bool *>(data) = m_Settings[u8"HideWhenFull"].isTrue();
+          *reinterpret_cast<bool *>(data) = m_Settings.GetHideWhenFull();
         }
       }, PluginEvent::Bool}
     },

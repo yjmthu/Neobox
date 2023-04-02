@@ -13,14 +13,10 @@ struct Utf8Array {
   const char8_t* end;
 };
 
-class LanPair {
-public:
-  double& from;
-  double& to;
-public:
-  explicit LanPair(class YJson& array);
-  auto f() const { return static_cast<size_t>(from); }
-  auto t() const { return static_cast<size_t>(to); } 
+struct LanPair {
+  int f;
+  int t;
+  LanPair(const class YJson& array);
 };
 
 class Translate {
@@ -31,7 +27,7 @@ public:
   typedef std::function<void(const void*, size_t)> Callback ;
 
 public:
-  explicit Translate(class YJson& setting, Callback&& callback);
+  explicit Translate(class TranslateCfg& setting, Callback&& callback);
   ~Translate();
 
 public:
@@ -46,10 +42,9 @@ public:
   inline Source GetSource() const { return m_Source; }
   std::optional<std::pair<int, int>> ReverseLanguage();
 
-private:
-  LanPair m_LanPairBaidu, m_LanPairYoudao;
-  const Callback m_Callback;
 public:
+  const Callback m_Callback;
+  LanPair m_LanPairBaidu, m_LanPairYoudao;
   LanPair* m_LanPair;
   static std::map<std::u8string, std::u8string> m_LangNameMap;
   static const LanguageMap m_LanguageCanFromTo;

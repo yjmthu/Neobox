@@ -12,7 +12,9 @@
 #include <pluginexport.cpp>
 
 PluginName::PluginName(YJson& settings)
-  : PluginObject(InitSettings(settings), u8"neocolorplg", u8"颜色拾取")
+  : PluginObject(InitSettings(settings)
+  , u8"neocolorplg", u8"颜色拾取")
+  , m_Settings(settings)
 {
   InitFunctionMap();
 }
@@ -64,13 +66,12 @@ void PluginName::InitFunctionMap()
     {u8"setHistoryMaxCount",
       {u8"历史数量", u8"设置颜色历史记录条数最大值。", [this](PluginEvent, void*)
         {
-          auto& count = m_Settings[u8"HistoryMaxCount"].getValueDouble();
+          auto count = m_Settings.GetHistoryMaxCount();
           auto result = m_MainMenu->GetNewInt("输入数字", "颜色历史的最大数量", 10, 300, count);
           if (!result) {
             return;
           }
-          count = *result;
-          mgr->SaveSettings();
+          m_Settings.SetHistoryMaxCount(*result);
           mgr->ShowMsg("保存成功");
         }
       , PluginEvent::Void}

@@ -27,7 +27,7 @@ protected:
   void enterEvent(QEnterEvent* event) override;
   void leaveEvent(QEvent* event) override;
 public:
-  explicit UsbDlg(class YJson& settings);
+  explicit UsbDlg(class UsbConfig& settings);
   ~UsbDlg();
 #ifdef _WIN32
   static std::string GetDrives(const void* lpdb);
@@ -50,8 +50,7 @@ private:
   void GetUsbInfo();
 private:
   QPoint m_ConstPos;
-  YJson& m_Settings;
-  YJson& m_Position;
+  UsbConfig& m_Settings;
   QWidget* m_CenterWidget;
   void* m_AppBarData;
   class QPropertyAnimation* m_Animation;

@@ -20,14 +20,13 @@ ColorDlg* ColorDlg::m_Instance = nullptr;
 
 void ColorDlg::SaveTopState(bool isTop)
 {
-  m_Settings[u8"StayTop"] = isTop;
-  mgr->SaveSettings();
+  m_Settings.SetStayTop(isTop);
 }
 
-ColorDlg::ColorDlg(YJson& settings)
-  : WidgetBase(nullptr, false, settings[u8"StayTop"].isTrue())
+ColorDlg::ColorDlg(ColorConfig& settings)
+  : WidgetBase(nullptr, false, settings.GetStayTop())
   , m_Settings(settings)
-  , m_ColorsArray(settings[u8"History"])
+  , m_ColorsArray(m_Settings.GetHistory())
   , m_CenterWidget(new QWidget(this))
   , ui(new Ui::ColorForm)
   , m_ColorsChanged(false)
@@ -102,6 +101,7 @@ void ColorDlg::RemoveColor(const QColor& color)
   auto iter = m_Colors.find(name);
   if (iter != m_Colors.end()) {
     m_ColorsArray.removeByValA(PluginObject::QString2Utf8(name));
+    m_Settings.SetHistory(m_ColorsArray.getArray());
     m_Colors.erase(iter);
   }
 }
@@ -213,7 +213,7 @@ void ColorDlg::SaveHistory()
 
   auto& array = m_ColorsArray.getArray();
   auto iter = array.cbegin();
-  int const max = static_cast<int>(m_Settings[u8"HistoryMaxCount"].getValueDouble());
+  int const max = m_Settings.GetHistoryMaxCount();
 
   for (int i=0; i!=max; ++i) {
     if (iter != array.cend()) {
@@ -226,7 +226,7 @@ void ColorDlg::SaveHistory()
     array.erase(iter, array.end());
   }
 
-  mgr->SaveSettings();
+  m_Settings.SetHistory(array);
 }
 
 #if 0
@@ -276,6 +276,7 @@ void ColorDlg::AddColor(const QColor& color)
   }
   auto& array = m_ColorsArray.getArray();
   array.insert(array.begin(), str);
+  m_Settings.SetHistory(array);
 
   auto const item = new QListWidgetItem;
   item->setSizeHint(QSize(66, 46));

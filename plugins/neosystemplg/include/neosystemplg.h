@@ -17,6 +17,7 @@ private:
   static void SetDesktopRightMenu(bool on);
   static bool HasDesktopRightMenu();
   YJson& InitSettings(YJson& settings);
+  class SystemCfg* m_Settings;
   QAction* m_MainMenuAction;
 };
 

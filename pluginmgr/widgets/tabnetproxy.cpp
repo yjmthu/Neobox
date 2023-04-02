@@ -62,8 +62,7 @@ void TabNetProxy::SaveData()
   } else {
     HttpLib::m_Proxy->SetType(2);
   }
-
-  mgr->SaveSettings();
+  //  to do save
   mgr->ShowMsg("保存成功~");
 }
 

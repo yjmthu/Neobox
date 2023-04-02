@@ -44,7 +44,8 @@ using namespace std::literals;
 
 PluginName::PluginName(YJson& settings)
   : PluginObject(InitSettings(settings), u8"neoocrplg", u8"文字识别")
-  , m_Ocr(new NeoOcr(settings, std::bind(&PluginMgr::SaveSettings, std::ref(mgr))))
+  , m_Settings(settings)
+  , m_Ocr(new NeoOcr(m_Settings))
   , m_OcrDialog(nullptr)
 {
   std::array<fs::path, 1> lst = { u8"tessdata"s };
@@ -90,27 +91,25 @@ void PluginName::InitFunctionMap() {
         if (!box->HaveCatchImage())
           return;
         std::u8string str = m_Ocr->GetText(std::move(image));
-        if (m_Settings[u8"WriteClipboard"].isTrue()) {
+        if (m_Settings.GetWriteClipboard()) {
           QGuiApplication::clipboard()->setText(QString::fromUtf8(str.data(), str.size()));
           mgr->ShowMsg("复制数据成功");
         }
-        if (m_Settings[u8"ShowWindow"].isTrue()) {
+        if (m_Settings.GetShowWindow()) {
           SendBroadcast(PluginEvent::U8string, &str);
         }
       }, PluginEvent::Void},
     },
     {u8"setDataDir",
       {u8"设置路径", u8"设置训练数据（语言包）的存储位置", [this](PluginEvent, void*) {
-        std::u8string& u8Path =
-            m_Settings[u8"TessdataDir"].getValueString();
+        std::u8string u8Path = m_Settings.GetTessdataDir();
         auto u8PathNew = mgr->m_Menu->GetExistingDirectory("请选择Tessdata数据文件存放位置", u8Path);
         if (!u8PathNew) {
           mgr->ShowMsg("取消设置成功！");
           return;
         } else {
           m_Ocr->SetDataDir(*u8PathNew);
-          u8Path.swap(*u8PathNew);
-          mgr->SaveSettings();
+          m_Settings.SetTessdataDir(std::move(*u8PathNew));
           mgr->ShowMsg("设置数据文件失成功！");
         }
       }, PluginEvent::Void},
@@ -124,22 +123,20 @@ void PluginName::InitFunctionMap() {
     {u8"enableWriteClipboard",
       {u8"复制文字", u8"复制文字到剪切板", [this](PluginEvent event, void* data) {
         if (event == PluginEvent::Bool) {
-          m_Settings[u8"WriteClipboard"] =  *reinterpret_cast<bool*>(data);
-          mgr->SaveSettings();
+          m_Settings.SetWriteClipboard(*reinterpret_cast<bool*>(data));
           mgr->ShowMsg("设置成功");
         } else if (event == PluginEvent::BoolGet) {
-          *reinterpret_cast<bool*>(data) = m_Settings[u8"WriteClipboard"].isTrue();
+          *reinterpret_cast<bool*>(data) = m_Settings.GetWriteClipboard();
         }
       }, PluginEvent::Bool}
     },
     {u8"enableShowWindow",
       {u8"显示窗口", u8"唤起极简翻译窗口", [this](PluginEvent event, void* data) {
         if (event == PluginEvent::Bool) {
-          m_Settings[u8"ShowWindow"] =  *reinterpret_cast<bool*>(data);
-          mgr->SaveSettings();
+          m_Settings.SetShowWindow(*reinterpret_cast<bool*>(data));
           mgr->ShowMsg("设置成功");
         } else if (event == PluginEvent::BoolGet) {
-          *reinterpret_cast<bool*>(data) = m_Settings[u8"ShowWindow"].isTrue();
+          *reinterpret_cast<bool*>(data) = m_Settings.GetShowWindow();
         }
       }, PluginEvent::Bool}
     },
@@ -158,7 +155,7 @@ void PluginName::InitFunctionMap() {
           return fs::exists(url);
         });
     std::vector<fs::path> vec(uiUrlsView.begin(), uiUrlsView.end());
-      auto const folder = fs::path(m_Settings[u8"TessdataDir"].getValueString());
+      auto const folder = fs::path(m_Settings.GetTessdataDir());
       for (const auto& file: vec) {
         fs::copy(file, folder / file.filename());
       }
@@ -188,13 +185,12 @@ void PluginName::AddEngineMenu() {
   }
 
   // servers.at(m_Settings[u8"OcrEngine"].getValueInt())
-  group->actions().at(m_Settings[u8"OcrEngine"].getValueInt())->setChecked(true);
+  group->actions().at(m_Settings.GetOcrEngine())->setChecked(true);
 
   QObject::connect(group, &QActionGroup::triggered, menu, [this](QAction* action){
     // 目前必须是.getValueDouble()
-    m_Settings[u8"OcrEngine"].getValueDouble() = static_cast<int>(servers.indexOf(action->text()));
+    m_Settings.SetOcrEngine(static_cast<int>(servers.indexOf(action->text())));
     mgr->ShowMsg("保存成功");
-    mgr->SaveSettings();
   });
 }
 
@@ -251,7 +247,7 @@ void PluginName::AddWindowsSection(QWidget* parent, QVBoxLayout* layout) {
   auto const group = new QButtonGroup(parent);
   group->setExclusive(true);
 
-  auto& u8CurLan = m_Settings[u8"WinLan"].getValueString();
+  auto u8CurLan = m_Settings.GetWinLan();
   auto qLanTag = QString::fromUtf8(u8CurLan.data(), u8CurLan.size());
 
   // WinLan
@@ -272,10 +268,9 @@ void PluginName::AddWindowsSection(QWidget* parent, QVBoxLayout* layout) {
       count = 0;
     }
   }
-  QObject::connect(group, &QButtonGroup::buttonClicked, parent, [&u8CurLan](QAbstractButton* box){
-    u8CurLan = QString2Utf8(box->property("lanTag").toString());
+  QObject::connect(group, &QButtonGroup::buttonClicked, parent, [this](QAbstractButton* box){
+    m_Settings.SetWinLan(QString2Utf8(box->property("lanTag").toString()));
     mgr->ShowMsg("保存成功");
-    mgr->SaveSettings();
   });
   layout->addWidget(new QLabel("如果想要支持更多语言，请在 Windows 设置中安装。", parent));
 }
@@ -296,11 +291,11 @@ void NeoOcrPlg::AddTesseractSection(QWidget* parent, QVBoxLayout* layout) {
   chkboxs->setExclusive(false);
 
   std::set<QString> curDatas;
-  for (auto& item: m_Settings[u8"Languages"].getArray()) {
+  for (auto& item: m_Settings.GetLanguages()) {
     curDatas.insert(Utf82QString(item.getValueString()));
   }
 
-  const QDir dir(Utf82QString(m_Settings[u8"TessdataDir"].getValueString()));
+  const QDir dir(Utf82QString(m_Settings.GetTessdataDir()));
   QStringList files = dir.entryList(QStringList { QStringLiteral("*.traineddata") }, QDir::Files | QDir::Readable, QDir::Name);
 
   for (size_t i=0; const auto& file: files) {
@@ -321,13 +316,12 @@ void NeoOcrPlg::AddTesseractSection(QWidget* parent, QVBoxLayout* layout) {
   }
   auto const btnOk = new QPushButton("确认", parent);
   QObject::connect(btnOk, &QPushButton::clicked, parent, [this, parent, chkboxs](){
-    auto& object = m_Settings[u8"Languages"].getArray();
-    object.clear();
+    YJson::ArrayType object;
     for (auto box: chkboxs->buttons() | std::views::filter(std::bind(&QAbstractButton::isChecked, std::placeholders::_1))) {
       object.push_back(QString2Utf8(box->text()));
     }
     m_Ocr->InitLanguagesList();
-    mgr->SaveSettings();
+    m_Settings.SetLanguages(std::move(object));
     mgr->ShowMsg("保存成功！");
     parent->close();
   });

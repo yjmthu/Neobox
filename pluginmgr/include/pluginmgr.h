@@ -20,11 +20,14 @@ public:
     PluginObject* plugin = nullptr;
     void* handle = nullptr;
   };
+  typedef std::mutex Mutex;
+  typedef std::lock_guard<Mutex> Locker;
+  typedef std::unique_lock<Mutex> LockerEx;
+  Mutex m_Mutex;
 public:
   explicit PluginMgr();
   ~PluginMgr();
 public:
-  void SaveSettings();
   void LoadPlugins();
   void LoadManageAction();
   YJson& GetPluginsInfo();
@@ -37,7 +40,9 @@ public:
   void UpdatePluginOrder(YJson&& data);
   bool IsPluginEnabled(const std::u8string& plugin) const;
 private:
+  friend class NeoConfig;
   static YJson* InitSettings();
+  void SaveSettings();
   bool LoadPlugin(std::u8string pluginName, PluginInfo& info);
   bool FreePlugin(PluginInfo& info);
   bool LoadPlugEnv(const std::filesystem::path& path);

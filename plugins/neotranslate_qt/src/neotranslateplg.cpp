@@ -14,9 +14,10 @@
  * NeoTranslatePlugin
  */
 
-PluginName::PluginName(YJson& settings):
-  PluginObject(InitSettings(settings), u8"neotranslateplg", u8"极简翻译"),
-  m_TranslateDlg(new NeoTranslateDlg(settings))
+PluginName::PluginName(YJson& settings)
+  : PluginObject(InitSettings(settings), u8"neotranslateplg", u8"极简翻译")
+  , m_Settings(settings)
+  , m_TranslateDlg(new NeoTranslateDlg(m_Settings))
 {
   AddMainObject(m_TranslateDlg);
   InitFunctionMap();
@@ -46,7 +47,7 @@ PluginName::PluginName(YJson& settings):
       auto const txtfrom = m_TranslateDlg->findChild<QPlainTextEdit*>("neoTextFrom");
       txtfrom->setPlainText(Utf82QString(str));
       if (m_TranslateDlg->isVisible()) {
-        if (m_Settings[u8"AutoTranslate"].isTrue()) {
+        if (m_Settings.GetAutoTranslate()) {
           m_TranslateDlg->GetResultData(str);
         }
       } else {
@@ -72,44 +73,40 @@ void PluginName::InitFunctionMap() {
     {u8"enableReadClipboard",
       {u8"读剪切板", u8"打开界面自动读取剪切板内容到From区", [this](PluginEvent event, void* data) {
         if (event == PluginEvent::Bool) {
-          m_Settings[u8"ReadClipboard"] = *reinterpret_cast<bool*>(data);
-          mgr->SaveSettings();
+          m_Settings.SetReadClipboard(*reinterpret_cast<bool*>(data));
           mgr->ShowMsg("设置成功");
         } else if (event == PluginEvent::BoolGet) {
-          *reinterpret_cast<bool*>(data) = m_Settings[u8"ReadClipboard"].isTrue();
+          *reinterpret_cast<bool*>(data) = m_Settings.GetReadClipboard();
         }
       }, PluginEvent::Bool}
     },
     {u8"enableAutoTranslate",
       {u8"自动翻译", u8"打开界面自动翻译From区内容", [this](PluginEvent event, void* data) {
         if (event == PluginEvent::Bool) {
-          m_Settings[u8"AutoTranslate"] =  *reinterpret_cast<bool*>(data);
-          mgr->SaveSettings();
+          m_Settings.SetAutoTranslate(*reinterpret_cast<bool*>(data));
           mgr->ShowMsg("设置成功");
         } else if (event == PluginEvent::BoolGet) {
-          *reinterpret_cast<bool*>(data) = m_Settings[u8"AutoTranslate"].isTrue();
+          *reinterpret_cast<bool*>(data) = m_Settings.GetAutoTranslate();
         }
       }, PluginEvent::Bool}
     },
     {u8"enableAutoMove",
       {u8"吸附窗口", u8"自动吸附窗口贴近网速悬浮窗", [this](PluginEvent event, void* data) {
         if (event == PluginEvent::Bool) {
-          m_Settings[u8"AutoMove"] =  *reinterpret_cast<bool*>(data);
-          mgr->SaveSettings();
+          m_Settings.SetAutoMove(*reinterpret_cast<bool*>(data));
           mgr->ShowMsg("设置成功");
         } else if (event == PluginEvent::BoolGet) {
-          *reinterpret_cast<bool*>(data) = m_Settings[u8"AutoMove"].isTrue();
+          *reinterpret_cast<bool*>(data) = m_Settings.GetAutoMove();
         }
       }, PluginEvent::Bool}
     },
     {u8"enableAutoSize",
       {u8"默认大小", u8"每次显示界面时调回默认大小", [this](PluginEvent event, void* data) {
         if (event == PluginEvent::Bool) {
-          m_Settings[u8"AutoSize"] =  *reinterpret_cast<bool*>(data);
-          mgr->SaveSettings();
+          m_Settings.SetAutoSize(*reinterpret_cast<bool*>(data));
           mgr->ShowMsg("设置成功");
         } else if (event == PluginEvent::BoolGet) {
-          *reinterpret_cast<bool*>(data) = m_Settings[u8"AutoSize"].isTrue();
+          *reinterpret_cast<bool*>(data) = m_Settings.GetAutoSize();
         }
       }, PluginEvent::Bool}
     },

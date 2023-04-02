@@ -1,6 +1,7 @@
 #include <heightctrl.hpp>
 #include <translatedlg.hpp>
 #include <yjson.h>
+#include <translatecfg.h>
 
 #include <QWheelEvent>
 #include <QPlainTextEdit>
@@ -12,10 +13,10 @@ constexpr int HeightCtrl::m_MaxRatio;
 constexpr int HeightCtrl::m_MinRatio;
 constexpr int HeightCtrl::m_DefaultRatio;
 
-HeightCtrl::HeightCtrl(NeoTranslateDlg* parent, YJson& setting)
+HeightCtrl::HeightCtrl(NeoTranslateDlg* parent, std::list<YJson> setting)
   : QFrame(parent)
-  , m_Baidu(setting[0].getValueDouble())
-  , m_Youdao(setting[1].getValueDouble())
+  , m_Baidu(setting.front().getValueInt())
+  , m_Youdao(setting.back().getValueInt())
   , m_Source(parent->m_Translate->m_Source)
   , m_Changed(parent->m_LanPairChanged)
   , m_TextFrom(*parent->m_TextFrom)

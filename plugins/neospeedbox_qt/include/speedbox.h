@@ -5,12 +5,13 @@
 
 #include <filesystem>
 #include <pluginobject.h>
+#include <speedboxcfg.h>
 
 namespace fs = std::filesystem;
 
 class SpeedBox : public WidgetBase {
 private:
-  class YJson& m_Settings;
+  SpeedBoxCfg& m_Settings;
   class PluginObject* m_PluginObject;
   class SkinObject* m_CentralWidget;
 #ifdef _WIN32
@@ -49,7 +50,7 @@ protected:
   void leaveEvent(QEvent* event) override;
 
  public:
-  explicit SpeedBox(PluginObject* plugin, YJson& settings, MenuBase* netcardMenu);
+  explicit SpeedBox(PluginObject* plugin, SpeedBoxCfg& settings, MenuBase* netcardMenu);
   ~SpeedBox();
   void InitShow(const PluginObject::FollowerFunction& callback);
   void InitMove();

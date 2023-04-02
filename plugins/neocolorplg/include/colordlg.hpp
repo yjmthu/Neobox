@@ -2,6 +2,7 @@
 #define COLORDLG_HPP
 
 #include <widgetbase.hpp>
+#include <colorconfig.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -9,7 +10,6 @@
 
 #include <set>
 
-class YJson;
 namespace Ui {
     class ColorForm;
 } // namespace Ui
@@ -23,7 +23,7 @@ protected:
   // bool eventFilter(QObject *target, QEvent *event) override;
   // bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 public:
-  explicit ColorDlg(YJson& settings);
+  explicit ColorDlg(ColorConfig& settings);
   virtual ~ColorDlg();
 public:
   static ColorDlg* m_Instance;
@@ -40,8 +40,8 @@ private:
   void RemoveColor(const QColor& color);
   static void SetStyleSheet(QWidget* target, const QColor& color);
 private:
-  YJson& m_Settings;
-  YJson& m_ColorsArray;
+  ColorConfig& m_Settings;
+  YJson m_ColorsArray;
   QWidget* m_CenterWidget;
   // QColor m_CurrentColor;
   Ui::ColorForm* const ui;

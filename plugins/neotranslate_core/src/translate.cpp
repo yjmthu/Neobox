@@ -3,6 +3,7 @@
 #include <httplib.h>
 #include <sha256.h>
 #include <md5.h>
+#include <translatecfg.h>
 
 #include <chrono>
 #include <format>
@@ -128,16 +129,16 @@ const Translate::LanguageMap Translate::m_LanguageCanFromTo
   }
 };
 
-LanPair::LanPair(YJson& array)
-  : from(array[0].getValueDouble())
-  , to(array[1].getValueDouble())
+LanPair::LanPair(const YJson& array)
+  : f(array.frontA().getValueDouble())
+  , t(array.backA().getValueDouble())
 {
 }
 
-Translate::Translate(YJson& setting, Translate::Callback&& callback)
+Translate::Translate(TranslateCfg& setting, Translate::Callback&& callback)
     : m_Callback(std::move(callback))
-    , m_LanPairBaidu(setting[u8"PairBaidu"])
-    , m_LanPairYoudao(setting[u8"PairYoudao"])
+    , m_LanPairBaidu(setting.GetPairBaidu())
+    , m_LanPairYoudao(setting.GetPairYoudao())
     , m_LanPair(nullptr)
 {
   SetSource(Baidu);
@@ -153,8 +154,8 @@ void Translate::SetSource(Source dict) {
 std::optional<std::pair<int, int>> Translate::ReverseLanguage()
 {
   auto const& dict = m_LanguageCanFromTo[m_Source];
-  auto const& from = dict[m_LanPair->f()].first;
-  auto const& to = dict[m_LanPair->f()].second[m_LanPair->t()];
+  auto const& from = dict[m_LanPair->f].first;
+  auto const& to = dict[m_LanPair->f].second[m_LanPair->t];
   auto iterFrom = std::find_if(dict.cbegin(), dict.cend(), [&to](decltype(dict.front())& item){
     return item.first == to;
   });
@@ -191,9 +192,9 @@ bool Translate::GetResultBaidu(const Utf8Array& text) {
   static auto const badNet = u8"<h1>没网络了！</h1>"s;
 
   static auto& from = jsData[u8"from"].getValueString();
-  from = m_LanguageCanFromTo[Baidu][m_LanPair->f()].first;
+  from = m_LanguageCanFromTo[Baidu][m_LanPair->f].first;
   static auto& to = jsData[u8"to"].getValueString();
-  to = m_LanguageCanFromTo[Baidu][m_LanPair->f()].second[m_LanPair->t()];
+  to = m_LanguageCanFromTo[Baidu][m_LanPair->f].second[m_LanPair->t];
 
   static auto& salt = jsData[u8"salt"].getValueString();
   salt = GetSalt();
@@ -247,9 +248,9 @@ bool Translate::GetResultYoudao(const Utf8Array& text) {
   };
 
   static auto& from = m_scJson[u8"from"].getValueString();
-  from = m_LanguageCanFromTo[Youdao][m_LanPair->f()].first;
+  from = m_LanguageCanFromTo[Youdao][m_LanPair->f].first;
   static auto& to = m_scJson[u8"to"].getValueString();
-  to = m_LanguageCanFromTo[Youdao][m_LanPair->f()].second[m_LanPair->t()];
+  to = m_LanguageCanFromTo[Youdao][m_LanPair->f].second[m_LanPair->t];
 
   static auto& q = m_scJson[u8"q"].getValueString();
   q.assign(text.begin, text.end);

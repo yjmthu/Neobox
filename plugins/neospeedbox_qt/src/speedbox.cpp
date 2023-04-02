@@ -33,12 +33,12 @@
 #include <dlfcn.h>
 #endif
 
-SpeedBox::SpeedBox(PluginObject* plugin, YJson& settings, MenuBase* netcardMenu)
+SpeedBox::SpeedBox(PluginObject* plugin, SpeedBoxCfg& settings, MenuBase* netcardMenu)
     : WidgetBase(nullptr)
     , m_PluginObject(plugin)
     , m_Settings(settings)
     , m_NetSpeedHelper(*dynamic_cast<NeoSpeedboxPlg*>(plugin)->m_NetSpeedHelper)
-    , m_ProcessForm(m_Settings[u8"ProgressMonitor"].isTrue()?new ProcessForm(this) : nullptr)
+    , m_ProcessForm(m_Settings.GetProgressMonitor() ?new ProcessForm(this) : nullptr)
     , m_NetCardMenu(*netcardMenu)
     , m_CentralWidget(nullptr)
     , m_SkinDll(nullptr)
@@ -74,26 +74,24 @@ void SpeedBox::InitShow(const PluginObject::FollowerFunction& callback) {
   m_Animation->setDuration(100);
   m_Animation->setTargetObject(this);
   connect(m_Animation, &QPropertyAnimation::finished, this, [this]() {
-    m_Settings[u8"Position"].getArray() =
-        YJson::A{x(), y()};
-    mgr->SaveSettings();
+    m_Settings.SetPosition(YJson::A{x(), y()});
   });
 
   UpdateNetCardMenu();
 
-  auto buffer = m_Settings[u8"ColorEffect"].isTrue();
+  bool buffer = m_Settings.GetColorEffect();
   callback(PluginEvent::Bool, &buffer);
 }
 
 void SpeedBox::SetWindowMode() {
   setWindowTitle("Neobox");
   setWindowIcon(QIcon(QStringLiteral(":/icons/neobox.ico")));
-  setAttribute(Qt::WA_TransparentForMouseEvents, m_Settings[u8"MousePenetrate"].isTrue());
+  setAttribute(Qt::WA_TransparentForMouseEvents, m_Settings.GetMousePenetrate());
   setAttribute(Qt::WA_TranslucentBackground, true);
   setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
   setAcceptDrops(true);
 
-  const auto& position = m_Settings [u8"Position"].getArray();
+  auto position = m_Settings.GetPosition();
   move(position.front().getValueInt(), position.back().getValueInt());
 }
 
@@ -151,8 +149,8 @@ bool SpeedBox::LoadDll(fs::path dllPath)
 
 bool SpeedBox::LoadCurrentSkin() {
 
-  auto& skinName = m_Settings[u8"CurSkin"].getValueString();
-  const auto& skinFileName = m_Settings[u8"UserSkins"][skinName].getValueString();
+  auto skinName = m_Settings.GetCurSkin();
+  const auto skinFileName = YJson(m_Settings.GetUserSkins())[skinName].getValueString();
 
 #ifdef _WIN32
   auto skinPath = u8"skins/" + skinFileName + u8".dll";
@@ -257,9 +255,7 @@ void SpeedBox::mousePressEvent(QMouseEvent* event) {
 
 void SpeedBox::mouseReleaseEvent(QMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
-    m_Settings[u8"Position"].getArray() =
-        YJson::A{x(), y()};
-    mgr->SaveSettings();
+    m_Settings.SetPosition(YJson::A{x(), y()});
   }
   this->WidgetBase::mouseReleaseEvent(event);
 }
@@ -338,7 +334,7 @@ void SpeedBox::leaveEvent(QEvent* event) {
   auto rtScreen = QGuiApplication::primaryScreen()->geometry();
   auto rtForm = this->frameGeometry();
   m_Animation->setStartValue(rtForm);
-  auto const hideBits = m_Settings[u8"HideAside"].getValueInt();
+  auto const hideBits = m_Settings.GetHideAside();
   if ((HideSide::Right & hideBits) && rtForm.right() + delta >= rtScreen.right()) {
     m_HideSide = HideSide::Right;
     rtForm.moveTo(rtScreen.right() - delta, rtForm.y());
@@ -365,8 +361,7 @@ void SpeedBox::InitMove()
 {
   move(100, 100);
   m_HideSide = HideSide::None;
-  m_Settings[u8"Position"].getArray() = YJson::A{100, 100};
-  mgr->SaveSettings();
+  m_Settings.SetPosition(YJson::A{100, 100});
   if (!isVisible())
     show();
   mgr->ShowMsg("移动成功！");
@@ -427,13 +422,16 @@ void SpeedBox::UpdateNetCard(QAction* action, bool checked)
   if (checked) {
     // 因为 m_AdapterBalckList 使用的是 u8string_view，所以顺序很重要。
     m_NetSpeedHelper.m_AdapterBalckList.erase(guid);
-    m_Settings[u8"NetCardDisabled"].removeByValA(guid);
+    auto blklst = m_Settings.GetNetCardDisabled();
+    blklst.removeByValA(guid);
+    m_Settings.SetNetCardDisabled(std::move(blklst));
     mgr->ShowMsg("添加网卡成功！"); // removed from blacklist
   } else {
-    auto iter = m_Settings[u8"NetCardDisabled"].append(guid);
+    auto blklst = m_Settings.GetNetCardDisabled();
+    auto iter = blklst.append(guid);
     m_NetSpeedHelper.m_AdapterBalckList.emplace(iter->getValueString());
+    m_Settings.SetNetCardDisabled(std::move(blklst));
     mgr->ShowMsg("删除网卡成功！");
   }
   m_NetSpeedHelper.UpdateAdaptersAddresses();
-  mgr->SaveSettings();
 }

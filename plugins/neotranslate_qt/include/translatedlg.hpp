@@ -21,14 +21,14 @@ protected:
   void resizeEvent(QResizeEvent *event) override;
 
 public:
-  explicit NeoTranslateDlg(class YJson& setings);
+  explicit NeoTranslateDlg(class TranslateCfg& setings);
   ~NeoTranslateDlg();
   void ToggleVisibility();
   void GetResultData(QUtf8StringView text);
 
 private:
   friend class HeightCtrl;
-  class YJson& m_Settings;
+  TranslateCfg& m_Settings;
   QWidget* m_CenterWidget;
   class QPlainTextEdit *m_TextFrom;
   class QTextEdit *m_TextTo;

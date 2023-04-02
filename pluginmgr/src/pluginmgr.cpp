@@ -129,8 +129,7 @@ PluginMgr::~PluginMgr()
 
 void PluginMgr::SaveSettings()
 {
-  static std::mutex mtx;
-  std::lock_guard<std::mutex> locker(mtx);
+  // std::lock_guard<std::mutex> locker(m_Mutex);
   m_Settings->toFile(m_SettingFileName, false, YJson::UTF8);
 }
 
@@ -165,6 +164,7 @@ void PluginMgr::LoadPlugins()
 {
   for (auto& [i, j]: m_Settings->find(u8"Plugins")->second.getObject()) {
     const auto name = i;
+    const char* data = (const char*) name.c_str();
     if (!j[u8"Enabled"].isTrue()) continue;
     auto& pluginSttings = m_Settings->find(u8"PluginsConfig")->second[name];
     if (!LoadPlugin(name, m_Plugins[name])) {

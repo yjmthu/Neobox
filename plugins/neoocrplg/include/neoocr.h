@@ -20,7 +20,7 @@ struct OcrResult {
 class NeoOcr {
 public:
   enum class Engine { Windows, Tesseract, Paddle, Other };
-  NeoOcr(class YJson& settings, std::function<void()> callback);
+  NeoOcr(class OcrConfig& settings);
   ~NeoOcr();
   std::u8string GetText(QImage image);
   std::vector<OcrResult> GetTextEx(QImage image);
@@ -33,9 +33,7 @@ private:
   std::u8string OcrWindows(const QImage& image);
   std::u8string OcrTesseract(const QImage& image);
 private:
-  class YJson& m_Settings;
-  double& m_Engine;
-  const std::function<void()> CallBackFunction;
+  OcrConfig& m_Settings;
   std::u8string GetLanguageName(const std::u8string& url);
   void DownloadFile(const std::u8string& url,
       const std::filesystem::path& path);

@@ -3,6 +3,7 @@
 #include <yjson.h>
 #include <httplib.h>
 #include <pluginmgr.h>
+#include <ocrconfig.h>
 
 #include <ranges>
 #include <set>
@@ -55,12 +56,10 @@ using namespace winrt::Windows::Security::Cryptography;
 
 #endif
 
-NeoOcr::NeoOcr(YJson& settings, std::function<void()> callback)
-  : CallBackFunction(callback)
-  , m_Settings(settings)
-  , m_Engine(settings[u8"OcrEngine"].getValueDouble())
+NeoOcr::NeoOcr(OcrConfig& settings)
+  : m_Settings(settings)
   , m_TessApi(new tesseract::TessBaseAPI)
-  , m_TrainedDataDir(fs::path(settings[u8"TessdataDir"].getValueString()).string())
+  , m_TrainedDataDir(fs::path(m_Settings.GetTessdataDir()).string())
 {
   InitLanguagesList();
   // winrt::init_apartment();
@@ -95,7 +94,7 @@ void SaveSoftwareBitmapToFile(SoftwareBitmap& softwareBitmap)
 
 std::u8string NeoOcr::GetText(QImage image)
 {
-  const auto engine = static_cast<Engine>((int)m_Engine);
+  const auto engine = static_cast<Engine>(m_Settings.GetOcrEngine());
   if (engine == Engine::Windows) {
     if (image.format() != QImage::Format_RGBA8888) {
       image = image.convertToFormat(QImage::Format_RGBA8888);
@@ -151,7 +150,7 @@ std::vector<OcrResult> NeoOcr::GetTextEx(QImage image)
 std::u8string NeoOcr::OcrWindows(const QImage& image)
 {
   std::function engine = WinOcr::OcrEngine::TryCreateFromUserProfileLanguages;
-  auto name = m_Settings[u8"WinLan"].getValueString();
+  auto name = m_Settings.GetWinLan();
   if (name != u8"user-Profile") {
     const Language lan(Utf82WideString(name));
     if (WinOcr::OcrEngine::IsLanguageSupported(lan)) {
@@ -249,7 +248,7 @@ void NeoOcr::InitLanguagesList()
 {
   m_Languages.clear();
 
-  const auto& array = m_Settings[u8"Languages"].getArray();
+  const auto array = m_Settings.GetLanguages();
 
   if (array.empty()) {
     return;
@@ -278,7 +277,7 @@ std::u8string NeoOcr::GetLanguageName(const std::u8string& url)
 
 void NeoOcr::AddLanguages(const std::vector<std::u8string> &urls)
 {
-  auto& langsArray = m_Settings[u8"Languages"].getArray();
+  auto langsArray = m_Settings.GetLanguages();
   auto langsView = langsArray | std::views::transform([](const YJson& item){ return item.getValueString(); });
   std::set<std::u8string> langsSet(langsView.begin(), langsView.end());
   for (const auto& i: urls) {
@@ -286,7 +285,7 @@ void NeoOcr::AddLanguages(const std::vector<std::u8string> &urls)
       continue;
     }
     auto name = GetLanguageName(i);
-    fs::path path = m_Settings[u8"TessdataDir"].getValueString();
+    fs::path path = m_Settings.GetTessdataDir();
     path /= name + u8".traineddata";
     if (langsSet.find(name) == langsSet.end()) {
       langsSet.insert(name);
@@ -298,27 +297,25 @@ void NeoOcr::AddLanguages(const std::vector<std::u8string> &urls)
     }
   }
   langsArray.assign(langsView.begin(), langsView.end());
-  CallBackFunction();
+  m_Settings.SetLanguages(langsArray);
   InitLanguagesList();
 }
 
 void NeoOcr::RmoveLanguages(const std::vector<std::u8string> &names)
 {
-  auto& jsLangArray = m_Settings[u8"Languages"];
+  YJson jsLangArray = m_Settings.GetLanguages();
   for (const auto& i: names) {
     jsLangArray.removeByValA(i);
   }
-  CallBackFunction();
+  m_Settings.SetLanguages(std::move(jsLangArray.getArray()));
   InitLanguagesList();
 }
 
 void NeoOcr::SetDataDir(const std::u8string &dirname)
 {
-  auto goodname = dirname | std::views::transform([](const char8_t i) {
-    return i == u8'/' ? u8'\\' : i;
-  });
-  m_Settings[u8"TessdataDir"].getValueString().assign(goodname.begin(), goodname.end());
-  CallBackFunction();
+  fs::path path(dirname);
+  path.make_preferred();
+  m_Settings.SetTessdataDir(path.u8string());
 }
 
 static inline bool IsBigDuan() {

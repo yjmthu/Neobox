@@ -6,6 +6,7 @@
 #include <yjson.h>
 #include <menubase.hpp>
 #include <neomenu.hpp>
+#include <translatecfg.h>
 
 #include <QApplication>
 #include <QClipboard>
@@ -20,7 +21,7 @@
 #include <QMimeData>
 #include <QWidget>
 
-NeoTranslateDlg::NeoTranslateDlg(YJson& settings)
+NeoTranslateDlg::NeoTranslateDlg(TranslateCfg& settings)
     : WidgetBase(mgr->m_Menu, true)
     , m_Settings(settings)
     , m_CenterWidget(new QWidget(this))
@@ -34,7 +35,7 @@ NeoTranslateDlg::NeoTranslateDlg(YJson& settings)
         else
           m_TextTo->setHtml(QString::fromUtf8(reinterpret_cast<const char*>(data), size));
       }))
-    , m_HeightCtrl(new HeightCtrl(this, settings[u8"HeightRatio"]))
+    , m_HeightCtrl(new HeightCtrl(this, m_Settings.GetHeightRatio()))
     , m_BtnReverse(new QPushButton(m_CenterWidget))
     , m_BtnCopyFrom(new QPushButton(m_TextFrom))
     , m_BtnCopyTo(new QPushButton(m_TextTo))
@@ -66,8 +67,8 @@ NeoTranslateDlg::NeoTranslateDlg(YJson& settings)
   AddScrollBar(m_TextFrom->verticalScrollBar());
   AddScrollBar(m_TextTo->verticalScrollBar());
 
-  const auto& position = m_Settings[u8"Position"].getArray();
-  auto const& size = m_Settings[u8"Size"].getArray();
+  const auto position = m_Settings.GetPosition();
+  auto const size = m_Settings.GetSize();
   m_LastPostion = QPoint {
     position.front().getValueInt(), position.back().getValueInt()
   };
@@ -95,9 +96,9 @@ void NeoTranslateDlg::GetResultData(QUtf8StringView text) {
 void NeoTranslateDlg::showEvent(QShowEvent* event) {
   static auto const defaultSize = size();
 
-  resize(m_Settings[u8"AutoSize"].isTrue() ? defaultSize : m_LastSize);
+  resize(m_Settings.GetAutoSize() ? defaultSize : m_LastSize);
 
-  if (m_Settings[u8"AutoMove"].isTrue()) {
+  if (m_Settings.GetAutoMove()) {
     auto const speedbox = ReferenceObject();
     if (speedbox) {
       const auto qFormRect = speedbox->frameGeometry();
@@ -131,7 +132,7 @@ void NeoTranslateDlg::showEvent(QShowEvent* event) {
   m_TextFrom->setFocus();
   activateWindow();
 
-  if (m_Settings[u8"AutoTranslate"].isTrue()) {
+  if (m_Settings.GetAutoTranslate()) {
     if (!m_TextFrom->toPlainText().isEmpty()) {
       GetResultData(m_TextFrom->toPlainText().toUtf8());
     }
@@ -143,29 +144,41 @@ void NeoTranslateDlg::hideEvent(QHideEvent *event)
 {
   bool save = false;
   if (m_LastPostion != pos()) {
-    if (m_Settings[u8"AutoMove"].isFalse()) {
+    if (m_Settings.GetAutoMove()) {
       m_LastPostion = pos();
-      m_Settings[u8"Position"] = YJson::A {
+      m_Settings.SetPosition(YJson::A {
         m_LastPostion.x(),
         m_LastPostion.y(),
-      };
+      }, false);
       save = true;
     }
   }
   if (m_LastSize != size()) {
-    if (m_Settings[u8"AutoSize"].isFalse()) {
+    if (!m_Settings.GetAutoSize()) {
       m_LastSize = size();
-      m_Settings[u8"Size"] = YJson::A {
+      m_Settings.SetSize(YJson::A {
         m_LastSize.width(), m_LastSize.height()
-      };
+      }, false);
       save = true;
     }
   }
   if (m_LanPairChanged) {
     m_LanPairChanged = false;
-    save = true;
+    m_Settings.SetPairBaidu(YJson::A{
+      m_Translate->m_LanPairBaidu.f,
+      m_Translate->m_LanPairBaidu.t
+    });
+    m_Settings.SetPairYoudao(YJson::A{
+      m_Translate->m_LanPairYoudao.f,
+      m_Translate->m_LanPairYoudao.t
+    });
+    m_Settings.SetHeightRatio(YJson::A {
+      m_HeightCtrl->m_Baidu, m_HeightCtrl->m_Youdao
+    });
   }
-  if (save) mgr->SaveSettings();
+  if (save) {
+    m_Settings.SaveData();
+  }
   event->accept();
 }
 
@@ -218,7 +231,7 @@ bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
           if (keyEvent->modifiers() & Qt::AltModifier) {
             int i = m_BoxTo->currentIndex();
             m_BoxTo->setCurrentIndex(i == 0 ? m_BoxTo->count() - 1 : --i);
-            m_Translate->m_LanPair->to = m_BoxTo->currentIndex();
+            m_Translate->m_LanPair->t = m_BoxTo->currentIndex();
             m_LanPairChanged = true;
             return true;
           }
@@ -227,7 +240,7 @@ bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
           if (keyEvent->modifiers() & Qt::AltModifier) {
             int i = m_BoxTo->currentIndex();
             m_BoxTo->setCurrentIndex(++i == m_BoxTo->count() ? 0 : i);
-            m_Translate->m_LanPair->to = m_BoxTo->currentIndex();
+            m_Translate->m_LanPair->t = m_BoxTo->currentIndex();
             m_LanPairChanged = true;
             return true;
           }
@@ -236,7 +249,7 @@ bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
           if (keyEvent->modifiers() & Qt::AltModifier) {
             int i = m_BoxFrom->currentIndex();
             m_BoxFrom->setCurrentIndex(i == 0 ? m_BoxFrom->count() - 1 : --i);
-            m_Translate->m_LanPair->to = m_BoxFrom->currentIndex();
+            m_Translate->m_LanPair->t = m_BoxFrom->currentIndex();
             m_LanPairChanged = true;
             return true;
           }
@@ -245,7 +258,7 @@ bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
           if (keyEvent->modifiers() & Qt::AltModifier) {
             int i = m_BoxFrom->currentIndex();
             m_BoxFrom->setCurrentIndex(++i == m_BoxFrom->count() ? 0 : i);
-            m_Translate->m_LanPair->to = m_BoxFrom->currentIndex();
+            m_Translate->m_LanPair->t = m_BoxFrom->currentIndex();
             m_LanPairChanged = true;
             return true;
           }
@@ -294,8 +307,7 @@ void NeoTranslateDlg::ToggleVisibility()
   if (isVisible()) {
     hide();
   } else {
-    const auto set = m_Settings[u8"ReadClipboard"];
-    if (set.isTrue()) {
+    if (m_Settings.GetReadClipboard()) {
       const auto clipbord = QGuiApplication::clipboard();
       const auto mimeData = clipbord->mimeData();
       if (mimeData->hasText()) {
@@ -421,27 +433,27 @@ void NeoTranslateDlg::ChangeLanguageSource(bool checked) {
     const auto& name = m_Translate->m_LangNameMap[from];
     m_BoxFrom->addItem(PluginObject::Utf82QString(name));
   }
-  const auto& [_, tos] = m_Translate->m_LanguageCanFromTo[newDict][m_Translate->m_LanPair->f()];
+  const auto& [_, tos] = m_Translate->m_LanguageCanFromTo[newDict][m_Translate->m_LanPair->f];
   for (auto& to : tos) {
     const auto& name = m_Translate->m_LangNameMap[to];
     m_BoxTo->addItem(PluginObject::Utf82QString(name));
   }
 
-  m_BoxFrom->setCurrentIndex(m_Translate->m_LanPair->f());
-  m_BoxTo->setCurrentIndex(m_Translate->m_LanPair->t());
+  m_BoxFrom->setCurrentIndex(m_Translate->m_LanPair->f);
+  m_BoxTo->setCurrentIndex(m_Translate->m_LanPair->t);
 
   connect(m_BoxFrom, &QComboBox::currentIndexChanged, this, &NeoTranslateDlg::ChangeLanguageFrom);
   connect(m_BoxTo, &QComboBox::currentIndexChanged, this, &NeoTranslateDlg::ChangeLanguageTo);
 
-  m_Settings[u8"Mode"] = checked ? 1 : 0;
+  m_Settings.SetMode(checked ? 1 : 0);
 
   m_HeightCtrl->UpdateUi();
   m_LanPairChanged = true;
 }
 
 void NeoTranslateDlg::ChangeLanguageFrom(int index) {
-  m_Translate->m_LanPair->from = index;
-  m_Translate->m_LanPair->to = 0;
+  m_Translate->m_LanPair->f = index;
+  m_Translate->m_LanPair->t = 0;
   m_LanPairChanged = true;
   m_TextFromChanged = true;
 
@@ -458,7 +470,7 @@ void NeoTranslateDlg::ChangeLanguageFrom(int index) {
 
 void NeoTranslateDlg::ChangeLanguageTo(int index)
 {
-  m_Translate->m_LanPair->to = index;
+  m_Translate->m_LanPair->t = index;
   m_LanPairChanged = true;
   m_TextFromChanged = true;
 }
@@ -523,7 +535,7 @@ void NeoTranslateDlg::AddCombbox(QHBoxLayout* layout) {
   m_BtnTransMode->setObjectName(QStringLiteral("btnTransMode"));
   m_BtnTransMode->setCheckable(true);
   layout->addWidget(m_BtnTransMode);
-  auto const dict = static_cast<Translate::Source>(m_Settings[u8"Mode"].getValueInt());
+  auto const dict = static_cast<Translate::Source>(m_Settings.GetMode());
   m_Translate->SetSource(dict);
   m_BtnTransMode->setChecked(dict == Translate::Youdao);
   ChangeLanguageSource(dict);

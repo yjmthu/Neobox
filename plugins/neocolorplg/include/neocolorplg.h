@@ -2,6 +2,7 @@
 #define NEOCOLORPLG_H
 
 #include <pluginobject.h>
+#include <colorconfig.h>
 
 class NeoColorPlg: public PluginObject
 {
@@ -14,6 +15,7 @@ public:
 private:
   static YJson& InitSettings(YJson& settings);
 private:
+  ColorConfig m_Settings;
   QAction* m_MainMenuAction;
 };
 

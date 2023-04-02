@@ -26,10 +26,10 @@ protected:
   void keyPressEvent(QKeyEvent *event) override;
   bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 public:
-  explicit SmallForm(class YJson& settings);
+  explicit SmallForm(class ColorConfig& settings);
   virtual ~SmallForm();
 public:
-  static void PickColor(YJson& settings);
+  static void PickColor(ColorConfig& settings);
 private:
   void TransformPoint(QPoint& point);
   void SetColor(const QColor& color);
@@ -47,7 +47,7 @@ public slots:
   static SmallForm* m_Instance;
   static HHOOK m_Hoock[2];
 private:
-  class YJson& m_Settings;
+  class ColorConfig& m_Settings;
   QScreen* m_Screen;
   short m_ScaleTimes;
   class SquareForm* m_SquareForm;

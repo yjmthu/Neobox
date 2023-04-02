@@ -34,7 +34,8 @@ using namespace std::literals;
 
 PluginName::PluginName(YJson& settings)
   : PluginObject(InitSettings(settings), u8"neospeedboxplg", u8"网速悬浮")
-  , m_NetSpeedHelper(new NetSpeedHelper(m_Settings[u8"NetCardDisabled"]))
+  , m_Settings(settings)
+  , m_NetSpeedHelper(new NetSpeedHelper(m_Settings.GetNetCardDisabled()))
 {
   // LoadFonts();
   InitFunctionMap();
@@ -59,7 +60,7 @@ void PluginName::InitFunctionMap() {
     {u8"enableBlur", {
       u8"模糊背景", u8"Windows10+或KDE下的模糊效果", [this](PluginEvent event, void* data){
         if (event == PluginEvent::Bool) {
-          m_Settings[u8"ColorEffect"] = *reinterpret_cast<bool *>(data);
+          m_Settings.SetColorEffect(*reinterpret_cast<bool *>(data));
 #ifdef _WIN32
           auto status = *reinterpret_cast<bool *>(data) ? ACCENT_ENABLE_BLURBEHIND : ACCENT_DISABLED;
           auto hWnd = reinterpret_cast<HWND>(m_Speedbox->winId());
@@ -71,9 +72,8 @@ void PluginName::InitFunctionMap() {
           //   qobject_cast<QWindow*>(m_Speedbox), *reinterpret_cast<bool *>(data));
           mgr->ShowMsg("暂不可用");
 #endif
-          mgr->SaveSettings();
         } else if (event == PluginEvent::BoolGet) {
-          *reinterpret_cast<bool *>(data) = m_Settings[u8"ColorEffect"].isTrue();
+          *reinterpret_cast<bool *>(data) = m_Settings.GetColorEffect();
         }
       }, PluginEvent::Bool}
     },
@@ -81,14 +81,13 @@ void PluginName::InitFunctionMap() {
       u8"鼠标穿透", u8"鼠标操作穿透悬浮窗", [this](PluginEvent event, void* data){
         if (event == PluginEvent::Bool) {
           auto const on = *reinterpret_cast<bool *>(data);
-          m_Settings[u8"MousePenetrate"] = on;
+          m_Settings.SetMousePenetrate(on);
           delete m_Speedbox;
           m_Speedbox = new SpeedBox(this, m_Settings, m_NetCardMenu);
           AddMainObject(m_Speedbox);       // 添加到对象列表
           m_Speedbox->InitShow(m_PluginMethod[u8"enableBlur"].function);
-          mgr->SaveSettings();
         } else if (event == PluginEvent::BoolGet) {
-          *reinterpret_cast<bool *>(data) = m_Settings[u8"MousePenetrate"].isTrue();
+          *reinterpret_cast<bool *>(data) = m_Settings.GetMousePenetrate();
         }
       }, PluginEvent::Bool}
     },
@@ -96,12 +95,11 @@ void PluginName::InitFunctionMap() {
       u8"进程信息", u8"滚轮查看进程信息", [this](PluginEvent event, void* data){
         if (event == PluginEvent::Bool) {
           auto& on = *reinterpret_cast<bool *>(data);
-          m_Settings[u8"ProgressMonitor"] = on;
+          m_Settings.SetProgressMonitor(on);
           m_Speedbox->SetProgressMonitor(on);
-          mgr->SaveSettings();
           mgr->ShowMsg("设置成功！");
         } else if (event == PluginEvent::BoolGet) {
-          *reinterpret_cast<bool *>(data) = m_Settings[u8"ProgressMonitor"].isTrue();
+          *reinterpret_cast<bool *>(data) = m_Settings.GetProgressMonitor();
         }
       }, PluginEvent::Bool}
     },
@@ -197,7 +195,8 @@ YJson& PluginName::InitSettings(YJson& settings)
       {u8"CurSkin", u8"经典火绒"},
       {u8"UserSkins", YJson::O {}},
       {u8"NetCardDisabled", YJson::A {}},
-      {u8"MousePenetrate", false}
+      {u8"MousePenetrate", false},
+      {u8"ProgressMonitor", false}
     };
   }
   std::u8string default_skins[][2] = {
@@ -256,8 +255,8 @@ YJson& PluginName::InitSettings(YJson& settings)
 void PluginName::LoadRemoveSkinMenu(MenuBase* parent)
 {
   m_RemoveSkinMenu = new MenuBase(parent);
-  const auto& curSkin = m_Settings[u8"CurSkin"].getValueString();
-  for (const auto& [name, path]: m_Settings[u8"UserSkins"].getObject()) {
+  const auto curSkin = m_Settings.GetCurSkin();
+  for (const auto& [name, path]: m_Settings.GetUserSkins()) {
     auto const action = m_RemoveSkinMenu->addAction(PluginObject::Utf82QString(name));
     action->setToolTip(PluginObject::Utf82QString(path.getValueString()));
     RemoveSkinConnect(action);
@@ -269,8 +268,8 @@ void PluginName::LoadChooseSkinMenu(MenuBase* parent)
   m_ChooseSkinMenu = new MenuBase(parent);
   m_ChooseSkinGroup = new QActionGroup(m_ChooseSkinMenu);
 
-  const std::u8string& curSkin = m_Settings[u8"CurSkin"].getValueString();
-  for (const auto& [name, path]: m_Settings[u8"UserSkins"].getObject()) {
+  const std::u8string curSkin = m_Settings.GetCurSkin();
+  for (const auto& [name, path]: m_Settings.GetUserSkins()) {
     auto const action = m_ChooseSkinMenu->addAction(PluginObject::Utf82QString(name));
     const auto qname = action->text();
     action->setCheckable(true);
@@ -288,16 +287,16 @@ void PluginName::LoadHideAsideMenu(MenuBase* parent)
   parent->addAction("贴边隐藏")->setMenu(menu);
 
   auto lst = {"上", "右", "下", "左"};
-  const int32_t set = m_Settings[u8"HideAside"].getValueInt();
+  const int32_t set = m_Settings.GetHideAside();
   int32_t bit = 1;
   for (auto i: lst) {
     auto const action = menu->addAction(i);
     action->setCheckable(true);
     action->setChecked(set & bit);
     QObject::connect(action, &QAction::triggered, menu, [this, bit](bool on){
-      auto& obj = m_Settings[u8"HideAside"];
-      obj = on ? (obj.getValueInt() | bit) : (obj.getValueInt() & ~bit);
-      mgr->SaveSettings();
+      auto obj = m_Settings.GetHideAside();
+      obj = on ? (obj | bit) : (obj & ~bit);
+      m_Settings.SetHideAside(obj);
       mgr->ShowMsg("设置成功！");
     });
     bit <<= 1;
@@ -309,12 +308,13 @@ void PluginName::RemoveSkinConnect(QAction* action)
   QObject::connect(action, &QAction::triggered, m_RemoveSkinMenu, [action, this](){
     const auto qname = action->text();
     const auto name = PluginObject::QString2Utf8(qname);
-    if (name == m_Settings[u8"CurSkin"].getValueString()) {
+    if (name == m_Settings.GetCurSkin()) {
       mgr->ShowMsg("当前皮肤正在使用，无法删除！");
       return;
     }
-    m_Settings[u8"UserSkins"].remove(name);
-    mgr->SaveSettings();
+    YJson skins(m_Settings.GetUserSkins());
+    skins.remove(name);
+    m_Settings.SetUserSkins(std::move(skins.getObject()));
     m_RemoveSkinMenu->removeAction(action);
 
     QAction* anotherAction = nullptr;
@@ -334,8 +334,7 @@ void PluginName::RemoveSkinConnect(QAction* action)
 void PluginName::ChooseSkinConnect(QAction* action)
 {
   QObject::connect(action, &QAction::triggered, m_ChooseSkinMenu, [action, this](){
-    m_Settings[u8"CurSkin"] = PluginObject::QString2Utf8(action->text());
-    mgr->SaveSettings();
+    m_Settings.SetCurSkin(PluginObject::QString2Utf8(action->text()));
     if (m_Speedbox->UpdateSkin()) {
       mgr->ShowMsg("更换皮肤成功！");
     } else {
@@ -392,8 +391,7 @@ void PluginName::AddSkin(const QString& name, const fs::path& path)
   }
 
   const auto fileName = path.stem();
-  m_Settings[u8"UserSkins"].append(fileName.u8string(), QString2Utf8(name));
-  mgr->SaveSettings();
+  m_Settings.AppendUserSkins(QString2Utf8(name), fileName.u8string());
 
   auto action = m_ChooseSkinMenu->addAction(name);
   action->setToolTip(QString::fromStdU16String(fileName.u16string()));

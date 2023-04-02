@@ -6,6 +6,7 @@
 #include <string>
 
 #include <translate.h>
+#include <translatecfg.h>
 
 class HeightCtrl: public QFrame 
 {
@@ -14,20 +15,21 @@ class HeightCtrl: public QFrame
 protected:
   void wheelEvent(QWheelEvent *event) override;
 public:
-  explicit HeightCtrl(class NeoTranslateDlg* parent, class YJson& setting);
+  explicit HeightCtrl(class NeoTranslateDlg* parent, std::list<YJson> setting);
   ~HeightCtrl() {}
 public:
   void UpdateUi() {
     SetTextHeight(m_Source == Translate::Baidu ? m_Baidu : m_Youdao);
     SetStyleSheet(m_Source == Translate::Baidu ? m_Baidu : m_Youdao);
   }
+public:
+  int m_Baidu;
+  int m_Youdao;
 private:
   void SetStyleSheet(double value);
   void SetTextHeight(double value);
 private:
-  double& m_Baidu;
-  double& m_Youdao;
-  bool& m_Changed;
+  bool m_Changed;
   Translate::Source& m_Source;
   class QPlainTextEdit& m_TextFrom;
   class QTextEdit& m_TextTo;

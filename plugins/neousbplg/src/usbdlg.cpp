@@ -15,7 +15,7 @@
 #include <QPropertyAnimation>
 #include <QGraphicsDropShadowEffect>
 #include <QSocketNotifier>
-// #include <QDebug>
+#include <usbconfig.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -34,19 +34,18 @@
 
 UsbDlg::ItemMap UsbDlg::m_Items;
 
-UsbDlg::UsbDlg(YJson& settings)
+UsbDlg::UsbDlg(UsbConfig& settings)
   : WidgetBase(nullptr)
   , m_Settings(settings)
   , m_CenterWidget(new QWidget(this))
   , m_MainLayout(new QVBoxLayout(m_CenterWidget))
   , m_Animation(new QPropertyAnimation(this, "geometry"))
-  , m_Position(settings[u8"Position"])
 #ifdef __linux__
   , m_NetlinkSocket(-1)
   , m_SocketNotifier(nullptr)
 #endif
 {
-  setWindowFlag(Qt::WindowStaysOnTopHint, m_Settings[u8"StayOnTop"].isTrue());
+  setWindowFlag(Qt::WindowStaysOnTopHint, m_Settings.GetStayOnTop());
   setWindowFlags(Qt::FramelessWindowHint | Qt::Window | Qt::Tool);
   setWindowTitle("U盘助手");
   setAttribute(Qt::WA_TranslucentBackground, true);
@@ -211,7 +210,7 @@ void UsbDlg::SetupUi()
 
   auto const sizeBtn = QSize(14, 14);
   btnTop->setCheckable(true);
-  btnTop->setChecked(m_Settings[u8"StayOnTop"].isTrue());
+  btnTop->setChecked(m_Settings.GetStayOnTop());
   btnTop->setFixedSize(sizeBtn);
   btnTop->setStyleSheet(
     "QPushButton {"
@@ -247,10 +246,9 @@ void UsbDlg::SetupUi()
   connect(btnClose, &QPushButton::clicked, this, &QWidget::hide);
   connect(btnTop, &QPushButton::clicked, this, [this](bool on) {
     // https://blog.csdn.net/wangw8507/article/details/116912796
-    m_Settings[u8"StayOnTop"] = on;
+    m_Settings.SetStayOnTop(on);
     setWindowFlag(Qt::WindowStaysOnTopHint, on);
     show();
-    mgr->SaveSettings();
   });
 }
 
@@ -259,11 +257,11 @@ void UsbDlg::SetupAnimation()
   m_Animation->setDuration(100);
   m_Animation->setTargetObject(this);
   connect(m_Animation, &QPropertyAnimation::finished, this, [this]() {
-    m_Position = YJson::A{x(), y()};
-    mgr->SaveSettings();
+    m_Settings.SetPosition(YJson::A{x(), y()});
   });
-  if (m_Position.isArray()) {
-    move(m_Position[0].getValueInt(), m_Position[1].getValueInt());
+  auto pos = m_Settings.GetPosition();
+  if (pos.isArray()) {
+    move(pos[0].getValueInt(), pos[1].getValueInt());
   }
 #ifdef _WIN32
   SetHideFullScreen();
@@ -453,8 +451,7 @@ void UsbDlg::SetHideFullScreen() {
 bool UsbDlg::nativeEvent(const QByteArray& eventType,
                            void* message,
                            qintptr* result) {
-  static YJson& bHide = m_Settings[u8"HideWhenFull"];
-  if (bHide.isFalse()) return false;
+  if (!m_Settings.GetHideWhenFull()) return false;
   
   MSG* msg = static_cast<MSG*>(message);
   if (MsgCode::MSG_APPBAR_MSGID != static_cast<MsgCode>(msg->message)) return false;
@@ -475,7 +472,7 @@ bool UsbDlg::nativeEvent(const QByteArray& eventType,
 
 void UsbDlg::showEvent(QShowEvent* event)
 {
-  if (!m_Position.isArray()) {
+  if (!m_Settings.GetPosition().isArray()) {
     const auto size = QGuiApplication::primaryScreen()->size();
     const auto mSize = frameSize();
     move(
@@ -490,8 +487,7 @@ void UsbDlg::showEvent(QShowEvent* event)
 void UsbDlg::mouseReleaseEvent(QMouseEvent* event)
 {
   if (event->button() == Qt::LeftButton) {
-    m_Position = YJson::A{x(), y()};
-    mgr->SaveSettings();
+    m_Settings.SetPosition(YJson::A{x(), y()});
   }
   this->WidgetBase::mouseReleaseEvent(event);
 }
@@ -500,7 +496,7 @@ static constexpr int delta = 1;
 
 void UsbDlg::enterEvent(QEnterEvent* event)
 {
-  if (m_Settings[u8"HideAside"].isFalse()) {
+  if (!m_Settings.GetHideAside()) {
     event->ignore();
     return;
   }
@@ -524,7 +520,7 @@ void UsbDlg::enterEvent(QEnterEvent* event)
 
 void UsbDlg::leaveEvent(QEvent* event)
 {
-  if (m_Settings[u8"HideAside"].isFalse()) {
+  if (!m_Settings.GetHideAside()) {
     event->ignore();
     return;
   }
