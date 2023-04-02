@@ -92,9 +92,9 @@ HttpLib::~HttpLib() {
 #endif
 }
 
-HttpLib::String HttpLib::GetDomain()
+std::u8string HttpLib::GetDomain()
 {
-  String result;
+  std::u8string result;
 #ifdef __linux__
   std::u8string::const_iterator iter;
 #endif
@@ -120,7 +120,7 @@ HttpLib::String HttpLib::GetDomain()
   return result;
 }
 
-HttpLib::String HttpLib::GetPath()
+std::u8string HttpLib::GetPath()
 {
   size_t pos;
   if (m_Url.starts_with(u8"https://")) {

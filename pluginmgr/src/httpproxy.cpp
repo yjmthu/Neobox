@@ -8,11 +8,7 @@
 static const wchar_t regProxyPath[] = LR"(Software\Microsoft\Windows\CurrentVersion\Internet Settings)";
 
 HttpProxy::HttpProxy(YJson& settings)
-  : m_Settings(InitSettings(settings))
-  , m_Proxy(settings[u8"Proxy"].getValueString())
-  , m_Username(settings[u8"Username"].getValueString())
-  , m_Password(settings[u8"Password"].getValueString())
-  , m_Type(settings[u8"Type"].getValueDouble())
+  : NeoConfig(InitSettings(settings))
 {}
 
 YJson& HttpProxy::InitSettings(YJson& settings)
@@ -51,53 +47,6 @@ bool HttpProxy::IsSystemProxy()
   auto const str = reinterpret_cast<const char8_t*>(std::getenv("HTTP_PROXY"));
   return str;
 #endif
-}
-
-HttpProxy::String HttpProxy::GetProxy()
-{
-  Locker locker(m_Mutex);
-  return m_Proxy;
-}
-
-void HttpProxy::SetProxy(String proxy)
-{
-  Locker locker(m_Mutex);
-  m_Proxy.swap(proxy);
-}
-
-HttpProxy::String HttpProxy::GetUsername()
-{
-  Locker locker(m_Mutex);
-  return m_Username;
-}
-
-void HttpProxy::SetUsername(String username)
-{
-  Locker locker(m_Mutex);
-  m_Username.swap(username);
-}
-
-HttpProxy::String HttpProxy::GetPassword()
-{
-  Locker locker(m_Mutex);
-  return m_Password;
-}
-
-void HttpProxy::SetPassword(String password)
-{
-  Locker locker(m_Mutex);
-  m_Password.swap(password);
-}
-int HttpProxy::GetType()
-{
-  Locker locker(m_Mutex);
-  return static_cast<int>(m_Type);
-}
-
-void HttpProxy::SetType(int type)
-{
-  Locker locker(m_Mutex);
-  m_Type = type;
 }
 
 bool HttpProxy::IsUserEmpty()

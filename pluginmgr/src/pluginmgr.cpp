@@ -99,9 +99,8 @@ PluginMgr::PluginMgr()
   , m_Tray(new NeoSystemTray)
   , m_Menu(new NeoMenu)
   , m_MsgDlg(new NeoMsgDlg(m_Menu))
-  , m_Settings(InitSettings())
+  , m_Settings((mgr = this, InitSettings()))
 {
-  mgr = this;
   m_Tray->setContextMenu(m_Menu);
   m_Tray->show();
   // QObject::connect(m_Menu->addAction("托盘图标"), &QAction::triggered, m_Tray, &QSystemTrayIcon::show);

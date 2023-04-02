@@ -12,7 +12,7 @@ else()
 endif()
 
 set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui)
-set(pliugin_libfiles pluginmgr yjson)
+set(pliugin_libfiles pluginmgr)
 
 set(plugin_name neousbplg)
 

@@ -9,7 +9,6 @@
 class HttpLib {
 private:
   struct PostData { void* data; size_t size; } m_PostData;
-  typedef HttpProxy::String String;
 public:
   typedef std::map<std::string, std::string> Headers;
   typedef size_t( CallbackFunction )(void*, size_t, size_t, void*);
@@ -77,8 +76,8 @@ private:
   void SetProxyBefore();
   void SetProxyAfter();
   bool SendRequestData();
-  String GetDomain();
-  String GetPath();
+  std::u8string GetDomain();
+  std::u8string GetPath();
 private:
   static CallbackFunction WriteFile;
   static CallbackFunction WriteString;

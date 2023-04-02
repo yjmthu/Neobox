@@ -21,7 +21,7 @@ load_resources(neoocrplg icons/*)
 target_link_libraries(neoocrplg PRIVATE
   ${qt_shared_files}
   ${ocr_libfiles}
-  pluginmgr yjson
+  pluginmgr
   leptonica
   Tesseract::libtesseract
   CURL::libcurl

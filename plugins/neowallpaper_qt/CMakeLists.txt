@@ -8,7 +8,7 @@ else()
   set(system_shared_files "")
 endif()
 set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui)
-set(pliugin_libfiles wallpaper_core pluginmgr yjson)
+set(pliugin_libfiles wallpaper_core pluginmgr)
 
 add_library(neowallpaperplg SHARED ${source_files})
 

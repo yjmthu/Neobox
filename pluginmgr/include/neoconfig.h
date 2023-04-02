@@ -124,17 +124,19 @@ public:                                                        \
 
 class NeoConfig {
 protected:
-  typedef std::function<void()> Callback;
-  typedef PluginMgr::Locker Locker;
+  typedef void (*Callback) ();
+  typedef std::mutex Mutex;
+  typedef std::lock_guard<Mutex> Locker;
+  typedef std::unique_lock<Mutex> LockerEx;
+protected:
   std::mutex& m_Mutex = mgr->m_Mutex;
+  const Callback m_Callback = [](){ mgr->SaveSettings(); };
   YJson& m_Settings;
-  const Callback m_Callback;
 public:
   explicit NeoConfig(YJson& data)
     : m_Settings(data)
-    , m_Callback(std::bind(&PluginMgr::SaveSettings, std::ref(mgr)))
   {}
-  void SaveData() {
+  void SaveData() const {
     m_Mutex.lock();
     m_Callback();
     m_Mutex.unlock();

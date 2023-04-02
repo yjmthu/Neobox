@@ -79,7 +79,6 @@ add_executable(neobox WIN32 main.cpp logo.rc)
 
 target_link_libraries(neobox PUBLIC
   pluginmgr
-  yjson
   Qt6::Widgets
 )
 

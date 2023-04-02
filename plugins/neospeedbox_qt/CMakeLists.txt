@@ -17,7 +17,7 @@ elseif(UNIX)
   set(system_shared_files "")
 endif()
 set(qt_shared_files Qt6::Core Qt6::Widgets)
-set(pliugin_libfiles neospeedbox_core pluginmgr yjson)
+set(pliugin_libfiles neospeedbox_core pluginmgr)
 
 add_library(neospeedboxplg SHARED ${source_files})
 

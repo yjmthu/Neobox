@@ -403,7 +403,7 @@ void UsbDlg::DoDeviceArrival(const QString& lpdb)
   m_MainLayout->addWidget(item);
   item->show();
 #endif
-  if (m_Items.size() == 1 && !isVisible()) {
+  if (m_Items.size() != 0 && !isVisible()) {
     show();
   }
 }

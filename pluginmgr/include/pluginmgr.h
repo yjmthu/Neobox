@@ -20,10 +20,7 @@ public:
     PluginObject* plugin = nullptr;
     void* handle = nullptr;
   };
-  typedef std::mutex Mutex;
-  typedef std::lock_guard<Mutex> Locker;
-  typedef std::unique_lock<Mutex> LockerEx;
-  Mutex m_Mutex;
+  std::mutex m_Mutex;
 public:
   explicit PluginMgr();
   ~PluginMgr();
