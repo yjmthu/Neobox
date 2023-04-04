@@ -493,24 +493,6 @@ void PluginMgr::Restart()
   QApplication::quit();
 }
 
-static void CompareJson(YJson& jsDefault, YJson& jsUser)
-{
-  if (!jsDefault.isSameType(&jsUser))
-    return;
-  if (!jsUser.isObject()) {
-    YJson::swap(jsDefault, jsUser);
-    return;
-  }
-  for (auto& [key, val]: jsUser.getObject()) {
-    auto iter = jsDefault.find(key);
-    if (iter != jsDefault.endO()) {
-      CompareJson(iter->second, val);
-    } else {
-      YJson::swap(jsDefault[key], val);
-    }
-  }
-}
-
 void PluginMgr::WriteSharedFlag(QSharedMemory* sharedMemory, int flag) {
   //m_SharedMemory->setKey(QStringLiteral("__Neobox__"));
   sharedMemory->lock();

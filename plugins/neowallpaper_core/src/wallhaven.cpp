@@ -25,6 +25,15 @@ YJson WallhavenData::InitData() {
   };
 }
 
+bool WallhavenData::IsEmpty() const {
+  return m_Unused.empty() && m_Used.empty();
+}
+
+void WallhavenData::ClearAll() {
+  m_Used.clear();
+  m_Unused.clear();
+}
+
 void WallhavenData::SaveData() {
   m_Data.toFile(m_DataPath);
 }
@@ -120,14 +129,10 @@ bool Wallhaven::CheckData(ImageInfoEx ptr)
   curUrl = m_Data.m_ApiUrl;
 
   if (curUrl == apiUrl) {
-    if (m_Data.m_Unused.empty() &&
-      m_Data.m_Used.empty()) {
-      ptr->ErrorMsg = u8"No data has been downloaded.";
-      ptr->ErrorCode = ImageInfo::DataErr;
-      return false;
-    } else {
-      return true;
-    }
+    if (!m_Data.IsEmpty()) return true;
+    ptr->ErrorMsg = u8"No data has been downloaded.";
+    ptr->ErrorCode = ImageInfo::DataErr;
+    return false;
   }
 
   if (!HttpLib::IsOnline()) {
@@ -136,8 +141,7 @@ bool Wallhaven::CheckData(ImageInfoEx ptr)
     return false;
   }
 
-  m_Data.m_Unused.clear();
-  m_Data.m_Used.clear();
+  m_Data.ClearAll();
   m_Data.m_ApiUrl = apiUrl;
 
   locker.unlock();
@@ -197,13 +201,13 @@ std::string Wallhaven::IsWallhavenFile(std::string name)
 {
   std::regex pattern("^.*(wallhaven-[0-9a-z]{6}).*\\.(png|jpg)$", std::regex::icase);
   std::smatch result;
-  if (std::regex_match(name, result, pattern)) {
-    return result.str(1) + "." + result.str(2);
+  if (!std::regex_match(name, result, pattern)) {
+    return std::string();
   }
-  return {};
+  return result.str(1) + "." + result.str(2);
 }
 
-void Wallhaven::Dislike(const std::u8string& sImgPath)
+void Wallhaven::Dislike(std::u8string_view sImgPath)
 {
   Locker locker(m_DataMutex);
 
@@ -220,7 +224,7 @@ void Wallhaven::Dislike(const std::u8string& sImgPath)
   m_Data.SaveData();
 }
 
-void Wallhaven::UndoDislike(const std::u8string& sImgPath)
+void Wallhaven::UndoDislike(std::u8string_view sImgPath)
 {
   Locker locker(m_DataMutex);
 
@@ -249,7 +253,7 @@ void Wallhaven::SetJson(const YJson& json)
   m_Data.SaveData();
 }
 
-size_t Wallhaven::DownloadUrl(const std::u8string& mainUrl) {
+size_t Wallhaven::DownloadUrl(std::u8string mainUrl) {
   LockerEx locker(m_DataMutex);
 
   size_t m_TotalDownload = 0;
@@ -259,7 +263,7 @@ size_t Wallhaven::DownloadUrl(const std::u8string& mainUrl) {
     GetCurInfo()[u8"StartPage"].getValueInt();
   auto const last = m_Setting[u8"PageSize"].getValueInt() + first;
 
-  const auto url = Utf8AsString(mainUrl);
+  const std::string url(mainUrl.begin(), mainUrl.end());
   std::unique_ptr<HttpLib> clt;
 
   auto Get = [&clt, &url](int i){

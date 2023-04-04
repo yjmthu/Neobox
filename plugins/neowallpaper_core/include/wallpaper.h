@@ -29,7 +29,7 @@ public:
   using Locker = WallBase::Locker;
   using LockerEx = WallBase::LockerEx;
   static bool DownloadImage(const ImageInfoEx imageInfo);
-  static bool IsImageFile(const fs::path& fileName);
+  static bool IsImageFile(const std::u8string & fileName);
 private:
   static bool SetWallpaper(fs::path imagePath);
   static Desktop GetDesktop();
@@ -49,7 +49,7 @@ private:
   void UnSetFavorite();
 
 public:
-  void SetDropFile(std::u8string url);
+  void SetDropFile(std::queue<std::u8string_view> url);
   void UpdateRegString(bool forward=false);
   void SetSlot(OperatorType type);
   bool SetImageType(int type);

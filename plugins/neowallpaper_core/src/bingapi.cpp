@@ -80,13 +80,14 @@ bool BingApi::CheckData()
 
   const auto url = m_Setting[u8"api"].getValueString() + u8"/HPImageArchive.aspx?format=js&idx=0&n=8&mkt="s + m_Setting[u8"region"].getValueString();
 
-  m_DataMutex.unlock();
+  locker.unlock();
   HttpLib clt(url);
   auto res = clt.Get();
   if (res->status != 200)
     return false;
 
-  m_DataMutex.lock();
+  locker.lock();
+  if (m_Data) return true;
   m_Data = new YJson(res->body.begin(), res->body.end());
 
   m_Setting[u8"curday"] = GetToday();
@@ -166,8 +167,7 @@ void BingApi::AutoDownload() {
       ImageInfoEx ptr(new ImageInfo);
       ptr->ImagePath = (imgDir / GetImageName(item)).u8string();
       ptr->ImageUrl = m_Setting[u8"api"].getValueString() +
-                      item[u8"urlbase"].getValueString() +
-                      u8"_UHD.jpg";
+        item[u8"urlbase"].getValueString() + u8"_UHD.jpg";
       ptr->ErrorCode = ImageInfo::NoErr;
       locker.unlock();
       Wallpaper::DownloadImage(ptr);
@@ -181,7 +181,7 @@ std::u8string BingApi::GetToday() {
   auto utc = chrono::system_clock::now();
   std::string result =
       std::format("{0:%Y-%m-%d}", chrono::current_zone()->to_local(utc));
-  return StringAsUtf8(result);
+  return std::u8string(result.begin(), result.end());
 #else
   time_t timep;
   time(&timep);
@@ -200,7 +200,7 @@ std::u8string BingApi::GetToday() {
 std::u8string BingApi::GetImageName(YJson& imgInfo) {
   // see https://codereview.stackexchange.com/questions/156695/converting-stdchronotime-point-to-from-stdstring
   const std::string fmt(Utf8AsString(m_Setting[u8"name-format"].getValueString()));
-  const std::string date = Utf8AsString(imgInfo[u8"enddate"].getValueString());
+  const std::string date(Utf8AsString(imgInfo[u8"enddate"].getValueString()));
   const std::u8string& copyright =
       imgInfo[u8"copyright"].getValueString();
   const std::u8string& title = imgInfo[u8"title"].getValueString();
@@ -227,5 +227,5 @@ std::u8string BingApi::GetImageName(YJson& imgInfo) {
       p->tm_mday
     ));
 #endif
-  return StringAsUtf8(result);
+  return std::u8string(result.begin(), result.end());
 }

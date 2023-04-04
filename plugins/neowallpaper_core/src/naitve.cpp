@@ -67,7 +67,7 @@ size_t Native::GetFileCount() {
         if (bRecursion) {
           qDirsToWalk.push(iter.path());
         }
-      } else if (Wallpaper::IsImageFile(iter.path())) {
+      } else if (auto& path = iter.path(); Wallpaper::IsImageFile(path.u8string())) {
         ++m_iCount;
       }
     }
@@ -114,7 +114,7 @@ bool Native::GetFileList()
         if (bRecursion) {
           qDirsToWalk.push(path);
         }
-      } else if (Wallpaper::IsImageFile(path)) {
+      } else if (Wallpaper::IsImageFile(path.u8string())) {
         if (*target == m_Index) {
           m_FileList.emplace_back(path.u8string());
           ++target;

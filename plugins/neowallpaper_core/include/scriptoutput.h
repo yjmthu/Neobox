@@ -10,7 +10,6 @@ public:
 private:
   YJson& InitSetting(YJson& setting);
   YJson& GetCurInfo();
-  YJson& GetCurInfo() const {
-    return const_cast<ScriptOutput*>(this)->GetCurInfo();
-  }
+  YJson& GetCurInfo() const
+  { return const_cast<ScriptOutput*>(this)->GetCurInfo(); }
 };

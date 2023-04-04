@@ -147,5 +147,5 @@ std::u8string DirectApi::GetImageName() {
         p->tm_min,
         p->tm_sec));
 #endif
-  return StringAsUtf8(result);
+  return std::u8string(result.begin(), result.end());
 }

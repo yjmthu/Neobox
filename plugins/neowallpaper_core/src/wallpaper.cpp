@@ -252,12 +252,12 @@ std::filesystem::path Wallpaper::Url2Name(const std::u8string& url)
     // url's separator is the '/'.
     imagePath /= url.substr(iter);
   } else {
-    auto fmt = m_Settings.GetDropNameFmt();
+    auto fmtStr = m_Settings.GetDropNameFmt();
     auto const extension = url.rfind(u8'.');                       // all url is img file
     auto utc = std::chrono::system_clock::now();
 
     auto const fmtedName = std::vformat(
-      Utf82WideString(fmt + url.substr(extension)),
+      Utf82WideString(fmtStr + url.substr(extension)),
       std::make_wformat_args(
         std::chrono::current_zone()->to_local(utc),
         Utf82WideString(url.substr(iter, extension - iter))
@@ -369,54 +369,52 @@ void Wallpaper::UnSetFavorite() {
 }
 
 const Wallpaper::String Wallpaper::m_ImgNamePattern {
-#ifdef _WIN32
-  L""
-#endif
-  ".*\\.(jpg|bmp|gif|jpeg|png)$"
+  L".*\\.(jpg|bmp|gif|jpeg|png)$"
 };
 
-bool Wallpaper::IsImageFile(const fs::path& filesName) {
+bool Wallpaper::IsImageFile(const std::u8string& filesName) {
   // BMP, PNG, GIF, JPG
-  std::basic_regex<String::value_type> pattern(m_ImgNamePattern, std::regex::icase);
-
-#ifdef _WIN32
-  return std::regex_match(filesName.wstring(), pattern);
-#else
-  return std::regex_match(filesName.string(), pattern);
-#endif
+  auto wideString { Utf82WideString(filesName) };
+  return std::regex_match(wideString, std::wregex(m_ImgNamePattern, std::wregex::icase));
 }
 
-void Wallpaper::SetDropFile(std::u8string url) {
-  // 在线程外使用 Url2Name 函数
-  auto imageName = Url2Name(url);
+void Wallpaper::SetDropFile(std::queue<std::u8string_view> urls) {
 
-  std::thread([this, url, imageName]() mutable {
-    Locker locker(m_ThreadMutex);
-    if (url.starts_with(u8"http")) {
-      ImageInfoEx ptr(new ImageInfo{
-        imageName.u8string(),
-        url,
-        {/* ??? */},
-        ImageInfo::Errors::NoErr,
-      });
-      PushBack(ptr);
-    } else if (fs::path oldName = url; fs::exists(oldName)) {
-      oldName.make_preferred();
+  while (!urls.empty()) {
+    std::u8string url(urls.front());
+    urls.pop();
+    if (IsImageFile(url)) {
+      std::thread([this, url]() {
+        auto imageName = Url2Name(url);
+        Locker locker(m_ThreadMutex);
+        if (url.starts_with(u8"http")) {
+          ImageInfoEx ptr(new ImageInfo {
+            .ImagePath = imageName.u8string(),
+            .ImageUrl = url,
+            .ErrorCode = ImageInfo::Errors::NoErr,
+          });
+          PushBack(ptr);
+        } else if (fs::path oldName = url; fs::exists(oldName)) {
+          oldName.make_preferred();
 
-      if (oldName.parent_path() != imageName.parent_path()) {
-        imageName = std::move(oldName);
-      } else {                     // don't move wallpaper to the same directory.
-        fs::copy(oldName, imageName);
-      }
-      if (SetWallpaper(imageName)) {
-        m_DataMutex.lock();
-        m_PrevImgs.push_back(m_CurImage);
-        m_CurImage = std::move(imageName);
-        m_DataMutex.unlock();
-      }
+          if (oldName.parent_path() != imageName.parent_path()) {
+            imageName = std::move(oldName);
+          } else {                     // don't move wallpaper to the same directory.
+            fs::copy(oldName, imageName);
+          }
+          if (SetWallpaper(imageName)) {
+            m_DataMutex.lock();
+            m_PrevImgs.push_back(m_CurImage);
+            m_CurImage = std::move(imageName);
+            m_DataMutex.unlock();
+          }
+        }
+        WriteSettings();
+      }).detach();
     }
-    WriteSettings();
-  }).detach();
+  }
+
+
 }
 
 bool Wallpaper::PushBack(ImageInfoEx ptr) {

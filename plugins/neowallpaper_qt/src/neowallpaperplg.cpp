@@ -94,21 +94,23 @@ void PluginName::InitFunctionMap()
     if (event == PluginEvent::Drop) {
       const auto mimeData = reinterpret_cast<QDropEvent*>(data)->mimeData();
       if (!mimeData->hasUrls()) return;
-      auto urls = mimeData->urls();
-      if (urls.empty()) return;
-      if (auto& url = urls.front(); url.isValid()) {
-        QByteArray buffer;
-        if (url.isLocalFile()) {
-          buffer = url.toLocalFile().toUtf8();
-        } else if (url.scheme().startsWith("http")) {
-          buffer = url.toString().toUtf8();
+      std::list<QByteArray> dataRaw;
+      std::queue<std::u8string_view> dataRef;
+      for (const auto& i: mimeData->urls()) {
+        if (!i.isValid()) continue;
+        if (i.isLocalFile()) {
+          dataRaw.push_back(i.toLocalFile().toUtf8());
+        } else if (i.scheme().startsWith("http")) {
+          dataRaw.push_back(i.toString().toUtf8());
+        } else {
+          continue;
         }
-        if (!buffer.isEmpty() && buffer.isValidUtf8()) {
-          m_Wallpaper->SetDropFile(
-            std::u8string(buffer.begin(), buffer.end())
-          );
-        }
+        dataRef.push(std::u8string_view(
+          reinterpret_cast<const char8_t*>(dataRaw.back().constData()),
+          dataRaw.back().size()
+        ));
       }
+      m_Wallpaper->SetDropFile(dataRef);
     }
   }});
 }

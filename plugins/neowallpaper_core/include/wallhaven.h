@@ -19,6 +19,8 @@ public:
   YJson::ArrayType& m_Used;
   YJson::ArrayType& m_Unused;
   YJson::ArrayType& m_Blacklist;
+  bool IsEmpty() const;
+  void ClearAll();
   void SaveData();
 };
 
@@ -27,8 +29,8 @@ class Wallhaven : public WallBase {
   static bool IsPngFile(std::u8string& str);
  public:
   ImageInfoEx GetNext() override;
-  void Dislike(const std::u8string& sImgPath) override;
-  void UndoDislike(const std::u8string& sImgPath) override;
+  void Dislike(std::u8string_view sImgPath) override;
+  void UndoDislike(std::u8string_view sImgPath) override;
 public:
   explicit Wallhaven(YJson& setting);
   virtual ~Wallhaven();
@@ -37,12 +39,11 @@ public:
 private:
   YJson& InitSetting(YJson& setting);
   YJson& GetCurInfo();
-  YJson& GetCurInfo() const {
-    return const_cast<Wallhaven*>(this)->GetCurInfo();
-  };
+  YJson& GetCurInfo() const
+  { return const_cast<Wallhaven*>(this)->GetCurInfo(); };
 
   std::string IsWallhavenFile(std::string name);
-  size_t DownloadUrl(const std::u8string& mainUrl);
+  size_t DownloadUrl(std::u8string mainUrl);
   bool CheckData(ImageInfoEx ptr);
   std::u8string GetApiPathUrl() const;
 private:

@@ -46,8 +46,9 @@ size_t Favorite::GetFileCount() const
     return m_iCount;
 
   for (auto& iter : fs::directory_iterator(curDir)) {
+    auto& path = iter.path();
     if (fs::is_directory(iter.status())) {
-    } else if (Wallpaper::IsImageFile(iter.path())) {
+    } else if (Wallpaper::IsImageFile(path.u8string())) {
       ++m_iCount;
     }
   }
@@ -79,9 +80,9 @@ bool Favorite::GetFileList()
   }
 
   for (auto target = numbers.cbegin(); auto& iter : fs::directory_iterator(curDir)) {
-    fs::path path = iter.path();
+    auto& path = iter.path();
     if (fs::is_directory(iter.status())) {
-    } else if (Wallpaper::IsImageFile(path)) {
+    } else if (Wallpaper::IsImageFile(path.u8string())) {
       if (*target == m_Index) {
         m_FileList.emplace_back(path.u8string());
         ++target;
@@ -125,7 +126,7 @@ ImageInfoEx Favorite::GetNext()
   return ptr;
 }
 
-void Favorite::Dislike(const std::u8string& sImgPath)
+void Favorite::Dislike(std::u8string_view sImgPath)
 {
   Locker locker(m_DataMutex);
 
@@ -149,7 +150,7 @@ void Favorite::Dislike(const std::u8string& sImgPath)
   }
 }
 
-void Favorite::UndoDislike(const std::u8string& sImgPath)
+void Favorite::UndoDislike(std::u8string_view sImgPath)
 {  
   Locker locker(m_DataMutex);
 

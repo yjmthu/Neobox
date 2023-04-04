@@ -13,7 +13,7 @@
 #include <tchar.h>
 #include <windows.h>
 
-inline std::wstring Utf82WideString(const std::u8string& u8Str) {
+inline std::wstring Utf82WideString(std::u8string_view u8Str) {
   int nWideCount = MultiByteToWideChar(
       CP_UTF8, 0, reinterpret_cast<const char*>(u8Str.data()),
       (int)u8Str.size(), NULL, 0);
@@ -26,7 +26,7 @@ inline std::wstring Utf82WideString(const std::u8string& u8Str) {
   return strResult;
 }
 
-inline std::u8string Wide2Utf8String(const std::wstring& wStr) {
+inline std::u8string Wide2Utf8String(std::wstring_view wStr) {
   //获取所需缓冲区大小
   int nU8Count = WideCharToMultiByte(CP_UTF8, 0, wStr.data(), (int)wStr.size(),
                                      NULL, 0, NULL, NULL);
@@ -40,7 +40,7 @@ inline std::u8string Wide2Utf8String(const std::wstring& wStr) {
   return strResult;
 }
 
-inline std::wstring Ansi2WideString(const std::string& ansiStr) {
+inline std::wstring Ansi2WideString(std::string_view ansiStr) {
   int nWideCount = MultiByteToWideChar(CP_ACP, 0, ansiStr.data(),
                                        (int)ansiStr.size(), NULL, 0);
   if (nWideCount == 0) {
@@ -52,7 +52,7 @@ inline std::wstring Ansi2WideString(const std::string& ansiStr) {
   return strResult;
 }
 
-inline std::string Wide2AnsiString(const std::wstring& wStr) {
+inline std::string Wide2AnsiString(std::wstring_view wStr) {
   //获取所需缓冲区大小
   int nAnsiCount = WideCharToMultiByte(CP_ACP, 0, wStr.data(), (int)wStr.size(),
                                        NULL, 0, NULL, NULL);
@@ -65,11 +65,11 @@ inline std::string Wide2AnsiString(const std::wstring& wStr) {
   return strResult;
 }
 
-inline std::string Utf82AnsiString(const std::u8string& u8Str) {
+inline std::string Utf82AnsiString(std::u8string_view u8Str) {
   return Wide2AnsiString(Utf82WideString(u8Str));
 }
 
-inline std::u8string Ansi2Utf8String(const std::string& ansiStr) {
+inline std::u8string Ansi2Utf8String(std::string_view ansiStr) {
   return Wide2Utf8String(Ansi2WideString(ansiStr));
 }
 

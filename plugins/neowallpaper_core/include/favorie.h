@@ -16,8 +16,8 @@ public:
   ImageInfoEx GetNext() override;
   fs::path GetImageDir() const;
 
-  void Dislike(const std::u8string& sImgPath) override;
-  void UndoDislike(const std::u8string& sImgPath) override;
+  void Dislike(std::u8string_view sImgPath) override;
+  void UndoDislike(std::u8string_view sImgPath) override;
 
 private:
   size_t GetFileCount() const;

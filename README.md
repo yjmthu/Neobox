@@ -103,6 +103,8 @@
 | <kbd>Ctrl</kbd> + <kbd>Tab</kbd> | tab |
 | <kbd>Esc</kbd> | 关闭窗口 |
 
+> 技巧：拖拽文字到悬浮窗可翻译文字。
+
 </details>
 
 <details>

@@ -50,19 +50,19 @@ void TabNetProxy::InitSignals()
 
 void TabNetProxy::SaveData()
 {
-  HttpLib::m_Proxy->SetProxy(PluginObject::QString2Utf8(ui->lineProxy->text()));
-  HttpLib::m_Proxy->SetUsername(PluginObject::QString2Utf8(ui->lineUsername->text()));
-  HttpLib::m_Proxy->SetPassword(PluginObject::QString2Utf8(ui->linePassword->text()));
+  HttpLib::m_Proxy->SetProxy(PluginObject::QString2Utf8(ui->lineProxy->text()), false);
+  HttpLib::m_Proxy->SetUsername(PluginObject::QString2Utf8(ui->lineUsername->text()), false);
+  HttpLib::m_Proxy->SetPassword(PluginObject::QString2Utf8(ui->linePassword->text()), false);
   // HttpLib::m_Proxy.port = m_Port = ui->linePort->text().toInt();
 
   if (ui->rBtnSystemProxy->isChecked()) {
-    HttpLib::m_Proxy->SetType(0);
+    HttpLib::m_Proxy->SetType(0, false);
   } else if (ui->rBtnUserProxy->isChecked()) {
-    HttpLib::m_Proxy->SetType(1);
+    HttpLib::m_Proxy->SetType(1, false);
   } else {
-    HttpLib::m_Proxy->SetType(2);
+    HttpLib::m_Proxy->SetType(2, false);
   }
-  //  to do save
+  HttpLib::m_Proxy->SaveData();
   mgr->ShowMsg("保存成功~");
 }
 
@@ -79,6 +79,7 @@ void TabNetProxy::InitData()
       ui->rBtnNoProxy->setChecked(true);
       break;
   }
+
   ui->lineProxy->setText(PluginObject::Utf82QString(HttpLib::m_Proxy->GetProxy()));
   ui->linePassword->setText(PluginObject::Utf82QString(HttpLib::m_Proxy->GetPassword()));
   ui->lineUsername->setText(PluginObject::Utf82QString(HttpLib::m_Proxy->GetUsername()));

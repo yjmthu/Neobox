@@ -74,9 +74,9 @@ void WallBase::ClearInstatnce() {
   s_pBingApi = nullptr;
 }
 
-void WallBase::Dislike(const std::u8string& sImgPath) {}
+void WallBase::Dislike(std::u8string_view sImgPath) {}
 
-void WallBase::UndoDislike(const std::u8string& sImgPath) {}
+void WallBase::UndoDislike(std::u8string_view sImgPath) {}
 
 void WallBase::SetJson(const YJson& json) {
   m_DataMutex.lock();
