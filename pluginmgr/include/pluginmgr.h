@@ -20,7 +20,7 @@ public:
     PluginObject* plugin = nullptr;
     void* handle = nullptr;
   };
-  std::mutex m_Mutex;
+  mutable std::mutex m_Mutex;
 public:
   explicit PluginMgr();
   ~PluginMgr();

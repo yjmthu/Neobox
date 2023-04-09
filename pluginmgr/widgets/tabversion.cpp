@@ -19,7 +19,7 @@
 
 using namespace std::literals;
 
-TabVersion::TabVersion(QWidget* parent)
+TabVersion::TabVersion(PluginCenter* parent)
   : QWidget(parent)
   , m_MainLayout(new QHBoxLayout(this))
 {
@@ -48,6 +48,8 @@ void TabVersion::InitLayout()
   m_Text->setOpenExternalLinks(true);
   layout1->addWidget(m_Text);
   m_Text->setReadOnly(true);
+
+  qobject_cast<PluginCenter*>(parent())->AddScrollBar(m_Text->verticalScrollBar());
 
   QHBoxLayout* layout2 =new QHBoxLayout;
   m_btnWeb = new QPushButton("开源网站", this);
@@ -104,8 +106,7 @@ void TabVersion::GetUpdate()
   auto& array = jsAboutNew[u8"assets"].getArray();
   if (!array.empty()) {
     buffer.append(u8"<h3>下载链接：</h3><ol>");
-    for (auto& item: array)
-    {
+    for (auto& item: array) {
       auto& name = item[u8"name"].getValueString();
       auto& url = item[u8"browser_download_url"].getValueString();
       buffer += u8"<li><a href='" + url + u8"'>" + name + u8"</a></li>";

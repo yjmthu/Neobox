@@ -11,4 +11,3 @@ target_link_libraries(weather PRIVATE
   ${pliugin_libfiles}
   ${qt_shared_files}
 )
-

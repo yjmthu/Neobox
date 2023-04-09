@@ -8,7 +8,7 @@
 
 #define CfgBool(VarName)                                       \
 public:                                                        \
-  bool Get##VarName() {                                        \
+  bool Get##VarName() const {                                  \
     Locker locker(m_Mutex);                                    \
     return m_##VarName == YJson::True;                         \
   }                                                            \
@@ -22,7 +22,7 @@ private:                                                       \
 
 #define CfgInt(VarName)                                        \
 public:                                                        \
-  int Get##VarName() {                                         \
+  int Get##VarName() const {                                   \
     Locker locker(m_Mutex);                                    \
     return static_cast<int>(m_##VarName);                      \
   }                                                            \
@@ -36,7 +36,7 @@ private:                                                       \
 
 #define CfgDouble(VarName)                                     \
 public:                                                        \
-  double Get##VarName() {                                      \
+  double Get##VarName() const {                                \
     Locker locker(m_Mutex);                                    \
     return m_##VarName;                                        \
   }                                                            \
@@ -50,7 +50,7 @@ private:                                                       \
 
 #define CfgString(VarName)                                     \
 public:                                                        \
-  std::u8string Get##VarName() {                               \
+  std::u8string Get##VarName() const {                         \
     Locker locker(m_Mutex);                                    \
     return m_##VarName;                                        \
   }                                                            \
@@ -65,7 +65,7 @@ private:                                                       \
 
 #define CfgArray(VarName)                                      \
 public:                                                        \
-  YJson::ArrayType Get##VarName() {                            \
+  YJson::ArrayType Get##VarName() const {                      \
     Locker locker(m_Mutex);                                    \
     return m_##VarName;                                        \
   }                                                            \
@@ -85,7 +85,7 @@ private:                                                       \
 
 #define CfgObject(VarName)                                      \
 public:                                                         \
-  YJson::ObjectType Get##VarName() {                            \
+  YJson::ObjectType Get##VarName() const {                      \
     Locker locker(m_Mutex);                                     \
     return m_##VarName;                                         \
   }                                                             \
@@ -105,7 +105,7 @@ private:                                                        \
 
 #define CfgYJson(VarName)                                      \
 public:                                                        \
-  YJson Get##VarName() {                                       \
+  YJson Get##VarName() const {                                 \
     Locker locker(m_Mutex);                                    \
     return m_##VarName;                                        \
   }                                                            \

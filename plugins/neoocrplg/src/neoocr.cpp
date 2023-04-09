@@ -8,6 +8,7 @@
 #include <ranges>
 #include <set>
 #include <regex>
+#include <mutex>
 
 #include <QByteArray>
 #include <QImage>
@@ -19,6 +20,7 @@
 
 std::unique_ptr<Pix, void(*)(Pix*)> QImage2Pix(const QImage& qImage);
 namespace fs = std::filesystem;
+static std::mutex s_ThreadMutex;
 
 #ifdef _WIN32
 #include <Unknwn.h>
@@ -70,6 +72,7 @@ NeoOcr::~NeoOcr()
 #ifdef __linux__
   delete m_TessApi;
 #endif
+  std::lock_guard<std::mutex> locker(s_ThreadMutex);
 }
 
 static auto OpenImageFile(std::wstring uriImage) {
@@ -263,10 +266,39 @@ void NeoOcr::InitLanguagesList()
   );
 }
 
-void NeoOcr::DownloadFile(const std::u8string& url, const fs::path& path)
+void NeoOcr::DownloadFile(std::u8string_view url, const fs::path& path)
 {
   HttpLib clt(url);
   clt.Get(path);
+}
+
+void NeoOcr::SetDropData(std::queue<std::u8string_view>& data)
+{
+  auto const folder = fs::path(m_Settings.GetTessdataDir());
+
+  std::vector<std::u8string> urls;
+  while (!data.empty()) {
+    auto str(data.front());
+    data.pop();
+    if (str.starts_with(u8"http")) {
+      urls.emplace_back(str);
+    } else {
+      fs::path path = str;
+      fs::copy(str, folder / path.filename());
+    }
+  }
+  if (!urls.empty()) {
+    std::thread([urls, folder](){
+      std::lock_guard<std::mutex> locker(s_ThreadMutex);
+      for (auto& url: urls) {
+        auto pos = url.rfind(u8'/');
+        if (pos == url.npos) {
+          continue;
+        }
+        HttpLib(url).Get(folder / url.substr(pos + 1));
+      }
+    }).detach();
+  }
 }
 
 std::u8string NeoOcr::GetLanguageName(const std::u8string& url)

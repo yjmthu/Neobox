@@ -13,8 +13,6 @@
 *.o
 Makefile
 build
-build-rel
-build-dbg
 install
 out
 yjson

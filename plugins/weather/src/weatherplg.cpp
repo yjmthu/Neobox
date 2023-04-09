@@ -1,12 +1,12 @@
-﻿#include <weatherdlg.h>
-#include <weatherplg.h>
+﻿#include <weatherplg.h>
+#include <weatherdlg.h>
 
 #define PluginName WeatherPlg
 #include <pluginexport.cpp>
 
 PluginName::PluginName(YJson& settings)
   : PluginObject(InitSettings(settings), u8"weatherplg", u8"天气预报")
-  , m_WeatherDlg(new WeatherDlg)
+  , m_WeatherDlg(new WeatherDlg(m_Settings))
 {
   InitFunctionMap();
 }

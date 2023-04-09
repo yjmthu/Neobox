@@ -1,5 +1,5 @@
-﻿#ifndef WEATHER_H
-#define WEATHER_H
+﻿#ifndef WEATHERDLG_H
+#define WEATHERDLG_H
 
 #include <widgetbase.hpp>
 
@@ -11,4 +11,4 @@ private:
   class YJson& m_Settings;
 };
 
-#endif // WEATHER_H
+#endif // WEATHERDLG_H

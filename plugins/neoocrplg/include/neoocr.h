@@ -4,6 +4,7 @@
 #include <functional>
 #include <string>
 #include <filesystem>
+#include <queue>
 
 namespace tesseract {
   class TessBaseAPI;
@@ -24,18 +25,19 @@ public:
   ~NeoOcr();
   std::u8string GetText(QImage image);
   std::vector<OcrResult> GetTextEx(QImage image);
-  static std::vector<std::pair<std::wstring, std::wstring>> GetLanguages();
   void InitLanguagesList();
   void AddLanguages(const std::vector<std::u8string>& urls);
   void RmoveLanguages(const std::vector<std::u8string>& names);
   void SetDataDir(const std::u8string& dirname);
+  void SetDropData(std::queue<std::u8string_view>& data);
+  static std::vector<std::pair<std::wstring, std::wstring>> GetLanguages();
 private:
   std::u8string OcrWindows(const QImage& image);
   std::u8string OcrTesseract(const QImage& image);
 private:
   OcrConfig& m_Settings;
   std::u8string GetLanguageName(const std::u8string& url);
-  void DownloadFile(const std::u8string& url,
+  static void DownloadFile(std::u8string_view url,
       const std::filesystem::path& path);
   tesseract::TessBaseAPI* m_TessApi;
   std::u8string m_Languages;

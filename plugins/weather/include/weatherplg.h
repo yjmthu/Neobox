@@ -1,5 +1,5 @@
-#ifndef WEATHER_H
-#define WEATHER_H
+#ifndef WEATHERPLG_H
+#define WEATHERPLG_H
 
 #include <pluginobject.h>
 #include <yjson.h>
@@ -18,4 +18,4 @@ private:
   class WeatherDlg* m_WeatherDlg;
 };
 
-#endif
+#endif // WEATHERPLG_H

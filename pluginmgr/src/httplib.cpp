@@ -437,7 +437,10 @@ HttpLib::Response* HttpLib::Get()
 
 HttpLib::Response* HttpLib::Get(const fs::path& path)
 {
-  std::ofstream stream(path, std::ios::binary | std::ios::out);
+  fs::path tempPath = GetTempFileName();
+  if (tempPath.empty()) return nullptr;
+
+  std::ofstream stream(tempPath, std::ios::binary | std::ios::out);
   m_Response.body.clear();
   m_CallBack = &HttpLib::WriteFile;
   if (!stream.is_open())
@@ -446,6 +449,10 @@ HttpLib::Response* HttpLib::Get(const fs::path& path)
 
   HttpPerform();
   stream.close();
+
+  if (!fs::file_size(tempPath)) return nullptr;
+
+  fs::rename(tempPath, path);
   return &m_Response;
 }
 

@@ -8,7 +8,7 @@ class TabVersion: public QWidget
 // protected:
 //   void showEvent(QShowEvent *event) override;
 public:
-  explicit TabVersion(QWidget* parent);
+  explicit TabVersion(class PluginCenter* parent);
   ~TabVersion();
 private:
   // const class YJson* m_VersionInfo;

@@ -31,6 +31,7 @@
 
 #include <filesystem>
 #include <ranges>
+#include <queue>
 
 #define PluginName NeoOcrPlg
 #include <pluginexport.cpp>
@@ -146,21 +147,27 @@ void PluginName::InitFunctionMap() {
     if (event == PluginEvent::Drop) {
       const auto mimeData = reinterpret_cast<QDropEvent*>(data)->mimeData();
       if (!mimeData->hasUrls()) return;
-      const auto urls = mimeData->urls();
-      auto uiUrlsView = urls | std::views::filter([](const QUrl& i) {
-          return i.isValid() && i.isLocalFile() && i.fileName().endsWith(".traineddata");
-        }) | std::views::transform([](const QUrl& url){
-          return fs::path(PluginObject::QString2Utf8(url.toLocalFile()));
-        }) | std::views::filter([](const fs::path& url) {
-          return fs::exists(url);
-        });
-    std::vector<fs::path> vec(uiUrlsView.begin(), uiUrlsView.end());
-      auto const folder = fs::path(m_Settings.GetTessdataDir());
-      for (const auto& file: vec) {
-        fs::copy(file, folder / file.filename());
+      std::list<QByteArray> dataRaw;
+      std::queue<std::u8string_view> dataRef;
+
+      for (const auto& i: mimeData->urls()) {
+        if (!i.isValid()) continue;
+        if (i.isLocalFile() && i.fileName().endsWith(".traineddata")) {
+          dataRaw.push_back(i.toLocalFile().toUtf8());
+        } else if (i.scheme().startsWith("http") && i.toString().endsWith(".traineddata")) {
+          dataRaw.push_back(i.toString().toUtf8());
+        } else {
+          continue;
+        }
+        dataRef.push(std::u8string_view(
+          reinterpret_cast<const char8_t*>(dataRaw.back().constData()),
+          dataRaw.back().size()
+        ));
       }
-      if (!vec.empty())
+      if (!dataRaw.empty()) {
+        m_Ocr->SetDropData(dataRef);
         mgr->ShowMsg("复制数据文件成功。");
+      }
     }
   }});
 }

@@ -89,7 +89,8 @@ void WallhavenExMenu::LoadSubSettingMenu(QAction* action)
     });
   }
   connect(pSonMenu->addAction("参数设置"), &QAction::triggered, this,
-    std::bind(&WallhavenExMenu::EditCurType, this, PluginObject::QString2Utf8(action->text())));
+    std::bind(&WallhavenExMenu::EditCurType, this,
+    std::ref(m_Data[u8"WallhavenApi"][PluginObject::QString2Utf8(action->text())][u8"Parameter"])));
   connect(pSonMenu->addAction("起始页面"), &QAction::triggered, this, [this, viewName](){
     auto& page = m_Data[u8"WallhavenApi"][viewName][u8"StartPage"];
     auto i = QInputDialog::getInt(this, "输入数字", "请输入壁纸起始页面，每页最多有24张壁纸", page.getValueInt(), 1, 100);
@@ -121,6 +122,11 @@ void WallhavenExMenu::LoadMoreActions()
     SaveSettings();
     mgr->ShowMsg("配置成功！");
   });
+  auto ptr = addAction("全局参数");
+  ptr->setToolTip("对所有类型的壁纸都生效的参数");
+  connect(ptr, &QAction::triggered, this,
+    std::bind(&WallhavenExMenu::EditCurType, this,
+      std::ref(m_Data[u8"Parameter"])));
   connect(addAction("添加更多"), &QAction::triggered, this, std::bind(&WallhavenExMenu::AddNewType, this));
   connect(addAction("关于壁纸"), &QAction::triggered, this, [this]() {
     const auto name = GetImageName(GetCurImage());
@@ -196,10 +202,9 @@ void WallhavenExMenu::EditNewType(std::u8string typeName)
   editor.exec();
 }
 
-void WallhavenExMenu::EditCurType(std::u8string typeName)
+void WallhavenExMenu::EditCurType(YJson& curJson)
 {
-  auto& params = m_Data[u8"WallhavenApi"][typeName][u8"Parameter"];
-  auto const editor = new MapEditor("编辑参数", params, [this, typeName, &params](bool changed, const YJson& data){
+   MapEditor("编辑参数", curJson, [this, &curJson](bool changed, const YJson& data){
     if (!changed) {
       mgr->ShowMsg("取消设置成功！");
       return;
@@ -209,9 +214,8 @@ void WallhavenExMenu::EditCurType(std::u8string typeName)
       return;
     }
 
-    params = data;
+    curJson = data;
     SaveSettings();
     mgr->ShowMsg("配置成功！");
-  });
-  editor->show();
+  }).exec();
 }

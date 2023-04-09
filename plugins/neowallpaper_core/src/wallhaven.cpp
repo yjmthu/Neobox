@@ -64,55 +64,50 @@ bool Wallhaven::IsPngFile(std::u8string& str) {
 
 YJson& Wallhaven::InitSetting(YJson& setting)
 {
-  if (setting.isObject()) {
-    return setting;
+  if (!setting.isObject()) {
+    setting = YJson::O {
+      {u8"WallhavenCurrent", u8"最热壁纸"},
+      {u8"WallhavenApi", YJson::O {}},
+      // {u8"ApiKey", YJson::Null},
+      {u8"PageSize", 5},
+      {u8"Parameter", YJson::O {
+        // {u8"ApiKey", nullptr},
+      }}
+    };
   }
-  setting = YJson::O {
-    {u8"WallhavenCurrent", u8"最热壁纸"},
-    {u8"WallhavenApi", YJson::O {}},
-    {u8"ApiKey", YJson::Null},
-    {u8"PageSize", 5},
-  };
-  std::initializer_list<std::tuple<std::u8string, bool, std::u8string, std::u8string>>
-    paramLIst = {
-      {u8"最热壁纸"s, true, u8"categories"s, u8"111"s},
-      {u8"风景壁纸"s, true, u8"q"s, u8"nature"s},
-      {u8"动漫壁纸"s, true, u8"categories"s, u8"010"s},
-      {u8"随机壁纸"s, false, u8"sorting"s, u8"random"s},
-      {u8"极简壁纸"s, false, u8"q"s, u8"minimalism"s},
-      // {u8"鬼刀壁纸"s, false, u8"q"s, u8"ghostblade"s}
-  };
-  auto& m_ApiObject = setting[u8"WallhavenApi"];
-  const auto initDir = GetStantardDir(u8"壁纸天堂");
+  if (auto& param = setting[u8"Parameter"]; param.isNull()) {
+    param = YJson::Object;
+  }
+  if (auto& m_ApiObject = setting[u8"WallhavenApi"]; m_ApiObject.emptyO()) {
+    std::initializer_list<std::tuple<std::u8string, bool, std::u8string, std::u8string>>
+      paramLIst = {
+        {u8"最热壁纸"s, true, u8"categories"s, u8"111"s},
+        {u8"风景壁纸"s, true, u8"q"s, u8"nature"s},
+        {u8"动漫壁纸"s, true, u8"categories"s, u8"010"s},
+        {u8"随机壁纸"s, false, u8"sorting"s, u8"random"s},
+        {u8"极简壁纸"s, false, u8"q"s, u8"minimalism"s},
+        // {u8"鬼刀壁纸"s, false, u8"q"s, u8"ghostblade"s}
+    };
+    const auto initDir = GetStantardDir(u8"壁纸天堂");
 
-  for (const auto& [i, j, k, l] : paramLIst) {
-    auto& item = m_ApiObject.append(YJson::Object, i)->second;
-    item[u8"Parameter"] = j ? YJson::O {
-      {u8"sorting", u8"toplist"}, {k, l}}: YJson::O {{k, l},};
-    item.append(initDir, u8"Directory");
-    item.append(1, u8"StartPage");
+    for (const auto& [i, j, k, l] : paramLIst) {
+      auto& item = m_ApiObject.append(YJson::Object, i)->second;
+      item[u8"Parameter"] = j ? YJson::O {
+        {u8"sorting", u8"toplist"}, {k, l}}: YJson::O {{k, l},};
+      item.append(initDir, u8"Directory");
+      item.append(1, u8"StartPage");
+    }
+    SaveSetting();
   }
-  SaveSetting();
   return setting;
 }
 
 std::u8string Wallhaven::GetApiPathUrl() const
 {
-  const auto& apiInfo = GetCurInfo();
-  std::u8string result;
-  auto& param = apiInfo[u8"Parameter"];
-  if (param.isObject()) {
-    result = param.urlEncode(u8"https://wallhaven.cc/api/v1/search?"sv);
-  } else if (param.isString()) {
-    result = param.getValueString();
-  } else {
-    throw std::runtime_error("Cant find Wallhaven Parameter or Path!"s);
-  }
-  auto& ApiKey = m_Setting[u8"ApiKey"];
-  if (ApiKey.isString()) {
-    result.append(u8"&apikey="s + ApiKey.getValueString());
-  }
-  return result;
+  return YJson::joinO(
+    GetCurInfo()[u8"Parameter"],
+    m_Setting[u8"Parameter"]
+  ).urlEncode(u8"https://wallhaven.cc/api/v1/search?"sv);
 }
 
 YJson& Wallhaven::GetCurInfo()

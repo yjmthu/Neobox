@@ -152,6 +152,22 @@ inline std::wstring GetExeFullPath() {
   return exeFullPath;
 }
 
+inline std::wstring GetTempPath() {
+  std::wstring tempFullPath(MAX_PATH, '\0');
+  ::GetTempPathW(MAX_PATH, tempFullPath.data());
+  tempFullPath.erase(tempFullPath.find(L'\0'));
+  return tempFullPath;
+}
+
+inline std::wstring GetTempFileName() {
+  WCHAR lpPathBuffer[MAX_PATH];
+  GetTempPathW(MAX_PATH, lpPathBuffer);
+  std::wstring lpFileName(MAX_PATH, L'\0');
+  GetTempFileNameW(lpPathBuffer, L"neobox", 0, lpFileName.data());
+  lpFileName.erase(lpFileName.find(L'\0'));
+  return lpFileName;
+}
+
 std::wstring RegReadString(HKEY dwSubKey, LPCWSTR pPath, LPCWSTR pKeyName);
 bool RegWriteString(HKEY dwSubKey,
                     LPCWSTR pPath,
