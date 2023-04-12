@@ -39,12 +39,12 @@ set(plugin_subdirs
   neousbplg
   neosystemplg
   neospeedbox_core
-  neospeedbox_qt
+  neospeedboxplg
   neoocrplg
   neowallpaper_core
-  neowallpaper_qt
+  neowallpaperplg
   neotranslate_core
-  neotranslate_qt
+  neotranslateplg
   neocolorplg
   weather
 )
