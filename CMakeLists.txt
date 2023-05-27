@@ -73,6 +73,7 @@ add_subdirectory(thirdlib/YJson yjson)
 add_subdirectory(thirdlib/zip zip)
 add_subdirectory(pluginmgr)
 add_subdirectory(plugins)
+add_subdirectory(example)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 add_executable(neobox WIN32 main.cpp logo.rc)

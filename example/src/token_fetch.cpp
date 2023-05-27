@@ -15,6 +15,10 @@ std::u8string get_access_token(const std::string &AK, const std::string &SK) {
   return json[u8"access_token"].getValueString();
 }
 
+std::ostream& operator<<(std::ostream& o, const std::u8string& data) {
+  return o.write(reinterpret_cast<const char*>(data.data()), data.size());
+}
+
 int main(int argc, char* argv[]) {
 #ifdef _WIN32
   SetConsoleOutputCP(65001);
