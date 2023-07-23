@@ -7,6 +7,8 @@ namespace Ui {
   class FormProxy;
 }
 
+class QButtonGroup;
+
 class TabNetProxy: public QWidget
 {
   Q_OBJECT
@@ -21,6 +23,7 @@ private:
   void InitSignals();
 private:
   Ui::FormProxy* ui;
+  QButtonGroup* m_BtnGroup;
 };
 
 #endif // TABNETPROXY_HPP

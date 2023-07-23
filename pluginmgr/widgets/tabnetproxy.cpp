@@ -8,10 +8,12 @@
 #include <httplib.h>
 
 #include <QIntValidator>
+#include <QButtonGroup>
 
 TabNetProxy::TabNetProxy(QWidget* parent)
   : QWidget(parent)
   , ui(new Ui::FormProxy)
+  , m_BtnGroup(new QButtonGroup(this))
 {
   InitLayout();
   InitSignals();
@@ -31,20 +33,18 @@ void TabNetProxy::InitLayout()
   mainLayout->addWidget(background);
   ui->setupUi(background);
   background->setObjectName("whiteBackground");
+
+  m_BtnGroup->addButton(ui->rBtnSystemProxy, 0);
+  m_BtnGroup->addButton(ui->rBtnUserProxy, 1);
+  m_BtnGroup->addButton(ui->rBtnNoProxy, 2);
 }
 
 void TabNetProxy::InitSignals()
 {
   connect(ui->pBtnSave, &QPushButton::clicked, this, &TabNetProxy::SaveData);
   connect(ui->pBtnCancel, &QPushButton::clicked, this, &TabNetProxy::InitData);
-  connect(ui->rBtnSystemProxy, &QRadioButton::toggled, this, [this](bool checked){
-    if (checked) ui->gBoxProxyInfo->setEnabled(false);
-  });
-  connect(ui->rBtnUserProxy, &QRadioButton::toggled, this, [this](bool checked){
-    if (checked) ui->gBoxProxyInfo->setEnabled(true);
-  });
-  connect(ui->rBtnNoProxy, &QRadioButton::toggled, this, [this](bool checked){
-    if (checked) ui->gBoxProxyInfo->setEnabled(false);
+  connect(m_BtnGroup, &QButtonGroup::idClicked, this, [this](int id){
+    ui->gBoxProxyInfo->setEnabled(id == 1);
   });
 }
 
@@ -55,34 +55,22 @@ void TabNetProxy::SaveData()
   HttpLib::m_Proxy->SetPassword(PluginObject::QString2Utf8(ui->linePassword->text()), false);
   // HttpLib::m_Proxy.port = m_Port = ui->linePort->text().toInt();
 
-  if (ui->rBtnSystemProxy->isChecked()) {
-    HttpLib::m_Proxy->SetType(0, false);
-  } else if (ui->rBtnUserProxy->isChecked()) {
-    HttpLib::m_Proxy->SetType(1, false);
-  } else {
-    HttpLib::m_Proxy->SetType(2, false);
-  }
+  HttpLib::m_Proxy->SetType(m_BtnGroup->checkedId(), false);
   HttpLib::m_Proxy->SaveData();
   mgr->ShowMsg("保存成功~");
 }
 
 void TabNetProxy::InitData()
 {
-  switch (HttpLib::m_Proxy->GetType()) {
-    case 0:
-      ui->rBtnSystemProxy->setChecked(true);
-      break;
-    case 1:
-      ui->rBtnUserProxy->setChecked(true);
-      break;
-    default:
-      ui->rBtnNoProxy->setChecked(true);
-      break;
-  }
+  auto button = m_BtnGroup->button(HttpLib::m_Proxy->GetType());
+  if (!button) button = ui->rBtnNoProxy;
+  button->setChecked(true);
 
   ui->lineProxy->setText(PluginObject::Utf82QString(HttpLib::m_Proxy->GetProxy()));
   ui->linePassword->setText(PluginObject::Utf82QString(HttpLib::m_Proxy->GetPassword()));
   ui->lineUsername->setText(PluginObject::Utf82QString(HttpLib::m_Proxy->GetUsername()));
+
+  ui->gBoxProxyInfo->setEnabled(m_BtnGroup->checkedId() == 1);
 }
 
 
