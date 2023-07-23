@@ -265,6 +265,8 @@ bool TabHotKey::SaveHotKeyData()
     return false;
   }
 
+  std::lock_guard<std::mutex> locker(mgr->m_Mutex);
+
   bool needSave = true;
   YJson* ptrEnabled = nullptr;
   const auto currKey = ui->pBtnHotKey->text();
@@ -274,7 +276,11 @@ bool TabHotKey::SaveHotKeyData()
 
   auto const enabled = ui->chkRegisterHotKey->isChecked();
   auto const u8PrevKey = PluginObject::QString2Utf8(prevKey);
-  if (prevKey != currKey) { // 标签标题和当前热键不一样
+
+  // 指向地图中的相应布尔值，表示热键是否启用
+  bool* ptrMapEnabled = nullptr;
+  // 标签标题和当前热键不一样
+  if (prevKey != currKey) {
     // 删除之前的数据
     auto iter = std::find_if(m_Settings.beginA(), m_Settings.endA(), [&u8PrevKey](const YJson& info){
       return info[u8"KeySequence"].getValueString() == u8PrevKey;
@@ -282,7 +288,9 @@ bool TabHotKey::SaveHotKeyData()
     if (iter != m_Settings.endA()) {
       // unregister hot key
       if (iter->find(u8"Enabled")->second.isTrue()) {
-        m_Shortcut.UnregisterHotKey(u8PrevKey);
+        if (!m_Shortcut.UnregisterHotKey(u8PrevKey)) {
+          mgr->ShowMsg("注销热键失败。");
+        }
       }
 
       m_Commands.erase(prevKey);
@@ -332,18 +340,21 @@ bool TabHotKey::SaveHotKeyData()
         ui->chkRegisterHotKey->setChecked(false);
       }
     }
-  } else {
+  } else { // 标签页标题和之前相同
     bool prevRegisterKey = false;
     auto& jsData = *std::find_if(m_Settings.beginA(), m_Settings.endA(), [&u8PrevKey](const YJson& info){
       return info[u8"KeySequence"] == u8PrevKey;
     });
     ptrEnabled = &jsData.find(u8"Enabled")->second;
 
+    // 在之前的插件热键地图中寻找当前热键
     if (auto iter = m_Plugins.find(prevKey); iter != m_Plugins.end()) {
       auto& info =  *iter->second;
       prevRegisterKey = info.enabled;
+      ptrMapEnabled = &info.enabled;
       auto jsIter = jsData.find(u8"Plugin");
 
+      // 之前为插件热键，现在为进程热键
       if (ui->rBtnProcess->isChecked()) {
         m_Plugins.erase(iter);
         jsIter->first = u8"Command";
@@ -354,7 +365,7 @@ bool TabHotKey::SaveHotKeyData()
         m_Commands[currKey] = std::make_unique<HotKeyInfoCommand>(
           jsIter->second, ui->chkRegisterHotKey->isChecked()
         );
-      } else {
+      } else { // 现在仍然时插件热键
         const auto& pluginName = m_PluginNames[ui->cBoxPlugin->currentIndex()];
         auto function = PluginObject::QString2Utf8(ui->cBoxCallBack->currentText());
 
@@ -369,6 +380,7 @@ bool TabHotKey::SaveHotKeyData()
     } else if (auto iter = m_Commands.find(prevKey); iter != m_Commands.end()) {
       auto& info =  *iter->second;
       prevRegisterKey = info.enabled;
+      ptrMapEnabled = &info.enabled;
       auto jsIter = jsData.find(u8"Command");
 
       if (ui->rBtnProcess->isChecked()) {
@@ -398,6 +410,7 @@ bool TabHotKey::SaveHotKeyData()
       if (ui->chkRegisterHotKey->isChecked()) {
         *ptrEnabled = m_Shortcut.RegisterHotKey(u8PrevKey);
         if (!ptrEnabled->isTrue()) {
+          mgr->ShowMsg("注册热键失败！");
           ui->chkRegisterHotKey->setChecked(false);
         }
       } else {
@@ -406,6 +419,7 @@ bool TabHotKey::SaveHotKeyData()
         }
         *ptrEnabled = false;
       }
+      *ptrMapEnabled = ptrEnabled->isTrue();
       needSave = true;
     }
   }
@@ -413,7 +427,7 @@ bool TabHotKey::SaveHotKeyData()
     mgr->SaveSettings();
     mgr->ShowMsg("保存成功！");
   } else {
-    // mgr->ShowMsg("无需保存！");
+    mgr->ShowMsg("无需保存！");
   }
   return true;
 }
