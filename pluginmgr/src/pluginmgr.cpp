@@ -33,16 +33,6 @@ PluginMgr *mgr;
 
 const std::u8string PluginMgr::m_SettingFileName(u8"PluginSettings.json");
 
-// #define WRITE_LOG(x) writelog((x))
-// #define WRITE_LOG(x) 
-
-// void writelog(std::string data)
-// {
-//   std::ofstream file("neobox.log", std::ios::app);
-//   file.write(data.data(), data.size());
-//   file.close();
-// }
-
 YJson* PluginMgr::InitSettings()
 {
   if (!fs::exists("plugins")) {
@@ -129,7 +119,7 @@ PluginMgr::~PluginMgr()
 void PluginMgr::SaveSettings()
 {
   // std::lock_guard<std::mutex> locker(m_Mutex);
-  m_Settings->toFile(m_SettingFileName, false, YJson::UTF8);
+  m_Settings->toFile(m_SettingFileName, true, YJson::UTF8);
 }
 
 void PluginMgr::LoadManageAction()

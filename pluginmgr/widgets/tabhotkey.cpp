@@ -274,7 +274,7 @@ bool TabHotKey::SaveHotKeyData()
 
   auto const enabled = ui->chkRegisterHotKey->isChecked();
   auto const u8PrevKey = PluginObject::QString2Utf8(prevKey);
-  if (prevKey != currKey) {
+  if (prevKey != currKey) { // 标签标题和当前热键不一样
     // 删除之前的数据
     auto iter = std::find_if(m_Settings.beginA(), m_Settings.endA(), [&u8PrevKey](const YJson& info){
       return info[u8"KeySequence"].getValueString() == u8PrevKey;
@@ -401,7 +401,10 @@ bool TabHotKey::SaveHotKeyData()
           ui->chkRegisterHotKey->setChecked(false);
         }
       } else {
-        m_Shortcut.UnregisterHotKey(u8PrevKey);
+        if (!m_Shortcut.UnregisterHotKey(u8PrevKey)) {
+          mgr->ShowMsg("取消注册热键失败！");
+        }
+        *ptrEnabled = false;
       }
       needSave = true;
     }
