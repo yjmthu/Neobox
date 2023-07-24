@@ -232,10 +232,10 @@ YJson& PluginName::InitSettings(YJson& settings)
   const auto& curFileName = Utf82QString(skins[curSkin].getValueString());
 #ifdef _WIN32
   auto const curSkinPath = "skins/" + curFileName + ".dll";
-  auto const curResPath = ":/dlls/" + curFileName + ".dll";
+  auto const curResPath = ":/dynamic/" + curFileName + ".dll";
 #else
   auto const curSkinPath = "skins/lib" + curFileName + ".so";
-  auto const curResPath = ":/dlls/lib" + curFileName + ".so";
+  auto const curResPath = ":/dynamic/lib" + curFileName + ".so";
 #endif
   auto& version = settings[u8"Version"];
   if (!version.isNumber()) {

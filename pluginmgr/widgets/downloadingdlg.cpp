@@ -18,6 +18,9 @@ DownloadingDlg::DownloadingDlg(QWidget* parent)
   layout->addWidget(m_ProgressBar);
   layout->addWidget(m_Label);
   m_ProgressBar->setRange(0, 0);
+
+  connect(this, &DownloadingDlg::DownloadFinished, this, &QDialog::close);
+  connect(this, &DownloadingDlg::Downloading, this, &DownloadingDlg::SetPercent);
 }
 
 DownloadingDlg::~DownloadingDlg()
@@ -36,4 +39,12 @@ void DownloadingDlg::closeEvent(QCloseEvent * event)
 {
   if (m_PreventClose) event->ignore();
   else event->accept();
+}
+
+void DownloadingDlg::emitFinished() {
+  emit DownloadFinished();
+}
+
+void DownloadingDlg::emitProcecs(int process, int total) {
+  emit Downloading(process, total);
 }

@@ -49,7 +49,7 @@ void ItemNative::InitLayout()
   // connect(m_BtnInstall, &QPushButton::clicked, this, std::bind(&ItemNative::Install, this));
   // m_SubLayout->addWidget(m_BtnInstall);
   
-  m_BtnUpgrade->setEnabled(false);
+  m_BtnUpgrade->setVisible(false);
 
   m_MainLayout->addWidget(m_BtnUninstall);
   m_MainLayout->addWidget(m_BtnUpgrade);
@@ -64,7 +64,7 @@ void ItemNative::UpdateStatus(const YJson& pluginsInfo)
   SetVersionLabel(L"最新版本", m_PluginNewVersion, m_LabelNewVersion);
   m_LabelNewVersion->setVisible(true);
 
-  m_BtnUpgrade->setEnabled(m_PluginOldVersion < m_PluginNewVersion);
+  m_BtnUpgrade->setVisible(m_PluginOldVersion < m_PluginNewVersion);
 }
 
 void ItemNative::InitConnect()
@@ -85,7 +85,7 @@ void ItemNative::InitConnect()
 void ItemNative::SetUpdated()
 {
   m_ChkEnable->SetChecked(mgr->IsPluginEnabled(m_PluginName));
-  m_BtnUpgrade->setEnabled(false);
+  m_BtnUpgrade->setVisible(false);
   m_LabelOldVersion->setText(m_LabelNewVersion->text());
   m_PluginOldVersion = m_PluginNewVersion;
 }

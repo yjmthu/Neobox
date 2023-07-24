@@ -1,13 +1,18 @@
 #include "tabversion.hpp"
 #include "plugincenter.hpp"
+#include "downloadingdlg.hpp"
 
+#include <systemapi.h>
 #include <yjson.h>
 #include <httplib.h>
 #include <config.h>
+#include <zip.h>
 
 #include <format>
 #include <vector>
 #include <ranges>
+#include <thread>
+#include <regex>
 
 #include <QFile>
 #include <QMessageBox>
@@ -16,8 +21,12 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QDesktopServices>
+#include <QApplication>
+#include <QProcess>
 
 using namespace std::literals;
+
+namespace fs = std::filesystem;
 
 TabVersion::TabVersion(PluginCenter* parent)
   : QWidget(parent)
@@ -115,6 +124,8 @@ void TabVersion::GetUpdate()
   }
 
   m_Text->append(QString::fromUtf8(buffer.data(), buffer.size()));
+
+  DoUpgrade(jsAboutNew);
 }
 
 // void TabVersion::showEvent(QShowEvent *event)
@@ -125,3 +136,99 @@ void TabVersion::GetUpdate()
 //       screenRect.width() / 3, screenRect.height() / 3);
 //   setGeometry(rect);
 // }
+
+std::array<int, 3> TabVersion::ParseVersion(const std::wstring& vStr) {
+  std::array<int, 3> version = {0, 0, 0};
+  std::wregex pattern(L"^v(\\d+).(\\d+).(\\d+)$");
+  std::wsmatch match;
+  if (std::regex_match(vStr, match, pattern)) {
+    version = { std::stoi(match[1]), std::stoi(match[2]), std::stoi(match[3]) };
+  }
+  return version;
+}
+
+bool TabVersion::DownloadNew(std::u8string_view url) {
+  if (!HttpLib::IsOnline()) {
+    mgr->ShowMsgbox(u8"失败", u8"请检查网络连接！");
+    return false;
+  }
+  bool result = false;
+  const auto dialog = new DownloadingDlg(this);
+  dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+  dialog->m_PreventClose = true;
+
+  std::thread thread([&]() {
+    fs::path pluginTemp = L"junk";
+    fs::create_directory(pluginTemp);
+    fs::path pluginDst = pluginTemp;
+    pluginTemp /= L"UpdatePack.zip";
+
+    HttpLib clt(url);
+    auto res = clt.Get(pluginTemp);
+    dialog->m_PreventClose = false;
+
+    if (res->status != 200) {
+      mgr->ShowMsg("下载压缩包失败！");
+    } else {
+      result = true;
+      auto temp = pluginTemp.string();
+      auto dst = pluginDst.string();
+      const auto ret = zip_extract(temp.c_str(), dst.c_str(), nullptr, nullptr);
+      if (ret < 0) {
+        mgr->ShowMsg(QString("无法解压文件！错误码：%d。").arg(ret));
+      }
+    }
+
+    if (fs::exists(pluginTemp)) {
+      fs::remove(pluginTemp);
+    }
+    dialog->emitFinished();
+  });
+  dialog->exec();
+  thread.join();
+  return result;
+
+}
+
+void TabVersion::DoUpgrade(const YJson& data)
+{
+  auto const vNew = ParseVersion(Utf82WideString(data[u8"tag_name"].getValueString()));
+  auto const vOld = ParseVersion(L"" NEOBOX_VERSION);
+  if (vNew > vOld) {
+    const auto res = QMessageBox::question(this, "提示", "有新版本可用！请确保能流畅访问GitHub，是否立即下载安装？");
+    if (res == QMessageBox::Yes) {
+      for (auto& asset: data[u8"assets"].getArray()) {
+        auto& url = asset[u8"browser_download_url"].getValueString();
+        if (!url.ends_with(u8".zip")) {
+          continue;
+        }
+        if (!DownloadNew(url)) {
+          mgr->ShowMsg("下载失败！");
+          return;
+        }
+        fs::path dataDir = fs::absolute(L"junk") / L"Neobox";
+        if (!fs::exists(dataDir) || !fs::is_directory(dataDir)) {
+          mgr->ShowMsg("安装包数据出错！");
+          return;
+        }
+        fs::path curDir = QApplication::applicationDirPath().toStdU16String();
+        curDir.make_preferred();
+        fs::path appPath = curDir / "neobox.exe";
+
+        std::ofstream file("update.bat", std::ios::out);
+        file << "timeout /t 2" << " && "
+          << "rd /s /q " << curDir << " && "
+          << "move /y " << dataDir << " " << curDir << " && "
+          << appPath << std::endl;
+        file.close();
+
+        QApplication::quit();
+        QProcess::startDetached("cmd.exe", QStringList { "/c", "update.bat" });
+        return;
+      }
+      mgr->ShowMsg("未找到下载链接，请手动下载！");
+    }
+  } else {
+    mgr->ShowMsg("当前已是最新版本！");
+  }
+}

@@ -3,8 +3,11 @@
 
 #include <QWidget>
 
+class YJson;
+
 class TabVersion: public QWidget
 {
+  Q_OBJECT
 // protected:
 //   void showEvent(QShowEvent *event) override;
 public:
@@ -22,6 +25,9 @@ private:
   void LoadJson();
   void Connect();
   void GetUpdate();
+  std::array<int, 3> ParseVersion(const std::wstring& vStr);
+  bool DownloadNew(std::u8string_view url);
+  void DoUpgrade(const YJson& data);
 };
 
 #endif // TABVERSION_HPP

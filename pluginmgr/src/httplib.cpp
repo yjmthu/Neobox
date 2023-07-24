@@ -111,7 +111,7 @@ std::u8string HttpLib::GetDomain()
     iter = m_Url.cbegin() + 7;
 #endif
   } else {
-    throw std::logic_error("Url should begin with 'http://' or 'http://'!");
+    throw std::logic_error("Url should begin with 'http://' or 'https://'!");
   }
 #ifndef _WIN32
   result.assign(iter, std::find(iter, m_Url.cend(), '/'));
@@ -149,9 +149,13 @@ void HttpLib::HttpInit()
   if (!WinHttpCheckPlatform()) {
     throw std::runtime_error("This platform is NOT supported by WinHTTP.");
   }
-  if (m_hConnect) WinHttpCloseHandle(m_hConnect);
+  if (m_hConnect) {
+    WinHttpCloseHandle(m_hConnect);
+    m_hConnect = nullptr;
+  }
   if (m_hSession) {
     WinHttpCloseHandle(m_hSession);
+    m_hSession = nullptr;
   }
   m_hSession = WinHttpOpen(L"WinHTTP in Neobox/1.0", 
     WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
@@ -159,7 +163,14 @@ void HttpLib::HttpInit()
     WINHTTP_NO_PROXY_BYPASS, 0);
   if (m_hSession) {
     auto url = Utf82WideString(GetDomain());
+
+    // Use WinHttpSetTimeouts to set a new time-out values.
+    const auto timeout = m_TimeOut * 1000;
+    if (!WinHttpSetTimeouts(m_hSession, timeout, timeout, timeout, timeout)) {
+      std::wcout << L"Error " << GetLastError() << L" in WinHttpSetTimeouts.\n";
+    }
     m_hConnect = WinHttpConnect(m_hSession, url.c_str(), INTERNET_DEFAULT_HTTP_PORT, 0);
+  
     SetProxyBefore();
   }
 
@@ -318,12 +329,12 @@ void HttpLib::HttpPerform()
   if (m_hRequest) {
     bResults = SendRequestData();
   } else {
-    std::cerr << "WinHttpOpenRequest failed: " << GetLastError() << std::endl;
+    std::wcerr << L"WinHttpOpenRequest failed: " << GetLastError() << std::endl;
   }
   if(bResults) {
     bResults = WinHttpReceiveResponse(m_hRequest, NULL);
   } else {
-    std::cerr << "WinHttpSendRequest failed: " << GetLastError() << std::endl;
+    std::wcerr << L"WinHttpSendRequest failed: " << GetLastError() << std::endl;
   }
 #else
   auto lStatus = curl_easy_perform(m_hSession);
@@ -335,11 +346,11 @@ void HttpLib::HttpPerform()
                 WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
       NULL, &m_Response.status, &dwSize, WINHTTP_NO_HEADER_INDEX);
   else
-    std::cerr << "WinHttpReceiveResponse failed: " << GetLastError() << std::endl;
+    std::wcerr << L"WinHttpReceiveResponse failed: " << GetLastError() << std::endl;
   if(bResults)
   {
     if(m_Response.status == 304) 
-      std::cout << "Document has not been updated.\n";
+      std::wcout << L"Document has not been updated.\n";
   }
 #else
   if (bResults)

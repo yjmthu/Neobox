@@ -87,8 +87,7 @@ void PluginCenter::SetupUi()
 void PluginCenter::InitConnect()
 {
   connect(m_TabWidget, &QTabWidget::currentChanged, this, [this](int index){
-    if (index == 1) {
-      m_TabOnline->UpdatePlugins();
+    if (index == 1 && m_TabOnline->UpdatePlugins()) {
       m_TabNative->UpdatePlugins();
     }
   });
@@ -113,7 +112,7 @@ std::optional<std::string> PluginCenter::DownloadFile(std::u8string_view url)
   std::optional<std::string> result = std::nullopt;
 
   if (!HttpLib::IsOnline()) {
-    mgr->ShowMsgbox(u8"失败", u8"请检查网络连接！");
+    mgr->ShowMsg(u8"请检查网络连接！");
     return result;
   }
 

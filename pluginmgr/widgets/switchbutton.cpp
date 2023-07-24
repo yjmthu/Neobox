@@ -80,9 +80,9 @@ void SwitchButton::paintEvent(QPaintEvent* event)
   painter.setRenderHint(QPainter::Antialiasing);
   painter.setPen(Qt::transparent);
   if (value == ::to) {
-    painter.setBrush(QBrush(QColor(202, 147, 211)));
+    painter.setBrush(QBrush(QColor("#a8c3d5")));
     painter.drawRoundedRect(rect(), h / 2.0, h / 2.0);
-    painter.setBrush(QBrush(QColor(0, 0, 0)));
+    painter.setBrush(QBrush(QColor(10, 180, 10)));
   } else {
     painter.setBrush(QBrush(QColor(72, 72, 72)));
     painter.drawRoundedRect(rect(), h / 2.0, h / 2.0);

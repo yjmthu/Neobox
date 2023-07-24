@@ -13,7 +13,7 @@ public:
 public:
   void UpdateItem(std::u8string_view pluginName, bool isUpdate);
 public slots:
-  void UpdatePlugins();
+  bool UpdatePlugins();
 private:
   void InitLayout();
   // void InitControls();

@@ -154,10 +154,10 @@ bool SpeedBox::LoadCurrentSkin() {
 
 #ifdef _WIN32
   auto skinPath = u8"skins/" + skinFileName + u8".dll";
-  auto qResSkinPath = ":/dlls/" + QString::fromUtf8(skinFileName.data(), skinFileName.size()) + ".dll";
+  auto qResSkinPath = ":/dynamic/" + QString::fromUtf8(skinFileName.data(), skinFileName.size()) + ".dll";
 #else
   auto skinPath = u8"skins/lib" + skinFileName + u8".so";
-  auto qResSkinPath = ":/sos/lib" + QString::fromUtf8(skinFileName.data(), skinFileName.size()) + ".so";
+  auto qResSkinPath = ":/dynamic/lib" + QString::fromUtf8(skinFileName.data(), skinFileName.size()) + ".so";
 #endif
   auto qSkinPath = QString::fromUtf8(skinPath.data(), skinPath.size());
 

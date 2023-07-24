@@ -21,7 +21,7 @@ set(pliugin_libfiles neospeedbox_core pluginmgr)
 
 add_library(neospeedboxplg SHARED ${source_files})
 
-set(resource_files fonts/*.ttf icons/* dlls/*.dll sos/*.so)
+set(resource_files fonts/*.ttf icons/* dynamic/*.dll dynamic/*.so)
 load_resources(neospeedboxplg "${resource_files}")
 
 target_link_libraries(neospeedboxplg PUBLIC
@@ -47,7 +47,7 @@ foreach(full_filepath ${_ui_files})
   install(TARGETS ${file_path}
     LIBRARY DESTINATION skins
     ARCHIVE DESTINATION skins
-    RUNTIME DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/dlls
+    RUNTIME DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/dynamic
     PUBLIC_HEADER DESTINATION skins
   )
   # file(COPY ${CMAKE_CURRENT_BINARY_DIR}/${file_path}.dll
