@@ -12,8 +12,7 @@ private:
 public:
   typedef std::map<std::string, std::string> Headers;
   typedef size_t( CallbackFunction )(void*, size_t, size_t, void*);
-  typedef CallbackFunction *pCallbackFunction;
-  typedef std::function<void(const void*, size_t)> WriteCallback;
+
   struct Response {
     std::string version;
     unsigned long status = -1;
@@ -22,15 +21,24 @@ public:
     std::string body;
     std::string location; // Redirect location
   };
-  typedef std::function<void(std::wstring, const Response*)> ErrorCallback;
+
+  typedef std::function<void(const void*, size_t)> WriteCallback;
+  typedef std::function<void(size_t, size_t)> ProcessCallback;
+  typedef std::function<void(std::wstring, const Response*)> FinishCallback;
+  struct Callback {
+    WriteCallback m_WriteCallback;
+    FinishCallback m_FinishCallback;
+    std::optional<ProcessCallback> m_ProcessCallback;
+  };
+
   template<typename Char=char>
   explicit HttpLib(std::basic_string_view<Char> url, bool async=false):
     m_Url(url.cbegin(), url.cend()),
     m_hSession(nullptr),
     m_ProxySet(false),
-    m_AsyncSet(async)
-  {
-    HttpInit();
+    m_AsyncSet(async) {
+    HttpPrepare();
+    HttpInitialize();
   }
   template<typename Char=char>
   explicit HttpLib(std::basic_string<Char> url, bool async=false)
@@ -42,7 +50,8 @@ public:
   template<typename Char=char>
   void SetUrl(std::basic_string_view<Char> url) {
     m_Url.assign(url.begin(), url.end());
-    HttpInit();
+    HttpUninitialize();
+    HttpInitialize();
   }
   template<typename Char=char>
   void SetUrl(const std::basic_string<Char>& url) {
@@ -51,12 +60,15 @@ public:
   void SetHeader(std::string key, std::string value) {
     m_Headers[key] = value;
   }
+  void ClearHeader() {
+    m_Headers.clear();
+  }
   void SetRedirect(long redirect);
   void SetPostData(void* data, size_t size);
   Response* Get();
   Response* Get(const std::filesystem::path& path);
-  Response* Get(pCallbackFunction callback, void* userData);
-  void GetAsync(WriteCallback writeData, ErrorCallback error);
+  Response* Get(CallbackFunction* callback, void* userData);
+  void GetAsync(const Callback& callback);
   void Exit();
   static bool IsOnline();
 public:
@@ -76,10 +88,15 @@ private:
   int m_RedirectDepth = 0;
   bool m_ProxySet;
   bool m_AsyncSet;
+  size_t m_RecieveSize = 0;
+  size_t m_ConnectLength = 0;
   std::function<void()> m_AsyncFunc;
 private:
-  void HttpInit();
+  void HttpInitialize();
+  void HttpUninitialize();
+  void HttpPrepare();
   void HttpPerform();
+  void ResetData();
   bool SendHeaders();
   void SetProxyBefore();
   bool SetProxyAfter();
@@ -91,13 +108,13 @@ private:
   bool ReadStatusCode();
   bool ReadHeaders();
   bool ReadBody();
+  void EmitProcess();
 private:
   static CallbackFunction WriteFile;
   static CallbackFunction WriteString;
   static void RequestStatusCallback(void* hInternet, unsigned long long dwContext, unsigned long dwInternetStatus, void* lpvStatusInformation, unsigned long dwInternetInformationLength);
-  pCallbackFunction m_CallBack;
-  WriteCallback m_AsyncWrite;
-  ErrorCallback m_AsyncError;
+  CallbackFunction* m_Callback;
+  const Callback* m_AsyncCallback;
   void* m_DataBuffer;
 };
 
