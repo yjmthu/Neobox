@@ -20,10 +20,10 @@ private:
   class QPushButton* m_btnBug;
   class QPushButton* m_btnChk;
   class QTextBrowser* m_Text;
-  QString m_TextRaw;
+  const QString m_TextRaw;
 private:
   void InitLayout();
-  void LoadJson();
+  static QString FormatString();
   void Connect();
   void GetUpdate();
   std::array<int, 3> ParseVersion(const std::wstring& vStr);

@@ -30,9 +30,9 @@ namespace fs = std::filesystem;
 TabVersion::TabVersion(PluginCenter* parent)
   : QWidget(parent)
   , m_MainLayout(new QHBoxLayout(this))
+  , m_TextRaw(FormatString())
 {
   InitLayout();
-  LoadJson();
   Connect();
 }
 
@@ -67,16 +67,17 @@ void TabVersion::InitLayout()
   layout2->addWidget(m_btnBug);
   layout2->addWidget(m_btnChk);
   layout1->addLayout(layout2);
+
+  m_Text->setText(m_TextRaw);
 }
 
-void TabVersion::LoadJson()
+QString TabVersion::FormatString()
 {
   const auto name = 
     "<h2>当前版本</h2>Neobox " NEOBOX_VERSION " " NEOBOX_BUILD_TYPE
     "<br>发布日期：" NEOBOX_BUILD_TIME
     "<br>" NEOBOX_COPYRIGHT ""s;
-  m_TextRaw = QString::fromUtf8(name.data(), name.size());
-  m_Text->setText(m_TextRaw);
+  return QString::fromUtf8(name.data(), name.size());
 }
 
 void TabVersion::Connect()
