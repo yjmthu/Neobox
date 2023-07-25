@@ -50,13 +50,13 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
     if (bResults) {
       bResults = object->m_Response.status < 400;
     } else {
-      object->m_AsyncCallback->m_FinishCallback(L"HttpLib ReadStatusCode Error.", &object->m_Response);
+      object->EmitFinish(L"HttpLib ReadStatusCode Error.");
       break;
     }
     if (bResults) {
       bResults = object->ReadHeaders();
     } else {
-      object->m_AsyncCallback->m_FinishCallback(L"HttpLib StatusCode Error.", &object->m_Response);
+      object->EmitFinish(L"HttpLib StatusCode Error.");
       break;
     }
     if (bResults) {
@@ -68,7 +68,7 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
       /* Next step: query for any data. */
       WinHttpQueryDataAvailable(object->m_hRequest, NULL);
     } else {
-      object->m_AsyncCallback->m_FinishCallback(L"HttpLib ReadHeaders Error.", &object->m_Response);
+      object->EmitFinish(L"HttpLib ReadHeaders Error.");
     }
     break;
   }
@@ -76,7 +76,7 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
   case WINHTTP_CALLBACK_STATUS_REDIRECT:
     /* Make sure we are not in a redirect loop. */
     if (object->m_RedirectDepth++ > 5) 
-      object->m_AsyncCallback->m_FinishCallback(L"HTTP request failed: too many redirects",  &object->m_Response);
+      object->EmitFinish(L"HTTP request failed: too many redirects");
     break;
 
   case WINHTTP_CALLBACK_STATUS_DATA_AVAILABLE: {
@@ -90,13 +90,16 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
   }
 
   case WINHTTP_CALLBACK_STATUS_READ_COMPLETE: {
-    object->m_RecieveSize += dwInternetInformationLength;
-    object->m_AsyncCallback->m_WriteCallback(lpvStatusInformation, dwInternetInformationLength);
+    if (!object->m_AsyncFinished) {
+      object->m_RecieveSize += dwInternetInformationLength;
+      object->m_AsyncCallback->m_WriteCallback(lpvStatusInformation, dwInternetInformationLength);
+      object->EmitProcess();
+    }
     delete[] reinterpret_cast<char*>(lpvStatusInformation);
-    object->EmitProcess();
-
-    if (dwInternetInformationLength == 0) {
-      object->m_AsyncCallback->m_FinishCallback(L""s, &object->m_Response);
+    if (object->m_AsyncFinished) {
+      return;
+    } else if (dwInternetInformationLength == 0) {
+      object->EmitFinish();
     } else {
       WinHttpQueryDataAvailable(object->m_hRequest, nullptr);
     }
@@ -108,7 +111,7 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
     auto const* pAsyncResult = (WINHTTP_ASYNC_RESULT*)lpvStatusInformation;
     DWORD dwError = pAsyncResult->dwError; // The error code
     DWORD dwResult = pAsyncResult->dwResult; // The ID of the called function
-    object->m_AsyncCallback->m_FinishCallback(std::format(L"Winhttp status error. Error code: {}, error id: {}.", dwError, dwResult), &object->m_Response);
+    object->EmitFinish(std::format(L"Winhttp status error. Error code: {}, error id: {}.", dwError, dwResult));
     break;
   }
   }
@@ -266,6 +269,7 @@ void HttpLib::ResetData() {
   m_PostData.size = 0;
   m_RecieveSize = 0;
   m_ConnectLength = 0;
+  m_AsyncFinished = false;
 }
 
 void HttpLib::HttpInitialize()
@@ -648,6 +652,12 @@ void HttpLib::EmitProcess()
   }
 }
 
+void HttpLib::EmitFinish(std::wstring message)
+{
+  m_AsyncFinished = true;
+  m_AsyncCallback->m_FinishCallback(message, &m_Response);
+}
+
 HttpLib::Response* HttpLib::Get()
 {
   m_Response.body.clear();
@@ -694,4 +704,8 @@ void HttpLib::GetAsync(const Callback& callback)
   m_Response.body.clear();
   m_AsyncCallback = &callback;
   HttpPerform();
+}
+
+void HttpLib::ExitAsync() {
+  m_AsyncFinished = true;
 }

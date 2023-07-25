@@ -116,25 +116,33 @@ std::optional<std::string> PluginCenter::DownloadFile(std::u8string_view url)
     return result;
   }
 
-  const auto dialog = new DownloadingDlg(this);
-  dialog->setAttribute(Qt::WA_DeleteOnClose, true);
-  dialog->m_PreventClose = true;
-  connect(m_Instance, &PluginCenter::DownloadFinished, dialog, &QDialog::close);
-  // connect(this, &ItemBase::Downloading, dialog, &DownloadingDlg::SetPercent);
+  DownloadingDlg dialog(this);
 
-  std::thread thrd([&](){
-    HttpLib clt(url);
-    clt.SetHeader("User-Agent", "Libcurl in Neobox App/1.0");
-    auto res = clt.Get();
-    if (res->status == 200) {
-      result = std::move(res->body);
+  HttpLib clt(url, true);
+  clt.SetHeader("User-Agent", "Libcurl in Neobox App/1.0");
+
+  std::string body;
+  HttpLib::Callback callback = {
+    .m_WriteCallback = [&body](auto data, auto size) {
+      body.append(reinterpret_cast<const char*>(data), size);
+    },
+    .m_FinishCallback = [&result, &body, &dialog](auto msg, auto res) {
+      if (msg.empty() && res->status == 200) {
+        result = std::move(body);
+      } else {
+        mgr->ShowMsg(QStringLiteral("下载失败！\n状态码：%1。\n错误信息：%2。")
+          .arg(res->status)
+          .arg(QString::fromStdWString(msg)));
+      }
+      dialog.emitFinished();
+    },
+    .m_ProcessCallback = [&dialog](auto recieve, auto total){
+      dialog.emitProcess(recieve, total);
     }
-    dialog->m_PreventClose = false;
-    emit DownloadFinished();
-  });
+  };
 
-  dialog->exec();
-  thrd.join();
+  connect(&dialog, &DownloadingDlg::Terminate, std::bind(&HttpLib::ExitAsync, &clt));
+  dialog.exec();
   // https://gitlab.com/yjmthu1/neoboxplg/-/raw/main/plugins/neohotkeyplg/manifest.json
   return result;
 }

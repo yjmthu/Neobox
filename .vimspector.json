@@ -7,7 +7,7 @@
         "name": "CodeLLDB",
         "type": "lldb",
         "request": "launch",
-        "program": "${workspaceFolder}/build/Debug/example/test_http_test_cpp.exe",
+        "program": "${workspaceFolder}/build/Debug/Neobox.exe",
         "args": [ ],
         "cwd": "${workspaceFolder}",
         "externalConsole": true,

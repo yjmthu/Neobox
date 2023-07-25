@@ -69,11 +69,11 @@ public:
   Response* Get(const std::filesystem::path& path);
   Response* Get(CallbackFunction* callback, void* userData);
   void GetAsync(const Callback& callback);
+  void ExitAsync();
   void Exit();
   static bool IsOnline();
 public:
   static std::optional<HttpProxy> m_Proxy;
-  bool SetAsyncCallback();
 private:
   std::atomic_bool m_Exit = false;
   Headers m_Headers;
@@ -88,9 +88,9 @@ private:
   int m_RedirectDepth = 0;
   bool m_ProxySet;
   bool m_AsyncSet;
+  bool m_AsyncFinished;
   size_t m_RecieveSize = 0;
   size_t m_ConnectLength = 0;
-  std::function<void()> m_AsyncFunc;
 private:
   void HttpInitialize();
   void HttpUninitialize();
@@ -100,6 +100,7 @@ private:
   bool SendHeaders();
   void SetProxyBefore();
   bool SetProxyAfter();
+  bool SetAsyncCallback();
   bool SendRequest();
   bool RecvResponse();
   std::u8string GetDomain();
@@ -109,6 +110,7 @@ private:
   bool ReadHeaders();
   bool ReadBody();
   void EmitProcess();
+  void EmitFinish(std::wstring message=L"");
 private:
   static CallbackFunction WriteFile;
   static CallbackFunction WriteString;

@@ -11,7 +11,6 @@
 #include <format>
 #include <vector>
 #include <ranges>
-#include <thread>
 #include <regex>
 
 #include <QFile>
@@ -155,37 +154,54 @@ bool TabVersion::DownloadNew(std::u8string_view url) {
   bool result = false;
   const auto dialog = new DownloadingDlg(this);
   dialog->setAttribute(Qt::WA_DeleteOnClose, true);
-  dialog->m_PreventClose = true;
 
-  std::thread thread([&]() {
-    fs::path pluginTemp = L"junk";
-    fs::create_directory(pluginTemp);
-    fs::path pluginDst = pluginTemp;
-    pluginTemp /= L"UpdatePack.zip";
+  fs::path pluginTemp = L"junk";
+  fs::create_directory(pluginTemp);
+  fs::path pluginDst = pluginTemp;
+  pluginTemp /= L"UpdatePack.zip";
 
-    HttpLib clt(url);
-    auto res = clt.Get(pluginTemp);
-    dialog->m_PreventClose = false;
+  std::ofstream file(pluginTemp, std::ios::binary | std::ios::out);
+  if (!file.is_open()) {
+    mgr->ShowMsgbox(u8"出错", u8"无法写入文件！");
+    return false;
+  }
 
-    if (res->status != 200) {
-      mgr->ShowMsg("下载压缩包失败！");
-    } else {
-      result = true;
-      auto temp = pluginTemp.string();
-      auto dst = pluginDst.string();
-      const auto ret = zip_extract(temp.c_str(), dst.c_str(), nullptr, nullptr);
-      if (ret < 0) {
-        mgr->ShowMsg(QString("无法解压文件！错误码：%d。").arg(ret));
+  HttpLib clt(url, true);
+  HttpLib::Callback callback = {
+    .m_WriteCallback = [&file](auto data, auto size){
+      file.write(reinterpret_cast<const char*>(data), size);
+    },
+    .m_FinishCallback = [dialog, &result, &file, &pluginTemp, &pluginDst](std::wstring msg, const HttpLib::Response* res) {
+      file.close();
+      if (msg.empty() && res->status == 200) {
+        result = true;
+        auto temp = pluginTemp.string();
+        auto dst = pluginDst.string();
+        const auto ret = zip_extract(temp.c_str(), dst.c_str(), nullptr, nullptr);
+        if (ret < 0) {
+          mgr->ShowMsg(QString("无法解压文件！错误码：%d。").arg(ret));
+        }
+      } else {
+        mgr->ShowMsg("下载压缩包失败！");
       }
-    }
-
-    if (fs::exists(pluginTemp)) {
       fs::remove(pluginTemp);
-    }
-    dialog->emitFinished();
-  });
+      dialog->emitFinished();
+    },
+    .m_ProcessCallback = [dialog](auto recieve, auto total) {
+      dialog->emitProcess(recieve, total);
+    },
+  };
+
+  clt.GetAsync(callback);
+
+  connect(dialog, &DownloadingDlg::Terminate, std::bind(&HttpLib::ExitAsync, &clt));
+
   dialog->exec();
-  thread.join();
+
+  if (file.is_open()) {
+    file.close();
+    fs::remove(pluginTemp);
+  }
   return result;
 
 }

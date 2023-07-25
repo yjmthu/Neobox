@@ -27,24 +27,28 @@ DownloadingDlg::~DownloadingDlg()
 {
 }
 
-void DownloadingDlg::SetPercent(int count, int size)
+void DownloadingDlg::SetPercent(size_t count, size_t size)
 {
   std::wstring const text = std::format(L"正在下载：{}/{}", count, size);
   m_ProgressBar->setRange(0, size);
-  m_ProgressBar->setValue(count + 1);
+  if (size) m_ProgressBar->setValue(count + 1);
   m_Label->setText(QString::fromStdWString(text));
 }
 
 void DownloadingDlg::closeEvent(QCloseEvent * event)
 {
-  if (m_PreventClose) event->ignore();
-  else event->accept();
+  if (m_PreventClose) {
+    event->ignore();
+  } else {
+    emit Terminate();
+    event->accept();
+  }
 }
 
 void DownloadingDlg::emitFinished() {
   emit DownloadFinished();
 }
 
-void DownloadingDlg::emitProcecs(int process, int total) {
+void DownloadingDlg::emitProcess(size_t process, size_t total) {
   emit Downloading(process, total);
 }

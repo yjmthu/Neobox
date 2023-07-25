@@ -7,8 +7,6 @@ class PluginCenter: public WidgetBase
 {
   Q_OBJECT 
 
-signals:
-  void DownloadFinished();
 public:
   explicit PluginCenter();
   virtual ~PluginCenter();
