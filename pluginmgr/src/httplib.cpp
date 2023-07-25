@@ -21,39 +21,30 @@ std::optional<HttpProxy> HttpLib::m_Proxy = std::nullopt;
 // https://github.com/JGRennison/OpenTTD-patches/blob/dcc52f7696f4ef2601b9fbca1ca78abcd1211734/src/network/core/http_winhttp.cpp#L145
 void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DWORD dwInternetStatus, LPVOID lpvStatusInformation, DWORD dwInternetInformationLength) {
   constexpr auto bufferSize = 8 << 10;
-  if (!dwContext) return;
-  auto object = (HttpLib*)dwContext;
+  if (!dwContext) {
+    throw std::runtime_error("No context in callback!");
+  }
+  auto object = reinterpret_cast<HttpLib*>(dwContext);
   switch (dwInternetStatus) {
-  case WINHTTP_CALLBACK_STATUS_REDIRECT:
-    /* Make sure we are not in a redirect loop. */
-    if (object->m_RedirectDepth++ > 5) {
-      object->m_AsyncError(L"HTTP request failed: too many redirects",  &object->m_Response);
-      return;
-    }
+    case WINHTTP_CALLBACK_STATUS_RESOLVING_NAME:
+    case WINHTTP_CALLBACK_STATUS_NAME_RESOLVED:
+    case WINHTTP_CALLBACK_STATUS_CONNECTING_TO_SERVER:
+    case WINHTTP_CALLBACK_STATUS_CONNECTED_TO_SERVER:
+    case WINHTTP_CALLBACK_STATUS_SENDING_REQUEST:
+    case WINHTTP_CALLBACK_STATUS_REQUEST_SENT:
+    case WINHTTP_CALLBACK_STATUS_RECEIVING_RESPONSE:
+    case WINHTTP_CALLBACK_STATUS_RESPONSE_RECEIVED:
+    case WINHTTP_CALLBACK_STATUS_CLOSING_CONNECTION:
+    case WINHTTP_CALLBACK_STATUS_CONNECTION_CLOSED:
+    case WINHTTP_CALLBACK_STATUS_HANDLE_CREATED:
+    case WINHTTP_CALLBACK_STATUS_HANDLE_CLOSING:
+      /* We don't care about these events, and explicitly ignore them. */
+      break;
+
+  case WINHTTP_CALLBACK_STATUS_SENDREQUEST_COMPLETE: 
+    WinHttpReceiveResponse(object->m_hRequest, nullptr);
     break;
-  case WINHTTP_CALLBACK_STATUS_READ_COMPLETE: {
-    if (dwInternetInformationLength > 0) {
-      WinHttpQueryDataAvailable(hInternet, NULL);
-    } else {
-      object->m_AsyncError(L""s, &object->m_Response);
-    }
-    object->m_AsyncWrite(lpvStatusInformation, dwInternetInformationLength);
-    delete[] reinterpret_cast<char*>(lpvStatusInformation);
-    break;
-  }
-  case WINHTTP_CALLBACK_STATUS_SENDREQUEST_COMPLETE: {
-    auto bResults = WinHttpReceiveResponse(hInternet, NULL);
-    break;
-  }
-  case WINHTTP_CALLBACK_STATUS_DATA_AVAILABLE: {
-    // Retrieve the number of bytes to read
-    // Allocate a buffer for the data
-    DWORD dwSize = *(DWORD *)lpvStatusInformation;
-    auto pszOutBuffer = dwSize == 0 ? nullptr : new char[dwSize];
-    // Read the data from the server
-    WinHttpReadData(hInternet, pszOutBuffer, dwSize, NULL);
-    break;
-  }
+ 
   case WINHTTP_CALLBACK_STATUS_HEADERS_AVAILABLE: {
     auto bResults = object->ReadStatusCode();
     if (bResults) {
@@ -69,12 +60,42 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
       break;
     }
     if (bResults) {
+      /* Next step: query for any data. */
       WinHttpQueryDataAvailable(object->m_hRequest, NULL);
     } else {
       object->m_AsyncError(L"HttpLib ReadHeaders Error.", &object->m_Response);
     }
     break;
   }
+
+  case WINHTTP_CALLBACK_STATUS_REDIRECT:
+    /* Make sure we are not in a redirect loop. */
+    if (object->m_RedirectDepth++ > 5) 
+      object->m_AsyncError(L"HTTP request failed: too many redirects",  &object->m_Response);
+    break;
+
+  case WINHTTP_CALLBACK_STATUS_DATA_AVAILABLE: {
+    // Retrieve the number of bytes to read
+    // Allocate a buffer for the data
+    DWORD dwSize = *(DWORD *)lpvStatusInformation;
+    auto pszOutBuffer = dwSize == 0 ? nullptr : new char[dwSize];
+    // Read the data from the server
+    WinHttpReadData(object->m_hRequest, pszOutBuffer, dwSize, nullptr);
+    break;
+  }
+
+  case WINHTTP_CALLBACK_STATUS_READ_COMPLETE: {
+    object->m_AsyncWrite(lpvStatusInformation, dwInternetInformationLength);
+    delete[] reinterpret_cast<char*>(lpvStatusInformation);
+
+    if (dwInternetInformationLength == 0) {
+      object->m_AsyncError(L""s, &object->m_Response);
+    } else {
+      WinHttpQueryDataAvailable(object->m_hRequest, nullptr);
+    }
+    break;
+  }
+
   case WINHTTP_CALLBACK_STATUS_SECURE_FAILURE:
   case WINHTTP_CALLBACK_STATUS_REQUEST_ERROR: {
     auto const* pAsyncResult = (WINHTTP_ASYNC_RESULT*)lpvStatusInformation;
@@ -164,16 +185,16 @@ HttpLib::~HttpLib() {
 bool HttpLib::SetAsyncCallback()
 {
 #ifdef _WIN32
-  const auto* ctx = this;
+  auto ctx = this;
   auto bResult = WinHttpSetOption(
-    m_hRequest,
+    m_hSession,
     WINHTTP_OPTION_CONTEXT_VALUE,
     &ctx,
     sizeof(void*)
   );
   if (bResult) {
     WINHTTP_STATUS_CALLBACK hCallback = WinHttpSetStatusCallback(
-      m_hRequest,
+      m_hSession,
       RequestStatusCallback,
       WINHTTP_CALLBACK_FLAG_ALL_NOTIFICATIONS,
       NULL
@@ -183,6 +204,7 @@ bool HttpLib::SetAsyncCallback()
   }
 #endif
   return bResult;
+  // return true;
 }
 
 std::u8string HttpLib::GetDomain()
@@ -260,6 +282,12 @@ void HttpLib::HttpInit()
     WINHTTP_NO_PROXY_BYPASS,
     m_AsyncSet ? WINHTTP_FLAG_ASYNC: 0);
   if (m_hSession) {
+
+    if (m_AsyncSet) {
+      if (!SetAsyncCallback()) {
+        throw std::runtime_error("Set async callback failed!");
+      }
+    }
     auto url = Utf82WideString(GetDomain());
 
     // Use WinHttpSetTimeouts to set a new time-out values.
@@ -410,12 +438,7 @@ bool HttpLib::SendHeaders()
     m_PostData.data ? L"POST": L"GET",
     path.c_str(), L"HTTP/1.1", WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, 0);
   if (m_hRequest) {
-    if (m_AsyncSet) {
-      bResults = SetAsyncCallback();
-    }
-    if (bResults) {
-      bResults = SetProxyAfter();
-    }
+    bResults = SetProxyAfter();
   } else {
     std::wcerr << L"WinHttp openRequest failed!" << std::endl;
   }
@@ -423,7 +446,10 @@ bool HttpLib::SendHeaders()
     for (auto& [i, j]: m_Headers) {
       auto header = Ansi2WideString(std::format("{}: {}", i, j));
       bResults = WinHttpAddRequestHeaders(m_hRequest, header.data(), header.size(), WINHTTP_ADDREQ_FLAG_ADD);
-      if (!bResults) break;
+      if (!bResults) {
+        std::wcerr << L"Winhttp add headers failed!" << std::endl;
+        break;
+      }
     }
   } else {
     std::wcerr << L"Winhttp setProxyAfter failed!" << std::endl;
@@ -452,8 +478,8 @@ bool HttpLib::ReadStatusCode()
 #ifdef _WIN32
   DWORD dwSize = sizeof(m_Response.status);
   bResults = WinHttpQueryHeaders(m_hRequest, 
-                WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
-      NULL, &m_Response.status, &dwSize, WINHTTP_NO_HEADER_INDEX);
+      WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+      WINHTTP_HEADER_NAME_BY_INDEX, &m_Response.status, &dwSize, WINHTTP_NO_HEADER_INDEX);
 
   if (bResults) {
     if(m_Response.status == 304) 

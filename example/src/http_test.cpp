@@ -21,19 +21,20 @@ int main()
   static bool done = false;
 #if 1
   HttpLib clt("https://w.wallhaven.cc/full/o5/wallhaven-o59gvl.jpg"s, true);
-  std::ofstream file(L"wallhaven-o59gvl.jpg", std::ios::out, std::ios::binary);
+  std::ofstream file(L"wallhaven-o59gvl.jpg", std::ios::out | std::ios::binary);
 #else
-  HttpLib clt("https://wallhaven.cc/w/o59gvl"s, true);
+  HttpLib clt("https://www.linux.org/"s, true);
   std::ofstream file(L"wallhaven-o59gvl.html", std::ios::out, std::ios::binary);
 #endif
   if (file.is_open()) {
     clt.GetAsync(
       [&file, &mutex, &cv](const void* data, size_t size){
-        std::lock_guard locker(mutex);
+        // std::lock_guard locker(mutex);
         if (size != 0) {
           std::cout << "--OK--" << size << "--" << std::endl;
           file.write(reinterpret_cast<const char*>(data), size);
         } else {
+          std::lock_guard locker(mutex);
           done = true;
           cv.notify_one();
         }
