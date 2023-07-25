@@ -1,5 +1,6 @@
 #include <bingapi.h>
 #include <httplib.h>
+#include <iostream>
 #include <wallpaper.h>
 #include <wallbase.h>
 #include <systemapi.h>
@@ -59,7 +60,7 @@ void BingApi::InitData()
   if (m_Setting[u8"curday"].getValueString() != GetToday()) {
     return;
   }
-  if (fs::exists(m_DataPath)) {
+  if (fs::exists(m_DataPath) && fs::file_size(m_DataPath) != 0) {
     m_Data = new YJson(m_DataPath, YJson::UTF8);
   }
 }
@@ -199,7 +200,7 @@ std::u8string BingApi::GetToday() {
 
 std::u8string BingApi::GetImageName(YJson& imgInfo) {
   // see https://codereview.stackexchange.com/questions/156695/converting-stdchronotime-point-to-from-stdstring
-  const std::string fmt(Utf8AsString(m_Setting[u8"name-format"].getValueString()));
+  const auto fmt = Utf82WideString(m_Setting[u8"name-format"].getValueString());
   const std::string date(Utf8AsString(imgInfo[u8"enddate"].getValueString()));
   const std::u8string& copyright =
       imgInfo[u8"copyright"].getValueString();
@@ -211,9 +212,15 @@ std::u8string BingApi::GetImageName(YJson& imgInfo) {
   timePoint += chrono::seconds(std::mktime(&tm)) + 24h;
 
 #ifdef _WIN32
-  std::string result = std::vformat(fmt, 
-    std::make_format_args(timePoint,
-      Utf8AsString(title), Utf8AsString(copyright)));
+  std::wstring titleUnicode = Utf82WideString(title);
+  for (auto& c: titleUnicode) {
+    if ("/\\;:"sv.find(c) != std::wstring::npos) {
+      c = '_';
+    }
+  }
+  std::wstring result = std::vformat(fmt, 
+    std::make_wformat_args(timePoint,
+      titleUnicode, Utf82WideString(copyright)));
 #else
   time_t timep = chrono::system_clock::to_time_t(timePoint);
   auto const p = gmtime(&timep);
@@ -227,5 +234,5 @@ std::u8string BingApi::GetImageName(YJson& imgInfo) {
       p->tm_mday
     ));
 #endif
-  return std::u8string(result.begin(), result.end());
+  return Wide2Utf8String(result);
 }

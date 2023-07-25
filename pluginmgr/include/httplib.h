@@ -13,6 +13,7 @@ public:
   typedef std::map<std::string, std::string> Headers;
   typedef size_t( CallbackFunction )(void*, size_t, size_t, void*);
   typedef CallbackFunction *pCallbackFunction;
+  typedef std::function<void(const void*, size_t)> WriteCallback;
   struct Response {
     std::string version;
     unsigned long status = -1;
@@ -21,17 +22,19 @@ public:
     std::string body;
     std::string location; // Redirect location
   };
+  typedef std::function<void(std::wstring, const Response*)> ErrorCallback;
   template<typename Char=char>
-  explicit HttpLib(std::basic_string_view<Char> url):
+  explicit HttpLib(std::basic_string_view<Char> url, bool async=false):
     m_Url(url.cbegin(), url.cend()),
     m_hSession(nullptr),
-    m_ProxySet(false)
+    m_ProxySet(false),
+    m_AsyncSet(async)
   {
     HttpInit();
   }
   template<typename Char=char>
-  explicit HttpLib(std::basic_string<Char> url)
-    : HttpLib(std::basic_string_view<Char>(url))
+  explicit HttpLib(std::basic_string<Char> url, bool async=false)
+    : HttpLib(std::basic_string_view<Char>(url), async)
   {
   }
   ~HttpLib();
@@ -53,10 +56,12 @@ public:
   Response* Get();
   Response* Get(const std::filesystem::path& path);
   Response* Get(pCallbackFunction callback, void* userData);
+  void GetAsync(WriteCallback writeData, ErrorCallback error);
   void Exit();
   static bool IsOnline();
 public:
   static std::optional<HttpProxy> m_Proxy;
+  bool SetAsyncCallback();
 private:
   std::atomic_bool m_Exit = false;
   Headers m_Headers;
@@ -68,20 +73,31 @@ private:
   void* m_hRequest = nullptr;
 #endif
   int m_TimeOut = 30;
+  int m_RedirectDepth = 0;
   bool m_ProxySet;
+  bool m_AsyncSet;
+  std::function<void()> m_AsyncFunc;
 private:
   void HttpInit();
   void HttpPerform();
-  void SendHeaders();
+  bool SendHeaders();
   void SetProxyBefore();
-  void SetProxyAfter();
-  bool SendRequestData();
+  bool SetProxyAfter();
+  bool SendRequest();
+  bool RecvResponse();
   std::u8string GetDomain();
   std::u8string GetPath();
 private:
+  bool ReadStatusCode();
+  bool ReadHeaders();
+  bool ReadBody();
+private:
   static CallbackFunction WriteFile;
   static CallbackFunction WriteString;
+  static void RequestStatusCallback(void* hInternet, unsigned long long dwContext, unsigned long dwInternetStatus, void* lpvStatusInformation, unsigned long dwInternetInformationLength);
   pCallbackFunction m_CallBack;
+  WriteCallback m_AsyncWrite;
+  ErrorCallback m_AsyncError;
   void* m_DataBuffer;
 };
 

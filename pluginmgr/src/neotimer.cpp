@@ -65,6 +65,7 @@ void NeoTimer::Expire() {
 
   {
     std::unique_lock<std::mutex> locker(m_Mutex);
+    // 释放锁，等待定时器被释放
     m_Condition.wait(locker, [this](){
       return m_Expired == true;
     });

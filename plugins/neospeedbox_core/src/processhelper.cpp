@@ -3,6 +3,7 @@
 #ifdef _WIN32
 #include <tlhelp32.h>
 #include <psapi.h>
+#include <iostream>
 #else
 #include <unistd.h>
 #include <fstream>
@@ -48,6 +49,8 @@ bool ProcessInfo::GetMemoryUsage()
     workingSetSize = pmc.WorkingSetSize;
     // pagefileUsage = pmc.PagefileUsage;
     return true;
+  } else {
+    std::cerr << "Failed to get process memory info. Error code: " << GetLastError() << std::endl;
   }
   return false;
 }
@@ -136,7 +139,7 @@ bool ProcessHelper::GetProcessInfo()
     // if (HasProcess(pe32.th32ProcessID)) {
     //   continue;
     // }
-    auto processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pe32.th32ProcessID);
+    auto processHandle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pe32.th32ProcessID);
     if (!processHandle) continue;
     DWORD size = MAX_PATH;
     std::wstring sExeName(MAX_PATH, L'\0');
