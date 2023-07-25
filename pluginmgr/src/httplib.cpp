@@ -281,24 +281,25 @@ void HttpLib::HttpInitialize()
     WINHTTP_NO_PROXY_NAME, 
     WINHTTP_NO_PROXY_BYPASS,
     m_AsyncSet ? WINHTTP_FLAG_ASYNC: 0);
-  if (m_hSession) {
-
-    if (m_AsyncSet) {
-      if (!SetAsyncCallback()) {
-        throw std::runtime_error("Set async callback failed!");
-      }
-    }
-    auto url = Utf82WideString(GetDomain());
-
-    // Use WinHttpSetTimeouts to set a new time-out values.
-    const auto timeout = m_TimeOut * 1000;
-    if (!WinHttpSetTimeouts(m_hSession, timeout, timeout, timeout, timeout)) {
-      std::wcout << L"Error " << GetLastError() << L" in WinHttpSetTimeouts.\n";
-    }
-    m_hConnect = WinHttpConnect(m_hSession, url.c_str(), INTERNET_DEFAULT_HTTP_PORT, 0);
-  
-    SetProxyBefore();
+  if (!m_hSession) {
+    return;
   }
+
+  if (m_AsyncSet) {
+    if (!SetAsyncCallback()) {
+      throw std::runtime_error("Set async callback failed!");
+    }
+  }
+  auto url = Utf82WideString(GetDomain());
+
+  // Use WinHttpSetTimeouts to set a new time-out values.
+  const auto timeout = m_TimeOut * 1000;
+  if (!WinHttpSetTimeouts(m_hSession, timeout, timeout, timeout, timeout)) {
+    std::wcout << L"Error " << GetLastError() << L" in WinHttpSetTimeouts.\n";
+  }
+  m_hConnect = WinHttpConnect(m_hSession, url.c_str(), INTERNET_DEFAULT_HTTP_PORT, 0);
+
+  SetProxyBefore();
 
 #else
   SetProxyBefore();

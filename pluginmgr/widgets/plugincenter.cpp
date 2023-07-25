@@ -141,6 +141,8 @@ std::optional<std::string> PluginCenter::DownloadFile(std::u8string_view url)
     }
   };
 
+  clt.GetAsync(callback);
+
   connect(&dialog, &DownloadingDlg::Terminate, std::bind(&HttpLib::ExitAsync, &clt));
   dialog.exec();
   // https://gitlab.com/yjmthu1/neoboxplg/-/raw/main/plugins/neohotkeyplg/manifest.json

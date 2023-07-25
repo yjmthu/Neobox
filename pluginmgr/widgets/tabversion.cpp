@@ -93,8 +93,8 @@ void TabVersion::GetUpdate()
     QMessageBox::information(this, "提示", "当前没有网络，请稍后再试！");
     return;
   }
-  const char url[] = NEOBOX_LATEST_URL;
-  auto res = PluginCenter::m_Instance->DownloadFile(std::u8string_view((const char8_t*)url));
+  const auto url = u8"" NEOBOX_LATEST_URL ""sv;
+  auto res = PluginCenter::m_Instance->DownloadFile(url);
   if (!res) {
     QMessageBox::information(this, "提示", "下载失败，请稍后再试！");
     return;
