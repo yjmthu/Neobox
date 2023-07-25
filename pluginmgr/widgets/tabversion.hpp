@@ -20,6 +20,7 @@ private:
   class QPushButton* m_btnBug;
   class QPushButton* m_btnChk;
   class QTextBrowser* m_Text;
+  QString m_TextRaw;
 private:
   void InitLayout();
   void LoadJson();

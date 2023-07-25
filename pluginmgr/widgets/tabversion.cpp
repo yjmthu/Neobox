@@ -75,7 +75,8 @@ void TabVersion::LoadJson()
     "<h2>当前版本</h2>Neobox " NEOBOX_VERSION " " NEOBOX_BUILD_TYPE
     "<br>发布日期：" NEOBOX_BUILD_TIME
     "<br>" NEOBOX_COPYRIGHT ""s;
-  m_Text->setText(QString::fromUtf8(name.data(), name.size()));
+  m_TextRaw = QString::fromUtf8(name.data(), name.size());
+  m_Text->setText(m_TextRaw);
 }
 
 void TabVersion::Connect()
@@ -99,7 +100,6 @@ void TabVersion::GetUpdate()
     QMessageBox::information(this, "提示", "下载失败，请稍后再试！");
     return;
   }
-  m_btnChk->setEnabled(false);
   // QString qhtml = m_Text->text();
   const YJson jsAboutNew(res->begin(), res->end());
   std::u8string buffer(u8"<h2>最新版本</h2><p style='color: #FF00FF;'>");
@@ -122,6 +122,7 @@ void TabVersion::GetUpdate()
     buffer.append(u8"</ol>");
   }
 
+  m_Text->setText(m_TextRaw);
   m_Text->append(QString::fromUtf8(buffer.data(), buffer.size()));
 
   DoUpgrade(jsAboutNew);
