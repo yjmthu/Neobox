@@ -110,7 +110,7 @@ std::u8string NeoOcr::GetText(QImage image)
   }
 }
 
-std::vector<OcrResult> NeoOcr::GetTextEx(QImage image)
+std::vector<OcrResult> NeoOcr::GetTextEx(const QImage& image)
 {
   std::vector<OcrResult> result;
   if (m_Languages.empty()) {

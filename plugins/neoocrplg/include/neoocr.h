@@ -24,7 +24,7 @@ public:
   NeoOcr(class OcrConfig& settings);
   ~NeoOcr();
   std::u8string GetText(QImage image);
-  std::vector<OcrResult> GetTextEx(QImage image);
+  std::vector<OcrResult> GetTextEx(const QImage& image);
   void InitLanguagesList();
   void AddLanguages(const std::vector<std::u8string>& urls);
   void RmoveLanguages(const std::vector<std::u8string>& names);

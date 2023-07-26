@@ -10,13 +10,11 @@ public:
   virtual ~OcrDialog();
 private:
   void InitBaseLayout();
-  void SetImage(QString path);
   QString OpenImage();
 private:
   NeoOcr& m_OcrEngine;
   OcrDialog* & m_Self;
-  class QLabel* m_ImageLabel;
-  QImage* m_Image;
+  class OcrImageQFrame* m_ImageLabel;
 };
 
 #endif // OCRDIALOG_H
