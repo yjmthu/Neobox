@@ -136,9 +136,8 @@ std::optional<std::string> PluginCenter::DownloadFile(std::u8string_view url)
       }
       dialog.emitFinished();
     },
-    .m_ProcessCallback = [&dialog](auto recieve, auto total){
-      dialog.emitProcess(recieve, total);
-    }
+    .m_ProcessCallback = std::bind(&DownloadingDlg::emitProcess,
+      &dialog,std::placeholders::_1, std::placeholders::_2)
   };
 
   clt.GetAsync(callback);

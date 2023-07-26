@@ -212,41 +212,41 @@ void TabVersion::DoUpgrade(const YJson& data)
 {
   auto const vNew = ParseVersion(Utf82WideString(data[u8"tag_name"].getValueString()));
   auto const vOld = ParseVersion(L"" NEOBOX_VERSION);
-  if (vNew > vOld) {
-    const auto res = QMessageBox::question(this, "提示", "有新版本可用！请确保能流畅访问GitHub，是否立即下载安装？");
-    if (res == QMessageBox::Yes) {
-      for (auto& asset: data[u8"assets"].getArray()) {
-        auto& url = asset[u8"browser_download_url"].getValueString();
-        if (!url.ends_with(u8".zip")) {
-          continue;
-        }
-        if (!DownloadNew(url)) {
-          mgr->ShowMsg("下载失败！");
-          return;
-        }
-        fs::path dataDir = fs::absolute(L"junk") / L"Neobox";
-        if (!fs::exists(dataDir) || !fs::is_directory(dataDir)) {
-          mgr->ShowMsg("安装包数据出错！");
-          return;
-        }
-        fs::path curDir = QApplication::applicationDirPath().toStdU16String();
-        curDir.make_preferred();
-        fs::path appPath = curDir / "neobox.exe";
-
-        std::ofstream file("update.bat", std::ios::out);
-        file << "timeout /t 2" << " && "
-          << "rd /s /q " << curDir << " && "
-          << "move /y " << dataDir << " " << curDir << " && "
-          << appPath << std::endl;
-        file.close();
-
-        QApplication::quit();
-        QProcess::startDetached("cmd.exe", QStringList { "/c", "update.bat" });
-        return;
-      }
-      mgr->ShowMsg("未找到下载链接，请手动下载！");
-    }
-  } else {
+  if (vNew <= vOld) {
     mgr->ShowMsg("当前已是最新版本！");
+    return;
   }
+  if (QMessageBox::question(this, "提示", "有新版本可用！请确保能流畅访问GitHub，是否立即下载安装？") != QMessageBox::Yes) {
+    return;
+  }
+  for (auto& asset: data[u8"assets"].getArray()) {
+    auto& url = asset[u8"browser_download_url"].getValueString();
+    if (!url.ends_with(u8".zip")) {
+      continue;
+    }
+    if (!DownloadNew(url)) {
+      mgr->ShowMsg("下载失败！");
+      return;
+    }
+    fs::path dataDir = fs::absolute(L"junk") / L"Neobox";
+    if (!fs::exists(dataDir) || !fs::is_directory(dataDir)) {
+      mgr->ShowMsg("安装包数据出错！");
+      return;
+    }
+    fs::path curDir = QApplication::applicationDirPath().toStdU16String();
+    curDir.make_preferred();
+    fs::path appPath = curDir / "neobox.exe";
+
+    std::ofstream file("update.bat", std::ios::out);
+    file << "timeout /t 2" << " && "
+      << "rd /s /q " << curDir << " && "
+      << "move /y " << dataDir << " " << curDir << " && "
+      << appPath << std::endl;
+    file.close();
+
+    QApplication::quit();
+    QProcess::startDetached("cmd.exe", QStringList { "/c", "update.bat" });
+    return;
+  }
+  mgr->ShowMsg("未找到下载链接，请手动下载！");
 }

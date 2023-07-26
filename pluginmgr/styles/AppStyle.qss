@@ -251,6 +251,10 @@ QComboBox QAbstractItemView::item:selected {
   color: white;
 }
 
+QListWidget{
+  outline:0px;
+}
+
 QListView::item {
   background-color: #e5f2fa;
   color: black;

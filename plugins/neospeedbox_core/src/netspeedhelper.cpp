@@ -86,15 +86,17 @@ void NetSpeedHelper::SetCpuInfo() {
   curUserTime = Filetime2Int64(userTime);
 
   const uint64_t all = curKernelTime + curUserTime;
-  if (all == 0) {
-    m_TrafficInfo.cpuUsage = 100;
+  const auto deltaAll = all - m_PreAllTime;
+  m_PreAllTime = all;
+
+  if (deltaAll == 0) {
+    m_TrafficInfo.cpuUsage = 1.0;
   } else {
-    m_TrafficInfo.cpuUsage = all - curIdleTime + m_PreIdleTime;
-    m_TrafficInfo.cpuUsage /= all;
+    m_TrafficInfo.cpuUsage = deltaAll - (curIdleTime - m_PreIdleTime);
+    m_TrafficInfo.cpuUsage /= deltaAll;
   }
 
   m_PreIdleTime = curIdleTime;
-  m_PreAllTime = all;
 }
 
 void NetSpeedHelper::UpdateAdaptersAddresses() {
