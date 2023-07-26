@@ -20,14 +20,14 @@ private:
   void SetStyleSheet();
 
 private:
-  Ui_center* m_Ui;
+  Ui_center6* m_Ui;
   const String m_NetUpFmt = L"↑ {0:.1f} {1}/s";
   const String m_NetDownFmt = L"↓ {0:.1f} {1}/s";
 };
 
 Skin::Skin(QWidget* parent, const TrafficInfo& trafficInfo)
   : SkinObject(trafficInfo, parent)
-  , m_Ui(new Ui_center)
+  , m_Ui(new Ui_center6)
 {
   m_Ui->setupUi(m_Center);
   InitSize(parent);
@@ -48,8 +48,7 @@ void Skin::UpdateText()
   buffer = m_TrafficInfo.FormatSpeed(m_TrafficInfo.bytesDown, m_NetDownFmt, m_Units);
   m_Ui->netDown->setText(QString::fromStdWString(buffer));
 
-  buffer = std::format(L"{}%", static_cast<int>(m_TrafficInfo.memUsage * 100));
-  m_Ui->memUse->setText(QString::fromStdWString(buffer));
+  m_Ui->memUse->setText(QString::number(static_cast<int>(m_TrafficInfo.memUsage * 100)) + "%");
 
   SetStyleSheet();
 }

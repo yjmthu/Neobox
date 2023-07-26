@@ -116,9 +116,9 @@ void SpeedBox::UpdateSkin()
 {
   delete m_CentralWidget;
 #ifdef _WIN32
-    FreeLibrary(m_SkinDll);
+  FreeLibrary(m_SkinDll);
 #else
-    dlclose(m_SkinDll);
+  dlclose(m_SkinDll);
 #endif
   m_CentralWidget = nullptr;
   m_SkinDll = nullptr;

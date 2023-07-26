@@ -18,14 +18,14 @@ private:
   void SetStyleSheet() {}
 
 private:
-  Ui_center* m_Ui;
+  Ui_center1* m_Ui;
   const String m_NetUpFmt = L"↑ {0:.1f} {1}";
   const String m_NetDownFmt = L"↓ {0:.1f} {1}";
 };
 
 Skin::Skin(QWidget* parent, const TrafficInfo& trafficInfo)
   : SkinObject(trafficInfo, parent)
-  , m_Ui(new Ui_center)
+  , m_Ui(new Ui_center1)
 {
   m_Ui->setupUi(m_Center);
   InitSize(parent);

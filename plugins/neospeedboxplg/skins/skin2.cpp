@@ -20,13 +20,13 @@ private:
   void SetStyleSheet();
 
 private:
-  Ui_center* m_Ui;
+  Ui_center2* m_Ui;
   const String m_NetFmt = L"{0:.0f} {1}/s";
 };
 
 Skin::Skin(QWidget* parent, const TrafficInfo& trafficInfo)
   : SkinObject(trafficInfo, parent)
-  , m_Ui(new Ui_center)
+  , m_Ui(new Ui_center2)
 {
   m_Ui->setupUi(m_Center);
   InitSize(parent);
