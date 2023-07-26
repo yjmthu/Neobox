@@ -1,5 +1,14 @@
 #ifdef Skin
 
+#ifdef SPEEDBOX_SKIN_STATIC
+
+SkinObject * newSkin(QWidget* parent, const TrafficInfo& trafficinfo)
+{
+  return new Skin(parent, trafficinfo);
+}
+
+#else
+
 #include <QWidget>
 #include <string>
 
@@ -26,4 +35,6 @@ SkinObject * newSkin(QWidget* parent, const TrafficInfo& trafficinfo)
   return new Skin(parent, trafficinfo);
 }
 
-#endif
+#endif // SPEEDBOX_SKIN_STATIC
+
+#endif // Skin

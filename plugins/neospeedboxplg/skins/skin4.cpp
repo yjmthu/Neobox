@@ -5,6 +5,7 @@
 #include <format>
 
 #define Skin Skin4
+#define newSkin newSkin4
 
 class Skin: public SkinObject
 {

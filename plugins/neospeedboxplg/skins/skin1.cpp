@@ -3,6 +3,7 @@
 #include <ui_skin1.h>
 
 #define Skin Skin1
+#define newSkin newSkin1
 
 class Skin: public SkinObject
 {

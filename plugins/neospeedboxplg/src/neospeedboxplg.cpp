@@ -32,6 +32,7 @@
 namespace fs = std::filesystem;
 using namespace std::literals;
 
+
 PluginName::PluginName(YJson& settings)
   : PluginObject(InitSettings(settings), u8"neospeedboxplg", u8"网速悬浮")
   , m_Settings(settings)
@@ -192,52 +193,35 @@ YJson& PluginName::InitSettings(YJson& settings)
       {u8"HideAside", 15},     // 0xFF
       {u8"ColorEffect", 0,},
       {u8"BackgroundColorRgba", YJson::A { 51, 51, 119, 204 } },
-      {u8"CurSkin", u8"经典火绒"},
+      {u8"CurSkin", YJson::String},
       {u8"UserSkins", YJson::O {}},
       {u8"NetCardDisabled", YJson::A {}},
       {u8"MousePenetrate", false},
       {u8"ProgressMonitor", false}
     };
   }
-  std::u8string default_skins[][2] = {
-    {u8"简简单单"s, u8"skin"s},
-    {u8"经典火绒"s, u8"skin1"s},
-    {u8"电脑管家"s, u8"skin2"s},
-    {u8"数字卫士"s, u8"skin3"s},
-    {u8"独霸一方"s, u8"skin4"s},
-    {u8"开源力量"s, u8"skin5"s},
-    {u8"果里果气"s, u8"skin6"s},
-  };
+
   auto& skins = settings[u8"UserSkins"];
   if (!skins.isObject()) skins = YJson::Object;
 
   auto& curSkin = settings[u8"CurSkin"].getValueString();
-  if (auto iter = skins.find(curSkin); iter == skins.endO()) {
-    curSkin = u8"经典火绒";
-  } else {
-#ifdef _WIN32
-    fs::path curSkinPath = u8"skins/" + iter->second.getValueString() + u8".dll";
-#else
-    fs::path curSkinPath = u8"skins/lib" + iter->second.getValueString() + u8".so";
-#endif
-    if (!fs::exists(curSkinPath)) {
-      skins.remove(curSkin);
-      curSkin = u8"经典火绒";
+
+  for (auto iter = skins.beginO(); iter != skins.endO();) {
+    if (IsDefaultSkin(iter->first) == -1)
+    {
+      ++iter;
+      continue;
     }
+    iter = skins.remove(iter);
+    mgr->ShowMsg("1111111");
   }
   
-  for (size_t i=0; i!=6; ++i) {
-    skins[default_skins[i][0]] = default_skins[i][1];
+  if (auto iter = skins.find(curSkin); iter == skins.endO()) {
+    if (IsDefaultSkin(curSkin) == -1) {
+      curSkin = m_DefaultSkins.front();
+    }
   }
 
-  const auto& curFileName = Utf82QString(skins[curSkin].getValueString());
-#ifdef _WIN32
-  auto const curSkinPath = "skins/" + curFileName + ".dll";
-  auto const curResPath = ":/dynamic/" + curFileName + ".dll";
-#else
-  auto const curSkinPath = "skins/lib" + curFileName + ".so";
-  auto const curResPath = ":/dynamic/lib" + curFileName + ".so";
-#endif
   auto& version = settings[u8"Version"];
   if (!version.isNumber()) {
     version = 0;
@@ -256,7 +240,6 @@ YJson& PluginName::InitSettings(YJson& settings)
 void PluginName::LoadRemoveSkinMenu(MenuBase* parent)
 {
   m_RemoveSkinMenu = new MenuBase(parent);
-  const auto curSkin = m_Settings.GetCurSkin();
   for (const auto& [name, path]: m_Settings.GetUserSkins()) {
     auto const action = m_RemoveSkinMenu->addAction(PluginObject::Utf82QString(name));
     action->setToolTip(PluginObject::Utf82QString(path.getValueString()));
@@ -264,12 +247,31 @@ void PluginName::LoadRemoveSkinMenu(MenuBase* parent)
   }
 }
 
+int PluginName::IsDefaultSkin(const std::u8string& key)
+{
+  auto iter = std::find(m_DefaultSkins.cbegin(), m_DefaultSkins.cend(), key);
+
+  return iter == m_DefaultSkins.cend() ? -1: iter - m_DefaultSkins.cbegin();
+}
+
+
 void PluginName::LoadChooseSkinMenu(MenuBase* parent)
 {
   m_ChooseSkinMenu = new MenuBase(parent);
   m_ChooseSkinGroup = new QActionGroup(m_ChooseSkinMenu);
 
   const std::u8string curSkin = m_Settings.GetCurSkin();
+  
+  for (const auto& name: m_DefaultSkins) {
+    auto const action = m_ChooseSkinMenu->addAction(PluginObject::Utf82QString(name));
+    action->setCheckable(true);
+    m_ChooseSkinGroup->addAction(action);
+    action->setChecked(curSkin == name);
+    ChooseSkinConnect(action);
+  }
+
+  m_ChooseSkinMenu->addSeparator();
+
   for (const auto& [name, path]: m_Settings.GetUserSkins()) {
     auto const action = m_ChooseSkinMenu->addAction(PluginObject::Utf82QString(name));
     const auto qname = action->text();
@@ -336,11 +338,7 @@ void PluginName::ChooseSkinConnect(QAction* action)
 {
   QObject::connect(action, &QAction::triggered, m_ChooseSkinMenu, [action, this](){
     m_Settings.SetCurSkin(PluginObject::QString2Utf8(action->text()));
-    if (m_Speedbox->UpdateSkin()) {
-      mgr->ShowMsg("更换皮肤成功！");
-    } else {
-      mgr->ShowMsg("更换皮肤失败！");
-    }
+    m_Speedbox->UpdateSkin();
   });
 }
 

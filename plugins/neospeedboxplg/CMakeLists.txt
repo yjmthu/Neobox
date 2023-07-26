@@ -21,16 +21,24 @@ set(pliugin_libfiles neospeedbox_core pluginmgr)
 
 add_library(neospeedboxplg SHARED ${source_files})
 
-set(resource_files fonts/*.ttf icons/* dynamic/*.dll dynamic/*.so)
+set(resource_files
+  fonts/*.ttf
+  icons/*
+  # dynamic/*.dll
+  # dynamic/*.so
+)
 load_resources(neospeedboxplg "${resource_files}")
 
-target_link_libraries(neospeedboxplg PUBLIC
+set(speedbox_libs)
+
+list(APPEND speedbox_libs
   ${pliugin_libfiles}
-  ${qt_shared_files}
   ${system_shared_files}
 )
 
 # ===== 编译皮肤 ======
+
+set(SPEEDBOX_SKIN_FLAGS "-DSPEEDBOX_SKIN_STATIC" )
 
 # 找到所有CPP文件
 file(GLOB all_cpp_files skins/*.cpp)
@@ -42,25 +50,33 @@ foreach(full_cpp_filepath ${all_cpp_files})
     qt_wrap_ui(wrap_file ${full_ui_filepath}) # 根据UI文件生成头文件
   endif()
   # 获取不带扩展的文件名称
-  get_filename_component(file_path ${full_cpp_filepath} NAME_WE)
+  get_filename_component(file_name ${full_cpp_filepath} NAME_WE)
   # 将CPP文件和对应的皮肤编译动态库
-  add_library(${file_path} SHARED
-    skins/${file_path}.cpp
+  add_library(${file_name} STATIC
+    skins/${file_name}.cpp
     ${wrap_file}
   )
-  # 链接动态库
-  target_link_libraries(${file_path}
-    neospeedboxplg
-    ${pliugin_libfiles}
-    ${qt_shared_files}
-  )
-  # 安装目录
-  install(TARGETS ${file_path}
-    LIBRARY DESTINATION skins
-    ARCHIVE DESTINATION skins
-    RUNTIME DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/dynamic
-    PUBLIC_HEADER DESTINATION skins
-  )
-  # file(COPY ${CMAKE_CURRENT_BINARY_DIR}/${file_path}.dll
-  #   DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/dlls/${file_path}.dll FOLLOW_SYMLINK_CHAIN)
+  target_link_libraries(${file_name} ${qt_shared_files})
+  set_target_properties(${file_name} PROPERTIES COMPILE_FLAGS ${SPEEDBOX_SKIN_FLAGS})
+  # 添加到主程序库列表
+  list(APPEND speedbox_libs ${file_name})
+  # # 链接动态库
+  # target_link_libraries(${file_name}
+  #   neospeedboxplg
+  #   ${pliugin_libfiles}
+  #   ${qt_shared_files}
+  # )
+  # # 安装目录
+  # install(TARGETS ${file_name}
+  #   LIBRARY DESTINATION skins
+  #   ARCHIVE DESTINATION skins
+  #   RUNTIME DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/dynamic
+  #   PUBLIC_HEADER DESTINATION skins
+  # )
+  # file(COPY ${CMAKE_CURRENT_BINARY_DIR}/${file_name}.dll
+  #   DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/dlls/${file_name}.dll FOLLOW_SYMLINK_CHAIN)
 endforeach()
+
+target_link_libraries(neospeedboxplg PUBLIC
+  ${speedbox_libs}
+)

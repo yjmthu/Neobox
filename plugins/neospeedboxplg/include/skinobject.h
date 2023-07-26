@@ -5,6 +5,7 @@
 
 #include <trafficinfo.h>
 
+
 class SkinObject
 {
 protected:
@@ -26,5 +27,7 @@ protected:
   const SpeedUnits m_Units;
   QWidget* m_Center;
 };
+
+typedef SkinObject* SkinApi(QWidget*, const TrafficInfo&);
 
 #endif // SKINOBJECT_H

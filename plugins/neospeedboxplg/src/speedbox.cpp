@@ -33,11 +33,28 @@
 #include <dlfcn.h>
 #endif
 
-SpeedBox::SpeedBox(PluginObject* plugin, SpeedBoxCfg& settings, MenuBase* netcardMenu)
+extern SkinApi newSkin, newSkin1, newSkin2, newSkin3, newSkin4, newSkin5, newSkin6;
+
+static SkinApi* const g_SkinApis[] = {
+  newSkin, newSkin1, newSkin2, newSkin3, newSkin4, newSkin5, newSkin6
+};
+
+const std::vector<std::u8string> NeoSpeedboxPlg::m_DefaultSkins = {
+    u8"简简单单",
+    u8"经典火绒",
+    u8"电脑管家",
+    u8"数字卫士",
+    u8"独霸一方",
+    u8"开源力量",
+    u8"果里果气",
+};
+
+
+SpeedBox::SpeedBox(NeoSpeedboxPlg* plugin, SpeedBoxCfg& settings, MenuBase* netcardMenu)
     : WidgetBase(nullptr)
     , m_PluginObject(plugin)
     , m_Settings(settings)
-    , m_NetSpeedHelper(*dynamic_cast<NeoSpeedboxPlg*>(plugin)->m_NetSpeedHelper)
+    , m_NetSpeedHelper(*plugin->m_NetSpeedHelper)
     , m_ProcessForm(m_Settings.GetProgressMonitor() ?new ProcessForm(this) : nullptr)
     , m_NetCardMenu(*netcardMenu)
     , m_CentralWidget(nullptr)
@@ -95,7 +112,7 @@ void SpeedBox::SetWindowMode() {
   move(position.front().getValueInt(), position.back().getValueInt());
 }
 
-bool SpeedBox::UpdateSkin()
+void SpeedBox::UpdateSkin()
 {
   delete m_CentralWidget;
 #ifdef _WIN32
@@ -105,7 +122,7 @@ bool SpeedBox::UpdateSkin()
 #endif
   m_CentralWidget = nullptr;
   m_SkinDll = nullptr;
-  return LoadCurrentSkin();
+  LoadCurrentSkin();
 }
 
 bool SpeedBox::LoadDll(fs::path dllPath)
@@ -146,50 +163,34 @@ bool SpeedBox::LoadDll(fs::path dllPath)
   return true;
 }
 
-bool SpeedBox::LoadCurrentSkin() {
+void SpeedBox::LoadCurrentSkin() {
 
   auto skinName = m_Settings.GetCurSkin();
-  const auto skinFileName = YJson(m_Settings.GetUserSkins())[skinName].getValueString();
-
-#ifdef _WIN32
-  auto skinPath = u8"skins/" + skinFileName + u8".dll";
-  auto qResSkinPath = ":/dynamic/" + QString::fromUtf8(skinFileName.data(), skinFileName.size()) + ".dll";
-#else
-  auto skinPath = u8"skins/lib" + skinFileName + u8".so";
-  auto qResSkinPath = ":/dynamic/lib" + QString::fromUtf8(skinFileName.data(), skinFileName.size()) + ".so";
-#endif
-  auto qSkinPath = QString::fromUtf8(skinPath.data(), skinPath.size());
-
-  if (!fs::exists("skins"))
-    fs::create_directory("skins");
-  
-  
-  if (QFile::exists(qResSkinPath)) {
-    if (QFile::exists(qSkinPath)) {
-      QFile fileConst(qResSkinPath);
-      fileConst.open(QIODevice::ReadOnly);
-      auto const resData = fileConst.readAll();
-      fileConst.close();
-
-      QFile fileVar(qSkinPath);
-      fileVar.open(QIODevice::ReadOnly);
-      auto const varData = fileVar.readAll();
-      fileVar.close();
-
-      if (resData != varData) {
-        QFile::remove(qSkinPath);
-        QFile::copy(qResSkinPath, qSkinPath);
-        QFile::setPermissions(qSkinPath, QFile::ReadUser | QFile::WriteUser);
-      }
-    } else {
-      QFile::copy(qResSkinPath, qSkinPath);
-      QFile::setPermissions(qSkinPath, QFile::ReadUser | QFile::WriteUser);
-    }
-  } else if (!QFile::exists(qSkinPath)) {
-    mgr->ShowMsg("找不到皮肤资源");
+  auto allSkins = YJson(m_Settings.GetUserSkins());
+  auto iter = allSkins.find(skinName);
+  int id = m_PluginObject->IsDefaultSkin(skinName);
+  if (iter == allSkins.endO() && id == -1) {
+    mgr->ShowMsg("无效的皮肤名称！");
+    id = 0;
   }
 
-  return LoadDll(skinPath);
+  if (id == -1) {
+    const auto skinFileName = iter->second.getValueString();
+#ifdef _WIN32
+  auto skinPath = u8"skins/" + skinFileName + u8".dll";
+#else
+  auto skinPath = u8"skins/lib" + skinFileName + u8".so";
+#endif
+  auto qSkinPath = QString::fromUtf8(skinPath.data(), skinPath.size());
+    if (QFile::exists(qSkinPath)) {
+      if (LoadDll(skinPath)) return;
+      mgr->ShowMsg("皮肤文件无效！");
+      id = 0;
+    } else {
+      mgr->ShowMsg("皮肤文件找不到！");
+    }
+  }
+  m_CentralWidget = g_SkinApis[id](this, m_NetSpeedHelper.m_TrafficInfo);
 }
 
 #ifdef _WIN32

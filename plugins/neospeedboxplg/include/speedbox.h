@@ -12,7 +12,7 @@ namespace fs = std::filesystem;
 class SpeedBox : public WidgetBase {
 private:
   SpeedBoxCfg& m_Settings;
-  class PluginObject* m_PluginObject;
+  class NeoSpeedboxPlg* m_PluginObject;
   class SkinObject* m_CentralWidget;
 #ifdef _WIN32
   HINSTANCE m_SkinDll;
@@ -50,17 +50,17 @@ protected:
   void leaveEvent(QEvent* event) override;
 
  public:
-  explicit SpeedBox(PluginObject* plugin, SpeedBoxCfg& settings, MenuBase* netcardMenu);
+  explicit SpeedBox(NeoSpeedboxPlg* plugin, SpeedBoxCfg& settings, MenuBase* netcardMenu);
   ~SpeedBox();
   void InitShow(const PluginObject::FollowerFunction& callback);
   void InitMove();
-  bool UpdateSkin();
+  void UpdateSkin();
   void SetProgressMonitor(bool on);
 
  private:
   void SetWindowMode();
   bool LoadDll(fs::path dllPath);
-  bool LoadCurrentSkin();
+  void LoadCurrentSkin();
 #ifdef _WIN32
   void SetHideFullScreen();
 #endif

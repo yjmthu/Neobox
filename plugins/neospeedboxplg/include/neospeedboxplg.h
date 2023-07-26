@@ -21,6 +21,7 @@ private:
   SpeedBoxCfg m_Settings;
 public:
   class NetSpeedHelper* m_NetSpeedHelper;
+  static int IsDefaultSkin(const std::u8string& key);
 private:
   YJson& InitSettings(YJson& settings);
   void InitFunctionMap() override;
@@ -34,6 +35,7 @@ private:
   void ChooseSkinConnect(QAction* action);
   void AddSkin(const QString& name, const std::filesystem::path& path);
 private:
+  static const std::vector<std::u8string> m_DefaultSkins;
   class SpeedBox* m_Speedbox;
   MenuBase* m_ChooseSkinMenu;
   MenuBase* m_RemoveSkinMenu;
