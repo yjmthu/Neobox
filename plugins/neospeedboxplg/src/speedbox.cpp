@@ -114,7 +114,6 @@ bool SpeedBox::LoadDll(fs::path dllPath)
 
   SkinObject* (*newSkin)(QWidget*, const TrafficInfo&);
   // bool (*skinVersion)(const std::string&);
-  dllPath.make_preferred();
 #ifdef _WIN32
   auto wPath = dllPath.make_preferred().wstring();
   wPath.push_back(L'\0');

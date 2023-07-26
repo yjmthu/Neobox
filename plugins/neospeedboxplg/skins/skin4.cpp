@@ -20,9 +20,9 @@ private:
 
 private:
   Ui_center* m_Ui;
-  const std::string m_NetFmt = "{0:.1f} {1}";
-  const TrafficInfo::SpeedUnits m_Units = {
-    "B/s", "KB/s", "MB/s", "GB/s", "TB/s", "PB/s"
+  const String m_NetFmt = L"{0:.1f} {1}";
+  const SpeedUnits m_Units = {
+    L"B/s", L"KB/s", L"MB/s", L"GB/s", L"TB/s", L"PB/s"
   };
 };
 
@@ -41,19 +41,19 @@ Skin::~Skin()
 
 void Skin::UpdateText()
 {
-  static std::string buffer;
+  static String buffer;
 
   buffer = m_TrafficInfo.FormatSpeed(m_TrafficInfo.bytesUp, m_NetFmt, m_Units);
-  m_Ui->netUp->setText(QString::fromUtf8(buffer.data(), buffer.size()));
+  m_Ui->netUp->setText(QString::fromStdWString(buffer));
 
   buffer = m_TrafficInfo.FormatSpeed(m_TrafficInfo.bytesDown, m_NetFmt, m_Units);
-    m_Ui->netDown->setText(QString::fromUtf8(buffer.data(), buffer.size()));
+  m_Ui->netDown->setText(QString::fromStdWString(buffer));
 
-  buffer = std::format("{}%", static_cast<int>(m_TrafficInfo.memUsage * 100));
-  m_Ui->memUse->setText(QString::fromUtf8(buffer.data(), buffer.size()));
+  buffer = std::format(L"{}%", static_cast<int>(m_TrafficInfo.memUsage * 100));
+  m_Ui->memUse->setText(QString::fromStdWString(buffer));
 
-  buffer = std::format("{}%", static_cast<int>(m_TrafficInfo.cpuUsage * 100));
-  m_Ui->cpuUse->setText(QString::fromUtf8(buffer.data(), buffer.size()));
+  buffer = std::format(L"{}%", static_cast<int>(m_TrafficInfo.cpuUsage * 100));
+  m_Ui->cpuUse->setText(QString::fromStdWString(buffer));
 
   SetStyleSheet();
 }

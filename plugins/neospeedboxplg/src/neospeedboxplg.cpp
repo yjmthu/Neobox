@@ -200,6 +200,7 @@ YJson& PluginName::InitSettings(YJson& settings)
     };
   }
   std::u8string default_skins[][2] = {
+    {u8"简简单单"s, u8"skin"s},
     {u8"经典火绒"s, u8"skin1"s},
     {u8"电脑管家"s, u8"skin2"s},
     {u8"数字卫士"s, u8"skin3"s},

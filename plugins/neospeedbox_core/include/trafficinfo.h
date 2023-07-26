@@ -7,7 +7,8 @@
 
 struct TrafficInfo {
 public:
-  typedef std::array<std::string, 6> SpeedUnits;
+  typedef std::wstring FormatString;
+  typedef std::array<FormatString, 6> SpeedUnits;
 
 public:
   uint64_t storageSizeAll = 0;
@@ -25,8 +26,8 @@ public:
   float gpuTemperature = 0;
 
 public:
-  static std::string FormatSpeed(uint32_t bytes,
-      const std::string& fmtStr,
+  static FormatString FormatSpeed(uint32_t bytes,
+      const FormatString& fmtStr,
       const SpeedUnits& uints);
 };
 

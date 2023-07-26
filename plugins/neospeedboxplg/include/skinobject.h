@@ -7,6 +7,9 @@
 
 class SkinObject
 {
+protected:
+  using String = TrafficInfo::FormatString;
+  using SpeedUnits = TrafficInfo::SpeedUnits;
 public:
   explicit SkinObject(const TrafficInfo& trafficInfo, QWidget* parent);
   virtual ~SkinObject();
@@ -20,7 +23,7 @@ protected:
 
 protected:
   const TrafficInfo& m_TrafficInfo;
-  const TrafficInfo::SpeedUnits m_Units;
+  const SpeedUnits m_Units;
   QWidget* m_Center;
 };
 

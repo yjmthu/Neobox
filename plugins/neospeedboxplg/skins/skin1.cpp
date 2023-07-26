@@ -18,8 +18,8 @@ private:
 
 private:
   Ui_center* m_Ui;
-  const std::string m_NetUpFmt = "↑ {0:.1f} {1}";
-  const std::string m_NetDownFmt = "↓ {0:.1f} {1}";
+  const String m_NetUpFmt = L"↑ {0:.1f} {1}";
+  const String m_NetDownFmt = L"↓ {0:.1f} {1}";
 };
 
 Skin::Skin(QWidget* parent, const TrafficInfo& trafficInfo)
@@ -37,13 +37,13 @@ Skin::~Skin()
 
 void Skin::UpdateText()
 {
-  static std::string buffer;
+  static String buffer;
 
   buffer = m_TrafficInfo.FormatSpeed(m_TrafficInfo.bytesUp, m_NetUpFmt, m_Units);
-  m_Ui->netUp->setText(QString::fromUtf8(buffer.data(), buffer.size()));
+  m_Ui->netUp->setText(QString::fromStdWString(buffer));
 
   buffer = m_TrafficInfo.FormatSpeed(m_TrafficInfo.bytesDown, m_NetDownFmt, m_Units);
-    m_Ui->netDown->setText(QString::fromUtf8(buffer.data(), buffer.size()));
+  m_Ui->netDown->setText(QString::fromStdWString(buffer));
 
   m_Ui->memUse->setText(QString::number(static_cast<int>(m_TrafficInfo.memUsage * 100), 10));
 
