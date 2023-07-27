@@ -38,7 +38,6 @@ PluginName::PluginName(YJson& settings)
   : PluginObject(InitSettings(settings), u8"neospeedboxplg", u8"网速悬浮")
   , m_Settings(settings)
   , m_NetSpeedHelper(new NetSpeedHelper(m_Settings.GetNetCardDisabled()))
-  , m_TrayFrame(nullptr)
   , m_Speedbox(nullptr)
 {
   // LoadFonts();
@@ -50,7 +49,6 @@ PluginName::~PluginName()
   RemoveMainObject();
   auto& followers = mgr->m_Tray->m_Followers;
   followers.erase(&m_ActiveWinodow);
-  delete m_TrayFrame;
   delete m_Speedbox;
   delete m_NetSpeedHelper;
 }
@@ -105,6 +103,32 @@ void PluginName::InitFunctionMap() {
           mgr->ShowMsg("设置成功！");
         } else if (event == PluginEvent::BoolGet) {
           *reinterpret_cast<bool *>(data) = m_Settings.GetProgressMonitor();
+        }
+      }, PluginEvent::Bool}
+    },
+    {u8"enableTaskbarMode", {
+      u8"任务栏模式", u8"网速悬浮窗开启鼠标穿透，并灵活置顶、自动调整位置。", [this](PluginEvent event, void* data){
+        if (event == PluginEvent::Bool) {
+          auto& on = *reinterpret_cast<bool *>(data);
+          m_Settings.SetTaskbarMode(on);
+          if (on != m_Settings.GetMousePenetrate()) {
+            const auto& callback = m_PluginMethod[u8"enableMousePenetrate"];
+            auto actions = m_MainAction->menu()->actions();
+            auto const actionText = QString::fromUtf8(callback.friendlyName.data(),
+              callback.friendlyName.size());
+            for (auto action: actions) {
+              if (action->text() == actionText) {
+                action->setChecked(on);
+                break;
+              }
+            }
+            callback.function(PluginEvent::Bool, data);
+            return;
+          }
+          m_Speedbox->SetTrayMode(on);
+          mgr->ShowMsg("设置成功！");
+        } else if (event == PluginEvent::BoolGet) {
+          *reinterpret_cast<bool *>(data) = m_Settings.GetTaskbarMode();
         }
       }, PluginEvent::Bool}
     },
@@ -238,6 +262,10 @@ YJson& PluginName::InitSettings(YJson& settings)
     settings[u8"ProgressMonitor"] = false;
   }
 
+  if (version.getValueInt() < 2) {
+    version = 2;
+    settings[u8"TaskbarMode"] = false;
+  }
   return settings;
   // we may not need to call SaveSettings;
 }

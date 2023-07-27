@@ -20,6 +20,7 @@ private:
   void* m_SkinDll;
 #endif
   class QTimer* m_Timer;
+  class TrayFrame* m_TrayFrame;
   class MenuBase& m_NetCardMenu;
   void* m_AppBarData;
   class NetSpeedHelper& m_NetSpeedHelper;
@@ -56,6 +57,7 @@ protected:
   void InitMove();
   void UpdateSkin();
   void SetProgressMonitor(bool on);
+  void SetTrayMode(bool on);
 
  private:
   void SetWindowMode();

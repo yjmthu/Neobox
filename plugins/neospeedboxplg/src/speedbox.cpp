@@ -22,6 +22,7 @@
 #include <skinobject.h>
 #include <netspeedhelper.h>
 #include <processform.h>
+#include <trayframe.h>
 
 #include <array>
 #include <filesystem>
@@ -60,6 +61,7 @@ SpeedBox::SpeedBox(NeoSpeedboxPlg* plugin, SpeedBoxCfg& settings, MenuBase* netc
     , m_CentralWidget(nullptr)
     , m_SkinDll(nullptr)
     , m_Timer(new QTimer(this))
+    , m_TrayFrame(nullptr)
     , m_Animation(new QPropertyAnimation(this, "geometry"))
 {
   SetWindowMode();
@@ -82,6 +84,7 @@ SpeedBox::~SpeedBox() {
 #endif
   
   // m_Timer->stop();
+  delete m_TrayFrame;
   delete m_Timer;
 }
 
@@ -98,6 +101,10 @@ void SpeedBox::InitShow(const PluginObject::FollowerFunction& callback) {
 
   bool buffer = m_Settings.GetColorEffect();
   callback(PluginEvent::Bool, &buffer);
+
+  if (m_Settings.GetTaskbarMode()) {
+    SetTrayMode(true);
+  }
 }
 
 void SpeedBox::SetWindowMode() {
@@ -213,6 +220,17 @@ void SpeedBox::SetProgressMonitor(bool on)
   } else {
     delete m_ProcessForm;
     m_ProcessForm = nullptr;
+  }
+}
+
+void SpeedBox::SetTrayMode(bool on)
+{
+  if (on) {
+    if (m_TrayFrame) return;
+    m_TrayFrame = new TrayFrame(*this);
+  } else {
+    delete m_TrayFrame;
+    m_TrayFrame = nullptr;
   }
 }
 

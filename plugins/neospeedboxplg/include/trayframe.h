@@ -1,30 +1,38 @@
 ﻿#ifndef TRAY_FRAME_H
 #define TRAY_FRAME_H
 
-#include <QWidget>
 #include <Windows.h>
 #include <string>
 
-class TrayFrame: public QWidget
+class TrayFrame
 {
 public:
   typedef std::wstring String;
 
 public:
-  explicit TrayFrame();
+  explicit TrayFrame(class SpeedBox&);
   ~TrayFrame();
 
 private:
   void GetShellAllWnd();
-  void JoinInTray();
-  void SetupUi();
+  void AdjustPosition();
 
 private:
+  bool m_IsWin11TaskBar = false;
+  int m_LeftSpace = 0;
+  int m_TopSpace = 0;
+  class QTimer* m_Timer;
+  SpeedBox& m_SpeedBox;
   // 任务栏
   HWND m_hTaskBar;
   // 任务栏子窗口
   HWND m_hReBar;
-  HWND m_hTaskBand;
+  HWND m_hMin;
+  HWND m_hNotify;
+  tagRECT m_rcTaskBar;
+  tagRECT m_rcReBar;
+  tagRECT m_rcMin;
+  tagRECT m_rcNotify;
 };
 
 #endif // TRAY_FRAME_H

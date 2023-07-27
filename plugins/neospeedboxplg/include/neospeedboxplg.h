@@ -37,7 +37,6 @@ private:
 private:
   static const std::vector<std::u8string> m_DefaultSkins;
   class SpeedBox* m_Speedbox;
-  class TrayFrame* m_TrayFrame;
   MenuBase* m_ChooseSkinMenu;
   MenuBase* m_RemoveSkinMenu;
   MenuBase* m_NetCardMenu;

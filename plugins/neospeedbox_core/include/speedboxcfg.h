@@ -15,6 +15,7 @@ class SpeedBoxCfg: public NeoConfig {
   CfgYJson(NetCardDisabled)
   CfgBool(MousePenetrate)
   CfgBool(ProgressMonitor)
+  CfgBool(TaskbarMode)
 };
 
 #endif // SPEEDBOXCFG_H

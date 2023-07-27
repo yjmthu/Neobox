@@ -31,6 +31,7 @@ void NeoMsgDlg::HandleShowMsg()
       if (m_Data.empty()) {
         m_pAnimation->start();
       } else {
+        while (m_Data.size() > 3) m_Data.pop();
         m_pLabel->setText(m_Data.front());
         HandleShowMsg();
       }
