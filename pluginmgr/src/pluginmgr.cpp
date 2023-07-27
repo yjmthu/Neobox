@@ -449,13 +449,12 @@ bool PluginMgr::IsPluginEnabled(const std::u8string& plugin) const
   return m_Plugins.find(plugin) != m_Plugins.end();
 }
 
-void PluginMgr::ShowMsgbox(const std::u8string& title,
-                 const std::u8string& text,
+void PluginMgr::ShowMsgbox(const std::wstring& title,
+                 const std::wstring& text,
                  int type) {
   QMetaObject::invokeMethod(m_Menu, [=](){
-    QMessageBox::information(m_Menu,
-                             QString::fromUtf8(title.data(), title.size()),
-                             QString::fromUtf8(text.data(), text.size()));
+    QMessageBox::information(m_Menu, QString::fromStdWString(title),
+      QString::fromStdWString(text));
   });
 }
 

@@ -114,12 +114,12 @@ std::vector<OcrResult> NeoOcr::GetTextEx(const QImage& image)
 {
   std::vector<OcrResult> result;
   if (m_Languages.empty()) {
-    mgr->ShowMsgbox(u8"error", u8"You should set some language first!");
+    mgr->ShowMsgbox(L"error", L"You should set some language first!");
 //    m_TessApi->End();
     return result;
   }
   if (m_TessApi->Init(m_TrainedDataDir.c_str(), reinterpret_cast<const char*>(m_Languages.c_str()))) {
-    mgr->ShowMsgbox(u8"error", u8"Could not initialize tesseract.");
+    mgr->ShowMsgbox(L"error", L"Could not initialize tesseract.");
     return result;
   }
 
@@ -127,11 +127,11 @@ std::vector<OcrResult> NeoOcr::GetTextEx(const QImage& image)
   m_TessApi->SetImage(pix.get());
 
   // RIL_TEXTLINE 表示识别文本行
-  const auto boxes = m_TessApi->GetComponentImages(tesseract::RIL_TEXTLINE, true, NULL, NULL);
+  const auto boxes = m_TessApi->GetComponentImages(tesseract::RIL_WORD, true, NULL, NULL);
 
   for (int i = 0; i != boxes->n; ++i) {
     auto box = boxaGetBox(boxes, i, L_CLONE);
-    m_TessApi->SetRectangle(box->x, box->y, box->w, box->h);
+    m_TessApi->SetRectangle(box->x - 1, box->y - 1, box->w + 2, box->h + 2);
     char* ocrResult = m_TessApi->GetUTF8Text();
     int conf = m_TessApi->MeanTextConf();
     result.push_back(OcrResult {
@@ -215,12 +215,12 @@ std::u8string NeoOcr::OcrTesseract(const QImage& image)
 {
   std::u8string result;
   if (m_Languages.empty()) {
-    mgr->ShowMsgbox(u8"error", u8"You should set some language first!");
+    mgr->ShowMsgbox(L"error", L"You should set some language first!");
 //    m_TessApi->End();
     return result;
   }
   if (m_TessApi->Init(m_TrainedDataDir.c_str(), reinterpret_cast<const char*>(m_Languages.c_str()))) {
-    mgr->ShowMsgbox(u8"error", u8"Could not initialize tesseract.");
+    mgr->ShowMsgbox(L"error", L"Could not initialize tesseract.");
     return result;
   }
   auto const pix = QImage2Pix(image);

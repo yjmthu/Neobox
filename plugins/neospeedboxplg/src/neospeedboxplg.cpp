@@ -1,5 +1,6 @@
 #include <neospeedboxplg.h>
 #include <speedbox.h>
+#include <trayframe.h>
 #include <pluginobject.h>
 #include <yjson.h>
 #include <systemapi.h>
@@ -37,6 +38,8 @@ PluginName::PluginName(YJson& settings)
   : PluginObject(InitSettings(settings), u8"neospeedboxplg", u8"网速悬浮")
   , m_Settings(settings)
   , m_NetSpeedHelper(new NetSpeedHelper(m_Settings.GetNetCardDisabled()))
+  , m_TrayFrame(nullptr)
+  , m_Speedbox(nullptr)
 {
   // LoadFonts();
   InitFunctionMap();
@@ -47,6 +50,7 @@ PluginName::~PluginName()
   RemoveMainObject();
   auto& followers = mgr->m_Tray->m_Followers;
   followers.erase(&m_ActiveWinodow);
+  delete m_TrayFrame;
   delete m_Speedbox;
   delete m_NetSpeedHelper;
 }
@@ -181,6 +185,8 @@ QAction* PluginName::InitMenuAction()
 
   m_Speedbox->InitShow(m_PluginMethod[u8"enableBlur"].function);
   
+  // m_TrayFrame = new TrayFrame();
+  // m_TrayFrame->show();
   return nullptr;
 }
 
@@ -213,7 +219,6 @@ YJson& PluginName::InitSettings(YJson& settings)
       continue;
     }
     iter = skins.remove(iter);
-    mgr->ShowMsg("1111111");
   }
   
   if (auto iter = skins.find(curSkin); iter == skins.endO()) {

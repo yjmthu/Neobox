@@ -35,6 +35,8 @@ add_library(pluginmgr SHARED
   ${wrap_files}
 )
 
+add_executable(update WIN32 src/update.cc)
+
 set(resource_files
   fonts/*.ttf
   icons/*.png
@@ -53,9 +55,15 @@ target_link_libraries(pluginmgr PUBLIC
   ${system_shared_files}
 )
 
+target_link_libraries(update PRIVATE pluginmgr)
+
 install(TARGETS pluginmgr
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
   PUBLIC_HEADER DESTINATION include
+)
+
+install(TARGETS update
+  RUNTIME DESTINATION bin
 )

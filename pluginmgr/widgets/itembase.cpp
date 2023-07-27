@@ -98,7 +98,7 @@ int on_extract_entry(const char *filename, void *arg) {
 bool ItemBase::PluginDownload()
 {
   if (!HttpLib::IsOnline()) {
-    mgr->ShowMsgbox(u8"失败", u8"请检查网络连接！");
+    mgr->ShowMsgbox(L"失败", L"请检查网络连接！");
     return false;
   }
   bool result = false;
@@ -119,13 +119,13 @@ bool ItemBase::PluginDownload()
     dialog->m_PreventClose = false;
 
     if (res->status != 200) {
-      mgr->ShowMsgbox(u8"失败", u8"下载清单失败！");
+      mgr->ShowMsgbox(L"失败", L"下载清单失败！");
     } else {
       result = true;
       auto temp = pluginTemp.string();
       auto dst = pluginDst.string();
       if (zip_extract(temp.c_str(), dst.c_str(), nullptr, nullptr) < 0) {
-        mgr->ShowMsgbox(u8"失败", u8"无法解压文件");
+        mgr->ShowMsgbox(L"失败", L"无法解压文件");
       }
     }
 

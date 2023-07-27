@@ -89,6 +89,19 @@ void TabVersion::Connect()
   connect(m_btnChk, &QPushButton::clicked, this, &TabVersion::GetUpdate);
 }
 
+
+bool TabVersion::hasFolderPermission(std::wstring path) {
+  path.push_back(L'\0');
+  DWORD accessMode = GENERIC_WRITE | GENERIC_READ;
+  DWORD shareMode = FILE_SHARE_READ | FILE_SHARE_WRITE;
+  HANDLE fileHandle = CreateFileW(path.data(), accessMode, shareMode, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+  if (fileHandle == INVALID_HANDLE_VALUE) {
+    return false;
+  }
+  CloseHandle(fileHandle);
+  return true;
+}
+
 void TabVersion::GetUpdate()
 {
   if (!HttpLib::IsOnline()) {
@@ -150,7 +163,7 @@ std::array<int, 3> TabVersion::ParseVersion(const std::wstring& vStr) {
 
 bool TabVersion::DownloadNew(std::u8string_view url) {
   if (!HttpLib::IsOnline()) {
-    mgr->ShowMsgbox(u8"失败", u8"请检查网络连接！");
+    mgr->ShowMsgbox(L"失败", L"请检查网络连接！");
     return false;
   }
   bool result = false;
@@ -164,7 +177,7 @@ bool TabVersion::DownloadNew(std::u8string_view url) {
 
   std::ofstream file(pluginTemp, std::ios::binary | std::ios::out);
   if (!file.is_open()) {
-    mgr->ShowMsgbox(u8"出错", u8"无法写入文件！");
+    mgr->ShowMsgbox(L"出错", L"无法写入文件！");
     return false;
   }
 
@@ -212,10 +225,12 @@ void TabVersion::DoUpgrade(const YJson& data)
 {
   auto const vNew = ParseVersion(Utf82WideString(data[u8"tag_name"].getValueString()));
   auto const vOld = ParseVersion(L"" NEOBOX_VERSION);
-  if (vNew <= vOld) {
+  if (vNew == vOld) {
     mgr->ShowMsg("当前已是最新版本！");
     return;
   }
+  // if (vOld > vNew) {
+  // }
   if (QMessageBox::question(this, "提示", "有新版本可用！请确保能流畅访问GitHub，是否立即下载安装？") != QMessageBox::Yes) {
     return;
   }
@@ -229,23 +244,35 @@ void TabVersion::DoUpgrade(const YJson& data)
       return;
     }
     fs::path dataDir = fs::absolute(L"junk") / L"Neobox";
-    if (!fs::exists(dataDir) || !fs::is_directory(dataDir)) {
+    dataDir.make_preferred();
+    fs::path exePath = dataDir / "update.exe";
+    if (!fs::exists(dataDir) || !fs::is_directory(dataDir) || !fs::exists(exePath)) {
       mgr->ShowMsg("安装包数据出错！");
       return;
     }
-    fs::path curDir = QApplication::applicationDirPath().toStdU16String();
-    curDir.make_preferred();
-    fs::path appPath = curDir / "neobox.exe";
+    fs::path curDirPath = QApplication::applicationDirPath().toStdU16String();
+    curDirPath.make_preferred();
+    
+    auto exeFile = exePath.wstring();
+    exeFile.push_back(L'\0');
+    auto wsPath = fs::current_path().make_preferred().wstring();
+    wsPath.push_back(L'\0');
+    auto curDir = curDirPath.wstring();
+    curDir.push_back(L'\0');
 
-    std::ofstream file("update.bat", std::ios::out);
-    file << "timeout /t 2" << " && "
-      << "rd /s /q " << curDir << " && "
-      << "move /y " << dataDir << " " << curDir << " && "
-      << appPath << std::endl;
-    file.close();
+    SHELLEXECUTEINFOW shellInfo {};
+    shellInfo.cbSize = sizeof(SHELLEXECUTEINFO);
+    shellInfo.hwnd = nullptr;
+    shellInfo.lpFile = exeFile.data();
+    shellInfo.lpParameters = curDir.data();
+    shellInfo.lpDirectory = wsPath.data();
+    shellInfo.nShow = SW_NORMAL;
+    // if (!hasFolderPermission(curDir.wstring())) {
+      shellInfo.lpVerb = L"runas";
+    // }
 
     QApplication::quit();
-    QProcess::startDetached("cmd.exe", QStringList { "/c", "update.bat" });
+    ::ShellExecuteExW(&shellInfo);
     return;
   }
   mgr->ShowMsg("未找到下载链接，请手动下载！");

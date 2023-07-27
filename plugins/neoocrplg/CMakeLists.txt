@@ -1,8 +1,30 @@
 cmake_minimum_required(VERSION 3.10.1)
 
-find_package(Leptonica CONFIG REQUIRED)
-find_package(Tesseract CONFIG REQUIRED)
-find_package(CURL CONFIG REQUIRED)
+
+if (NOT TARGET Leptonica)
+  find_package (Leptonica CONFIG)
+  if (NOT Leptonica_FOUND)
+    message (WARNING \"Leptonica not found, skipping this CMakeLists.txt file.\")
+    return ()
+  endif ()
+endif ()
+
+if (NOT TARGET Tesseract)
+  find_package (Tesseract CONFIG)
+  find_package(CURL CONFIG)
+  if (NOT Tesseract_FOUND)
+    message (WARNING \"Tesseract not found, skipping this CMakeLists.txt file.\")
+    return ()
+  endif ()
+endif ()
+
+if (NOT TARGET CURL)
+  find_package(CURL CONFIG)
+  if (NOT CURL_FOUND)
+    message (WARNING \"CURL not found, skipping this CMakeLists.txt file.\")
+    return ()
+  endif ()
+endif ()
 
 file(GLOB source_files src/*.cpp)
 

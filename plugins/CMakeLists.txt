@@ -17,7 +17,7 @@ set(plugin_list
 function(include_sub_directories_recursively root_dir)
   if (IS_DIRECTORY ${root_dir})   # 当前路径是一个目录吗，是的话就加入到包含目录
     if (${root_dir} MATCHES "include")
-      message("include dir: " ${root_dir})
+      # message("include dir: " ${root_dir})
       include_directories(${root_dir})
     endif()
   endif()

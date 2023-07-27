@@ -38,7 +38,7 @@ fs::path FileNameFilter(std::u8string& path) {
 
 bool Wallpaper::DownloadImage(const ImageInfoEx imageInfo) {
   if (imageInfo->ErrorCode != ImageInfo::NoErr) {
-    mgr->ShowMsgbox(u8"出错", imageInfo->ErrorMsg);
+    mgr->ShowMsgbox(L"出错", Utf82WideString(imageInfo->ErrorMsg));
     return false;
   }
 
@@ -59,7 +59,7 @@ bool Wallpaper::DownloadImage(const ImageInfoEx imageInfo) {
   }
 
   if (!HttpLib::IsOnline()) {
-    mgr->ShowMsgbox(u8"出错"s, u8"网络异常"s);
+    mgr->ShowMsgbox(L"出错"s, L"网络异常"s);
     return false;
   }
   HttpLib clt(imageInfo->ImageUrl);
@@ -70,8 +70,8 @@ bool Wallpaper::DownloadImage(const ImageInfoEx imageInfo) {
   } else {
     if (fs::exists(filePath))
       fs::remove(filePath);
-    mgr->ShowMsgbox(u8"出错"s, u8"网络异常或文件不能打开！\n文件名："s + filePath.u8string() +
-                              u8"\n网址："s + imageInfo->ImageUrl);
+    mgr->ShowMsgbox(L"出错"s, L"网络异常或文件不能打开！\n文件名："s + filePath.wstring() +
+                              L"\n网址："s + Utf82WideString(imageInfo->ImageUrl));
     return false;
   }
 }
@@ -107,11 +107,11 @@ bool Wallpaper::SetWallpaper(fs::path imagePath) {
   static auto const m_DesktopType = GetDesktop();
 #endif
   if (!fs::exists(imagePath)) {
-    mgr->ShowMsgbox(u8"出错", u8"找不到该文件：" + imagePath.u8string());
+    mgr->ShowMsgbox(L"出错", L"找不到该文件：" + imagePath.wstring());
     return false;
   }
   if (fs::is_directory(imagePath)) {
-    mgr->ShowMsgbox(u8"出错", u8"要使用的壁纸不是文件：" + imagePath.u8string());
+    mgr->ShowMsgbox(L"出错", L"要使用的壁纸不是文件：" + imagePath.wstring());
     return false;
   }
 #if defined(_WIN32)
@@ -198,7 +198,7 @@ void Wallpaper::SetSlot(OperatorType type) {
   std::thread([this, type]() {
     LockerEx locker(m_ThreadMutex, std::defer_lock);
     if (!locker.try_lock()) {
-      mgr->ShowMsgbox(u8"提示", u8"后台正忙，请稍后！");
+      mgr->ShowMsgbox(L"提示", L"后台正忙，请稍等！");
       return;
     }
     switch (type) {

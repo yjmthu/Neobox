@@ -64,8 +64,8 @@ public:
   static int ReadSharedFlag(QSharedMemory*);
 
   void ShowMsg(class QString text);
-  void ShowMsgbox(const std::u8string& title,
-    const std::u8string& text, int type = 0);
+  void ShowMsgbox(const std::wstring& title,
+    const std::wstring& text, int type = 0);
   static int Exec();
   static void Quit();
   void Restart();
