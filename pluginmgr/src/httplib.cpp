@@ -92,7 +92,7 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
   case WINHTTP_CALLBACK_STATUS_READ_COMPLETE: {
     if (!object->m_AsyncFinished) {
       object->m_RecieveSize += dwInternetInformationLength;
-      object->m_AsyncCallback->m_WriteCallback(lpvStatusInformation, dwInternetInformationLength);
+      object->m_AsyncCallback.m_WriteCallback->operator()(lpvStatusInformation, dwInternetInformationLength);
       object->EmitProcess();
     }
     delete[] reinterpret_cast<char*>(lpvStatusInformation);
@@ -179,6 +179,7 @@ size_t HttpLib::WriteString(void* buffer,
 }
 
 HttpLib::~HttpLib() {
+  m_AsyncFinished = true;
   HttpUninitialize();
 }
 
@@ -648,7 +649,7 @@ void HttpLib::HttpPerform()
 
 void HttpLib::EmitProcess()
 {
-  const auto& callback = m_AsyncCallback->m_ProcessCallback;
+  const auto& callback = m_AsyncCallback.m_ProcessCallback;
   if (callback) {
     (*callback)(m_RecieveSize, m_ConnectLength);
   }
@@ -657,7 +658,7 @@ void HttpLib::EmitProcess()
 void HttpLib::EmitFinish(std::wstring message)
 {
   m_AsyncFinished = true;
-  m_AsyncCallback->m_FinishCallback(message, &m_Response);
+  m_AsyncCallback.m_FinishCallback(message, &m_Response);
 }
 
 HttpLib::Response* HttpLib::Get()
@@ -701,10 +702,18 @@ HttpLib::Response* HttpLib::Get(CallbackFunction* callback, void* userdata) {
 }
 
 
-void HttpLib::GetAsync(const Callback& callback)
+void HttpLib::GetAsync(Callback callback)
 {
+  if (!m_AsyncSet) {
+    throw std::logic_error("HttpAync wasn't set!");
+  }
   m_Response.body.clear();
-  m_AsyncCallback = &callback;
+  m_AsyncCallback = std::move(callback);
+  if (!m_AsyncCallback.m_WriteCallback) {
+    m_AsyncCallback.m_WriteCallback = [this](auto data, auto size){
+      m_Response.body.append(reinterpret_cast<const char*>(data), size);
+    };
+  }
   HttpPerform();
 }
 

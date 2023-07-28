@@ -26,7 +26,7 @@ public:
   typedef std::function<void(size_t, size_t)> ProcessCallback;
   typedef std::function<void(std::wstring, const Response*)> FinishCallback;
   struct Callback {
-    WriteCallback m_WriteCallback;
+    std::optional<WriteCallback> m_WriteCallback;
     FinishCallback m_FinishCallback;
     std::optional<ProcessCallback> m_ProcessCallback;
   };
@@ -68,7 +68,7 @@ public:
   Response* Get();
   Response* Get(const std::filesystem::path& path);
   Response* Get(CallbackFunction* callback, void* userData);
-  void GetAsync(const Callback& callback);
+  void GetAsync(Callback callback);
   void ExitAsync();
   void Exit();
   static bool IsOnline();
@@ -116,7 +116,7 @@ private:
   static CallbackFunction WriteString;
   static void RequestStatusCallback(void* hInternet, unsigned long long dwContext, unsigned long dwInternetStatus, void* lpvStatusInformation, unsigned long dwInternetInformationLength);
   CallbackFunction* m_Callback;
-  const Callback* m_AsyncCallback;
+  Callback m_AsyncCallback;
   void* m_DataBuffer;
 };
 

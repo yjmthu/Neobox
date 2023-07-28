@@ -30,10 +30,9 @@ NeoTranslateDlg::NeoTranslateDlg(TranslateCfg& settings)
     , m_BoxFrom(new QComboBox(m_CenterWidget))
     , m_BoxTo(new QComboBox(m_CenterWidget))
     , m_Translate(new Translate(m_Settings, [this](const void* data, size_t size){
-        if (m_Translate->GetSource() == Translate::Baidu)
-          m_TextTo->setPlainText(QString::fromUtf8(reinterpret_cast<const char*>(data), size));
-        else
-          m_TextTo->setHtml(QString::fromUtf8(reinterpret_cast<const char*>(data), size));
+        emit HttpFinished(QString::fromUtf8(
+          reinterpret_cast<const char*>(data), size
+        ));
       }))
     , m_HeightCtrl(new HeightCtrl(this, m_Settings.GetHeightRatio()))
     , m_BtnReverse(new QPushButton(m_CenterWidget))
@@ -53,6 +52,12 @@ NeoTranslateDlg::NeoTranslateDlg(TranslateCfg& settings)
     auto const clip = QGuiApplication::clipboard();
     clip->setText(m_TextTo->toPlainText());
     m_BtnCopyTo->setText("成功");
+  });
+  connect(this, &NeoTranslateDlg::HttpFinished, this, [this](QString text){
+    if (m_Translate->GetSource() == Translate::Baidu)
+      m_TextTo->setPlainText(text);
+    else
+      m_TextTo->setHtml(text);
   });
   m_BtnReverse->setObjectName("reverseLanguage");
   m_BtnCopyFrom->setObjectName("copyTextFrom");

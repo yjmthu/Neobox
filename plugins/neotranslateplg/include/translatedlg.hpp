@@ -50,6 +50,8 @@ private:
   void CreateFromRightMenu(QMouseEvent* event);
   void CreateToRightMenu(QMouseEvent* event);
   void AddCombbox(class QHBoxLayout* layout);
+signals:
+  void HttpFinished(QString result);
 private slots:
   void ReverseLanguage();
   void ChangeLanguageSource(bool checked);

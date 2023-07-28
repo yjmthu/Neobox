@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <memory>
 
 struct Utf8Array {
   const char8_t* begin;
@@ -32,11 +33,15 @@ public:
 
 public:
   template<typename _Utf8Array>
-  bool GetResult(const _Utf8Array& text) {
+  void GetResult(const _Utf8Array& text) {
     const Utf8Array array { 
       reinterpret_cast<const char8_t*>(text.data()),
       reinterpret_cast<const char8_t*>(text.data()) + text.size() };
-    return m_Source == Youdao ? GetResultYoudao(array) : GetResultBaidu(array);
+    if (m_Source == Youdao) {
+      GetResultYoudao(array);
+    } else {
+      GetResultBaidu(array);
+    }
   }
   void SetSource(Source dict);
   inline Source GetSource() const { return m_Source; }
@@ -50,8 +55,11 @@ public:
   static const LanguageMap m_LanguageCanFromTo;
 
 private:
-  bool GetResultBaidu(const Utf8Array& text);
-  bool GetResultYoudao(const Utf8Array& text);
+  std::unique_ptr<class HttpLib> m_Request;
+
+private:
+  void GetResultBaidu(const Utf8Array& text);
+  void GetResultYoudao(const Utf8Array& text);
   void FormatYoudaoResult(const class YJson& data);
 };
 

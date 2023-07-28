@@ -177,7 +177,7 @@ inline static std::u8string GetSalt() {
   return std::u8string(data.begin(), data.end());
 }
 
-bool Translate::GetResultBaidu(const Utf8Array& text) {
+void Translate::GetResultBaidu(const Utf8Array& text) {
   // http://api.fanyi.baidu.com/product/113
   static YJson jsData {
     YJson::O{
@@ -205,33 +205,36 @@ bool Translate::GetResultBaidu(const Utf8Array& text) {
   static auto& sign = jsData[u8"sign"].getValueString();
   sign = Md5(u8"20210503000812254"s + q + salt + u8"Q_2PPxmCr66r6B2hi0ts");
 
-  HttpLib clt(jsData.urlEncode(u8"https://fanyi-api.baidu.com/api/trans/vip/translate?"));
-  auto res = clt.Get();
+  m_Request = std::make_unique<HttpLib>(jsData.urlEncode(u8"https://fanyi-api.baidu.com/api/trans/vip/translate?"), true);
+  
+  HttpLib::Callback callback = {
+    .m_FinishCallback = [this](auto message, auto res) {
+      if (message.empty() && (res->status == 200 || res->status == 201)) {
+        YJson jsData(res->body.begin(), res->body.end());
+        if (auto iter = jsData.find(u8"error_msg"); iter != jsData.endO()) {
+          // Access token expired
+          m_Callback(res->body.data(), res->body.size());
+          return;
+          // return iter->second.getValueString();
+        }
+        const auto& obTransResult =
+            jsData[u8"trans_result"].getArray();
 
-  if (res->status == 200 || res->status == 201) {
-    YJson jsData(res->body.begin(), res->body.end());
-    if (auto iter = jsData.find(u8"error_msg"); iter != jsData.endO()) {
-      // Access token expired
-      m_Callback(res->body.data(), res->body.size());
-      return false;
-      // return iter->second.getValueString();
+        std::u8string content;
+        for (auto& item : obTransResult) {
+          content.append(item[u8"dst"].getValueString());
+          content.push_back('\n');
+        }
+        m_Callback(content.data(), content.size());
+        return;
+      }
+      m_Callback(badNet.data(), badNet.size());
     }
-    const auto& obTransResult =
-        jsData[u8"trans_result"].getArray();
-
-    std::u8string content;
-    for (auto& item : obTransResult) {
-      content.append(item[u8"dst"].getValueString());
-      content.push_back('\n');
-    }
-    m_Callback(content.data(), content.size());
-    return true;
-  }
-  m_Callback(badNet.data(), badNet.size());
-  return false;
+  };
+  m_Request->GetAsync(std::move(callback));
 }
 
-bool Translate::GetResultYoudao(const Utf8Array& text) {
+void Translate::GetResultYoudao(const Utf8Array& text) {
   static const auto APP_KEY{u8"0b5f90d14623b917"s};
   static const auto APP_SECRET{u8"8X1HcIvXXETCRf2smIbey8AGJ2xGRyK3"s};
   static YJson m_scJson {
@@ -261,15 +264,20 @@ bool Translate::GetResultYoudao(const Utf8Array& text) {
   static auto& sign = m_scJson[u8"sign"].getValueString();
   sign = Sha256(APP_KEY + Truncate(text) + salt + curtime + APP_SECRET);
 
-  HttpLib clt(m_scJson.urlEncode(u8"http://openapi.youdao.com/api/?"));
-  clt.SetHeader("Content-Type", "application/x-www-form-urlencoded");
+  // 这样同时也取消了前一个请求
+  m_Request = std::make_unique<HttpLib>(m_scJson.urlEncode(u8"http://openapi.youdao.com/api/?"), true);
+  m_Request->SetHeader("Content-Type", "application/x-www-form-urlencoded");
 
-  if (auto res = clt.Get(); res->status == 200 || res->status == 201) {
-    YJson jsData(res->body.begin(), res->body.end());
-    FormatYoudaoResult(jsData);
-    return true;
-  }
-  return false;
+  HttpLib::Callback callback = {
+    .m_FinishCallback = [this](auto message, auto res) {
+      if (message.empty() && (res->status == 200 || res->status == 201)) {
+        FormatYoudaoResult(YJson(res->body.begin(), res->body.end()));
+      }
+      m_Request = nullptr;
+    }
+  };
+
+  m_Request->GetAsync(std::move(callback));
 }
 
 void Translate::FormatYoudaoResult(const YJson& data) {
