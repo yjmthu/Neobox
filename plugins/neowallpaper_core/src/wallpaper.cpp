@@ -1,4 +1,6 @@
+#include <yjson.h>
 #include <httplib.h>
+#include <stdexcept>
 #include <systemapi.h>
 #include <neotimer.h>
 #include <pluginmgr.h>
@@ -174,7 +176,7 @@ bool Wallpaper::SetWallpaper(fs::path imagePath) {
 
 Wallpaper::Wallpaper(YJson& settings)
   : m_Settings(settings)
-  , m_Config(fs::exists(WallBase::m_ConfigPath) ? new YJson(WallBase::m_ConfigPath, YJson::UTF8): new YJson(YJson::Object))
+  , m_Config(GetConfigData())
   , m_Wallpaper(nullptr)
   , m_Timer(new NeoTimer)
   , m_Favorites(WallBase::GetNewInstance(*m_Config, WallBase::FAVORITE))
@@ -192,6 +194,19 @@ Wallpaper::~Wallpaper() {
   m_ThreadMutex.lock();
   WallBase::ClearInstatnce();
   m_ThreadMutex.unlock();
+}
+
+YJson* Wallpaper::GetConfigData()
+{
+  YJson* data = nullptr;
+  try {
+    data = new YJson(WallBase::m_ConfigPath, YJson::UTF8);
+  } catch (std::runtime_error error) {
+    delete data;
+    data = new YJson(YJson::Object);
+  }
+
+  return data;
 }
 
 void Wallpaper::SetSlot(OperatorType type) {

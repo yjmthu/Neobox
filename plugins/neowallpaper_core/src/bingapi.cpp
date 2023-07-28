@@ -1,6 +1,7 @@
 #include <bingapi.h>
 #include <httplib.h>
 #include <iostream>
+#include <stdexcept>
 #include <wallpaper.h>
 #include <wallbase.h>
 #include <systemapi.h>
@@ -60,8 +61,12 @@ void BingApi::InitData()
   if (m_Setting[u8"curday"].getValueString() != GetToday()) {
     return;
   }
-  if (fs::exists(m_DataPath) && fs::file_size(m_DataPath) != 0) {
+  try {
     m_Data = new YJson(m_DataPath, YJson::UTF8);
+  } catch (std::runtime_error error) {
+    std::cerr << error.what() << std::endl;
+    delete m_Data;
+    m_Data = nullptr;
   }
 }
 

@@ -40,6 +40,7 @@ private:
   void WriteBlackList();
   bool PushBack(ImageInfoEx ptr);
   bool MoveRight();
+  static YJson* GetConfigData();
 private:
   void SetNext();
   void UnSetNext();
@@ -64,7 +65,6 @@ public:
   WallConfig m_Settings;
 
 private:
-  YJson* const m_Config;
 #ifdef _WIN32
   typedef std::wstring String;
 #else
@@ -78,6 +78,7 @@ public:
   virtual ~Wallpaper();
 
 private:
+  YJson* const m_Config;
   std::mutex m_DataMutex;
   std::mutex m_ThreadMutex;
 
