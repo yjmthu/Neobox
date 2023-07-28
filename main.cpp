@@ -1,5 +1,6 @@
 #include <QApplication>
 #include <pluginmgr.h>
+#include <QMessageBox>
 
 #include <winrt/Windows.Foundation.h>
 
@@ -10,7 +11,8 @@ int main(int argc, char* argv[]) {
     PluginMgr mgr;
     mgr.Exec();
   } catch (std::runtime_error err) {
-    //
+    auto msg = QString::fromLocal8Bit(err.what());
+    QMessageBox::critical(nullptr, "Error", msg);
   }
   return 0;
 }

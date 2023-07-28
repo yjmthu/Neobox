@@ -39,9 +39,10 @@ YJson* PluginMgr::InitSettings()
     fs::create_directory("plugins");
   }
   YJson* setting = nullptr;
-  if (fs::exists(m_SettingFileName)) {
+  try {
     setting = new YJson(m_SettingFileName, YJson::UTF8);
-  } else {
+  } catch (std::runtime_error err) {
+    delete setting;
     setting = new YJson{ YJson::O {
       { u8"Plugins", YJson::O {
       }},
