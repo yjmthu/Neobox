@@ -80,3 +80,5 @@ endforeach()
 target_link_libraries(neospeedboxplg PUBLIC
   ${speedbox_libs}
 )
+
+install_plugin(neospeedboxplg)

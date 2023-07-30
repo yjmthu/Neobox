@@ -26,3 +26,5 @@ target_link_libraries(${plugin_name} PRIVATE
   ${qt_shared_files}
   ${system_shared_files}
 )
+
+install_plugin(${plugin_name})

@@ -13,7 +13,7 @@ public:
 public:
   YJson& InitSetting(YJson& setting);
   // void InitData();
-  ImageInfoEx GetNext() override;
+  void GetNext(std::function<void(ImageInfoEx)> callback) override;
   fs::path GetImageDir() const;
 
   void Dislike(std::u8string_view sImgPath) override;

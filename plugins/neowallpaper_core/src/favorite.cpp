@@ -97,7 +97,7 @@ bool Favorite::GetFileList()
   return true;
 }
 
-ImageInfoEx Favorite::GetNext()
+void Favorite::GetNext(std::function<void(ImageInfoEx)> callback)
 {
   Locker locker(m_DataMutex);
 
@@ -117,13 +117,12 @@ ImageInfoEx Favorite::GetNext()
   if (m_FileList.empty() && !GetFileList()) {
     ptr->ErrorMsg = u8"Empty folder with no wallpaper in it.";
     ptr->ErrorCode = ImageInfo::FileErr;
-    return ptr;
+  } else {
+    ptr->ImagePath = std::move(m_FileList.back());
+    m_FileList.pop_back();
+    ptr->ErrorCode = ImageInfo::NoErr;
   }
-
-  ptr->ImagePath = std::move(m_FileList.back());
-  m_FileList.pop_back();
-  ptr->ErrorCode = ImageInfo::NoErr;
-  return ptr;
+  callback(ptr);
 }
 
 void Favorite::Dislike(std::u8string_view sImgPath)

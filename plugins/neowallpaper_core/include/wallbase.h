@@ -64,7 +64,7 @@ public:
   YJson& m_Setting;
 
 public:
-  virtual ImageInfoEx GetNext() = 0;
+  virtual void GetNext(std::function<void(ImageInfoEx)> callback) = 0;
   virtual void Dislike(std::u8string_view sImgPath);
   virtual void UndoDislike(std::u8string_view sImgPath);
   virtual void SetJson(const YJson& json);

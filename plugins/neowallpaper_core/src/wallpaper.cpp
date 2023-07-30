@@ -292,7 +292,7 @@ void Wallpaper::SetNext() {
   m_DataMutex.unlock();
 
   if (ok) {
-    PushBack(m_Wallpaper->GetNext());
+    m_Wallpaper->GetNext(std::bind(&Wallpaper::PushBack, this, std::placeholders::_1));
   } else {
     MoveRight();
   }
@@ -463,21 +463,34 @@ bool Wallpaper::MoveRight() {
 void Wallpaper::SetDislike() {
   UpdateRegString(false);
 
-  LockerEx locker(m_DataMutex);
-  auto ok = m_NextImgs.empty();
+  m_DataMutex.lock();
+  auto const ok = m_NextImgs.empty();
+  m_DataMutex.unlock();
 
-  locker.unlock();
-  if (!((ok && PushBack(m_Wallpaper->GetNext())) || (!ok && MoveRight()))) return;
-  locker.lock();
-
-  if (!m_PrevImgs.empty()) {
-    auto path = std::move(m_PrevImgs.back());
-    m_Wallpaper->Dislike(path.u8string());
-    m_PrevImgs.pop_back();
-    locker.unlock();
-    if (fs::exists(path)) {
-      AppendBlackList(path);
+  auto callback = [this](){
+    LockerEx locker(m_DataMutex);
+    if (!m_PrevImgs.empty()) {
+      // 取出之前的图片栈顶元素，并将其设置为dislike
+      auto path = std::move(m_PrevImgs.back());
+      m_Wallpaper->Dislike(path.u8string());
+      m_PrevImgs.pop_back();
+      if (fs::exists(path)) {
+        locker.unlock();
+        AppendBlackList(path);
+      }
     }
+  };
+
+  if (ok) {
+    m_Wallpaper->GetNext([this, callback](auto ptr){
+      // 设置一张新的壁纸
+      PushBack(ptr);
+      // 把之前的壁纸设置为dislike
+      callback();
+    });
+  } else {
+    MoveRight();
+    callback();
   }
 }
 

@@ -71,11 +71,11 @@ public:
   void GetAsync(Callback callback);
   void ExitAsync();
   void Exit();
+  bool IsFinished() const { return m_Finished; }
   static bool IsOnline();
 public:
   static std::optional<HttpProxy> m_Proxy;
 private:
-  std::atomic_bool m_Exit = false;
   Headers m_Headers;
   Response m_Response;
   std::u8string m_Url;
@@ -88,7 +88,7 @@ private:
   int m_RedirectDepth = 0;
   bool m_ProxySet;
   bool m_AsyncSet;
-  bool m_AsyncFinished;
+  std::atomic_bool m_Finished;
   size_t m_RecieveSize = 0;
   size_t m_ConnectLength = 0;
 private:
@@ -100,7 +100,7 @@ private:
   bool SendHeaders();
   void SetProxyBefore();
   bool SetProxyAfter();
-  bool SetAsyncCallback();
+  void SetAsyncCallback();
   bool SendRequest();
   bool RecvResponse();
   std::u8string GetDomain();

@@ -3,17 +3,6 @@ cmake_minimum_required(VERSION 3.10.1)
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui Svg)
 qt_standard_project_setup()
 
-set(plugin_list
-  neoocrplg
-  neospeedboxplg
-  neosystemplg
-  neotranslateplg
-  neowallpaperplg
-  neousbplg
-  neocolorplg
-  weather
-)
-
 function(include_sub_directories_recursively root_dir)
   if (IS_DIRECTORY ${root_dir})   # 当前路径是一个目录吗，是的话就加入到包含目录
     if (${root_dir} MATCHES "include")
@@ -34,32 +23,22 @@ include_sub_directories_recursively(${CMAKE_CURRENT_SOURCE_DIR})
 
 add_definitions(-DMYSHAREDLIB_LIBRARY)
 
-# file(GLOB plugin_subdirs */CMakeLists.txt)
-set(plugin_subdirs
-  neousbplg
-  neosystemplg
-  neospeedbox_core
-  neospeedboxplg
-  neoocrplg
-  neowallpaper_core
-  neowallpaperplg
-  neotranslate_core
-  neotranslateplg
-  neocolorplg
-  weather
-)
-
-foreach(subdir_name ${plugin_subdirs})
-  # get_filename_component(subdir_name ${plugin_subdir_cmake} DIRECTORY)
-  # add_subdirectory(${subdir_name})
-  add_subdirectory(${subdir_name})
-endforeach()
-
 set(install_dir ${PROJECT_SOURCE_DIR}/install)
 
-install(TARGETS ${plugin_list}
-  LIBRARY DESTINATION ${install_dir}/lib
-  ARCHIVE DESTINATION ${install_dir}/lib
-  RUNTIME DESTINATION ${install_dir}/plugins
-  PUBLIC_HEADER DESTINATION ${install_dir}include
-)
+function(install_plugin plugin_name)
+  install(TARGETS ${plugin_name}
+    LIBRARY DESTINATION ${install_dir}/lib
+    ARCHIVE DESTINATION ${install_dir}/lib
+    RUNTIME DESTINATION ${install_dir}/plugins
+    PUBLIC_HEADER DESTINATION ${install_dir}include
+  )
+endfunction()
+
+file(GLOB child_dirs ${CMAKE_CURRENT_SOURCE_DIR}/*)
+foreach(subdirectory ${child_dirs})
+  if(IS_DIRECTORY ${subdirectory})
+    get_filename_component(plugin_name ${subdirectory} NAME)
+    add_subdirectory(${plugin_name})
+  endif()
+endforeach()
+

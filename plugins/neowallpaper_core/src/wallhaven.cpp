@@ -148,7 +148,7 @@ bool Wallhaven::CheckData(ImageInfoEx ptr)
   return true;
 }
 
-ImageInfoEx Wallhaven::GetNext()
+void Wallhaven::GetNext(std::function<void(ImageInfoEx)> callback)
 {
   // https://w.wallhaven.cc/full/1k/wallhaven-1kmx19.jpg
 
@@ -158,7 +158,8 @@ ImageInfoEx Wallhaven::GetNext()
     m_DataMutex.lock();
     m_Data.SaveData();
     m_DataMutex.unlock();
-    return ptr;
+    callback(ptr);
+    return;
   }
 
   LockerEx locker(m_DataMutex);
@@ -178,7 +179,8 @@ ImageInfoEx Wallhaven::GetNext()
     if (!IsPngFile(name)) {
       ptr->ErrorMsg = u8"Can't get filetype.";
       ptr->ErrorCode = ImageInfo::NetErr;
-      return ptr;
+      callback(ptr);
+      return;
     }
     locker.lock();
   }
@@ -189,7 +191,9 @@ ImageInfoEx Wallhaven::GetNext()
   m_Data.m_Unused.pop_back();
   m_Data.SaveData();
   ptr->ErrorCode = ImageInfo::NoErr;
-  return ptr;
+  locker.unlock();
+  callback(ptr);
+  return;
 }
 
 std::string Wallhaven::IsWallhavenFile(std::string name)

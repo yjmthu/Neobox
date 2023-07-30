@@ -48,3 +48,5 @@ target_link_libraries(neoocrplg PRIVATE
   Tesseract::libtesseract
   CURL::libcurl
 )
+
+install_plugin(neoocrplg)

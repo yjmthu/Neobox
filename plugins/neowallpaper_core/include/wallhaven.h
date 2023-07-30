@@ -28,7 +28,7 @@ class Wallhaven : public WallBase {
  private:
   static bool IsPngFile(std::u8string& str);
  public:
-  ImageInfoEx GetNext() override;
+  void GetNext(std::function<void(ImageInfoEx)> callback) override;
   void Dislike(std::u8string_view sImgPath) override;
   void UndoDislike(std::u8string_view sImgPath) override;
 public:

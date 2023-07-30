@@ -21,3 +21,5 @@ target_link_libraries(neosystemplg PRIVATE
   ${qt_shared_files}
   ${system_shared_files}
 )
+
+install_plugin(neosystemplg)

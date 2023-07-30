@@ -42,7 +42,7 @@ YJson& ScriptOutput::InitSetting(YJson& setting)
   return setting;
 }
 
-ImageInfoEx ScriptOutput::GetNext()
+void ScriptOutput::GetNext(std::function<void(ImageInfoEx)> callback)
 {
   ImageInfoEx ptr(new ImageInfo);
   m_DataMutex.lock();
@@ -52,7 +52,8 @@ ImageInfoEx ScriptOutput::GetNext()
   if (u8cmd.empty()) {
     ptr->ErrorMsg = u8"Invalid command to get wallpaper path."s;
     ptr->ErrorCode = ImageInfo::CfgErr;
-    return ptr;
+    callback(ptr);
+    return;
   }
 #ifdef _WIN32
   std::vector<std::wstring> result;
@@ -63,7 +64,8 @@ ImageInfoEx ScriptOutput::GetNext()
   if (result.empty()) {
     ptr->ErrorMsg = u8"Invalid command to get wallpaper path."s;
     ptr->ErrorCode = ImageInfo::CfgErr;
-    return ptr;
+    callback(ptr);
+    return;
   }
   auto str = Wide2Utf8String(result.front());
 #elif defined (__linux__)
@@ -78,7 +80,8 @@ ImageInfoEx ScriptOutput::GetNext()
   if (str.empty()) {
     ptr->ErrorMsg = u8"Run command with wrong output."s;
     ptr->ErrorCode = ImageInfo::RunErr;
-    return ptr;
+    callback(ptr);
+    return;
   }
   if (!fs::exists(str)) {
 #ifdef _WIN32
@@ -97,11 +100,13 @@ ImageInfoEx ScriptOutput::GetNext()
     ptr->ErrorMsg = std::move(wErMsg);
 #endif
     ptr->ErrorCode = ImageInfo::RunErr;
-    return ptr;
+    callback(ptr);
+    return;
   }
   ptr->ImagePath = std::move(str);
   ptr->ErrorCode = ImageInfo::NoErr;
-  return ptr;
+  callback(ptr);
+  return;
 }
 
 YJson& ScriptOutput::GetCurInfo() 

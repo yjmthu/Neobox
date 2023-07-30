@@ -10,7 +10,7 @@ public:
   virtual ~Native();
 
 public:
-  ImageInfoEx GetNext() override;
+  void GetNext(std::function<void(ImageInfoEx)> callback) override;
   void SetJson(const YJson& json) override;
 
 private:

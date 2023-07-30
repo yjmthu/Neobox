@@ -25,3 +25,4 @@ target_link_libraries(neocolorplg PRIVATE
   ${qt_shared_files}
   # ${system_shared_files}
 )
+install_plugin(neocolorplg)

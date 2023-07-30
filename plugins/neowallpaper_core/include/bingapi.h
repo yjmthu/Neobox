@@ -11,18 +11,19 @@ public:
   virtual ~BingApi();
 
 public:
-  ImageInfoEx GetNext() override;
+  void GetNext(std::function<void(ImageInfoEx)> callback) override;
   void SetJson(const YJson& json) override;
 
 private:
   void AutoDownload();
   YJson& InitSetting(YJson& setting);
   void InitData();
-  bool CheckData();
+  void CheckData(std::function<void()> cbOK, std::function<void()> cbNO);
   static std::u8string GetToday();
   std::u8string GetImageName(YJson& imgInfo);
 
 private:
   YJson* m_Data;
+  std::unique_ptr<class HttpLib> m_DataRequest;
   const fs::path m_DataPath = m_DataDir / u8"BingApiData.json";
 };

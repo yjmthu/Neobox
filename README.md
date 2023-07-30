@@ -229,6 +229,7 @@ cmake -P build/Debug/cmake_install.cmake
 2. 逐步增加wxWidgets部分的代码，最终取代qt。 -->
 
 - [ ] 文字识别模仿微信加强，可在图片上选中文字；
+- [x] 网速悬浮窗嵌入任务栏。
 - [x] 网速悬浮窗可滚轮查看每个进程内存；
 - [x] 尽量解决网速悬浮窗的闪退情况；
 - [x] 插件更新功能完善，可离线管理插件、调整插件加载顺序；
@@ -236,6 +237,7 @@ cmake -P build/Debug/cmake_install.cmake
 - [x] 翻译功能记住from，to语言；
 - [x] 翻译功能可调节文本区域高度；
 - [x] 支持设置网络代理。
+- [ ] 壁纸下载方式切换为异步。
 
 ## 插件开发计划
 
@@ -246,3 +248,4 @@ cmake -P build/Debug/cmake_install.cmake
 - [ ] 动态壁纸
 - [x] U盘助手
 - [ ] 任务栏网速
+- [ ] 后台自动更新程序

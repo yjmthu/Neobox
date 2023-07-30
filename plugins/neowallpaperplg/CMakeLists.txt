@@ -10,11 +10,13 @@ endif()
 set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui)
 set(pliugin_libfiles wallpaper_core pluginmgr)
 
-add_library(neowallpaperplg SHARED ${source_files})
+set(plugin_name neowallpaperplg)
+add_library(${plugin_name} SHARED ${source_files})
 
-target_link_libraries(neowallpaperplg PRIVATE
+target_link_libraries(${plugin_name} PRIVATE
   ${pliugin_libfiles}
   ${qt_shared_files}
   ${system_shared_files}
 )
 
+install_plugin(${plugin_name})

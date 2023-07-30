@@ -22,7 +22,7 @@ std::optional<HttpProxy> HttpLib::m_Proxy = std::nullopt;
 void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DWORD dwInternetStatus, LPVOID lpvStatusInformation, DWORD dwInternetInformationLength) {
   constexpr auto bufferSize = 8 << 10;
   if (!dwContext) {
-    throw std::runtime_error("No context in callback!");
+    throw std::logic_error("HttpLib Error: No context in callback!");
   }
   auto object = reinterpret_cast<HttpLib*>(dwContext);
   switch (dwInternetStatus) {
@@ -50,7 +50,7 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
     if (bResults) {
       bResults = object->m_Response.status < 400;
     } else {
-      object->EmitFinish(L"HttpLib ReadStatusCode Error.");
+      object->EmitFinish(L"HttpLib Error: HttpLib ReadStatusCode Error.");
       break;
     }
     if (bResults) {
@@ -90,13 +90,13 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
   }
 
   case WINHTTP_CALLBACK_STATUS_READ_COMPLETE: {
-    if (!object->m_AsyncFinished) {
+    if (!object->m_Finished) {
       object->m_RecieveSize += dwInternetInformationLength;
       object->m_AsyncCallback.m_WriteCallback->operator()(lpvStatusInformation, dwInternetInformationLength);
       object->EmitProcess();
     }
     delete[] reinterpret_cast<char*>(lpvStatusInformation);
-    if (object->m_AsyncFinished) {
+    if (object->m_Finished) {
       return;
     } else if (dwInternetInformationLength == 0) {
       object->EmitFinish();
@@ -108,7 +108,7 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
 
   case WINHTTP_CALLBACK_STATUS_SECURE_FAILURE:
   case WINHTTP_CALLBACK_STATUS_REQUEST_ERROR: {
-    if (object->m_AsyncFinished) return;
+    if (object->m_Finished) return;
     auto const* pAsyncResult = (WINHTTP_ASYNC_RESULT*)lpvStatusInformation;
     DWORD dwError = pAsyncResult->dwError; // The error code
     DWORD dwResult = pAsyncResult->dwResult; // The ID of the called function
@@ -179,11 +179,11 @@ size_t HttpLib::WriteString(void* buffer,
 }
 
 HttpLib::~HttpLib() {
-  m_AsyncFinished = true;
+  m_Finished = true;
   HttpUninitialize();
 }
 
-bool HttpLib::SetAsyncCallback()
+void HttpLib::SetAsyncCallback()
 {
 #ifdef _WIN32
   auto ctx = this;
@@ -201,11 +201,9 @@ bool HttpLib::SetAsyncCallback()
       NULL
     );
   } else {
-    std::wcerr << L"Httplib SetAsyncCallback failed. Code" << GetLastError() << L"." << std::endl;
+    throw std::logic_error(std::format("Httplib SetAsyncCallback failed. Code: {}.", GetLastError()));
   }
 #endif
-  return bResult;
-  // return true;
 }
 
 std::u8string HttpLib::GetDomain()
@@ -261,7 +259,7 @@ void HttpLib::HttpPrepare()
 {
 #ifdef _WIN32
   if (!WinHttpCheckPlatform()) {
-    throw std::runtime_error("This platform is NOT supported by WinHTTP.");
+    throw std::logic_error("This platform is NOT supported by WinHTTP.");
   }
 #endif
 }
@@ -271,7 +269,7 @@ void HttpLib::ResetData() {
   m_PostData.size = 0;
   m_RecieveSize = 0;
   m_ConnectLength = 0;
-  m_AsyncFinished = false;
+  m_Finished = false;
 }
 
 void HttpLib::HttpInitialize()
@@ -288,9 +286,7 @@ void HttpLib::HttpInitialize()
   }
 
   if (m_AsyncSet) {
-    if (!SetAsyncCallback()) {
-      throw std::runtime_error("Set async callback failed!");
-    }
+    SetAsyncCallback();
   }
   auto url = Utf82WideString(GetDomain());
 
@@ -587,7 +583,7 @@ bool HttpLib::ReadBody()
   DWORD dwSize = 0;
 
   std::string strBuffer;
-  for (DWORD dwDownloaded = 0; !m_Exit; ) {
+  for (DWORD dwDownloaded = 0; !m_Finished; ) {
     bResults = WinHttpQueryDataAvailable(m_hRequest, &dwSize);
     if (!bResults) {
       std::wcerr << L"WinHttpQueryDataAvailable failed: " << GetLastError() << std::endl;
@@ -657,7 +653,7 @@ void HttpLib::EmitProcess()
 
 void HttpLib::EmitFinish(std::wstring message)
 {
-  m_AsyncFinished = true;
+  m_Finished = true;
   m_AsyncCallback.m_FinishCallback(message, &m_Response);
 }
 
@@ -705,7 +701,7 @@ HttpLib::Response* HttpLib::Get(CallbackFunction* callback, void* userdata) {
 void HttpLib::GetAsync(Callback callback)
 {
   if (!m_AsyncSet) {
-    throw std::logic_error("HttpAync wasn't set!");
+    throw std::logic_error("HttpLib Error: HttpAync wasn't set!");
   }
   m_Response.body.clear();
   m_AsyncCallback = std::move(callback);
@@ -718,5 +714,5 @@ void HttpLib::GetAsync(Callback callback)
 }
 
 void HttpLib::ExitAsync() {
-  m_AsyncFinished = true;
+  m_Finished = true;
 }

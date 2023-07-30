@@ -131,7 +131,7 @@ bool Native::GetFileList()
   return true;
 }
 
-ImageInfoEx Native::GetNext()
+void Native::GetNext(std::function<void(ImageInfoEx)> callback)
 {
   Locker locker(m_DataMutex);
 
@@ -144,13 +144,12 @@ ImageInfoEx Native::GetNext()
   if (m_FileList.empty() && !GetFileList()) {
     ptr->ErrorMsg = u8"Empty folder with no wallpaper in it.";
     ptr->ErrorCode = ImageInfo::FileErr;
-    return ptr;
+  } else {
+    ptr->ImagePath = std::move(m_FileList.back());
+    m_FileList.pop_back();
+    ptr->ErrorCode = ImageInfo::NoErr;
   }
-
-  ptr->ImagePath = std::move(m_FileList.back());
-  m_FileList.pop_back();
-  ptr->ErrorCode = ImageInfo::NoErr;
-  return ptr;
+  callback(ptr);
 }
 
 void Native::SetJson(const YJson& json) {

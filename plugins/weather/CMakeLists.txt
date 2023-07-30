@@ -5,9 +5,12 @@ file(GLOB source_files src/*.cpp)
 set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui)
 set(pliugin_libfiles pluginmgr)
 
-add_library(weather SHARED ${source_files})
+set(plugin_name weather)
+add_library(${plugin_name} SHARED ${source_files})
 
-target_link_libraries(weather PRIVATE
+target_link_libraries(${plugin_name} PRIVATE
   ${pliugin_libfiles}
   ${qt_shared_files}
 )
+
+install_plugin(${plugin_name})
