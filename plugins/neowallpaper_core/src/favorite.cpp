@@ -1,4 +1,5 @@
 #include <favorie.h>
+#include <download.h>
 
 #include <set>
 
@@ -48,7 +49,7 @@ size_t Favorite::GetFileCount() const
   for (auto& iter : fs::directory_iterator(curDir)) {
     auto& path = iter.path();
     if (fs::is_directory(iter.status())) {
-    } else if (Wallpaper::IsImageFile(path.u8string())) {
+    } else if (DownloadJob::IsImageFile(path.u8string())) {
       ++m_iCount;
     }
   }
@@ -82,7 +83,7 @@ bool Favorite::GetFileList()
   for (auto target = numbers.cbegin(); auto& iter : fs::directory_iterator(curDir)) {
     auto& path = iter.path();
     if (fs::is_directory(iter.status())) {
-    } else if (Wallpaper::IsImageFile(path.u8string())) {
+    } else if (DownloadJob::IsImageFile(path.u8string())) {
       if (*target == m_Index) {
         m_FileList.emplace_back(path.u8string());
         ++target;

@@ -5,6 +5,7 @@
 #include <wallpaper.h>
 #include <wallbase.h>
 #include <systemapi.h>
+#include <download.h>
 
 #include <utility>
 #include <numeric>
@@ -165,7 +166,7 @@ void BingApi::AutoDownload() {
         item[u8"urlbase"].getValueString() + u8"_UHD.jpg";
       ptr->ErrorCode = ImageInfo::NoErr;
       // ------------------------------------ //
-      Wallpaper::DownloadImage(ptr);
+      DownloadJob::DownloadImage(ptr, [](){});
     }
     delete count;
   };

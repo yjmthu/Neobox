@@ -22,14 +22,11 @@ enum class OperatorType {
   Next, UNext, Dislike, UDislike, Favorite, UFavorite
 };
 
-
 class Wallpaper {
   enum class Desktop { WIN, KDE, DDE, GNOME, XFCE, UNKNOWN };
 public:
   using Locker = WallBase::Locker;
   using LockerEx = WallBase::LockerEx;
-  static bool DownloadImage(const ImageInfoEx imageInfo);
-  static bool IsImageFile(const std::u8string & fileName);
 private:
   static bool SetWallpaper(fs::path imagePath);
   static Desktop GetDesktop();
@@ -38,7 +35,8 @@ private:
   void WriteSettings();
   void AppendBlackList(const fs::path& path);
   void WriteBlackList();
-  bool PushBack(ImageInfoEx ptr);
+  void PushBack(ImageInfoEx ptr,
+    std::optional<std::function<void()>> callback);
   bool MoveRight();
   static YJson* GetConfigData();
 private:
@@ -65,12 +63,6 @@ public:
   WallConfig m_Settings;
 
 private:
-#ifdef _WIN32
-  typedef std::wstring String;
-#else
-  typedef std::string String;
-#endif
-  static const String m_ImgNamePattern;
   static constexpr char m_szWallScript[16]{"SetWallpaper.sh"};
 
 public:

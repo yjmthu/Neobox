@@ -4,6 +4,7 @@
 #include <systemapi.h>
 #include <neotimer.h>
 #include <pluginmgr.h>
+#include <download.h>
 
 #ifdef __linux__
 #include <unistd.h>
@@ -19,64 +20,6 @@ using namespace std::literals;
 // extern std::unordered_set<fs::path> g_UsingFiles;
 
 constexpr char Wallpaper::m_szWallScript[];
-
-fs::path FileNameFilter(std::u8string& path) {
-  std::u8string_view pattern(u8":*?\"<>|");
-  std::u8string result;
-  result.reserve(path.size());
-  for (int count=0; auto c : path) {
-    if (pattern.find(c) == pattern.npos) {
-      result.push_back(c);
-    } else if (c == u8':') {
-      // 当路径为相对路径时，可能会有Bug
-      if (++count == 1) {
-        result.push_back(c);
-      }
-    }
-  }
-  path = std::move(result);
-  return path;
-}
-
-bool Wallpaper::DownloadImage(const ImageInfoEx imageInfo) {
-  if (imageInfo->ErrorCode != ImageInfo::NoErr) {
-    mgr->ShowMsgbox(L"出错", Utf82WideString(imageInfo->ErrorMsg));
-    return false;
-  }
-
-  // Check image dir and file.
-  const auto& filePath = FileNameFilter(imageInfo->ImagePath);
-  const auto& dir = filePath.parent_path();
-
-  if (!fs::exists(dir))
-    fs::create_directories(dir);
-  if (fs::exists(filePath)) {
-    if (!fs::file_size(filePath))
-      fs::remove(filePath);
-    else
-      return true;
-  }
-  if (imageInfo->ImageUrl.empty()) {
-    return false;
-  }
-
-  if (!HttpLib::IsOnline()) {
-    mgr->ShowMsgbox(L"出错"s, L"网络异常"s);
-    return false;
-  }
-  HttpLib clt(imageInfo->ImageUrl);
-  clt.SetRedirect(1);
-  auto res = clt.Get(filePath);
-  if (res && res->status == 200) {
-    return true;
-  } else {
-    if (fs::exists(filePath))
-      fs::remove(filePath);
-    mgr->ShowMsgbox(L"出错"s, L"网络异常或文件不能打开！\n文件名："s + filePath.wstring() +
-                              L"\n网址："s + Utf82WideString(imageInfo->ImageUrl));
-    return false;
-  }
-}
 
 Wallpaper::Desktop Wallpaper::GetDesktop() {
 #ifdef _WIN32
@@ -109,7 +52,7 @@ bool Wallpaper::SetWallpaper(fs::path imagePath) {
   static auto const m_DesktopType = GetDesktop();
 #endif
   if (!fs::exists(imagePath)) {
-    mgr->ShowMsgbox(L"出错", L"找不到该文件：" + imagePath.wstring());
+    // mgr->ShowMsgbox(L"出错", L"找不到该文件：" + imagePath.wstring());
     return false;
   }
   if (fs::is_directory(imagePath)) {
@@ -210,36 +153,34 @@ YJson* Wallpaper::GetConfigData()
 }
 
 void Wallpaper::SetSlot(OperatorType type) {
-  std::thread([this, type]() {
-    LockerEx locker(m_ThreadMutex, std::defer_lock);
-    if (!locker.try_lock()) {
-      mgr->ShowMsgbox(L"提示", L"后台正忙，请稍等！");
-      return;
-    }
-    switch (type) {
-      case OperatorType::Next:
-        SetNext();
-        break;
-      case OperatorType::UNext:
-        UnSetNext();
-        break;
-      case OperatorType::Dislike:
-        SetDislike();
-        break;
-      case OperatorType::UDislike:
-        UnSetDislike();
-        break;
-      case OperatorType::Favorite:
-        SetFavorite();
-        break;
-      case OperatorType::UFavorite:
-        UnSetFavorite();
-        break;
-      default:
-        break;
-    }
-    WriteSettings();
-  }).detach();
+  LockerEx locker(m_ThreadMutex, std::defer_lock);
+  if (!locker.try_lock()) {
+    mgr->ShowMsgbox(L"提示", L"后台正忙，请稍等！");
+    return;
+  }
+  switch (type) {
+    case OperatorType::Next:
+      SetNext();
+      break;
+    case OperatorType::UNext:
+      UnSetNext();
+      break;
+    case OperatorType::Dislike:
+      SetDislike();
+      break;
+    case OperatorType::UDislike:
+      UnSetDislike();
+      break;
+    case OperatorType::Favorite:
+      SetFavorite();
+      break;
+    case OperatorType::UFavorite:
+      UnSetFavorite();
+      break;
+    default:
+      break;
+  }
+  // WriteSettings();
 }
 
 void Wallpaper::SetTimeInterval(int minute) {
@@ -292,28 +233,40 @@ void Wallpaper::SetNext() {
   m_DataMutex.unlock();
 
   if (ok) {
-    m_Wallpaper->GetNext(std::bind(&Wallpaper::PushBack, this, std::placeholders::_1));
+    m_Wallpaper->GetNext(
+      std::bind(&Wallpaper::PushBack,
+        this, std::placeholders::_1,
+        std::function<void()>(std::bind(&Wallpaper::WriteSettings, this))
+      )
+    );
   } else {
     MoveRight();
+    WriteSettings();
   }
 }
 
 void Wallpaper::UnSetNext() {
   UpdateRegString(true);
 
-  LockerEx locker(m_DataMutex);
+  m_DataMutex.lock();
   if (!m_PrevImgs.empty()) {
     auto prev = std::move(m_PrevImgs.back());
     m_PrevImgs.pop_back();
-    locker.unlock();
+    m_DataMutex.unlock();
     if (!SetWallpaper(prev)) {
       UnSetNext();
       return;
     }
-    locker.lock();
+
+    m_DataMutex.lock();
     m_NextImgs.push(m_CurImage);
     m_CurImage = std::move(prev);
     m_CurImage.make_preferred();
+    m_DataMutex.unlock();
+    WriteSettings();
+  } else {
+    mgr->ShowMsgbox(L"提示", L"当前已经是第一张壁纸！");
+    m_DataMutex.unlock();
   }
 }
 
@@ -347,6 +300,7 @@ void Wallpaper::UnSetDislike() {
   m_Wallpaper->UndoDislike(m_CurImage.u8string());
   locker.unlock();
   WriteBlackList();
+  WriteSettings();
 }
 
 void Wallpaper::ClearJunk() {
@@ -383,67 +337,61 @@ void Wallpaper::UnSetFavorite() {
   }
 }
 
-const Wallpaper::String Wallpaper::m_ImgNamePattern {
-  L".*\\.(jpg|bmp|gif|jpeg|png)$"
-};
-
-bool Wallpaper::IsImageFile(const std::u8string& filesName) {
-  // BMP, PNG, GIF, JPG
-  auto wideString { Utf82WideString(filesName) };
-  return std::regex_match(wideString, std::wregex(m_ImgNamePattern, std::wregex::icase));
-}
-
 void Wallpaper::SetDropFile(std::queue<std::u8string_view> urls) {
 
   while (!urls.empty()) {
     std::u8string url(urls.front());
     urls.pop();
-    if (IsImageFile(url)) {
-      std::thread([this, url]() {
-        auto imageName = Url2Name(url);
-        Locker locker(m_ThreadMutex);
-        if (url.starts_with(u8"http")) {
-          ImageInfoEx ptr(new ImageInfo {
-            .ImagePath = imageName.u8string(),
-            .ImageUrl = url,
-            .ErrorCode = ImageInfo::Errors::NoErr,
-          });
-          PushBack(ptr);
-        } else if (fs::path oldName = url; fs::exists(oldName)) {
-          oldName.make_preferred();
+    if (!DownloadJob::IsImageFile(url)) {
+      continue;
+    }
+    auto imageName = Url2Name(url);
+    Locker locker(m_ThreadMutex);
+    if (url.starts_with(u8"http")) {
+      ImageInfoEx ptr(new ImageInfo {
+        .ImagePath = imageName.u8string(),
+        .ImageUrl = url,
+        .ErrorCode = ImageInfo::Errors::NoErr,
+      });
+      PushBack(ptr, std::bind(&Wallpaper::WriteSettings, this));
+    } else if (fs::path oldName = url; fs::exists(oldName)) {
+      oldName.make_preferred();
 
-          if (oldName.parent_path() != imageName.parent_path()) {
-            imageName = std::move(oldName);
-          } else {                     // don't move wallpaper to the same directory.
-            fs::copy(oldName, imageName);
-          }
-          if (SetWallpaper(imageName)) {
-            m_DataMutex.lock();
-            m_PrevImgs.push_back(m_CurImage);
-            m_CurImage = std::move(imageName);
-            m_DataMutex.unlock();
-          }
-        }
-        WriteSettings();
-      }).detach();
+      if (oldName.parent_path() != imageName.parent_path()) {
+        imageName = std::move(oldName);
+      } else {                     // don't move wallpaper to the same directory.
+        fs::copy(oldName, imageName);
+      }
+      if (SetWallpaper(imageName)) {
+        m_DataMutex.lock();
+        m_PrevImgs.push_back(m_CurImage);
+        m_CurImage = std::move(imageName);
+        m_DataMutex.unlock();
+      }
+      WriteSettings();
     }
   }
-
-
 }
 
-bool Wallpaper::PushBack(ImageInfoEx ptr) {
-  if (!DownloadImage(ptr))
-    return false;
-  if (!SetWallpaper(ptr->ImagePath))
-    return false;
+void Wallpaper::PushBack(ImageInfoEx ptr, 
+  std::optional<std::function<void()>> callback)
+{
   
-  Locker locker(m_DataMutex);
-  if (!m_CurImage.empty())
-    m_PrevImgs.push_back(m_CurImage);
-  m_CurImage = ptr->ImagePath;
-  m_CurImage.make_preferred();
-  return true;
+  DownloadJob::DownloadImage(ptr, [this, ptr, callback](){
+    if (!SetWallpaper(ptr->ImagePath))
+      return;
+    
+    LockerEx locker(m_DataMutex);
+    if (!m_CurImage.empty())
+      m_PrevImgs.push_back(m_CurImage);
+    m_CurImage = ptr->ImagePath;
+    m_CurImage.make_preferred();
+
+    if (callback) {
+      locker.unlock();
+      callback->operator()();
+    }
+  });
 }
 
 bool Wallpaper::MoveRight() {
@@ -477,16 +425,17 @@ void Wallpaper::SetDislike() {
       if (fs::exists(path)) {
         locker.unlock();
         AppendBlackList(path);
+        locker.lock();
       }
     }
+    locker.unlock();
+    WriteSettings();
   };
 
   if (ok) {
     m_Wallpaper->GetNext([this, callback](auto ptr){
-      // 设置一张新的壁纸
-      PushBack(ptr);
-      // 把之前的壁纸设置为dislike
-      callback();
+      // 设置一张新的壁纸, 并把之前的壁纸设置为dislike
+      PushBack(ptr, callback);
     });
   } else {
     MoveRight();
