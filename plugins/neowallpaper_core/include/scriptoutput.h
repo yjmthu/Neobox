@@ -5,7 +5,7 @@ class ScriptOutput : public WallBase {
 public:
   explicit ScriptOutput(YJson& setting);
   ~ScriptOutput() override;
-  void GetNext(std::function<void(ImageInfoEx)> callback) override;
+  void GetNext(Callback callback) override;
 
 private:
   YJson& InitSetting(YJson& setting);

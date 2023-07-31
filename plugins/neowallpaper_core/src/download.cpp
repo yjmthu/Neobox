@@ -44,9 +44,10 @@ DownloadJob::DownloadJob(std::filesystem::path path, std::u8string url, Callback
         m_Callback();
       } else {
         mgr->ShowMsgbox(L"出错"s,
-          L"网络异常或文件不能打开！"
-          "\n文件名："s + m_Path.wstring() + 
-          L"\n网址："s + Utf82WideString(url));
+          std::format(L"网络异常！\n"
+          "文件名：{}\n网址：{}\n错误信息：{}\n状态码：{}",
+          m_Path.wstring(), Utf82WideString(url),
+          msg, res->status));
       }
 
       m_Mutex.lock();

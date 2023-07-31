@@ -15,7 +15,9 @@
 
 namespace fs =std::filesystem;
 
-WallhavenExMenu::WallhavenExMenu(YJson data, MenuBase* parent, Callback callback, std::function<const fs::path&()> getCurImg)
+WallhavenExMenu::WallhavenExMenu(YJson data, MenuBase* parent,
+  Callback callback,
+  std::function<std::optional<fs::path>()> getCurImg)
   : WallBaseEx(callback, std::move(data), parent)
   , GetCurImage(getCurImg)
   , m_ActionGroup(new QActionGroup(this))
@@ -129,13 +131,23 @@ void WallhavenExMenu::LoadMoreActions()
       std::ref(m_Data[u8"Parameter"])));
   connect(addAction("添加更多"), &QAction::triggered, this, std::bind(&WallhavenExMenu::AddNewType, this));
   connect(addAction("关于壁纸"), &QAction::triggered, this, [this]() {
-    const auto name = GetImageName(GetCurImage());
+    auto curImage = GetCurImage();
+    if (!curImage) {
+      mgr->ShowMsg("当前壁纸不存在！");
+      return;
+    }
+    const auto name = GetImageName(*curImage);
     if (name.size() != 6) return;
     QDesktopServices::openUrl(
       QString::fromStdString("https://wallhaven.cc/w/" + name));
   });
   connect(addAction("相似壁纸"), &QAction::triggered, this, [this]() {
-    const auto name = GetImageName(GetCurImage());
+    auto curImage = GetCurImage();
+    if (!curImage) {
+      mgr->ShowMsg("当前壁纸不存在！");
+      return;
+    }
+    const auto name = GetImageName(*curImage);
     if (name.size() != 6) return;
     auto const url =
         "https://wallhaven.cc/search?q=like:" + name;

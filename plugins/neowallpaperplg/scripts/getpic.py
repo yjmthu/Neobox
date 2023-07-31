@@ -10,7 +10,7 @@ def get_picfolder() -> str:
 
 if __name__ == '__main__':
     # https://api.ixiaowai.cn/api/api.php
-    data = requests.get("https://api.ixiaowai.cn/api/api.php")
+    data = requests.get("https://api.aixiaowai.cn/api/api.php")
     folder = os.path.join(get_picfolder(), "桌面壁纸", "脚本获取")
     if not os.path.exists(folder):
         os.makedirs(folder)

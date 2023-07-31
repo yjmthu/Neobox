@@ -42,7 +42,7 @@ YJson& ScriptOutput::InitSetting(YJson& setting)
   return setting;
 }
 
-void ScriptOutput::GetNext(std::function<void(ImageInfoEx)> callback)
+void ScriptOutput::GetNext(Callback callback)
 {
   ImageInfoEx ptr(new ImageInfo);
   m_DataMutex.lock();

@@ -125,7 +125,7 @@ Wallpaper::Wallpaper(YJson& settings)
   , m_Favorites(WallBase::GetNewInstance(*m_Config, WallBase::FAVORITE))
   , m_BingWallpaper(WallBase::GetNewInstance(*m_Config, WallBase::BINGAPI))
 {
-  ReadSettings();
+  ReadBlacklist();
   SetImageType(m_Settings.GetImageType());
   SetTimeInterval(m_Settings.GetTimeInterval());
   SetFirstChange(m_Settings.GetFirstChange());
@@ -134,9 +134,7 @@ Wallpaper::Wallpaper(YJson& settings)
 Wallpaper::~Wallpaper() {
   delete m_Timer;
 
-  m_ThreadMutex.lock();
   WallBase::ClearInstatnce();
-  m_ThreadMutex.unlock();
 }
 
 YJson* Wallpaper::GetConfigData()
@@ -153,11 +151,6 @@ YJson* Wallpaper::GetConfigData()
 }
 
 void Wallpaper::SetSlot(OperatorType type) {
-  LockerEx locker(m_ThreadMutex, std::defer_lock);
-  if (!locker.try_lock()) {
-    mgr->ShowMsgbox(L"提示", L"后台正忙，请稍等！");
-    return;
-  }
   switch (type) {
     case OperatorType::Next:
       SetNext();
@@ -226,54 +219,44 @@ std::filesystem::path Wallpaper::Url2Name(const std::u8string& url)
 }
 
 void Wallpaper::SetNext() {
-  UpdateRegString(false);
-
   m_DataMutex.lock();
+  m_PrevImgs.UpdateRegString();
   auto const ok = m_NextImgs.empty();
   m_DataMutex.unlock();
 
   if (ok) {
     m_Wallpaper->GetNext(
       std::bind(&Wallpaper::PushBack,
-        this, std::placeholders::_1,
-        std::function<void()>(std::bind(&Wallpaper::WriteSettings, this))
+        this,
+        std::placeholders::_1,
+        std::nullopt
       )
     );
   } else {
     MoveRight();
-    WriteSettings();
   }
 }
 
 void Wallpaper::UnSetNext() {
-  UpdateRegString(true);
-
-  m_DataMutex.lock();
-  if (!m_PrevImgs.empty()) {
-    auto prev = std::move(m_PrevImgs.back());
-    m_PrevImgs.pop_back();
-    m_DataMutex.unlock();
-    if (!SetWallpaper(prev)) {
-      UnSetNext();
-      return;
+  LockerEx locker(m_DataMutex);
+  m_PrevImgs.UpdateRegString();
+  auto prev = m_PrevImgs.GetPrevious();
+  if (prev) {
+    auto cur = m_PrevImgs.GetCurrent();
+    if (cur) {
+      m_PrevImgs.EraseCurrent();
+      m_NextImgs.push(std::move(*cur));
     }
-
-    m_DataMutex.lock();
-    m_NextImgs.push(m_CurImage);
-    m_CurImage = std::move(prev);
-    m_CurImage.make_preferred();
-    m_DataMutex.unlock();
-    WriteSettings();
+    locker.unlock();
+    SetWallpaper(*prev);
   } else {
     mgr->ShowMsgbox(L"提示", L"当前已经是第一张壁纸！");
-    m_DataMutex.unlock();
   }
 }
 
 void Wallpaper::UnSetDislike() {
-  UpdateRegString(false);
-
   LockerEx locker(m_DataMutex);
+  m_PrevImgs.UpdateRegString();
   if (m_BlackList.empty())
     return;
   auto back = std::move(m_BlackList.back());
@@ -293,14 +276,12 @@ void Wallpaper::UnSetDislike() {
   locker.unlock();
   if (!SetWallpaper(back.second))
     return;
+
   locker.lock();
-  m_PrevImgs.push_back(m_CurImage);
-  m_CurImage = std::move(back.second);
-  m_CurImage.make_preferred();
-  m_Wallpaper->UndoDislike(m_CurImage.u8string());
+  m_Wallpaper->UndoDislike(back.second.u8string());
+  m_PrevImgs.PushBack(std::move(back.second));
   locker.unlock();
   WriteBlackList();
-  WriteSettings();
 }
 
 void Wallpaper::ClearJunk() {
@@ -316,21 +297,24 @@ void Wallpaper::ClearJunk() {
 }
 
 void Wallpaper::SetFavorite() {
-  UpdateRegString(false);
-
   Locker locker(m_DataMutex);
+  m_PrevImgs.UpdateRegString();
   if (m_Wallpaper != m_Favorites) {
-    m_Favorites->UndoDislike(m_CurImage.u8string());
+    auto curImage = m_PrevImgs.GetCurrent();
+    if (curImage) {
+      m_Favorites->UndoDislike(curImage->u8string());
+    }
   }
 }
 
 void Wallpaper::UnSetFavorite() {
-  UpdateRegString(false);
-
   LockerEx locker(m_DataMutex);
+  m_PrevImgs.UpdateRegString();
   if (m_Wallpaper != m_Favorites) {
-    m_Favorites->Dislike(m_CurImage.u8string());
-    return;
+    auto curImage = m_PrevImgs.GetCurrent();
+    if (curImage) {
+      m_Favorites->Dislike(curImage->u8string());
+    }
   } else {
     locker.unlock();
     SetDislike();
@@ -346,14 +330,13 @@ void Wallpaper::SetDropFile(std::queue<std::u8string_view> urls) {
       continue;
     }
     auto imageName = Url2Name(url);
-    Locker locker(m_ThreadMutex);
     if (url.starts_with(u8"http")) {
       ImageInfoEx ptr(new ImageInfo {
         .ImagePath = imageName.u8string(),
         .ImageUrl = url,
         .ErrorCode = ImageInfo::Errors::NoErr,
       });
-      PushBack(ptr, std::bind(&Wallpaper::WriteSettings, this));
+      PushBack(ptr, std::nullopt);
     } else if (fs::path oldName = url; fs::exists(oldName)) {
       oldName.make_preferred();
 
@@ -364,11 +347,9 @@ void Wallpaper::SetDropFile(std::queue<std::u8string_view> urls) {
       }
       if (SetWallpaper(imageName)) {
         m_DataMutex.lock();
-        m_PrevImgs.push_back(m_CurImage);
-        m_CurImage = std::move(imageName);
+        m_PrevImgs.PushBack(std::move(imageName));
         m_DataMutex.unlock();
       }
-      WriteSettings();
     }
   }
 }
@@ -382,10 +363,7 @@ void Wallpaper::PushBack(ImageInfoEx ptr,
       return;
     
     LockerEx locker(m_DataMutex);
-    if (!m_CurImage.empty())
-      m_PrevImgs.push_back(m_CurImage);
-    m_CurImage = ptr->ImagePath;
-    m_CurImage.make_preferred();
+    m_PrevImgs.PushBack(ptr->ImagePath);
 
     if (callback) {
       locker.unlock();
@@ -396,67 +374,50 @@ void Wallpaper::PushBack(ImageInfoEx ptr,
 
 bool Wallpaper::MoveRight() {
   LockerEx locker(m_DataMutex);
-  auto next = std::move(m_NextImgs.top());
+  fs::path next { std::move(m_NextImgs.top()) };
   m_NextImgs.pop();
   locker.unlock();
   if (!SetWallpaper(next)) {
     return false;
   }
   locker.lock();
-  m_PrevImgs.push_back(m_CurImage);
-  m_CurImage = std::move(next);
+  m_PrevImgs.PushBack(std::move(next));
   return true;
 }
 
 void Wallpaper::SetDislike() {
-  UpdateRegString(false);
-
   m_DataMutex.lock();
+  m_PrevImgs.UpdateRegString();
   auto const ok = m_NextImgs.empty();
   m_DataMutex.unlock();
 
   auto callback = [this](){
     LockerEx locker(m_DataMutex);
-    if (!m_PrevImgs.empty()) {
-      // 取出之前的图片栈顶元素，并将其设置为dislike
-      auto path = std::move(m_PrevImgs.back());
-      m_Wallpaper->Dislike(path.u8string());
-      m_PrevImgs.pop_back();
-      if (fs::exists(path)) {
-        locker.unlock();
-        AppendBlackList(path);
-        locker.lock();
-      }
+    // 取出之前的图片栈顶元素，并将其设置为dislike
+    auto curImage = m_PrevImgs.GetPrevious();
+
+    if (!curImage) return ;
+    m_PrevImgs.ErasePrevious();
+    m_Wallpaper->Dislike(curImage->u8string());
+    if (fs::exists(*curImage)) {
+      locker.unlock();
+      AppendBlackList(*curImage);
+      locker.lock();
     }
-    locker.unlock();
-    WriteSettings();
   };
 
   if (ok) {
-    m_Wallpaper->GetNext([this, callback](auto ptr){
-      // 设置一张新的壁纸, 并把之前的壁纸设置为dislike
-      PushBack(ptr, callback);
-    });
+    // 设置一张新的壁纸, 并把之前的壁纸设置为dislike
+    m_Wallpaper->GetNext(std::bind(&Wallpaper::PushBack,
+      this, std::placeholders::_1, callback));
   } else {
     MoveRight();
     callback();
   }
 }
 
-void Wallpaper::ReadSettings() {
-  std::ifstream file("wallpaperData/History.txt", std::ios::in);
-  if (file.is_open()) {
-    std::string temp;
-    if (std::getline(file, temp)) {
-      m_CurImage = temp;
-      m_CurImage.make_preferred();
-      while (std::getline(file, temp)) {
-        m_PrevImgs.emplace_front(temp);
-      }
-    }
-    file.close();
-  }
-  file.open("wallpaperData/Blacklist.txt", std::ios::in);
+void Wallpaper::ReadBlacklist() {
+  std::ifstream file("wallpaperData/Blacklist.txt", std::ios::in);
   if (file.is_open()) {
     std::string key, val;
     while (std::getline(file, key) && std::getline(file, val)) {
@@ -464,45 +425,6 @@ void Wallpaper::ReadSettings() {
     }
     file.close();
   }
-#ifdef _WIN32
-  UpdateRegString(false);
-#endif
-}
-
-#ifdef _WIN32
-void Wallpaper::UpdateRegString(bool forward)
-{
-  Locker locker(m_DataMutex);
-  fs::path const curWallpaper = RegReadString(HKEY_CURRENT_USER, L"Control Panel\\Desktop", L"WallPaper");
-  if (!curWallpaper.empty() && fs::exists(curWallpaper)) {
-    fs::path temp = m_CurImage;
-    temp.make_preferred();
-    if (temp != curWallpaper) {
-      if (forward)
-        m_NextImgs.push(temp);
-      else
-        m_PrevImgs.push_back(temp);
-      m_CurImage = curWallpaper.u8string();
-    }
-  }
-}
-#endif
-
-void Wallpaper::WriteSettings() {
-  int m_CountLimit = 100;
-  std::ofstream file("wallpaperData/History.txt", std::ios::out);
-  if (!file.is_open())
-    return;
-
-  Locker locker(m_DataMutex);
-  if (!m_CurImage.empty())
-    file << m_CurImage.string() << std::endl;
-  for (auto i = m_PrevImgs.rbegin(); i != m_PrevImgs.rend(); ++i) {
-    file << i->string() << std::endl;
-    if (!--m_CountLimit)
-      break;
-  }
-  file.close();
 }
 
 void Wallpaper::AppendBlackList(const fs::path& path) {
@@ -550,12 +472,10 @@ void Wallpaper::SetAutoChange(bool flag) {
 void Wallpaper::SetFirstChange(bool flag) {
   m_DataMutex.lock();
   m_Settings.SetFirstChange(flag);
-  // m_Settings.SaveData();
   m_DataMutex.unlock();
 
   if (flag) {
     std::thread([this](){
-      Locker locker(m_ThreadMutex);
       for (int i =0; i != 300; ++i) {
         std::this_thread::sleep_for(100ms);
         if (WallBase::m_QuitFlag) {
@@ -563,18 +483,11 @@ void Wallpaper::SetFirstChange(bool flag) {
         }
       }
       SetNext();
-      WriteSettings();
     }).detach();
   }
 }
 
 bool Wallpaper::SetImageType(int index) {
-  LockerEx locker(m_ThreadMutex, std::defer_lock);
-
-  if (!locker.try_lock()) {
-    return false;
-  }
-
   if (m_Settings.GetImageType() != index) {
     m_Settings.SetImageType(index);
     // m_Settings.SaveData();

@@ -11,7 +11,7 @@ public:
   virtual ~BingApi();
 
 public:
-  void GetNext(std::function<void(ImageInfoEx)> callback) override;
+  void GetNext(Callback callback) override;
   void SetJson(const YJson& json) override;
 
 private:

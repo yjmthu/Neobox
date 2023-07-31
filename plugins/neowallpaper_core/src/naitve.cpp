@@ -132,7 +132,7 @@ bool Native::GetFileList()
   return true;
 }
 
-void Native::GetNext(std::function<void(ImageInfoEx)> callback)
+void Native::GetNext(Callback callback)
 {
   Locker locker(m_DataMutex);
 

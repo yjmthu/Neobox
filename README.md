@@ -61,7 +61,7 @@
     - Awesome Wallpapers: <https://wallhaven.cc/>
     - Bing: <https://www.bing.com/>
     - Unsplash: <https://unsplash.com/>
-    - 小歪: <https://api.ixiaowai.cn/>
+    - 小歪: <https://api.aixiaowai.cn/>
     - 其他壁纸Api链接（必须是直接在浏览器打开就能看到图片的链接，例如<https://source.unsplash.com/random/2500x1600>）
 + 本地壁纸源
     - 可遍历壁纸文件夹

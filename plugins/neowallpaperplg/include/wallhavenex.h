@@ -4,16 +4,14 @@
 #include <functional>
 #include <wallbaseex.h>
 
-namespace std {
-  namespace filesystem {
-    class path;
-  }
-}
+namespace fs = std::filesystem;
 
 class WallhavenExMenu: public WallBaseEx
 {
 public:
-  explicit WallhavenExMenu(YJson data, MenuBase* parent, Callback callback, std::function<const std::filesystem::path&()> getCurImg);
+  explicit WallhavenExMenu(YJson data, MenuBase* parent,
+    Callback callback,
+    std::function<std::optional<fs::path>()> getCurImg);
   virtual ~WallhavenExMenu();
 private:
   static std::string GetImageName(const std::filesystem::path& path);
@@ -23,7 +21,7 @@ private:
   void AddNewType();
   void EditNewType(std::u8string typeName);
   void EditCurType(YJson& curJson);
-  const std::function<const std::filesystem::path &()> GetCurImage;
+  const std::function<std::optional<std::filesystem::path>()> GetCurImage;
   class QAction* const m_Separator;
   class QActionGroup* m_ActionGroup;
 };

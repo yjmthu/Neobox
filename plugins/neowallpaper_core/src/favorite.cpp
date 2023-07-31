@@ -98,7 +98,7 @@ bool Favorite::GetFileList()
   return true;
 }
 
-void Favorite::GetNext(std::function<void(ImageInfoEx)> callback)
+void Favorite::GetNext(Callback callback)
 {
   Locker locker(m_DataMutex);
 

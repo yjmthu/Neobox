@@ -15,12 +15,14 @@
 
 #include <wallbase.h>
 #include <wallconfig.h>
+#include <history.h>
 
 namespace fs = std::filesystem;
 
 enum class OperatorType {
   Next, UNext, Dislike, UDislike, Favorite, UFavorite
 };
+
 
 class Wallpaper {
   enum class Desktop { WIN, KDE, DDE, GNOME, XFCE, UNKNOWN };
@@ -31,8 +33,6 @@ private:
   static bool SetWallpaper(fs::path imagePath);
   static Desktop GetDesktop();
   fs::path Url2Name(const std::u8string& url);
-  void ReadSettings();
-  void WriteSettings();
   void AppendBlackList(const fs::path& path);
   void WriteBlackList();
   void PushBack(ImageInfoEx ptr,
@@ -40,6 +40,7 @@ private:
   bool MoveRight();
   static YJson* GetConfigData();
 private:
+  void ReadBlacklist();
   void SetNext();
   void UnSetNext();
   void SetDislike();
@@ -49,14 +50,16 @@ private:
 
 public:
   void SetDropFile(std::queue<std::u8string_view> url);
-  void UpdateRegString(bool forward=false);
   void SetSlot(OperatorType type);
   bool SetImageType(int type);
   void SetFirstChange(bool val);
   void SetTimeInterval(int minute);
   void SetAutoChange(bool val);
   void ClearJunk();
-  const fs::path& GetCurIamge() const { return m_CurImage; }
+  std::optional<fs::path> GetCurIamge() {
+    m_PrevImgs.UpdateRegString();
+    return m_PrevImgs.GetCurrent();
+  }
   WallBase* Engine() { return m_Wallpaper; }
 
 public:
@@ -72,16 +75,15 @@ public:
 private:
   YJson* const m_Config;
   std::mutex m_DataMutex;
-  std::mutex m_ThreadMutex;
 
   class NeoTimer* const m_Timer;
   class WallBase* const m_Favorites;
   class WallBase* const m_BingWallpaper;
   class WallBase* m_Wallpaper;
-  std::deque<fs::path> m_PrevImgs;
+  WallpaperHistory m_PrevImgs;
   std::stack<fs::path> m_NextImgs;
   std::list<std::pair<fs::path, fs::path>> m_BlackList;
-  fs::path m_CurImage;
+  // fs::path m_CurImage;
 };
 
 #endif

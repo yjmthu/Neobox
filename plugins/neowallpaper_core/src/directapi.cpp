@@ -42,7 +42,7 @@ YJson& DirectApi::InitSetting(YJson& setting)
         {u8"ImageNameFormat"sv, u8"{0:%Y-%m-%d} {0:%H%M%S}.jpg"sv}
       }},
       {u8"Xiaowai"sv, YJson::O{
-        {u8"Url"sv, u8"https://api.ixiaowai.cn"sv},
+        {u8"Url"sv, u8"https://api.aixiaowai.cn"sv},
         {u8"CurPath"sv, 0},
         {u8"Paths"sv, YJson::A {
           u8"/api/api.php"sv,
@@ -76,7 +76,7 @@ YJson& DirectApi::InitSetting(YJson& setting)
   }
 */
 
-void DirectApi::GetNext(std::function<void(ImageInfoEx)> callback)
+void DirectApi::GetNext(Callback callback)
 {
   Locker locker(m_DataMutex);
   auto& apiInfo = GetCurInfo();

@@ -108,7 +108,7 @@ void BingApi::CheckData(std::function<void()> cbOK, std::function<void()> cbNO)
   m_DataRequest->GetAsync(std::move(callback));
 }
 
-void BingApi::GetNext(std::function<void(ImageInfoEx)> callback) {
+void BingApi::GetNext(Callback callback) {
   static size_t s_uCurImgIndex = 0;
 
   // https://www.bing.com/th?id=OHR.Yellowstone150_ZH-CN055

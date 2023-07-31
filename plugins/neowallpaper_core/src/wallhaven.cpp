@@ -38,9 +38,70 @@ void WallhavenData::SaveData() {
   m_Data.toFile(m_DataPath);
 }
 
+void WallhavenData::DownloadUrl(Range range, Callback callback)
+{
+  if (range == m_Range && m_Request) return;
+
+  m_Range = range;
+  m_Index = m_Range.front();
+  m_Array.clear();
+
+  DownloadAll(std::move(callback));
+}
+
+
+void WallhavenData::HandleResult(const YJson &data)
+{
+  for (auto& i: data.getArray()) {
+    auto name = i.find(u8"path")->second.getValueString().substr(31);
+    auto const iter = std::find_if(m_Blacklist.cbegin(), m_Blacklist.cend(), [&name](const YJson& j){
+      return j.getValueString() == name;
+    });
+    if (m_Blacklist.cend() == iter) {
+      m_Array.emplace_back(std::move(name));
+    }
+  }
+}
+
+void WallhavenData::DownloadAll(Callback cb)
+{
+  const std::string url(m_ApiUrl.cbegin(), m_ApiUrl.cend());
+  m_Request = std::make_unique<HttpLib>(url + "&page=" + std::to_string(m_Index), true);
+
+  HttpLib::Callback callback = {
+    .m_FinishCallback = [this, cb](auto msg, auto res){
+      if (msg.empty() && res->status == 200) {
+        YJson root(res->body.begin(), res->body.end());
+        const auto& data = root[u8"data"];
+        if (data.emptyA()) {
+          goto handle;
+        }
+        HandleResult(data);
+      }
+
+      if (++m_Index != m_Range.back()) {
+        DownloadAll(cb);
+        return;
+      }
+handle:
+      ImageInfoEx ptr;
+      if (!m_Array.empty()) {
+        std::mt19937 g(std::random_device{}());
+        std::shuffle(m_Array.begin(), m_Array.end(), g);
+        m_Mutex.lock();
+        m_Unused.assign(m_Array.begin(), m_Array.end());
+        m_Mutex.unlock();
+      }
+      cb();
+      m_Request = nullptr;
+    }
+  };
+  m_Request->GetAsync(callback);
+}
+
 Wallhaven::Wallhaven(YJson& setting):
   WallBase(InitSetting(setting)),
-  m_Data(m_DataDir / u8"WallhaveData.json")
+  m_Data(m_DataMutex, m_DataDir / u8"WallhaveData.json")
 {
 }
 
@@ -115,54 +176,51 @@ YJson& Wallhaven::GetCurInfo()
   return m_Setting[u8"WallhavenApi"][m_Setting[u8"WallhavenCurrent"].getValueString()];
 }
 
-bool Wallhaven::CheckData(ImageInfoEx ptr)
+bool Wallhaven::CheckData(WallhavenData::Callback callback)
 {
   LockerEx locker(m_DataMutex);
 
   auto const apiUrl = GetApiPathUrl();
-  std::u8string curUrl;
-  curUrl = m_Data.m_ApiUrl;
-
-  if (curUrl == apiUrl) {
+  if (m_Data.m_ApiUrl == apiUrl) {
     if (!m_Data.IsEmpty()) return true;
-    ptr->ErrorMsg = u8"No data has been downloaded.";
-    ptr->ErrorCode = ImageInfo::DataErr;
-    return false;
-  }
-
-  if (!HttpLib::IsOnline()) {
-    ptr->ErrorMsg = u8"Bad network connection.";
-    ptr->ErrorCode = ImageInfo::NetErr;
-    return false;
   }
 
   m_Data.ClearAll();
   m_Data.m_ApiUrl = apiUrl;
-
+  auto const first = GetCurInfo()[u8"StartPage"].getValueInt();
+  auto const last = m_Setting[u8"PageSize"].getValueInt() + first;
   locker.unlock();
-  if (!DownloadUrl(apiUrl)) {
-    ptr->ErrorMsg = u8"Bad data has been downloaded.";
-    ptr->ErrorCode = ImageInfo::DataErr;
-    return false;
-  }
-  return true;
+  m_Data.DownloadUrl({first, last}, callback);
+  return false;
 }
 
-void Wallhaven::GetNext(std::function<void(ImageInfoEx)> callback)
+void Wallhaven::GetNext(Callback callback)
 {
   // https://w.wallhaven.cc/full/1k/wallhaven-1kmx19.jpg
 
-  ImageInfoEx ptr(new ImageInfo);
-
-  if (!CheckData(ptr)) {
+  auto handle = [this, callback](){
+    ImageInfoEx ptr(new ImageInfo);
     m_DataMutex.lock();
-    m_Data.SaveData();
+    if (!m_Data.m_Unused.empty()) {
+      std::u8string name = m_Data.m_Unused.back().getValueString();
+      ptr->ErrorCode = ImageInfo::NoErr;
+      ptr->ImagePath = GetCurInfo()[u8"Directory"].getValueString() + u8"/" + name;
+      ptr->ImageUrl =
+          u8"https://w.wallhaven.cc/full/"s + name.substr(10, 2) + u8"/"s + name;
+      m_Data.m_Used.push_back(name);
+      m_Data.m_Unused.pop_back();
+      m_Data.SaveData();
+    } else {
+      ptr->ErrorMsg = u8"列表下载失败。";
+      ptr->ErrorCode = ImageInfo::NetErr;
+    }
     m_DataMutex.unlock();
     callback(ptr);
-    return;
-  }
+  };
+  if (!CheckData(handle)) return;
 
-  LockerEx locker(m_DataMutex);
+  ImageInfoEx ptr(new ImageInfo);
+  m_DataMutex.lock();
   if (m_Data.m_Unused.empty()) {
     m_Data.m_Unused.swap(m_Data.m_Used);
     std::vector<std::u8string> temp;
@@ -173,26 +231,8 @@ void Wallhaven::GetNext(std::function<void(ImageInfoEx)> callback)
     std::shuffle(temp.begin(), temp.end(), g);
     m_Data.m_Unused.assign(temp.begin(), temp.end());
   }
-  std::u8string name = m_Data.m_Unused.back().getValueString();
-  if (name.length() == 6) {
-    locker.unlock();
-    if (!IsPngFile(name)) {
-      ptr->ErrorMsg = u8"Can't get filetype.";
-      ptr->ErrorCode = ImageInfo::NetErr;
-      callback(ptr);
-      return;
-    }
-    locker.lock();
-  }
-  ptr->ImagePath = GetCurInfo()[u8"Directory"].getValueString() + u8"/" + name;
-  ptr->ImageUrl =
-      u8"https://w.wallhaven.cc/full/"s + name.substr(10, 2) + u8"/"s + name;
-  m_Data.m_Used.push_back(name);
-  m_Data.m_Unused.pop_back();
-  m_Data.SaveData();
-  ptr->ErrorCode = ImageInfo::NoErr;
-  locker.unlock();
-  callback(ptr);
+  m_DataMutex.unlock();
+  handle();
   return;
 }
 
@@ -250,90 +290,5 @@ void Wallhaven::SetJson(const YJson& json)
 
   m_Data.m_ApiUrl.clear();
   m_Data.SaveData();
-}
-
-size_t Wallhaven::DownloadUrl(std::u8string mainUrl) {
-  LockerEx locker(m_DataMutex);
-
-  size_t m_TotalDownload = 0;
-  std::vector<std::u8string> m_Array;
-
-  auto const first = 
-    GetCurInfo()[u8"StartPage"].getValueInt();
-  auto const last = m_Setting[u8"PageSize"].getValueInt() + first;
-
-  const std::string url(mainUrl.begin(), mainUrl.end());
-  std::unique_ptr<HttpLib> clt;
-
-  auto Get = [&clt, &url](int i){
-    auto curUrl = (i == 1 ? url : url + "&page=" + std::to_string(i));
-    if (!clt)
-      clt = std::unique_ptr<HttpLib>(new HttpLib(curUrl));
-    else
-      clt->SetUrl(curUrl);
-    return clt->Get();
-  };
-
-  if (mainUrl.substr(20, 4) == u8"/api") {
-    for (size_t n = first; n != last; ++n) {
-
-      locker.unlock();
-      auto res = Get(n);
-      locker.lock();
-
-      if (res->status != 200)
-        break;
-      YJson root(res->body.begin(), res->body.end());
-      YJson& data = root[u8"data"sv];
-      for (auto& i : data.getArray()) {
-        auto name =
-            i.find(u8"path")->second.getValueString().substr(31);
-        auto const iter = std::find_if(m_Data.m_Blacklist.cbegin(), m_Data.m_Blacklist.cend(), [&name](const YJson& j){
-          return j.getValueString() == name;
-        });
-        if (m_Data.m_Blacklist.cend() == iter) {
-          m_Array.emplace_back(std::move(name));
-          ++m_TotalDownload;
-        }
-      }
-    }
-  } else {  // wallhaven-6ozrgw.png
-    const std::regex pattern("<li><figure.*?data-wallpaper-id=\"(\\w{6})\"");
-    auto cmp = [](const YJson& i, const std::u8string_view& name) -> bool {
-      return i.getValueString().find(name) != std::u8string::npos;
-    };
-    std::cregex_iterator end;
-    for (size_t n = first; n < last; ++n) {
-
-      locker.unlock();
-      auto res = Get(n);
-      locker.lock();
-
-      if (res->status != 200)
-        break;
-      std::string_view body = res->body;
-      std::cregex_iterator iter(body.data(), body.data() + body.size(), pattern);
-      while (iter != end) {
-        const auto& i_ = iter->str(1);
-        std::u8string_view i(reinterpret_cast<const char8_t*>(i_.data()),
-                              i_.size());
-        if (std::find_if(m_Data.m_Blacklist.begin(), m_Data.m_Blacklist.end(), std::bind(cmp,
-          std::placeholders::_1, std::ref(i))) == m_Data.m_Blacklist.end() && std::find_if(m_Array.begin(), m_Array.end(), [&i](const YJson& j) -> bool {
-            return i == j.getValueString();}) == m_Array.end()) {
-          m_Array.emplace_back(i);
-          ++m_TotalDownload;
-        }
-        ++iter;
-      }
-    }
-  }
-  if (m_TotalDownload) {
-    std::mt19937 g(std::random_device{}());
-    std::shuffle(m_Array.begin(), m_Array.end(), g);
-    m_Data.m_Unused.assign(m_Array.begin(), m_Array.end());
-  }
-
-  m_Data.SaveData();
-  return m_TotalDownload;
 }
 

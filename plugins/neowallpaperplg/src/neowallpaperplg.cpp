@@ -175,8 +175,12 @@ void PluginName::LoadMainMenuAction()
     {u8"openCurrentDir",
       { u8"定位文件", u8"打开当前壁纸位置", [this](PluginEvent, void*) {
 #ifdef _WIN32
-        m_Wallpaper->UpdateRegString();
-        std::wstring args = L"/select, " + m_Wallpaper->GetCurIamge().wstring();
+        auto curImage = m_Wallpaper->GetCurIamge();
+        if (!curImage) {
+          mgr->ShowMsg("找不到当前壁纸！");
+          return;
+        }
+        auto const args = L"/select, " + curImage->wstring();
         ShellExecuteW(nullptr, L"open", L"explorer", args.c_str(), NULL, SW_SHOWNORMAL);
 #else
         QDesktopServices::openUrl(QUrl::fromLocalFile(QString::fromStdWString(m_Wallpaper->GetCurIamge().wstring())));

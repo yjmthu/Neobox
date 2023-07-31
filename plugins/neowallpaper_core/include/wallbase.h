@@ -30,6 +30,7 @@ class WallBase {
 public:
   typedef std::lock_guard<std::mutex> Locker;
   typedef std::unique_lock<std::mutex> LockerEx;
+  typedef std::function<void(ImageInfoEx ptr)> Callback;
 protected:
   static std::mutex m_DataMutex;
   static const fs::path m_DataDir;
@@ -64,7 +65,7 @@ public:
   YJson& m_Setting;
 
 public:
-  virtual void GetNext(std::function<void(ImageInfoEx)> callback) = 0;
+  virtual void GetNext(Callback callback) = 0;
   virtual void Dislike(std::u8string_view sImgPath);
   virtual void UndoDislike(std::u8string_view sImgPath);
   virtual void SetJson(const YJson& json);
