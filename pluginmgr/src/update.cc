@@ -9,6 +9,24 @@
 using namespace std::literals;
 namespace fs = std::filesystem;
 
+void CopyDir(fs::path res, fs::path des) {
+
+  if (!fs::exists(des)) {
+    fs::create_directory(des);
+  }
+
+  for (const auto& entry: fs::directory_iterator(res)) {
+    const auto currentPath = entry.path();
+    const auto newPath = des / currentPath.filename();
+
+    if (fs::is_directory(currentPath)) {
+      CopyDir(currentPath, newPath);
+    } else if (fs::is_regular_file(currentPath)) {
+      fs::copy(currentPath, newPath, fs::copy_options::overwrite_existing);
+    }
+  }
+}
+
 int main(int argc, char*argv[]) {
   if (argc != 2) {
     MessageBoxW(nullptr, L"参数个数错误！", L"出错", MB_OK | MB_ICONERROR);
@@ -21,12 +39,7 @@ int main(int argc, char*argv[]) {
   try {
     fs::path resDir = fs::absolute(argv[0]).parent_path();
     fs::current_path(desDir.parent_path());
-
-    if (fs::exists(desDir)) {
-      fs::remove_all(desDir);
-    }
-
-    fs::rename(resDir, desDir);
+    CopyDir(resDir, desDir);
 
     fs::path exeFilePath = desDir / "neobox.exe";
     auto exeFile = exeFilePath.wstring();
