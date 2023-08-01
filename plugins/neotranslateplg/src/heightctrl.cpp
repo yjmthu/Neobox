@@ -13,16 +13,19 @@ constexpr int HeightCtrl::m_MaxRatio;
 constexpr int HeightCtrl::m_MinRatio;
 constexpr int HeightCtrl::m_DefaultRatio;
 
+static std::array<int, Translate::Source::None> Json2Array(const YJson& json) {
+  std::array<int, Translate::Source::None> result;
+  for (auto i=0; i!=Translate::Source::None; ++i) {
+    result[i] = json[i].getValueInt();
+  }
+  return result;
+}
+
 HeightCtrl::HeightCtrl(NeoTranslateDlg* parent, YJson setting)
   : QFrame(parent)
-  , m_Heights(
-    {
-      setting[0].getValueInt(),
-      setting[1].getValueInt(),
-      setting[2].getValueInt(),
-    })
+  , m_Heights(Json2Array(setting))
   , m_Source(parent->m_Translate->m_Source)
-  , m_Changed(parent->m_LanPairChanged)
+  , m_Changed(false)
   , m_TextFrom(*parent->m_TextFrom)
   , m_TextTo(*parent->m_TextTo)
 {
@@ -74,7 +77,7 @@ void HeightCtrl::SetStyleSheet(double value)
 void HeightCtrl::SetTextHeight(double value)
 {
   value /= 360;
-  auto const val = static_cast<int>(value * (m_TextFrom.height() + m_TextTo.height()));
+  auto const val = static_cast<int>(value * dynamic_cast<QWidget*>(parent())->height());
   m_TextFrom.setMinimumHeight(val);
   m_TextFrom.setMaximumHeight(val);
   setToolTip(QString("%1%").arg(static_cast<int>(value * 100)));

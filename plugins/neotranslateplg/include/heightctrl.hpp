@@ -24,16 +24,16 @@ public:
   }
 public:
   std::array<int, Translate::None> m_Heights;
+  bool m_Changed;
 private:
   void SetStyleSheet(double value);
   void SetTextHeight(double value);
 private:
-  bool m_Changed;
   Translate::Source& m_Source;
   class QPlainTextEdit& m_TextFrom;
   class QTextEdit& m_TextTo;
 protected:
-  static constexpr int m_MaxRatio = 340;
+  static constexpr int m_MaxRatio = 200;
   static constexpr int m_MinRatio = 20;
   static constexpr int m_DefaultRatio = 180;
 };

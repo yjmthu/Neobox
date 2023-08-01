@@ -175,14 +175,19 @@ void NeoTranslateDlg::hideEvent(QHideEvent *event)
     m_Settings.SetPairBaidu(YJson::A{
       m_Translate->m_AllLanPair[Translate::Baidu].f,
       m_Translate->m_AllLanPair[Translate::Baidu].t
-    });
+    }, false);
     m_Settings.SetPairYoudao(YJson::A{
       m_Translate->m_AllLanPair[Translate::Youdao].f,
       m_Translate->m_AllLanPair[Translate::Youdao].t
-    });
+    }, false);
+    save = true;
+  }
+  if (m_HeightCtrl->m_Changed) {
+    m_HeightCtrl->m_Changed = false;
     YJson json(YJson::Array);
     json.assignA(m_HeightCtrl->m_Heights.begin(), m_HeightCtrl->m_Heights.end());
-    m_Settings.SetHeightRatio(std::move(json));
+    m_Settings.SetHeightRatio(std::move(json), false);
+    save = true;
   }
   if (save) {
     m_Settings.SaveData();
@@ -344,7 +349,7 @@ void NeoTranslateDlg::SetupUi()
   SetShadowAround(m_CenterWidget);
 
   m_BoxTransMode->addItems({
-    "百度翻译", "有道翻译", "必应词典"
+    "百度翻译", "有道翻译", "必应翻译", "词霸翻译"
   });
 
   m_TextFrom->setObjectName("neoTextFrom");

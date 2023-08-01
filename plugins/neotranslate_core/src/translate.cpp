@@ -12,6 +12,8 @@
 #include <format>
 #include <random>
 
+#include <apikey.h>
+
 using namespace std::literals;
 namespace chrono = std::chrono;
 
@@ -133,7 +135,10 @@ const Translate::LanMaps Translate::m_LanguageCanFromTo
   },
   Translate::LanMap {
     {u8"auto", {u8"auto"}}
-  }
+  },
+  Translate::LanMap {
+    {u8"auto", {u8"auto"}}
+  },
 };
 
 LanPair::LanPair(const YJson::ArrayType& array)
@@ -153,7 +158,8 @@ Translate::Translate(TranslateCfg& setting, Translate::Callback&& callback)
     , m_AllLanPair({
         setting.GetPairBaidu(),
         setting.GetPairYoudao(),
-        std::array<int, 2> {0, 0}
+        std::array<int, 2> {0, 0},
+        std::array<int, 2> {0, 0},
       })
     , m_LanPair(nullptr)
 {
@@ -200,7 +206,7 @@ void Translate::GetResultBaidu(const Utf8Array& text) {
       {u8"from", u8"auto"},
       {u8"to", u8"zh"},
       {u8"q", YJson::String},
-      {u8"appid", u8"20210503000812254"},
+      {u8"appid", u8"" BAIDU_ID},
       {u8"salt", YJson::String},
       {u8"sign", YJson::String},
     }
@@ -219,7 +225,7 @@ void Translate::GetResultBaidu(const Utf8Array& text) {
   q.assign(text.begin, text.end);
  
   static auto& sign = jsData[u8"sign"].getValueString();
-  sign = Md5(u8"20210503000812254"s + q + salt + u8"Q_2PPxmCr66r6B2hi0ts");
+  sign = Md5(u8"" BAIDU_ID ""s + q + salt + u8"" BAIDU_KEY);
 
   m_Request = std::make_unique<HttpLib>(jsData.urlEncode(u8"https://fanyi-api.baidu.com/api/trans/vip/translate?"), true);
   
@@ -251,13 +257,11 @@ void Translate::GetResultBaidu(const Utf8Array& text) {
 }
 
 void Translate::GetResultYoudao(const Utf8Array& text) {
-  static const auto APP_KEY{u8"0b5f90d14623b917"s};
-  static const auto APP_SECRET{u8"8X1HcIvXXETCRf2smIbey8AGJ2xGRyK3"s};
   static YJson m_scJson {
     YJson::O{
       {u8"from", u8"auto"},
       {u8"to", u8"auto"},
-      {u8"appKey", APP_KEY},
+      {u8"appKey", u8"" YOUDAO_ID},
       {u8"signType", u8"v3"},
       {u8"curtime", YJson::String},
       {u8"q", YJson::String},
@@ -278,7 +282,7 @@ void Translate::GetResultYoudao(const Utf8Array& text) {
   static auto& salt = m_scJson[u8"salt"].getValueString();
   salt = Uuid1();  //"d818bc30-99df-11ec-9e18-1cbfc0a98096";
   static auto& sign = m_scJson[u8"sign"].getValueString();
-  sign = Sha256(APP_KEY + Truncate(text) + salt + curtime + APP_SECRET);
+  sign = Sha256(u8"" YOUDAO_ID + Truncate(text) + salt + curtime + u8"" YOUDAO_KEY);
 
   // 这样同时也取消了前一个请求
   m_Request = std::make_unique<HttpLib>(m_scJson.urlEncode(u8"http://openapi.youdao.com/api/?"), true);
@@ -405,17 +409,27 @@ void Translate::GetResultBingSimple(const Utf8Array& text) {
 
   static YJson m_scJson {
     YJson::O {
+#if 0
+      {u8"mkt", u8"zh-CN"},
+      {u8"setLang", u8"zh"},
+      {u8"from", u8"BDVEHC"},
+      {u8"ClientVer", u8"BDDTV3.5.1.4320"},
+#endif
       {u8"q", YJson::String},
     }
   };
   m_scJson[u8"q"].getValueString().assign(text.begin, text.end);
+#if 0
+  const auto url = m_scJson.urlEncode(u8"https://cn.bing.com/dict/clientsearch?"s);
+#else
   const auto url = m_scJson.urlEncode(u8"https://cn.bing.com/dict/SerpHoverTrans?"s);
+#endif
 
   m_Request = std::make_unique<HttpLib>(url, true);
 
   HttpLib::Callback callback = {
     .m_FinishCallback = [this](auto message, auto res) {
-      if (message.empty() && (res->status == 200 || res->status == 201)) {
+      if (message.empty() && (res->status / 100 == 2)) {
         m_Callback(res->body.data(), res->body.size());
       } else {
         std::wstring msg = std::format(L"error: {}\ncode:{}", message, res->status);
@@ -427,4 +441,138 @@ void Translate::GetResultBingSimple(const Utf8Array& text) {
   };
 
   m_Request->GetAsync(std::move(callback));
+}
+
+void Translate::GetResultIciba(const Utf8Array& text)
+{
+  static YJson m_scJson {
+    YJson::O {
+      {u8"type", u8"json"},
+      {u8"key", u8"" ICIBA_KEY},
+      {u8"w", YJson::String},
+    }
+  };
+  m_scJson[u8"w"].getValueString().assign(text.begin, text.end);
+  const auto url = m_scJson.urlEncode(u8"https://dict-co.iciba.com/api/dictionary.php?"s);
+
+  m_Request = std::make_unique<HttpLib>(url, true);
+
+  HttpLib::Callback callback = {
+    .m_FinishCallback = [this](auto message, auto res) {
+      if (message.empty() && (res->status / 100 == 2)) {
+        // m_Callback(res->body.data(), res->body.size());
+        // return;
+
+        YJson root(res->body.begin(), res->body.end());
+        FormatIcibaResult(root);
+      } else {
+        std::wstring msg = std::format(L"error: {}\ncode:{}", message, res->status);
+        auto u8msg = Wide2Utf8String(msg);
+        m_Callback(u8msg.data(), u8msg.size());
+      }
+      m_Request = nullptr;
+    }
+  };
+
+  m_Request->GetAsync(std::move(callback));
+}
+
+void Translate::FormatIcibaResult(const YJson& data)
+{
+  typedef std::map<std::u8string, std::string> Map;
+  static const Map exchangeMap {
+    {u8"word_pl"s, "复数"s},
+    {u8"word_past"s, "过去时"s},
+    {u8"word_done"s, "完成时"s},
+    {u8"word_ing"s, "进行时"s},
+    {u8"word_third"s, "三单"s},
+    {u8"word_er"s, "比较级"s},
+    {u8"word_est"s, "最高级"s},
+  };
+
+  static const Map symbolsMap {
+    {u8"ph_en"s, "英式音标"s},
+    {u8"ph_am"s, "美式音标"s},
+    {u8"ph_other"s, "其它"s},
+    {u8"word_symbol"s, "拼音"s},
+  };
+  static const Map mp3Map {
+    {u8"ph_en_mp3"s, "英式发音"s},
+    {u8"ph_am_mp3"s, "英式发音"s},
+    {u8"ph_tts_mp3"s, "TTS发音"s},
+    {u8"symbol_mp3"s, "发音"s},
+  };
+  auto& wordName = data[u8"word_name"];
+
+  std::ostringstream html;
+
+  if (wordName.isString()) {
+    html << "<h3>" << wordName << "</h3><hr>";
+  } else {
+    html << "<p style=\"color: red;\">只能查询单词。</p>";
+    goto callback;
+  }
+
+  if (auto& excahnge = data[u8"exchange"]; excahnge.isObject()) {
+    html << "<h5>形式转换</h5><ul>";
+    for (auto& [key, value]: excahnge.getObject()) {
+      if (!value.isArray()) continue;
+      auto iter = exchangeMap.find(key);
+      if (iter == exchangeMap.end()) continue;
+      html << "<li>" << iter->second << ": ";
+      for (auto& val: value.getArray()) {
+        html << val.getValueString() << "; ";
+      }
+      html << "</li>";
+    }
+    html << "</ul><hr>";
+  }
+
+  if (auto& symbols = data[u8"symbols"]; symbols.isArray() && !symbols.emptyA()) {
+    auto& symble = symbols.frontA();
+    html << "<h5>读音</h5><ul>";
+    for (auto& [key, value]: symble.getObject()) {
+      if (!value.isString() || value.getValueString().empty()) continue;
+      auto iter = symbolsMap.find(key);
+      if (iter == symbolsMap.end()) continue;
+      html << "<li>" << iter->second << ": /" << value.getValueString() << "/</li>";
+    }
+    html << "</ul><hr>";
+
+    auto& parts = symble[u8"parts"];
+
+    if (parts.isArray() && !parts.emptyA()) {
+      html << "<h5>基本释义</h5><ol>";
+      for (auto& item: parts.getArray()) {
+        auto& part = item[u8"part"];
+        auto& means = item[u8"means"];
+
+        if (part.isString()) {
+          html << "<li><span style=\"color: purple;\">" << part.getValueString() << "</span>: ";
+          for (auto& m : means.getArray()) {
+            html << m.getValueString() << "; ";
+          }
+          html << "</li>";
+        } else {
+          for (auto& m : means.getArray()) {
+            auto& mean = m.find(u8"word_mean");
+            if (mean == m.endO() || mean->second.getValueString().empty()) continue;
+            html << "<li>" << mean->second.getValueString() << ";</li>";
+          }
+        }
+        
+      }
+      html << "</ol><hr>";
+    }
+  }
+
+callback:
+#ifdef _WIN32
+  auto const view = html.rdbuf()->view();
+#else
+  auto const view = html.str();
+#endif
+  //auto sss = data.toString();
+  //m_Callback(sss.data(), sss.size());
+  m_Callback(view.data(), view.size());
 }

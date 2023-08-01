@@ -235,6 +235,10 @@ QComboBox::drop-down {
   border-left-color: #242424;
 }
 
+QComboBox QAbstractItemView {
+  outline: 0px;
+}
+
 QComboBox QAbstractItemView::item{
 	color: #666666;
 	padding: 6px 12px;
@@ -252,7 +256,7 @@ QComboBox QAbstractItemView::item:selected {
 }
 
 QListWidget{
-  outline:0px;
+  outline: 0px;
 }
 
 QListView::item {
