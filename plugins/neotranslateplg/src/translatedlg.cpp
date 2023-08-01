@@ -13,7 +13,7 @@
 #include <QComboBox>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QTextEdit>
+#include <QTextBrowser>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QTextBlock>
@@ -26,7 +26,7 @@ NeoTranslateDlg::NeoTranslateDlg(TranslateCfg& settings)
     , m_Settings(settings)
     , m_CenterWidget(new QWidget(this))
     , m_TextFrom(new QPlainTextEdit(m_CenterWidget))
-    , m_TextTo(new QTextEdit(m_CenterWidget))
+    , m_TextTo(new QTextBrowser(m_CenterWidget))
     , m_BoxFrom(new QComboBox(m_CenterWidget))
     , m_BoxTo(new QComboBox(m_CenterWidget))
     , m_Translate(new Translate(m_Settings, [this](const void* data, size_t size){
@@ -41,6 +41,7 @@ NeoTranslateDlg::NeoTranslateDlg(TranslateCfg& settings)
     , m_BoxTransMode(new QComboBox(m_CenterWidget))
 {
   SetupUi();
+  m_TextTo->setOpenExternalLinks(true);
   m_BtnCopyFrom->setText("复制");
   m_BtnCopyTo->setText("复制");
   connect(m_BtnCopyFrom, &QPushButton::clicked, this, [this]() {
@@ -349,7 +350,7 @@ void NeoTranslateDlg::SetupUi()
   SetShadowAround(m_CenterWidget);
 
   m_BoxTransMode->addItems({
-    "百度翻译", "有道翻译", "必应翻译", "词霸翻译"
+    "百度翻译", "有道翻译", "必应翻译", "词霸翻译", "英文词典"
   });
 
   m_TextFrom->setObjectName("neoTextFrom");
@@ -501,7 +502,7 @@ void NeoTranslateDlg::CreateToRightMenu(QMouseEvent* event)
     // m_TextTo->setContextMenuPolicy(Qt::CustomContextMenu);
   auto const toMenu = m_TextTo->createStandardContextMenu();
   auto const clearAction = toMenu->addAction("Clear");
-  QObject::connect(clearAction, &QAction::triggered, m_TextTo, &QTextEdit::clear);
+  QObject::connect(clearAction, &QAction::triggered, m_TextTo, &QTextBrowser::clear);
   auto const searchAction = toMenu->addAction("Search");
   QObject::connect(searchAction, &QAction::triggered, m_TextTo, [this](){
     auto const text = m_TextTo->textCursor().selectedText();

@@ -31,7 +31,7 @@ private:
 private:
   Translate::Source& m_Source;
   class QPlainTextEdit& m_TextFrom;
-  class QTextEdit& m_TextTo;
+  class QTextBrowser& m_TextTo;
 protected:
   static constexpr int m_MaxRatio = 200;
   static constexpr int m_MinRatio = 20;

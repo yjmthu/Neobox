@@ -3,7 +3,7 @@
 
 #include <widgetbase.hpp>
 #include <QPlainTextEdit>
-#include <QTextEdit>
+#include <QTextBrowser>
 
 #include <translate.h>
 #include <pluginobject.h>
@@ -30,8 +30,8 @@ private:
   friend class HeightCtrl;
   TranslateCfg& m_Settings;
   QWidget* m_CenterWidget;
-  class QPlainTextEdit *m_TextFrom;
-  class QTextEdit *m_TextTo;
+  QPlainTextEdit *m_TextFrom;
+  QTextBrowser *m_TextTo;
   class QComboBox *m_BoxFrom, *m_BoxTo;
   class Translate* m_Translate;
   class HeightCtrl* m_HeightCtrl;

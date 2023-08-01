@@ -5,7 +5,7 @@
 
 #include <QWheelEvent>
 #include <QPlainTextEdit>
-#include <QTextEdit>
+#include <QTextBrowser>
 
 using namespace std::literals;
 

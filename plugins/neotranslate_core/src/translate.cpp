@@ -139,6 +139,9 @@ const Translate::LanMaps Translate::m_LanguageCanFromTo
   Translate::LanMap {
     {u8"auto", {u8"auto"}}
   },
+  Translate::LanMap {
+    {u8"en", {u8"en"}}
+  },
 };
 
 LanPair::LanPair(const YJson::ArrayType& array)
@@ -158,6 +161,7 @@ Translate::Translate(TranslateCfg& setting, Translate::Callback&& callback)
     , m_AllLanPair({
         setting.GetPairBaidu(),
         setting.GetPairYoudao(),
+        std::array<int, 2> {0, 0},
         std::array<int, 2> {0, 0},
         std::array<int, 2> {0, 0},
       })
@@ -572,7 +576,104 @@ callback:
 #else
   auto const view = html.str();
 #endif
-  //auto sss = data.toString();
-  //m_Callback(sss.data(), sss.size());
+  m_Callback(view.data(), view.size());
+}
+
+void Translate::GetResultDictionary(const Utf8Array& text)
+{
+  auto invalid = u8"只能翻译英文单词！"s;
+  auto iter = std::find_if(text.begin, text.end, [](char8_t c){
+    return !std::isalnum(c) && !std::isalpha(c);
+  });
+  if (iter != text.end) {
+    m_Callback(invalid.data(), invalid.size());
+    return;
+  }
+
+  auto url = u8"https://api.dictionaryapi.dev/api/v2/entries/en/"s;
+  url.append(text.begin, text.end);
+
+  m_Request = std::make_unique<HttpLib>(url, true);
+
+  HttpLib::Callback callback = {
+    .m_FinishCallback = [this](auto message, auto res) {
+      if (message.empty() && (res->status / 100 == 2)) {
+#if 0
+        m_Callback(res->body.data(), res->body.size());
+        return;
+#else
+        YJson root(res->body.begin(), res->body.end());
+        FormatDictionaryResult(root);
+#endif
+      } else {
+        std::wstring msg = std::format(L"error: {}\ncode:{}", message, res->status);
+        auto u8msg = Wide2Utf8String(msg);
+        m_Callback(u8msg.data(), u8msg.size());
+      }
+      m_Request = nullptr;
+    }
+  };
+
+  m_Request->GetAsync(std::move(callback));
+}
+
+void Translate::FormatDictionaryResult(const class YJson& data)
+{
+  std::ostringstream html;
+
+  for (auto& wordData: data.getArray()) {
+    auto& word = wordData[u8"word"];
+    html << "<h3>" << word.getValueString() << "</h3><hr>";
+    auto& phonetics = wordData[u8"phonetics"];
+
+    if (phonetics.isArray() && !phonetics.emptyA()) {
+      html << "<h4>phonetics</h4><ul><li>";
+      for (auto& item: phonetics.getArray()) {
+        auto& text = item[u8"text"].getValueString();
+        html << text << "; ";
+      }
+      html << "</li></ul><hr>";
+    }
+
+    auto& meanings = wordData[u8"meanings"];
+    if (meanings.isArray() && !meanings.emptyA()) {
+      html << "<h4>meaning</h4><ul>";
+      for (auto& item: meanings.getArray()) {
+        html << "<li>[" << item[u8"partOfSpeech"].getValueString() << "]";
+        auto& definitions = item[u8"definitions"];
+        if (definitions.isArray() && !definitions.emptyA()) {
+          html << "<ol>";
+          for (auto& mean: definitions.getArray()) {
+            auto& definition = mean[u8"definition"];
+            auto& example = mean[u8"example"];
+            html << "<li>" << definition.getValueString();
+            if (example.isString()) {
+              html << "<br><span style=\"color: green;\">e.g.</span> "
+                << example.getValueString();
+            }
+            html << "</li>";
+          }
+          html << "</ol>";
+        }
+        html << "</li>";
+      }
+      html << "</ul><hr>";
+    }
+
+    auto& sourceUrls = wordData[u8"sourceUrls"];
+    if (sourceUrls.isArray() && !sourceUrls.emptyA()) {
+      html << "<h4>sourceUrls</h4><ol>";
+      for (auto& url: sourceUrls.getArray()) {
+        html << "<li><a href=\"" << url.getValueString() << "\">"
+          << url.getValueString() << "</a></li>";
+      }
+      html << "</ul><hr>";
+    }
+  }
+#ifdef _WIN32
+  auto const view = html.rdbuf()->view();
+#else
+  auto const view = html.str();
+#endif
   m_Callback(view.data(), view.size());
 }
