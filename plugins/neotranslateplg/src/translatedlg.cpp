@@ -38,7 +38,7 @@ NeoTranslateDlg::NeoTranslateDlg(TranslateCfg& settings)
     , m_BtnReverse(new QPushButton(m_CenterWidget))
     , m_BtnCopyFrom(new QPushButton(m_TextFrom))
     , m_BtnCopyTo(new QPushButton(m_TextTo))
-    , m_BtnTransMode(new QPushButton("查词", m_CenterWidget))
+    , m_BoxTransMode(new QComboBox(m_CenterWidget))
 {
   SetupUi();
   m_BtnCopyFrom->setText("复制");
@@ -54,10 +54,13 @@ NeoTranslateDlg::NeoTranslateDlg(TranslateCfg& settings)
     m_BtnCopyTo->setText("成功");
   });
   connect(this, &NeoTranslateDlg::HttpFinished, this, [this](QString text){
-    if (m_Translate->GetSource() == Translate::Baidu)
+    switch (m_Translate->GetSource()) {
+    case Translate::Baidu:
       m_TextTo->setPlainText(text);
-    else
+      break;
+    default:
       m_TextTo->setHtml(text);
+    }
   });
   m_BtnReverse->setObjectName("reverseLanguage");
   m_BtnCopyFrom->setObjectName("copyTextFrom");
@@ -170,16 +173,16 @@ void NeoTranslateDlg::hideEvent(QHideEvent *event)
   if (m_LanPairChanged) {
     m_LanPairChanged = false;
     m_Settings.SetPairBaidu(YJson::A{
-      m_Translate->m_LanPairBaidu.f,
-      m_Translate->m_LanPairBaidu.t
+      m_Translate->m_AllLanPair[Translate::Baidu].f,
+      m_Translate->m_AllLanPair[Translate::Baidu].t
     });
     m_Settings.SetPairYoudao(YJson::A{
-      m_Translate->m_LanPairYoudao.f,
-      m_Translate->m_LanPairYoudao.t
+      m_Translate->m_AllLanPair[Translate::Youdao].f,
+      m_Translate->m_AllLanPair[Translate::Youdao].t
     });
-    m_Settings.SetHeightRatio(YJson::A {
-      m_HeightCtrl->m_Baidu, m_HeightCtrl->m_Youdao
-    });
+    YJson json(YJson::Array);
+    json.assignA(m_HeightCtrl->m_Heights.begin(), m_HeightCtrl->m_Heights.end());
+    m_Settings.SetHeightRatio(std::move(json));
   }
   if (save) {
     m_Settings.SaveData();
@@ -270,7 +273,11 @@ bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
           break;
         case Qt::Key_M:
           if (keyEvent->modifiers() & Qt::ControlModifier) {
-            m_BtnTransMode->toggle();
+            auto index = m_BoxTransMode->currentIndex();
+            if (++index == Translate::Source::None) {
+              index = 0;
+            }
+            m_BoxTransMode->setCurrentIndex(index);
             return true;
           }
         default:
@@ -335,6 +342,10 @@ void NeoTranslateDlg::SetupUi()
   AddTitle("极简翻译");
   AddCloseButton();
   SetShadowAround(m_CenterWidget);
+
+  m_BoxTransMode->addItems({
+    "百度翻译", "有道翻译", "必应词典"
+  });
 
   m_TextFrom->setObjectName("neoTextFrom");
   m_TextTo->setObjectName("neoTextTo");
@@ -423,16 +434,15 @@ void NeoTranslateDlg::ReverseLanguage()
   }
 }
 
-void NeoTranslateDlg::ChangeLanguageSource(bool checked) {
-  auto const newDict = checked ? Translate::Youdao: Translate::Baidu;
+void NeoTranslateDlg::ChangeLanguageSource(int newDict) {
   m_TextFromChanged = true;
 
-  m_BoxFrom->disconnect(this);
+  m_BoxFrom->blockSignals(true);
+  m_BoxTo->blockSignals(true);
   m_BoxFrom->clear();
-  m_BoxTo->disconnect(this);
   m_BoxTo->clear();
 
-  m_Translate->SetSource(newDict);
+  m_Translate->SetSource(static_cast<Translate::Source>(newDict));
 
   for (const auto& [from, _]: m_Translate->m_LanguageCanFromTo[newDict]) {
     const auto& name = m_Translate->m_LangNameMap[from];
@@ -447,10 +457,10 @@ void NeoTranslateDlg::ChangeLanguageSource(bool checked) {
   m_BoxFrom->setCurrentIndex(m_Translate->m_LanPair->f);
   m_BoxTo->setCurrentIndex(m_Translate->m_LanPair->t);
 
-  connect(m_BoxFrom, &QComboBox::currentIndexChanged, this, &NeoTranslateDlg::ChangeLanguageFrom);
-  connect(m_BoxTo, &QComboBox::currentIndexChanged, this, &NeoTranslateDlg::ChangeLanguageTo);
+  m_BoxFrom->blockSignals(false);
+  m_BoxTo->blockSignals(false);
 
-  m_Settings.SetMode(checked ? 1 : 0);
+  m_Settings.SetMode(newDict);
 
   m_HeightCtrl->UpdateUi();
   m_LanPairChanged = true;
@@ -537,18 +547,18 @@ void NeoTranslateDlg::AddCombbox(QHBoxLayout* layout) {
   layout->addWidget(m_HeightCtrl);
 
   m_BtnReverse->setCheckable(true);
-  m_BtnTransMode->setObjectName(QStringLiteral("btnTransMode"));
-  m_BtnTransMode->setCheckable(true);
-  layout->addWidget(m_BtnTransMode);
+  // m_BoxTransMode->setObjectName(QStringLiteral("btnTransMode"));
+  // m_BtnTransMode->setCheckable(true);
+  layout->addWidget(m_BoxTransMode);
   auto const dict = static_cast<Translate::Source>(m_Settings.GetMode());
   m_Translate->SetSource(dict);
-  m_BtnTransMode->setChecked(dict == Translate::Youdao);
+  m_BoxTransMode->setCurrentIndex(dict);
   ChangeLanguageSource(dict);
   m_LanPairChanged = false;
 
   connect(m_BtnReverse, &QPushButton::clicked, this, &NeoTranslateDlg::ReverseLanguage);
   connect(m_TextFrom, &QPlainTextEdit::textChanged, this, [this](){m_TextFromChanged = true;});
-  connect(m_BtnTransMode, &QPushButton::toggled, this, &NeoTranslateDlg::ChangeLanguageSource);
+  connect(m_BoxTransMode, &QComboBox::currentIndexChanged, this, &NeoTranslateDlg::ChangeLanguageSource);
   connect( m_BoxFrom, &QComboBox::currentIndexChanged, this, &NeoTranslateDlg::ChangeLanguageFrom);
   connect(m_BoxTo, &QComboBox::currentIndexChanged, this, &NeoTranslateDlg::ChangeLanguageTo);
 

@@ -237,7 +237,7 @@ cmake -P build/Debug/cmake_install.cmake
 - [x] 翻译功能记住from，to语言；
 - [x] 翻译功能可调节文本区域高度；
 - [x] 支持设置网络代理。
-- [ ] 壁纸下载方式切换为异步。
+- [x] 壁纸下载方式切换为异步。
 
 ## 插件开发计划
 
@@ -247,5 +247,4 @@ cmake -P build/Debug/cmake_install.cmake
 - [ ] 天气预报
 - [ ] 动态壁纸
 - [x] U盘助手
-- [ ] 任务栏网速
 - [ ] 后台自动更新程序

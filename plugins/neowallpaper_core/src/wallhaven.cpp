@@ -14,15 +14,16 @@
 using namespace std::literals;
 
 YJson WallhavenData::InitData() {
-  if (fs::exists(m_DataPath)) {
+  try {
     return YJson(m_DataPath, YJson::UTF8);
+  } catch (std::runtime_error error) {
+    return YJson::O {
+      {u8"Api"s,        YJson::String},
+      {u8"Unused"s,     YJson::Array},
+      {u8"Used"s,       YJson::Array},
+      {u8"Blacklist"s,  YJson::Array}
+    };
   }
-  return YJson::O {
-    {u8"Api"s,        YJson::String},
-    {u8"Unused"s,     YJson::Array},
-    {u8"Used"s,       YJson::Array},
-    {u8"Blacklist"s,  YJson::Array}
-  };
 }
 
 bool WallhavenData::IsEmpty() const {

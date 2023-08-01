@@ -13,10 +13,14 @@ constexpr int HeightCtrl::m_MaxRatio;
 constexpr int HeightCtrl::m_MinRatio;
 constexpr int HeightCtrl::m_DefaultRatio;
 
-HeightCtrl::HeightCtrl(NeoTranslateDlg* parent, std::list<YJson> setting)
+HeightCtrl::HeightCtrl(NeoTranslateDlg* parent, YJson setting)
   : QFrame(parent)
-  , m_Baidu(setting.front().getValueInt())
-  , m_Youdao(setting.back().getValueInt())
+  , m_Heights(
+    {
+      setting[0].getValueInt(),
+      setting[1].getValueInt(),
+      setting[2].getValueInt(),
+    })
   , m_Source(parent->m_Translate->m_Source)
   , m_Changed(parent->m_LanPairChanged)
   , m_TextFrom(*parent->m_TextFrom)
@@ -24,13 +28,12 @@ HeightCtrl::HeightCtrl(NeoTranslateDlg* parent, std::list<YJson> setting)
 {
   setMinimumWidth(15);
   setMaximumWidth(35);
-  if (m_Baidu > m_MaxRatio || m_Baidu < m_MinRatio) {
-    m_Baidu = m_DefaultRatio;
+  for (auto& height: m_Heights) {
+    if (height > m_MaxRatio || height < m_MinRatio) {
+      height = m_DefaultRatio;
+    }
   }
-  if (m_Youdao > m_MaxRatio || m_Youdao < m_MinRatio) {
-    m_Youdao = m_DefaultRatio; 
-  }
-  SetStyleSheet(m_Source == Translate::Baidu ? m_Baidu : m_Youdao);
+  SetStyleSheet(m_Heights[m_Source]);
 }
 
 void HeightCtrl::SetStyleSheet(double value)
@@ -83,7 +86,7 @@ void HeightCtrl::wheelEvent(QWheelEvent *event)
 
   if (!numDegrees.isNull()) {
     auto numSteps = numDegrees.y();
-    auto& value = (m_Source == Translate::Baidu ? (m_Baidu) : (m_Youdao));
+    auto& value = m_Heights[m_Source];
     int val = static_cast<int>(value) - numSteps;
     if (numSteps && val > m_MinRatio && val < m_MaxRatio) {
       value = val;

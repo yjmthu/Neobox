@@ -46,24 +46,23 @@ Wallpaper::Desktop Wallpaper::GetDesktop() {
 }
 
 bool Wallpaper::SetWallpaper(fs::path imagePath) {
-  // use preferred separator to prevent win32 api crash.
-  imagePath.make_preferred();
 #ifdef __linux__
   static auto const m_DesktopType = GetDesktop();
 #endif
-  if (!fs::exists(imagePath)) {
-    // mgr->ShowMsgbox(L"出错", L"找不到该文件：" + imagePath.wstring());
-    return false;
-  }
-  if (fs::is_directory(imagePath)) {
-    mgr->ShowMsgbox(L"出错", L"要使用的壁纸不是文件：" + imagePath.wstring());
+  if (!fs::exists(imagePath) || !fs::is_regular_file(imagePath)) {
     return false;
   }
 #if defined(_WIN32)
-  std::wstring str = imagePath.wstring();
-  return ::SystemParametersInfoW(SPI_SETDESKWALLPAPER, UINT(0),
-                                 const_cast<WCHAR*>(str.c_str()),
-                                 SPIF_SENDCHANGE | SPIF_UPDATEINIFILE);
+  std::thread([imagePath]() mutable {
+    // use preferred separator to prevent win32 api crash.
+    imagePath.make_preferred();
+    std::wstring str = imagePath.wstring();
+    ::SystemParametersInfoW(
+      SPI_SETDESKWALLPAPER, UINT(0),
+      const_cast<WCHAR*>(str.c_str()),
+      SPIF_SENDCHANGE | SPIF_UPDATEINIFILE);
+  }).detach();
+  return true;
 #elif defined(__linux__)
   std::string argStr;
   switch (m_DesktopType) {

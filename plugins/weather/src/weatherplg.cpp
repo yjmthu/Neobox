@@ -32,5 +32,10 @@ QAction* PluginName::InitMenuAction()
 
 YJson& PluginName::InitSettings(YJson& settings)
 {
+  if (!settings.isObject()) {
+    settings = YJson::O {
+      {u8"ApiData", YJson::Object},
+    };
+  }
   return settings;
 }

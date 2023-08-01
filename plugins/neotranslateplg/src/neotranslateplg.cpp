@@ -155,6 +155,10 @@ YJson& PluginName::InitSettings(YJson& settings)
     version = 2;
     settings[u8"HeightRatio"] = YJson::A {180, 180};
   }
+  if (version.getValueInt() == 2) {
+    version = 3;
+    settings[u8"HeightRatio"].append(180);
+  }
   return settings;
   // we may not need to call SaveSettings;
 }

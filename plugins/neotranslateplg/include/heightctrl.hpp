@@ -15,16 +15,15 @@ class HeightCtrl: public QFrame
 protected:
   void wheelEvent(QWheelEvent *event) override;
 public:
-  explicit HeightCtrl(class NeoTranslateDlg* parent, std::list<YJson> setting);
+  explicit HeightCtrl(class NeoTranslateDlg* parent, YJson setting);
   ~HeightCtrl() {}
 public:
   void UpdateUi() {
-    SetTextHeight(m_Source == Translate::Baidu ? m_Baidu : m_Youdao);
-    SetStyleSheet(m_Source == Translate::Baidu ? m_Baidu : m_Youdao);
+    SetTextHeight(m_Heights[m_Source]);
+    SetStyleSheet(m_Heights[m_Source]);
   }
 public:
-  int m_Baidu;
-  int m_Youdao;
+  std::array<int, Translate::None> m_Heights;
 private:
   void SetStyleSheet(double value);
   void SetTextHeight(double value);

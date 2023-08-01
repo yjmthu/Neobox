@@ -37,7 +37,7 @@ private:
   class HeightCtrl* m_HeightCtrl;
   QPushButton* m_BtnReverse;
   QPushButton *m_BtnCopyFrom, *m_BtnCopyTo;
-  QPushButton* m_BtnTransMode;
+  QComboBox* m_BoxTransMode;
   QPoint m_LastPostion;
   QSize m_LastSize;
   bool m_LanPairChanged = false;
@@ -54,7 +54,7 @@ signals:
   void HttpFinished(QString result);
 private slots:
   void ReverseLanguage();
-  void ChangeLanguageSource(bool checked);
+  void ChangeLanguageSource(int index);
   void ChangeLanguageFrom(int index);
   void ChangeLanguageTo(int index);
 };

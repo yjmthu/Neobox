@@ -1,4 +1,7 @@
+#include <systemapi.h>
+#include <array>
 #include <translate.h>
+#include <xstring>
 #include <yjson.h>
 #include <httplib.h>
 #include <sha256.h>
@@ -107,9 +110,9 @@ std::map<std::u8string, std::u8string> Translate::m_LangNameMap
   {u8"ru",     u8"俄语"},
 };
 
-const Translate::LanguageMap Translate::m_LanguageCanFromTo
+const Translate::LanMaps Translate::m_LanguageCanFromTo
 {
-  {  // baidu
+  Translate::LanMap {  // baidu
     {u8"auto", {u8"zh", u8"cht", u8"en", u8"jp", u8"fra", u8"ru", u8"kor"}},
     {u8"zh",   {u8"cht", u8"en", u8"jp", u8"fra", u8"ru", u8"kor"}},
     {u8"cht",  {u8"zh", u8"en", u8"jp", u8"fra", u8"ru", u8"kor"}},
@@ -118,7 +121,8 @@ const Translate::LanguageMap Translate::m_LanguageCanFromTo
     {u8"fra",  {u8"zh", u8"cht", u8"en", u8"jp", u8"ru", u8"kor"}},
     {u8"ru",   {u8"zh", u8"cht", u8"en", u8"jp", u8"fra", u8"kor"}},
     {u8"kor",   {u8"zh", u8"cht", u8"en", u8"jp", u8"fra", u8"ru"}},
-   },{  // youdao
+   },
+  Translate::LanMap {  // youdao
     {u8"auto",   {u8"auto", u8"zh-CNS", u8"en", u8"ja", u8"ko", u8"fr", u8"ru"}},
     {u8"zh-CNS", {u8"auto", u8"en", u8"ja", u8"ko", u8"fr", u8"ru"}},
     {u8"en",     {u8"auto", u8"zh-CNS", u8"ja"}},
@@ -126,19 +130,31 @@ const Translate::LanguageMap Translate::m_LanguageCanFromTo
     {u8"ko",     {u8"auto", u8"zh-CNS"}},
     {u8"fr",     {u8"auto", u8"zh-CNS"}},
     {u8"ru",     {u8"auto", u8"zh-CNS"}},
+  },
+  Translate::LanMap {
+    {u8"auto", {u8"auto"}}
   }
 };
 
-LanPair::LanPair(const YJson& array)
-  : f(array.frontA().getValueDouble())
-  , t(array.backA().getValueDouble())
+LanPair::LanPair(const YJson::ArrayType& array)
+  : f(array.front().getValueDouble())
+  , t(array.back().getValueDouble())
+{
+}
+
+LanPair::LanPair(std::array<int, 2> array)
+  : f(0)
+  , t(0)
 {
 }
 
 Translate::Translate(TranslateCfg& setting, Translate::Callback&& callback)
     : m_Callback(std::move(callback))
-    , m_LanPairBaidu(setting.GetPairBaidu())
-    , m_LanPairYoudao(setting.GetPairYoudao())
+    , m_AllLanPair({
+        setting.GetPairBaidu(),
+        setting.GetPairYoudao(),
+        std::array<int, 2> {0, 0}
+      })
     , m_LanPair(nullptr)
 {
   SetSource(Baidu);
@@ -148,7 +164,7 @@ Translate::~Translate() {}
 
 void Translate::SetSource(Source dict) {
   m_Source = dict;
-  m_LanPair = (dict == Baidu) ? &m_LanPairBaidu: &m_LanPairYoudao;
+  m_LanPair = &m_AllLanPair[dict];
 }
 
 std::optional<std::pair<int, int>> Translate::ReverseLanguage()
@@ -383,4 +399,32 @@ void Translate::FormatYoudaoResult(const YJson& data) {
   auto const view = html.str();
 #endif
   m_Callback(view.data(), view.size());
+}
+
+void Translate::GetResultBingSimple(const Utf8Array& text) {
+
+  static YJson m_scJson {
+    YJson::O {
+      {u8"q", YJson::String},
+    }
+  };
+  m_scJson[u8"q"].getValueString().assign(text.begin, text.end);
+  const auto url = m_scJson.urlEncode(u8"https://cn.bing.com/dict/SerpHoverTrans?"s);
+
+  m_Request = std::make_unique<HttpLib>(url, true);
+
+  HttpLib::Callback callback = {
+    .m_FinishCallback = [this](auto message, auto res) {
+      if (message.empty() && (res->status == 200 || res->status == 201)) {
+        m_Callback(res->body.data(), res->body.size());
+      } else {
+        std::wstring msg = std::format(L"error: {}\ncode:{}", message, res->status);
+        auto u8msg = Wide2Utf8String(msg);
+        m_Callback(u8msg.data(), u8msg.size());
+      }
+      m_Request = nullptr;
+    }
+  };
+
+  m_Request->GetAsync(std::move(callback));
 }
