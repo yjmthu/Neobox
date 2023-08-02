@@ -42,6 +42,7 @@ private:
   std::ofstream m_File;
 signals:
   void AskInstall();
+  void QuitApp() const;
 };
 
 #endif // UPDATE_H

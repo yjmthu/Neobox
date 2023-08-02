@@ -22,7 +22,7 @@ PluginUpdate::PluginUpdate(YJson& settings)
   : m_Settings(InitSettings(settings))
   , m_Timer(new NeoTimer)
 {
-#if 0
+#if 1
   connect(this, &PluginUpdate::AskInstall, this, [this](){
     if (QMessageBox::question(mgr->m_Menu, "提示", "有新版本可用，是否下载更新？") == QMessageBox::No)
       return;
@@ -30,6 +30,9 @@ PluginUpdate::PluginUpdate(YJson& settings)
     DownloadUpgrade([](PluginUpdate& obj){
       obj.CopyExecutable();
     });
+  });
+  connect(this, &PluginUpdate::QuitApp, this, [](){
+    QApplication::quit();
   });
 #endif
   if (m_Settings.GetAutoCheck()) {
@@ -143,8 +146,8 @@ void PluginUpdate::CopyExecutable() const
   shellInfo.nShow = SW_NORMAL;
   shellInfo.lpVerb = L"runas";
 
-  QApplication::quit();
   ::ShellExecuteExW(&shellInfo);
+  emit QuitApp();
 }
 
 void PluginUpdate::DownloadUpgrade(Callback cb)
