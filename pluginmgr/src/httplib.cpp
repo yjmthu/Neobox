@@ -25,6 +25,7 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
     throw std::logic_error("HttpLib Error: No context in callback!");
   }
   auto object = reinterpret_cast<HttpLib*>(dwContext);
+  // LockerEx locker(object->m_AsyncMutex);
   switch (dwInternetStatus) {
     case WINHTTP_CALLBACK_STATUS_RESOLVING_NAME:
     case WINHTTP_CALLBACK_STATUS_NAME_RESOLVED:
@@ -50,12 +51,14 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
     if (bResults) {
       bResults = object->m_Response.status < 400;
     } else {
+      // locker.unlock();
       object->EmitFinish(L"HttpLib Error: HttpLib ReadStatusCode Error.");
       break;
     }
     if (bResults) {
       bResults = object->ReadHeaders();
     } else {
+      // locker.unlock();
       object->EmitFinish(L"HttpLib StatusCode Error.");
       break;
     }
@@ -68,6 +71,7 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
       /* Next step: query for any data. */
       WinHttpQueryDataAvailable(object->m_hRequest, NULL);
     } else {
+      // locker.unlock();
       object->EmitFinish(L"HttpLib ReadHeaders Error.");
     }
     break;
@@ -75,17 +79,20 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
 
   case WINHTTP_CALLBACK_STATUS_REDIRECT:
     /* Make sure we are not in a redirect loop. */
-    if (object->m_RedirectDepth++ > 5) 
+    if (object->m_RedirectDepth++ > 5) {
+      // locker.unlock();
       object->EmitFinish(L"HTTP request failed: too many redirects");
+    }
     break;
 
   case WINHTTP_CALLBACK_STATUS_DATA_AVAILABLE: {
     // Retrieve the number of bytes to read
     // Allocate a buffer for the data
-    DWORD dwSize = *(DWORD *)lpvStatusInformation;
-    auto pszOutBuffer = dwSize == 0 ? nullptr : new char[dwSize];
+    auto buffer = reinterpret_cast<std::u8string*>(object->m_DataBuffer);
+    buffer->resize(*(DWORD *)lpvStatusInformation);
+    auto pszOutBuffer = buffer->empty() ? nullptr : buffer->data();
     // Read the data from the server
-    WinHttpReadData(object->m_hRequest, pszOutBuffer, dwSize, nullptr);
+    WinHttpReadData(object->m_hRequest, pszOutBuffer, buffer->size(), nullptr);
     break;
   }
 
@@ -95,10 +102,10 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
       object->m_AsyncCallback.m_WriteCallback->operator()(lpvStatusInformation, dwInternetInformationLength);
       object->EmitProcess();
     }
-    delete[] reinterpret_cast<char*>(lpvStatusInformation);
     if (object->m_Finished) {
       return;
     } else if (dwInternetInformationLength == 0) {
+      // locker.unlock();
       object->EmitFinish();
     } else {
       WinHttpQueryDataAvailable(object->m_hRequest, nullptr);
@@ -112,6 +119,7 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
     auto const* pAsyncResult = (WINHTTP_ASYNC_RESULT*)lpvStatusInformation;
     DWORD dwError = pAsyncResult->dwError; // The error code
     DWORD dwResult = pAsyncResult->dwResult; // The ID of the called function
+    // locker.unlock();
     object->EmitFinish(std::format(L"Winhttp status error. Error code: {}, error id: {}.", dwError, dwResult));
     break;
   }
@@ -179,6 +187,7 @@ size_t HttpLib::WriteString(void* buffer,
 }
 
 HttpLib::~HttpLib() {
+  Locker locker(m_AsyncMutex);
   m_Finished = true;
   HttpUninitialize();
 }
@@ -337,6 +346,9 @@ void HttpLib::HttpUninitialize() {
   if (m_hSession)
     curl_easy_cleanup(m_hSession);
 #endif
+  if (m_AsyncSet) {
+    delete reinterpret_cast<std::u8string*>(m_DataBuffer);
+  }
 }
 
 void HttpLib::SetProxyBefore()
@@ -705,6 +717,8 @@ void HttpLib::GetAsync(Callback callback)
   }
   m_Response.body.clear();
   m_AsyncCallback = std::move(callback);
+  delete reinterpret_cast<std::u8string*>(m_DataBuffer);
+  m_DataBuffer = new std::u8string();
   if (!m_AsyncCallback.m_WriteCallback) {
     m_AsyncCallback.m_WriteCallback = [this](auto data, auto size){
       m_Response.body.append(reinterpret_cast<const char*>(data), size);

@@ -153,6 +153,9 @@ void WallhavenExMenu::LoadMoreActions()
         "https://wallhaven.cc/search?q=like:" + name;
     QDesktopServices::openUrl(QString::fromStdString(url));
   });
+  connect(addAction("官方文档"), &QAction::triggered, this,
+    std::bind(&QDesktopServices::openUrl, QUrl("https://wallhaven.cc/help/api"))
+  );
 }
 
 void WallhavenExMenu::AddNewType()

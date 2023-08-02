@@ -19,7 +19,12 @@ void PluginName::InitFunctionMap()
 {
   m_PluginMethod = {
     {u8"openWindow",
-      {u8"开关窗口", u8"打开/关闭 U盘助手窗口", [this](PluginEvent, void*){
+      {u8"开关窗口", u8"打开/关闭 天气预报界面。", [this](PluginEvent, void*) {
+        if (m_WeatherDlg->isVisible()) {
+          m_WeatherDlg->hide();
+        } else {
+          m_WeatherDlg->show();
+        }
       }, PluginEvent::Void}
     },
   };

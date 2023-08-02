@@ -20,6 +20,7 @@
 #include <QVBoxLayout>
 #include <QMimeData>
 #include <QWidget>
+#include <QKeySequence>
 
 NeoTranslateDlg::NeoTranslateDlg(TranslateCfg& settings)
     : WidgetBase(mgr->m_Menu, true)
@@ -143,7 +144,8 @@ void NeoTranslateDlg::showEvent(QShowEvent* event) {
 
   if (m_Settings.GetAutoTranslate()) {
     if (!m_TextFrom->toPlainText().isEmpty()) {
-      GetResultData(m_TextFrom->toPlainText().toUtf8());
+      QString text = m_TextFrom->toPlainText().simplified();
+      GetResultData(text.toUtf8());
     }
   }
   this->WidgetBase::showEvent(event);
@@ -219,7 +221,7 @@ bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
             else if (target == m_TextTo)
               m_TextTo->insertPlainText("\n");
           } else {
-            GetResultData(m_TextFrom->toPlainText().toUtf8());
+            GetResultData(m_TextFrom->toPlainText().simplified().toUtf8());
           }
           return true;
         }
@@ -368,7 +370,7 @@ void NeoTranslateDlg::SetupUi()
   phLayout->addWidget(pButtonGet);
   pvLayout->addLayout(phLayout);
   connect(pButtonGet, &QPushButton::clicked, this, [this](){
-    GetResultData(m_TextFrom->toPlainText().toUtf8());
+    GetResultData(m_TextFrom->toPlainText().simplified().toUtf8());
   });
 }
 
@@ -501,16 +503,18 @@ void NeoTranslateDlg::CreateToRightMenu(QMouseEvent* event)
   if (!(event->buttons() & Qt::MouseButton::RightButton)) return;
     // m_TextTo->setContextMenuPolicy(Qt::CustomContextMenu);
   auto const toMenu = m_TextTo->createStandardContextMenu();
+  ReplaceMenuCopyReturn(*toMenu, m_TextTo);
   auto const clearAction = toMenu->addAction("Clear");
   QObject::connect(clearAction, &QAction::triggered, m_TextTo, &QTextBrowser::clear);
   auto const searchAction = toMenu->addAction("Search");
+  searchAction->setShortcut(QKeySequence("Ctrl+S"));
   QObject::connect(searchAction, &QAction::triggered, m_TextTo, [this](){
     auto const text = m_TextTo->textCursor().selectedText();
     if (text.isEmpty()) {
-      GetResultData(m_TextFrom->toPlainText().toUtf8());
+      GetResultData(m_TextFrom->toPlainText().simplified().toUtf8());
     } else {
       m_TextFrom->setPlainText(text);
-      GetResultData(text.toUtf8());
+      GetResultData(text.simplified().toUtf8());
     }
   });
   toMenu->exec(event->globalPosition().toPoint());
@@ -522,6 +526,7 @@ void NeoTranslateDlg::CreateFromRightMenu(QMouseEvent* event)
   if (!(event->buttons() & Qt::MouseButton::RightButton)) return;
   // m_TextFrom->setContextMenuPolicy(Qt::CustomContextMenu);
   auto const fromMenu = m_TextFrom->createStandardContextMenu();
+  ReplaceMenuCopyReturn(*fromMenu, m_TextFrom);
   auto const clearAction = fromMenu->addAction("Clear");
   QObject::connect(clearAction, &QAction::triggered, m_TextFrom, [this](){
     auto cursor = m_TextFrom->textCursor();
@@ -533,17 +538,31 @@ void NeoTranslateDlg::CreateFromRightMenu(QMouseEvent* event)
     }
   });
   auto const searchAction = fromMenu->addAction("Search");
+  searchAction->setShortcut(QKeySequence("Ctrl+S"));
   QObject::connect(searchAction, &QAction::triggered, m_TextFrom, [this](){
     auto const text = m_TextFrom->textCursor().selectedText();
     if (text.isEmpty()) {
-      GetResultData(m_TextFrom->toPlainText().toUtf8());
+      GetResultData(m_TextFrom->toPlainText().simplified().toUtf8());
     } else {
       m_TextFrom->setPlainText(text);
-      GetResultData(text.toUtf8());
+      GetResultData(text.simplified().toUtf8());
     }
   });
   fromMenu->exec(event->globalPosition().toPoint());
   delete fromMenu;
+}
+
+template<class _EditType>
+void NeoTranslateDlg::ReplaceMenuCopyReturn(QMenu& menu, _EditType* edit)
+{
+  for (auto action: menu.actions()) {
+    if (action->text().contains("Copy")) {
+      action->disconnect();
+      connect(action, &QAction::triggered, this, [edit]() {
+        QApplication::clipboard()->setText(edit->textCursor().selectedText());
+      });
+    }
+  }
 }
 
 void NeoTranslateDlg::AddCombbox(QHBoxLayout* layout) {

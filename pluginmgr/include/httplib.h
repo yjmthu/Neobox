@@ -9,6 +9,9 @@
 class HttpLib {
 private:
   struct PostData { void* data; size_t size; } m_PostData;
+  typedef std::mutex Mutex;
+  typedef std::lock_guard<Mutex> Locker;
+  typedef std::unique_lock<Mutex> LockerEx;
 public:
   typedef std::map<std::string, std::string> Headers;
   typedef size_t( CallbackFunction )(void*, size_t, size_t, void*);
@@ -117,7 +120,8 @@ private:
   static void RequestStatusCallback(void* hInternet, unsigned long long dwContext, unsigned long dwInternetStatus, void* lpvStatusInformation, unsigned long dwInternetInformationLength);
   CallbackFunction* m_Callback;
   Callback m_AsyncCallback;
-  void* m_DataBuffer;
+  void* m_DataBuffer = nullptr;
+  Mutex m_AsyncMutex;
 };
 
 #endif

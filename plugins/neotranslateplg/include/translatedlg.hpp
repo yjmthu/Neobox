@@ -47,6 +47,8 @@ private:
   void SetupUi();
   void UpdateToolButtons();
   class QWidget* ReferenceObject() const;
+  template<class _EditType>
+  void ReplaceMenuCopyReturn(QMenu& menu, _EditType* edit);
   void CreateFromRightMenu(QMouseEvent* event);
   void CreateToRightMenu(QMouseEvent* event);
   void AddCombbox(class QHBoxLayout* layout);

@@ -213,6 +213,18 @@ std::u8string NeoOcr::OcrWindows(const QImage& image)
 
 std::u8string NeoOcr::OcrTesseract(const QImage& image)
 {
+  static const int charSizeTable[16] {
+    // 单字节字符 0b0000~0b1000   0b0xxx
+    1, 1, 1, 1, 1, 1, 1, 1,
+    // 尾随字符   0b1000~0b1011   0b10xx
+    0, 0, 0, 0,
+    // 双字节字符 0b1100~0b1101   0b110x
+    2, 2,
+    // 三字节字符 0b1110
+    3,
+    // 四字节字符 0b11110
+    4,
+  };
   std::u8string result;
   if (m_Languages.empty()) {
     mgr->ShowMsgbox(L"error", L"You should set some language first!");
@@ -226,7 +238,21 @@ std::u8string NeoOcr::OcrTesseract(const QImage& image)
   auto const pix = QImage2Pix(image);
   m_TessApi->SetImage(pix.get());
   char* szText = m_TessApi->GetUTF8Text();
-  result = reinterpret_cast<const char8_t*>(szText);
+  std::u8string_view view = reinterpret_cast<const char8_t*>(szText);
+  result.reserve(view.size());
+  // 过滤掉多字节字符之间的空格，例如中文之间的空格
+  for (auto ptr = view.cbegin(); ptr != view.cend(); ) {
+    auto size = charSizeTable[*ptr >> 4];
+    result.append(ptr, ptr + size);
+    ptr += size;
+    if (size > 1 && ptr != view.cend() && *ptr == ' ') {
+      if (++ptr == view.cend())
+        break;
+      if (charSizeTable[*ptr >> 4] == 1) {
+        result.push_back(' ');
+      }
+    }
+  }
   m_TessApi->End();
   delete [] szText;
   return result;

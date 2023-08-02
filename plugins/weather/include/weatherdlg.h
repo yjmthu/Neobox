@@ -8,6 +8,10 @@ public:
   explicit WeatherDlg(class YJson& setting);
   virtual ~WeatherDlg();
 private:
+  void SetupUi();
+  void InitComponent();
+private:
+  QWidget* m_CenterWidget;
   class YJson& m_Settings;
 };
 
