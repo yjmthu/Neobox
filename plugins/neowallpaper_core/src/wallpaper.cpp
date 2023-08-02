@@ -183,7 +183,8 @@ void Wallpaper::SetTimeInterval(int minute) {
   m_Timer->Expire();
   if (!m_Settings.GetAutoChange())
     return;
-  m_Timer->StartTimer(minute, std::bind(&Wallpaper::SetSlot, this, OperatorType::Next));
+  auto m = std::chrono::minutes(minute);
+  m_Timer->StartTimer(m, std::bind(&Wallpaper::SetSlot, this, OperatorType::Next));
 }
 
 std::filesystem::path Wallpaper::Url2Name(const std::u8string& url)
@@ -463,7 +464,7 @@ void Wallpaper::SetAutoChange(bool flag) {
   // m_Settings.SaveData();
   if (flag) {
     m_Timer->ResetTime(
-    m_Settings.GetTimeInterval(),
+      std::chrono::minutes(m_Settings.GetTimeInterval()),
         std::bind(&Wallpaper::SetSlot, this, OperatorType::Next));
   }
 }
@@ -474,15 +475,12 @@ void Wallpaper::SetFirstChange(bool flag) {
   m_DataMutex.unlock();
 
   if (flag) {
-    std::thread([this](){
-      for (int i =0; i != 300; ++i) {
-        std::this_thread::sleep_for(100ms);
-        if (WallBase::m_QuitFlag) {
-          return;
-        }
-      }
+    auto const timer = new NeoTimer;
+    timer->StartTimer(15s, [this, timer](){
       SetNext();
-    }).detach();
+      // 不阻塞工作线程才能顺利析构
+      std::thread([timer](){ delete timer; }).detach();
+    });
   }
 }
 

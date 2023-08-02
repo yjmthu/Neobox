@@ -6,6 +6,7 @@
 #include <yjson.h>
 #include <httplib.h>
 #include <config.h>
+#include <update.hpp>
 #include <zip.h>
 
 #include <format>
@@ -151,16 +152,6 @@ void TabVersion::GetUpdate()
 //   setGeometry(rect);
 // }
 
-std::array<int, 3> TabVersion::ParseVersion(const std::wstring& vStr) {
-  std::array<int, 3> version = {0, 0, 0};
-  std::wregex pattern(L"^v(\\d+).(\\d+).(\\d+)$");
-  std::wsmatch match;
-  if (std::regex_match(vStr, match, pattern)) {
-    version = { std::stoi(match[1]), std::stoi(match[2]), std::stoi(match[3]) };
-  }
-  return version;
-}
-
 bool TabVersion::DownloadNew(std::u8string_view url) {
   if (!HttpLib::IsOnline()) {
     mgr->ShowMsgbox(L"失败", L"请检查网络连接！");
@@ -200,7 +191,9 @@ bool TabVersion::DownloadNew(std::u8string_view url) {
         mgr->ShowMsg("下载压缩包失败！");
       }
       fs::remove(pluginTemp);
-      dialog->emitFinished();
+      if (res->status != -1) {
+        dialog->emitFinished();
+      }
     },
     .m_ProcessCallback = [dialog](auto recieve, auto total) {
       dialog->emitProcess(recieve, total);
@@ -223,8 +216,8 @@ bool TabVersion::DownloadNew(std::u8string_view url) {
 
 void TabVersion::DoUpgrade(const YJson& data)
 {
-  auto const vNew = ParseVersion(Utf82WideString(data[u8"tag_name"].getValueString()));
-  auto const vOld = ParseVersion(L"" NEOBOX_VERSION);
+  auto const vNew = PluginUpdate::ParseVersion(Utf82WideString(data[u8"tag_name"].getValueString()));
+  auto const vOld = PluginUpdate::ParseVersion(L"" NEOBOX_VERSION);
   if (vNew == vOld) {
     mgr->ShowMsg("当前已是最新版本！");
     return;

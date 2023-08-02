@@ -30,7 +30,7 @@ public:
   typedef std::function<void(std::wstring, const Response*)> FinishCallback;
   struct Callback {
     std::optional<WriteCallback> m_WriteCallback;
-    FinishCallback m_FinishCallback;
+    std::optional<FinishCallback> m_FinishCallback;
     std::optional<ProcessCallback> m_ProcessCallback;
   };
 
@@ -73,7 +73,6 @@ public:
   Response* Get(CallbackFunction* callback, void* userData);
   void GetAsync(Callback callback);
   void ExitAsync();
-  void Exit();
   bool IsFinished() const { return m_Finished; }
   static bool IsOnline();
 public:
@@ -121,7 +120,7 @@ private:
   CallbackFunction* m_Callback;
   Callback m_AsyncCallback;
   void* m_DataBuffer = nullptr;
-  Mutex m_AsyncMutex;
+  // Mutex m_AsyncMutex;
 };
 
 #endif

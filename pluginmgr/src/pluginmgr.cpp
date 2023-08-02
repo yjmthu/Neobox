@@ -17,10 +17,11 @@
 #include <cstdlib>
 #include <filesystem>
 
-#include "../widgets/plugincenter.hpp"
+#include <update.hpp>
 #include <neomsgdlg.hpp>
 #include <neosystemtray.hpp>
 #include <neomenu.hpp>
+#include "../widgets/plugincenter.hpp"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -91,6 +92,7 @@ PluginMgr::PluginMgr()
   , m_Menu(new NeoMenu)
   , m_MsgDlg(new NeoMsgDlg(m_Menu))
   , m_Settings((mgr = this, InitSettings()))
+  , m_UpdateMgr(new PluginUpdate((*m_Settings)[u8"Upgrade"]))
 {
   m_Tray->setContextMenu(m_Menu);
   m_Tray->show();
@@ -104,6 +106,7 @@ PluginMgr::PluginMgr()
 
 PluginMgr::~PluginMgr()
 {
+  delete m_UpdateMgr;
   delete m_Shortcut;
   for (auto& [_, info]: m_Plugins) {
     if (!info.plugin) continue;

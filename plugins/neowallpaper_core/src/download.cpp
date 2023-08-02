@@ -29,7 +29,7 @@ std::map<std::filesystem::path, const DownloadJob*> DownloadJob::m_Pool;
 DownloadJob::DownloadJob(std::filesystem::path path, std::u8string url, Callback cb)
   : m_HttpJob(new HttpLib(url, true))
   , m_ImageFile(new std::ofstream(path, std::ios::out | std::ios::binary))
-  , m_Callback(std::move(cb))
+  , m_Callback(cb)
   , m_Path(std::move(path))
 {
   m_HttpJob->SetRedirect(1);
@@ -41,7 +41,7 @@ DownloadJob::DownloadJob(std::filesystem::path path, std::u8string url, Callback
     .m_FinishCallback = [this, url](auto msg, auto res) {
       if (msg.empty() && res->status == 200) {
         m_ImageFile->close();
-        m_Callback();
+        if (m_Callback) (*m_Callback)();
       } else {
         mgr->ShowMsgbox(L"出错"s,
           std::format(L"网络异常！\n"
@@ -96,10 +96,12 @@ void DownloadJob::DownloadImage(const ImageInfoEx imageInfo,
     }
   }
   if (fs::exists(filePath)) {
-    if (!fs::file_size(filePath))
+    if (!fs::file_size(filePath)){
       fs::remove(filePath);
-    else
-      return callback();
+    } else {
+      if (callback) (*callback)();
+      return;
+    }
   }
   if (imageInfo->ImageUrl.empty()) {
     return;

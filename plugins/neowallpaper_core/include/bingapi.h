@@ -6,6 +6,7 @@
 #include <filesystem>
 
 class BingApi : public WallBase {
+  typedef std::function<void()> CheckCallback;
 public:
   explicit BingApi(YJson& setting);
   virtual ~BingApi();
@@ -18,9 +19,10 @@ private:
   void AutoDownload();
   YJson& InitSetting(YJson& setting);
   void InitData();
-  void CheckData(std::function<void()> cbOK, std::function<void()> cbNO);
+  void CheckData(CheckCallback cbOK, std::optional<CheckCallback> cbNO);
   static std::u8string GetToday();
   std::u8string GetImageName(YJson& imgInfo);
+  class NeoTimer* m_Timer;
 
 private:
   YJson* m_Data;

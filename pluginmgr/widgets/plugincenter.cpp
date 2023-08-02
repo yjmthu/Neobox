@@ -134,7 +134,10 @@ std::optional<std::string> PluginCenter::DownloadFile(std::u8string_view url)
           .arg(res->status)
           .arg(QString::fromStdWString(msg)));
       }
-      dialog.emitFinished();
+      // 不是用户手动关闭对话框
+      if (res->status != -1) {
+        dialog.emitFinished();
+      }
     },
     .m_ProcessCallback = std::bind(&DownloadingDlg::emitProcess,
       &dialog, std::placeholders::_1, std::placeholders::_2)

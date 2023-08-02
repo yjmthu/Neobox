@@ -6,6 +6,7 @@
 #include <wallbase.h>
 #include <systemapi.h>
 #include <download.h>
+#include <neotimer.h>
 
 #include <utility>
 #include <numeric>
@@ -21,6 +22,7 @@ using namespace std::literals;
 BingApi::BingApi(YJson& setting)
   : WallBase(InitSetting(setting))
   , m_Data(nullptr)
+  , m_Timer(new NeoTimer)
 {
   InitData();
   AutoDownload();
@@ -29,6 +31,7 @@ BingApi::BingApi(YJson& setting)
 BingApi::~BingApi()
 {
   m_QuitFlag = true;
+  delete m_Timer;
   delete m_Data;
 }
 
@@ -69,7 +72,7 @@ void BingApi::InitData()
   }
 }
 
-void BingApi::CheckData(std::function<void()> cbOK, std::function<void()> cbNO)
+void BingApi::CheckData(CheckCallback cbOK, std::optional<CheckCallback> cbNO)
 {
   // https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8
 
@@ -98,10 +101,9 @@ void BingApi::CheckData(std::function<void()> cbOK, std::function<void()> cbNO)
         SaveSetting();
         m_DataMutex.unlock();
         cbOK();
-      } else {
-        cbNO();
+      } else if (cbNO && res->status != -1) {
+        (*cbNO)();
       }
-      m_DataRequest = nullptr;
     }
   };
 
@@ -152,42 +154,29 @@ void BingApi::SetJson(const YJson& json)
 }
 
 void BingApi::AutoDownload() {
+  Locker locker(m_DataMutex);
   if (m_Setting[u8"auto-download"sv].isFalse())
     return;
 
-  auto const count = new int { 30 };
-  auto callback = [this, count](){
-    Locker locker(m_DataMutex);
-    const fs::path imgDir = m_Setting[u8"directory"].getValueString();
-    for (auto& item: m_Data->find(u8"images")->second.getArray()) {
-      ImageInfoEx ptr(new ImageInfo);
-      ptr->ImagePath = (imgDir / GetImageName(item)).u8string();
-      ptr->ImageUrl = m_Setting[u8"api"].getValueString() +
-        item[u8"urlbase"].getValueString() + u8"_UHD.jpg";
-      ptr->ErrorCode = ImageInfo::NoErr;
-      // ------------------------------------ //
-      DownloadJob::DownloadImage(ptr, [](){});
-    }
-    delete count;
-  };
-
-  CheckData(callback, [this, callback, count](){
+  m_Timer->StartTimer(1min, [this]() {
     LockerEx locker(m_DataMutex);
-    if (m_Setting[u8"auto-download"sv].isFalse()) {
-      delete count;
-      return;
+    if (m_Setting[u8"auto-download"sv].isTrue()) {
+      locker.unlock();
+      CheckData([this]() {
+        LockerEx locker(m_DataMutex);
+        const fs::path imgDir = m_Setting[u8"directory"].getValueString();
+        for (auto& item : m_Data->find(u8"images")->second.getArray()) {
+          ImageInfoEx ptr(new ImageInfo);
+          ptr->ImagePath = (imgDir / GetImageName(item)).u8string();
+          ptr->ImageUrl = m_Setting[u8"api"].getValueString() +
+            item[u8"urlbase"].getValueString() + u8"_UHD.jpg";
+          ptr->ErrorCode = ImageInfo::NoErr;
+          // ------------------------------------ //
+          DownloadJob::DownloadImage(ptr, std::nullopt);
+        }
+        }, std::nullopt);
     }
-
-    --*count;
-    for (int i=0; i!=10; i++) {
-      std::this_thread::sleep_for(100ms);
-      if (m_QuitFlag) {
-        delete count;
-        return;
-      }
-    }
-
-    callback();
+    m_Timer->Expire();
   });
 }
 

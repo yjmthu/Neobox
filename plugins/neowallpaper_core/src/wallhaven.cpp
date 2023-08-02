@@ -94,7 +94,6 @@ handle:
         m_Mutex.unlock();
       }
       cb();
-      m_Request = nullptr;
     }
   };
   m_Request->GetAsync(callback);

@@ -25,7 +25,8 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
     throw std::logic_error("HttpLib Error: No context in callback!");
   }
   auto object = reinterpret_cast<HttpLib*>(dwContext);
-  // LockerEx locker(object->m_AsyncMutex);
+  if (object->m_Finished)
+    return;
   switch (dwInternetStatus) {
     case WINHTTP_CALLBACK_STATUS_RESOLVING_NAME:
     case WINHTTP_CALLBACK_STATUS_NAME_RESOLVED:
@@ -187,9 +188,12 @@ size_t HttpLib::WriteString(void* buffer,
 }
 
 HttpLib::~HttpLib() {
-  Locker locker(m_AsyncMutex);
-  m_Finished = true;
-  HttpUninitialize();
+  if (m_AsyncSet) {
+    ExitAsync();
+  } else {
+    m_Finished = true;
+    HttpUninitialize();
+  }
 }
 
 void HttpLib::SetAsyncCallback()
@@ -346,9 +350,6 @@ void HttpLib::HttpUninitialize() {
   if (m_hSession)
     curl_easy_cleanup(m_hSession);
 #endif
-  if (m_AsyncSet) {
-    delete reinterpret_cast<std::u8string*>(m_DataBuffer);
-  }
 }
 
 void HttpLib::SetProxyBefore()
@@ -666,7 +667,17 @@ void HttpLib::EmitProcess()
 void HttpLib::EmitFinish(std::wstring message)
 {
   m_Finished = true;
-  m_AsyncCallback.m_FinishCallback(message, &m_Response);
+  auto& callback = m_AsyncCallback.m_FinishCallback;
+  if (callback) {
+    /* To prevent infinite recursion at destructor time,
+      the callback function is emptied after one execution.
+      */
+    auto cb = std::move(*callback);
+    callback = std::nullopt;
+    cb(message, &m_Response);
+  }
+  delete reinterpret_cast<std::u8string*>(m_DataBuffer);
+  m_DataBuffer = nullptr;
 }
 
 HttpLib::Response* HttpLib::Get()
@@ -715,10 +726,10 @@ void HttpLib::GetAsync(Callback callback)
   if (!m_AsyncSet) {
     throw std::logic_error("HttpLib Error: HttpAync wasn't set!");
   }
+  m_Finished = false;
   m_Response.body.clear();
   m_AsyncCallback = std::move(callback);
-  delete reinterpret_cast<std::u8string*>(m_DataBuffer);
-  m_DataBuffer = new std::u8string();
+  m_DataBuffer = new std::u8string;
   if (!m_AsyncCallback.m_WriteCallback) {
     m_AsyncCallback.m_WriteCallback = [this](auto data, auto size){
       m_Response.body.append(reinterpret_cast<const char*>(data), size);
@@ -728,5 +739,7 @@ void HttpLib::GetAsync(Callback callback)
 }
 
 void HttpLib::ExitAsync() {
-  m_Finished = true;
+  m_Response.status = -1;
+  EmitFinish(L"Httplib Error: User terminate.");
+  HttpInitialize();
 }

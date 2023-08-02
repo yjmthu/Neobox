@@ -235,7 +235,7 @@ void Translate::GetResultBaidu(const Utf8Array& text) {
   
   HttpLib::Callback callback = {
     .m_FinishCallback = [this](auto message, auto res) {
-      if (message.empty() && (res->status == 200 || res->status == 201)) {
+      if (message.empty() && (res->status / 100 == 2)) {
         YJson jsData(res->body.begin(), res->body.end());
         if (auto iter = jsData.find(u8"error_msg"); iter != jsData.endO()) {
           // Access token expired
@@ -294,10 +294,9 @@ void Translate::GetResultYoudao(const Utf8Array& text) {
 
   HttpLib::Callback callback = {
     .m_FinishCallback = [this](auto message, auto res) {
-      if (message.empty() && (res->status == 200 || res->status == 201)) {
+      if (message.empty() && (res->status / 100 == 2)) {
         FormatYoudaoResult(YJson(res->body.begin(), res->body.end()));
       }
-      m_Request = nullptr;
     }
   };
 
@@ -440,7 +439,6 @@ void Translate::GetResultBingSimple(const Utf8Array& text) {
         auto u8msg = Wide2Utf8String(msg);
         m_Callback(u8msg.data(), u8msg.size());
       }
-      m_Request = nullptr;
     }
   };
 
@@ -474,7 +472,6 @@ void Translate::GetResultIciba(const Utf8Array& text)
         auto u8msg = Wide2Utf8String(msg);
         m_Callback(u8msg.data(), u8msg.size());
       }
-      m_Request = nullptr;
     }
   };
 
@@ -610,7 +607,6 @@ void Translate::GetResultDictionary(const Utf8Array& text)
         auto u8msg = Wide2Utf8String(msg);
         m_Callback(u8msg.data(), u8msg.size());
       }
-      m_Request = nullptr;
     }
   };
 

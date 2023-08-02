@@ -27,7 +27,6 @@ private:
   void Connect();
   void GetUpdate();
   static bool hasFolderPermission(std::wstring path);
-  std::array<int, 3> ParseVersion(const std::wstring& vStr);
   bool DownloadNew(std::u8string_view url);
   void DoUpgrade(const YJson& data);
 };
