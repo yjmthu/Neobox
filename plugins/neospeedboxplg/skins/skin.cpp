@@ -24,8 +24,8 @@ private:
   void SetStyleSheet();
 
 private:
-  const String m_UpFmt { L"↑ {0:.0f} {1}" };
-  const String m_DownFmt { L"↓ {0:.0f} {1}" };
+  const String m_UpFmt { L"↑ {0:.0f} {1}"s };
+  const String m_DownFmt { L"↓ {0:.0f} {1}"s };
   QLabel* m_NetUp;
   QLabel* m_NetDown;
 };

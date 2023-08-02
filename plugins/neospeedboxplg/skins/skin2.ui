@@ -32,13 +32,13 @@
    <string>行動是治癒恐懼的良藥，而猶豫、拖延將不斷滋養恐懼</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">QWidget#center{
+   <string notr="true">QWidget#center2 {
 background-color: rgba(255, 255, 255, 0);
 }
-QWidget:hover#center{
+QWidget:hover#center2{
 border-image: url(:/icons/guanjia_shadow_hoverd.png);
 }
-QWidget#center{
+QWidget#center2 {
 border-image: url(:/icons/guanjia_shadow_normal.png);
 }</string>
   </property>

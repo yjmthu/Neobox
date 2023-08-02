@@ -33,7 +33,7 @@ std::u8string Truncate(const Utf8Array& q) {
   std::vector<char const*> string;
   // char8_t const* start = q.begin, *stop = start + q.end;
   for (auto ptr = q.begin; ptr != q.end; ++ptr) {
-    if (*ptr >> 6 != 2) string.push_back(
+    if ((*ptr >> 6) != 0b10) string.push_back(
       reinterpret_cast<const char*>(ptr)
     );
   }
@@ -667,7 +667,7 @@ void Translate::FormatDictionaryResult(const class YJson& data)
         html << "<li><a href=\"" << url.getValueString() << "\">"
           << url.getValueString() << "</a></li>";
       }
-      html << "</ul><hr>";
+      html << "</ol><hr>";
     }
   }
 #ifdef _WIN32

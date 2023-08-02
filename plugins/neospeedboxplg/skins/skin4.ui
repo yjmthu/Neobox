@@ -17,7 +17,7 @@
    <string>Form</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">*#center {
+   <string notr="true">*#center4 {
 	background-color: transparent;
     border-image: url(&quot;:/icons/duba.png&quot;);
 }

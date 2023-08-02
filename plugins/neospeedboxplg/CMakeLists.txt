@@ -23,15 +23,13 @@ add_library(neospeedboxplg SHARED ${source_files})
 
 set(resource_files
   fonts/*.ttf
-  icons/*
+  icons/*.png
   # dynamic/*.dll
   # dynamic/*.so
 )
 load_resources(neospeedboxplg "${resource_files}")
 
-set(speedbox_libs)
-
-list(APPEND speedbox_libs
+set(speedbox_libs
   ${pliugin_libfiles}
   ${system_shared_files}
 )

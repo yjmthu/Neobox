@@ -53,7 +53,7 @@ function(load_resources plugin_name files_list)
   message("- <${plugin_name}> ${files_list}")
   foreach(full_filepath ${_resource_files})
     file(RELATIVE_PATH file_path ${CMAKE_CURRENT_SOURCE_DIR} ${full_filepath})
-    # message(STATUS "res: '${file_path}'")
+    message(STATUS "res: '${file_path}'")
     list(APPEND resource_files ${file_path})
   endforeach()
 

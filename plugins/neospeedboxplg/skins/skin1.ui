@@ -20,7 +20,7 @@
    <string>行動是治癒恐懼的良藥，而猶豫、拖延將不斷滋養恐懼</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">QWidget#center {
+   <string notr="true">QWidget#center1 {
   background-color: #33333377;
   border-radius: 2px;
 }</string>
@@ -45,13 +45,13 @@
     <widget class="QLabel" name="memUse">
      <property name="minimumSize">
       <size>
-       <width>30</width>
+       <width>28</width>
        <height>0</height>
       </size>
      </property>
      <property name="maximumSize">
       <size>
-       <width>30</width>
+       <width>28</width>
        <height>16777215</height>
       </size>
      </property>
@@ -60,11 +60,9 @@
      </property>
      <property name="styleSheet">
       <string notr="true">QLabel#memUse {
-  width: 26px;
+  width: 24px;
   color: #00FFFF;
-  font-size: 17pt;
-  font-family: Carattere;
-  font-weight: bold;
+  font-size: 16pt;
   padding-left: 1px;
 }</string>
      </property>
@@ -98,8 +96,6 @@
        <property name="styleSheet">
         <string notr="true">QLabel#netUp {
   color: #FAAA23;
-  font-family: Nickainley;
-  font-weight: bold;
   margin-left: 1px;
 }</string>
        </property>
@@ -119,8 +115,6 @@
        <property name="styleSheet">
         <string notr="true">QLabel#netDown {
   color: #8CF01E;
-  font-family: Nickainley;
-  font-weight: bold;
   margin-left: 1px;
 }</string>
        </property>

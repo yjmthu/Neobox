@@ -20,11 +20,11 @@
    <string>行動是治癒恐懼的良藥，而猶豫、拖延將不斷滋養恐懼</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">QWidget#center {
+   <string notr="true">QWidget#center5 {
 	background-color: transparent;
     border-image: url(&quot;:/icons/archlinux-light.png&quot;);
 }
-QWidget:hover#center {
+QWidget:hover#center5 {
 	background-color: transparent;
     border-image: url(&quot;:/icons/archlinux-dark.png&quot;);
 }</string>
