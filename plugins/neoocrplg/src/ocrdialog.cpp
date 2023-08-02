@@ -142,6 +142,7 @@ void OcrDialog::InitBaseLayout()
     "}"
   );
   auto const plainText = new QPlainTextEdit(panel);
+  AddScrollBar(plainText->verticalScrollBar());
 
   controls->setContentsMargins(9, 9, 9, 9);
   auto gridLayout = new QGridLayout(controls);
