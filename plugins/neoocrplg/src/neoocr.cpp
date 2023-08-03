@@ -34,6 +34,7 @@ static std::mutex s_ThreadMutex;
 #include <winrt/Windows.Storage.Streams.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Security.Cryptography.h>
+#include <winrt/Windows.Media.Speechrecognition.h>
 
 // #include <wrl/client.h>
 
@@ -51,6 +52,7 @@ using namespace winrt::Windows::Globalization;
 namespace WinOcr = winrt::Windows::Media::Ocr;
 using namespace winrt::Windows::Graphics::Imaging;
 using namespace winrt::Windows::Security::Cryptography;
+using namespace winrt::Windows::Media::SpeechRecognition;
 #else
 
 #include <leptonica/allheaders.h>
@@ -99,8 +101,8 @@ std::u8string NeoOcr::GetText(QImage image)
 {
   const auto engine = static_cast<Engine>(m_Settings.GetOcrEngine());
   if (engine == Engine::Windows) {
-    if (image.format() != QImage::Format_RGBA8888) {
-      image = image.convertToFormat(QImage::Format_RGBA8888);
+    if (image.format() != QImage::Format_RGB32) {
+      image = image.convertToFormat(QImage::Format_RGB32);
     }
     return OcrWindows(image);
   } else if (engine == Engine::Tesseract) {
@@ -150,10 +152,8 @@ std::vector<OcrResult> NeoOcr::GetTextEx(const QImage& image)
   return result;
 }
 
-std::u8string NeoOcr::OcrWindows(const QImage& image)
-{
+IAsyncAction WinOcrGet(const std::u8string& name, SoftwareBitmap& softwareBitmap, std::wstring& result) {
   std::function engine = WinOcr::OcrEngine::TryCreateFromUserProfileLanguages;
-  auto name = m_Settings.GetWinLan();
   if (name != u8"user-Profile") {
     const Language lan(Utf82WideString(name));
     if (WinOcr::OcrEngine::IsLanguageSupported(lan)) {
@@ -161,8 +161,30 @@ std::u8string NeoOcr::OcrWindows(const QImage& image)
     }
   }
 
+  auto ocrResult = co_await engine().RecognizeAsync(softwareBitmap);
+
+  hstring back;
+  auto notZhCN = [](const hstring& str) {
+    return str.size() == 1 && str.front() < 0x80;
+  };
+  for (const auto& line : ocrResult.Lines()) {
+    back.clear();
+    for (const auto& word: line.Words()) {
+      hstring text = word.Text();
+      if (!back.empty() && (notZhCN(back) || notZhCN(text))) {
+        result.push_back(L' ');
+      }
+      result += text;
+      back = std::move(text);
+    }
+    result.push_back(L'\n');
+  }
+}
+
+std::u8string NeoOcr::OcrWindows(const QImage& image)
+{
   SoftwareBitmap softwareBitmap(
-      BitmapPixelFormat::Rgba8,
+      BitmapPixelFormat::Bgra8,
       image.width(), image.height()
   );
 
@@ -171,6 +193,7 @@ std::u8string NeoOcr::OcrWindows(const QImage& image)
   auto access = reference.as<IMemoryBufferByteAccess>();
   unsigned char* pPixelData = nullptr;
   unsigned capacity = 0;
+  // access->GetBuffer(&pPixelData, &capacity);
   winrt::check_hresult(access->GetBuffer(&pPixelData, &capacity));
   auto bufferLayout = buffer.GetPlaneDescription(0);
 
@@ -178,9 +201,13 @@ std::u8string NeoOcr::OcrWindows(const QImage& image)
 #if 1
   std::copy_n(image.bits(), bufferLayout.Stride * bufferLayout.Height, pPixelData);
 #else
-  for (int i = 0; i < bufferLayout.Height; i++) {
-    std::copy_n(image.scanLine(i), bufferLayout.Width * 4, pPixelData);
-    pPixelData += bufferLayout.Stride;
+  auto plane = reinterpret_cast<uint32_t*>(pPixelData);
+  for (int i = 0; i < bufferLayout.Height; ++i) {
+    auto line = reinterpret_cast<const uint32_t*>(image.scanLine(i));
+    for (int j=0; j != bufferLayout.Width; ++j) {
+      plane[j] = line[j];
+    }
+    plane += bufferLayout.Width;
   }
 #endif
 
@@ -189,25 +216,9 @@ std::u8string NeoOcr::OcrWindows(const QImage& image)
 
   // SaveSoftwareBitmapToFile(softwareBitmap);
 
-  wchar_t back;
-  auto notZh = [](wchar_t c) { return 0x4e00 > c || c > 0x9fa5; };
   std::wstring result;
-  auto ocrResult = engine().RecognizeAsync(softwareBitmap).get();
-  for (const auto& line : ocrResult.Lines()) {
-    back = 0;
-    for (const auto& word: line.Words()) {
-      auto text = word.Text();
-      if (back && (notZh(back) || notZh(text.front()))) {
-        result.push_back(L' ');
-      }
-      back = text.front();
-      result += text;
-    }
-    // if (result.ends_with(L' ')) {
-    //   result.back() = L'\n';
-    // }
-    result.push_back(L'\n');
-  }
+  auto rrrr = WinOcrGet(m_Settings.GetWinLan(), softwareBitmap, result);
+  rrrr.get();
   return Wide2Utf8String(result);
 }
 

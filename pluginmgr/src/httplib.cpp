@@ -21,9 +21,9 @@ std::optional<HttpProxy> HttpLib::m_Proxy = std::nullopt;
 // https://github.com/JGRennison/OpenTTD-patches/blob/dcc52f7696f4ef2601b9fbca1ca78abcd1211734/src/network/core/http_winhttp.cpp#L145
 void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DWORD dwInternetStatus, LPVOID lpvStatusInformation, DWORD dwInternetInformationLength) {
   constexpr auto bufferSize = 8 << 10;
-  if (!dwContext) {
-    throw std::logic_error("HttpLib Error: No context in callback!");
-  }
+  // sometimes maybe nullptr
+  if (!dwContext) return;
+
   auto object = reinterpret_cast<HttpLib*>(dwContext);
   if (object->m_Finished)
     return;
@@ -89,23 +89,22 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
   case WINHTTP_CALLBACK_STATUS_DATA_AVAILABLE: {
     // Retrieve the number of bytes to read
     // Allocate a buffer for the data
-    auto buffer = reinterpret_cast<std::u8string*>(object->m_DataBuffer);
-    buffer->resize(*(DWORD *)lpvStatusInformation);
-    auto pszOutBuffer = buffer->empty() ? nullptr : buffer->data();
+    auto size = *reinterpret_cast<DWORD*>(lpvStatusInformation);
+    auto pszOutBuffer = size == 0 ? nullptr : new char8_t[size];
     // Read the data from the server
-    WinHttpReadData(object->m_hRequest, pszOutBuffer, buffer->size(), nullptr);
+    WinHttpReadData(object->m_hRequest, pszOutBuffer, size, nullptr);
     break;
   }
 
   case WINHTTP_CALLBACK_STATUS_READ_COMPLETE: {
-    if (!object->m_Finished) {
+    if (dwInternetInformationLength) {
       object->m_RecieveSize += dwInternetInformationLength;
       object->m_AsyncCallback.m_WriteCallback->operator()(lpvStatusInformation, dwInternetInformationLength);
       object->EmitProcess();
     }
-    if (object->m_Finished) {
-      return;
-    } else if (dwInternetInformationLength == 0) {
+    delete[] reinterpret_cast<char8_t*>(lpvStatusInformation);
+
+    if (dwInternetInformationLength == 0) {
       // locker.unlock();
       object->EmitFinish();
     } else {
@@ -116,7 +115,6 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
 
   case WINHTTP_CALLBACK_STATUS_SECURE_FAILURE:
   case WINHTTP_CALLBACK_STATUS_REQUEST_ERROR: {
-    if (object->m_Finished) return;
     auto const* pAsyncResult = (WINHTTP_ASYNC_RESULT*)lpvStatusInformation;
     DWORD dwError = pAsyncResult->dwError; // The error code
     DWORD dwResult = pAsyncResult->dwResult; // The ID of the called function
@@ -199,23 +197,23 @@ HttpLib::~HttpLib() {
 void HttpLib::SetAsyncCallback()
 {
 #ifdef _WIN32
-  auto ctx = this;
-  auto bResult = WinHttpSetOption(
-    m_hSession,
-    WINHTTP_OPTION_CONTEXT_VALUE,
-    &ctx,
-    sizeof(void*)
-  );
-  if (bResult) {
+  // auto ctx = this;
+  // auto bResult = WinHttpSetOption(
+  //   m_hSession,
+  //   WINHTTP_OPTION_CONTEXT_VALUE,
+  //   &ctx,
+  //   sizeof(void*)
+  // );
+  // if (bResult) {
     WINHTTP_STATUS_CALLBACK hCallback = WinHttpSetStatusCallback(
       m_hSession,
       RequestStatusCallback,
       WINHTTP_CALLBACK_FLAG_ALL_NOTIFICATIONS,
       NULL
     );
-  } else {
-    throw std::logic_error(std::format("Httplib SetAsyncCallback failed. Code: {}.", GetLastError()));
-  }
+  // } else {
+  //   throw std::logic_error(std::format("Httplib SetAsyncCallback failed. Code: {}.", GetLastError()));
+  // }
 #endif
 }
 
@@ -435,7 +433,11 @@ bool HttpLib::SendRequest()
   if (m_PostData.data) {
 #ifdef _WIN32
     return WinHttpSendRequest(m_hRequest,
-      WINHTTP_NO_ADDITIONAL_HEADERS, 0, m_PostData.data, m_PostData.size, m_PostData.size, 0);
+      WINHTTP_NO_ADDITIONAL_HEADERS, 0,
+      m_PostData.data, m_PostData.size,
+      m_PostData.size,
+      reinterpret_cast<DWORD_PTR>(this)
+    );
 #else
     curl_easy_setopt(m_hSession, CURLOPT_POST, 1L);
     curl_easy_setopt(m_hSession, CURLOPT_POSTFIELDS, m_PostData.data);
@@ -444,7 +446,10 @@ bool HttpLib::SendRequest()
   } else {
 #ifdef _WIN32
     return WinHttpSendRequest(m_hRequest,
-      WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0);
+      WINHTTP_NO_ADDITIONAL_HEADERS, 0,
+      WINHTTP_NO_REQUEST_DATA, 0, 0,
+      reinterpret_cast<DWORD_PTR>(this)
+    );
 #endif
   }
   return true;
@@ -467,9 +472,15 @@ bool HttpLib::SendHeaders()
   bool bResults = false;
 #ifdef _WIN32
   auto path = Utf82WideString(GetPath());
-  m_hRequest = WinHttpOpenRequest (m_hConnect,
+  m_hRequest = WinHttpOpenRequest(
+    m_hConnect,
     m_PostData.data ? L"POST": L"GET",
-    path.c_str(), L"HTTP/1.1", WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, 0);
+    path.c_str(),
+    nullptr,
+    WINHTTP_NO_REFERER,
+    WINHTTP_DEFAULT_ACCEPT_TYPES,
+    0
+  );
   if (m_hRequest) {
     bResults = SetProxyAfter();
   } else {
@@ -667,6 +678,12 @@ void HttpLib::EmitProcess()
 void HttpLib::EmitFinish(std::wstring message)
 {
   m_Finished = true;
+  WinHttpSetStatusCallback(
+    m_hSession,
+    NULL,
+    WINHTTP_CALLBACK_FLAG_ALL_NOTIFICATIONS,
+    NULL
+  );
   auto& callback = m_AsyncCallback.m_FinishCallback;
   if (callback) {
     /* To prevent infinite recursion at destructor time,
@@ -676,8 +693,9 @@ void HttpLib::EmitFinish(std::wstring message)
     callback = std::nullopt;
     cb(message, &m_Response);
   }
-  delete reinterpret_cast<std::u8string*>(m_DataBuffer);
-  m_DataBuffer = nullptr;
+  // Locker locker(m_AsyncMutex);
+  // delete reinterpret_cast<std::u8string*>(m_DataBuffer);
+  // m_DataBuffer = nullptr;
 }
 
 HttpLib::Response* HttpLib::Get()
@@ -729,7 +747,7 @@ void HttpLib::GetAsync(Callback callback)
   m_Finished = false;
   m_Response.body.clear();
   m_AsyncCallback = std::move(callback);
-  m_DataBuffer = new std::u8string;
+  // m_DataBuffer = new std::u8string;
   if (!m_AsyncCallback.m_WriteCallback) {
     m_AsyncCallback.m_WriteCallback = [this](auto data, auto size){
       m_Response.body.append(reinterpret_cast<const char*>(data), size);

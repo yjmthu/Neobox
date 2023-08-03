@@ -13,6 +13,7 @@ NeoTimer::NeoTimer(const NeoTimer& t) {
 NeoTimer::~NeoTimer() {
   Expire();
   while (m_ToExpire);
+  Locker _(m_Mutex);
   //      std::cout << "timer destructed!" << std::endl;
 }
 
