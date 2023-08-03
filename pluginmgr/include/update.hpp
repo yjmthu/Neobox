@@ -34,8 +34,8 @@ public:
   void CopyExecutable() const;
   static std::array<int, 3> ParseVersion(const std::wstring& vStr);
   static std::filesystem::path GetTempFilePath();
-private:
   UpgradeConfig m_Settings;
+private:
   class NeoTimer* m_Timer;
   std::unique_ptr<YJson> m_LatestData;
   std::unique_ptr<class HttpLib> m_DataRequest;

@@ -510,12 +510,12 @@ QSharedMemory* PluginMgr::CreateSharedMemory() {
       // WriteSharedFlag(sharedMemory, 2);
       sharedMemory->detach();
       delete sharedMemory;
-      throw std::runtime_error("Already have an instance.");
+      throw std::runtime_error("There is already an instance running!");
     default:
       break;
     }
   } else if (!sharedMemory->create(sizeof(int))) {
-    throw std::runtime_error("Already have an instance.");
+    throw std::runtime_error("Unable to create Shared memory!");
   }
   WriteSharedFlag(sharedMemory, 0);
   return sharedMemory;

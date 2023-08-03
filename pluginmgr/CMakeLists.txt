@@ -36,6 +36,9 @@ add_library(pluginmgr SHARED
 )
 
 add_executable(update WIN32 src/update.cc)
+add_executable(installer WIN32 src/install.cc)
+add_executable(uninstaller WIN32 src/uninstall.cc)
+set(app_helper update installer uninstaller)
 
 set(resource_files
   fonts/*.ttf
@@ -55,7 +58,10 @@ target_link_libraries(pluginmgr PUBLIC
   ${system_shared_files}
 )
 
-target_link_libraries(update PRIVATE pluginmgr)
+foreach(app ${app_helper})
+  target_link_libraries(${app} PRIVATE pluginmgr)
+endforeach()
+
 
 install(TARGETS pluginmgr
   LIBRARY DESTINATION lib
@@ -64,6 +70,12 @@ install(TARGETS pluginmgr
   PUBLIC_HEADER DESTINATION include
 )
 
-install(TARGETS update
-  RUNTIME DESTINATION bin
-)
+if (WIN32)
+  install(TARGETS ${app_helper}
+    RUNTIME DESTINATION bin
+  )
+  set_target_properties(${app_helper}
+    PROPERTIES LINK_FLAGS
+    "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\" /SUBSYSTEM:WINDOWS"
+  )
+endif()

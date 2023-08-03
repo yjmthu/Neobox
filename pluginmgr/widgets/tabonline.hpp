@@ -23,7 +23,6 @@ private:
   class PluginCenter& m_PluginCenter;
   class QVBoxLayout* m_MainLayout;
   // class QHBoxLayout* m_ControlLayout;
-  // class QPushButton* m_UpdateButton;
   class QListWidget* m_ListWidget;
 };
 

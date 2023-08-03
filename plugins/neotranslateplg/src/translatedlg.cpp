@@ -47,12 +47,12 @@ NeoTranslateDlg::NeoTranslateDlg(TranslateCfg& settings)
   m_BtnCopyTo->setText("复制");
   connect(m_BtnCopyFrom, &QPushButton::clicked, this, [this]() {
     auto const clip = QGuiApplication::clipboard();
-    clip->setText(m_TextFrom->toPlainText());
+    clip->setText(m_TextFrom->toPlainText().trimmed());
     m_BtnCopyFrom->setText("成功");
   });
   connect(m_BtnCopyTo, &QPushButton::clicked, this, [this]() {
     auto const clip = QGuiApplication::clipboard();
-    clip->setText(m_TextTo->toPlainText());
+    clip->setText(m_TextTo->toPlainText().trimmed());
     m_BtnCopyTo->setText("成功");
   });
   connect(this, &NeoTranslateDlg::HttpFinished, this, [this](QString text){

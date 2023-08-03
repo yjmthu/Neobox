@@ -56,8 +56,8 @@ private:
   YJson* m_Settings;
   friend class TabHotKey;
   class Shortcut* m_Shortcut;
-  class PluginUpdate* m_UpdateMgr;
 public:
+  class PluginUpdate* const m_UpdateMgr;
   std::map<std::u8string, PluginInfo> m_Plugins;
   std::map<std::u8string, class QObject*> m_MainObjects;
 public:

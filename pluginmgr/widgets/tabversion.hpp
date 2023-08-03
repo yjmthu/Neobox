@@ -15,12 +15,16 @@ public:
   ~TabVersion();
 private:
   // const class YJson* m_VersionInfo;
+  class PluginUpdate& m_UpdateMgr;
   class QHBoxLayout* m_MainLayout;
+  class QCheckBox* m_AutoUpdate;
+  class QCheckBox* m_AutoInstall;
   class QPushButton* m_btnWeb;
   class QPushButton* m_btnBug;
   class QPushButton* m_btnChk;
   class QTextBrowser* m_Text;
   const QString m_TextRaw;
+  bool m_ConfigChanged = false;
 private:
   void InitLayout();
   static QString FormatString();

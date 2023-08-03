@@ -23,6 +23,7 @@
 #include <QDesktopServices>
 #include <QApplication>
 #include <QProcess>
+#include <QCheckBox>
 
 using namespace std::literals;
 
@@ -30,8 +31,11 @@ namespace fs = std::filesystem;
 
 TabVersion::TabVersion(PluginCenter* parent)
   : QWidget(parent)
+  , m_UpdateMgr(*mgr->m_UpdateMgr)
   , m_MainLayout(new QHBoxLayout(this))
   , m_TextRaw(FormatString())
+  , m_AutoUpdate(new QCheckBox("自动检查更新", this))
+  , m_AutoInstall(new QCheckBox("自动安装更新", this))
 {
   InitLayout();
   Connect();
@@ -40,6 +44,9 @@ TabVersion::TabVersion(PluginCenter* parent)
 TabVersion::~TabVersion()
 {
   // delete m_VersionInfo;
+  if (m_ConfigChanged) {
+    m_UpdateMgr.m_Settings.SaveData();
+  }
 }
 
 void TabVersion::InitLayout()
@@ -60,14 +67,21 @@ void TabVersion::InitLayout()
 
   qobject_cast<PluginCenter*>(parent())->AddScrollBar(m_Text->verticalScrollBar());
 
-  QHBoxLayout* layout2 =new QHBoxLayout;
+  auto layout2 = new QHBoxLayout;
+  layout1->addLayout(layout2);
+  layout2->addWidget(m_AutoUpdate);
+  layout2->addWidget(m_AutoInstall);
+  m_AutoUpdate->setChecked(m_UpdateMgr.m_Settings.GetAutoCheck());
+  m_AutoInstall->setChecked(m_UpdateMgr.m_Settings.GetAutoUpgrade());
+
+  layout2 =new QHBoxLayout;
+  layout1->addLayout(layout2);
   m_btnWeb = new QPushButton("开源网站", this);
   m_btnBug = new QPushButton("报告问题", this);
   m_btnChk = new QPushButton("检查更新", this);
   layout2->addWidget(m_btnWeb);
   layout2->addWidget(m_btnBug);
   layout2->addWidget(m_btnChk);
-  layout1->addLayout(layout2);
 
   m_Text->setText(m_TextRaw);
 }
@@ -88,6 +102,14 @@ void TabVersion::Connect()
   connect(m_btnBug, &QPushButton::clicked, this,
     std::bind(QDesktopServices::openUrl, QUrl(NEOBOX_ISSUE_URL)));
   connect(m_btnChk, &QPushButton::clicked, this, &TabVersion::GetUpdate);
+  connect(m_AutoUpdate, &QCheckBox::clicked, this, [this](bool on){
+    m_UpdateMgr.m_Settings.SetAutoCheck(on, false);
+    m_ConfigChanged = true;
+  });
+  connect(m_AutoInstall, &QCheckBox::clicked, this, [this](bool on){
+    m_UpdateMgr.m_Settings.SetAutoUpgrade(on, false);
+    m_ConfigChanged = true;
+  });
 }
 
 
@@ -260,12 +282,13 @@ void TabVersion::DoUpgrade(const YJson& data)
     shellInfo.lpParameters = curDir.data();
     shellInfo.lpDirectory = wsPath.data();
     shellInfo.nShow = SW_NORMAL;
-    // if (!hasFolderPermission(curDir.wstring())) {
-      shellInfo.lpVerb = L"runas";
-    // }
+    // shellInfo.lpVerb = L"runas";
 
-    QApplication::quit();
+    if (QMessageBox::question(this, "提示", "下载完成，是否立即安装？") != QMessageBox::Yes) {
+      return;
+    }
     ::ShellExecuteExW(&shellInfo);
+    QApplication::quit();
     return;
   }
   mgr->ShowMsg("未找到下载链接，请手动下载！");

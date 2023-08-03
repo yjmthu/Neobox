@@ -144,7 +144,7 @@ void PluginUpdate::CopyExecutable() const
   shellInfo.lpParameters = curDir.data();
   shellInfo.lpDirectory = wsPath.data();
   shellInfo.nShow = SW_NORMAL;
-  shellInfo.lpVerb = L"runas";
+  // shellInfo.lpVerb = L"runas";
 
   ::ShellExecuteExW(&shellInfo);
   emit QuitApp();
