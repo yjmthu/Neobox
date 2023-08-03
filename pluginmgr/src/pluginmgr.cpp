@@ -6,6 +6,7 @@
 #include <httplib.h>
 #include <menubase.hpp>
 #include <config.h>
+#include <neotimer.h>
 
 #include <QAction>
 #include <QMessageBox>
@@ -30,6 +31,7 @@
 #endif
 
 namespace fs = std::filesystem;
+using namespace std::literals;
 PluginMgr *mgr;
 
 const std::u8string PluginMgr::m_SettingFileName(u8"PluginSettings.json");
@@ -92,13 +94,19 @@ PluginMgr::PluginMgr()
   , m_Menu(new NeoMenu)
   , m_MsgDlg(new NeoMsgDlg(m_Menu))
   , m_Settings((mgr = this, InitSettings()))
+  , m_SharedTimer(new NeoTimer)
   , m_UpdateMgr(new PluginUpdate((*m_Settings)[u8"Upgrade"]))
+  , m_Shortcut { new Shortcut(m_Settings->find(u8"EventMap")->second) }
 {
   m_Tray->setContextMenu(m_Menu);
   m_Tray->show();
   // QObject::connect(m_Menu->addAction("托盘图标"), &QAction::triggered, m_Tray, &QSystemTrayIcon::show);
-
-  m_Shortcut = new Shortcut(m_Settings->find(u8"EventMap")->second);
+  m_SharedTimer->StartTimer(1s, [this](){
+    if (ReadSharedFlag(m_SharedMemory) == -1) {
+      QMetaObject::invokeMethod(m_Menu, QApplication::quit);
+      WriteSharedFlag(m_SharedMemory, 1);
+    }
+  });
 
   LoadPlugins();
   LoadManageAction();
@@ -116,6 +124,7 @@ PluginMgr::~PluginMgr()
 
   delete m_Menu;
   delete m_Tray;
+  delete m_SharedTimer;
 
   DetachSharedMemory();   // 在构造函数抛出异常后析构函数将不再被调用
 }
@@ -493,7 +502,7 @@ void PluginMgr::WriteSharedFlag(QSharedMemory* sharedMemory, int flag) {
   sharedMemory->unlock();
 }
 
-int PluginMgr::ReadSharedFlag(class QSharedMemory* sharedMemory) {
+int PluginMgr::ReadSharedFlag(QSharedMemory* sharedMemory) {
   //m_SharedMemory->setKey(QStringLiteral("__Neobox__"));
   sharedMemory->lock();
   const auto state = *reinterpret_cast<const int*>(sharedMemory->constData());

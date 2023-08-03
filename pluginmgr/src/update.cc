@@ -40,11 +40,15 @@ public:
     setWindowTitle("Neobox 安装程序");
     auto const mainLayout = new QVBoxLayout(this);
 
+    mainLayout->addWidget(new QLabel("选择安装之后的操作：", this));
     auto layout = new QHBoxLayout;
     mainLayout->addLayout(layout);
     layout->addWidget(m_DesktopShortcut);
     layout->addWidget(m_StartMenuShortcut);
     layout->addWidget(m_RunApplication);
+    m_DesktopShortcut->setChecked(true);
+    m_StartMenuShortcut->setChecked(true);
+    m_RunApplication->setChecked(true);
 
     layout = new QHBoxLayout;
     mainLayout->addLayout(layout);
@@ -119,7 +123,7 @@ void WriteRegister(fs::path installDir) {
 
   auto version = u8"" NEOBOX_VERSION ""sv.substr(1);
   auto app = installDir / "neobox.exe";
-  auto uninstall = installDir / "uninstall.exe";
+  auto uninstall = installDir / "uninstaller.exe";
   // 写入注册表值
   settings.setValue("DisplayName", "Neobox");
   settings.setValue("Publisher", "yjmthu");

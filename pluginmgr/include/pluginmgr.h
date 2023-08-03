@@ -52,10 +52,11 @@ public:
   NeoMsgDlg* const m_MsgDlg;
   // MenuBase* const m_PluginMainMenu;
 private:
-  static const std::u8string m_SettingFileName;
-  YJson* m_Settings;
   friend class TabHotKey;
-  class Shortcut* m_Shortcut;
+  static const std::u8string m_SettingFileName;
+  YJson* const m_Settings;
+  class NeoTimer* const m_SharedTimer;
+  class Shortcut* const m_Shortcut;
 public:
   class PluginUpdate* const m_UpdateMgr;
   std::map<std::u8string, PluginInfo> m_Plugins;
