@@ -255,7 +255,6 @@ void TabVersion::DoUpgrade(const YJson& data)
       continue;
     }
     if (!DownloadNew(url)) {
-      mgr->ShowMsg("下载失败！");
       return;
     }
     fs::path dataDir = fs::absolute(L"junk") / L"Neobox";

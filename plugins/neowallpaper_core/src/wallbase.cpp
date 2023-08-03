@@ -26,9 +26,7 @@ fs::path GetSpecialFolderPath() {
   return result;
 }
 
-static WallBase* s_pFavorite = nullptr;
-static WallBase* s_pBingApi = nullptr;
-static WallBase* s_pOther = nullptr;
+static std::vector<WallBase*> s_Wallpaper = {};
 
 std::mutex WallBase::m_DataMutex;
 const fs::path WallBase::m_DataDir = u8"wallpaperData";
@@ -36,42 +34,27 @@ const fs::path WallBase::m_ConfigPath = u8"wallpaperData/Wallpaper.json";
 std::atomic_bool WallBase::m_QuitFlag = false;
 std::function<void()> WallBase::SaveSetting = [](){};
 
-WallBase* WallBase::GetNewInstance(YJson& setting, int type) {
-  if (s_pOther) {
-    delete s_pOther;
-    s_pOther = nullptr;
-  }
+WallBase* WallBase::GetNewInstance(YJson& setting, uint32_t type) {
   SaveSetting = std::bind(&YJson::toFile, &setting, m_ConfigPath, true, YJson::UTF8);
-  switch (type) {
-    case WALLHAVEN:
-      return s_pOther = new Wallhaven(setting[u8"壁纸天堂"]);
-    case BINGAPI:
-      if (!s_pBingApi)
-        s_pBingApi = new BingApi(setting[u8"必应壁纸"]);
-      return s_pBingApi;
-    case DIRECTAPI:
-      return s_pOther = new DirectApi(setting[u8"直链壁纸"]);
-    case NATIVE:
-      return s_pOther = new Native(setting[u8"本地壁纸"]);
-    case SCRIPTOUTPUT:
-      return s_pOther = new ScriptOutput(setting[u8"脚本输出"]);
-    case FAVORITE:
-      if (!s_pFavorite)
-        s_pFavorite = new Favorite(setting[u8"收藏壁纸"]);
-      return s_pFavorite;
-    default:
-      return s_pOther;
+  if (s_Wallpaper.empty()) {
+    s_Wallpaper = {
+      new Wallhaven(setting[u8"壁纸天堂"]),
+      new BingApi(setting[u8"必应壁纸"]),
+      new DirectApi(setting[u8"直链壁纸"]),
+      new Native(setting[u8"本地壁纸"]),
+      new ScriptOutput(setting[u8"脚本输出"]),
+      new Favorite(setting[u8"收藏壁纸"]),
+    };
   }
+  if (type >= s_Wallpaper.size()) type = 0;
+  return s_Wallpaper[type];
 }
 
 void WallBase::ClearInstatnce() {
-  delete s_pOther;
-  delete s_pFavorite;
-  delete s_pBingApi;
-
-  s_pOther = nullptr;
-  s_pFavorite = nullptr;
-  s_pBingApi = nullptr;
+  while (!s_Wallpaper.empty()) {
+    delete s_Wallpaper.back();
+    s_Wallpaper.pop_back();
+  }
 }
 
 void WallBase::Dislike(std::u8string_view sImgPath) {}

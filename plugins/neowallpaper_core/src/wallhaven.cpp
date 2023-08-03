@@ -41,7 +41,7 @@ void WallhavenData::SaveData() {
 
 void WallhavenData::DownloadUrl(Range range, Callback callback)
 {
-  if (range == m_Range && m_Request) return;
+  if (range == m_Range) return;
 
   m_Range = range;
   m_Index = m_Range.front();
@@ -81,7 +81,7 @@ void WallhavenData::DownloadAll(Callback cb)
       }
 
       if (++m_Index != m_Range.back()) {
-        DownloadAll(cb);
+        std::thread([this, cb](){ DownloadAll(cb);}).detach();
         return;
       }
 handle:

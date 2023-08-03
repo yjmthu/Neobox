@@ -133,6 +133,8 @@ Wallpaper::Wallpaper(YJson& settings)
 Wallpaper::~Wallpaper() {
   delete m_Timer;
 
+  DownloadJob::ClearPool();
+  
   WallBase::ClearInstatnce();
 }
 

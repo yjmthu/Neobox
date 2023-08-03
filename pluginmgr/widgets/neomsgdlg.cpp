@@ -45,11 +45,13 @@ void NeoMsgDlg::ShowMessage(const QString& text)
     m_Data.push(text);
     return;
   }
-  m_Data.push(text);
-  m_pLabel->setText(text);
-  show();
-  // m_pFrame->setWindowOpacity();
-  HandleShowMsg();
+  QMetaObject::invokeMethod(this, [this, text]() {
+    m_Data.push(text);
+    m_pLabel->setText(text);
+    show();
+    // m_pFrame->setWindowOpacity();
+    HandleShowMsg();
+  });
 }
 
 void NeoMsgDlg::InitWindowStyle()

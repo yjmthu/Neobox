@@ -5,17 +5,20 @@
 #include <string>
 #include <map>
 #include <httpproxy.h>
+#include <memory>
 
 class HttpLib {
-private:
-  struct PostData { void* data; size_t size; } m_PostData;
+public:
   typedef std::mutex Mutex;
+private:
   typedef std::lock_guard<Mutex> Locker;
   typedef std::unique_lock<Mutex> LockerEx;
 public:
+  typedef uint64_t HttpId;
   typedef std::map<std::string, std::string> Headers;
   typedef size_t( CallbackFunction )(void*, size_t, size_t, void*);
 
+  struct PostData { void* data; size_t size; } m_PostData;
   struct Response {
     std::string version;
     unsigned long status = -1;
@@ -35,11 +38,13 @@ public:
   };
 
   template<typename Char=char>
-  explicit HttpLib(std::basic_string_view<Char> url, bool async=false):
-    m_Url(url.cbegin(), url.cend()),
-    m_hSession(nullptr),
-    m_ProxySet(false),
-    m_AsyncSet(async) {
+  explicit HttpLib(std::basic_string_view<Char> url, bool async = false)
+    : m_Url(url.cbegin(), url.cend())
+    , m_hSession(nullptr)
+    , m_ProxySet(false)
+    , m_AsyncSet(async)
+  {
+    IntoPool();
     HttpPrepare();
     HttpInitialize();
   }
@@ -94,6 +99,7 @@ private:
   size_t m_RecieveSize = 0;
   size_t m_ConnectLength = 0;
 private:
+  void IntoPool();
   void HttpInitialize();
   void HttpUninitialize();
   void HttpPrepare();
@@ -120,7 +126,7 @@ private:
   CallbackFunction* m_Callback;
   Callback m_AsyncCallback;
   void* m_DataBuffer = nullptr;
-  // Mutex m_AsyncMutex;
+  HttpId m_AsyncId;
 };
 
 #endif

@@ -25,6 +25,23 @@ fs::path FileNameFilter(std::u8string& path) {
 }
 
 std::map<std::filesystem::path, const DownloadJob*> DownloadJob::m_Pool;
+std::mutex DownloadJob::m_Mutex;
+
+bool DownloadJob::IsPoolEmpty() {
+  std::lock_guard<std::mutex> locker(m_Mutex);
+  return m_Pool.empty();
+}
+
+void DownloadJob::ClearPool()
+{
+  m_Mutex.lock();
+  for (auto& [url, worker]: m_Pool) {
+    worker->m_HttpJob->ExitAsync();
+  }
+  m_Mutex.unlock();
+
+  while (!DownloadJob::IsPoolEmpty());
+}
 
 DownloadJob::DownloadJob(std::filesystem::path path, std::u8string url, Callback cb)
   : m_HttpJob(new HttpLib(url, true))
@@ -42,7 +59,7 @@ DownloadJob::DownloadJob(std::filesystem::path path, std::u8string url, Callback
       if (msg.empty() && res->status == 200) {
         m_ImageFile->close();
         if (m_Callback) (*m_Callback)();
-      } else {
+      } else if (res->status != -1) {
         mgr->ShowMsgbox(L"出错"s,
           std::format(L"网络异常！\n"
           "文件名：{}\n网址：{}\n错误信息：{}\n状态码：{}",
@@ -50,13 +67,15 @@ DownloadJob::DownloadJob(std::filesystem::path path, std::u8string url, Callback
           msg, res->status));
       }
 
-      m_Mutex.lock();
-      auto iter = m_Pool.find(m_Path);
-      if (iter != m_Pool.end()) {
-        delete iter->second;
-      }
-      m_Pool.erase(iter);
-      m_Mutex.unlock();
+      std::thread([this](){
+        m_Mutex.lock();
+        auto iter = m_Pool.find(m_Path);
+        if (iter != m_Pool.end()) {
+          delete iter->second;
+        }
+        m_Pool.erase(iter);
+        m_Mutex.unlock();
+      }).detach();
     },
   };
 

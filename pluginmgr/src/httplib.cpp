@@ -17,6 +17,13 @@
 using namespace std::literals;
 namespace fs = std::filesystem;
 std::optional<HttpProxy> HttpLib::m_Proxy = std::nullopt;
+// HttpLib::HttpId HttpLib::m_MaxId = 0;
+// std::map<HttpLib::HttpId, HttpLib*> HttpLib::m_AsyncPool;
+// HttpLib::Mutex HttpLib::m_AsyncMutex;
+
+static HttpLib::HttpId m_MaxId = 0;
+static std::map<HttpLib::HttpId, HttpLib*> m_AsyncPool;
+static HttpLib::Mutex m_AsyncMutex;
 
 // https://github.com/JGRennison/OpenTTD-patches/blob/dcc52f7696f4ef2601b9fbca1ca78abcd1211734/src/network/core/http_winhttp.cpp#L145
 void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DWORD dwInternetStatus, LPVOID lpvStatusInformation, DWORD dwInternetInformationLength) {
@@ -24,9 +31,14 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
   // sometimes maybe nullptr
   if (!dwContext) return;
 
-  auto object = reinterpret_cast<HttpLib*>(dwContext);
-  if (object->m_Finished)
+  LockerEx locker(m_AsyncMutex);
+  auto objectIter = m_AsyncPool.find(dwContext);
+  if (objectIter == m_AsyncPool.end())
     return;
+  auto& object = *objectIter->second;
+
+  if (object.m_Finished) return;
+
   switch (dwInternetStatus) {
     case WINHTTP_CALLBACK_STATUS_RESOLVING_NAME:
     case WINHTTP_CALLBACK_STATUS_NAME_RESOLVED:
@@ -44,74 +56,76 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
       break;
 
   case WINHTTP_CALLBACK_STATUS_SENDREQUEST_COMPLETE: 
-    WinHttpReceiveResponse(object->m_hRequest, nullptr);
+    locker.unlock();
+    WinHttpReceiveResponse(hInternet, nullptr);
     break;
  
   case WINHTTP_CALLBACK_STATUS_HEADERS_AVAILABLE: {
-    auto bResults = object->ReadStatusCode();
+
+    auto bResults = object.ReadStatusCode();
     if (bResults) {
-      bResults = object->m_Response.status < 400;
+      bResults = object.m_Response.status < 400;
     } else {
       // locker.unlock();
-      object->EmitFinish(L"HttpLib Error: HttpLib ReadStatusCode Error.");
+      object.EmitFinish(L"HttpLib Error: HttpLib ReadStatusCode Error.");
       break;
     }
     if (bResults) {
-      bResults = object->ReadHeaders();
+      bResults = object.ReadHeaders();
     } else {
       // locker.unlock();
-      object->EmitFinish(L"HttpLib StatusCode Error.");
+      object.EmitFinish(L"HttpLib StatusCode Error.");
       break;
     }
     if (bResults) {
-      auto iter = object->m_Response.headers.find("Content-Length");
-      if (iter != object->m_Response.headers.end()) {
-        object->m_ConnectLength = std::stoull(iter->second);
+      auto iter = object.m_Response.headers.find("Content-Length");
+      if (iter != object.m_Response.headers.end()) {
+        object.m_ConnectLength = std::stoull(iter->second);
       }
-      object->EmitProcess();
+      object.EmitProcess();
       /* Next step: query for any data. */
-      WinHttpQueryDataAvailable(object->m_hRequest, NULL);
+      locker.unlock();
+      WinHttpQueryDataAvailable(hInternet, NULL);
     } else {
       // locker.unlock();
-      object->EmitFinish(L"HttpLib ReadHeaders Error.");
+      object.EmitFinish(L"HttpLib ReadHeaders Error.");
     }
     break;
   }
 
   case WINHTTP_CALLBACK_STATUS_REDIRECT:
     /* Make sure we are not in a redirect loop. */
-    if (object->m_RedirectDepth++ > 5) {
-      // locker.unlock();
-      object->EmitFinish(L"HTTP request failed: too many redirects");
+    if (object.m_RedirectDepth++ > 5) {
+      object.EmitFinish(L"HTTP request failed: too many redirects");
     }
     break;
-
+  
   case WINHTTP_CALLBACK_STATUS_DATA_AVAILABLE: {
     // Retrieve the number of bytes to read
     // Allocate a buffer for the data
+    auto buffer = reinterpret_cast<std::u8string*>(object.m_DataBuffer);
     auto size = *reinterpret_cast<DWORD*>(lpvStatusInformation);
-    auto pszOutBuffer = size == 0 ? nullptr : new char8_t[size];
+    if (!buffer) return;
+    buffer->resize(size);
+    auto pszOutBuffer = size == 0 ? nullptr : buffer->data();
     // Read the data from the server
-    WinHttpReadData(object->m_hRequest, pszOutBuffer, size, nullptr);
+    locker.unlock();
+    WinHttpReadData(object.m_hRequest, pszOutBuffer, size, nullptr);
     break;
   }
 
-  case WINHTTP_CALLBACK_STATUS_READ_COMPLETE: {
+  case WINHTTP_CALLBACK_STATUS_READ_COMPLETE: 
     if (dwInternetInformationLength) {
-      object->m_RecieveSize += dwInternetInformationLength;
-      object->m_AsyncCallback.m_WriteCallback->operator()(lpvStatusInformation, dwInternetInformationLength);
-      object->EmitProcess();
-    }
-    delete[] reinterpret_cast<char8_t*>(lpvStatusInformation);
+      object.m_RecieveSize += dwInternetInformationLength;
+      object.m_AsyncCallback.m_WriteCallback->operator()(lpvStatusInformation, dwInternetInformationLength);
+      object.EmitProcess();
 
-    if (dwInternetInformationLength == 0) {
-      // locker.unlock();
-      object->EmitFinish();
-    } else {
-      WinHttpQueryDataAvailable(object->m_hRequest, nullptr);
+      locker.unlock();
+      WinHttpQueryDataAvailable(object.m_hRequest, nullptr);
+    } else{
+      object.EmitFinish();
     }
     break;
-  }
 
   case WINHTTP_CALLBACK_STATUS_SECURE_FAILURE:
   case WINHTTP_CALLBACK_STATUS_REQUEST_ERROR: {
@@ -119,7 +133,7 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
     DWORD dwError = pAsyncResult->dwError; // The error code
     DWORD dwResult = pAsyncResult->dwResult; // The ID of the called function
     // locker.unlock();
-    object->EmitFinish(std::format(L"Winhttp status error. Error code: {}, error id: {}.", dwError, dwResult));
+    object.EmitFinish(std::format(L"Winhttp status error. Error code: {}, error id: {}.", dwError, dwResult));
     break;
   }
   }
@@ -188,6 +202,9 @@ size_t HttpLib::WriteString(void* buffer,
 HttpLib::~HttpLib() {
   if (m_AsyncSet) {
     ExitAsync();
+    m_AsyncMutex.lock();
+    m_AsyncPool.erase(m_AsyncId);
+    m_AsyncMutex.unlock();
   } else {
     m_Finished = true;
     HttpUninitialize();
@@ -264,6 +281,16 @@ std::u8string HttpLib::GetPath()
   String result(m_Url.begin() + pos, m_Url.end());
 #endif
   return result;
+}
+
+void HttpLib::IntoPool()
+{
+  if (m_AsyncSet) {
+    m_AsyncMutex.lock();
+    m_AsyncId = ++m_MaxId;
+    m_AsyncPool[m_AsyncId] = this;
+    m_AsyncMutex.unlock();
+  }
 }
 
 void HttpLib::HttpPrepare()
@@ -436,7 +463,7 @@ bool HttpLib::SendRequest()
       WINHTTP_NO_ADDITIONAL_HEADERS, 0,
       m_PostData.data, m_PostData.size,
       m_PostData.size,
-      reinterpret_cast<DWORD_PTR>(this)
+      static_cast<DWORD_PTR>(m_AsyncId)
     );
 #else
     curl_easy_setopt(m_hSession, CURLOPT_POST, 1L);
@@ -448,7 +475,7 @@ bool HttpLib::SendRequest()
     return WinHttpSendRequest(m_hRequest,
       WINHTTP_NO_ADDITIONAL_HEADERS, 0,
       WINHTTP_NO_REQUEST_DATA, 0, 0,
-      reinterpret_cast<DWORD_PTR>(this)
+      static_cast<DWORD_PTR>(m_AsyncId)
     );
 #endif
   }
@@ -694,8 +721,8 @@ void HttpLib::EmitFinish(std::wstring message)
     cb(message, &m_Response);
   }
   // Locker locker(m_AsyncMutex);
-  // delete reinterpret_cast<std::u8string*>(m_DataBuffer);
-  // m_DataBuffer = nullptr;
+   delete reinterpret_cast<std::u8string*>(m_DataBuffer);
+   m_DataBuffer = nullptr;
 }
 
 HttpLib::Response* HttpLib::Get()
@@ -747,7 +774,7 @@ void HttpLib::GetAsync(Callback callback)
   m_Finished = false;
   m_Response.body.clear();
   m_AsyncCallback = std::move(callback);
-  // m_DataBuffer = new std::u8string;
+  m_DataBuffer = new std::u8string;
   if (!m_AsyncCallback.m_WriteCallback) {
     m_AsyncCallback.m_WriteCallback = [this](auto data, auto size){
       m_Response.body.append(reinterpret_cast<const char*>(data), size);
@@ -757,7 +784,9 @@ void HttpLib::GetAsync(Callback callback)
 }
 
 void HttpLib::ExitAsync() {
+  m_AsyncMutex.lock();
   m_Response.status = -1;
   EmitFinish(L"Httplib Error: User terminate.");
-  HttpInitialize();
+  m_AsyncMutex.unlock();
+  HttpUninitialize();
 }

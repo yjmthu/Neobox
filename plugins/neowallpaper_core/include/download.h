@@ -18,8 +18,10 @@ public:
   static bool IsImageFile(const std::u8string & fileName);
 
   static std::map<std::filesystem::path, const DownloadJob*> m_Pool;
-  inline static std::mutex m_Mutex;
+  static std::mutex m_Mutex;
   static const String m_ImgNamePattern;
+  static void ClearPool();
+  static bool IsPoolEmpty();
 private:
   DownloadJob(std::filesystem::path path, std::u8string url, Callback callback);
   ~DownloadJob();

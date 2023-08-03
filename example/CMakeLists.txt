@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.10.1)
 
+return()
+
 file(GLOB sources src/*.cpp)
 
 foreach(item ${sources})

@@ -57,9 +57,6 @@ PluginUpdate::~PluginUpdate()
 {
   delete m_Timer;
   m_DataRequest = nullptr;
-  if (m_File.is_open()) {
-    m_File.close();
-  }
 }
 
 
@@ -159,7 +156,6 @@ void PluginUpdate::DownloadUpgrade(Callback cb)
     if (!url.ends_with(u8".zip")) {
       continue;
     }
-    if (m_File.is_open()) m_File.close();
     m_File.open(GetTempFilePath(), std::ios::out | std::ios::binary);
     if (!m_File.is_open()) return;
 
@@ -176,9 +172,7 @@ void PluginUpdate::DownloadUpgrade(Callback cb)
         }
       },
     };
-
     m_DataRequest->GetAsync(std::move(callback));
-
     return;
   }
 }

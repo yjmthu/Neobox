@@ -50,7 +50,7 @@ protected:
 
 public:
   enum { WALLHAVEN = 0, BINGAPI, DIRECTAPI, NATIVE, SCRIPTOUTPUT, FAVORITE };
-  static WallBase* GetNewInstance(YJson& setting, int type);
+  static WallBase* GetNewInstance(YJson& setting, uint32_t type);
   static void ClearInstatnce();
   explicit WallBase(YJson& setting):
     m_Setting(setting)
