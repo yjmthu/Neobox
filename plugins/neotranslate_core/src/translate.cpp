@@ -12,7 +12,11 @@
 #include <format>
 #include <random>
 
+#ifdef TRANSLATE_USE_USER_KEY
+#include <userkey.h>
+#else
 #include <apikey.h>
+#endif
 
 using namespace std::literals;
 namespace chrono = std::chrono;
@@ -464,9 +468,12 @@ void Translate::GetResultIciba(const Utf8Array& text)
       if (message.empty() && (res->status / 100 == 2)) {
         // m_Callback(res->body.data(), res->body.size());
         // return;
-
-        YJson root(res->body.begin(), res->body.end());
-        FormatIcibaResult(root);
+        try {
+          YJson root(res->body.begin(), res->body.end());
+          FormatIcibaResult(root);
+        } catch (std::runtime_error error) {
+          m_Callback(res->body.data(), res->body.size());
+        }
       } else {
         std::wstring msg = std::format(L"error: {}\ncode:{}", message, res->status);
         auto u8msg = Wide2Utf8String(msg);
