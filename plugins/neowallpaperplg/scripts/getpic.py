@@ -17,5 +17,5 @@ if __name__ == '__main__':
     path = os.path.join(folder, time.strftime("%Y-%m-%d %H%M%S.jpg", time.localtime()))
     with open(path, "wb") as f:
         f.write(data.content)
-        print(path)
+        print(path)  # 关键步骤，打印出壁纸绝对路径
 
