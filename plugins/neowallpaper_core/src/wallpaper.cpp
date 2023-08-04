@@ -229,10 +229,7 @@ void Wallpaper::SetNext() {
   if (ok) {
     m_Wallpaper->GetNext(
       std::bind(&Wallpaper::PushBack,
-        this,
-        std::placeholders::_1,
-        std::nullopt
-      )
+        this, std::placeholders::_1, std::nullopt)
     );
   } else {
     MoveRight();

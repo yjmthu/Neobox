@@ -13,7 +13,9 @@
 #include <filesystem>
 
 #include <QMessageBox>
+#include <QProcess>
 #include <QApplication>
+#include <QDir>
 
 using namespace std::literals;
 namespace fs = std::filesystem;
@@ -31,8 +33,14 @@ PluginUpdate::PluginUpdate(YJson& settings)
       obj.CopyExecutable();
     });
   });
-  connect(this, &PluginUpdate::QuitApp, this, [](){
-    QApplication::quit();
+  connect(this, &PluginUpdate::QuitApp, this, [](QString exe, QStringList arg){
+    qApp->quit();
+    // 设置进程优先级-实时，使其抢先于操作系统组件之前运行
+    SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
+    // 设置线程优先级-实时
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
+    // 隐藏启动控制台程序，执行删除文件指令
+    QProcess::startDetached(exe, arg);
   });
 #endif
   if (m_Settings.GetAutoCheck()) {
@@ -42,6 +50,7 @@ PluginUpdate::PluginUpdate(YJson& settings)
         if (!self.m_Settings.GetAutoUpgrade()) {
           emit AskInstall();
         } else {
+          // mgr->ShowMsg("开始更新！");
           self.DownloadUpgrade([](PluginUpdate& obj){
             obj.CopyExecutable();
           });
@@ -97,54 +106,36 @@ bool PluginUpdate::NeedUpgrade() const
   return vNew != vOld;
 }
 
-fs::path PluginUpdate::GetTempFilePath()
+fs::path PluginUpdate::GetTempFilePath() const
 {
-  fs::path pluginTemp = L"junk";
-  fs::create_directory(pluginTemp);
-  fs::path pluginDst = pluginTemp;
-  pluginTemp /= L"UpdatePack.zip";
+  fs::path pluginTemp = mgr->GetJunkDir();
+  // fs::path pluginDst = pluginTemp;
+  pluginTemp /= m_ZipUrl.substr(m_ZipUrl.rfind(u8'/') + 1);
 
   return pluginTemp;
 }
 
 void PluginUpdate::CopyExecutable() const
 {
-  auto pluginTempPath = GetTempFilePath();
-  auto pluginTemp= pluginTempPath.string();
-  auto pluginDst = pluginTempPath.parent_path().string();
+  const auto pluginTempPath = GetTempFilePath();
+  const auto pluginTemp= pluginTempPath.string();
+  const auto pluginDst = pluginTempPath.parent_path().string();
   const auto ret = zip_extract(pluginTemp.c_str(), pluginDst.c_str(), nullptr, nullptr);
   if (ret < 0) return;
-  fs::remove(pluginTemp);
+  fs::remove(pluginTempPath);
 
-  fs::path dataDir = fs::absolute(L"junk") / L"Neobox";
+  fs::path dataDir = mgr->GetJunkDir() / L"Neobox";
   dataDir.make_preferred();
   fs::path exePath = dataDir / "update.exe";
   if (!fs::exists(dataDir) || !fs::is_directory(dataDir) || !fs::exists(exePath)) {
     return;
   }
 
-  fs::path curDirPath = QApplication::applicationDirPath().toStdU16String();
-  curDirPath.make_preferred();
-  
   exePath.make_preferred();
-  auto exeFile = exePath.wstring();
-  exeFile.push_back(L'\0');
-  auto wsPath = fs::current_path().make_preferred().wstring();
-  wsPath.push_back(L'\0');
-  auto curDir = curDirPath.wstring();
-  curDir.push_back(L'\0');
 
-  SHELLEXECUTEINFOW shellInfo {};
-  shellInfo.cbSize = sizeof(SHELLEXECUTEINFO);
-  shellInfo.hwnd = nullptr;
-  shellInfo.lpFile = exeFile.data();
-  shellInfo.lpParameters = curDir.data();
-  shellInfo.lpDirectory = wsPath.data();
-  shellInfo.nShow = SW_NORMAL;
-  // shellInfo.lpVerb = L"runas";
-
-  ::ShellExecuteExW(&shellInfo);
-  emit QuitApp();
+  emit QuitApp(QString::fromStdWString(exePath.wstring()), {
+    QDir::toNativeSeparators(qApp->applicationDirPath())
+  });
 }
 
 void PluginUpdate::DownloadUpgrade(Callback cb)
@@ -156,23 +147,26 @@ void PluginUpdate::DownloadUpgrade(Callback cb)
     if (!url.ends_with(u8".zip")) {
       continue;
     }
+    m_ZipUrl = url;
     m_File.open(GetTempFilePath(), std::ios::out | std::ios::binary);
     if (!m_File.is_open()) return;
 
-    m_DataRequest = std::make_unique<HttpLib>(url, true);
+    std::thread([this, cb](){
+      m_DataRequest = std::make_unique<HttpLib>(m_ZipUrl, true);
 
-    HttpLib::Callback callback = {
-      .m_WriteCallback = [this](auto data, auto size) {
-        m_File.write(reinterpret_cast<const char*>(data), size);
-      },
-      .m_FinishCallback = [cb, this](auto msg, auto res){
-        m_File.close();
-        if (msg.empty() && res->status == 200) {
-          cb(*this);
-        }
-      },
-    };
-    m_DataRequest->GetAsync(std::move(callback));
+      HttpLib::Callback callback = {
+        .m_WriteCallback = [this](auto data, auto size) {
+          m_File.write(reinterpret_cast<const char*>(data), size);
+        },
+        .m_FinishCallback = [cb, this](auto msg, auto res){
+          m_File.close();
+          if (msg.empty() && res->status == 200) {
+            cb(*this);
+          }
+        },
+      };
+      m_DataRequest->GetAsync(std::move(callback));
+    }).detach();
     return;
   }
 }
@@ -192,7 +186,5 @@ void PluginUpdate::CheckUpdate(Callback cb)
       }
     },
   };
-
   m_DataRequest->GetAsync(std::move(callback));
 }
-

@@ -81,7 +81,7 @@ void WallhavenData::DownloadAll(Callback cb)
       }
 
       if (++m_Index != m_Range.back()) {
-        std::thread([this, cb](){ DownloadAll(cb);}).detach();
+        std::thread(&WallhavenData::DownloadAll, this, cb).detach();
         return;
       }
 handle:
@@ -93,7 +93,7 @@ handle:
         m_Unused.assign(m_Array.begin(), m_Array.end());
         m_Mutex.unlock();
       }
-      cb();
+      std::thread(cb).detach();
     }
   };
   m_Request->GetAsync(callback);

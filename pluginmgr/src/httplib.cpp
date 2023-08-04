@@ -66,14 +66,12 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
     if (bResults) {
       bResults = object.m_Response.status < 400;
     } else {
-      // locker.unlock();
       object.EmitFinish(L"HttpLib Error: HttpLib ReadStatusCode Error.");
       break;
     }
     if (bResults) {
       bResults = object.ReadHeaders();
     } else {
-      // locker.unlock();
       object.EmitFinish(L"HttpLib StatusCode Error.");
       break;
     }
@@ -87,7 +85,6 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
       locker.unlock();
       WinHttpQueryDataAvailable(hInternet, NULL);
     } else {
-      // locker.unlock();
       object.EmitFinish(L"HttpLib ReadHeaders Error.");
     }
     break;
@@ -132,7 +129,6 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
     auto const* pAsyncResult = (WINHTTP_ASYNC_RESULT*)lpvStatusInformation;
     DWORD dwError = pAsyncResult->dwError; // The error code
     DWORD dwResult = pAsyncResult->dwResult; // The ID of the called function
-    // locker.unlock();
     object.EmitFinish(std::format(L"Winhttp status error. Error code: {}, error id: {}.", dwError, dwResult));
     break;
   }
@@ -234,7 +230,7 @@ void HttpLib::SetAsyncCallback()
 #endif
 }
 
-std::u8string HttpLib::GetDomain()
+std::u8string HttpLib::GetDomain() const
 {
   std::u8string result;
 #ifdef __linux__
@@ -262,7 +258,7 @@ std::u8string HttpLib::GetDomain()
   return result;
 }
 
-std::u8string HttpLib::GetPath()
+std::u8string HttpLib::GetPath() const
 {
   size_t pos;
   if (m_Url.starts_with(u8"https://")) {

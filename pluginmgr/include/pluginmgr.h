@@ -71,6 +71,7 @@ public:
   static int Exec();
   static void Quit();
   void Restart();
+  static std::filesystem::path GetJunkDir();
 private:
   static QSharedMemory* CreateSharedMemory();
   void DetachSharedMemory();

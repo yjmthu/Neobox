@@ -495,6 +495,14 @@ void PluginMgr::Restart()
   QApplication::quit();
 }
 
+fs::path PluginMgr::GetJunkDir() {
+  fs::path result = "junk";
+  if (!fs::exists(result)) {
+    fs::create_directory(result);
+  }
+  return fs::absolute(result);
+}
+
 void PluginMgr::WriteSharedFlag(QSharedMemory* sharedMemory, int flag) {
   //m_SharedMemory->setKey(QStringLiteral("__Neobox__"));
   sharedMemory->lock();

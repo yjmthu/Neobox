@@ -131,14 +131,16 @@ void DownloadJob::DownloadImage(const ImageInfoEx imageInfo,
     return;
   }
 
-  std::lock_guard<std::mutex> locker(m_Mutex);
-  auto& job = m_Pool[filePath];
-  if (job) {
-    mgr->ShowMsgbox(L"提示", L"任务已经存在！");
-    return;
-  }
+  std::thread([callback, filePath, imageInfo](){
+    std::lock_guard<std::mutex> locker(m_Mutex);
+    auto& job = m_Pool[filePath];
+    if (job) {
+      mgr->ShowMsgbox(L"提示", L"任务已经存在！");
+      return;
+    }
 
-  job = new DownloadJob(filePath, imageInfo->ImageUrl, std::move(callback));
+    job = new DownloadJob(filePath, imageInfo->ImageUrl, std::move(callback));
+  }).detach();
 }
 
 bool DownloadJob::IsImageFile(const std::u8string& filesName) {

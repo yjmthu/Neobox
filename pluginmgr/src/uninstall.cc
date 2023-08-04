@@ -24,11 +24,19 @@ using namespace std::literals;
 
 
 void EraseRegister() {
-  QSettings settings("HKEY_LOCAL_"
+  {
+    QSettings settings("HKEY_LOCAL_"
                      "MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Un"
                      "install\\Neobox",
                      QSettings::NativeFormat);
-  settings.remove("");
+    settings.remove("");
+  }
+  {
+    QSettings settings(R"(HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run)", QSettings::NativeFormat);
+    if (settings.contains("Neobox")) {
+      settings.remove("Neobox");
+    }
+  }
 }
 
 bool ExitAppInstance(fs::path appFile) {

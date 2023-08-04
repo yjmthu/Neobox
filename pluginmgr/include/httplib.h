@@ -71,6 +71,9 @@ public:
   void ClearHeader() {
     m_Headers.clear();
   }
+  const std::u8string& GetUrl() const {
+    return m_Url;
+  }
   void SetRedirect(long redirect);
   void SetPostData(void* data, size_t size);
   Response* Get();
@@ -111,8 +114,8 @@ private:
   void SetAsyncCallback();
   bool SendRequest();
   bool RecvResponse();
-  std::u8string GetDomain();
-  std::u8string GetPath();
+  std::u8string GetDomain() const;
+  std::u8string GetPath() const;
 private:
   bool ReadStatusCode();
   bool ReadHeaders();

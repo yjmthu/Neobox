@@ -180,13 +180,14 @@ bool TabVersion::DownloadNew(std::u8string_view url) {
     return false;
   }
   bool result = false;
-  const auto dialog = new DownloadingDlg(this);
-  dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+  DownloadingDlg dialog(this);
+  // dialog->setAttribute(Qt::WA_DeleteOnClose, true);
 
+  auto zipFileName = url.substr(url.rfind(u8'/') + 1);
   fs::path pluginTemp = L"junk";
   fs::create_directory(pluginTemp);
   fs::path pluginDst = pluginTemp;
-  pluginTemp /= L"UpdatePack.zip";
+  pluginTemp /= zipFileName;
 
   std::ofstream file(pluginTemp, std::ios::binary | std::ios::out);
   if (!file.is_open()) {
@@ -199,7 +200,7 @@ bool TabVersion::DownloadNew(std::u8string_view url) {
     .m_WriteCallback = [&file](auto data, auto size){
       file.write(reinterpret_cast<const char*>(data), size);
     },
-    .m_FinishCallback = [dialog, &result, &file, &pluginTemp, &pluginDst](std::wstring msg, const HttpLib::Response* res) {
+    .m_FinishCallback = [&](std::wstring msg, const HttpLib::Response* res) {
       file.close();
       if (msg.empty() && res->status == 200) {
         result = true;
@@ -213,20 +214,18 @@ bool TabVersion::DownloadNew(std::u8string_view url) {
         mgr->ShowMsg("下载压缩包失败！");
       }
       fs::remove(pluginTemp);
-      if (res->status != -1) {
-        dialog->emitFinished();
-      }
+      dialog.emitFinished();
     },
-    .m_ProcessCallback = [dialog](auto recieve, auto total) {
-      dialog->emitProcess(recieve, total);
+    .m_ProcessCallback = [&](auto recieve, auto total) {
+      dialog.emitProcess(recieve, total);
     },
   };
 
   clt.GetAsync(callback);
 
-  connect(dialog, &DownloadingDlg::Terminate, std::bind(&HttpLib::ExitAsync, &clt));
+  connect(&dialog, &DownloadingDlg::Terminate, std::bind(&HttpLib::ExitAsync, &clt));
 
-  dialog->exec();
+  dialog.exec();
 
   if (file.is_open()) {
     file.close();
@@ -257,7 +256,7 @@ void TabVersion::DoUpgrade(const YJson& data)
     if (!DownloadNew(url)) {
       return;
     }
-    fs::path dataDir = fs::absolute(L"junk") / L"Neobox";
+    fs::path dataDir = mgr->GetJunkDir() / L"Neobox";
     dataDir.make_preferred();
     fs::path exePath = dataDir / "update.exe";
     if (!fs::exists(dataDir) || !fs::is_directory(dataDir) || !fs::exists(exePath)) {
@@ -267,19 +266,14 @@ void TabVersion::DoUpgrade(const YJson& data)
     fs::path curDirPath = QApplication::applicationDirPath().toStdU16String();
     curDirPath.make_preferred();
     
-    auto exeFile = exePath.wstring();
-    exeFile.push_back(L'\0');
-    auto wsPath = fs::current_path().make_preferred().wstring();
-    wsPath.push_back(L'\0');
-    auto curDir = curDirPath.wstring();
-    curDir.push_back(L'\0');
+    auto wsPath = fs::current_path().make_preferred();
 
     SHELLEXECUTEINFOW shellInfo {};
     shellInfo.cbSize = sizeof(SHELLEXECUTEINFO);
     shellInfo.hwnd = nullptr;
-    shellInfo.lpFile = exeFile.data();
-    shellInfo.lpParameters = curDir.data();
-    shellInfo.lpDirectory = wsPath.data();
+    shellInfo.lpFile = exePath.c_str();
+    shellInfo.lpParameters = curDirPath.c_str();
+    shellInfo.lpDirectory = wsPath.c_str();
     shellInfo.nShow = SW_NORMAL;
     // shellInfo.lpVerb = L"runas";
 

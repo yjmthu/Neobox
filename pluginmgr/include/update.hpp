@@ -33,16 +33,17 @@ public:
   void DownloadUpgrade(Callback callback);
   void CopyExecutable() const;
   static std::array<int, 3> ParseVersion(const std::wstring& vStr);
-  static std::filesystem::path GetTempFilePath();
+  std::filesystem::path GetTempFilePath() const;
   UpgradeConfig m_Settings;
 private:
   class NeoTimer* m_Timer;
+  std::u8string m_ZipUrl;
   std::unique_ptr<YJson> m_LatestData;
   std::unique_ptr<class HttpLib> m_DataRequest;
   std::ofstream m_File;
 signals:
   void AskInstall();
-  void QuitApp() const;
+  void QuitApp(QString exe, QStringList arg) const;
 };
 
 #endif // UPDATE_H

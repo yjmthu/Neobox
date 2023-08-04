@@ -139,7 +139,6 @@ void BingApi::GetNext(Callback callback) {
       .ErrorCode = ImageInfo::NetErr
     }));
   });
-
 }
 
 void BingApi::SetJson(const YJson& json)
@@ -158,7 +157,7 @@ void BingApi::AutoDownload() {
   if (m_Setting[u8"auto-download"sv].isFalse())
     return;
 
-  m_Timer->StartTimer(1min, [this]() {
+  m_Timer->StartTimer(20s, [this]() {
     LockerEx locker(m_DataMutex);
     if (m_Setting[u8"auto-download"sv].isTrue()) {
       locker.unlock();
@@ -174,7 +173,7 @@ void BingApi::AutoDownload() {
           // ------------------------------------ //
           DownloadJob::DownloadImage(ptr, std::nullopt);
         }
-        }, std::nullopt);
+      }, std::nullopt);
     }
     m_Timer->Expire();
   });
