@@ -340,7 +340,7 @@ void NeoOcr::SetDropData(std::queue<std::u8string_view>& data)
         if (pos == url.npos) {
           continue;
         }
-        HttpLib(url).Get(folder / url.substr(pos + 1));
+        HttpLib(HttpUrl(url)).Get(folder / url.substr(pos + 1));
       }
     }).detach();
   }

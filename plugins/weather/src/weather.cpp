@@ -64,7 +64,8 @@ bool GZipUnCompress(const _IBufferType& inBuffer, _OBufferType& outBuffer)
 
 Weather::Weather()
   : QObject()
-  , m_Result { std::nullopt }
+  , m_WeatherData { std::nullopt }
+  , m_CityList { std::nullopt }
 {
   //
 }
@@ -74,19 +75,17 @@ Weather::~Weather()
   //
 }
 
-void Weather::SendRequest()
+void Weather::FetchDays()
 {
   std::lock_guard<std::mutex> locker(m_Mutex);
   if (m_Request && !m_Request->IsFinished()) return;
 
-  YJson param = YJson::O {
+  HttpUrl url(u8"https://devapi.qweather.com/v7/weather/3d?"sv, {
     {u8"location", u8"101010100"},
     {u8"key", u8"" QWEATHER_KEY},
-  };
+  });
 
-  m_Request = std::make_unique<HttpLib>(
-    param.urlEncode(u8"https://devapi.qweather.com/v7/weather/3d?"s), true);
-  // m_Request->SetHeader("Content-Type", "application/x-www-form-urlencoded");
+  m_Request = std::make_unique<HttpLib>(url, true, 5);
   
   HttpLib::Callback callback = {
     .m_FinishCallback = [this](auto msg, auto res) {
@@ -94,7 +93,7 @@ void Weather::SendRequest()
         std::lock_guard<std::mutex> locker(m_Mutex);
         std::u8string unCompressed;
         if (GZipUnCompress(res->body, unCompressed)) {
-          m_Result = std::make_optional<YJson>(unCompressed.begin(), unCompressed.end());
+          m_WeatherData = std::make_optional<YJson>(unCompressed.begin(), unCompressed.end());
           emit Finished(true);
           return;
         }
@@ -106,14 +105,14 @@ void Weather::SendRequest()
   m_Request->GetAsync(std::move(callback));
 }
 
-std::optional<YJson> Weather::GetResult()
+std::optional<YJson> Weather::GetDays()
 {
   std::lock_guard<std::mutex> locker(m_Mutex);
   if (m_Request && !m_Request->IsFinished()) return std::nullopt;
-  if (!m_Result) return std::nullopt;
+  if (!m_WeatherData) return std::nullopt;
 
-  std::optional<YJson> result = std::move(*m_Result);
-  m_Result = std::nullopt;
+  std::optional<YJson> result = std::move(*m_WeatherData);
+  m_WeatherData = std::nullopt;
 
   return result;
 }

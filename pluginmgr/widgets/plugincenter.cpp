@@ -119,7 +119,7 @@ std::optional<std::string> PluginCenter::DownloadFile(std::u8string_view url)
   DownloadingDlg dialog(this);
 
   HttpLib clt(url, true);
-  clt.SetHeader("User-Agent", "Libcurl in Neobox App/1.0");
+  clt.SetHeader(u8"User-Agent", u8"Libcurl in Neobox App/1.0");
 
   std::string body;
   HttpLib::Callback callback = {

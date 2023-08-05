@@ -66,8 +66,10 @@ void WallhavenData::HandleResult(const YJson &data)
 
 void WallhavenData::DownloadAll(Callback cb)
 {
-  const std::string url(m_ApiUrl.cbegin(), m_ApiUrl.cend());
-  m_Request = std::make_unique<HttpLib>(url + "&page=" + std::to_string(m_Index), true);
+  auto indexString = std::to_string(m_Index);
+  auto url = m_ApiUrl + u8"&page=";
+  url.append(indexString.begin(), indexString.end());
+  m_Request = std::make_unique<HttpLib>(HttpUrl(url), true);
 
   HttpLib::Callback callback = {
     .m_FinishCallback = [this, cb](auto msg, auto res){
@@ -112,7 +114,7 @@ Wallhaven::~Wallhaven()
 
 bool Wallhaven::IsPngFile(std::u8string& str) {
   // if (!Wallpaper::IsOnline()) return false;
-  HttpLib clt(u8"https://wallhaven.cc/api/v1/w/"s + str);
+  HttpLib clt(HttpUrl(u8"https://wallhaven.cc/api/v1/w/"s + str));
   auto res = clt.Get();
   if (res->status != 200)
     return false;

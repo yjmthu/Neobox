@@ -152,7 +152,7 @@ void PluginUpdate::DownloadUpgrade(Callback cb)
     if (!m_File.is_open()) return;
 
     std::thread([this, cb](){
-      m_DataRequest = std::make_unique<HttpLib>(m_ZipUrl, true);
+      m_DataRequest = std::make_unique<HttpLib>(HttpUrl(m_ZipUrl), true);
 
       HttpLib::Callback callback = {
         .m_WriteCallback = [this](auto data, auto size) {
@@ -175,8 +175,7 @@ void PluginUpdate::CheckUpdate(Callback cb)
 {
   if (m_DataRequest && !m_DataRequest->IsFinished()) return;
 
-  m_DataRequest = std::make_unique<HttpLib>(
-      NEOBOX_LATEST_URL ""sv, true);
+  m_DataRequest = std::make_unique<HttpLib>(u8"" NEOBOX_LATEST_URL ""sv, true);
 
   HttpLib::Callback callback = {
     .m_FinishCallback = [this, cb](auto msg, auto res) {

@@ -13,12 +13,17 @@ class Weather: public QObject
 public:
   explicit Weather();
   virtual ~Weather();
-  void SendRequest();
-  std::optional<YJson> GetResult();
+  void FetchDays();
+  void FetchCities();
+  void FetchHours();
+  std::optional<YJson> GetDays();
+  std::optional<YJson> GetCities();
+  std::optional<YJson> GetHours();
 private:
   std::unique_ptr<class HttpLib> m_Request;
   std::mutex m_Mutex;
-  std::optional<YJson> m_Result;
+  std::optional<YJson> m_WeatherData;
+  std::optional<YJson> m_CityList;
 signals:
   void Finished(bool);
 };

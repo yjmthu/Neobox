@@ -1,13 +1,19 @@
 #include <iostream>
 #include <httplib.h>
 #include <yjson.h>
+#include <systemapi.h>
 
 #ifdef _WIN32
 #include <Windows.h>
 #endif
 
-std::u8string get_access_token(const std::string &AK, const std::string &SK) {
-  HttpLib clt(std::format("https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id={}&client_secret={}", AK, SK));
+std::u8string get_access_token(const std::u8string &AK, const std::u8string &SK) {
+  HttpLib clt(
+    HttpUrl(u8"https://aip.baidubce.com/oauth/2.0/token?", {
+    {u8"grant_type", u8"client_credentials"},
+    {u8"client_id", AK},
+    {u8"client_secret", SK}
+  }));
   auto res = clt.Get();
   if (res->status != 200)
     return std::u8string(res->body.begin(), res->body.end());
@@ -24,7 +30,8 @@ int main(int argc, char* argv[]) {
   SetConsoleOutputCP(65001);
 #endif
   if (argc == 2) {
-    std::cout << "your token is 【" << get_access_token("enwvUXsYtstHiKPDOPShBOuE", argv[1]) << "】.\n";
+    std::u8string key = Ansi2Utf8String(argv[1]);
+    std::cout << "your token is 【" << get_access_token(u8"enwvUXsYtstHiKPDOPShBOuE", key) << "】.\n";
   } else {
     std::cout << "you should parse the 'Secret Key' to this executable.\n";
   }

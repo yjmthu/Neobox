@@ -114,7 +114,7 @@ bool ItemBase::PluginDownload()
     fs::create_directory(pluginTemp);
     pluginTemp /= plugin;
     fs::path pluginDst = u8"plugins/" + m_PluginName;
-    HttpLib clt(PluginCenter::m_RawUrl + plugin);
+    HttpLib clt(HttpUrl(PluginCenter::m_RawUrl + plugin));
     auto res = clt.Get(pluginTemp);
     dialog->m_PreventClose = false;
 

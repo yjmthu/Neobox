@@ -209,33 +209,33 @@ inline static std::u8string GetSalt() {
 
 void Translate::GetResultBaidu(const Utf8Array& text) {
   // http://api.fanyi.baidu.com/product/113
-  static YJson jsData {
-    YJson::O{
+  static HttpUrl url(u8"https://fanyi-api.baidu.com/api/trans/vip/translate?"sv, {
+    {
       {u8"from", u8"auto"},
       {u8"to", u8"zh"},
-      {u8"q", YJson::String},
+      {u8"q", std::u8string {}},
       {u8"appid", u8"" BAIDU_ID},
-      {u8"salt", YJson::String},
-      {u8"sign", YJson::String},
+      {u8"salt", std::u8string {}},
+      {u8"sign", std::u8string {}},
     }
-  };
+  });
   static auto const badNet = u8"<h1>没网络了！</h1>"s;
 
-  static auto& from = jsData[u8"from"].getValueString();
+  static auto& from = url.parameters[u8"from"];
   from = m_LanguageCanFromTo[Baidu][m_LanPair->f].first;
-  static auto& to = jsData[u8"to"].getValueString();
+  static auto& to = url.parameters[u8"to"];
   to = m_LanguageCanFromTo[Baidu][m_LanPair->f].second[m_LanPair->t];
 
-  static auto& salt = jsData[u8"salt"].getValueString();
+  static auto& salt = url.parameters[u8"salt"];
   salt = GetSalt();
 
-  static auto& q = jsData[u8"q"].getValueString();
+  static auto& q = url.parameters[u8"q"];
   q.assign(text.begin, text.end);
  
-  static auto& sign = jsData[u8"sign"].getValueString();
+  static auto& sign = url.parameters[u8"sign"];
   sign = Md5(u8"" BAIDU_ID ""s + q + salt + u8"" BAIDU_KEY);
 
-  m_Request = std::make_unique<HttpLib>(jsData.urlEncode(u8"https://fanyi-api.baidu.com/api/trans/vip/translate?"), true);
+  m_Request = std::make_unique<HttpLib>(url, true);
   
   HttpLib::Callback callback = {
     .m_FinishCallback = [this](auto message, auto res) {
@@ -265,36 +265,34 @@ void Translate::GetResultBaidu(const Utf8Array& text) {
 }
 
 void Translate::GetResultYoudao(const Utf8Array& text) {
-  static YJson m_scJson {
-    YJson::O{
-      {u8"from", u8"auto"},
-      {u8"to", u8"auto"},
-      {u8"appKey", u8"" YOUDAO_ID},
-      {u8"signType", u8"v3"},
-      {u8"curtime", YJson::String},
-      {u8"q", YJson::String},
-      {u8"salt", YJson::String},
-      {u8"sign", YJson::String}
-    }
-  };
+  static HttpUrl url(u8"http://openapi.youdao.com/api/?"sv, {
+    {u8"from", u8"auto"},
+    {u8"to", u8"auto"},
+    {u8"appKey", u8"" YOUDAO_ID},
+    {u8"signType", u8"v3"},
+    {u8"curtime", std::u8string {}},
+    {u8"q", std::u8string {}},
+    {u8"salt", std::u8string {}},
+    {u8"sign", std::u8string {}}
+  });
 
-  static auto& from = m_scJson[u8"from"].getValueString();
+  static auto& from = url.parameters[u8"from"];
   from = m_LanguageCanFromTo[Youdao][m_LanPair->f].first;
-  static auto& to = m_scJson[u8"to"].getValueString();
+  static auto& to = url.parameters[u8"to"];
   to = m_LanguageCanFromTo[Youdao][m_LanPair->f].second[m_LanPair->t];
 
-  static auto& q = m_scJson[u8"q"].getValueString();
+  static auto& q = url.parameters[u8"q"];
   q.assign(text.begin, text.end);
-  static auto& curtime = m_scJson[u8"curtime"].getValueString();
+  static auto& curtime = url.parameters[u8"curtime"];
   curtime = GetTimeStamp();
-  static auto& salt = m_scJson[u8"salt"].getValueString();
+  static auto& salt = url.parameters[u8"salt"];
   salt = Uuid1();  //"d818bc30-99df-11ec-9e18-1cbfc0a98096";
-  static auto& sign = m_scJson[u8"sign"].getValueString();
+  static auto& sign = url.parameters[u8"sign"];
   sign = Sha256(u8"" YOUDAO_ID + Truncate(text) + salt + curtime + u8"" YOUDAO_KEY);
 
   // 这样同时也取消了前一个请求
-  m_Request = std::make_unique<HttpLib>(m_scJson.urlEncode(u8"http://openapi.youdao.com/api/?"), true);
-  m_Request->SetHeader("Content-Type", "application/x-www-form-urlencoded");
+  m_Request = std::make_unique<HttpLib>(url, true);
+  m_Request->SetHeader(u8"Content-Type", u8"application/x-www-form-urlencoded");
 
   HttpLib::Callback callback = {
     .m_FinishCallback = [this](auto message, auto res) {
@@ -414,23 +412,10 @@ void Translate::FormatYoudaoResult(const YJson& data) {
 
 void Translate::GetResultBingSimple(const Utf8Array& text) {
 
-  static YJson m_scJson {
-    YJson::O {
-#if 0
-      {u8"mkt", u8"zh-CN"},
-      {u8"setLang", u8"zh"},
-      {u8"from", u8"BDVEHC"},
-      {u8"ClientVer", u8"BDDTV3.5.1.4320"},
-#endif
-      {u8"q", YJson::String},
-    }
-  };
-  m_scJson[u8"q"].getValueString().assign(text.begin, text.end);
-#if 0
-  const auto url = m_scJson.urlEncode(u8"https://cn.bing.com/dict/clientsearch?"s);
-#else
-  const auto url = m_scJson.urlEncode(u8"https://cn.bing.com/dict/SerpHoverTrans?"s);
-#endif
+  static HttpUrl url(u8"https://cn.bing.com/dict/SerpHoverTrans?"sv, {
+    {u8"q", std::u8string {}},
+  });
+  url.parameters[u8"q"].assign(text.begin, text.end);
 
   m_Request = std::make_unique<HttpLib>(url, true);
 
@@ -451,16 +436,11 @@ void Translate::GetResultBingSimple(const Utf8Array& text) {
 
 void Translate::GetResultIciba(const Utf8Array& text)
 {
-  static YJson m_scJson {
-    YJson::O {
-      {u8"type", u8"json"},
-      {u8"key", u8"" ICIBA_KEY},
-      {u8"w", YJson::String},
-    }
-  };
-  m_scJson[u8"w"].getValueString().assign(text.begin, text.end);
-  const auto url = m_scJson.urlEncode(u8"http://dict-co.iciba.com/api/dictionary.php?"s);
-
+  HttpUrl url(u8"http://dict-co.iciba.com/api/dictionary.php?"sv, {
+    {u8"type", u8"json"},
+    {u8"key", u8"" ICIBA_KEY},
+    {u8"w", std::u8string(text.begin, text.end)},
+  });
   m_Request = std::make_unique<HttpLib>(url, true);
 
   HttpLib::Callback callback = {
@@ -587,7 +567,7 @@ void Translate::GetResultDictionary(const Utf8Array& text)
 {
   auto invalid = u8"只能翻译英文单词！"s;
   auto iter = std::find_if(text.begin, text.end, [](char8_t c){
-    return !std::isalnum(c) && !std::isalpha(c);
+    return !std::isalnum(c);
   });
   if (iter != text.end) {
     m_Callback(invalid.data(), invalid.size());
@@ -597,7 +577,7 @@ void Translate::GetResultDictionary(const Utf8Array& text)
   auto url = u8"https://api.dictionaryapi.dev/api/v2/entries/en/"s;
   url.append(text.begin, text.end);
 
-  m_Request = std::make_unique<HttpLib>(url, true);
+  m_Request = std::make_unique<HttpLib>(HttpUrl(url), true);
 
   HttpLib::Callback callback = {
     .m_FinishCallback = [this](auto message, auto res) {

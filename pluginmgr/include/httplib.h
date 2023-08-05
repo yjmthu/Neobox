@@ -8,22 +8,53 @@
 #include <memory>
 
 class HttpUrl {
+  friend class HttpLib;
   typedef std::u8string_view::const_iterator Iterator;
   typedef std::u8string String;
+  typedef std::u8string_view StringView;
+  typedef String::value_type Char;
+  typedef std::map<String, String> Params;
 public:
-  explicit HttpUrl(std::u8string_view url);
-  String GetUrlString();
-  String scheme;
+  HttpUrl(StringView url);
+  HttpUrl(StringView url, Params params);
+  HttpUrl(HttpUrl&& url) noexcept;
+  HttpUrl(const HttpUrl& url);
+  String GetUrl(bool showPort=false) const;
+  void SetUrl(StringView url);
+  String GetObjectString() const;
+  bool IsHttps() const { return scheme.back() == u8's'; }
+public:
+  String scheme = u8"http";
   String host;
-  String path;
-  std::map<String, String> parameters;
-  uint16_t port;
+  String path = u8"/";
+  uint16_t port = 80;
+  Params parameters;
 private:
   void ParseScheme(Iterator& first, Iterator last);
   void ParseHost(Iterator& first, Iterator last);
   void ParsePort(Iterator& first, Iterator last);
   void ParseParams(Iterator& first, Iterator last);
   void ParsePath(Iterator& first, Iterator last);
+  inline static Char ToHex(Char c) {
+    constexpr Char A = u8'A' - 10;
+    return c > 9 ? c + A : c + u8'0';
+  }
+  inline static Char FromHex(Char c) {
+    constexpr Char A = u8'A' - 10;
+    constexpr Char a = u8'a' - 10;
+    
+    if (std::isupper(c))
+      return c - A;
+    if (std::islower(c))
+      return c - a;
+    if (std::isdigit(c))
+      return c - '0';
+
+    return c;
+  }
+public:
+  static void UrlEncode(StringView text, String& out);
+  static void UrlDecode(StringView text, String& out);
 };
 
 class HttpLib {
@@ -34,17 +65,17 @@ private:
   typedef std::unique_lock<Mutex> LockerEx;
 public:
   typedef uint64_t HttpId;
-  typedef std::map<std::string, std::string> Headers;
+  typedef std::map<std::u8string, std::u8string> Headers;
   typedef size_t( CallbackFunction )(void*, size_t, size_t, void*);
 
   struct PostData { void* data; size_t size; } m_PostData;
   struct Response {
-    std::string version;
+    std::u8string version;
     unsigned long status = -1;
-    std::string reason;
+    std::u8string reason;
     Headers headers;
-    std::string body;
-    std::string location; // Redirect location
+    std::u8string body;
+    std::u8string location; // Redirect location
   };
 
   typedef std::function<void(const void*, size_t)> WriteCallback;
@@ -56,48 +87,39 @@ public:
     std::optional<ProcessCallback> m_ProcessCallback;
   };
 
-  template<typename Char=char>
-  explicit HttpLib(std::basic_string_view<Char> url, bool async = false)
-    : m_Url(url.cbegin(), url.cend())
+  explicit HttpLib(HttpUrl url, bool async = false, int timeout=30)
+    : m_Url(std::move(url))
     , m_hSession(nullptr)
     , m_ProxySet(false)
     , m_AsyncSet(async)
+    , m_TimeOut(timeout)
   {
     IntoPool();
     HttpPrepare();
     HttpInitialize();
   }
-  template<typename Char=char>
-  explicit HttpLib(std::basic_string<Char> url, bool async=false)
-    : HttpLib(std::basic_string_view<Char>(url), async)
-  {
-  }
   ~HttpLib();
 public:
-  template<typename Char=char>
-  void SetUrl(std::basic_string_view<Char> url) {
-    m_Url.assign(url.begin(), url.end());
+  void SetUrl(HttpUrl::StringView url) {
+    m_Url.SetUrl(url);
     HttpUninitialize();
     HttpInitialize();
   }
-  template<typename Char=char>
-  void SetUrl(const std::basic_string<Char>& url) {
-    SetUrl(std::basic_string_view<Char>(url));
-  }
-  void SetHeader(std::string key, std::string value) {
+  void SetHeader(std::u8string key, std::u8string value) {
     m_Headers[key] = value;
   }
   void ClearHeader() {
     m_Headers.clear();
   }
-  const std::u8string& GetUrl() const {
-    return m_Url;
+  std::u8string GetUrl() const {
+    return m_Url.GetUrl();
   }
   void SetRedirect(long redirect);
   void SetPostData(void* data, size_t size);
   Response* Get();
   Response* Get(const std::filesystem::path& path);
   Response* Get(CallbackFunction* callback, void* userData);
+  void SetTimeOut(int TimeOut);
   void GetAsync(Callback callback);
   void ExitAsync();
   bool IsFinished() const { return m_Finished; }
@@ -107,7 +129,7 @@ public:
 private:
   Headers m_Headers;
   Response m_Response;
-  std::u8string m_Url;
+  HttpUrl m_Url;
   void* m_hSession = nullptr;
 #ifdef _WIN32
   void* m_hConnect = nullptr;
@@ -133,8 +155,6 @@ private:
   void SetAsyncCallback();
   bool SendRequest();
   bool RecvResponse();
-  std::u8string GetDomain() const;
-  std::u8string GetPath() const;
 private:
   bool ReadStatusCode();
   bool ReadHeaders();

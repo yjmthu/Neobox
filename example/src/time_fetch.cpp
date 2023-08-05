@@ -16,8 +16,9 @@ static const auto strMonths = "JanFebMarAprMayJunJulAugSepOctNovDec"s;
 static const auto strWeeks = "SunMonTueWedThuFriSat"s;
 
 // Date:  Sat, 24 Dec 2022 17:19:03 GMT
-static auto GetDateTime(std::string dateStr)
+static auto GetDateTime(std::u8string dateU8Str)
 {
+  std::string dateStr(dateU8Str.begin(), dateU8Str.end());
   std::cout << "inital string is {" << dateStr << "} size <" << dateStr.size() << ">" << std::endl;
   std::regex pattern(" (\\w{3}), {1,2}(\\d{1,2}) (\\w{3}) (\\d{4}) (\\d{2})\\:(\\d{2})\\:(\\d{2}) GMT");
   std::smatch result;
@@ -51,10 +52,10 @@ void SetDateTime(SYSTEMTIME& datetime)
 int main()
 {
   std::cout << "============Begin============" << std::endl;
-  HttpLib clt("https://beijing-time.org/"s);
+  HttpLib clt(HttpUrl(u8"https://beijing-time.org/"sv));
   auto res = clt.Get();
   try {
-    auto ptr = GetDateTime(res->headers["Date"]);
+    auto ptr = GetDateTime(res->headers[u8"Date"]);
     auto& datetime = *ptr;
     std::cout << std::format("{:04}-{:02}-{:02} {:02}:{:02}:{:02} {}\n",
         datetime.wYear, datetime.wMonth, datetime.wDay,

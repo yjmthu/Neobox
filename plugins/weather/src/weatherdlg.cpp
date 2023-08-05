@@ -5,19 +5,24 @@
 #include <weather.hpp>
 #include <pluginmgr.h>
 
+#include <QLabel>
 #include <QPlainTextEdit>
 #include <QHBoxLayout>
+#include <QComboBox>
+#include <QLineEdit>
+#include <QListView>
 
 WeatherDlg::WeatherDlg(YJson& settings)
   : WidgetBase(mgr->m_Menu, false, false)
   , m_CenterWidget(new QWidget(this))
   , m_Settings(settings)
   , m_Weather(new Weather)
+  , m_Search(new QComboBox(this))
 {
   SetupUi();
   InitComponent();
   ConnectAll();
-  m_Weather->SendRequest();
+  m_Weather->FetchDays();
 }
 
 WeatherDlg::~WeatherDlg() {
@@ -50,13 +55,26 @@ void WeatherDlg::InitComponent()
   auto layout = new QVBoxLayout(m_CenterWidget);
   layout->setContentsMargins(11, 30, 11, 11);
   m_Text = new QPlainTextEdit(m_CenterWidget);
+
+  auto l = new QHBoxLayout();
+  layout->addLayout(l);
+  l->addWidget(new QLabel("搜索", this));
+  auto edit = new QLineEdit(this);
+
+  edit->setPlaceholderText(QStringLiteral("输入城市、乡镇"));
+  m_Search->setView(new QListView());
+  m_Search->setLineEdit(edit);
+  m_Search->setEditable(true);
+  m_Search->setMaxVisibleItems(6);
+  l->addWidget(m_Search);
+
   layout->addWidget(m_Text);
   AddScrollBar(m_Text->verticalScrollBar());
 }
 
 void WeatherDlg::ConnectAll() {
   connect(m_Weather, &Weather::Finished, this, [this](bool succeed) {
-    auto result = m_Weather->GetResult();
+    auto result = m_Weather->GetDays();
     if (succeed && result) {
       auto str = result->toString(true);
       m_Text->setPlainText(QString::fromUtf8(str.data(), str.size()));

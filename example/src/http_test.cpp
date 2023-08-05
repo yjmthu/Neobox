@@ -13,14 +13,22 @@
 
 using namespace std::literals;
 
+std::ostream& operator<<(std::ostream& out, const std::u8string& str) {
+  return out.write(reinterpret_cast<const char*>(str.data()), str.length());
+}
+
 int main()
 {
+  SetConsoleOutputCP(CP_UTF8);
   std::cout << "============Begin============" << std::endl;
   std::mutex mutex;
   std::condition_variable cv;
   static bool done = false;
 #if 1
-  HttpLib clt("https://w.wallhaven.cc/full/o5/wallhaven-o59gvl.jpg"s, true);
+  HttpUrl url(u8"https://w.wallhaven.cc/full/o5/wallhaven-o59gvl.jpg"sv);
+  std::cout << url.host << std::endl;
+  std::cout << url.GetObjectString() << std::endl;
+  HttpLib clt(url, true);
   std::ofstream file(L"wallhaven-o59gvl.jpg", std::ios::out | std::ios::binary);
 #else
   HttpLib clt("https://www.linux.org/"s, true);

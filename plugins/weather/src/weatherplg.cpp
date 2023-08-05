@@ -12,6 +12,7 @@ PluginName::PluginName(YJson& settings)
 }
 
 PluginName::~PluginName() {
+  delete m_MainMenuAction;
   delete m_WeatherDlg;
 }
 
@@ -32,7 +33,12 @@ void PluginName::InitFunctionMap()
 
 QAction* PluginName::InitMenuAction()
 {
-  return PluginObject::InitMenuAction();
+  m_MainMenuAction = new QAction("天气预报");
+  m_MainMenuAction->setToolTip("打开天气预报窗口");
+  QObject::connect(m_MainMenuAction, &QAction::triggered, m_WeatherDlg, &WeatherDlg::show);
+  PluginObject::InitMenuAction();
+
+  return m_MainMenuAction;
 }
 
 YJson& PluginName::InitSettings(YJson& settings)

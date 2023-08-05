@@ -81,7 +81,12 @@ void BingApi::CheckData(CheckCallback cbOK, std::optional<CheckCallback> cbNO)
     delete m_Data;
     m_Data = nullptr;
   }
-  const auto url = m_Setting[u8"api"].getValueString() + u8"/HPImageArchive.aspx?format=js&idx=0&n=8&mkt="s + m_Setting[u8"region"].getValueString();
+  HttpUrl url(m_Setting[u8"api"].getValueString() + u8"/HPImageArchive.aspx?", {
+    {u8"format", u8"js"},
+    {u8"idx", u8"0"},
+    {u8"n", u8"8"},
+    {u8"mkt", m_Setting[u8"region"].getValueString()},
+  });
   m_DataMutex.unlock();
 
   if (m_Data) {

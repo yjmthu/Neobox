@@ -44,7 +44,7 @@ void DownloadJob::ClearPool()
 }
 
 DownloadJob::DownloadJob(std::filesystem::path path, std::u8string url, Callback cb)
-  : m_HttpJob(new HttpLib(url, true))
+  : m_HttpJob(new HttpLib(HttpUrl(url), true))
   , m_ImageFile(new std::ofstream(path, std::ios::out | std::ios::binary))
   , m_Callback(cb)
   , m_Path(std::move(path))

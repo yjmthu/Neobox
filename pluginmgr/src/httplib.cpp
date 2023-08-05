@@ -76,9 +76,10 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
       break;
     }
     if (bResults) {
-      auto iter = object.m_Response.headers.find("Content-Length");
+      auto iter = object.m_Response.headers.find(u8"Content-Length");
       if (iter != object.m_Response.headers.end()) {
-        object.m_ConnectLength = std::stoull(iter->second);
+        std::string number(iter->second.begin(), iter->second.end());
+        object.m_ConnectLength = std::stoull(number);
       }
       object.EmitProcess();
       /* Next step: query for any data. */
@@ -136,31 +137,50 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
 }
 
 HttpUrl::HttpUrl(std::u8string_view url) {
-  auto iter = url.cbegin();
+  SetUrl(url);
+}
 
-  ParseScheme(iter, url.cend());
-  ParseHost(iter, url.cend());
-  ParsePort(iter, url.cend());
-  ParsePath(iter, url.cend());
-  ParseParams(iter, url.cend());
+HttpUrl::HttpUrl(HttpUrl&& url) noexcept
+  : scheme(std::move(url.scheme))
+  , host(std::move(url.host))
+  , path(std::move(url.path))
+  , port(url.port)
+  , parameters(std::move(url.parameters))
+{
+}
+
+HttpUrl::HttpUrl(const HttpUrl& url)
+  : scheme(url.scheme)
+  , host(url.host)
+  , path(url.path)
+  , port(url.port)
+  , parameters(url.parameters)
+{
+}
+
+HttpUrl::HttpUrl(StringView url, Params params)
+  : parameters(std::move(params))
+{
+  SetUrl(url);
 }
 
 void HttpUrl::ParseScheme(Iterator& first, Iterator last)
 {
   scheme = u8"https";
-  if (std::equal(first, last, u8"http")) {
+  if (last - first > 7 && std::equal(first, first + 4, u8"http")) {
     first += 4;
-    if (first != last && *first == u8's') {
+    if (*first == u8's') {
       ++first;
+    } else {
       scheme.pop_back();
     }
-    if (std::equal(first, last, u8"://")) {
+    if (std::equal(first, first + 3, u8"://")) {
       first += 3;
     } else {
       throw std::logic_error("HttpUrl Error: Url scheme doesn't end with '://'.");
     }
   } else {
-    throw std::logic_error("HttpUrl Error: Url scheme doesn't start with 'http'.");
+    throw std::logic_error("HttpUrl Error: Url scheme doesn't start with 'http(s)://'.");
   }
 }
 
@@ -233,10 +253,88 @@ void HttpUrl::ParseParams(Iterator& first, Iterator last)
     auto e = std::find(first, last, u8'&');
     auto i = std::find(first, e, u8'=');
     if (i != e) {
-      parameters[String(first, i)] = String(i + 1, e);
+      String key;
+      UrlDecode(StringView(first, i), key);
+      UrlDecode(StringView(i + 1, e), parameters[key]);
     }
     first = e != last ? ++e: e;
   };
+}
+
+void HttpUrl::UrlEncode(StringView text, String& out)
+{
+  for (auto i: text) {
+    if (std::isalnum(i) || u8"-_.~"s.find(i) != std::u8string_view::npos) {
+      out.push_back(i);
+    } else {
+      out.push_back('%');
+      out.push_back(ToHex(i >> 4));
+      out.push_back(ToHex(i & 0xF));
+    }
+  }
+}
+
+void HttpUrl::UrlDecode(StringView text, String& out)
+{
+  for (auto i = text.cbegin(); i != text.cend(); ++i) {
+    switch (*i) {
+      case u8'%':{
+        if (text.cend() - i < 2) {
+          throw std::logic_error("HttpUrl Error: Url decode error.");
+        }
+        auto const c = FromHex(*++i) << 4;
+        out.push_back(c | FromHex(*++i));
+        break;
+      }
+      case u8'+':
+        out.push_back(u8' ');
+        break;
+      default:
+        out.push_back(*i);
+        break;
+    }
+  }
+}
+
+HttpUrl::String HttpUrl::GetUrl(bool showPort) const
+{
+  auto url = scheme + u8"://" + host;
+  if (showPort) {
+    url.push_back(u8':');
+    auto str = std::to_string(port);
+    url.append(str.begin(), str.end());
+  }
+  url += GetObjectString();
+
+  return url;
+}
+
+void HttpUrl::SetUrl(StringView url)
+{
+  auto iter = url.cbegin();
+
+  ParseScheme(iter, url.cend());
+  ParseHost(iter, url.cend());
+  ParsePort(iter, url.cend());
+  ParsePath(iter, url.cend());
+  ParseParams(iter, url.cend());
+}
+
+HttpUrl::String HttpUrl::GetObjectString() const
+{
+  auto object = path;
+  for (auto& [key, value]: parameters) {
+    UrlEncode(key, object);
+    object.push_back(u8'=');
+    UrlEncode(value, object);
+    object.push_back(u8'&');
+  }
+
+  if (!parameters.empty()) {
+    object.pop_back();
+  }
+
+  return object;
 }
 
 bool HttpLib::IsOnline() {
@@ -334,55 +432,6 @@ void HttpLib::SetAsyncCallback()
 #endif
 }
 
-std::u8string HttpLib::GetDomain() const
-{
-  std::u8string result;
-#ifdef __linux__
-  std::u8string::const_iterator iter;
-#endif
-  if (m_Url.starts_with(u8"https://")) {
-#ifdef _WIN32
-    result = m_Url.substr(8, m_Url.find('/', 8) - 8);
-#else
-    iter = m_Url.cbegin() + 8;
-#endif
-  } else if (m_Url.starts_with(u8"http://")) {
-#ifdef _WIN32
-    result = m_Url.substr(7, m_Url.find('/', 7) - 7);
-#else
-    iter = m_Url.cbegin() + 7;
-#endif
-  } else {
-    throw std::logic_error("Url should begin with 'http://' or 'https://'!");
-  }
-#ifndef _WIN32
-  result.assign(iter, std::find(iter, m_Url.cend(), '/'));
-#endif
-  // result.push_back(L'\0');
-  return result;
-}
-
-std::u8string HttpLib::GetPath() const
-{
-  size_t pos;
-  if (m_Url.starts_with(u8"https://")) {
-    pos = m_Url.find('/', 8);
-  } else if (m_Url.starts_with(u8"http://")) {
-    pos = m_Url.find('/', 7);
-  } else {
-    throw std::logic_error("Url should begin with 'http://' or 'http://'!");
-  }
-  if (pos == std::string::npos) {
-    return u8"/"s;
-  }
-#ifdef _WIN32
-  auto result = m_Url.substr(pos);
-#else
-  String result(m_Url.begin() + pos, m_Url.end());
-#endif
-  return result;
-}
-
 void HttpLib::IntoPool()
 {
   if (m_AsyncSet) {
@@ -420,28 +469,22 @@ void HttpLib::HttpInitialize()
     WINHTTP_NO_PROXY_BYPASS,
     m_AsyncSet ? WINHTTP_FLAG_ASYNC: 0);
   if (!m_hSession) {
+    std::wcerr << L"HttpLib Error: " << GetLastError() << L" in WinHttpOpen.\n";
     return;
   }
 
   if (m_AsyncSet) {
     SetAsyncCallback();
   }
-  auto url = Utf82WideString(GetDomain());
+  auto url = Utf82WideString(m_Url.host);
 
-  // Use WinHttpSetTimeouts to set a new time-out values.
-  const auto timeout = m_TimeOut * 1000;
-  if (!WinHttpSetTimeouts(m_hSession, timeout, timeout, timeout, timeout)) {
-    std::wcout << L"Error " << GetLastError() << L" in WinHttpSetTimeouts.\n";
+  SetTimeOut(m_TimeOut);
+  m_hConnect = WinHttpConnect(m_hSession, url.c_str(), m_Url.port, 0);
+  if (m_hConnect) {
+    SetProxyBefore();
+  } else {
+    std::wcerr << L"HttpLib Error: " << GetLastError() << L" in WinHttpConnect.\n";
   }
-  m_hConnect = WinHttpConnect(
-    m_hSession,
-    url.c_str(),
-    m_Url.starts_with(u8"https") ? 
-      INTERNET_DEFAULT_HTTPS_PORT: INTERNET_DEFAULT_HTTP_PORT,
-    0
-  );
-
-  SetProxyBefore();
 
 #else
   SetProxyBefore();
@@ -604,7 +647,7 @@ bool HttpLib::SendHeaders()
 {
   bool bResults = false;
 #ifdef _WIN32
-  auto path = Utf82WideString(GetPath());
+  auto path = Utf82WideString(m_Url.GetObjectString());
   m_hRequest = WinHttpOpenRequest(
     m_hConnect,
     m_PostData.data ? L"POST": L"GET",
@@ -612,7 +655,7 @@ bool HttpLib::SendHeaders()
     nullptr,
     WINHTTP_NO_REFERER,
     WINHTTP_DEFAULT_ACCEPT_TYPES,
-    m_Url.starts_with(u8"https") ? WINHTTP_FLAG_SECURE : 0
+    m_Url.IsHttps() ? WINHTTP_FLAG_SECURE : 0
   );
   if (m_hRequest) {
     bResults = SetProxyAfter();
@@ -621,7 +664,7 @@ bool HttpLib::SendHeaders()
   }
   if (bResults) {
     for (auto& [i, j]: m_Headers) {
-      auto header = Ansi2WideString(std::format("{}: {}", i, j));
+      auto header = Utf82WideString(i + u8": " + j);
       bResults = WinHttpAddRequestHeaders(m_hRequest, header.data(), header.size(), WINHTTP_ADDREQ_FLAG_ADD);
       if (!bResults) {
         std::wcerr << L"Winhttp add headers failed!" << std::endl;
@@ -660,7 +703,7 @@ bool HttpLib::ReadStatusCode()
 
   if (bResults) {
     if(m_Response.status == 304) 
-      std::wcout << L"Document has not been updated.\n";
+      std::wcerr << L"Document has not been updated.\n";
   }
 #else
   if (bResults)
@@ -693,22 +736,28 @@ bool HttpLib::ReadHeaders()
                                 WINHTTP_NO_HEADER_INDEX);
 
     if (bResults) { // regex expr: '/^([^:]+):([^\n]+)/'
-      std::istringstream strstream(Wide2AnsiString(lpOutBuffer));
-      std::string buffer;
-      if (std::getline(strstream, buffer)) {
-        auto const pos = buffer.find(' ');
-        m_Response.version = buffer.substr(0, pos);
+      // std::istringstream strstream(Wide2AnsiString(lpOutBuffer));
+      auto const outBuffer = Wide2Utf8String(lpOutBuffer);
+      auto cursor = outBuffer.find(u8"\r\n");
+      if (cursor != outBuffer.npos) {
+        auto const pos = outBuffer.find(u8' ');
+        m_Response.version = outBuffer.substr(0, pos);
+        cursor += 2;
       }
-      while (std::getline(strstream, buffer)) {
-        // const auto str = Wide2AnsiString(buffer);
-        const auto left = buffer.find(':'), right = buffer.find('\r', left);
-        if (left == buffer.npos || right == buffer.npos) continue;
-        m_Response.headers[buffer.substr(0, left)] = buffer.substr(left + 1, right - left - 1);
+      for (; cursor != outBuffer.npos; cursor += 2) {
+        auto mid = outBuffer.find(u8':', cursor);
+        cursor = outBuffer.find(u8"\r\n", mid);
+        if (mid == outBuffer.npos || cursor == outBuffer.npos) {
+          break;
+        }
+        auto key = outBuffer.substr(0, mid);
+        mid = outBuffer.find_first_not_of(u8' ', ++mid);
+        m_Response.headers[key] = outBuffer.substr(mid, cursor - mid);
       }
 
       if (m_Response.status / 100 == 3) {
 #ifdef _WIN32
-        m_Response.location = m_Response.headers["Location"];
+        m_Response.location = m_Response.headers[u8"Location"];
 #else
       char* szRedirectUrl = nullptr;
       lStatus = curl_easy_getinfo(m_hSession, CURLINFO_REDIRECT_URL, &szRedirectUrl);
@@ -750,7 +799,7 @@ bool HttpLib::ReadBody()
     strBuffer.resize(dwSize);
     bResults = WinHttpReadData(m_hRequest, strBuffer.data(), dwSize, &dwDownloaded);
     if (!bResults) {
-      std::wcout << L"WinHttpQueryDataAvailable failed: " << GetLastError() << std::endl;
+      std::wcerr << L"WinHttpQueryDataAvailable failed: " << GetLastError() << std::endl;
     }
     if (!dwDownloaded) break;
     m_Callback(strBuffer.data(), sizeof(char), dwDownloaded, m_DataBuffer);
@@ -768,7 +817,12 @@ void HttpLib::HttpPerform()
   } else {
     std::wcerr << L"WinHttpSendHeasers failed: " << GetLastError() << std::endl;
   }
-  if (m_AsyncSet) return;
+  if (m_AsyncSet) {
+    if (!bResults) {
+      std::thread(&HttpLib::ExitAsync, this).detach();
+    }
+    return;
+  }
 
   if (bResults) {
     bResults = RecvResponse();
@@ -811,12 +865,14 @@ void HttpLib::EmitProcess()
 void HttpLib::EmitFinish(std::wstring message)
 {
   m_Finished = true;
-  WinHttpSetStatusCallback(
-    m_hSession,
-    NULL,
-    WINHTTP_CALLBACK_FLAG_ALL_NOTIFICATIONS,
-    NULL
-  );
+  if (m_hSession) {
+    WinHttpSetStatusCallback(
+      m_hSession,
+      NULL,
+      WINHTTP_CALLBACK_FLAG_ALL_NOTIFICATIONS,
+      NULL
+    );
+  }
   auto& callback = m_AsyncCallback.m_FinishCallback;
   if (callback) {
     /* To prevent infinite recursion at destructor time,
@@ -871,21 +927,37 @@ HttpLib::Response* HttpLib::Get(CallbackFunction* callback, void* userdata) {
   return &m_Response;
 }
 
+void HttpLib::SetTimeOut(int TimeOut) {
+  // Use WinHttpSetTimeouts to set a new time-out values.
+  m_TimeOut = TimeOut;
+  const auto timeout = m_TimeOut * 1000;
+  if (!WinHttpSetTimeouts(m_hSession, timeout, timeout, timeout, timeout)) {
+    std::wcerr << L"HttpLib Error: " << GetLastError() << L" in WinHttpSetTimeouts.\n";
+  }
+}
 
 void HttpLib::GetAsync(Callback callback)
 {
   if (!m_AsyncSet) {
     throw std::logic_error("HttpLib Error: HttpAync wasn't set!");
   }
+
   m_Finished = false;
+
   m_Response.body.clear();
   m_AsyncCallback = std::move(callback);
   m_DataBuffer = new std::u8string;
   if (!m_AsyncCallback.m_WriteCallback) {
     m_AsyncCallback.m_WriteCallback = [this](auto data, auto size){
-      m_Response.body.append(reinterpret_cast<const char*>(data), size);
+      m_Response.body.append(reinterpret_cast<const char8_t*>(data), size);
     };
   }
+
+  if (!m_hConnect || !m_hSession) {
+    std::thread(&HttpLib::ExitAsync, this).detach();
+    return;
+  }
+
   HttpPerform();
 }
 

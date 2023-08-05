@@ -15,6 +15,7 @@ private:
   QWidget* const m_CenterWidget;
   class YJson& m_Settings;
   class Weather* const m_Weather;
+  class QComboBox* const m_Search;
   class QPlainTextEdit* m_Text;
 };
 
