@@ -86,14 +86,14 @@ static auto OpenImageFile(std::wstring uriImage) {
   return softwareBitmap;
 }
 
-void SaveSoftwareBitmapToFile(SoftwareBitmap& softwareBitmap)
+IAsyncAction SaveSoftwareBitmapToFile(SoftwareBitmap& softwareBitmap)
 {
-  StorageFolder currentfolder = StorageFolder::GetFolderFromPathAsync(std::filesystem::current_path().wstring()).get();
-  StorageFile outimagefile = currentfolder.CreateFileAsync(L"NEOOCR.jpg", CreationCollisionOption::ReplaceExisting).get();
-  IRandomAccessStream writestream = outimagefile.OpenAsync(FileAccessMode::ReadWrite).get();
-  BitmapEncoder encoder = BitmapEncoder::CreateAsync(BitmapEncoder::JpegEncoderId(), writestream).get();
+  StorageFolder currentfolder = co_await StorageFolder::GetFolderFromPathAsync(std::filesystem::current_path().wstring());
+  StorageFile outimagefile = co_await currentfolder.CreateFileAsync(L"NEOOCR.jpg", CreationCollisionOption::ReplaceExisting);
+  IRandomAccessStream writestream = co_await outimagefile.OpenAsync(FileAccessMode::ReadWrite);
+  BitmapEncoder encoder = co_await BitmapEncoder::CreateAsync(BitmapEncoder::JpegEncoderId(), writestream);
   encoder.SetSoftwareBitmap(softwareBitmap);
-  encoder.FlushAsync().get();
+  encoder.FlushAsync();
   writestream.Close();
 }
 
@@ -152,10 +152,12 @@ std::vector<OcrResult> NeoOcr::GetTextEx(const QImage& image)
   return result;
 }
 
-IAsyncAction WinOcrGet(const std::u8string& name, SoftwareBitmap& softwareBitmap, std::wstring& result) {
+IAsyncAction WinOcrGet(std::wstring name, SoftwareBitmap& softwareBitmap, std::wstring& result) {
+  // co_await SaveSoftwareBitmapToFile(softwareBitmap);
+
   std::function engine = WinOcr::OcrEngine::TryCreateFromUserProfileLanguages;
-  if (name != u8"user-Profile") {
-    const Language lan(Utf82WideString(name));
+  if (name != L"user-Profile") {
+    const Language lan(name);
     if (WinOcr::OcrEngine::IsLanguageSupported(lan)) {
       engine = std::bind(&WinOcr::OcrEngine::TryCreateFromLanguage, lan);
     }
@@ -164,7 +166,7 @@ IAsyncAction WinOcrGet(const std::u8string& name, SoftwareBitmap& softwareBitmap
   auto ocrResult = co_await engine().RecognizeAsync(softwareBitmap);
 
   hstring back;
-  auto notZhCN = [](const hstring& str) {
+  static constexpr auto notZhCN = [](const hstring& str) {
     return str.size() == 1 && str.front() < 0x80;
   };
   for (const auto& line : ocrResult.Lines()) {
@@ -187,38 +189,44 @@ std::u8string NeoOcr::OcrWindows(const QImage& image)
       BitmapPixelFormat::Bgra8,
       image.width(), image.height()
   );
+  {
+    auto buffer = softwareBitmap.LockBuffer(BitmapBufferAccessMode::Write);
+    auto reference = buffer.CreateReference();
+    auto access = reference.as<IMemoryBufferByteAccess>();
+    unsigned char* pPixelData = nullptr;
+    unsigned capacity = 0;
+    // access->GetBuffer(&pPixelData, &capacity);
+    winrt::check_hresult(access->GetBuffer(&pPixelData, &capacity));
+    // 获取第0帧图片
+    auto bufferLayout = buffer.GetPlaneDescription(0);
 
-  auto buffer = softwareBitmap.LockBuffer(BitmapBufferAccessMode::Write);
-  auto reference = buffer.CreateReference();
-  auto access = reference.as<IMemoryBufferByteAccess>();
-  unsigned char* pPixelData = nullptr;
-  unsigned capacity = 0;
-  // access->GetBuffer(&pPixelData, &capacity);
-  winrt::check_hresult(access->GetBuffer(&pPixelData, &capacity));
-  auto bufferLayout = buffer.GetPlaneDescription(0);
-
-  pPixelData += bufferLayout.StartIndex;
+    pPixelData += bufferLayout.StartIndex;
+    auto plane = reinterpret_cast<uint32_t*>(pPixelData);
 #if 1
-  std::copy_n(image.bits(), bufferLayout.Stride * bufferLayout.Height, pPixelData);
+    std::copy_n(reinterpret_cast<const uint32_t*>(image.bits()),
+      bufferLayout.Width * bufferLayout.Height, plane);
 #else
-  auto plane = reinterpret_cast<uint32_t*>(pPixelData);
-  for (int i = 0; i < bufferLayout.Height; ++i) {
-    auto line = reinterpret_cast<const uint32_t*>(image.scanLine(i));
-    for (int j=0; j != bufferLayout.Width; ++j) {
-      plane[j] = line[j];
+    for (int i = 0; i < bufferLayout.Height; ++i) {
+      auto line = reinterpret_cast<const uint32_t*>(image.scanLine(i));
+      for (int j=0; j != bufferLayout.Width; ++j) {
+        plane[j] = line[j];
+      }
+      plane += bufferLayout.Width;
     }
-    plane += bufferLayout.Width;
-  }
 #endif
 
-  reference.Close();
-  buffer.Close();
+    reference.Close();
+    buffer.Close();
 
-  // SaveSoftwareBitmapToFile(softwareBitmap);
+  }
+
 
   std::wstring result;
-  auto rrrr = WinOcrGet(m_Settings.GetWinLan(), softwareBitmap, result);
-  rrrr.get();
+  std::thread thread([&](){
+    // 不知道为啥必须要在另外一个线程里面才能正常运行
+    WinOcrGet(Utf82WideString(m_Settings.GetWinLan()), softwareBitmap, result).get();
+  });
+  thread.join();
   return Wide2Utf8String(result);
 }
 

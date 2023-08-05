@@ -10,9 +10,12 @@ public:
 private:
   void SetupUi();
   void InitComponent();
+  void ConnectAll();
 private:
-  QWidget* m_CenterWidget;
+  QWidget* const m_CenterWidget;
   class YJson& m_Settings;
+  class Weather* const m_Weather;
+  class QPlainTextEdit* m_Text;
 };
 
 #endif // WEATHERDLG_H

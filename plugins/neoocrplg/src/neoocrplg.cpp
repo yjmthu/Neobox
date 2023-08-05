@@ -132,7 +132,7 @@ void PluginName::InitFunctionMap() {
       }, PluginEvent::Bool}
     },
     {u8"enableShowWindow",
-      {u8"显示窗口", u8"唤起极简翻译窗口", [this](PluginEvent event, void* data) {
+      {u8"显示窗口", u8"识别文字后唤起极简翻译窗口", [this](PluginEvent event, void* data) {
         if (event == PluginEvent::Bool) {
           m_Settings.SetShowWindow(*reinterpret_cast<bool*>(data));
           mgr->ShowMsg("设置成功");

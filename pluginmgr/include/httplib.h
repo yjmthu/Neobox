@@ -7,6 +7,25 @@
 #include <httpproxy.h>
 #include <memory>
 
+class HttpUrl {
+  typedef std::u8string_view::const_iterator Iterator;
+  typedef std::u8string String;
+public:
+  explicit HttpUrl(std::u8string_view url);
+  String GetUrlString();
+  String scheme;
+  String host;
+  String path;
+  std::map<String, String> parameters;
+  uint16_t port;
+private:
+  void ParseScheme(Iterator& first, Iterator last);
+  void ParseHost(Iterator& first, Iterator last);
+  void ParsePort(Iterator& first, Iterator last);
+  void ParseParams(Iterator& first, Iterator last);
+  void ParsePath(Iterator& first, Iterator last);
+};
+
 class HttpLib {
 public:
   typedef std::mutex Mutex;

@@ -459,7 +459,7 @@ void Translate::GetResultIciba(const Utf8Array& text)
     }
   };
   m_scJson[u8"w"].getValueString().assign(text.begin, text.end);
-  const auto url = m_scJson.urlEncode(u8"https://dict-co.iciba.com/api/dictionary.php?"s);
+  const auto url = m_scJson.urlEncode(u8"http://dict-co.iciba.com/api/dictionary.php?"s);
 
   m_Request = std::make_unique<HttpLib>(url, true);
 
@@ -632,8 +632,10 @@ void Translate::FormatDictionaryResult(const class YJson& data)
     if (phonetics.isArray() && !phonetics.emptyA()) {
       html << "<h4>phonetics</h4><ul><li>";
       for (auto& item: phonetics.getArray()) {
-        auto& text = item[u8"text"].getValueString();
-        html << text << "; ";
+        auto text = item.find(u8"text");
+        if (text != item.endO() && text->second.isString()) {
+          html << text->second.getValueString() << "; ";
+        }
       }
       html << "</li></ul><hr>";
     }

@@ -135,6 +135,110 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
   }
 }
 
+HttpUrl::HttpUrl(std::u8string_view url) {
+  auto iter = url.cbegin();
+
+  ParseScheme(iter, url.cend());
+  ParseHost(iter, url.cend());
+  ParsePort(iter, url.cend());
+  ParsePath(iter, url.cend());
+  ParseParams(iter, url.cend());
+}
+
+void HttpUrl::ParseScheme(Iterator& first, Iterator last)
+{
+  scheme = u8"https";
+  if (std::equal(first, last, u8"http")) {
+    first += 4;
+    if (first != last && *first == u8's') {
+      ++first;
+      scheme.pop_back();
+    }
+    if (std::equal(first, last, u8"://")) {
+      first += 3;
+    } else {
+      throw std::logic_error("HttpUrl Error: Url scheme doesn't end with '://'.");
+    }
+  } else {
+    throw std::logic_error("HttpUrl Error: Url scheme doesn't start with 'http'.");
+  }
+}
+
+void HttpUrl::ParseHost(Iterator& first, Iterator last)
+{
+  auto iter = std::find(first, last, u8'/');
+  if (first == iter || *first == u8':') {
+    throw std::logic_error("HttpUrl Error: Url host doesn't exist!");
+  }
+  host.assign(first, iter);
+
+  auto i = host.rfind(u8':');
+  if (i == host.npos) {
+    first = iter;
+    return;
+  }
+  first += i;
+  host.erase(i, host.size() - i);
+}
+
+void HttpUrl::ParsePort(Iterator& first, Iterator last)
+{
+  if (scheme.back() == u8's') {
+    port = 443;
+  } else {
+    port = 80;
+  }
+  if (first == last) return;
+
+  switch (*first) {
+    case ':':{
+      port = 0;
+      while (++first != last && u8'0' <= *first && *first <= u8'9') {
+        port *= 10;
+        port += *first - u8'0';
+      }
+      break;
+    }
+    case '/':
+      return;
+    default:
+      throw std::logic_error("HttpUrl Error: Url is invalid!");
+  }
+}
+
+void HttpUrl::ParsePath(Iterator& first, Iterator last)
+{
+  if (first == last) {
+    path = u8"/";
+    return;
+  }
+  if (*first != u8'/') {
+    throw std::logic_error("HttpUrl Error: Url path doesn't start with '/'.");
+  }
+
+  std::u8string_view str(first, last);
+  auto i = str.find(u8'?');
+  if (i == str.npos) {
+    path = str;
+    first = last;
+    return;
+  }
+  path = str.substr(0, ++i);
+  first += i;
+}
+
+void HttpUrl::ParseParams(Iterator& first, Iterator last)
+{
+  while (first != last) {
+    auto e = std::find(first, last, u8'&');
+    auto i = std::find(first, e, u8'=');
+    if (i != e) {
+      parameters[String(first, i)] = String(i + 1, e);
+    }
+    first = e != last ? ++e: e;
+  };
+}
+
 bool HttpLib::IsOnline() {
 #ifdef _WIN32
   BOOL bResult = FALSE;
@@ -329,7 +433,13 @@ void HttpLib::HttpInitialize()
   if (!WinHttpSetTimeouts(m_hSession, timeout, timeout, timeout, timeout)) {
     std::wcout << L"Error " << GetLastError() << L" in WinHttpSetTimeouts.\n";
   }
-  m_hConnect = WinHttpConnect(m_hSession, url.c_str(), INTERNET_DEFAULT_HTTP_PORT, 0);
+  m_hConnect = WinHttpConnect(
+    m_hSession,
+    url.c_str(),
+    m_Url.starts_with(u8"https") ? 
+      INTERNET_DEFAULT_HTTPS_PORT: INTERNET_DEFAULT_HTTP_PORT,
+    0
+  );
 
   SetProxyBefore();
 
@@ -502,7 +612,7 @@ bool HttpLib::SendHeaders()
     nullptr,
     WINHTTP_NO_REFERER,
     WINHTTP_DEFAULT_ACCEPT_TYPES,
-    0
+    m_Url.starts_with(u8"https") ? WINHTTP_FLAG_SECURE : 0
   );
   if (m_hRequest) {
     bResults = SetProxyAfter();
