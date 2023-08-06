@@ -10,7 +10,7 @@ using namespace std::literals;
 template<class _IBufferType, class _OBufferType>
 bool GzipCompress(const _IBufferType& inBuffer, _OBufferType& outBuffer)
 {
-  std::array<Bytef, 4096> tempBuffer;
+  std::vector<Bytef> tempBuffer(1 << 15);
   int windowBits = 15;
 
   if (inBuffer.empty()) {
@@ -26,6 +26,7 @@ bool GzipCompress(const _IBufferType& inBuffer, _OBufferType& outBuffer)
       MAX_WBITS + 16, 8, Z_DEFAULT_STRATEGY);
   if (error != Z_OK) return false;
   do {
+    std::fill(tempBuffer.begin(), tempBuffer.end(), 0);
     gzipStream.next_out = tempBuffer.data();
     gzipStream.avail_out = tempBuffer.size();
     error = deflate(&gzipStream, Z_FINISH);
@@ -38,7 +39,7 @@ bool GzipCompress(const _IBufferType& inBuffer, _OBufferType& outBuffer)
 template<class _IBufferType, class _OBufferType>
 bool GZipUnCompress(const _IBufferType& inBuffer, _OBufferType& outBuffer)
 {
-  std::array<Bytef, 4096> tempBuffer;
+  std::vector<Bytef> tempBuffer(1 << 15);
   z_stream gzipStream {
     .next_in = (Bytef*)inBuffer.data(),
     .avail_in = static_cast<z_uInt>(inBuffer.size()),
@@ -50,6 +51,7 @@ bool GZipUnCompress(const _IBufferType& inBuffer, _OBufferType& outBuffer)
     return false;
   }
   do {
+    std::fill(tempBuffer.begin(), tempBuffer.end(), 0);
     gzipStream.avail_out = tempBuffer.size();
     gzipStream.next_out = tempBuffer.data();
     error = inflate(&gzipStream, Z_FINISH);

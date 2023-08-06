@@ -24,3 +24,33 @@
   font-size: 14px;
   font-family: "%1";
 }
+
+QScrollArea {
+  outline: 0;
+  background-color: aqua;
+  border-radius: 6px;
+  color: black;
+}
+
+#IconHour {
+  color: black;
+  font-size: 24px;
+  border-radius: 3px;
+  font-family: "%1";
+}
+
+#ScrollWidget {
+  background-color: transparent;
+  color: black;
+}
+
+QProgressBar:vertical {
+  border-radius: 3px;
+  background-color: #2d2e32;
+  text-align: center;
+}
+
+QProgressBar::chunk:vertical {
+  border-radius: 3px;
+  background-color: #427bff;
+}

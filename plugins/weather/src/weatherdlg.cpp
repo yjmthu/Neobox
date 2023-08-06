@@ -8,6 +8,7 @@
 #include <citysearch.hpp>
 #include <citylist.hpp>
 #include <weatheritem.hpp>
+#include <weatherh.hpp>
 
 #include <QLabel>
 #include <QPlainTextEdit>
@@ -15,12 +16,16 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QFile>
+#include <QScrollArea>
+#include <QTimer>
 
 QString WeatherDlg::m_WeatherFontName;
+std::map<std::u8string, int> WeatherDlg::m_FontsMap;
 
 void WeatherDlg::showEvent(QShowEvent *event)
 {
   m_SearchList->Move();
+  // m_Hours->m_ScrollArea->setMinimumWidth(m_Item->width());
   WidgetBase::showEvent(event);
 }
 
@@ -41,6 +46,7 @@ WeatherDlg::WeatherDlg(WeatherCfg& settings)
   , m_Config(settings)
   , m_Weather(new Weather(m_Config))
   , m_Item(new WeatherItem(this))
+  , m_Hours(new WeatherH(this))
   , m_CityName(new QLabel(GetCityName(), m_CenterWidget))
   , m_CityEdit(new CitySearch(m_CenterWidget))
   , m_SearchList(new CityList(m_CenterWidget, m_Config, *m_CityName, *m_CityEdit))
@@ -56,6 +62,22 @@ WeatherDlg::~WeatherDlg() {
   delete m_CityEdit;
   delete m_CityName;
   delete m_Weather;
+}
+
+void WeatherDlg::LoadFontsMap()
+{
+  QFile file(":/fonts/qweather-icons.json");
+
+  if (!file.open(QIODevice::ReadOnly)) {
+    return;
+  }
+
+  auto data = file.readAll();
+  YJson json(data.begin(), data.end());
+
+  for (auto& [name, value]: json.getObject()) {
+    m_FontsMap[name] = value.getValueInt();
+  }
 }
 
 void WeatherDlg::LoadStyleSheet()
@@ -111,6 +133,9 @@ void WeatherDlg::InitComponent()
   l->addWidget(m_CityEdit);
 
   layout->addWidget(m_Item);
+  layout->addWidget(m_Hours);
+  AddScrollBar(m_Hours->m_ScrollArea->horizontalScrollBar(), true);
+  AddScrollBar(m_Hours->m_ScrollArea->verticalScrollBar(), true);
   layout->addWidget(m_Text);
   AddScrollBar(m_Text->verticalScrollBar());
 
@@ -123,6 +148,8 @@ void WeatherDlg::LoadQweatherFonts()
   int fontId = QFontDatabase::addApplicationFont(":/fonts/qweather-icons.ttf");
   QStringList fontFamilies = QFontDatabase::applicationFontFamilies(fontId);
   m_WeatherFontName = fontFamilies.at(0);
+
+  LoadFontsMap();
 }
 
 void WeatherDlg::ConnectAll() {
@@ -133,11 +160,15 @@ void WeatherDlg::ConnectAll() {
       ShowCityList(succeed);
       break;
     case Hours:
+      UpdateHours(succeed);
+      m_Weather->Fetch(Days);
       break;
     case Days:
+      UpdateDays(succeed);
       break;
     case Now:
       UpdateItem(succeed);
+      m_Weather->Fetch(Hours);
       break;
     }
   });
@@ -151,6 +182,8 @@ void WeatherDlg::ConnectAll() {
   connect(m_SearchList, &CityList::CityChanged, [this]() {
     m_Weather->Fetch(Weather::GetTypes::Now);
   });
+
+  QTimer::singleShot(1000, [this](){m_Weather->Fetch(Weather::GetTypes::Now);});
 }
 
 QString WeatherDlg::GetCityName() const
@@ -195,4 +228,19 @@ void WeatherDlg::UpdateItem(bool succeed)
     auto str = result->toString(true);
     m_Text->setPlainText(QString::fromUtf8(str.data(), str.size()));
   }
+}
+
+void WeatherDlg::UpdateHours(bool succeed)
+{
+  auto result = m_Weather->Get();
+  if (succeed && result) {
+    m_Hours->SetJSON(*result);
+    auto str = result->toString(true);
+    m_Text->setPlainText(QString::fromUtf8(str.data(), str.size()));
+  }
+}
+
+void WeatherDlg::UpdateDays(bool succeed)
+{
+  auto result = m_Weather->Get();
 }

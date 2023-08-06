@@ -9,7 +9,6 @@
 #include <QLabel>
 
 using namespace std::literals;
-std::map<std::u8string, int> WeatherItem::m_FontsMap;
 
 WeatherItem::WeatherItem(QWidget* parent)
   : QFrame(parent)
@@ -17,7 +16,6 @@ WeatherItem::WeatherItem(QWidget* parent)
   , m_TextDayNight(new QLabel(this))
   , m_Temperature(new QLabel(this))
 {
-  LoadFontsMap();
   SetObjectName();
   SetupUi();
 }
@@ -25,22 +23,6 @@ WeatherItem::WeatherItem(QWidget* parent)
 WeatherItem::~WeatherItem()
 {
   //
-}
-
-void WeatherItem::LoadFontsMap()
-{
-  QFile file(":/fonts/qweather-icons.json");
-
-  if (!file.open(QIODevice::ReadOnly)) {
-    return;
-  }
-
-  auto data = file.readAll();
-  YJson json(data.begin(), data.end());
-
-  for (auto& [name, value]: json.getObject()) {
-    m_FontsMap[name] = value.getValueInt();
-  }
 }
 
 void WeatherItem::SetupUi()
@@ -91,7 +73,7 @@ class QGridLayout* WeatherItem::SetupGrid()
   for (auto& [key, item]: m_DetailMap) {
     auto curRow = curIndex / iRowSize;
     auto offset = (curIndex++ % iRowSize) * 3;
-    auto icon = new QLabel(QChar(m_FontsMap[item.icon]), this);
+    auto icon = new QLabel(QChar(WeatherDlg::m_FontsMap[item.icon]), this);
     icon->setObjectName("IconExponent");
     grid->addWidget(icon, curRow, offset);
     auto lName = new QLabel(item.name);
@@ -150,6 +132,6 @@ void WeatherItem::SetDayText(std::u8string_view value)
 
 void WeatherItem::SetDayIcon(const std::u8string& value)
 {
-  auto unicode = m_FontsMap[value];
+  auto unicode = WeatherDlg::m_FontsMap[value];
   m_IconDayNight->setText(QChar(unicode));
 }

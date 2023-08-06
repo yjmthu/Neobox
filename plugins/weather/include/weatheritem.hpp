@@ -35,8 +35,6 @@ private:
   void SetDayText(std::u8string_view value);
   void SetDayIcon(const std::u8string& value);
 private:
-  static std::map<std::u8string, int> m_FontsMap;
-  static void LoadFontsMap();
 private:
   QLabel*const m_IconDayNight;
   QLabel*const m_TextDayNight;
