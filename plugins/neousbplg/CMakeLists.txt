@@ -19,7 +19,7 @@ set(plugin_name neousbplg)
 add_library(${plugin_name} SHARED ${source_files})
 
 set(resource_files icons/*.png)
-load_resources(${plugin_name} ${resource_files})
+load_resources(${plugin_name} resource_files)
 
 target_link_libraries(${plugin_name} PRIVATE
   ${pliugin_libfiles}

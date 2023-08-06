@@ -195,7 +195,7 @@ bool TabVersion::DownloadNew(std::u8string_view url) {
     return false;
   }
 
-  HttpLib clt(url, true);
+  HttpLib clt(HttpUrl(std::u8string_view(url)), true);
   HttpLib::Callback callback = {
     .m_WriteCallback = [&file](auto data, auto size){
       file.write(reinterpret_cast<const char*>(data), size);

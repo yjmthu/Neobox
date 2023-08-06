@@ -5,27 +5,28 @@
 #include <memory>
 
 #include <yjson.h>
+#include <weathercfg.h>
+#include <httplib.h>
 
 class Weather: public QObject
 {
   Q_OBJECT
 
 public:
-  explicit Weather();
+  enum class GetTypes { Cities, Hours, Days };
+  explicit Weather(const WeatherCfg& config);
   virtual ~Weather();
-  void FetchDays();
-  void FetchCities();
-  void FetchHours();
-  std::optional<YJson> GetDays();
-  std::optional<YJson> GetCities();
-  std::optional<YJson> GetHours();
+  void Fetch(GetTypes type, std::optional<std::u8string_view> data=std::nullopt);
+  std::optional<YJson> Get();
+private:
+  HttpUrl GetUrl(GetTypes type, std::optional<std::u8string_view> data) const;
 private:
   std::unique_ptr<class HttpLib> m_Request;
   std::mutex m_Mutex;
-  std::optional<YJson> m_WeatherData;
-  std::optional<YJson> m_CityList;
+  std::optional<YJson> m_JSON;
+  const WeatherCfg& m_Config;
 signals:
-  void Finished(bool);
+  void Finished(GetTypes, bool);
 };
 
 #endif // WEATHER_H

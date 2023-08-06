@@ -140,6 +140,27 @@ HttpUrl::HttpUrl(std::u8string_view url) {
   SetUrl(url);
 }
 
+HttpUrl::HttpUrl(StringView host,
+  StringView path,
+  Params params,
+  StringView scheme,
+  uint16_t port
+)
+  : scheme(scheme)
+  , host(host)
+  , path(path)
+  , port(port)
+  , parameters(std::move(params))
+{
+  auto iter = host.cbegin();
+  ParseHost(iter, host.end());
+  if (iter != host.end()) {
+    ParsePort(iter, host.end());
+  }
+  iter = path.cbegin();
+  ParsePath(iter, path.cend());
+}
+
 HttpUrl::HttpUrl(HttpUrl&& url) noexcept
   : scheme(std::move(url.scheme))
   , host(std::move(url.host))

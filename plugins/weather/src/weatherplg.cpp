@@ -1,12 +1,16 @@
 ﻿#include <weatherplg.h>
 #include <weatherdlg.h>
+#include <neomenu.hpp>
+
+#include <QMessageBox>
 
 #define PluginName WeatherPlg
 #include <pluginexport.cpp>
 
 PluginName::PluginName(YJson& settings)
   : PluginObject(InitSettings(settings), u8"weatherplg", u8"天气预报")
-  , m_WeatherDlg(new WeatherDlg(m_Settings))
+  , m_Config(settings)
+  , m_WeatherDlg(new WeatherDlg(m_Config))
 {
   InitFunctionMap();
 }
@@ -28,6 +32,20 @@ void PluginName::InitFunctionMap()
         }
       }, PluginEvent::Void}
     },
+    {u8"setApiKey",
+      {u8"设置密钥", u8"填写和风天气API密钥。", [this](PluginEvent, void*) {
+        const auto key = m_Config.GetApiKey();
+        auto result = mgr->m_Menu->GetNewU8String("输入", "输入和风天气密钥", key);
+        if (!result) return;
+        
+        if (*result != key) {
+          m_Config.SetApiKey(*result, false);
+        }
+        auto res = QMessageBox::question(m_WeatherDlg, "提示", "您是否为付费用户？");
+        m_Config.SetIsPaidUser(res == QMessageBox::Yes, true);
+        mgr->ShowMsg("保存成功！");
+      }, PluginEvent::Void}
+    }
   };
 }
 
@@ -45,7 +63,15 @@ YJson& PluginName::InitSettings(YJson& settings)
 {
   if (!settings.isObject()) {
     settings = YJson::O {
-      {u8"ApiData", YJson::Object},
+      {u8"ApiKey", YJson::String},
+      {u8"CityList", YJson::O {
+        {u8"101010100", { u8"北京市", u8"北京", u8"北京" }}
+      }},
+      {u8"City", u8"101010100"},
+      {u8"Prompt", false},
+      {u8"UpdateCycle", 60},
+      {u8"IsPaidUser", false},
+      {u8"WindowPosition", YJson::A { nullptr, nullptr }},
     };
   }
   return settings;

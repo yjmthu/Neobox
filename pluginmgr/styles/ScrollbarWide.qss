@@ -67,3 +67,75 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical
   background: rgb(0,0,0,10%);
   border-radius: 2px;
 }
+
+
+
+QScrollBar:horizontal
+{
+  height: 10px;
+  background-color: transparent;
+  margin: 0px;
+  padding: 0px 10px;
+}
+
+QScrollBar::handle:horizontal
+{
+  height: 10px;
+  background-color: #858585;
+  border-radius: 0px;
+  min-width: 10;
+}
+
+QScrollBar:horizontal:hover
+{
+  height: 10px;
+  background-color: #222222;
+  margin: 0px;
+  padding: 0px 10px;
+}
+
+QScrollBar::handle:horizontal:hover
+{
+  height: 10px;
+  background-color: #7a7a7a;
+  border-radius: 0px;
+  min-width: 10;
+}
+
+QScrollBar::add-line:horizontal
+{
+  width: 10px;
+  height: 10px;
+  border-image: url(:/icons/scrollbar-right.png);
+  subcontrol-position: right;
+}
+
+QScrollBar::sub-line:horizontal
+{
+  width: 10px;
+  height: 10px;
+  border-image: url(:/icons/scrollbar-left.png);
+  subcontrol-position: left;
+}
+
+QScrollBar::add-line:horizontal:hover
+{
+  width: 10px;
+  height: 10px;
+  border-image: url(:/icons/scrollbar-right-dark.png);
+  subcontrol-position: right;
+}
+
+QScrollBar::sub-line:horizontal:hover
+{
+  width: 10px;
+  height: 10px;
+  border-image: url(:/icons/scrollbar-left-dark.png);
+  subcontrol-position: left;
+}
+
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal
+{
+  background: rgb(0,0,0,10%);
+  border-radius: 2px;
+}

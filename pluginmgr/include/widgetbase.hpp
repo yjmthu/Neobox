@@ -33,7 +33,7 @@ protected:
   void AddCloseButton();
   void AddMinButton();
   void AddTitle(QString title);
-  void AddScrollBar(class QScrollBar* bar);
+  void AddScrollBar(class QScrollBar* bar, bool horizontal=false);
   void RemoveScrollBar(class QScrollBar* bar);
   void SetShadowAround(QWidget* widget, int radius=20, QColor col=Qt::black, int dx=0, int dy=0);
 private:
@@ -44,7 +44,7 @@ private:
   QRect mouseRect;
   void UpdateBorderRect();
   std::array<QRect, 8> pressedRect;
-  std::set<class QScrollBar*> m_ScrollBars;
+  std::map<class QScrollBar*, bool> m_ScrollBars;
   bool m_StayTop;
 };
 

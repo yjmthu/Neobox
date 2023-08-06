@@ -3,6 +3,7 @@
 
 #include <pluginobject.h>
 #include <yjson.h>
+#include <weathercfg.h>
 
 class WeatherPlg: public PluginObject
 {
@@ -14,6 +15,7 @@ private:
   void InitFunctionMap() override;
   YJson& InitSettings(YJson& settings);
 private:
+  WeatherCfg m_Config;
   class QAction* m_MainMenuAction;
   class WeatherDlg* m_WeatherDlg;
 };

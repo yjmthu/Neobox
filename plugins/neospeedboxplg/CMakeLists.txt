@@ -27,7 +27,7 @@ set(resource_files
   # dynamic/*.dll
   # dynamic/*.so
 )
-load_resources(neospeedboxplg "${resource_files}")
+load_resources(neospeedboxplg resource_files)
 
 set(speedbox_libs
   ${pliugin_libfiles}

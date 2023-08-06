@@ -14,7 +14,7 @@ set(pliugin_libfiles pluginmgr)
 add_library(neosystemplg SHARED ${source_files})
 
 set(resource_files icons/*)
-load_resources(neosystemplg "${resource_files}")
+load_resources(neosystemplg resource_files)
 
 target_link_libraries(neosystemplg PRIVATE
   ${pliugin_libfiles}

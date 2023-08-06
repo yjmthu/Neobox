@@ -217,17 +217,25 @@ bool WidgetBase::eventFilter(QObject *watched, QEvent *event) {
   } else {
     auto iter = m_ScrollBars.find(reinterpret_cast<QScrollBar *>(watched));
     if (iter != m_ScrollBars.end()) {
-      auto const bar = *iter;
+      auto const bar = iter->first;
       if (event->type() == QEvent::HoverEnter)
       {
-        bar->setFixedWidth(10); //重新定义宽度
+        if (iter->second) {
+          bar->setFixedHeight(10);
+        } else {
+          bar->setFixedWidth(10); //重新定义宽度
+        }
         bar->setProperty("STYLE_KEY", QString("SETTINGSSWBG_SCROLL_HOVER")); //重载样式
         bar->setStyleSheet(styleWide);
         bar->style()->polish(bar); //强制刷新样式
       }
       else if (event->type() == QEvent::HoverLeave)
       {
-        bar->setFixedWidth(4);
+        if (iter->second) {
+          bar->setFixedHeight(4);
+        } else {
+          bar->setFixedWidth(4); //重新定义宽度
+        }
         bar->setProperty("STYLE_KEY", QString("SETTINGSSWBG_SCROLL"));
         bar->setStyleSheet(styleNarrow);
         bar->style()->polish(bar);
@@ -315,12 +323,16 @@ void WidgetBase::AddTitle(QString title)
   label->move(20, 12);
 }
 
-void WidgetBase::AddScrollBar(QScrollBar* bar)
+void WidgetBase::AddScrollBar(QScrollBar* bar, bool horizontal)
 {
-  m_ScrollBars.insert(bar);
+  m_ScrollBars[bar] = horizontal;
   bar->installEventFilter(this);
   bar->setStyleSheet(ReadStyle(":/styles/ScrollbarNarrow.qss"));
-  bar->setFixedWidth(4);
+  if (horizontal) {
+    bar->setFixedHeight(4);
+  } else {
+    bar->setFixedWidth(4);
+  }
 }
 
 void WidgetBase::RemoveScrollBar(QScrollBar* bar)

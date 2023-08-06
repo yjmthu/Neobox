@@ -48,9 +48,7 @@ set(resource_files
   scripts/*.desktop
   styles/*.qss
 )
-load_resources(pluginmgr
-  "${resource_files}"
-)
+load_resources(pluginmgr resource_files)
 
 target_link_libraries(pluginmgr PUBLIC
   ${pliugin_libfiles}

@@ -16,6 +16,12 @@ class HttpUrl {
   typedef std::map<String, String> Params;
 public:
   HttpUrl(StringView url);
+  HttpUrl(StringView host,
+    StringView path,
+    Params params={},
+    StringView scheme=u8"http",
+    uint16_t port=80
+  );
   HttpUrl(StringView url, Params params);
   HttpUrl(HttpUrl&& url) noexcept;
   HttpUrl(const HttpUrl& url);

@@ -11,7 +11,7 @@ add_library(neotranslateplg SHARED
 )
 
 set(resource_files icons/*.png)
-load_resources(neotranslateplg ${resource_files})
+load_resources(neotranslateplg resource_files)
 
 target_link_libraries(neotranslateplg PUBLIC
   ${pliugin_libfiles}

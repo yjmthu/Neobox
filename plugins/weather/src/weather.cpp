@@ -62,10 +62,10 @@ bool GZipUnCompress(const _IBufferType& inBuffer, _OBufferType& outBuffer)
   return error == Z_STREAM_END;
 }
 
-Weather::Weather()
+Weather::Weather(const WeatherCfg& config)
   : QObject()
-  , m_WeatherData { std::nullopt }
-  , m_CityList { std::nullopt }
+  , m_JSON { std::nullopt }
+  , m_Config(config)
 {
   //
 }
@@ -75,44 +75,89 @@ Weather::~Weather()
   //
 }
 
-void Weather::FetchDays()
+HttpUrl Weather::GetUrl(GetTypes type, std::optional<std::u8string_view> data) const
+{
+  using enum GetTypes;
+  static const std::array hosts = {
+    u8"devapi.qweather.com"s,
+    u8"geoapi.qweather.com"s
+  };
+  static const std::array paths = {
+    u8"/v2/city/lookup?"s,
+    u8"/v7/weather/24h?"s,
+    u8"/v7/weather/7d?"s,
+  };
+  std::u8string_view host;
+  auto path = paths[static_cast<int>(type)];
+  std::u8string city;
+  switch (type) {
+  case Cities:
+    host = hosts[1];
+    city = *data;
+    break;
+  default:
+    if (m_Config.GetIsPaidUser()) {
+      host = hosts[0].substr(3);
+    } else {
+      host = hosts[0];
+    }
+    city = m_Config.GetCity();
+    break;
+  }
+  auto apikey = m_Config.GetApiKey();
+  if (apikey.empty()) apikey = u8"" QWEATHER_KEY ""sv;
+
+  HttpUrl url(host, path, {
+    {u8"location", city},
+    {u8"key", apikey},
+  }, u8"https", 443);
+
+  if (type == Cities) {
+    url.parameters[u8"range"] = u8"cn";
+  }
+
+  return url;
+}
+
+void Weather::Fetch(GetTypes type, std::optional<std::u8string_view> data)
 {
   std::lock_guard<std::mutex> locker(m_Mutex);
   if (m_Request && !m_Request->IsFinished()) return;
 
-  HttpUrl url(u8"https://devapi.qweather.com/v7/weather/3d?"sv, {
-    {u8"location", u8"101010100"},
-    {u8"key", u8"" QWEATHER_KEY},
-  });
-
-  m_Request = std::make_unique<HttpLib>(url, true, 5);
+  m_Request = std::make_unique<HttpLib>(GetUrl(type, data), true, 5);
   
   HttpLib::Callback callback = {
-    .m_FinishCallback = [this](auto msg, auto res) {
+    .m_FinishCallback = [this, type](auto msg, auto res) {
       if (msg.empty() && res->status / 100 == 2) {
         std::lock_guard<std::mutex> locker(m_Mutex);
         std::u8string unCompressed;
         if (GZipUnCompress(res->body, unCompressed)) {
-          m_WeatherData = std::make_optional<YJson>(unCompressed.begin(), unCompressed.end());
-          emit Finished(true);
-          return;
+          m_JSON = std::make_optional<YJson>(unCompressed.begin(), unCompressed.end());
+          auto iter = m_JSON->find(u8"code");
+          if (iter != m_JSON->endO() && iter->second.isString()) {
+            if (iter->second.getValueString() == u8"200") {
+              emit Finished(type, true);
+              return;
+            }
+          }
+          m_JSON = std::nullopt;
         }
       }
-      emit Finished(false);
+      emit Finished(type, false);
     },
   };
 
   m_Request->GetAsync(std::move(callback));
 }
 
-std::optional<YJson> Weather::GetDays()
+std::optional<YJson> Weather::Get()
 {
   std::lock_guard<std::mutex> locker(m_Mutex);
   if (m_Request && !m_Request->IsFinished()) return std::nullopt;
-  if (!m_WeatherData) return std::nullopt;
+  if (!m_JSON) return std::nullopt;
 
-  std::optional<YJson> result = std::move(*m_WeatherData);
-  m_WeatherData = std::nullopt;
+  std::optional<YJson> result = std::move(*m_JSON);
+  m_JSON = std::nullopt;
 
   return result;
 }

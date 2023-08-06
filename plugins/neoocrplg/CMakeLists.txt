@@ -38,7 +38,8 @@ endif()
 
 add_library(neoocrplg SHARED ${source_files})
 
-load_resources(neoocrplg icons/*)
+set(resource_files icons/*)
+load_resources(neoocrplg resource_files)
 
 target_link_libraries(neoocrplg PRIVATE
   ${qt_shared_files}
