@@ -4,6 +4,8 @@
 #include <QListWidget>
 #include <yjson.h>
 
+class WeatherCfg;
+
 struct CityInfo {
   std::u8string name;
   std::u8string adm1;
@@ -38,7 +40,7 @@ class CityList: public QListWidget
   Q_OBJECT
 
 public:
-  explicit CityList(QWidget* parent, class QLabel& label, class QLineEdit& edit);
+  explicit CityList(QWidget* parent, WeatherCfg& cfg, class QLabel& label, class QLineEdit& edit);
   void SetConetnt(const class YJson& data);
   void Move();
   void Show();
@@ -48,6 +50,9 @@ private:
   QLabel& m_Label;
   QLineEdit& m_Edit;
   std::vector<CityInfo> m_Info;
+  WeatherCfg& m_Config;
+signals:
+  void CityChanged();
 };
 
 #endif // CITYLIST_HPP

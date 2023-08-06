@@ -18,8 +18,6 @@
 
 QString WeatherDlg::m_WeatherFontName;
 
-const QString WeatherDlg::m_FontObjectName = "qweaterFont";
-
 void WeatherDlg::showEvent(QShowEvent *event)
 {
   m_SearchList->Move();
@@ -42,11 +40,13 @@ WeatherDlg::WeatherDlg(WeatherCfg& settings)
   , m_CenterWidget((LoadQweatherFonts(), new QWidget(this)))
   , m_Config(settings)
   , m_Weather(new Weather(m_Config))
+  , m_Item(new WeatherItem(this))
   , m_CityName(new QLabel(GetCityName(), m_CenterWidget))
   , m_CityEdit(new CitySearch(m_CenterWidget))
-  , m_SearchList(new CityList(m_CenterWidget, *m_CityName, *m_CityEdit))
+  , m_SearchList(new CityList(m_CenterWidget, m_Config, *m_CityName, *m_CityEdit))
 {
   SetupUi();
+  LoadStyleSheet();
   InitComponent();
   ConnectAll();
 }
@@ -60,18 +60,13 @@ WeatherDlg::~WeatherDlg() {
 
 void WeatherDlg::LoadStyleSheet()
 {
-  QFile file(":/styles/WeatherStyle.qss");
+  QFile file(":/styles/WeatherStyle.css");
   if (!file.open(QIODevice::ReadOnly)) {
     mgr->ShowMsgbox(L"NO", L"打开文件失败");
     return;
   }
   QString sheet = file.readAll();
-  sheet += QStringLiteral("\n#%1"
-    "{"
-      "font-family: \"%2\";"
-      "font-size: 20px;"
-    "}").arg(m_FontObjectName).arg(m_WeatherFontName);
-  setStyleSheet(sheet);
+  setStyleSheet(sheet.arg(m_WeatherFontName));
   file.close();
   return;
 }
@@ -91,7 +86,7 @@ void WeatherDlg::SetupUi()
   AddMinButton();
   SetShadowAround(m_CenterWidget);
 
-  setFixedSize(500, 360);
+  setFixedSize(520, 500);
   auto pos = m_Config.GetWindowPosition();
   if (pos.front().isNumber() && pos.back().isNumber()) {
     m_LastPosition = {pos.front().getValueInt(), pos.back().getValueInt()};
@@ -115,7 +110,7 @@ void WeatherDlg::InitComponent()
   AddScrollBar(m_SearchList->horizontalScrollBar(), true);
   l->addWidget(m_CityEdit);
 
-  layout->addWidget(new WeatherItem(this));
+  layout->addWidget(m_Item);
   layout->addWidget(m_Text);
   AddScrollBar(m_Text->verticalScrollBar());
 
@@ -141,6 +136,9 @@ void WeatherDlg::ConnectAll() {
       break;
     case Days:
       break;
+    case Now:
+      UpdateItem(succeed);
+      break;
     }
   });
 
@@ -150,6 +148,9 @@ void WeatherDlg::ConnectAll() {
   });
   connect(m_CityEdit, &CitySearch::FocusIn, m_SearchList, &CityList::Show);
   connect(m_CityEdit, &CitySearch::FocusOut, m_SearchList, &QListWidget::hide);
+  connect(m_SearchList, &CityList::CityChanged, [this]() {
+    m_Weather->Fetch(Weather::GetTypes::Now);
+  });
 }
 
 QString WeatherDlg::GetCityName() const
@@ -173,7 +174,6 @@ void WeatherDlg::SearchCities(QString city)
   m_Weather->Fetch(Weather::GetTypes::Cities, view);
 }
 
-
 void WeatherDlg::ShowCityList(bool succeed)
 {
   auto result = m_Weather->Get();
@@ -184,5 +184,15 @@ void WeatherDlg::ShowCityList(bool succeed)
     m_Text->setPlainText(QString::fromUtf8(str.data(), str.size()));
   } else {
     m_SearchList->hide();
+  }
+}
+
+void WeatherDlg::UpdateItem(bool succeed)
+{
+  auto result = m_Weather->Get();
+  if (succeed && result) {
+    m_Item->SetJSON(*result);
+    auto str = result->toString(true);
+    m_Text->setPlainText(QString::fromUtf8(str.data(), str.size()));
   }
 }

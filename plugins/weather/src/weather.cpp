@@ -86,6 +86,7 @@ HttpUrl Weather::GetUrl(GetTypes type, std::optional<std::u8string_view> data) c
     u8"/v2/city/lookup?"s,
     u8"/v7/weather/24h?"s,
     u8"/v7/weather/7d?"s,
+    u8"/v7/weather/now?"s,
   };
   std::u8string_view host;
   auto path = paths[static_cast<int>(type)];

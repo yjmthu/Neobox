@@ -1,12 +1,14 @@
 ﻿#include <citylist.hpp>
 #include <yjson.h>
 #include <pluginmgr.h>
+#include <weathercfg.h>
 
 #include <QLineEdit>
 #include <QLabel>
 
-CityList::CityList(QWidget* parent, QLabel& label, QLineEdit& edit)
+CityList::CityList(QWidget* parent, WeatherCfg& cfg, QLabel& label, QLineEdit& edit)
   : QListWidget(parent)
+  , m_Config(cfg)
   , m_Label(label)
   , m_Edit(edit)
 {
@@ -30,9 +32,17 @@ void CityList::Show()
 void CityList::ConnectAll()
 {
   connect(this, &QListWidget::pressed, this, [this](const QModelIndex& index) {
-    mgr->ShowMsg(QString::number(index.row()));
-    auto&& text = m_Info[index.row()].GetCityName();
+    auto& info = m_Info[index.row()];
+    auto&& text = info.GetCityName();
+    auto cities = m_Config.GetCityList();
+    auto& json = cities[info.id];
+    if (!json.isArray()) {
+      json = YJson::A { info.adm1, info.adm2, info.name };
+    }
+    m_Config.SetCityList(cities, false);
+    m_Config.SetCity(info.id);
     m_Label.setText(QString::fromUtf8(text.data(), text.size()));
+    emit CityChanged();
     hide();
   });
 }

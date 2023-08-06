@@ -1,0 +1,26 @@
+#WeatherItem {
+  border-radius: 4px;
+  background-color: bisque;
+}
+
+#IconDayNight {
+  font-size: 64px;
+  color: #4aa3df;
+  font-family: "%1";
+}
+
+#TextDayNight {
+  font-size: 12px;
+  color: black;
+}
+
+#Temperature {
+  font-size: 50px;
+  font-weight: bolder;
+}
+
+#IconExponent {
+  color: black;
+  font-size: 14px;
+  font-family: "%1";
+}
