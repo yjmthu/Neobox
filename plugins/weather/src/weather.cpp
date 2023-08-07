@@ -74,7 +74,9 @@ Weather::Weather(const WeatherCfg& config)
 
 Weather::~Weather()
 {
-  //
+  std::lock_guard<std::mutex> locker(m_Mutex);
+  m_Request = nullptr;
+  m_JSON = std::nullopt;
 }
 
 HttpUrl Weather::GetUrl(GetTypes type, std::optional<std::u8string_view> data) const
@@ -125,9 +127,12 @@ HttpUrl Weather::GetUrl(GetTypes type, std::optional<std::u8string_view> data) c
 void Weather::Fetch(GetTypes type, std::optional<std::u8string_view> data)
 {
   std::lock_guard<std::mutex> locker(m_Mutex);
-  if (m_Request && !m_Request->IsFinished()) return;
+  if (m_Request && !m_Request->IsFinished()) {
+    mgr->ShowMsg("上一次请求还未结束！");
+    return;
+  }
 
-  m_Request = std::make_unique<HttpLib>(GetUrl(type, data), true, 5);
+  m_Request = std::make_unique<HttpLib>(GetUrl(type, data), true, 2);
   
   HttpLib::Callback callback = {
     .m_FinishCallback = [this, type](auto msg, auto res) {

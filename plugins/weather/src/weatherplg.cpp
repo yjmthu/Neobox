@@ -41,11 +41,18 @@ void PluginName::InitFunctionMap()
         if (*result != key) {
           m_Config.SetApiKey(*result, false);
         }
-        auto res = QMessageBox::question(m_WeatherDlg, "提示", "您是否为付费用户？");
+        auto res = QMessageBox::question(m_WeatherDlg, u8"提示", u8"您是否为付费用户？");
         m_Config.SetIsPaidUser(res == QMessageBox::Yes, true);
         mgr->ShowMsg("保存成功！");
       }, PluginEvent::Void}
-    }
+    },
+    {u8"clearApiKey",
+      {u8"清除密钥", u8"清除您的密钥。", [this](PluginEvent, void*) {
+        m_Config.SetApiKey(u8"", false);
+        m_Config.SetIsPaidUser(false, true);
+        mgr->ShowMsg(u8"清除成功！");
+      }, PluginEvent::Void}
+    },
   };
 }
 

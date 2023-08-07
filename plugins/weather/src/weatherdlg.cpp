@@ -24,11 +24,22 @@
 #include <QPushButton>
 #include <QEventLoop>
 
+#include <chrono>
+
 QString WeatherDlg::m_WeatherFontName;
 std::map<std::u8string, int> WeatherDlg::m_FontsMap;
 
 void WeatherDlg::showEvent(QShowEvent *event)
 {
+  using namespace std::chrono;
+  static auto timePrev = time_point<system_clock, seconds>(0s);
+  auto timeNow = time_point_cast<seconds>(system_clock::now());
+  auto timeDelta = timeNow - timePrev;
+  timePrev = timeNow;
+  if (timeDelta > 300s) {
+    QTimer::singleShot(500, [this](){ m_Weather->Fetch(Weather::GetTypes::Now); });
+  }
+
   m_SearchList->Move();
   // m_Hours->m_ScrollArea->setMinimumWidth(m_Item->width());
   WidgetBase::showEvent(event);
@@ -180,15 +191,19 @@ void WeatherDlg::ConnectAll() {
       break;
     case Hours:
       UpdateHours(succeed);
-      m_Weather->Fetch(Days);
+      if (succeed) m_Weather->Fetch(Days);
       break;
     case Days:
       UpdateDays(succeed);
+      if (succeed) mgr->ShowMsg("更新成功！");
       break;
     case Now:
       UpdateItem(succeed);
-      m_Weather->Fetch(Hours);
+      if (succeed) m_Weather->Fetch(Hours);
       break;
+    }
+    if (!succeed) {
+      mgr->ShowMsg("天气数据请求失败！");
     }
   });
 
@@ -227,10 +242,8 @@ void WeatherDlg::ConnectAll() {
 
   connect(m_Update, &QPushButton::clicked, this, [this]() {
     m_Weather->Fetch(Weather::GetTypes::Now);
-    mgr->ShowMsg("更新成功！");
   });
 
-  QTimer::singleShot(1000, [this](){m_Weather->Fetch(Weather::GetTypes::Now);});
 }
 
 QString WeatherDlg::GetCityName() const
