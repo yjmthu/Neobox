@@ -178,14 +178,27 @@
 
 </details>
 
-## 编译环境
+<details>
+<summary style="font-size:17pt;">天气预报</summary>
 
-> 如果只有 VS2022 + Qt6 + CMake + YJson 的环境，可以删除 `plugins` 、 `example`、`wxui` 目录，只编译主程序，不编译插件。 
+- 简介：使用和风天气API，仿照网页端编写的天气预报插件。
+
+### 主界面
+
+![天气预报](./screenshots/屏幕截图%202023-08-07%20213426.png)
+
+### 城市列表
+
+![城市列表](./screenshots/屏幕截图%202023-08-07%20213819.png)
+
+</details>
+
+## 编译环境
 
 - `Windows 10/11 x86_64`
     - <del>xmake+xrepo</del> **[CMake](https://cmake.org/download/)+Vcpkg**
     - [VS 2022](https://visualstudio.microsoft.com/zh-hans/vs/)
-    - [Qt 6.4.1](https://www.qt.io/download)（最新版本）
+    - [Qt 6.5.1](https://www.qt.io/download)（最新版本）
     - c++20 JSON库 [YJson](https://github.com/yjmthu/YJson)
 - `Arch Linux x86_64`
     - 主程序库依赖: `kde` `curl` `qt6-base`
@@ -223,7 +236,7 @@ cmake -P build/Debug/cmake_install.cmake
 
 ## 现有功能增强方向
 
-> 预计在 `v2.3.x` 的版本内完成。
+<!-- > 预计在 `v2.3.x` 的版本内完成。 -->
 
 <!-- 1. 完善自定义皮肤功能，考虑使用 `Lua` 语言来编写动画；
 2. 逐步增加wxWidgets部分的代码，最终取代qt。 -->
@@ -244,7 +257,7 @@ cmake -P build/Debug/cmake_install.cmake
 > 这是我目前打算新开发的插件，如果有什么建议或者想参与插件开发，可以联系我。
 
 - [x] 颜色拾取（PowerToys已具备，但为了跨平台还是先简单写一个吧）
-- [ ] 天气预报
+- [x] 天气预报
 - [ ] 动态壁纸
 - [x] U盘助手
-- [ ] 后台自动更新程序
+- [x] 后台自动更新程序

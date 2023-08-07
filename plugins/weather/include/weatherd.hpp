@@ -19,7 +19,7 @@ struct WeatherDDetail {
   QLabel* const m_TempLabel;
   inline static constexpr auto w = 32;
   inline static QString m_StrWeeksEng = "SunMonTueWedThuFriSat";
-  inline static QString m_StrWeeksChi = "一二三四五六日";
+  inline static QString m_StrWeeksChi = "日一二三四五六";
   WeatherDDetail(QWidget* parent, int index)
     : m_Date(new QLabel(parent))
     , m_Text(new QLabel(parent))
@@ -82,7 +82,7 @@ struct WeatherDDetail {
     auto r = (tempMax - min) / range * m_TempFrame->width();
     m_Temp->move(static_cast<int>(l), 13);
     m_Temp->setFixedWidth(static_cast<int>(r - l));
-    m_TempLabel->setText(QStringLiteral("%1°~%2°").arg(min).arg(max));
+    m_TempLabel->setText(QStringLiteral("%1°~%2°").arg(tempMin).arg(tempMax));
   }
 };
 
