@@ -21,7 +21,7 @@ set(NEOBOX_BUILD_TIME ${COMPILE_TIME})
 
 # list(APPEND CMAKE_PREFIX_PATH "C:/Qt/6.4.2/msvc2019_64")
 
-project(neobox VERSION 2.4.0 LANGUAGES CXX C)
+project(neobox VERSION 2.4.1 LANGUAGES CXX C)
 
 if (NOT CMAKE_BUILD_TYPE)
   message("编译类型未定义，默认设置为Debug")
