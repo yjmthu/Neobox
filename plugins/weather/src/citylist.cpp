@@ -5,8 +5,9 @@
 
 #include <QLineEdit>
 #include <QLabel>
+#include <QPushButton>
 
-CityList::CityList(QWidget* parent, WeatherCfg& cfg, QLabel& label, QLineEdit& edit)
+CityList::CityList(QWidget* parent, WeatherCfg& cfg, QPushButton& label, QLineEdit& edit)
   : QListWidget(parent)
   , m_Config(cfg)
   , m_Label(label)

@@ -11,9 +11,7 @@
 #include <QScrollBar >
 
 WeatherH::WeatherH(QWidget* parent)
-  : QWidget(parent)
-  , m_ScrollArea(new QScrollArea(this))
-  , m_ScrollWidget(new QWidget(this))
+  : QScrollArea(parent)
 {
   SetupUi();
 }
@@ -25,19 +23,16 @@ WeatherH::~WeatherH()
 
 void WeatherH::SetupUi()
 {
-  auto mainLayout = new QVBoxLayout(this);
-  mainLayout->addWidget(new QLabel("<h4>24小时预报</h4>", this));
-  mainLayout->addWidget(m_ScrollArea);
-  mainLayout->setContentsMargins(0,0,0,0);
+  setFixedHeight(190);
   // m_ScrollArea->setBackgroundRole(QPalette::ColorRole::Dark);
-  m_ScrollArea->setFixedHeight(190);
-  m_ScrollWidget->setFixedHeight(180);
-  m_ScrollWidget->setObjectName("ScrollWidget");
-  auto layout = new QHBoxLayout(m_ScrollWidget);
+  auto widget = new QWidget(this);
+  widget->setFixedHeight(180);
+  widget->setObjectName("ScrollWidget");
+  auto layout = new QHBoxLayout(widget);
   layout->setContentsMargins(10, 10, 10, 10);
   m_Data.reserve(24);
   for (int i=0; i!=24; ++i) {
-    auto w = new QWidget(m_ScrollWidget);
+    auto w = new QWidget(widget);
     w->setFixedSize(40, 160);
     w->setStyleSheet("background-color:transparent;");
     auto l = new QVBoxLayout(w);
@@ -46,27 +41,39 @@ void WeatherH::SetupUi()
     m_Data.emplace_back(this, l, i);
     layout->addWidget(w);
   }
-  m_ScrollArea->setWidget(m_ScrollWidget);
+  setWidget(widget);
   // m_ScrollArea->setAlignment(Qt::AlignCenter);
-  m_ScrollWidget->installEventFilter(this);
+  widget->installEventFilter(this);
 }
 
 void WeatherH::SetJSON(const YJson& json)
 {
   auto hourly = json[u8"hourly"];
 
+  int min = 100, max = -100;
+
+  for (auto& item: hourly.getArray()) {
+    auto& temp = item[u8"temp"];
+    auto iTemp = std::stoi(std::string(temp.getValueString().begin(), temp.getValueString().end()));
+    min = std::min(min, iTemp);
+    max = std::max(max, iTemp);
+    temp = iTemp;
+  }
+
+  min -= 3;
+
   auto iter = m_Data.begin();
   for (auto& item: hourly.getArray()) {
-    iter->ParseJSON(item);
+    iter->ParseJSON(item, min, max);
     ++iter;
   }
 }
 
 bool WeatherH::eventFilter(QObject *watched, QEvent *event)
 {
-  if (event->type() == QEvent::Wheel && watched == m_ScrollWidget) {
+  if (event->type() == QEvent::Wheel && watched == this->widget()) {
     auto ev = reinterpret_cast<QWheelEvent*>(event);
-    auto bar = m_ScrollArea->horizontalScrollBar();
+    auto const bar = horizontalScrollBar();
     auto delta = ev->angleDelta().y() / 120;
     bar->setValue(bar->value() - delta * 70);
     return true;

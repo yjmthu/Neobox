@@ -3,7 +3,7 @@
 
 #include <neoconfig.h>
 
-class WeatherCfg: NeoConfig {
+class WeatherCfg: public NeoConfig {
   ConfigConsruct(WeatherCfg)
   CfgString(ApiKey)
   CfgBool(Prompt)

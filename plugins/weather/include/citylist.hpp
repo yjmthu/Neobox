@@ -17,6 +17,7 @@ struct CityInfo {
     if (name != adm2) {
       result += sep + name;
     }
+
     return result;
   }
   static CityInfo FromJSON(std::u8string_view id, const YJson& json) {
@@ -33,6 +34,10 @@ struct CityInfo {
       .id = std::u8string(id),
     };
   }
+
+  YJson DumpJSON() const {
+    return YJson::A { adm1, adm2, name };
+  }
 };
 
 class CityList: public QListWidget
@@ -40,14 +45,14 @@ class CityList: public QListWidget
   Q_OBJECT
 
 public:
-  explicit CityList(QWidget* parent, WeatherCfg& cfg, class QLabel& label, class QLineEdit& edit);
+  explicit CityList(QWidget* parent, WeatherCfg& cfg, class QPushButton& label, class QLineEdit& edit);
   void SetConetnt(const class YJson& data);
   void Move();
   void Show();
 private:
   void ConnectAll();
 private:
-  QLabel& m_Label;
+  QPushButton& m_Label;
   QLineEdit& m_Edit;
   std::vector<CityInfo> m_Info;
   WeatherCfg& m_Config;

@@ -32,10 +32,11 @@ private:
   class Weather* const m_Weather;
   class WeatherItem* const m_Item;
   class WeatherH* const m_Hours;
-  class QLabel* const m_CityName;
+  class WeatherD* const m_Days;
+  class QPushButton* const m_CityName;
   class CitySearch* const m_CityEdit;
   class CityList* const m_SearchList;
-  class QPlainTextEdit* m_Text;
+  class QPushButton* const m_Update;
 };
 
 #endif // WEATHERDLG_H

@@ -9,15 +9,20 @@
 #include <citylist.hpp>
 #include <weatheritem.hpp>
 #include <weatherh.hpp>
+#include <weatherd.hpp>
+#include <savedcity.hpp>
 
 #include <QLabel>
-#include <QPlainTextEdit>
 #include <QHBoxLayout>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QFile>
 #include <QScrollArea>
 #include <QTimer>
+#include <QFontDatabase>
+#include <QCursor>
+#include <QPushButton>
+#include <QEventLoop>
 
 QString WeatherDlg::m_WeatherFontName;
 std::map<std::u8string, int> WeatherDlg::m_FontsMap;
@@ -47,9 +52,11 @@ WeatherDlg::WeatherDlg(WeatherCfg& settings)
   , m_Weather(new Weather(m_Config))
   , m_Item(new WeatherItem(this))
   , m_Hours(new WeatherH(this))
-  , m_CityName(new QLabel(GetCityName(), m_CenterWidget))
+  , m_Days(new WeatherD(this))
+  , m_CityName(new QPushButton(GetCityName(), m_CenterWidget))
   , m_CityEdit(new CitySearch(m_CenterWidget))
   , m_SearchList(new CityList(m_CenterWidget, m_Config, *m_CityName, *m_CityEdit))
+  , m_Update(new QPushButton(this))
 {
   SetupUi();
   LoadStyleSheet();
@@ -82,7 +89,7 @@ void WeatherDlg::LoadFontsMap()
 
 void WeatherDlg::LoadStyleSheet()
 {
-  QFile file(":/styles/WeatherStyle.css");
+  QFile file(":/styles/WeatherStyle.qss");
   if (!file.open(QIODevice::ReadOnly)) {
     mgr->ShowMsgbox(L"NO", L"打开文件失败");
     return;
@@ -101,14 +108,16 @@ void WeatherDlg::SetupUi()
 
   auto const mainLayout = new QHBoxLayout(this);
   mainLayout->addWidget(m_CenterWidget);
-  m_CenterWidget->setObjectName("whiteBackground");
+  m_CenterWidget->setObjectName("Weather");
+  m_CityName->setObjectName("CityName");
+  m_CityName->setCursor(Qt::PointingHandCursor);
 
-  AddTitle("天气预报");
+  AddTitle("Neobox 天气预报");
   AddCloseButton();
-  AddMinButton();
   SetShadowAround(m_CenterWidget);
 
-  setFixedSize(520, 500);
+  // setFixedSize(520, 520);
+  setFixedWidth(520);
   auto pos = m_Config.GetWindowPosition();
   if (pos.front().isNumber() && pos.back().isNumber()) {
     m_LastPosition = {pos.front().getValueInt(), pos.back().getValueInt()};
@@ -120,12 +129,20 @@ void WeatherDlg::InitComponent()
 {
   auto layout = new QVBoxLayout(m_CenterWidget);
   layout->setContentsMargins(11, 30, 11, 11);
-  m_Text = new QPlainTextEdit(m_CenterWidget);
 
   auto l = new QHBoxLayout();
   l->setContentsMargins(0, 0, 30, 0);
   layout->addLayout(l);
+  QPixmap pix(":/icons/Location.png");
+  auto location = new QLabel(this);
+  location->setFixedSize(16, 16);
+  location->setPixmap(pix.scaled(location->size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
+  l->addWidget(location);
   l->addWidget(m_CityName);
+  m_Update->setCursor(Qt::PointingHandCursor);
+  m_Update->setObjectName("WeatherUpdate");
+  m_Update->setFixedSize(18, 18);
+  l->addWidget(m_Update);
 
   l->addStretch();
   AddScrollBar(m_SearchList->verticalScrollBar(), false);
@@ -133,11 +150,13 @@ void WeatherDlg::InitComponent()
   l->addWidget(m_CityEdit);
 
   layout->addWidget(m_Item);
+  layout->addWidget(new QLabel("<h4>24小时预报</h4>", this));
   layout->addWidget(m_Hours);
-  AddScrollBar(m_Hours->m_ScrollArea->horizontalScrollBar(), true);
-  AddScrollBar(m_Hours->m_ScrollArea->verticalScrollBar(), true);
-  layout->addWidget(m_Text);
-  AddScrollBar(m_Text->verticalScrollBar());
+  AddScrollBar(m_Hours->horizontalScrollBar(), true);
+  AddScrollBar(m_Hours->verticalScrollBar(), true);
+  layout->addWidget(new QLabel("<h4>未来7日预报</h4>", this));
+  layout->addWidget(m_Days);
+  AddScrollBar(m_Days->verticalScrollBar(), false);
 
   m_SearchList->raise();
   m_SearchList->hide();
@@ -182,6 +201,34 @@ void WeatherDlg::ConnectAll() {
   connect(m_SearchList, &CityList::CityChanged, [this]() {
     m_Weather->Fetch(Weather::GetTypes::Now);
   });
+  connect(m_CityName, &QPushButton::clicked, this, [this](){
+    static SavedCity* editor = nullptr;
+    if (editor) {
+      editor->show();
+      editor->raise();
+      return ;
+    }
+    editor = new SavedCity(this, m_Config);
+    editor->move(this->pos() + QPoint(50, 50));
+    auto loop = QEventLoop(this);
+    connect(editor, &SavedCity::Finished, this, [this, &loop](bool quit) {
+      if (quit) {
+        loop.quit();
+      } else {
+        m_CityName->setText(GetCityName());
+        m_Weather->Fetch(Weather::GetTypes::Now);
+      }
+    });
+    connect(m_SearchList, &CityList::CityChanged, editor, &SavedCity::Update);
+    editor->show();
+    loop.exec();
+    editor = nullptr;
+  });
+
+  connect(m_Update, &QPushButton::clicked, this, [this]() {
+    m_Weather->Fetch(Weather::GetTypes::Now);
+    mgr->ShowMsg("更新成功！");
+  });
 
   QTimer::singleShot(1000, [this](){m_Weather->Fetch(Weather::GetTypes::Now);});
 }
@@ -199,7 +246,6 @@ void WeatherDlg::SearchCities(QString city)
 {
   city = city.trimmed();
   if (city.isEmpty()) {
-    m_Text->clear();
     return;
   }
   auto data = city.toUtf8();
@@ -213,8 +259,6 @@ void WeatherDlg::ShowCityList(bool succeed)
   if (succeed && result) {
     m_SearchList->SetConetnt(*result);
     m_SearchList->show();
-    auto str = result->toString(true);
-    m_Text->setPlainText(QString::fromUtf8(str.data(), str.size()));
   } else {
     m_SearchList->hide();
   }
@@ -225,8 +269,6 @@ void WeatherDlg::UpdateItem(bool succeed)
   auto result = m_Weather->Get();
   if (succeed && result) {
     m_Item->SetJSON(*result);
-    auto str = result->toString(true);
-    m_Text->setPlainText(QString::fromUtf8(str.data(), str.size()));
   }
 }
 
@@ -235,12 +277,14 @@ void WeatherDlg::UpdateHours(bool succeed)
   auto result = m_Weather->Get();
   if (succeed && result) {
     m_Hours->SetJSON(*result);
-    auto str = result->toString(true);
-    m_Text->setPlainText(QString::fromUtf8(str.data(), str.size()));
   }
 }
 
 void WeatherDlg::UpdateDays(bool succeed)
 {
   auto result = m_Weather->Get();
+
+  if (succeed && result) {
+    m_Days->SetJSON(*result);
+  }
 }

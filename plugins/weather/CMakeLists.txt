@@ -8,7 +8,7 @@ set(pliugin_libfiles pluginmgr)
 set(plugin_name weather)
 add_library(${plugin_name} SHARED ${source_files})
 
-set(resource_files fonts/*.ttf fonts/*.json styles/*.css)
+set(resource_files fonts/*.ttf fonts/*.json styles/*.qss icons/*.png)
 load_resources(${plugin_name} resource_files)
 
 target_link_libraries(${plugin_name} PRIVATE
