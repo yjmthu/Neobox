@@ -498,6 +498,9 @@ void HttpLib::HttpInitialize()
     SetAsyncCallback();
   }
   auto url = Utf82WideString(m_Url.host);
+#ifdef _DEBUG
+  std::cout << Utf82AnsiString(m_Url.host) << std::endl;
+#endif
 
   SetTimeOut(m_TimeOut);
   m_hConnect = WinHttpConnect(m_hSession, url.c_str(), m_Url.port, 0);

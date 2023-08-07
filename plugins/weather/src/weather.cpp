@@ -68,6 +68,16 @@ Weather::Weather(const WeatherCfg& config)
   : QObject()
   , m_JSON { std::nullopt }
   , m_Config(config)
+  , m_Hosts({
+    u8"devapi.qweather.com"s,
+    u8"geoapi.qweather.com"s
+  })
+  , m_Paths({
+    u8"/v2/city/lookup?"s,
+    u8"/v7/weather/24h?"s,
+    u8"/v7/weather/7d?"s,
+    u8"/v7/weather/now?"s,
+  })
 {
   //
 }
@@ -82,29 +92,19 @@ Weather::~Weather()
 HttpUrl Weather::GetUrl(GetTypes type, std::optional<std::u8string_view> data) const
 {
   using enum GetTypes;
-  static const std::array hosts = {
-    u8"devapi.qweather.com"s,
-    u8"geoapi.qweather.com"s
-  };
-  static const std::array paths = {
-    u8"/v2/city/lookup?"s,
-    u8"/v7/weather/24h?"s,
-    u8"/v7/weather/7d?"s,
-    u8"/v7/weather/now?"s,
-  };
-  std::u8string_view host;
-  auto path = paths[static_cast<int>(type)];
+  std::u8string host;
+  auto path = m_Paths[static_cast<int>(type)];
   std::u8string city;
   switch (type) {
   case Cities:
-    host = hosts[1];
+    host = m_Hosts[1];
     city = *data;
     break;
   default:
     if (m_Config.GetIsPaidUser()) {
-      host = hosts[0].substr(3);
+      host = m_Hosts[0].substr(3);
     } else {
-      host = hosts[0];
+      host = m_Hosts[0];
     }
     city = m_Config.GetCity();
     break;
@@ -132,7 +132,8 @@ void Weather::Fetch(GetTypes type, std::optional<std::u8string_view> data)
     return;
   }
 
-  m_Request = std::make_unique<HttpLib>(GetUrl(type, data), true, 2);
+  auto&& url = GetUrl(type, data);
+  m_Request = std::make_unique<HttpLib>(url, true, 2);
   
   HttpLib::Callback callback = {
     .m_FinishCallback = [this, type](auto msg, auto res) {

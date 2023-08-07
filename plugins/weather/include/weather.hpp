@@ -25,6 +25,8 @@ private:
   std::mutex m_Mutex;
   std::optional<YJson> m_JSON;
   const WeatherCfg& m_Config;
+  const std::vector<std::u8string> m_Hosts;
+  const std::vector<std::u8string> m_Paths;
 signals:
   void Finished(GetTypes, bool);
 };
