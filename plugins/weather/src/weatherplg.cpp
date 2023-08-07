@@ -39,10 +39,8 @@ void PluginName::InitFunctionMap()
         if (!result) return;
         
         if (*result != key) {
-          m_Config.SetApiKey(*result, false);
+          m_Config.SetApiKey(*result);
         }
-        auto res = QMessageBox::question(m_WeatherDlg, u8"提示", u8"您是否为付费用户？");
-        m_Config.SetIsPaidUser(res == QMessageBox::Yes, true);
         mgr->ShowMsg("保存成功！");
       }, PluginEvent::Void}
     },
@@ -52,6 +50,16 @@ void PluginName::InitFunctionMap()
         m_Config.SetIsPaidUser(false, true);
         mgr->ShowMsg(u8"清除成功！");
       }, PluginEvent::Void}
+    },
+    {u8"setPaidUser",
+      {u8"付费模式", u8"如果你的密钥是付费模式，请勾选此项。", [this](PluginEvent event, void* data) {
+        if (event == PluginEvent::Bool) {
+          m_Config.SetIsPaidUser(*reinterpret_cast<bool*>(data));
+          mgr->ShowMsg(u8"设置成功！");
+        } else if (event == PluginEvent::BoolGet) {
+          *reinterpret_cast<bool*>(data) = m_Config.GetIsPaidUser();
+        }
+      }, PluginEvent::Bool}
     },
   };
 }

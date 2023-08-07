@@ -202,9 +202,6 @@ void WeatherDlg::ConnectAll() {
       if (succeed) m_Weather->Fetch(Hours);
       break;
     }
-    if (!succeed) {
-      mgr->ShowMsg("天气数据请求失败！");
-    }
   });
 
   connect(m_CityEdit, &QLineEdit::textChanged, this, &WeatherDlg::SearchCities);
