@@ -30,8 +30,12 @@ protected:
 public:
   explicit Shortcut(class YJson& m_Data);
   ~Shortcut();
+  bool RegisterPlugin(std::u8string_view pluginName);
+  bool UnregisterPlugin(std::u8string_view pluginName);
   bool RegisterHotKey(const std::u8string& keyString);
   bool UnregisterHotKey(const std::u8string& keyString);
+  YJson* FindPluginData(std::u8string_view pluginName);
+  YJson* FindShortcutData(std::u8string_view keyString);
   const std::u8string_view GetCallbackInfo(int id);
   const std::u8string_view GetCallbackInfo(KeyName keyName);
 

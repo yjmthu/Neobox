@@ -115,11 +115,14 @@ PluginMgr::PluginMgr()
 PluginMgr::~PluginMgr()
 {
   delete m_UpdateMgr;
-  delete m_Shortcut;
+
   for (auto& [_, info]: m_Plugins) {
     if (!info.plugin) continue;
     FreePlugin(info);
   }
+  // 先释放插件，再释放热键
+  delete m_Shortcut;
+
   delete m_Settings;
 
   delete m_Menu;
@@ -266,6 +269,7 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
       mainMenuAction->setProperty("pluginName", QString::fromUtf8(pluginName.data(), pluginName.size()));
       m_Menu->addAction(mainMenuAction);
     }
+    m_Shortcut->RegisterPlugin(pluginInfo.plugin->m_PluginName);
     return true;
   } catch (...) {
     // pluginInfo.plugin = nullptr;
@@ -278,8 +282,11 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
 
 bool PluginMgr::FreePlugin(PluginInfo& info)
 {
-  delete info.plugin;
-  info.plugin = nullptr;
+  if (info.plugin) {
+    m_Shortcut->UnregisterPlugin(info.plugin->m_PluginName);
+    delete info.plugin;
+    info.plugin = nullptr;
+  }
 #ifdef _WIN32
   return FreeLibrary(reinterpret_cast<HINSTANCE>(info.handle));
 #else
