@@ -183,9 +183,9 @@ void WeatherDlg::LoadQweatherFonts()
 }
 
 void WeatherDlg::ConnectAll() {
-  connect(m_Weather, &Weather::Finished, this, [this](Weather::GetTypes type, bool succeed) {
+  connect(m_Weather, &Weather::Finished, this, [this](int type, bool succeed) {
     using enum Weather::GetTypes;
-    switch (type) {
+    switch (static_cast<Weather::GetTypes>(type)) {
     case Cities:
       ShowCityList(succeed);
       break;

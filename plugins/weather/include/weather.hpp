@@ -14,6 +14,7 @@ class Weather: public QObject
 
 public:
   enum class GetTypes { Cities, Hours, Days, Now };
+
   explicit Weather(const WeatherCfg& config);
   virtual ~Weather();
   void Fetch(GetTypes type, std::optional<std::u8string_view> data=std::nullopt);
@@ -28,7 +29,7 @@ private:
   const std::vector<std::u8string> m_Hosts;
   const std::vector<std::u8string> m_Paths;
 signals:
-  void Finished(GetTypes, bool);
+  void Finished(int, bool);
 };
 
 #endif // WEATHER_H

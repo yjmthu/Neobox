@@ -79,7 +79,7 @@ Weather::Weather(const WeatherCfg& config)
     u8"/v7/weather/now?"s,
   })
 {
-  //
+  // qRegisterMetaType<Weather::GetTypes>("Weather::GetTypes");
 }
 
 Weather::~Weather()
@@ -145,7 +145,7 @@ void Weather::Fetch(GetTypes type, std::optional<std::u8string_view> data)
           auto iter = m_JSON->find(u8"code");
           if (iter != m_JSON->endO() && iter->second.isString()) {
             if (iter->second.getValueString() == u8"200") {
-              emit Finished(type, true);
+              emit Finished(static_cast<int>(type), true);
               return;
             } else {
               auto msg = u8"密钥暂时失效！错误码：" + iter->second.getValueString();
@@ -163,7 +163,7 @@ void Weather::Fetch(GetTypes type, std::optional<std::u8string_view> data)
         mgr->ShowMsg(u8"HTTP请求出错");
 #endif
       }
-      emit Finished(type, false);
+      emit Finished(static_cast<int>(type), false);
     },
   };
 

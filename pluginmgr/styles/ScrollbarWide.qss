@@ -64,7 +64,7 @@ QScrollBar::sub-line:vertical:hover
 
 QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical
 {
-  background: rgb(0,0,0,10%);
+  background: rgba(0,0,0,10%);
   border-radius: 2px;
 }
 
@@ -136,6 +136,6 @@ QScrollBar::sub-line:horizontal:hover
 
 QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal
 {
-  background: rgb(0,0,0,10%);
+  background: rgba(0,0,0,10%);
   border-radius: 2px;
 }
