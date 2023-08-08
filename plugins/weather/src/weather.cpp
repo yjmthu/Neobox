@@ -1,7 +1,12 @@
 ﻿#include <weather.hpp>
 #include <httplib.h>
 
+#ifdef WEATHER_WRONG_USER_KEY
+#define QWEATHER_ID  "XXXXXXXXXXXXXXXXXX"
+#define QWEATHER_KEY "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+#else
 #include "apikey.cpp"
+#endif
 
 #include <QtZlib/zlib.h>
 

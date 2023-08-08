@@ -1,6 +1,6 @@
 ﻿# 极简翻译编译说明
 
-需要在include文件夹下创建名为`apikey.h`的文件，并定义如下宏
+需要在src文件夹下创建名为`apikey.cpp`的文件，并定义如下宏
 
 ```cpp
 #define ICIBA_KEY "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"

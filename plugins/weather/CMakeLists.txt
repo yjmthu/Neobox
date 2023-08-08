@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.10.1)
 
+if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/apikey.cpp")
+  add_definitions(-DWEATHER_WRONG_USER_KEY)
+endif()
+
 file(GLOB source_files src/*.cpp include/*hpp)
 
 set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui)

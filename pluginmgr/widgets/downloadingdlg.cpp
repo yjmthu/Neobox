@@ -17,6 +17,7 @@ DownloadingDlg::DownloadingDlg(QWidget* parent)
   auto const layout = new QVBoxLayout(this);
   layout->addWidget(m_ProgressBar);
   layout->addWidget(m_Label);
+  m_ProgressBar->setFixedHeight(6);
   m_ProgressBar->setRange(0, 0);
 
   connect(this, &DownloadingDlg::DownloadFinished, this, &QDialog::close);

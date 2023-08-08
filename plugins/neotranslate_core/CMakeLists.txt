@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10.1)
 
 if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/include/apikey.h")
-  add_definitions(-DTRANSLATE_USE_USER_KEY)
+  add_definitions(-DTRANSLATE_WRONG_USER_KEY)
 endif()
 
 file(GLOB source_files src/*.cpp)

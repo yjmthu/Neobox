@@ -12,10 +12,14 @@
 #include <format>
 #include <random>
 
-#ifdef TRANSLATE_USE_USER_KEY
-#include <userkey.h>
+#ifdef TRANSLATE_WRONG_USER_KEY
+#define ICIBA_KEY "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+#define BAIDU_ID "xxxxxxxxxxxxxxxxx"
+#define BAIDU_KEY "xxxxxxxxxxxxxxxxxxxx"
+#define YOUDAO_ID "xxxxxxxxxxxxxxxx"
+#define YOUDAO_KEY "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 #else
-#include <apikey.h>
+#include "apikey.cpp"
 #endif
 
 using namespace std::literals;
