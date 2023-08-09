@@ -7,6 +7,7 @@
 #include <httpproxy.h>
 #include <memory>
 #include <atomic>
+#include <chrono>
 
 class HttpUrl {
   friend class HttpLib;
@@ -78,7 +79,7 @@ public:
   struct PostData { void* data; size_t size; } m_PostData;
   struct Response {
     std::u8string version;
-    unsigned long status = -1;
+    long status = -1;
     std::u8string reason;
     Headers headers;
     std::u8string body;
@@ -94,7 +95,7 @@ public:
     std::optional<ProcessCallback> m_ProcessCallback;
   };
 
-  explicit HttpLib(HttpUrl url, bool async = false, int timeout=30)
+  explicit HttpLib(HttpUrl url, bool async = false, std::chrono::seconds timeout=30s)
     : m_Url(std::move(url))
     , m_hSession(nullptr)
     , m_ProxySet(false)
@@ -126,7 +127,7 @@ public:
   Response* Get();
   Response* Get(const std::filesystem::path& path);
   Response* Get(CallbackFunction* callback, void* userData);
-  void SetTimeOut(int TimeOut);
+  void SetTimeOut(std::chrono::seconds timeOut);
   void GetAsync(Callback callback);
   void ExitAsync();
   bool IsFinished() const { return m_Finished; }
@@ -142,7 +143,7 @@ private:
   void* m_hConnect = nullptr;
   void* m_hRequest = nullptr;
 #endif
-  int m_TimeOut = 30;
+  std::chrono::seconds m_TimeOut { 30s };
   int m_RedirectDepth = 0;
   bool m_ProxySet;
   bool m_AsyncSet;
@@ -165,13 +166,19 @@ private:
 private:
   bool ReadStatusCode();
   bool ReadHeaders();
+#ifdef _WIN32
   bool ReadBody();
+#endif
   void EmitProcess();
   void EmitFinish(std::wstring message=L"");
 private:
   static CallbackFunction WriteFile;
   static CallbackFunction WriteString;
+  static CallbackFunction WriteFunction;
+#ifdef _WIN32
   static void RequestStatusCallback(void* hInternet, unsigned long long dwContext, unsigned long dwInternetStatus, void* lpvStatusInformation, unsigned long dwInternetInformationLength);
+#endif
+  std::function<bool(const void*, size_t)> m_WriteCallback;
   CallbackFunction* m_Callback;
   Callback m_AsyncCallback;
   void* m_DataBuffer = nullptr;

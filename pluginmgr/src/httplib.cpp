@@ -18,9 +18,6 @@
 using namespace std::literals;
 namespace fs = std::filesystem;
 std::optional<HttpProxy> HttpLib::m_Proxy = std::nullopt;
-// HttpLib::HttpId HttpLib::m_MaxId = 0;
-// std::map<HttpLib::HttpId, HttpLib*> HttpLib::m_AsyncPool;
-// HttpLib::Mutex HttpLib::m_AsyncMutex;
 
 static HttpLib::HttpId m_MaxId = 0;
 static std::map<HttpLib::HttpId, HttpLib*> m_AsyncPool;
@@ -116,13 +113,11 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
 
   case WINHTTP_CALLBACK_STATUS_READ_COMPLETE: 
     if (dwInternetInformationLength) {
-      object.m_RecieveSize += dwInternetInformationLength;
-      object.m_AsyncCallback.m_WriteCallback->operator()(lpvStatusInformation, dwInternetInformationLength);
-      object.EmitProcess();
+      object.m_WriteCallback->operator()(lpvStatusInformation, dwInternetInformationLength);
 
       locker.unlock();
       WinHttpQueryDataAvailable(object.m_hRequest, nullptr);
-    } else{
+    } else {
       object.EmitFinish();
     }
     break;
@@ -137,6 +132,15 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
   }
   }
 }
+#elif defined (__linux__)
+struct CurlGlobal {
+  CurlGlobal() {
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+  }
+  ~CurlGlobal() {
+    curl_global_cleanup();
+  }
+};
 #endif
 
 HttpUrl::HttpUrl(std::u8string_view url) {
@@ -395,7 +399,7 @@ bool HttpLib::IsOnline() {
   std::cout << data << std::endl << "lostPacket: " << lostPacket << std::endl;
   return !std::atoi(lostPacket.c_str());
 #else
-  HttpLib clt("https://www.baidu.com"s);
+  HttpLib clt(HttpUrl(u8"https://www.baidu.com"sv));
   auto res = clt.Get();
   return res && res->status == 200;
 #endif
@@ -421,6 +425,14 @@ size_t HttpLib::WriteString(void* buffer,
   return size;
 }
 
+
+size_t HttpLib::WriteFunction(void* buffer, size_t size, size_t nmemb, void* userdata) {
+  auto data = reinterpret_cast<const char*>(buffer);
+  if ((*reinterpret_cast<decltype(m_WriteCallback)*>(userdata))(data, size *= nmemb))
+    return size;
+  return 0;
+}
+
 HttpLib::~HttpLib() {
   if (m_AsyncSet) {
     ExitAsync();
@@ -436,22 +448,13 @@ HttpLib::~HttpLib() {
 void HttpLib::SetAsyncCallback()
 {
 #ifdef _WIN32
-  // auto ctx = this;
-  // auto bResult = WinHttpSetOption(
-  //   m_hSession,
-  //   WINHTTP_OPTION_CONTEXT_VALUE,
-  //   &ctx,
-  //   sizeof(void*)
-  // );
-  // if (bResult) {
-    WINHTTP_STATUS_CALLBACK hCallback = WinHttpSetStatusCallback(
-      m_hSession,
-      RequestStatusCallback,
-      WINHTTP_CALLBACK_FLAG_ALL_NOTIFICATIONS,
-      0);
-  // } else {
-  //   throw std::logic_error(std::format("Httplib SetAsyncCallback failed. Code: {}.", GetLastError()));
-  // }
+  WINHTTP_STATUS_CALLBACK hCallback = WinHttpSetStatusCallback(
+    m_hSession,
+    RequestStatusCallback,
+    WINHTTP_CALLBACK_FLAG_ALL_NOTIFICATIONS,
+    0);
+#elif defined (__linux__)
+  m_Callback = WriteFunction;
 #endif
 }
 
@@ -512,21 +515,25 @@ void HttpLib::HttpInitialize()
     std::wcerr << L"HttpLib Error: " << GetLastError() << L" in WinHttpConnect.\n";
   }
 
-#else
+#elif defined (__linux__)
+  static volatile CurlGlobal _;
+
   SetProxyBefore();
-  m_Url.push_back('\0');
+  auto url = m_Url.GetUrl();
   if (m_hSession)
     curl_easy_cleanup(m_hSession);
   m_hSession = curl_easy_init();
   curl_easy_setopt(m_hSession, CURLOPT_HEADER, false);
-  curl_easy_setopt(m_hSession, CURLOPT_URL, m_Url.data());
+  curl_easy_setopt(m_hSession, CURLOPT_URL, url.c_str());
   curl_easy_setopt(m_hSession, CURLOPT_SSL_VERIFYPEER, false);
   curl_easy_setopt(m_hSession, CURLOPT_SSL_VERIFYHOST, false);
   curl_easy_setopt(m_hSession, CURLOPT_READFUNCTION, NULL);
   curl_easy_setopt(m_hSession, CURLOPT_NOSIGNAL, 1L);
   curl_easy_setopt(m_hSession, CURLOPT_POST, 0L);
-  if (m_TimeOut > 0) {
-    curl_easy_setopt(m_hSession, CURLOPT_TIMEOUT, m_TimeOut);
+  curl_easy_setopt(m_hSession, CURLOPT_FAILONERROR, 1L);
+  if (m_TimeOut > 0s) {
+    curl_easy_setopt(m_hSession, CURLOPT_TIMEOUT, m_TimeOut.count());
+    curl_easy_setopt(m_hSession, CURLOPT_CONNECTTIMEOUT, m_TimeOut.count());
   }
 #endif
 }
@@ -547,8 +554,10 @@ void HttpLib::HttpUninitialize() {
     m_hSession = nullptr;
   }
 #else
-  if (m_hSession)
+  if (m_hSession) {
     curl_easy_cleanup(m_hSession);
+    m_hSession = nullptr;
+  }
 #endif
 }
 
@@ -583,8 +592,9 @@ void HttpLib::SetProxyBefore()
 #else
   // https://curl.se/libcurl/c/CURLOPT_PROXY.html
   // https://curl.se/libcurl/c/CURLOPT_PROXYAUTH.html
-  auto pwd = m_Proxy.username + u8":" + m_Proxy.password;
-  curl_easy_setopt(m_hSession, CURLOPT_PROXY, m_Proxy.proxy.c_str());
+  auto pwd = m_Proxy->GetUsername() + u8":" + m_Proxy->GetPassword();
+  auto proxy = m_Proxy->GetProxy();
+  curl_easy_setopt(m_hSession, CURLOPT_PROXY, proxy.c_str());
   /* allow whatever auth the proxy speaks */
   curl_easy_setopt(m_hSession, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
   /* set the proxy credentials */
@@ -701,15 +711,17 @@ bool HttpLib::SendHeaders()
     std::wcerr << L"Winhttp setProxyAfter failed!" << std::endl;
   }
 #else
-  curl_easy_setopt(m_hSession, CURLOPT_WRITEFUNCTION, m_CallBack);
-  curl_easy_setopt(m_hSession, CURLOPT_WRITEDATA, m_DataBuffer);
+  curl_easy_setopt(m_hSession, CURLOPT_HEADERFUNCTION, &WriteString);
+  curl_easy_setopt(m_hSession, CURLOPT_HEADERDATA, &WriteString);
+  curl_easy_setopt(m_hSession, CURLOPT_WRITEFUNCTION, m_Callback);
+  curl_easy_setopt(m_hSession, CURLOPT_WRITEDATA, &m_WriteCallback);
   if (!m_Headers.empty()) {
     struct curl_slist *headers = nullptr;
-    std::string buffer;
+    std::u8string buffer;
     for (const auto& [key, value]: m_Headers) {
-      buffer = std::format("{}: {}", key, value);
+      buffer = key + u8": " + value;
       buffer.push_back('\0');
-      headers = curl_slist_append(headers, buffer.data());
+      headers = curl_slist_append(headers, reinterpret_cast<const char*>(buffer.data()));
     }
     curl_easy_setopt(m_hSession, CURLOPT_HTTPHEADER, headers);
   }
@@ -720,8 +732,8 @@ bool HttpLib::SendHeaders()
 
 bool HttpLib::ReadStatusCode() 
 {
-  bool bResults = false;
 #ifdef _WIN32
+  bool bResults = false;
   DWORD dwSize = sizeof(m_Response.status);
   bResults = WinHttpQueryHeaders(m_hRequest, 
       WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
@@ -731,22 +743,23 @@ bool HttpLib::ReadStatusCode()
     if(m_Response.status == 304) 
       std::wcerr << L"Document has not been updated.\n";
   }
-#else
-  if (bResults)
-    lStatus = curl_easy_getinfo(m_hSession, CURLINFO_RESPONSE_CODE, &m_Response.status);
-  else
-    std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(lStatus) << std::endl;
-  bResults = lStatus == CURLE_OK;
-#endif
   return bResults;
+#else
+  auto lStatus = curl_easy_getinfo(m_hSession, CURLINFO_RESPONSE_CODE, &m_Response.status);
+  if (lStatus != CURLE_OK) {
+    std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(lStatus) << std::endl;
+    return false;
+  }
+  return true;
+#endif
 }
 
 bool HttpLib::ReadHeaders()
 {
-  bool bResults = false;
   m_Response.headers.clear();
 
 #ifdef _WIN32
+  bool bResults = false;
   // Query the status code of the response
   DWORD dwSize = 0;
 
@@ -782,15 +795,7 @@ bool HttpLib::ReadHeaders()
       }
 
       if (m_Response.status / 100 == 3) {
-#ifdef _WIN32
         m_Response.location = m_Response.headers[u8"Location"];
-#else
-      char* szRedirectUrl = nullptr;
-      lStatus = curl_easy_getinfo(m_hSession, CURLINFO_REDIRECT_URL, &szRedirectUrl);
-      if (lStatus == CURLE_OK) {
-        m_Response.location = szRedirectUrl;
-      }
-#endif
       }
     }
 
@@ -798,17 +803,15 @@ bool HttpLib::ReadHeaders()
   } else {
     std::wcerr << L"WinHttpQueryHeaders BufferSize Failed." << std::endl;
   }
-#else
-    char *ct = nullptr;
-    lStatus = curl_easy_getinfo(m_hSession, CURLINFO_CONTENT_TYPE, &ct);
-    if(!lStatus && ct) {
-      m_Response.headers["Content-Type"] = ct;
-    }
-#endif
-
   return bResults;
+#elif defined (__linux__)
+  auto& h = *reinterpret_cast<std::u8string*>(m_DataBuffer);
+  std::cout << std::string(h.begin(), h.end()) << std::endl;
+#endif
+ return true;
 }
 
+#ifdef _WIN32
 bool HttpLib::ReadBody()
 {
   bool bResults = false;
@@ -833,6 +836,7 @@ bool HttpLib::ReadBody()
 
   return bResults;
 }
+#endif
 
 void HttpLib::HttpPerform()
 {
@@ -841,30 +845,34 @@ void HttpLib::HttpPerform()
   if (bResults) {
     bResults = SendRequest();
   } else {
-    std::wcerr << L"WinHttpSendHeasers failed: " << GetLastError() << std::endl;
+    std::wcerr << L"WinHttpSendHeasers failed." << std::endl;
   }
   if (m_AsyncSet) {
+#ifdef _WIN32
     if (!bResults) {
       std::thread(&HttpLib::ExitAsync, this).detach();
     }
+#else
+    ExitAsync();
+#endif
     return;
   }
 
   if (bResults) {
     bResults = RecvResponse();
   } else {
-    std::wcerr << L"WinHttpSendRequest failed: " << GetLastError() << std::endl;
+    std::wcerr << L"WinHttpSendRequest failed." << std::endl;
   }
   if (bResults) {
     bResults = ReadStatusCode();
   } else {
-    std::wcerr << L"WinHttpReceiveResponse failed: " << GetLastError() << std::endl;
+    std::wcerr << L"WinHttpReceiveResponse failed." << std::endl;
   }
 
   if (bResults) {
     bResults = m_Response.status == 200;
   } else {
-    std::wcerr << L"WinHttp read status code failed: " << GetLastError() << std::endl;
+    std::wcerr << L"WinHttp read status code failed." << std::endl;
   }
   
   if (bResults) {
@@ -874,7 +882,9 @@ void HttpLib::HttpPerform()
   }
 
   if(bResults) {
+#ifdef _WIN32
     bResults = ReadBody();
+#endif
   } else {
     std::wcerr << L"WinHttpQueryHeaders BufferSize Failed." << std::endl;
   }
@@ -891,6 +901,7 @@ void HttpLib::EmitProcess()
 void HttpLib::EmitFinish(std::wstring message)
 {
   m_Finished = true;
+#ifdef _WIN32
   if (m_hSession) {
     WinHttpSetStatusCallback(
       m_hSession,
@@ -899,6 +910,7 @@ void HttpLib::EmitFinish(std::wstring message)
       0
     );
   }
+#endif
   auto& callback = m_AsyncCallback.m_FinishCallback;
   if (callback) {
     /* To prevent infinite recursion at destructor time,
@@ -925,10 +937,7 @@ HttpLib::Response* HttpLib::Get()
 
 HttpLib::Response* HttpLib::Get(const fs::path& path)
 {
-  fs::path tempPath = GetTempFileName();
-  if (tempPath.empty()) return nullptr;
-
-  std::ofstream stream(tempPath, std::ios::binary | std::ios::out);
+  std::ofstream stream(path, std::ios::binary | std::ios::out);
   m_Response.body.clear();
   m_Callback = &HttpLib::WriteFile;
   if (!stream.is_open())
@@ -938,9 +947,6 @@ HttpLib::Response* HttpLib::Get(const fs::path& path)
   HttpPerform();
   stream.close();
 
-  if (!fs::file_size(tempPath)) return nullptr;
-
-  fs::rename(tempPath, path);
   return &m_Response;
 }
 
@@ -953,13 +959,18 @@ HttpLib::Response* HttpLib::Get(CallbackFunction* callback, void* userdata) {
   return &m_Response;
 }
 
-void HttpLib::SetTimeOut(int TimeOut) {
+void HttpLib::SetTimeOut(std::chrono::seconds timeOut) {
   // Use WinHttpSetTimeouts to set a new time-out values.
-  m_TimeOut = TimeOut;
-  const auto timeout = m_TimeOut * 1000;
-  if (!WinHttpSetTimeouts(m_hSession, timeout, timeout, timeout, timeout)) {
+  m_TimeOut = timeOut;
+#ifdef _WIN32
+  const auto t = m_TimeOut.count() * 1000;
+  if (!WinHttpSetTimeouts(m_hSession, t, t, t, t)) {
     std::wcerr << L"HttpLib Error: " << GetLastError() << L" in WinHttpSetTimeouts.\n";
   }
+#elif defined (__linux__)
+  curl_easy_setopt(m_hSession, CURLOPT_TIMEOUT, m_TimeOut.count());
+  curl_easy_setopt(m_hSession, CURLOPT_CONNECTTIMEOUT, m_TimeOut.count());
+#endif
 }
 
 void HttpLib::GetAsync(Callback callback)
@@ -974,17 +985,38 @@ void HttpLib::GetAsync(Callback callback)
   m_AsyncCallback = std::move(callback);
   m_DataBuffer = new std::u8string;
   if (!m_AsyncCallback.m_WriteCallback) {
-    m_AsyncCallback.m_WriteCallback = [this](auto data, auto size){
+    m_WriteCallback = [this](auto data, auto size){
+      if (m_Finished) return false;
+      m_RecieveSize += size;
       m_Response.body.append(reinterpret_cast<const char8_t*>(data), size);
+      EmitProcess();
+      return true;
+    };
+  } else {
+    auto callback = std::move(*m_AsyncCallback.m_WriteCallback);
+    m_WriteCallback = [this, callback](auto data, auto size) {
+      if (m_Finished) return false;
+      m_RecieveSize += size;
+      callback(data, size);
+      EmitProcess();
+      return true;
     };
   }
 
-  if (!m_hConnect || !m_hSession) {
+  bool init = m_hSession;
+#ifdef _WIN32
+  init = init && m_hConnect; 
+#endif
+
+  if (!init) {
     std::thread(&HttpLib::ExitAsync, this).detach();
     return;
   }
-
+#ifdef _WIN32
   HttpPerform();
+#elif defined (__linux__)
+  std::thread(&HttpLib::HttpPerform, this).detach();
+#endif
 }
 
 void HttpLib::ExitAsync() {
