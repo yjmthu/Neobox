@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10.1)
 
-if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/include/apikey.h")
+if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/apikey.cpp")
   add_definitions(-DTRANSLATE_WRONG_USER_KEY)
 endif()
 

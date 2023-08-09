@@ -135,7 +135,7 @@ PluginMgr::~PluginMgr()
 void PluginMgr::SaveSettings()
 {
   // std::lock_guard<std::mutex> locker(m_Mutex);
-  m_Settings->toFile(m_SettingFileName, true, YJson::UTF8);
+  m_Settings->toFile(m_SettingFileName, false, YJson::UTF8);
 }
 
 void PluginMgr::LoadManageAction()
