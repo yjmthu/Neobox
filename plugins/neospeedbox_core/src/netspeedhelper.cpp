@@ -240,7 +240,7 @@ union CpuTimes {
     uint64_t guestTime;
     uint64_t guestNiceTime;
   };
-  const uint64_t array[10];
+  uint64_t array[10];
 };
 
 void NetSpeedHelper::SetCpuInfo() {

@@ -35,11 +35,12 @@ PluginUpdate::PluginUpdate(YJson& settings)
   });
   connect(this, &PluginUpdate::QuitApp, this, [](QString exe, QStringList arg){
     qApp->quit();
+#ifdef _WIN32
     // 设置进程优先级-实时，使其抢先于操作系统组件之前运行
     SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
     // 设置线程优先级-实时
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
-    // 隐藏启动控制台程序，执行删除文件指令
+#endif
     QProcess::startDetached(exe, arg);
   });
 #endif

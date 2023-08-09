@@ -193,6 +193,9 @@ BOOL SetWindowCompositionAttribute(HWND hWnd,
 
 #elif defined (__linux__)
 
+#include <codecvt>
+#include <locale>
+
 template <typename _Ty>
 void GetCmdOutput(const char* cmd, _Ty& result) {
   char buffer[1024];
@@ -210,6 +213,19 @@ void GetCmdOutput(const char* cmd, _Ty& result) {
     result.emplace_back(str.begin(), str.end());
   }
 }
+
+
+inline std::wstring Utf82WideString(std::u8string_view u8Str) {
+  std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+
+  auto buffer = new char[u8Str.size() + 1] { };
+  std::copy(u8Str.begin(), u8Str.end(), buffer);
+  std::wstring result = converter.from_bytes(buffer);
+  delete[] buffer;
+
+  return result;
+}
+
 #endif
 
 #endif

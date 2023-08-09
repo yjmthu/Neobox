@@ -26,6 +26,7 @@ static HttpLib::HttpId m_MaxId = 0;
 static std::map<HttpLib::HttpId, HttpLib*> m_AsyncPool;
 static HttpLib::Mutex m_AsyncMutex;
 
+#ifdef _WIN32
 // https://github.com/JGRennison/OpenTTD-patches/blob/dcc52f7696f4ef2601b9fbca1ca78abcd1211734/src/network/core/http_winhttp.cpp#L145
 void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DWORD dwInternetStatus, LPVOID lpvStatusInformation, DWORD dwInternetInformationLength) {
   constexpr auto bufferSize = 8 << 10;
@@ -136,6 +137,7 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
   }
   }
 }
+#endif
 
 HttpUrl::HttpUrl(std::u8string_view url) {
   SetUrl(url);

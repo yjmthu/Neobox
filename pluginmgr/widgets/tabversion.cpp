@@ -112,7 +112,7 @@ void TabVersion::Connect()
   });
 }
 
-
+#ifdef _WIN32
 bool TabVersion::hasFolderPermission(std::wstring path) {
   path.push_back(L'\0');
   DWORD accessMode = GENERIC_WRITE | GENERIC_READ;
@@ -124,6 +124,7 @@ bool TabVersion::hasFolderPermission(std::wstring path) {
   CloseHandle(fileHandle);
   return true;
 }
+#endif
 
 void TabVersion::GetUpdate()
 {
@@ -268,6 +269,7 @@ void TabVersion::DoUpgrade(const YJson& data)
     
     auto wsPath = fs::current_path().make_preferred();
 
+#ifdef _WIN32
     SHELLEXECUTEINFOW shellInfo {};
     shellInfo.cbSize = sizeof(SHELLEXECUTEINFO);
     shellInfo.hwnd = nullptr;
@@ -276,11 +278,17 @@ void TabVersion::DoUpgrade(const YJson& data)
     shellInfo.lpDirectory = wsPath.c_str();
     shellInfo.nShow = SW_NORMAL;
     // shellInfo.lpVerb = L"runas";
+#elif defined (__linux__)
+    QProcess proc;
+#endif
 
     if (QMessageBox::question(this, "提示", "下载完成，是否立即安装？") != QMessageBox::Yes) {
       return;
     }
+#ifdef _WIN32
     ::ShellExecuteExW(&shellInfo);
+#elif defined (__linux__)
+#endif
     QApplication::quit();
     return;
   }
