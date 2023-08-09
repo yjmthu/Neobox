@@ -5,6 +5,7 @@
 #include <string>
 #include <filesystem>
 #include <functional>
+#include <mutex>
 
 class NeoMenu;
 class YJson;

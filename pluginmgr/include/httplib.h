@@ -6,6 +6,7 @@
 #include <map>
 #include <httpproxy.h>
 #include <memory>
+#include <atomic>
 
 class HttpUrl {
   friend class HttpLib;

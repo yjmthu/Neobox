@@ -35,11 +35,6 @@ add_library(pluginmgr SHARED
   ${wrap_files}
 )
 
-add_executable(update WIN32 src/update.cc)
-add_executable(installer WIN32 src/install.cc)
-add_executable(uninstaller WIN32 src/uninstall.cc)
-set(app_helper update installer uninstaller)
-
 set(resource_files
   fonts/*.ttf
   icons/*.png
@@ -56,11 +51,6 @@ target_link_libraries(pluginmgr PUBLIC
   ${system_shared_files}
 )
 
-foreach(app ${app_helper})
-  target_link_libraries(${app} PRIVATE pluginmgr)
-endforeach()
-
-
 install(TARGETS pluginmgr
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
@@ -68,12 +58,22 @@ install(TARGETS pluginmgr
   PUBLIC_HEADER DESTINATION include
 )
 
-if (WIN32)
-  install(TARGETS ${app_helper}
-    RUNTIME DESTINATION bin
-  )
-  set_target_properties(${app_helper}
-    PROPERTIES LINK_FLAGS
-    "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\" /SUBSYSTEM:WINDOWS"
-  )
+if (MSVC)
+  add_executable(update WIN32 src/update.cc)
+  add_executable(installer WIN32 src/install.cc)
+  add_executable(uninstaller WIN32 src/uninstall.cc)
+  set(app_helper update installer uninstaller)
+  foreach(app ${app_helper})
+    target_link_libraries(${app} PRIVATE pluginmgr)
+  endforeach()
+
+  if (MSVC)
+    install(TARGETS ${app_helper}
+      RUNTIME DESTINATION bin
+    )
+    set_target_properties(${app_helper}
+      PROPERTIES LINK_FLAGS
+      "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\" /SUBSYSTEM:WINDOWS"
+    )
+  endif()
 endif()

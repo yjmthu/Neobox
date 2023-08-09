@@ -8,7 +8,7 @@
 #include <citysearch.hpp>
 #include <citylist.hpp>
 #include <weatheritem.hpp>
-#include <weatherh.hpp>
+#include <weatherh.h>
 #include <weatherd.hpp>
 #include <savedcity.hpp>
 

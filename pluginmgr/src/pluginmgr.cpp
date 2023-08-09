@@ -472,7 +472,7 @@ bool PluginMgr::IsPluginEnabled(const std::u8string& plugin) const
 void PluginMgr::ShowMsgbox(const std::wstring& title,
                  const std::wstring& text,
                  int type) {
-  QMetaObject::invokeMethod(m_Menu, [=](){
+  QMetaObject::invokeMethod(m_Menu, [=, this](){
     QMessageBox::information(m_Menu, QString::fromStdWString(title),
       QString::fromStdWString(text));
   });

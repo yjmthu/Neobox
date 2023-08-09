@@ -11,6 +11,7 @@
 #include <QVBoxLayout>
 #include <QSharedMemory>
 #include <QProcess>
+#include <QDragEnterEvent>
 
 #include <neomenu.hpp>
 #include <speedbox.h>

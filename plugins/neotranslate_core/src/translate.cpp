@@ -295,7 +295,7 @@ void Translate::GetResultYoudao(const Utf8Array& text) {
   sign = Sha256(u8"" YOUDAO_ID + Truncate(text) + salt + curtime + u8"" YOUDAO_KEY);
 
   // 这样同时也取消了前一个请求
-  m_Request = std::make_unique<HttpLib>(url, true);
+  m_Request = std::make_unique<HttpLib>(url, true, 2);
   m_Request->SetHeader(u8"Content-Type", u8"application/x-www-form-urlencoded");
 
   HttpLib::Callback callback = {
@@ -421,7 +421,7 @@ void Translate::GetResultBingSimple(const Utf8Array& text) {
   });
   url.parameters[u8"q"].assign(text.begin, text.end);
 
-  m_Request = std::make_unique<HttpLib>(url, true);
+  m_Request = std::make_unique<HttpLib>(url, true, 2);
 
   HttpLib::Callback callback = {
     .m_FinishCallback = [this](auto message, auto res) {
@@ -445,7 +445,7 @@ void Translate::GetResultIciba(const Utf8Array& text)
     {u8"key", u8"" ICIBA_KEY},
     {u8"w", std::u8string(text.begin, text.end)},
   });
-  m_Request = std::make_unique<HttpLib>(url, true);
+  m_Request = std::make_unique<HttpLib>(url, true, 2);
 
   HttpLib::Callback callback = {
     .m_FinishCallback = [this](auto message, auto res) {
@@ -581,7 +581,7 @@ void Translate::GetResultDictionary(const Utf8Array& text)
   auto url = u8"https://api.dictionaryapi.dev/api/v2/entries/en/"s;
   url.append(text.begin, text.end);
 
-  m_Request = std::make_unique<HttpLib>(HttpUrl(url), true);
+  m_Request = std::make_unique<HttpLib>(HttpUrl(url), true, 2);
 
   HttpLib::Callback callback = {
     .m_FinishCallback = [this](auto message, auto res) {

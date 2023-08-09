@@ -126,7 +126,7 @@ bool ProcessHelper::GetProcessInfo()
 
 #ifdef _WIN32
   // std::map<DWORD, ProcessInfo> mapPIdInfo{};
-  PROCESSENTRY32 pe32;
+  PROCESSENTRY32W pe32;
   pe32.dwSize = sizeof(pe32);
 
   HANDLE hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -134,7 +134,7 @@ bool ProcessHelper::GetProcessInfo()
     return false;
   }
 
-  for (auto bResult = Process32First(hProcessSnap, &pe32); bResult; bResult = Process32Next(hProcessSnap, &pe32))
+  for (auto bResult = Process32FirstW(hProcessSnap, &pe32); bResult; bResult = Process32NextW(hProcessSnap, &pe32))
   {
     // if (HasProcess(pe32.th32ProcessID)) {
     //   continue;
@@ -143,7 +143,7 @@ bool ProcessHelper::GetProcessInfo()
     if (!processHandle) continue;
     DWORD size = MAX_PATH;
     std::wstring sExeName(MAX_PATH, L'\0');
-    if (FALSE == QueryFullProcessImageName(processHandle, 0, sExeName.data(), &size)) {
+    if (FALSE == QueryFullProcessImageNameW(processHandle, 0, sExeName.data(), &size)) {
       continue;
     }
     sExeName.erase(sExeName.find(L'\0'));

@@ -1,11 +1,5 @@
 cmake_minimum_required(VERSION 3.21.2)
 
-# 写在所有project之前，对所有project生效
-if(UNIX)
-  set(CMAKE_C_COMPILER /usr/bin/clang)
-  set(CMAKE_CXX_COMPILER /usr/bin/clang++)
-endif()
-
 # C++20标准
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -37,15 +31,20 @@ else()
   message("定义Rlease宏, 类型${CMAKE_BUILD_TYPE}。")
 endif()
 
-if(MSVC)
+if (WIN32)
   add_definitions(-DUNICODE -D_UNICODE)
-  add_compile_options("/utf-8")
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT ANDROID)
-  add_compile_options(-stdlib=libc++)
-  # Presumably need the above for linking too, maybe other options missing as well
-  add_link_options(-stdlib=libc++)   # New command on CMake master, not in 3.12 release
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexperimental-library")  # std::format
+  if(MSVC)
+    add_compile_options("/utf-8")
+  endif()
+elseif(UNIX)
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT ANDROID)
+    add_compile_options(-stdlib=libc++)
+    # Presumably need the above for linking too, maybe other options missing as well
+    add_link_options(-stdlib=libc++)   # New command on CMake master, not in 3.12 release
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexperimental-library")  # std::format
+  endif()
 endif()
+
 
 function(load_resources plugin_name files_list)
   message("- <${plugin_name}> ${${files_list}}")

@@ -2,7 +2,7 @@
 #include <pluginmgr.h>
 #include <QMessageBox>
 
-#include <winrt/Windows.Foundation.h>
+// #include <winrt/Windows.Foundation.h>
 
 int main(int argc, char* argv[]) {
   QApplication a(argc, argv);

@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.10.1)
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT ANDROID)
+  return ()
+endif()
 
 if (NOT TARGET Leptonica)
   find_package (Leptonica CONFIG)

@@ -11,6 +11,9 @@
 #include <QFile>
 #include <QMessageBox>
 #include <QStyle>
+#include <QShowEvent>
+#include <QByteArray>
+#include <QCursor>
 
 #ifdef _WIN32
 #include <Windows.h>

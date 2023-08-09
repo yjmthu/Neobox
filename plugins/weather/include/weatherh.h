@@ -106,8 +106,6 @@ struct WeatherHDetail {
 
 class WeatherH: public QScrollArea
 {
-  Q_OBJECT
-
 protected:
   bool eventFilter(QObject *watched, QEvent *event) override;
 public:

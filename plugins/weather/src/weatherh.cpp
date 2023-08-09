@@ -1,4 +1,4 @@
-﻿#include <weatherh.hpp>
+﻿#include <weatherh.h>
 #include <weatherdlg.h>
 #include <pluginmgr.h>
 
@@ -79,5 +79,5 @@ bool WeatherH::eventFilter(QObject *watched, QEvent *event)
     return true;
   }
 
-  return QWidget::eventFilter(watched, event);
+  return QScrollArea::eventFilter(watched, event);
 }

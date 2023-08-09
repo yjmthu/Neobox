@@ -12,6 +12,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <fstream>
+#include <thread>
 #include <format>
 
 using namespace std::literals;
@@ -84,7 +85,7 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
       object.EmitProcess();
       /* Next step: query for any data. */
       locker.unlock();
-      WinHttpQueryDataAvailable(hInternet, NULL);
+      WinHttpQueryDataAvailable(hInternet, nullptr);
     } else {
       object.EmitFinish(L"HttpLib ReadHeaders Error.");
     }
@@ -445,8 +446,7 @@ void HttpLib::SetAsyncCallback()
       m_hSession,
       RequestStatusCallback,
       WINHTTP_CALLBACK_FLAG_ALL_NOTIFICATIONS,
-      NULL
-    );
+      0);
   // } else {
   //   throw std::logic_error(std::format("Httplib SetAsyncCallback failed. Code: {}.", GetLastError()));
   // }
@@ -658,7 +658,7 @@ bool HttpLib::SendRequest()
 bool HttpLib::RecvResponse() {
   bool bResults = false;
 #ifdef _WIN32
-  bResults = WinHttpReceiveResponse(m_hRequest, NULL);
+  bResults = WinHttpReceiveResponse(m_hRequest, nullptr);
 #else
   auto lStatus = curl_easy_perform(m_hSession);
   bResults = lStatus == CURLE_OK;
@@ -748,7 +748,7 @@ bool HttpLib::ReadHeaders()
   // Query the status code of the response
   DWORD dwSize = 0;
 
-  WinHttpQueryHeaders(m_hRequest, WINHTTP_QUERY_RAW_HEADERS_CRLF, NULL, NULL, &dwSize, NULL);
+  WinHttpQueryHeaders(m_hRequest, WINHTTP_QUERY_RAW_HEADERS_CRLF, nullptr, nullptr, &dwSize, nullptr);
   if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
     auto const lpOutBuffer = new WCHAR[dwSize/sizeof(WCHAR)];
 
@@ -892,9 +892,9 @@ void HttpLib::EmitFinish(std::wstring message)
   if (m_hSession) {
     WinHttpSetStatusCallback(
       m_hSession,
-      NULL,
+      nullptr,
       WINHTTP_CALLBACK_FLAG_ALL_NOTIFICATIONS,
-      NULL
+      0
     );
   }
   auto& callback = m_AsyncCallback.m_FinishCallback;
