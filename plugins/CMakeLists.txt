@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 3.10.1)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui Svg)
-qt_standard_project_setup()
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui)
+
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
 
 function(include_sub_directories_recursively root_dir)
   if (IS_DIRECTORY ${root_dir})   # 当前路径是一个目录吗，是的话就加入到包含目录

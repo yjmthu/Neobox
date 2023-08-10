@@ -29,7 +29,7 @@ endif()
 
 file(GLOB source_files src/*.cpp)
 
-set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Svg)
+set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui)
 
 if(WIN32)
   set(ocr_libfiles Tesseract::libtesseract CURL::libcurl leptonica)
