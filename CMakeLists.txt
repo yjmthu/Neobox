@@ -13,8 +13,6 @@ set(CMAKE_INSTALL_PREFIX "install")
 string(TIMESTAMP COMPILE_TIME %Y-%m-%d)
 set(NEOBOX_BUILD_TIME ${COMPILE_TIME})
 
-# list(APPEND CMAKE_PREFIX_PATH "C:/Qt/6.4.2/msvc2019_64")
-
 project(neobox VERSION 2.4.1 LANGUAGES CXX C)
 
 if (NOT CMAKE_BUILD_TYPE)
@@ -43,6 +41,7 @@ elseif(UNIX)
     add_link_options(-stdlib=libc++)   # New command on CMake master, not in 3.12 release
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexperimental-library")  # std::format
   endif()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpic")  # std::format
 endif()
 
 
