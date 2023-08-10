@@ -396,7 +396,6 @@ bool HttpLib::IsOnline() {
   first += 10;
   auto last = data.find("%", first);
   auto&& lostPacket = data.substr(first, last - first);
-  std::cout << data << std::endl << "lostPacket: " << lostPacket << std::endl;
   return !std::atoi(lostPacket.c_str());
 #else
   HttpLib clt(HttpUrl(u8"https://www.baidu.com"sv));
@@ -425,12 +424,45 @@ size_t HttpLib::WriteString(void* buffer,
   return size;
 }
 
+size_t HttpLib::WriteHeader(void* buffer, size_t size, size_t nmemb, void* userdata) {
+  std::u8string_view outBuffer(reinterpret_cast<const char8_t*>(buffer), size *= nmemb);
+  auto& clt = *reinterpret_cast<HttpLib*>(userdata);
+  if (clt.m_Finished) {
+    return CURL_WRITEFUNC_ERROR;
+  }
+  if (clt.m_Response.version.empty()) {
+    auto pos = outBuffer.find(u8' ');
+    clt.m_Response.version = outBuffer.substr(0, pos);
+  } else {
+    auto mid = outBuffer.find(u8':');
+    if (mid == outBuffer.npos) return size;
+
+    std::u8string key(outBuffer.substr(0, mid));
+    mid = outBuffer.find_first_not_of(u8' ', ++mid);
+    auto value = outBuffer.substr(mid, size - 2 - mid);
+
+    clt.m_Response.headers[std::u8string(key)] = value;
+
+    for (auto& c: key) {
+      if (std::isupper(c)) {
+        c = std::tolower(c);
+      }
+    }
+    if (key == u8"location") {
+      clt.m_Response.location = value;
+    } else if (key == u8"content-length") {
+      clt.m_ConnectLength = std::stoull(std::string(value.begin(), value.end()));
+      clt.EmitProcess();
+    }
+  }
+  return size;
+}
 
 size_t HttpLib::WriteFunction(void* buffer, size_t size, size_t nmemb, void* userdata) {
   auto data = reinterpret_cast<const char*>(buffer);
   if ((*reinterpret_cast<decltype(m_WriteCallback)*>(userdata))(data, size *= nmemb))
     return size;
-  return 0;
+  return CURL_WRITEFUNC_ERROR;
 }
 
 HttpLib::~HttpLib() {
@@ -454,7 +486,9 @@ void HttpLib::SetAsyncCallback()
     WINHTTP_CALLBACK_FLAG_ALL_NOTIFICATIONS,
     0);
 #elif defined (__linux__)
-  m_Callback = WriteFunction;
+  if (m_AsyncSet) {
+    m_Callback = WriteFunction;
+  }
 #endif
 }
 
@@ -503,9 +537,6 @@ void HttpLib::HttpInitialize()
     SetAsyncCallback();
   }
   auto url = Utf82WideString(m_Url.host);
-#ifdef _DEBUG
-  std::cout << Utf82AnsiString(m_Url.host) << std::endl;
-#endif
 
   SetTimeOut(m_TimeOut);
   m_hConnect = WinHttpConnect(m_hSession, url.c_str(), m_Url.port, 0);
@@ -520,10 +551,8 @@ void HttpLib::HttpInitialize()
 
   SetProxyBefore();
   auto url = m_Url.GetUrl();
-  if (m_hSession)
-    curl_easy_cleanup(m_hSession);
   m_hSession = curl_easy_init();
-  curl_easy_setopt(m_hSession, CURLOPT_HEADER, false);
+  // curl_easy_setopt(m_hSession, CURLOPT_HEADER, false);
   curl_easy_setopt(m_hSession, CURLOPT_URL, url.c_str());
   curl_easy_setopt(m_hSession, CURLOPT_SSL_VERIFYPEER, false);
   curl_easy_setopt(m_hSession, CURLOPT_SSL_VERIFYHOST, false);
@@ -535,6 +564,7 @@ void HttpLib::HttpInitialize()
     curl_easy_setopt(m_hSession, CURLOPT_TIMEOUT, m_TimeOut.count());
     curl_easy_setopt(m_hSession, CURLOPT_CONNECTTIMEOUT, m_TimeOut.count());
   }
+  SetAsyncCallback();
 #endif
 }
 
@@ -651,9 +681,18 @@ bool HttpLib::SendRequest()
       static_cast<DWORD_PTR>(m_AsyncId)
     );
 #else
-    curl_easy_setopt(m_hSession, CURLOPT_POST, 1L);
-    curl_easy_setopt(m_hSession, CURLOPT_POSTFIELDS, m_PostData.data);
-    curl_easy_setopt(m_hSession, CURLOPT_POSTFIELDSIZE, m_PostData.size);
+    auto status = curl_easy_setopt(m_hSession, CURLOPT_POST, 1L);
+
+    if (status == CURLE_OK)
+      status = curl_easy_setopt(m_hSession, CURLOPT_POSTFIELDS, m_PostData.data);
+    else
+      throw std::logic_error("Http Error: CURL set CURLOPT_POST failed.");
+
+    if (status == CURLE_OK)
+      status = curl_easy_setopt(m_hSession, CURLOPT_POSTFIELDSIZE, m_PostData.size);
+    else
+      throw std::logic_error("Http Error: CURL set CURLOPT_POSTFIELDS failed.");
+    return status == CURLE_OK;
 #endif
   } else {
 #ifdef _WIN32
@@ -663,26 +702,26 @@ bool HttpLib::SendRequest()
       static_cast<DWORD_PTR>(m_AsyncId)
     );
 #endif
+    return true;
   }
-  return true;
 }
 
 bool HttpLib::RecvResponse() {
-  bool bResults = false;
 #ifdef _WIN32
+  bool bResults = false;
   bResults = WinHttpReceiveResponse(m_hRequest, nullptr);
+  return bResults;
 #else
   auto lStatus = curl_easy_perform(m_hSession);
-  bResults = lStatus == CURLE_OK;
+  return lStatus == CURLE_OK;
 #endif
-  return bResults;
 
 }
 
 bool HttpLib::SendHeaders()
 {
-  bool bResults = false;
 #ifdef _WIN32
+  bool bResults = false;
   auto path = Utf82WideString(m_Url.GetObjectString());
   m_hRequest = WinHttpOpenRequest(
     m_hConnect,
@@ -710,12 +749,30 @@ bool HttpLib::SendHeaders()
   } else {
     std::wcerr << L"Winhttp setProxyAfter failed!" << std::endl;
   }
+  return bResults;
 #else
-  curl_easy_setopt(m_hSession, CURLOPT_HEADERFUNCTION, &WriteString);
-  curl_easy_setopt(m_hSession, CURLOPT_HEADERDATA, &WriteString);
-  curl_easy_setopt(m_hSession, CURLOPT_WRITEFUNCTION, m_Callback);
-  curl_easy_setopt(m_hSession, CURLOPT_WRITEDATA, &m_WriteCallback);
-  if (!m_Headers.empty()) {
+  auto status = curl_easy_setopt(m_hSession, CURLOPT_HEADERFUNCTION, &WriteHeader);
+
+  if (status == CURLE_OK)
+    status = curl_easy_setopt(m_hSession, CURLOPT_HEADERDATA, this);
+  else
+    throw std::logic_error("Http Error: CURL set CURLOPT_HEADERFUNCTION failed.");
+
+  if (status == CURLE_OK) {
+      status = curl_easy_setopt(m_hSession, CURLOPT_WRITEFUNCTION, m_Callback);
+  } else
+    throw std::logic_error("Http Error: CURL set CURLOPT_HEADERDATA failed.");
+
+  if (status == CURLE_OK) {
+    if (m_AsyncSet) {
+      status = curl_easy_setopt(m_hSession, CURLOPT_WRITEDATA, &m_WriteCallback);
+    } else {
+      status = curl_easy_setopt(m_hSession, CURLOPT_WRITEDATA, m_DataBuffer);
+    }
+  } else
+    throw std::logic_error("Http Error: CURL set CURLOPT_WRITEFUNCTION failed.");
+
+  if (status == CURLE_OK && !m_Headers.empty()) {
     struct curl_slist *headers = nullptr;
     std::u8string buffer;
     for (const auto& [key, value]: m_Headers) {
@@ -723,10 +780,10 @@ bool HttpLib::SendHeaders()
       buffer.push_back('\0');
       headers = curl_slist_append(headers, reinterpret_cast<const char*>(buffer.data()));
     }
-    curl_easy_setopt(m_hSession, CURLOPT_HTTPHEADER, headers);
+    status = curl_easy_setopt(m_hSession, CURLOPT_HTTPHEADER, headers);
   }
+  return status == CURLE_OK;
 #endif
-  return bResults;
 }
 
 
@@ -754,10 +811,32 @@ bool HttpLib::ReadStatusCode()
 #endif
 }
 
+void HttpLib::ParseHeaders(const std::u8string& outBuffer)
+{
+  auto cursor = outBuffer.find(u8"\r\n");
+  if (cursor != outBuffer.npos) {
+    auto const pos = outBuffer.find(u8' ');
+    m_Response.version = outBuffer.substr(0, pos);
+    cursor += 2;
+  }
+  for (; cursor != outBuffer.npos; cursor += 2) {
+    auto mid = outBuffer.find(u8':', cursor);
+    cursor = outBuffer.find(u8"\r\n", mid);
+    if (mid == outBuffer.npos || cursor == outBuffer.npos) {
+      break;
+    }
+    auto key = outBuffer.substr(0, mid);
+    mid = outBuffer.find_first_not_of(u8' ', ++mid);
+    m_Response.headers[key] = outBuffer.substr(mid, cursor - mid);
+  }
+
+  if (m_Response.status / 100 == 3) {
+    m_Response.location = m_Response.headers[u8"Location"];
+  }
+}
+
 bool HttpLib::ReadHeaders()
 {
-  m_Response.headers.clear();
-
 #ifdef _WIN32
   bool bResults = false;
   // Query the status code of the response
@@ -776,27 +855,7 @@ bool HttpLib::ReadHeaders()
 
     if (bResults) { // regex expr: '/^([^:]+):([^\n]+)/'
       // std::istringstream strstream(Wide2AnsiString(lpOutBuffer));
-      auto const outBuffer = Wide2Utf8String(lpOutBuffer);
-      auto cursor = outBuffer.find(u8"\r\n");
-      if (cursor != outBuffer.npos) {
-        auto const pos = outBuffer.find(u8' ');
-        m_Response.version = outBuffer.substr(0, pos);
-        cursor += 2;
-      }
-      for (; cursor != outBuffer.npos; cursor += 2) {
-        auto mid = outBuffer.find(u8':', cursor);
-        cursor = outBuffer.find(u8"\r\n", mid);
-        if (mid == outBuffer.npos || cursor == outBuffer.npos) {
-          break;
-        }
-        auto key = outBuffer.substr(0, mid);
-        mid = outBuffer.find_first_not_of(u8' ', ++mid);
-        m_Response.headers[key] = outBuffer.substr(mid, cursor - mid);
-      }
-
-      if (m_Response.status / 100 == 3) {
-        m_Response.location = m_Response.headers[u8"Location"];
-      }
+      ParseHeaders(Wide2Utf8String(lpOutBuffer));
     }
 
     delete[] lpOutBuffer;
@@ -805,10 +864,8 @@ bool HttpLib::ReadHeaders()
   }
   return bResults;
 #elif defined (__linux__)
-  auto& h = *reinterpret_cast<std::u8string*>(m_DataBuffer);
-  std::cout << std::string(h.begin(), h.end()) << std::endl;
+  return true;
 #endif
- return true;
 }
 
 #ifdef _WIN32
@@ -847,16 +904,14 @@ void HttpLib::HttpPerform()
   } else {
     std::wcerr << L"WinHttpSendHeasers failed." << std::endl;
   }
-  if (m_AsyncSet) {
 #ifdef _WIN32
+  if (m_AsyncSet) {
     if (!bResults) {
       std::thread(&HttpLib::ExitAsync, this).detach();
     }
-#else
-    ExitAsync();
-#endif
     return;
   }
+#endif
 
   if (bResults) {
     bResults = RecvResponse();
@@ -875,6 +930,7 @@ void HttpLib::HttpPerform()
     std::wcerr << L"WinHttp read status code failed." << std::endl;
   }
   
+#ifdef _WIN32
   if (bResults) {
     bResults = ReadHeaders();
   } else {
@@ -882,12 +938,17 @@ void HttpLib::HttpPerform()
   }
 
   if(bResults) {
-#ifdef _WIN32
     bResults = ReadBody();
-#endif
   } else {
-    std::wcerr << L"WinHttpQueryHeaders BufferSize Failed." << std::endl;
+    std::wcerr << L"WinHttp ReadHeaders Failed." << std::endl;
   }
+#elif defined (__linux__)
+  if (bResults) {
+    EmitFinish();
+  } else {
+    EmitFinish(L"HttpPerform Faield.");
+  }
+#endif
 }
 
 void HttpLib::EmitProcess()

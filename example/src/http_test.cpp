@@ -52,10 +52,11 @@ int main()
       },
       .m_FinishCallback = [&clt, &quitLoop](std::wstring error, auto res){
         if (error.empty()) {
-          std::wcout << L"ALL OK." << std::endl;
+          std::wcout << L"ALL OK.\n---------------" << std::endl;
           for (auto [i, j]: res->headers) {
             std::cout << i << ": " << j << std::endl;
           }
+          std::wcout << L"---------------\n";
         } else {
           std::wcerr << error << std::endl;
         }

@@ -165,6 +165,7 @@ private:
   bool RecvResponse();
 private:
   bool ReadStatusCode();
+  void ParseHeaders(const std::u8string&);
   bool ReadHeaders();
 #ifdef _WIN32
   bool ReadBody();
@@ -174,6 +175,7 @@ private:
 private:
   static CallbackFunction WriteFile;
   static CallbackFunction WriteString;
+  static CallbackFunction WriteHeader;
   static CallbackFunction WriteFunction;
 #ifdef _WIN32
   static void RequestStatusCallback(void* hInternet, unsigned long long dwContext, unsigned long dwInternetStatus, void* lpvStatusInformation, unsigned long dwInternetInformationLength);

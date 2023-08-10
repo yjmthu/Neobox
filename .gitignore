@@ -20,7 +20,7 @@ CMakeCache.txt
 compile_commands.json
 CMakeSettings.json
 .clangd
-.vscode
+# .vscode
 .cache
 .vs
 .xmake
