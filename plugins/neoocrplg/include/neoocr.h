@@ -30,7 +30,9 @@ public:
   void RmoveLanguages(const std::vector<std::u8string>& names);
   void SetDataDir(const std::u8string& dirname);
   void SetDropData(std::queue<std::u8string_view>& data);
+#ifdef _WIN32
   static std::vector<std::pair<std::wstring, std::wstring>> GetLanguages();
+#endif
 private:
   std::u8string OcrWindows(const QImage& image);
   std::u8string OcrTesseract(const QImage& image);

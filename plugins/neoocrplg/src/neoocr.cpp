@@ -9,6 +9,7 @@
 #include <set>
 #include <regex>
 #include <mutex>
+#include <thread>
 
 #include <QByteArray>
 #include <QImage>
@@ -77,6 +78,7 @@ NeoOcr::~NeoOcr()
   std::lock_guard<std::mutex> locker(s_ThreadMutex);
 }
 
+#ifdef _WIN32
 static auto OpenImageFile(std::wstring uriImage) {
   // auto const& streamRef = RandomAccessStreamReference::CreateFromFile(StorageFile::GetFileFromPathAsync(uriImage).get());
   auto file = StorageFile::GetFileFromPathAsync(uriImage).get();
@@ -96,18 +98,22 @@ IAsyncAction SaveSoftwareBitmapToFile(SoftwareBitmap& softwareBitmap)
   encoder.FlushAsync();
   writestream.Close();
 }
+#endif
 
 std::u8string NeoOcr::GetText(QImage image)
 {
+  using enum Engine;
   const auto engine = static_cast<Engine>(m_Settings.GetOcrEngine());
-  if (engine == Engine::Windows) {
+  switch (engine) {
+  case Windows: {
     if (image.format() != QImage::Format_RGB32) {
       image = image.convertToFormat(QImage::Format_RGB32);
     }
     return OcrWindows(image);
-  } else if (engine == Engine::Tesseract) {
+  }
+  case Tesseract:
     return OcrTesseract(image);
-  } else {
+  default:
     return u8"~未知服务器~";
   }
 }
@@ -152,6 +158,7 @@ std::vector<OcrResult> NeoOcr::GetTextEx(const QImage& image)
   return result;
 }
 
+#ifdef _WIN32
 IAsyncAction WinOcrGet(std::wstring name, SoftwareBitmap& softwareBitmap, std::wstring& result) {
   // co_await SaveSoftwareBitmapToFile(softwareBitmap);
 
@@ -182,9 +189,11 @@ IAsyncAction WinOcrGet(std::wstring name, SoftwareBitmap& softwareBitmap, std::w
     result.push_back(L'\n');
   }
 }
+#endif
 
 std::u8string NeoOcr::OcrWindows(const QImage& image)
 {
+#ifdef _WIN32
   SoftwareBitmap softwareBitmap(
       BitmapPixelFormat::Bgra8,
       image.width(), image.height()
@@ -228,6 +237,9 @@ std::u8string NeoOcr::OcrWindows(const QImage& image)
   });
   thread.join();
   return Wide2Utf8String(result);
+#else
+  return u8"当前平台不支持Windows引擎。";
+#endif
 }
 
 std::u8string NeoOcr::OcrTesseract(const QImage& image)
@@ -277,6 +289,7 @@ std::u8string NeoOcr::OcrTesseract(const QImage& image)
   return result;
 }
 
+#ifdef _WIN32
 std::vector<std::pair<std::wstring, std::wstring>> NeoOcr::GetLanguages()
 {
   auto languages = WinOcr::OcrEngine::AvailableRecognizerLanguages();
@@ -291,6 +304,7 @@ std::vector<std::pair<std::wstring, std::wstring>> NeoOcr::GetLanguages()
 
   return result;
 }
+#endif
 
 void NeoOcr::InitLanguagesList()
 {

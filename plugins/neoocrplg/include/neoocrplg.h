@@ -20,7 +20,9 @@ private:
   void ChooseLanguages();
   void InitMenu();
   void AddEngineMenu();
+#ifdef _WIN32
   void AddWindowsSection(QWidget* parent, QVBoxLayout* layout);
+#endif
   void AddTesseractSection(QWidget* parent, QVBoxLayout* layout);
 private:
   OcrConfig m_Settings;

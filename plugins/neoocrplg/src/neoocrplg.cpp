@@ -178,7 +178,9 @@ void PluginName::AddEngineMenu() {
   typeAction->setMenu(menu);
   auto const group = new QActionGroup(menu);
   group->setExclusive(true);
-  static const QStringList servers = { "Windows", "Tesseract" };
+  static const QStringList servers = {
+    "Windows", "Tesseract",
+  };
   const std::array description = {
     QStringLiteral("Windows原生的Ocr引擎"),
     QStringLiteral("非常优秀的开源Ocr引擎，识别结果更加准确"),
@@ -242,11 +244,14 @@ void PluginName::ChooseLanguages()
   dialog->setAttribute(Qt::WidgetAttribute::WA_DeleteOnClose, true);
 
   auto const vlayout = new QVBoxLayout(dialog);
+#ifdef _WIN32
   AddWindowsSection(dialog, vlayout);
+#endif
   AddTesseractSection(dialog, vlayout);
   dialog->exec();
 }
 
+#ifdef _WIN32
 void PluginName::AddWindowsSection(QWidget* parent, QVBoxLayout* layout) {
   layout->addWidget(new QLabel("<h3>Windows Ocr目前支持下列语言</h3>", parent));
 
@@ -281,6 +286,7 @@ void PluginName::AddWindowsSection(QWidget* parent, QVBoxLayout* layout) {
   });
   layout->addWidget(new QLabel("如果想要支持更多语言，请在 Windows 设置中安装。", parent));
 }
+#endif
 
 void NeoOcrPlg::AddTesseractSection(QWidget* parent, QVBoxLayout* layout) {
   QHBoxLayout* hlayout = nullptr;
