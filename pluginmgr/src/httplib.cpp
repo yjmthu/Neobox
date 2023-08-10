@@ -75,11 +75,6 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
       break;
     }
     if (bResults) {
-      auto iter = object.m_Response.headers.find(u8"Content-Length");
-      if (iter != object.m_Response.headers.end()) {
-        std::string number(iter->second.begin(), iter->second.end());
-        object.m_ConnectLength = std::stoull(number);
-      }
       object.EmitProcess();
       /* Next step: query for any data. */
       locker.unlock();
@@ -830,11 +825,19 @@ void HttpLib::ParseHeaders(const std::u8string& outBuffer)
     }
     auto key = outBuffer.substr(0, mid);
     mid = outBuffer.find_first_not_of(u8' ', ++mid);
-    m_Response.headers[key] = outBuffer.substr(mid, cursor - mid);
-  }
-
-  if (m_Response.status / 100 == 3) {
-    m_Response.location = m_Response.headers[u8"Location"];
+    auto value = outBuffer.substr(mid, cursor - mid);
+    m_Response.headers[key] = value;
+    
+    for (auto& c: key) {
+      if (std::isupper(c)) {
+        c = std::tolower(c);
+      }
+    }
+    if (key == u8"content-length") {
+      m_ConnectLength = std::stoull(std::string(value.begin(), value.end()));
+    } else if (key == u8"location") {
+      m_Response.location = value;
+    }
   }
 }
 
