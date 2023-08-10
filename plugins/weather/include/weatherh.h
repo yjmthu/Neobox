@@ -1,4 +1,4 @@
-﻿#ifndef WEATHERH_HPP
+#ifndef WEATHERH_HPP
 #define WEATHERH_HPP
 
 #include <QScrollArea>

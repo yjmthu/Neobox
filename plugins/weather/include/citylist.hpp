@@ -1,4 +1,4 @@
-﻿#ifndef CITYLIST_HPP
+#ifndef CITYLIST_HPP
 #define CITYLIST_HPP
 
 #include <QListWidget>

@@ -1,4 +1,4 @@
-﻿#ifndef SAVEDCITY_HPP
+#ifndef SAVEDCITY_HPP
 #define SAVEDCITY_HPP
 
 #include <widgetbase.hpp>

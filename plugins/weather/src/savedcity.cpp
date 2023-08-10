@@ -1,4 +1,4 @@
-﻿#include <savedcity.hpp>
+#include <savedcity.hpp>
 #include <citylist.hpp>
 #include <savedcityitem.hpp>
 

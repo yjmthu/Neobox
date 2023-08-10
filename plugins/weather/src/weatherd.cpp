@@ -1,4 +1,4 @@
-﻿#include <weatherd.hpp>
+#include <weatherd.hpp>
 
 WeatherD::WeatherD(QWidget* parent)
   : QScrollArea(parent)

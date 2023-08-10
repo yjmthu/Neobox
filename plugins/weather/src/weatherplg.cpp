@@ -1,4 +1,4 @@
-﻿#include <weatherplg.h>
+#include <weatherplg.h>
 #include <weatherdlg.h>
 #include <neomenu.hpp>
 

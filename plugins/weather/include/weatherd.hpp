@@ -1,4 +1,4 @@
-﻿#ifndef WEATHERD_HPP
+#ifndef WEATHERD_HPP
 #define WEATHERD_HPP
 
 #include <yjson.h>

@@ -1,4 +1,4 @@
-﻿#ifndef SAVEDCITYITEM_HPP
+#ifndef SAVEDCITYITEM_HPP
 #define SAVEDCITYITEM_HPP
 
 #include <QWidget>

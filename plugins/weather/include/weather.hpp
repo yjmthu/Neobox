@@ -1,4 +1,4 @@
-﻿#ifndef WEATHER_HPP
+#ifndef WEATHER_HPP
 #define WEATHER_HPP
 
 #include <QObject>

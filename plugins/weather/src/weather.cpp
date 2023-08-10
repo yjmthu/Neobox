@@ -1,4 +1,4 @@
-﻿#include <weather.hpp>
+#include <weather.hpp>
 #include <httplib.h>
 
 #ifdef WEATHER_WRONG_USER_KEY

@@ -1,4 +1,4 @@
-﻿#include <weatherdlg.h>
+#include <weatherdlg.h>
 #include <pluginmgr.h>
 #include <neomenu.hpp>
 #include <yjson.h>

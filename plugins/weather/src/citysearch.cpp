@@ -1,4 +1,4 @@
-﻿#include <citysearch.hpp>
+#include <citysearch.hpp>
 
 void CitySearch::focusInEvent(QFocusEvent *event)
 {

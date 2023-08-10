@@ -1,4 +1,4 @@
-﻿#ifndef WEATHERITEM_HPP
+#ifndef WEATHERITEM_HPP
 #define WEATHERITEM_HPP
 
 #include <QFrame>

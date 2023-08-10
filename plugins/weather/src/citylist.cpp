@@ -1,4 +1,4 @@
-﻿#include <citylist.hpp>
+#include <citylist.hpp>
 #include <yjson.h>
 #include <pluginmgr.h>
 #include <weathercfg.h>

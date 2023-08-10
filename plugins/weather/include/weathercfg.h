@@ -1,4 +1,4 @@
-﻿#ifndef WEATHERCFG_H
+#ifndef WEATHERCFG_H
 #define WEATHERCFG_H
 
 #include <neoconfig.h>

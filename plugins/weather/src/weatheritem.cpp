@@ -1,4 +1,4 @@
-﻿#include <weatheritem.hpp>
+#include <weatheritem.hpp>
 #include <weatherdlg.h>
 
 #include <QHBoxLayout>

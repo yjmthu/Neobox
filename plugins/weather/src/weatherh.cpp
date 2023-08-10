@@ -1,4 +1,4 @@
-﻿#include <weatherh.h>
+#include <weatherh.h>
 #include <weatherdlg.h>
 #include <pluginmgr.h>
 

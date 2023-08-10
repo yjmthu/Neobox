@@ -1,4 +1,4 @@
-﻿#ifndef WEATHERDLG_H
+#ifndef WEATHERDLG_H
 #define WEATHERDLG_H
 
 #include <widgetbase.hpp>

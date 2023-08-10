@@ -1,4 +1,4 @@
-﻿#ifndef CITYSEARCH_HPP
+#ifndef CITYSEARCH_HPP
 #define CITYSEARCH_HPP
 
 #include <QLineEdit>

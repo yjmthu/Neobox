@@ -1,4 +1,4 @@
-﻿#include <history.h>
+#include <history.h>
 #include <fstream>
 #include <systemapi.h>
 #ifdef _WIN32
@@ -27,6 +27,11 @@ void WallpaperHistory::UpdateRegString()
       PushBack(std::move(curWallpaper));
     }
   }
+}
+#else
+void WallpaperHistory::UpdateRegString()
+{
+  //
 }
 #endif
 
