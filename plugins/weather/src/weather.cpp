@@ -8,7 +8,11 @@
 #include "apikey.cpp"
 #endif
 
+#ifdef _WIN32
 #include <QtZlib/zlib.h>
+#else
+#include <zlib.h>
+#endif
 
 using namespace std::literals;
 
@@ -24,7 +28,7 @@ bool GzipCompress(const _IBufferType& inBuffer, _OBufferType& outBuffer)
 
   z_stream gzipStream {
     .next_in = (Bytef *)inBuffer.data(),
-    .avail_in = static_cast<z_uInt>(inBuffer.size()),
+    .avail_in = static_cast<uInt>(inBuffer.size()),
   };
 
   auto error = deflateInit2(&gzipStream, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
@@ -47,7 +51,7 @@ bool GZipUnCompress(const _IBufferType& inBuffer, _OBufferType& outBuffer)
   std::vector<Bytef> tempBuffer(1 << 15);
   z_stream gzipStream {
     .next_in = (Bytef*)inBuffer.data(),
-    .avail_in = static_cast<z_uInt>(inBuffer.size()),
+    .avail_in = static_cast<uInt>(inBuffer.size()),
   };
 
   int error = inflateInit2(&gzipStream, MAX_WBITS + 16);
@@ -138,7 +142,7 @@ void Weather::Fetch(GetTypes type, std::optional<std::u8string_view> data)
   }
 
   auto&& url = GetUrl(type, data);
-  m_Request = std::make_unique<HttpLib>(url, true, 2);
+  m_Request = std::make_unique<HttpLib>(url, true, 2s);
   
   HttpLib::Callback callback = {
     .m_FinishCallback = [this, type](auto msg, auto res) {

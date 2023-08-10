@@ -3,9 +3,16 @@
 #include <string>
 
 int main() {
+#ifdef _WIN32
   SetConsoleOutputCP(65001);
+#endif
   std::vector<std::wstring> data;
-  GetCmdOutput(TEXT("python.exe scripts/getpic.py"), data);
+
+#ifdef _WIN32
+  GetCmdOutput(L"python.exe scripts/getpic.py", data);
+#else
+  GetCmdOutput("pythons cripts/getpic.py", data);
+#endif
   for (auto i : data) {
     auto str = Wide2Utf8String(i);
     std::cout.write((const char*)str.data(), str.size());

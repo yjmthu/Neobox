@@ -13,6 +13,7 @@
 #include <string>
 #include <functional>
 #include <system_error>
+#include <mutex>
 
 namespace fs =std::filesystem;
 

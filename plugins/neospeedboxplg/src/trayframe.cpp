@@ -8,16 +8,18 @@
 
 #include <QTimer>
 
-#include <Windows.h>
-
 using namespace std::literals;
 
 TrayFrame::TrayFrame(SpeedBox& box)
+#ifdef _WIN32
   : m_hReBar(nullptr)
   , m_hMin(nullptr)
   , m_hTaskBar(nullptr)
   , m_hNotify(nullptr)
   , m_Timer(new QTimer)
+#else
+  : m_Timer(new QTimer)
+#endif
   , m_SpeedBox(box)
 {
   m_Timer->setInterval(100);
@@ -33,6 +35,7 @@ TrayFrame::~TrayFrame()
 
 void TrayFrame::GetShellAllWnd()
 {
+#ifdef _WIN32
   m_hTaskBar = FindWindowW(L"Shell_TrayWnd", nullptr);
 
   m_IsWin11TaskBar = (::FindWindowExW(m_hTaskBar, nullptr, L"Windows.UI.Composition.DesktopWindowContentBridge", nullptr) != nullptr);
@@ -45,6 +48,7 @@ void TrayFrame::GetShellAllWnd()
   } else {
     mgr->ShowMsg("没有找到任务栏二级窗口！");
   }
+#endif
 }
 
 #if 0

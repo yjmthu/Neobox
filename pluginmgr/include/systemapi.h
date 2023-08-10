@@ -214,9 +214,8 @@ void GetCmdOutput(const char* cmd, _Ty& result) {
   }
 }
 
-
 inline std::wstring Utf82WideString(std::u8string_view u8Str) {
-  std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 
   auto buffer = new char[u8Str.size() + 1] { };
   std::copy(u8Str.begin(), u8Str.end(), buffer);
@@ -224,6 +223,23 @@ inline std::wstring Utf82WideString(std::u8string_view u8Str) {
   delete[] buffer;
 
   return result;
+}
+
+inline std::u8string Wide2Utf8String(std::wstring_view wStr) {
+  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+
+  auto result = converter.to_bytes(wStr.data());
+
+  return std::u8string(result.begin(), result.end());
+}
+
+inline std::wstring Ansi2WideString(std::string_view ansiStr) {
+  return Utf82WideString(std::u8string_view(
+    reinterpret_cast<const char8_t*>(ansiStr.data()), ansiStr.size()));
+};
+
+inline std::u8string Ansi2Utf8String(std::string_view ansiStr) {
+  return std::u8string(ansiStr.begin(), ansiStr.end());
 }
 
 #endif

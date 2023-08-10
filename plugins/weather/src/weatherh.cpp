@@ -8,7 +8,7 @@
 #include <QVBoxLayout>
 #include <QScrollArea>
 #include <QWheelEvent>
-#include <QScrollBar >
+#include <QScrollBar>
 
 WeatherH::WeatherH(QWidget* parent)
   : QScrollArea(parent)

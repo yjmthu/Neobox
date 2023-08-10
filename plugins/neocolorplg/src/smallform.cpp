@@ -13,12 +13,16 @@
 #include <QPainter>
 #include <QPainterPath>
 
+#ifdef _WIN32
 #include <Windows.h>
 #include <Windowsx.h>
+#endif
 
 SmallForm* SmallForm::m_Instance = nullptr;
 
+#ifdef _WIN32
 HHOOK SmallForm::m_Hoock[2] { nullptr, nullptr };
+#endif
 
 SmallForm::SmallForm(ColorConfig& settings)
   : QWidget(nullptr, Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool)
@@ -52,10 +56,13 @@ SmallForm::~SmallForm()
   }
   m_Instance = nullptr;
   if (!UninstallHook()) {
+#ifdef _WIN32
     mgr->ShowMsg(QStringLiteral("卸载钩子失败！\n错误代码【%1】").arg(GetLastError()));
+#endif
   }
 }
 
+#ifdef _WIN32
 static constexpr auto WM_USER_MOUSEMOVE = WM_USER + 1;
 
 LRESULT CALLBACK SmallForm::LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam)
@@ -102,11 +109,13 @@ LRESULT CALLBACK SmallForm::LowLevelKeyProc(int nCode, WPARAM wParam, LPARAM lPa
   }
 	return CallNextHookEx(SmallForm::m_Hoock[1], nCode, wParam, lParam);
 }
+#endif
 
 bool SmallForm::InstallHook()
 {
   // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowshookexw
 
+#ifdef _WIN32
   if (!m_Hoock[0]) {
     m_Hoock[0] = SetWindowsHookExW(WH_MOUSE_LL, LowLevelMouseProc, GetModuleHandleW(NULL), 0);
   }
@@ -128,6 +137,9 @@ bool SmallForm::UninstallHook()
     m_Hoock[1] = nullptr;
   }
   return !(m_Hoock[0] || m_Hoock[1]);
+#elif defined (__linux__)
+  return true;
+#endif
 }
 
 void SmallForm::QuitHook(bool succeed)
@@ -150,6 +162,7 @@ void SmallForm::PickColor(ColorConfig& settings)
     mgr->ShowMsg("正在拾取颜色！");
     return;
   }
+#ifdef _WIN32
   if (!m_Instance->InstallHook()) {
     mgr->ShowMsg(QStringLiteral("注册钩子失败！\n错误代码【%1】。").arg(GetLastError()));
     return;
@@ -159,6 +172,7 @@ void SmallForm::PickColor(ColorConfig& settings)
     mgr->ShowMsg(QStringLiteral("获取鼠标位置失败！\n错误代码【%1】。").arg(GetLastError()));
     return;
   }
+#endif
 
   if (ColorDlg::m_Instance) {
     ColorDlg::m_Instance->hide();
@@ -171,6 +185,7 @@ void SmallForm::PickColor(ColorConfig& settings)
 
 void SmallForm::showEvent(QShowEvent *event)
 {
+#ifdef _WIN32
   QWindow * handle = window()->windowHandle();
   if(handle) {
     m_Screen = handle->screen();
@@ -181,6 +196,7 @@ void SmallForm::showEvent(QShowEvent *event)
       move(point);
     }
   }
+#endif
   QWidget::showEvent(event);
 }
 
@@ -215,6 +231,7 @@ void SmallForm::paintEvent(QPaintEvent *event)
 
 bool SmallForm::nativeEvent(const QByteArray &eventType, void *message, qintptr *result)
 {
+#ifdef _WIN32
   if (eventType == "windows_generic_MSG" || eventType == "windows_dispatcher_MSG")
   {
     MSG* pMsg = reinterpret_cast<MSG*>(message);
@@ -233,6 +250,7 @@ bool SmallForm::nativeEvent(const QByteArray &eventType, void *message, qintptr 
       break;
     }
   }
+#endif
   return QWidget::nativeEvent(eventType, message, result);
 }
 
@@ -286,6 +304,7 @@ void SmallForm::wheelEvent(QWheelEvent *event)
 
 void SmallForm::GetScreenColor(int x, int y)
 {
+#ifdef _WIN32
   HWND hWnd = ::GetDesktopWindow();
   HDC hdc = ::GetDC(hWnd); // GetDC(NULL)
   COLORREF pixel = ::GetPixel(hdc, x, y);
@@ -296,6 +315,7 @@ void SmallForm::GetScreenColor(int x, int y)
       GetBValue(pixel)
     ));
   }
+#endif
 }
 
 void SmallForm::SetColor(const QColor& color)

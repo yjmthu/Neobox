@@ -39,13 +39,19 @@ private:
   static bool UninstallHook();
   void QuitHook(bool succeed);
 private:
+#ifdef _WIN32
   static LRESULT CALLBACK LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam);
   static LRESULT CALLBACK LowLevelKeyProc(int nCode, WPARAM wParam, LPARAM lParam);
+#endif
 public slots:
+#ifdef _WIN32
   void DoMouseWheel(LPARAM lParam);
+#endif
   QColor m_Color;
   static SmallForm* m_Instance;
+#ifdef _WIN32
   static HHOOK m_Hoock[2];
+#endif
 private:
   class ColorConfig& m_Settings;
   QScreen* m_Screen;

@@ -1,7 +1,9 @@
 ﻿#ifndef TRAY_FRAME_H
 #define TRAY_FRAME_H
 
+#ifdef _WIN32
 #include <Windows.h>
+#endif
 #include <string>
 
 class TrayFrame
@@ -23,6 +25,7 @@ private:
   int m_TopSpace = 0;
   class QTimer* m_Timer;
   SpeedBox& m_SpeedBox;
+#ifdef _WIN32
   // 任务栏
   HWND m_hTaskBar;
   // 任务栏子窗口
@@ -33,6 +36,7 @@ private:
   tagRECT m_rcReBar;
   tagRECT m_rcMin;
   tagRECT m_rcNotify;
+#endif
 };
 
 #endif // TRAY_FRAME_H

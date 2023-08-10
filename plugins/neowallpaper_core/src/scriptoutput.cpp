@@ -71,10 +71,12 @@ void ScriptOutput::GetNext(Callback callback)
 #elif defined (__linux__)
   std::vector<std::u8string> result;
   GetCmdOutput(reinterpret_cast<const char*>(u8cmd.c_str()), result);
-  if (result.empty())
+  if (result.empty()) {
     ptr->ErrorMsg = u8"Run command with empty output."s;
-  ptr->ErrorCode = ImageInfo::RunErr;
-  return ptr;
+    ptr->ErrorCode = ImageInfo::RunErr;
+    callback(ptr);
+    return;
+  }
   auto& str = result.front();
 #endif
   if (str.empty()) {

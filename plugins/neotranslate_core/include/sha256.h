@@ -9,6 +9,7 @@
 #include <array>
 #include <format>
 #include <algorithm>
+#include <cstdint>
 
 class SHA256 {
 

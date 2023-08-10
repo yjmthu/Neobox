@@ -7,6 +7,7 @@
 #include <string>
 #include <memory>
 
+#ifdef _WIN32
 #include <windows.h>
 #include <shlobj_core.h>
 
@@ -72,4 +73,6 @@ int main()
   // std::getchar();
   return 0;
 }
-
+#else
+int main() {}
+#endif

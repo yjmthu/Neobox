@@ -3,6 +3,8 @@
 
 #include <deque>
 #include <filesystem>
+#include <optional>
+#include <algorithm>
 
 namespace fs = std::filesystem;
 

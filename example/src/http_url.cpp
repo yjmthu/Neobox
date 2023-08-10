@@ -1,12 +1,16 @@
 ﻿#include <httplib.h>
+#ifdef _WIN32
 #include <Windows.h>
+#endif
 
 std::ostream& operator<<(std::ostream& out, const std::u8string& str) {
   return out.write(reinterpret_cast<const char*>(str.data()), str.length());
 }
 
 int main() {
+#ifdef _WIN32
   SetConsoleOutputCP(CP_UTF8);
+#endif
   HttpUrl url1(u8"http://www.baidu.com/?q=123&p=345", {
     {u8"sdd", u8"华中科技大学"}
   });

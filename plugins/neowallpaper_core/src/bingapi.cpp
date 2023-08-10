@@ -231,11 +231,11 @@ std::u8string BingApi::GetImageName(YJson& imgInfo) {
 #else
   time_t timep = chrono::system_clock::to_time_t(timePoint);
   auto const p = gmtime(&timep);
-  std::string result = std::vformat(fmt, 
-    std::make_format_args(
+  auto result = std::vformat(fmt, 
+    std::make_wformat_args(
       0,
-      Utf8AsString(title), 
-      Utf8AsString(copyright),
+      Utf82WideString(title), 
+      Utf82WideString(copyright),
       p->tm_year + 1900,
       p->tm_mon + 1,
       p->tm_mday

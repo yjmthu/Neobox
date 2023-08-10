@@ -6,10 +6,6 @@
 
 class MenuBase;
 
-namespace std::filesystem {
-  class path;
-}
-
 class NeoSpeedboxPlg: public PluginObject
 {
 protected:

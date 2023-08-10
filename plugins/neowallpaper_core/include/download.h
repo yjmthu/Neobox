@@ -8,11 +8,7 @@
 class DownloadJob {
   typedef std::optional<std::function<void()>> Callback;
 public:
-#ifdef _WIN32
   typedef std::wstring String;
-#else
-  typedef std::string String;
-#endif
   static void DownloadImage(const ImageInfoEx imageInfo,
     Callback callback);
   static bool IsImageFile(const std::u8string & fileName);

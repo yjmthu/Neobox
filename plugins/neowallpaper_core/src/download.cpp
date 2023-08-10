@@ -2,6 +2,7 @@
 #include <download.h>
 #include <pluginmgr.h>
 #include <httplib.h>
+#include <thread>
 
 using namespace std::literals;
 

@@ -9,7 +9,9 @@
 #include <mutex>
 #include <condition_variable>
 
+#ifdef _WIN32
 #include <windows.h>
+#endif
 
 using namespace std::literals;
 
@@ -19,7 +21,9 @@ std::ostream& operator<<(std::ostream& out, const std::u8string& str) {
 
 int main()
 {
+#ifdef _WIN32
   SetConsoleOutputCP(CP_UTF8);
+#endif
   std::cout << "============Begin============" << std::endl;
   std::mutex mutex;
   std::condition_variable cv;
@@ -29,7 +33,7 @@ int main()
   std::cout << url.host << std::endl;
   std::cout << url.GetObjectString() << std::endl;
   HttpLib clt(url, true);
-  std::ofstream file(L"wallhaven-o59gvl.jpg", std::ios::out | std::ios::binary);
+  std::ofstream file("wallhaven-o59gvl.jpg", std::ios::out | std::ios::binary);
 #else
   HttpLib clt("https://www.linux.org/"s, true);
   std::ofstream file(L"wallhaven-o59gvl.html", std::ios::out, std::ios::binary);
