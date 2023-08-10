@@ -178,6 +178,7 @@ void PluginUpdate::CheckUpdate(Callback cb)
 
   m_DataRequest = std::make_unique<HttpLib>(u8"" NEOBOX_LATEST_URL ""sv, true);
 
+  m_DataRequest->SetHeader(u8"User-Agent", u8"Libcurl in Neobox App/1.0");
   HttpLib::Callback callback = {
     .m_FinishCallback = [this, cb](auto msg, auto res) {
       if (msg.empty() && res->status == 200) {

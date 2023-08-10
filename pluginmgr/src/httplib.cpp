@@ -394,7 +394,7 @@ bool HttpLib::IsOnline() {
   auto&& lostPacket = data.substr(first, last - first);
   return !std::atoi(lostPacket.c_str());
 #else
-  HttpLib clt(HttpUrl(u8"https://www.baidu.com"sv));
+  HttpLib clt(HttpUrl(u8"https://www.baidu.com"sv), false, 1s);
   auto res = clt.Get();
   return res && res->status == 200;
 #endif
@@ -430,6 +430,8 @@ size_t HttpLib::WriteHeader(void* buffer, size_t size, size_t nmemb, void* userd
   if (clt.m_Response.version.empty()) {
     auto pos = outBuffer.find(u8' ');
     clt.m_Response.version = outBuffer.substr(0, pos);
+    auto code = outBuffer.substr(pos + 1, size - pos - 3);
+    clt.m_Response.status = std::stol(std::string(code.begin(), code.end()));
   } else {
     auto mid = outBuffer.find(u8':');
     if (mid == outBuffer.npos) return size;
@@ -442,7 +444,7 @@ size_t HttpLib::WriteHeader(void* buffer, size_t size, size_t nmemb, void* userd
 
     for (auto& c: key) {
       if (std::isupper(c)) {
-        c = std::tolower(c);
+        c += 32;
       }
     }
     if (key == u8"location") {
@@ -830,7 +832,7 @@ void HttpLib::ParseHeaders(const std::u8string& outBuffer)
     
     for (auto& c: key) {
       if (std::isupper(c)) {
-        c = std::tolower(c);
+        c += 32;
       }
     }
     if (key == u8"content-length") {
@@ -924,6 +926,8 @@ void HttpLib::HttpPerform()
   } else {
     std::wcerr << L"WinHttpSendRequest failed." << std::endl;
   }
+  
+#ifdef _WIN32
   if (bResults) {
     bResults = ReadStatusCode();
   } else {
@@ -935,8 +939,7 @@ void HttpLib::HttpPerform()
   } else {
     std::wcerr << L"WinHttp read status code failed." << std::endl;
   }
-  
-#ifdef _WIN32
+
   if (bResults) {
     bResults = ReadHeaders();
   } else {
@@ -949,6 +952,7 @@ void HttpLib::HttpPerform()
     std::wcerr << L"WinHttp ReadHeaders Failed." << std::endl;
   }
 #elif defined (__linux__)
+  if (!m_AsyncSet) return;
   if (bResults) {
     EmitFinish();
   } else {
