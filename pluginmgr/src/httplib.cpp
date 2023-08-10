@@ -113,10 +113,11 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
 
   case WINHTTP_CALLBACK_STATUS_READ_COMPLETE: 
     if (dwInternetInformationLength) {
-      object.m_WriteCallback->operator()(lpvStatusInformation, dwInternetInformationLength);
-
-      locker.unlock();
-      WinHttpQueryDataAvailable(object.m_hRequest, nullptr);
+      if (object.m_WriteCallback(lpvStatusInformation, dwInternetInformationLength)) {
+        locker.unlock();
+        WinHttpQueryDataAvailable(object.m_hRequest, nullptr);
+      } else {
+      }
     } else {
       object.EmitFinish();
     }
@@ -424,6 +425,7 @@ size_t HttpLib::WriteString(void* buffer,
   return size;
 }
 
+#ifdef __linux__
 size_t HttpLib::WriteHeader(void* buffer, size_t size, size_t nmemb, void* userdata) {
   std::u8string_view outBuffer(reinterpret_cast<const char8_t*>(buffer), size *= nmemb);
   auto& clt = *reinterpret_cast<HttpLib*>(userdata);
@@ -464,6 +466,7 @@ size_t HttpLib::WriteFunction(void* buffer, size_t size, size_t nmemb, void* use
     return size;
   return CURL_WRITEFUNC_ERROR;
 }
+#endif
 
 HttpLib::~HttpLib() {
   if (m_AsyncSet) {

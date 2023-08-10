@@ -175,8 +175,10 @@ private:
 private:
   static CallbackFunction WriteFile;
   static CallbackFunction WriteString;
+#ifdef __linux__
   static CallbackFunction WriteHeader;
   static CallbackFunction WriteFunction;
+#endif
 #ifdef _WIN32
   static void RequestStatusCallback(void* hInternet, unsigned long long dwContext, unsigned long dwInternetStatus, void* lpvStatusInformation, unsigned long dwInternetInformationLength);
 #endif
