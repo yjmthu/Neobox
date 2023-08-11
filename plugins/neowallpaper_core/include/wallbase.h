@@ -50,9 +50,8 @@ protected:
   { return std::u8string_view(reinterpret_cast<const char8_t *>(str.data()), str.size()); };
 
 public:
-  enum { WALLHAVEN = 0, BINGAPI, DIRECTAPI, NATIVE, SCRIPTOUTPUT, FAVORITE };
-  static WallBase* GetNewInstance(YJson& setting, uint32_t type);
-  static void ClearInstatnce();
+  enum { WALLHAVEN = 0, BINGAPI, DIRECTAPI, NATIVE, SCRIPTOUTPUT, FAVORITE, NONE };
+  static WallBase* GetInstance(uint32_t type);
   explicit WallBase(YJson& setting):
     m_Setting(setting)
     {
@@ -61,6 +60,8 @@ public:
       }
     }
   virtual ~WallBase() {}
+  static std::nullptr_t Initialize(YJson& setting);
+  static void Uuinitialize();
   static const fs::path m_ConfigPath;
   static std::atomic_bool m_QuitFlag;
   YJson& m_Setting;
@@ -73,6 +74,7 @@ public:
   YJson GetJson() const;
 
  private:
+  static std::array<WallBase*, NONE> m_Instances;
   friend class Wallpaper;
 };
 

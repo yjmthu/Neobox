@@ -74,6 +74,8 @@ SpeedBox::SpeedBox(NeoSpeedboxPlg* plugin, SpeedBoxCfg& settings, MenuBase* netc
 }
 
 SpeedBox::~SpeedBox() {
+  delete m_Timer;
+
   delete m_ProcessForm;
   delete m_CentralWidget;
 #ifdef _WIN32
@@ -81,12 +83,12 @@ SpeedBox::~SpeedBox() {
   SHAppBarMessage(ABM_REMOVE, reinterpret_cast<APPBARDATA*>(m_AppBarData));
   delete reinterpret_cast<APPBARDATA*>(m_AppBarData);
 #else
-  dlclose(m_SkinDll);
+  // linux平台需要判断指针非零
+  if (m_SkinDll) dlclose(m_SkinDll);
 #endif
   
   // m_Timer->stop();
   delete m_TrayFrame;
-  delete m_Timer;
 }
 
 void SpeedBox::InitShow(const PluginObject::FollowerFunction& callback) {

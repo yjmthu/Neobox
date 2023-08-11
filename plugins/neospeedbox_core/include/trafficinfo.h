@@ -5,7 +5,7 @@
 #include <array>
 #include <string>
 
-struct TrafficInfo {
+class TrafficInfo {
 public:
   typedef std::wstring FormatString;
   typedef std::array<FormatString, 6> SpeedUnits;

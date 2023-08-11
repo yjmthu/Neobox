@@ -1,7 +1,7 @@
 #include <trafficinfo.h>
 #include <format>
 
-TrafficInfo::FormatString TrafficInfo::FormatSpeed(uint32_t bytes, const FormatString& fmtStr, const std::array<std::wstring, 6> & uints)
+TrafficInfo::FormatString TrafficInfo::FormatSpeed(uint32_t bytes, const FormatString& fmtStr, const SpeedUnits & uints)
 {
   // https://unicode-table.com/en/2192/
   auto iter = uints.cbegin();

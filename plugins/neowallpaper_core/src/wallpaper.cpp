@@ -119,10 +119,10 @@ bool Wallpaper::SetWallpaper(fs::path imagePath) {
 Wallpaper::Wallpaper(YJson& settings)
   : m_Settings(settings)
   , m_Config(GetConfigData())
-  , m_Wallpaper(nullptr)
+  , m_Wallpaper(WallBase::Initialize(*m_Config))
   , m_Timer(new NeoTimer)
-  , m_Favorites(WallBase::GetNewInstance(*m_Config, WallBase::FAVORITE))
-  , m_BingWallpaper(WallBase::GetNewInstance(*m_Config, WallBase::BINGAPI))
+  , m_Favorites(WallBase::GetInstance(WallBase::FAVORITE))
+  , m_BingWallpaper(WallBase::GetInstance(WallBase::BINGAPI))
 {
   ReadBlacklist();
   SetImageType(m_Settings.GetImageType());
@@ -135,7 +135,7 @@ Wallpaper::~Wallpaper() {
 
   DownloadJob::ClearPool();
   
-  WallBase::ClearInstatnce();
+  WallBase::Uuinitialize();
 }
 
 YJson* Wallpaper::GetConfigData()
@@ -489,7 +489,7 @@ bool Wallpaper::SetImageType(int index) {
     // m_Settings.SaveData();
   }
 
-  m_Wallpaper = WallBase::GetNewInstance(*m_Config, index);
+  m_Wallpaper = WallBase::GetInstance(index);
   return true;
 }
 

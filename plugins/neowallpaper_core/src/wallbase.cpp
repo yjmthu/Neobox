@@ -26,34 +26,39 @@ fs::path GetSpecialFolderPath() {
   return result;
 }
 
-static std::vector<WallBase*> s_Wallpaper = {};
-
 std::mutex WallBase::m_DataMutex;
 const fs::path WallBase::m_DataDir = u8"wallpaperData";
 const fs::path WallBase::m_ConfigPath = u8"wallpaperData/Wallpaper.json";
 std::atomic_bool WallBase::m_QuitFlag = false;
-std::function<void()> WallBase::SaveSetting = [](){};
+std::function<void()> WallBase::SaveSetting;
 
-WallBase* WallBase::GetNewInstance(YJson& setting, uint32_t type) {
+
+std::array<WallBase*, WallBase::NONE> WallBase::m_Instances {};
+
+std::nullptr_t WallBase::Initialize(YJson& setting) {
   SaveSetting = std::bind(&YJson::toFile, &setting, m_ConfigPath, true, YJson::UTF8);
-  if (s_Wallpaper.empty()) {
-    s_Wallpaper = {
-      new Wallhaven(setting[u8"壁纸天堂"]),
-      new BingApi(setting[u8"必应壁纸"]),
-      new DirectApi(setting[u8"直链壁纸"]),
-      new Native(setting[u8"本地壁纸"]),
-      new ScriptOutput(setting[u8"脚本输出"]),
-      new Favorite(setting[u8"收藏壁纸"]),
-    };
-  }
-  if (type >= s_Wallpaper.size()) type = 0;
-  return s_Wallpaper[type];
+
+  m_Instances = {
+    new Wallhaven(setting[u8"壁纸天堂"]),
+    new BingApi(setting[u8"必应壁纸"]),
+    new DirectApi(setting[u8"直链壁纸"]),
+    new Native(setting[u8"本地壁纸"]),
+    new ScriptOutput(setting[u8"脚本输出"]),
+    new Favorite(setting[u8"收藏壁纸"]),
+  };
+
+  return nullptr;
 }
 
-void WallBase::ClearInstatnce() {
-  while (!s_Wallpaper.empty()) {
-    delete s_Wallpaper.back();
-    s_Wallpaper.pop_back();
+WallBase* WallBase::GetInstance(uint32_t type) {
+  if (type >= m_Instances.size()) type = 0;
+  return m_Instances[type];
+}
+
+void WallBase::Uuinitialize() {
+  for (auto& ptr: m_Instances) {
+    delete ptr;
+    ptr = nullptr;
   }
 }
 

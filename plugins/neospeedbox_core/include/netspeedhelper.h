@@ -42,7 +42,6 @@ private:
   void SetMemInfo();
   void SetNetInfo();
   void SetCpuInfo();
-  void FormatSpeed(uint64_t bytes, bool upload);
 };
 
 #endif  // NETSPEEDHELPER_H

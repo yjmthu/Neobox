@@ -1,4 +1,4 @@
-﻿#include <skinobject.h>
+#include <skinobject.h>
 
 #include <format>
 

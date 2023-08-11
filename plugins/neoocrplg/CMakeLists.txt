@@ -39,7 +39,7 @@ endif()
 
 add_library(neoocrplg SHARED ${source_files})
 
-set(resource_files icons/*)
+set(resource_files icons/*.png)
 load_resources(neoocrplg resource_files)
 
 target_link_libraries(neoocrplg PRIVATE
