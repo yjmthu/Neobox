@@ -427,20 +427,21 @@ size_t HttpLib::WriteHeader(void* buffer, size_t size, size_t nmemb, void* userd
   if (clt.m_Finished) {
     return CURL_WRITEFUNC_ERROR;
   }
-  if (clt.m_Response.version.empty()) {
+  auto& res = clt.m_Response;
+  if (res.version.empty()) {
     auto pos = outBuffer.find(u8' ');
-    clt.m_Response.version = outBuffer.substr(0, pos);
-    auto code = outBuffer.substr(pos + 1, size - pos - 3);
-    clt.m_Response.status = std::stol(std::string(code.begin(), code.end()));
-  } else {
+    res.version = outBuffer.substr(0, pos);
+    auto code = outBuffer.substr(pos + 1, pos + 4);
+    res.status = std::stol(std::string(code.begin(), code.end()));
+  } else if (size != 2) {
     auto mid = outBuffer.find(u8':');
-    if (mid == outBuffer.npos) return size;
+    // if (mid == outBuffer.npos) return size;
 
     std::u8string key(outBuffer.substr(0, mid));
     mid = outBuffer.find_first_not_of(u8' ', ++mid);
     auto value = outBuffer.substr(mid, size - 2 - mid);
 
-    clt.m_Response.headers[std::u8string(key)] = value;
+    res.headers[std::u8string(key)] = value;
 
     for (auto& c: key) {
       if (std::isupper(c)) {
@@ -448,10 +449,18 @@ size_t HttpLib::WriteHeader(void* buffer, size_t size, size_t nmemb, void* userd
       }
     }
     if (key == u8"location") {
-      clt.m_Response.location = value;
+      res.location = value;
     } else if (key == u8"content-length") {
       clt.m_ConnectLength = std::stoull(std::string(value.begin(), value.end()));
       clt.EmitProcess();
+    }
+  } else if (outBuffer == u8"\r\n"sv) {
+    if (res.status / 100 == 3 && clt.m_RedirectDepth) {
+      if (clt.m_RedirectDepth > 0) {
+        --clt.m_RedirectDepth;
+      }
+      res.version.clear();
+      res.headers.clear();
     }
   }
   return size;
@@ -654,12 +663,14 @@ bool HttpLib::SetProxyAfter()
 
 void HttpLib::SetRedirect(long redirect)
 {
+  m_RedirectDepth = redirect;
 #ifdef _WIN32
   ULONGLONG flag = redirect ?
     WINHTTP_OPTION_REDIRECT_POLICY_DISALLOW_HTTPS_TO_HTTP : WINHTTP_OPTION_REDIRECT_POLICY_NEVER;
   WinHttpSetOption(m_hSession, WINHTTP_OPTION_REDIRECT_POLICY, &flag, sizeof(flag));
 #else
-  curl_easy_setopt(m_hSession, CURLOPT_FOLLOWLOCATION, redirect);
+  curl_easy_setopt(m_hSession, CURLOPT_FOLLOWLOCATION, redirect == 0 ? false : true);
+  curl_easy_setopt(m_hSession, CURLOPT_MAXREDIRS, redirect);
 #endif
 }
 
@@ -905,6 +916,11 @@ bool HttpLib::ReadBody()
 
 void HttpLib::HttpPerform()
 {
+#ifdef __linux__
+  if (m_AsyncSet) {
+    m_AsyncMutex.lock();
+  }
+#endif
   bool bResults = SendHeaders();
 
   if (bResults) {
@@ -958,6 +974,7 @@ void HttpLib::HttpPerform()
   } else {
     EmitFinish(L"HttpPerform Faield.");
   }
+  m_AsyncMutex.unlock();
 #endif
 }
 

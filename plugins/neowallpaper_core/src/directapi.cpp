@@ -120,31 +120,12 @@ void DirectApi::SetJson(const YJson& json)
   m_DataMutex.unlock();
 }
 
-std::u8string DirectApi::GetImageName() {
+std::wstring DirectApi::GetImageName() {
   auto& apiInfo = GetCurInfo();
 
-#ifdef _WIN32
   auto utc = floor<seconds>(system_clock::now());  // Exactly in seconds.
   const auto time = current_zone()->to_local(utc);
-  const std::string result = std::vformat(
-      Utf8AsString(apiInfo[u8"ImageNameFormat"].getValueString()),
-      std::make_format_args(time));
-#else
-  time_t timep;
-  time(&timep);
-
-  const auto p = gmtime(&timep);
-
-  const std::string result = std::vformat(
-      Utf8AsString(apiInfo[u8"ImageNameFormat"].getValueString()),
-      std::make_format_args(
-        0,
-        p->tm_year + 1900,
-        p->tm_mon + 1,
-        p->tm_mday,
-        p->tm_hour,
-        p->tm_min,
-        p->tm_sec));
-#endif
-  return std::u8string(result.begin(), result.end());
+  const auto format = Utf82WideString(apiInfo[u8"ImageNameFormat"].getValueString());
+  const auto result = std::vformat(format, std::make_wformat_args(time));
+  return result;
 }

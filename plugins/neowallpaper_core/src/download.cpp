@@ -50,7 +50,7 @@ DownloadJob::DownloadJob(std::filesystem::path path, std::u8string url, Callback
   , m_Callback(cb)
   , m_Path(std::move(path))
 {
-  m_HttpJob->SetRedirect(1);
+  m_HttpJob->SetRedirect(3);
 
   HttpLib::Callback callback = {
     .m_WriteCallback = [this](auto data, auto size) {

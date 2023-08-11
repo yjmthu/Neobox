@@ -15,5 +15,5 @@ private:
   YJson& GetCurInfo();
   const YJson& GetCurInfo() const
   { return const_cast<DirectApi*>(this)->GetCurInfo(); }
-  std::u8string GetImageName();
+  std::wstring GetImageName();
 };

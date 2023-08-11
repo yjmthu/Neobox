@@ -153,7 +153,7 @@ void PluginUpdate::DownloadUpgrade(Callback cb)
     if (!m_File.is_open()) return;
 
     std::thread([this, cb](){
-      m_DataRequest = std::make_unique<HttpLib>(HttpUrl(std::u8string_view(m_ZipUrl)), true);
+      m_DataRequest = std::make_unique<HttpLib>(HttpUrl(m_ZipUrl), true);
 
       HttpLib::Callback callback = {
         .m_WriteCallback = [this](auto data, auto size) {
