@@ -1,4 +1,4 @@
-#pragma onece
+#pragma once
 
 #include <QWidget>
 #include <QPainterPath>

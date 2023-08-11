@@ -5,6 +5,22 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "(Windows) 启动 Neobox",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}\\build\\Debug\\neobox.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${fileDirname}",
+      "environment": [
+        {
+          "name": "PATH",
+          "value": "${workspaceFolder}\\build\\Debug\\pluginmgr;${workspaceFolder}\\build\\Debug\\plugins;${env:PATH}"
+        }
+      ],
+      "console": "externalTerminal"
+    },
+    {
       "name": "Linux (gdb) 启动 Test",
       "type": "cppdbg",
       "request": "launch",

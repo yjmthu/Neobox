@@ -1,5 +1,4 @@
-#ifndef WALLPAPER_H
-#define WALLPAPER_H
+#pragma once
 
 #include <deque>
 #include <filesystem>
@@ -77,13 +76,10 @@ private:
   std::mutex m_DataMutex;
 
   class NeoTimer* const m_Timer;
+  class WallBase* m_Wallpaper;
   class WallBase* const m_Favorites;
   class WallBase* const m_BingWallpaper;
-  class WallBase* m_Wallpaper;
   WallpaperHistory m_PrevImgs;
   std::stack<fs::path> m_NextImgs;
   std::list<std::pair<fs::path, fs::path>> m_BlackList;
-  // fs::path m_CurImage;
 };
-
-#endif
