@@ -17,6 +17,7 @@ set(pliugin_libfiles pluginmgr)
 set(plugin_name neousbplg)
 
 add_library(${plugin_name} SHARED ${source_files})
+target_include_directories(${plugin_name} PRIVATE include)
 
 set(resource_files icons/*.png)
 load_resources(${plugin_name} resource_files)

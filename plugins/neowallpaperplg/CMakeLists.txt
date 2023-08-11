@@ -12,6 +12,7 @@ set(pliugin_libfiles wallpaper_core pluginmgr)
 
 set(plugin_name neowallpaperplg)
 add_library(${plugin_name} SHARED ${source_files})
+target_include_directories(${plugin_name} PRIVATE include)
 
 target_link_libraries(${plugin_name} PRIVATE
   ${pliugin_libfiles}

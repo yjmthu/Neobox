@@ -1,5 +1,4 @@
-#ifndef SMALLFORM_HPP
-#define SMALLFORM_HPP
+#pragma onece
 
 #include <QWidget>
 #include <QPainterPath>
@@ -18,43 +17,24 @@ class SmallForm: public QWidget
   // Q_OBJECT
 
 protected:
-  void showEvent(QShowEvent *event) override;
-  void mousePressEvent(QMouseEvent *event) override;
   void paintEvent(QPaintEvent *event) override;
-  // void mouseMoveEvent(QMouseEvent *event) override;
-  void wheelEvent(QWheelEvent *event) override;
-  void keyPressEvent(QKeyEvent *event) override;
-  bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
+  void OnMouseWheel(QWheelEvent *event);
 public:
   explicit SmallForm(class ColorConfig& settings);
   virtual ~SmallForm();
 public:
   static void PickColor(ColorConfig& settings);
 private:
-  void TransformPoint(QPoint& point);
   void SetColor(const QColor& color);
-  void GetScreenColor(int x, int y);
   void AutoPosition(const QPoint& point);
-  static bool InstallHook();
-  static bool UninstallHook();
   void QuitHook(bool succeed);
-private:
-#ifdef _WIN32
-  static LRESULT CALLBACK LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam);
-  static LRESULT CALLBACK LowLevelKeyProc(int nCode, WPARAM wParam, LPARAM lParam);
-#endif
-public slots:
-#ifdef _WIN32
-  void DoMouseWheel(LPARAM lParam);
-#endif
+  void ConnectAll(class ColorBack* back);
+public:
   QColor m_Color;
   static SmallForm* m_Instance;
-#ifdef _WIN32
-  static HHOOK m_Hoock[2];
-#endif
 private:
+  class ScreenFetch* const m_ScreenFetch;
   class ColorConfig& m_Settings;
-  QScreen* m_Screen;
   short m_ScaleTimes;
   class SquareForm* m_SquareForm;
   QPixmap m_BackPixMap;
@@ -62,5 +42,3 @@ private:
   QPainterPath m_ColorPath;
   const QFont m_TextFont;
 };
-
-#endif // SMALLFORM_HPP

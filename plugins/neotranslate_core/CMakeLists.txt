@@ -6,6 +6,8 @@ endif()
 
 file(GLOB source_files src/*.cpp)
 
-add_library(translate_core STATIC ${source_files})
+set(plugin_name translate_core)
+add_library(${plugin_name} STATIC ${source_files})
+target_include_directories(${plugin_name} PUBLIC include)
 
-target_link_libraries(translate_core PUBLIC pluginmgr)
+target_link_libraries(${plugin_name} PUBLIC pluginmgr)

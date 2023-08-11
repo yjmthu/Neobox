@@ -42,6 +42,7 @@ set(plugin_name neospeedboxplg)
 
 add_library(${plugin_name} SHARED ${source_files})
 set_target_properties(${plugin_name} PROPERTIES COMPILE_FLAGS ${SPEEDBOX_SKIN_FLAGS})
+target_include_directories(${plugin_name} PRIVATE include)
 
 set(resource_files
   fonts/*.ttf

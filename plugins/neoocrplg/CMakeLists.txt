@@ -37,15 +37,17 @@ else()
   set(ocr_libfiles leptonica tesseract)
 endif()
 
-add_library(neoocrplg SHARED ${source_files})
+set(plugin_name neoocrplg)
+add_library(${plugin_name} SHARED ${source_files})
+target_include_directories(${plugin_name} PRIVATE include)
 
 set(resource_files icons/*.png)
-load_resources(neoocrplg resource_files)
+load_resources(${plugin_name} resource_files)
 
-target_link_libraries(neoocrplg PRIVATE
+target_link_libraries(${plugin_name} PRIVATE
   ${qt_shared_files}
   ${ocr_libfiles}
   pluginmgr
 )
 
-install_plugin(neoocrplg)
+install_plugin(${plugin_name})

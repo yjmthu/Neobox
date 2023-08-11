@@ -1,10 +1,13 @@
 #include <squareform.hpp>
 #include <pluginmgr.h>
+#include <screenfetch.hpp>
 
 #include <QPainterPath>
 #include <QPainter>
 #include <QMouseEvent>
 #include <QTimer>
+
+#include <iostream>
 
 constexpr int SquareForm::m_BorderWidth;
 
@@ -25,7 +28,9 @@ private:
   short& m_ScalSize;
   float m_Radius = 0;
 public:
-  explicit ColorBigger(short& scalSize, QWidget* parent) : QWidget(parent), m_ScalSize(scalSize) {}
+  explicit ColorBigger(short& scalSize, QWidget* parent) : QWidget(parent), m_ScalSize(scalSize) {
+    setAttribute(Qt::WA_TransparentForMouseEvents);
+  }
   void DrawGrids() {
     auto side = m_ScalSize * 5;
     m_Radius = side / 2.0;
@@ -71,31 +76,21 @@ public:
 };
 
 SquareForm::SquareForm(const QPixmap& pix, const QPoint& pos, QWidget* parent)
-  : QWidget(parent)
+  : ColorBack(pix)
   , m_Center(pos)
   , m_BaseSize(pix.size())
   , m_BaseScal(3)
-  // , m_PixMap(pix)
-  , m_Image(pix.toImage())
   , m_ColorBigger(new ColorBigger(m_ScalSize, this))
 {
-  setWindowTitle("Neobox-颜色放大器");
-  setAttribute(Qt::WA_TransparentForMouseEvents);
-  setAttribute(Qt::WA_TranslucentBackground);
-  setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
-  // setAttribute(Qt::WA_OpaquePaintEvent);
   m_ColorBigger->move(m_BorderWidth, m_BorderWidth);
   SetScaleSize(1);
-  // m_PixMaps[m_ScalSize] = pix;
   if (m_Image.format() != QImage::Format_ARGB32 && m_Image.format() != QImage::Format_RGB32) {
     m_Image = m_Image.convertToFormat(QImage::Format_RGB32);
   }
-  // setMouseTracking(true);
 }
 
 SquareForm::~SquareForm()
 {
-  // setMouseTracking(false);
 }
 
 void SquareForm::SetScaleSize(short times)
@@ -117,15 +112,28 @@ void SquareForm::SetScaleSize(short times)
 void SquareForm::paintEvent(QPaintEvent *event)
 {
   QPainter painter(this);
-  // painter.setRenderHint(QPainter::Antialiasing, true);
-  painter.drawPixmap(0, 0, m_PixMap);
-  // QWidget::paintEvent(event);
+  painter.drawPixmap(0, 0, m_Pixmap);
 }
 
-void SquareForm::MouseMove(const QPoint& global)
+void SquareForm::mouseMoveEvent(QMouseEvent *event)
 {
   if (m_ScalSize < 9) return;
-  m_ColorBigger->Update(global - pos() - QPoint(m_BorderWidth, m_BorderWidth));
+  m_ColorBigger->Update(event->pos() - QPoint(m_BorderWidth, m_BorderWidth));
+  ColorBack::mouseMoveEvent(event);
+}
+
+void SquareForm::enterEvent(QEnterEvent *event) {
+  auto p = qobject_cast<ScreenFetch*>(parent());
+  p->setMouseTracking(false);
+  setMouseTracking(true);
+  ColorBack::enterEvent(event);
+}
+
+void SquareForm::leaveEvent(QEvent *event) {
+  auto p = qobject_cast<ScreenFetch*>(parent());
+  setMouseTracking(false);
+  p->setMouseTracking(true);
+  ColorBack::leaveEvent(event);
 }
 
 // void SquareForm::DrawBorder(QPainter& painter) const
@@ -159,10 +167,10 @@ void SquareForm::MouseMove(const QPoint& global)
 
 void SquareForm::DrawPicture()
 {
-  m_PixMap = QPixmap(size());
-  m_PixMap.fill(Qt::transparent);
+  m_Pixmap = QPixmap(size());
+  m_Pixmap.fill(Qt::transparent);
 
-  QPainter painter(&m_PixMap);
+  QPainter painter(&m_Pixmap);
   painter.setRenderHint(QPainter::Antialiasing, true);
   QPainterPath path;
   path.addRoundedRect(rect(), m_BorderWidth, m_BorderWidth);
@@ -187,6 +195,5 @@ void SquareForm::DrawPicture()
 void SquareForm::showEvent(QShowEvent *event) 
 {
   move(m_Center - frameGeometry().center() + pos());
-  QWidget::showEvent(event);
+  ColorBack::showEvent(event);
 }
-

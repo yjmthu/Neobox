@@ -229,31 +229,6 @@ void ColorDlg::SaveHistory()
   m_Settings.SetHistory(array);
 }
 
-#if 0
-bool ColorDlg::eventFilter(QObject *watched, QEvent *event)
-{
-  auto const bar = ui->listWidget->verticalScrollBar();
-	if (watched == ui->listWidget->verticalScrollBar())
-	{
-		if (event->type() == QEvent::HoverEnter)
-		{
-      bar->setFixedWidth(16); //重新定义宽度
-      bar->setProperty("STYLE_KEY", QString("SETTINGSSWBG_SCROLL_HOVER")); //重载样式
-      bar->setStyleSheet(m_StyleWide);
-      // bar->style()->polish(bar); //强制刷新样式
-		}
-		else if (event->type() == QEvent::HoverLeave)
-		{
-			bar->setFixedWidth(4);
-			bar->setProperty("STYLE_KEY", QString("SETTINGSSWBG_SCROLL"));
-      bar->setStyleSheet(m_StyleNarrow);
-			// bar->style()->polish(bar);
-		}
-	}
-  return QWidget::eventFilter(watched, event);
-}
-#endif
-
 void ColorDlg::AddColor(const QColor& color)
 {
   m_ColorsChanged = true;

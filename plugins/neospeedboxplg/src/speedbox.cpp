@@ -51,7 +51,6 @@ const std::vector<std::u8string> NeoSpeedboxPlg::m_DefaultSkins = {
     u8"果里果气",
 };
 
-
 SpeedBox::SpeedBox(NeoSpeedboxPlg* plugin, SpeedBoxCfg& settings, MenuBase* netcardMenu)
     : WidgetBase(nullptr)
     , m_PluginObject(plugin)

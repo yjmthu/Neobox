@@ -1,4 +1,6 @@
-import os, shutil
+import os, shutil, platform
+
+sys_name = platform.system()
 
 def copy_plugins(src: str, des: str):
     plugins = os.listdir(src)
@@ -7,7 +9,10 @@ def copy_plugins(src: str, des: str):
     for plugin in plugins:
         print(f"正在复制：{plugin}", end='  ')
         from_path = os.path.join(src, plugin)
-        to_dir = os.path.join(des, plugin.split('.')[0])
+        des_name = plugin.split('.')[0]
+        if sys_name == 'Linux':
+            des_name = des_name[3:]
+        to_dir = os.path.join(des, des_name)
         if not os.path.exists(to_dir):
             os.mkdir(to_dir)
         to_path = os.path.join(to_dir, plugin)

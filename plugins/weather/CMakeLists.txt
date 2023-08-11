@@ -12,6 +12,8 @@ set(pliugin_libfiles pluginmgr)
 set(plugin_name weather)
 add_library(${plugin_name} SHARED ${source_files})
 
+target_include_directories(${plugin_name} PRIVATE include)
+
 set(resource_files fonts/*.ttf fonts/*.json styles/*.qss icons/*.png)
 load_resources(${plugin_name} resource_files)
 
