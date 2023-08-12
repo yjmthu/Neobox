@@ -121,16 +121,34 @@ bool Shortcut::nativeEventFilter(const QByteArray &eventType, void *message, qin
 
 }
 
+#ifdef __linux__
+static Display* GetX11Display() {
+  auto x11App = qGuiApp->nativeInterface<QNativeInterface::QX11Application>();
+  if (!x11App) return nullptr;
+  return x11App->display();
+}
+static wl_display* GetWaylandDisplay() {
+  auto wayland = qGuiApp->nativeInterface<QNativeInterface::QWaylandApplication>();
+  if (!wayland) return nullptr;
+  return wayland->display();
+}
+#endif
+
 Shortcut::Shortcut(YJson& data)
   : m_Data(data)
 #ifdef __linux__
-  , m_Display(qGuiApp->nativeInterface<QX11Application>()->display())
-  , m_GrabWindow(DefaultRootWindow(m_Display))
+  , m_Display(GetX11Display())
+  , m_WlDisplay(GetWaylandDisplay())
+  , m_GrabWindow(m_Display ? DefaultRootWindow(m_Display) : 0)
 #endif
 {
 #ifdef __linux__
   // 巨坑至关重要！
-  XSelectInput(m_Display, m_GrabWindow, KeyPressMask);
+  if (m_Display) {
+    XSelectInput(m_Display, m_GrabWindow, KeyPressMask);
+  } else if (m_WlDisplay) {
+  
+  }
 #endif
   qApp->installNativeEventFilter(this);
 }

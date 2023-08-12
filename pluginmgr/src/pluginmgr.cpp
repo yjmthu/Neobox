@@ -46,7 +46,7 @@ YJson* PluginMgr::InitSettings()
     setting = new YJson(m_SettingFileName, YJson::UTF8);
   } catch (std::runtime_error err) {
     delete setting;
-    setting = new YJson{ YJson::O {
+    setting = new YJson(YJson::O {
       { u8"Plugins", YJson::O {
       }},
       { u8"EventMap", YJson::A {
@@ -71,7 +71,7 @@ YJson* PluginMgr::InitSettings()
       { u8"PluginsConfig", YJson::O {
       }},
       { u8"NetProxy", nullptr },
-    }};
+    });
   }
   auto& proxy = setting->operator[](u8"NetProxy");
   auto& version = setting->operator[](u8"Version");

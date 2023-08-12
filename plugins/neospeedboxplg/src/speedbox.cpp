@@ -127,7 +127,8 @@ void SpeedBox::UpdateSkin()
 #ifdef _WIN32
   FreeLibrary(m_SkinDll);
 #else
-  dlclose(m_SkinDll);
+  // Linux下需要判断指针非空
+  if (m_SkinDll) dlclose(m_SkinDll);
 #endif
   m_CentralWidget = nullptr;
   m_SkinDll = nullptr;

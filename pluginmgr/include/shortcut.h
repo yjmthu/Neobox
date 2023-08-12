@@ -50,6 +50,7 @@ private:
   class YJson& m_Data;
 #ifdef __linux__
   struct _XDisplay* const m_Display;
+  struct wl_display* const m_WlDisplay;
   const unsigned long m_GrabWindow;
 #endif
   std::map<KeyName, int> m_HotKeyIds;

@@ -43,16 +43,14 @@ YJson& BingApi::InitSetting(YJson& setting) {
     return setting;
   }
   auto const initDir = GetStantardDir(u8"必应壁纸");
-  setting = YJson {
-    YJson::O {
-      { u8"api", u8"https://global.bing.com"},
-      { u8"curday"sv,    GetToday() },
-      { u8"directory"sv,  initDir },
-      { u8"name-format"sv, u8"{3:04d}-{4:02d}-{5:02d} {1}.jpg" },
-      { u8"region"sv, u8"zh-CN" },
-      { u8"auto-download"sv, false },
-      { u8"copyrightlink"sv, YJson::String}
-    }
+  setting = YJson::O {
+    { u8"api", u8"https://global.bing.com"},
+    { u8"curday"sv,    GetToday() },
+    { u8"directory"sv,  initDir },
+    { u8"name-format"sv, u8"{3:04d}-{4:02d}-{5:02d} {1}.jpg" },
+    { u8"region"sv, u8"zh-CN" },
+    { u8"auto-download"sv, false },
+    { u8"copyrightlink"sv, YJson::String}
   };
   SaveSetting();
   return setting;
