@@ -24,6 +24,7 @@
 #include <QApplication>
 #include <QProcess>
 #include <QCheckBox>
+#include <QDir>
 
 using namespace std::literals;
 
@@ -240,54 +241,52 @@ void TabVersion::DoUpgrade(const YJson& data)
 {
   auto const vNew = PluginUpdate::ParseVersion(Utf82WideString(data[u8"tag_name"].getValueString()));
   auto const vOld = PluginUpdate::ParseVersion(L"" NEOBOX_VERSION);
+  // 只判断等于，方便debug
   if (vNew == vOld) {
     mgr->ShowMsg("当前已是最新版本！");
     return;
   }
-  // if (vOld > vNew) {
-  // }
   if (QMessageBox::question(this, "提示", "有新版本可用！请确保能流畅访问GitHub，是否立即下载安装？") != QMessageBox::Yes) {
     return;
   }
   for (auto& asset: data[u8"assets"].getArray()) {
     auto& url = asset[u8"browser_download_url"].getValueString();
+#ifdef _WIN32
     if (!url.ends_with(u8".zip")) {
       continue;
     }
+#else
+    if (!url.ends_with(u8".tar.gz")) {
+      continue;
+    }
+#endif
     if (!DownloadNew(url)) {
       return;
     }
     fs::path dataDir = mgr->GetJunkDir() / L"Neobox";
     dataDir.make_preferred();
+#ifdef _WIN32
     fs::path exePath = dataDir / "update.exe";
+#else
+    fs::path exePath = dataDir / "update.sh";
+#endif
     if (!fs::exists(dataDir) || !fs::is_directory(dataDir) || !fs::exists(exePath)) {
       mgr->ShowMsg("安装包数据出错！");
       return;
     }
-    fs::path curDirPath = QApplication::applicationDirPath().toStdU16String();
-    curDirPath.make_preferred();
-    
-    auto wsPath = fs::current_path().make_preferred();
-
-#ifdef _WIN32
-    SHELLEXECUTEINFOW shellInfo {};
-    shellInfo.cbSize = sizeof(SHELLEXECUTEINFO);
-    shellInfo.hwnd = nullptr;
-    shellInfo.lpFile = exePath.c_str();
-    shellInfo.lpParameters = curDirPath.c_str();
-    shellInfo.lpDirectory = wsPath.c_str();
-    shellInfo.nShow = SW_NORMAL;
-    // shellInfo.lpVerb = L"runas";
-#elif defined (__linux__)
-    QProcess proc;
-#endif
 
     if (QMessageBox::question(this, "提示", "下载完成，是否立即安装？") != QMessageBox::Yes) {
       return;
     }
 #ifdef _WIN32
-    ::ShellExecuteExW(&shellInfo);
+    QProcess::startDetached(QString::fromStdWString(exePath.wstring()), {
+      QDir::currentPath(),
+    }, qApp->applicationDirPath());
 #elif defined (__linux__)
+    QProcess::startDetached("sh", {
+      QString::fromStdWString(exePath.wstring()),
+      QDir::currentPath(),
+    }, qApp->applicationDirPath());
 #endif
     QApplication::quit();
     return;

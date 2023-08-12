@@ -145,9 +145,15 @@ void PluginUpdate::DownloadUpgrade(Callback cb)
 
   for (auto& asset: (*m_LatestData)[u8"assets"].getArray()) {
     auto& url = asset[u8"browser_download_url"].getValueString();
+#ifdef _WIN32
     if (!url.ends_with(u8".zip")) {
       continue;
     }
+#else
+    if (!url.ends_with(u8".tar.gz")) {
+      continue;
+    }
+#endif
     m_ZipUrl = url;
     m_File.open(GetTempFilePath(), std::ios::out | std::ios::binary);
     if (!m_File.is_open()) return;
