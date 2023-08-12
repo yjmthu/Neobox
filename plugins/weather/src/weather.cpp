@@ -16,6 +16,7 @@
 
 using namespace std::literals;
 
+// https://blog.csdn.net/github_18974657/article/details/116061982
 template<class _IBufferType, class _OBufferType>
 bool GzipCompress(const _IBufferType& inBuffer, _OBufferType& outBuffer)
 {

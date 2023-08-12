@@ -9,7 +9,11 @@
 #include <filesystem>
 #include <thread>
 
+#ifdef _WIN32
 #include <zip.h>
+#else
+#include <QProcess>
+#endif
 
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -102,40 +106,66 @@ bool ItemBase::PluginDownload()
     return false;
   }
   bool result = false;
-  const auto dialog = new DownloadingDlg(this);
-  dialog->setAttribute(Qt::WA_DeleteOnClose, true);
-  dialog->m_PreventClose = true;
-  connect(this, &ItemBase::DownloadFinished, dialog, &QDialog::close);
-  connect(this, &ItemBase::Downloading, dialog, &DownloadingDlg::SetPercent);
+  DownloadingDlg dialog(this);
+  connect(this, &ItemBase::DownloadFinished, &dialog, &QDialog::close);
+  connect(this, &ItemBase::Downloading, &dialog, &DownloadingDlg::SetPercent);
 
-  std::thread thread([&]() {
-    auto const plugin = m_PluginName + u8".zip";
-    fs::path pluginTemp = u8"junk";
-    fs::create_directory(pluginTemp);
-    pluginTemp /= plugin;
-    fs::path pluginDst = u8"plugins/" + m_PluginName;
-    HttpLib clt(HttpUrl(PluginCenter::m_RawUrl + plugin));
-    auto res = clt.Get(pluginTemp);
-    dialog->m_PreventClose = false;
+#ifdef _WIN32
+  auto const plugin = m_PluginName + u8".zip";
+#else
+  auto const plugin = m_PluginName + u8".tar.gz";
+#endif
+  fs::path pluginTemp = u8"junk";
+  fs::create_directory(pluginTemp);
+  pluginTemp /= plugin;
+  fs::path pluginDst = u8"plugins/" + m_PluginName;
+  HttpLib clt(HttpUrl(PluginCenter::m_RawUrl + plugin), true, 10s);
 
-    if (res->status != 200) {
-      mgr->ShowMsgbox(L"失败", L"下载清单失败！");
-    } else {
-      result = true;
-      auto temp = pluginTemp.string();
-      auto dst = pluginDst.string();
-      if (zip_extract(temp.c_str(), dst.c_str(), nullptr, nullptr) < 0) {
-        mgr->ShowMsgbox(L"失败", L"无法解压文件");
+  std::ofstream file(pluginTemp, std::ios::out | std::ios::binary);
+  if (!file.is_open()) return false;
+
+  HttpLib::Callback callback = {
+    .m_WriteCallback = [&file](auto data, auto size) {
+      file.write(reinterpret_cast<const char*>(data), size);
+    },
+    .m_FinishCallback = [&](auto msg, auto res) {
+      file.close();
+      if (!msg.empty() || res->status != 200) {
+        mgr->ShowMsgbox(L"失败", L"下载清单失败！");
+        // result = false;
+      } else {
+#ifdef _WIN32
+        auto temp = pluginTemp.string();
+        auto dst = pluginDst.string();
+        result = zip_extract(temp.c_str(), dst.c_str(), nullptr, nullptr) >= 0;
+        if (!result) {
+          mgr->ShowMsgbox(L"失败", L"无法解压文件");
+        }
+#else
+        if (!fs::exists(pluginDst))
+          fs::create_directories(pluginDst);
+        QProcess process;
+        const auto ret = process.execute("tar", QStringList {
+          QStringLiteral("-xzf"),
+          QString::fromStdWString(pluginTemp.wstring()),
+          QStringLiteral("-C"),
+          QString::fromStdWString(pluginDst.wstring())
+        });
+        result = result == 0;
+        if (!result) {
+          mgr->ShowMsgbox(L"失败", std::format(L"解压文件出错，tar返回值：{}。", ret));
+        }
+#endif
       }
-    }
 
-    if (fs::exists(pluginTemp)) {
       fs::remove(pluginTemp);
-    }
-    emit DownloadFinished();
-  });
-  dialog->exec();
-  thread.join();
+      emit DownloadFinished();
+    },
+  };
+  connect(&dialog, &DownloadingDlg::Terminate, std::bind(&HttpLib::ExitAsync, &clt));
+
+  clt.GetAsync(std::move(callback));
+  dialog.exec();
   return result;
 }
 
