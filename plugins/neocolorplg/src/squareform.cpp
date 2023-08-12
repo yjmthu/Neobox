@@ -15,11 +15,10 @@ class ColorBigger: public QWidget
 {
 protected:
   void paintEvent(QPaintEvent *event) override {
-    if (m_MouseGrid.isNull()) {
-      return;
+    if (!m_MouseGrid.isNull()) {
+      QPainter painter(this);
+      painter.drawPixmap(m_MouseGrid, m_Pixmap);
     }
-    QPainter painter(this);
-    painter.drawPixmap(m_MouseGrid, m_Pixmap);
     event->accept();
   }
 private:
@@ -91,6 +90,7 @@ SquareForm::SquareForm(const QPixmap& pix, const QPoint& pos, QWidget* parent)
 
 SquareForm::~SquareForm()
 {
+  leaveEvent(nullptr);
 }
 
 void SquareForm::SetScaleSize(short times)
@@ -102,8 +102,8 @@ void SquareForm::SetScaleSize(short times)
   m_ScalSize = times * m_BaseScal; // 3, 6, 9, 12
   auto fixedSize = m_BaseSize * m_ScalSize;
   m_ColorBigger->Resize(fixedSize);
-  fixedSize.rwidth() += m_BorderWidth << 1;
-  fixedSize.rheight() += m_BorderWidth << 1;
+  fixedSize.rwidth() += (m_BorderWidth << 1);
+  fixedSize.rheight() += (m_BorderWidth << 1);
   setFixedSize(fixedSize);
   DrawPicture();
   move(m_Center - frameGeometry().center() + pos());
@@ -117,8 +117,9 @@ void SquareForm::paintEvent(QPaintEvent *event)
 
 void SquareForm::mouseMoveEvent(QMouseEvent *event)
 {
-  if (m_ScalSize < 9) return;
-  m_ColorBigger->Update(event->pos() - QPoint(m_BorderWidth, m_BorderWidth));
+  if (m_ScalSize >= 9) {
+    m_ColorBigger->Update(event->pos() - QPoint(m_BorderWidth, m_BorderWidth));
+  }
   ColorBack::mouseMoveEvent(event);
 }
 
@@ -126,44 +127,15 @@ void SquareForm::enterEvent(QEnterEvent *event) {
   auto p = qobject_cast<ScreenFetch*>(parent());
   p->setMouseTracking(false);
   setMouseTracking(true);
-  ColorBack::enterEvent(event);
+  // ColorBack::enterEvent(event);
 }
 
 void SquareForm::leaveEvent(QEvent *event) {
   auto p = qobject_cast<ScreenFetch*>(parent());
   setMouseTracking(false);
   p->setMouseTracking(true);
-  ColorBack::leaveEvent(event);
+  // ColorBack::leaveEvent(event);
 }
-
-// void SquareForm::DrawBorder(QPainter& painter) const
-// {
-//   QPainterPath path;
-
-//   auto size = this->frameSize();
-//   auto rect = QRect(0, 0, m_BorderWidth << 1, m_BorderWidth << 1);
-//   path.moveTo(m_BorderWidth, 0);
-//   path.arcTo(rect, 90, 90);
-
-// 	path.lineTo(0, size.height() - m_BorderWidth);
-
-//   rect.moveTop(size.height() - m_BorderWidth * 2);
-// 	path.arcTo(rect, 180, 90);
-
-//   path.lineTo(size.width() - m_BorderWidth, size.height());
-  
-//   rect.moveLeft(size.width() - m_BorderWidth * 2);
-//   path.arcTo(rect, 270, 90);
-
-//   path.lineTo(size.width(), m_BorderWidth);
-
-//   rect.moveTop(0);
-//   path.arcTo(rect, 0, 90);
-
-//   path.lineTo(m_BorderWidth, 0);
-
-// 	painter.fillPath(path, QColor(20, 20, 20, 200));
-// }
 
 void SquareForm::DrawPicture()
 {
