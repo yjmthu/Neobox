@@ -75,9 +75,22 @@ inline std::optional<fs::path> GetWallpaper() {
     }
     break;
   }
-  case Desktop::DDE:
-  case Desktop::GNOME:
-  case Desktop::XFCE:
+  case Desktop::GNOME:{
+    std::string_view argStr = "gsettings get org.gnome.desktop.background picture-uri"sv;
+    std::list<std::string> result;
+    GetCmdOutput(argStr.data(), result);
+    break;
+  }
+  case Desktop::DDE: {
+    std::string_view argStr = "dbus-send --session --print-reply --dest=com.deepin.daemon.Appearance /com/deepin/daemon/Appearance com.deepin.daemon.Appearance.GetMonitorBackground"sv;
+    break;
+  }
+  case Desktop::XFCE: {
+    std::string_view argStr = "xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/workspace0/last-image"sv;
+    std::list<std::string> result;
+    GetCmdOutput(argStr.data(), result);
+    break;
+  }
   default:
     break;
   }
@@ -116,7 +129,15 @@ inline bool SetWallpaper(fs::path imagePath) {
   switch (m_DesktopType) {
     // https://github.com/bharadwaj-raju/libdesktop/issues/1
     case Desktop::KDE:
-      argStr = std::format("var allDesktops = desktops(); print(allDesktops); for (i=0; i < allDesktops.length; i++){{ d = allDesktops[i]; d.wallpaperPlugin = \"org.kde.image\"; d.currentConfigGroup = Array(\"Wallpaper\", \"org.kde.image\", \"General\"); d.writeConfig(\"Image\", \"file://{}\")}}", imagePath.string());
+      argStr = std::format(
+        "var allDesktops = desktops();"
+        "print(allDesktops);"
+        "for (i=0; i < allDesktops.length; i++){{"
+          "d = allDesktops[i];"
+          "d.wallpaperPlugin = \"org.kde.image\";"
+          "d.currentConfigGroup = Array(\"Wallpaper\", \"org.kde.image\", \"General\");"
+          "d.writeConfig(\"Image\", \"file://{}\")"
+        "}}", imagePath.string());
       if (fork() == 0) {
         execlp(
           "qdbus", "qdbus",
@@ -145,12 +166,24 @@ inline bool SetWallpaper(fs::path imagePath) {
     */
       // xrandr|grep 'connected primary'|awk '{print $1}' ======> eDP
       argStr = std::format("string:\"file://{}\"", imagePath.string());
-      if (fork()) {
+      if (fork() == 0) {
         execlp(
           "dbus-send", "dbus-send",
-          "--dest=com.deepin.daemon.Appearance", "/com/deepin/daemon/Appearance", "--print-reply",
-          "com.deepin.daemon.Appearance.SetMonitorBackground", "string:\"eDP\"",
-          argStr.c_str(), nullptr
+          "--dest=com.deepin.daemon.Appearance", "/com/deepin/daemon/Appearance",
+          "--print-reply", "com.deepin.daemon.Appearance.SetMonitorBackground",
+          "string:\"eDP\"", argStr.c_str(), nullptr
+        );
+      }
+      break;
+    case Desktop::XFCE:
+      argStr = std::format("\"{}\"", imagePath.string());
+      if (fork() == 0) {
+        execlp(
+          "xfconf-query",
+          "xfconf-query",
+          "-c", "xfce4-desktop",
+          "-p", "/backdrop/screen0/monitor0/workspace0/last-image",
+          "-s", argStr.c_str(), nullptr
         );
       }
       break;
