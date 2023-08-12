@@ -186,10 +186,8 @@ bool TabVersion::DownloadNew(std::u8string_view url) {
   // dialog->setAttribute(Qt::WA_DeleteOnClose, true);
 
   auto zipFileName = url.substr(url.rfind(u8'/') + 1);
-  fs::path pluginTemp = L"junk";
-  fs::create_directory(pluginTemp);
-  fs::path pluginDst = pluginTemp;
-  pluginTemp /= zipFileName;
+  const auto pluginDst = mgr->GetJunkDir();
+  const auto pluginTemp = pluginDst / zipFileName;
 
   std::ofstream file(pluginTemp, std::ios::binary | std::ios::out);
   if (!file.is_open()) {

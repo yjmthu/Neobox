@@ -38,17 +38,13 @@ const std::u8string PluginMgr::m_SettingFileName(u8"PluginSettings.json");
 
 YJson* PluginMgr::InitSettings()
 {
-  if (!fs::exists("plugins")) {
-    fs::create_directory("plugins");
-  }
   YJson* setting = nullptr;
   try {
     setting = new YJson(m_SettingFileName, YJson::UTF8);
   } catch (std::runtime_error err) {
     delete setting;
     setting = new YJson(YJson::O {
-      { u8"Plugins", YJson::O {
-      }},
+      { u8"Plugins", YJson::Object },
       { u8"EventMap", YJson::A {
         // YJson::O {
         //   {u8"KeySequence", u8"Shift+A"},
@@ -68,8 +64,7 @@ YJson* PluginMgr::InitSettings()
         //   }},
         // }
       }},
-      { u8"PluginsConfig", YJson::O {
-      }},
+      { u8"PluginsConfig", YJson::Object },
       { u8"NetProxy", nullptr },
     });
   }
@@ -211,9 +206,8 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
   pluginInfo.handle = nullptr;
 
   PluginObject* (*newPlugin)(YJson&, PluginMgr*)= nullptr;
-#ifndef _DEBUG
-  fs::path path = u8"plugins";
-  path /= pluginName;
+#ifdef _RELEASE
+  fs::path path = GetPluginDir() / pluginName;
 #else
   fs::path path = __FILE__;
   path = path.parent_path().parent_path().parent_path() / "build/Debug/plugins" / pluginName;
@@ -501,9 +495,15 @@ void PluginMgr::Restart()
 
 fs::path PluginMgr::GetJunkDir() {
   fs::path result = "junk";
-  if (!fs::exists(result)) {
-    fs::create_directory(result);
-  }
+  // 必须成功，不成功则直接抛异常
+  fs::create_directory(result);
+  return fs::absolute(result);
+}
+
+fs::path PluginMgr::GetPluginDir() {
+  fs::path result = "plugins";
+  // 必须成功，不成功则直接抛异常
+  fs::create_directory(result);
   return fs::absolute(result);
 }
 

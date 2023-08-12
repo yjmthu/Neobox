@@ -73,6 +73,7 @@ public:
   static void Quit();
   void Restart();
   static std::filesystem::path GetJunkDir();
+  static std::filesystem::path GetPluginDir();
 private:
   static QSharedMemory* CreateSharedMemory();
   void DetachSharedMemory();

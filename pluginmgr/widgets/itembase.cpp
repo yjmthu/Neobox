@@ -115,10 +115,8 @@ bool ItemBase::PluginDownload()
 #else
   auto const plugin = m_PluginName + u8".tar.gz";
 #endif
-  fs::path pluginTemp = u8"junk";
-  fs::create_directory(pluginTemp);
-  pluginTemp /= plugin;
-  fs::path pluginDst = u8"plugins/" + m_PluginName;
+  const auto pluginTemp = mgr->GetJunkDir() / plugin;
+  const auto pluginDst = mgr->GetPluginDir() / m_PluginName;
   HttpLib clt(HttpUrl(PluginCenter::m_RawUrl + plugin), true, 10s);
 
   std::ofstream file(pluginTemp, std::ios::out | std::ios::binary);
@@ -194,7 +192,7 @@ void ItemBase::PluginUninstall()
 
   if (result) {
     std::error_code error;
-    fs::remove_all(u8"plugins/" + m_PluginName, error);
+    fs::remove_all(mgr->GetPluginDir() / m_PluginName, error);
     result = error.value() == 0;
   }
 
@@ -219,7 +217,7 @@ void ItemBase::PluginUpgrade()
 
   if (result) {
     std::error_code error;
-    fs::remove_all(u8"plugins/" + m_PluginName, error);
+    fs::remove_all(mgr->GetPluginDir() / m_PluginName, error);
     result = error.value() == 0;
   }
 

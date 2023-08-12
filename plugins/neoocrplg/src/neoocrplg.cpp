@@ -51,9 +51,7 @@ PluginName::PluginName(YJson& settings)
 {
   std::array<fs::path, 1> lst = { u8"tessdata"s };
   for (auto i: lst) {
-    if (!fs::exists(i)) {
-      fs::create_directory(i);
-    }
+    fs::create_directory(i);
   }
   InitFunctionMap();
 }

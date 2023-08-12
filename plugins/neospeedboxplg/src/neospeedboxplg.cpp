@@ -411,9 +411,10 @@ void PluginName::AddSkinConnect(QAction* action)
 
 void PluginName::AddSkin(const QString& name, const fs::path& path)
 {
-
-  if (!fs::exists("skins")) {
-    fs::create_directory("skins");
+  std::error_code error;
+  if (!fs::exists("skins") && !fs::create_directory("skins", error)) {
+    mgr->ShowMsgbox(L"出错", std::format(L"复制皮肤出错，无法创建skin文件夹！\n错误码：{}。", error.value()));
+    return;
   }
 
   auto u8FilePath = u8"skins" / path.filename();
@@ -434,8 +435,3 @@ void PluginName::AddSkin(const QString& name, const fs::path& path)
   RemoveSkinConnect(action);
   mgr->ShowMsg("添加皮肤" + name + "成功！");
 }
-
-// void NeoSpeedboxPlg::LoadFonts() {
-//   QFontDatabase::addApplicationFont(":/fonts/Nickainley-Normal-small.ttf");
-//   QFontDatabase::addApplicationFont(":/fonts/Carattere-Regular-small.ttf");
-// }

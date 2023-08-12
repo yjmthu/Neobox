@@ -55,9 +55,7 @@ public:
   explicit WallBase(YJson& setting):
     m_Setting(setting)
     {
-      if (!fs::exists(m_DataDir)) {
-        fs::create_directory(m_DataDir);
-      }
+      fs::create_directory(m_DataDir);
     }
   virtual ~WallBase() {}
   static std::nullptr_t Initialize(YJson& setting);

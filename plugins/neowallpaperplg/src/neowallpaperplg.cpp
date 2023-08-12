@@ -33,9 +33,6 @@ PluginName::PluginName(YJson& settings):
   PluginObject(InitSettings(settings), u8"neowallpaperplg", u8"壁纸引擎"),
   m_Wallpaper(new Wallpaper(m_Settings))
 {
-  if (!fs::exists("junk")) {
-    fs::create_directory("junk");
-  }
   InitFunctionMap();
 }
 

@@ -107,13 +107,9 @@ void DownloadJob::DownloadImage(const ImageInfoEx imageInfo,
   const auto& filePath = FileNameFilter(imageInfo->ImagePath);
   const auto& dir = filePath.parent_path();
 
-  if (!fs::exists(dir)) {
-    try {
-      fs::create_directories(dir);
-    } catch (fs::filesystem_error error) {
-      mgr->ShowMsgbox(L"出错", std::format(L"创建文件夹失败！\n{}", Ansi2WideString(error.what())));
-      return;
-    }
+  std::error_code error;
+  if (!fs::exists(dir) && !fs::create_directories(dir, error)) {
+    mgr->ShowMsgbox(L"出错", std::format(L"创建文件夹失败！\n{}", error.value()));
   }
   if (fs::exists(filePath)) {
     if (!fs::file_size(filePath)){

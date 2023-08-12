@@ -19,8 +19,9 @@ fs::path GetSpecialFolderPath() {
 #else
   fs::path result = std::getenv("HOME");
   result /= "Pictures";
-  if (!fs::exists(result)) {
-    fs::create_directory(result);
+  std::error_code error;
+  if (!fs::exists(result) && !fs::create_directory(result, error)) {
+    throw std::runtime_error("Wallbase Error: Can't create wallpaper home.");
   }
 #endif
   return result;

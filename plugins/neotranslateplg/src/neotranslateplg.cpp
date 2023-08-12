@@ -124,7 +124,7 @@ QAction* PluginName::InitMenuAction()
 YJson& PluginName::InitSettings(YJson& settings)
 {
   if (!settings.isObject()) {
-    return settings = YJson::O {
+    settings = YJson::O {
       { u8"Version", 0},
       { u8"Mode", 0 },
       { u8"Size", YJson::A { 300, 500 }},

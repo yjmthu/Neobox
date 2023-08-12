@@ -172,10 +172,13 @@ void Wallpaper::UnSetDislike() {
   }
 
   auto parent_path = back.second.parent_path();
-  if (!fs::exists(parent_path)) {
-    fs::create_directories(parent_path);
+  std::error_code error;
+  if (!fs::exists(parent_path) && !fs::create_directories(parent_path, error)) {
+    return;
   }
-  fs::rename(back.first, back.second);
+  fs::copy(back.first, back.second, error);
+  fs::remove(back.first, error);
+
   locker.unlock();
   if (!WallpaperPlatform::SetWallpaper(back.second))
     return;
@@ -331,10 +334,7 @@ void Wallpaper::ReadBlacklist() {
 }
 
 void Wallpaper::AppendBlackList(const fs::path& path) {
-  constexpr char8_t junk[] = u8"junk";
-  if (!fs::exists(junk)) {
-    fs::create_directory(junk);
-  }
+  const auto junk = mgr->GetJunkDir();
 
   Locker locker(m_DataMutex);
   auto& back = m_BlackList.emplace_back(junk / path.filename(), path);

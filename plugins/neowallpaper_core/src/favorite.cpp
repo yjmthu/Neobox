@@ -156,15 +156,15 @@ void Favorite::UndoDislike(std::u8string_view sImgPath)
 
   const fs::path oldPath = sImgPath;
   const auto curDir = GetImageDir();
-  if (!fs::exists(curDir) && !fs::create_directories(curDir)) {
+  std::error_code error;
+  if (!fs::exists(curDir) && !fs::create_directories(curDir, error)) {
+    mgr->ShowMsgbox(L"出错", std::format(L"创建文件夹失败！\n文件夹名称：{}。\n错误码：{}。",
+      curDir.wstring(), error.value()));
     return;
   }
-#ifdef _WIN32
-  const auto fmtStr = Utf82AnsiString(m_Setting[u8"NameFormat"].getValueString());
-#else
-  const auto fmtStr = Utf8AsString(m_Setting[u8"NameFormat"].getValueString());
-#endif
-  const auto newName = std::vformat(fmtStr, std::make_format_args(oldPath.stem().string())) + oldPath.extension().string();
+  const auto fmtStr = Utf82WideString(m_Setting[u8"NameFormat"].getValueString());
+  const auto newName = std::vformat(fmtStr,
+    std::make_wformat_args(oldPath.stem().wstring())) + oldPath.extension().wstring();
   const auto newPath = curDir / newName;
   if (!fs::exists(newPath) && fs::exists(oldPath)) {
     fs::copy_file(oldPath, newPath);
