@@ -38,7 +38,6 @@ YJson& Native::InitSetting(YJson& setting)
       }}
     }}
   };
-  SaveSetting();
   return setting;
 }
 

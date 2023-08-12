@@ -161,7 +161,6 @@ YJson& Wallhaven::InitSetting(YJson& setting)
       item.append(initDir, u8"Directory");
       item.append(1, u8"StartPage");
     }
-    SaveSetting();
   }
   return setting;
 }

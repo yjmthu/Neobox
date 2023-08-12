@@ -191,11 +191,17 @@ void Wallpaper::UnSetDislike() {
 }
 
 void Wallpaper::ClearJunk() {
-  constexpr char8_t junk[] = u8"junk";
-  if (fs::exists(junk))
+  const auto junk = mgr->GetJunkDir();
+  
+  try {
     fs::remove_all(junk);
-  if (fs::exists("Blacklist.txt"))
-    fs::remove("Blacklist.txt");
+    if (fs::exists("Blacklist.txt"))
+      fs::remove("Blacklist.txt");
+  } catch (fs::filesystem_error error) {
+    mgr->ShowMsgbox(L"出错",
+      std::format(L"无法清除文件！\n错误码：{}。\n错误信息：{}",
+        error.code().value(), Ansi2WideString(error.what())));
+  }
   
   m_DataMutex.lock();
   m_BlackList.clear();

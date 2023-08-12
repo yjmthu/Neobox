@@ -38,7 +38,6 @@ YJson& ScriptOutput::InitSetting(YJson& setting)
       }}
     }}
   };
-  SaveSetting();
   return setting;
 }
 

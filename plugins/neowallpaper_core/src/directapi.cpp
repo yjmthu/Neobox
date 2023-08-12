@@ -58,7 +58,6 @@ YJson& DirectApi::InitSetting(YJson& setting)
       }}
     }},
   };
-  SaveSetting();
   return setting;
 }
 /*

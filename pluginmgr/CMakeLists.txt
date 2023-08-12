@@ -52,7 +52,7 @@ target_link_libraries(pluginmgr PUBLIC
 )
 
 install(TARGETS pluginmgr
-  LIBRARY DESTINATION lib
+  LIBRARY DESTINATION bin
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
   PUBLIC_HEADER DESTINATION include

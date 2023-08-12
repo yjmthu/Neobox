@@ -40,19 +40,23 @@ YJson& BingApi::InitSetting(YJson& setting) {
     auto& copyrightlink = setting[u8"copyrightlink"];
     if (!copyrightlink.isString())
       copyrightlink = YJson::String;
-    return setting;
+  } else {
+    auto const initDir = GetStantardDir(u8"必应壁纸");
+    setting = YJson::O {
+      { u8"api", u8"https://global.bing.com"},
+      { u8"curday"sv,    GetToday() },
+      { u8"directory"sv,  initDir },
+      { u8"name-format"sv, u8"{0:%Y-%m-%d} {1}.jpg" },
+      { u8"region"sv, u8"zh-CN" },
+      { u8"auto-download"sv, false },
+      { u8"copyrightlink"sv, YJson::String}
+    };
   }
-  auto const initDir = GetStantardDir(u8"必应壁纸");
-  setting = YJson::O {
-    { u8"api", u8"https://global.bing.com"},
-    { u8"curday"sv,    GetToday() },
-    { u8"directory"sv,  initDir },
-    { u8"name-format"sv, u8"{3:04d}-{4:02d}-{5:02d} {1}.jpg" },
-    { u8"region"sv, u8"zh-CN" },
-    { u8"auto-download"sv, false },
-    { u8"copyrightlink"sv, YJson::String}
-  };
-  SaveSetting();
+  auto& version = setting[u8"version"];
+  if (!version.isNumber()) {
+    version = 0;
+    setting[u8"name-format"] = u8"{0:%Y-%m-%d} {1}.jpg";
+  }
   return setting;
 }
 
@@ -216,7 +220,6 @@ std::u8string BingApi::GetImageName(YJson& imgInfo) {
   chrono::system_clock::time_point timePoint  = {};
   timePoint += chrono::seconds(std::mktime(&tm)) + 24h;
 
-#ifdef _WIN32
   std::wstring titleUnicode = Utf82WideString(title);
   for (auto& c: titleUnicode) {
     if ("/\\;:"sv.find(c) != std::wstring::npos) {
@@ -224,20 +227,6 @@ std::u8string BingApi::GetImageName(YJson& imgInfo) {
     }
   }
   std::wstring result = std::vformat(fmt, 
-    std::make_wformat_args(timePoint,
-      titleUnicode, Utf82WideString(copyright)));
-#else
-  time_t timep = chrono::system_clock::to_time_t(timePoint);
-  auto const p = gmtime(&timep);
-  auto result = std::vformat(fmt, 
-    std::make_wformat_args(
-      0,
-      Utf82WideString(title), 
-      Utf82WideString(copyright),
-      p->tm_year + 1900,
-      p->tm_mon + 1,
-      p->tm_mday
-    ));
-#endif
+    std::make_wformat_args(timePoint, titleUnicode, Utf82WideString(copyright)));
   return Wide2Utf8String(result);
 }
