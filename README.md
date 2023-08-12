@@ -51,6 +51,8 @@
 
 ![进程内存](https://cloud.tsinghua.edu.cn/f/8705930894e940309bdf/?dl=1)
 
+> KDE中，使用 `Alt`+`F3`可选择将悬浮窗显示到所有虚拟桌面。
+
 </details>
 
 <details>
