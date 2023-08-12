@@ -42,12 +42,16 @@ public:
 private:
   bool IsKeyRegistered(QString shortcut);
   bool IsKeyRegistered(const KeyName& keyName);
-  static KeyName GetKeyName(const QKeySequence& shortcut);
+  KeyName GetKeyName(const QKeySequence& shortcut);
   static uint32_t GetNativeModifiers(Qt::KeyboardModifiers modifiers);
-  static uint32_t GetNativeKeycode(Qt::Key key);
+  uint32_t GetNativeKeycode(Qt::Key key);
   int GetHotKeyId() const;
 private:
   class YJson& m_Data;
+#ifdef __linux__
+  struct _XDisplay* const m_Display;
+  const unsigned long m_GrabWindow;
+#endif
   std::map<KeyName, int> m_HotKeyIds;
   std::map<int, std::u8string> m_HotKeyNames;
 };

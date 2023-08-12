@@ -302,15 +302,13 @@ bool TabHotKey::SaveHotKeyData()
     // 保存现在的数据
     auto u8CurrKey = PluginObject::QString2Utf8(currKey);
     if (ui->rBtnProcess->isChecked()) {
-      auto iter = m_Settings.append(YJson {
-        YJson::O {
-          {u8"KeySequence", u8CurrKey},
-          {u8"Enabled", enabled},
-          {u8"Command", YJson::O {
-            {u8"Directory", PluginObject::QString2Utf8(ui->lineDirectory->text())},
-            {u8"Arguments", m_ArgList}
-          }},
-        }
+      auto iter = m_Settings.append(YJson::O {
+        {u8"KeySequence", u8CurrKey},
+        {u8"Enabled", enabled},
+        {u8"Command", YJson::O {
+          {u8"Directory", PluginObject::QString2Utf8(ui->lineDirectory->text())},
+          {u8"Arguments", m_ArgList}
+        }},
       });
       m_Commands[currKey] = std::make_unique<HotKeyInfoCommand>(
         iter->find(u8"Command")->second,
@@ -318,15 +316,13 @@ bool TabHotKey::SaveHotKeyData()
       );
       ptrEnabled = &iter->find(u8"Enabled")->second;
     } else {
-      auto iter = m_Settings.append(YJson {
-        YJson::O {
-          {u8"KeySequence", u8CurrKey},
-          {u8"Enabled", enabled},
-          {u8"Plugin", YJson::O {
-            {u8"PluginName", m_PluginNames[ui->cBoxPlugin->currentIndex()]},
-            {u8"Function", PluginObject::QString2Utf8(ui->cBoxCallBack->currentText())},
-          }},
-        }
+      auto iter = m_Settings.append(YJson::O {
+        {u8"KeySequence", u8CurrKey},
+        {u8"Enabled", enabled},
+        {u8"Plugin", YJson::O {
+          {u8"PluginName", m_PluginNames[ui->cBoxPlugin->currentIndex()]},
+          {u8"Function", PluginObject::QString2Utf8(ui->cBoxCallBack->currentText())},
+        }},
       });
       m_Plugins[currKey] = std::make_unique<HotKeyInfoPlugin>(
         iter->find(u8"Plugin")->second, enabled

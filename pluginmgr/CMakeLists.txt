@@ -1,9 +1,5 @@
 cmake_minimum_required(VERSION 3.10.1)
 
-# if (UNIX)
-#   find_package(CURL CONFIG REQUIRED)
-# endif()
-
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui)
 
 # qt_standard_project_setup()

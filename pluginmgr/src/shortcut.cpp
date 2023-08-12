@@ -88,7 +88,6 @@ bool Shortcut::nativeEventFilter(const QByteArray &eventType, void *message, qin
   keyName.nativeKey = kev->detail;
   auto& keyString = GetCallbackInfo(keyName);
 #endif
-  // std::cout << "called: " << std::string(keyString.begin(), keyString.end()) << " " << keyName.nativeMods << " " << keyName.nativeKey << std::endl;
   auto iter = FindShortcutData(keyString);
   if (!iter) return false;
 
@@ -122,30 +121,23 @@ bool Shortcut::nativeEventFilter(const QByteArray &eventType, void *message, qin
 
 }
 
+using QNativeInterface::QX11Application;
+
 Shortcut::Shortcut(YJson& data)
   : m_Data(data)
+#ifdef __linux__
+  , m_Display(qGuiApp->nativeInterface<QX11Application>()->display())
+  , m_GrabWindow(DefaultRootWindow(m_Display))
+#endif
 {
-  // for (auto& infomation: m_Data.getArray()) {
-  //   auto& enabled = infomation[u8"Enabled"];
-  //   if (!enabled.isTrue()) continue;
-  //   enabled = RegisterHotKey(infomation[u8"KeySequence"].getValueString());
-  // }
+#ifdef __linux__
+  // 巨坑至关重要！
+  XSelectInput(m_Display, m_GrabWindow, KeyPressMask);
+#endif
   qApp->installNativeEventFilter(this);
 }
 
 Shortcut::~Shortcut() {
-#ifdef __linux__
-  auto const x11Application = qGuiApp->nativeInterface<QNativeInterface::QX11Application>();
-  auto const display = x11Application->display();
-  Window root = DefaultRootWindow(display);
-#endif
-//   for (const auto& [name, id] : m_HotKeyIds) {
-// #ifdef _WIN32
-//     ::UnregisterHotKey(NULL, id);
-// #else
-//     XUngrabKey(display, name.nativeKey, name.nativeMods, root);
-// #endif
-//   }
 }
 
 const std::u8string_view Shortcut::GetCallbackInfo(int id)
@@ -211,11 +203,9 @@ bool Shortcut::RegisterHotKey(const std::u8string& keyString)
       keyName.nativeMods, keyName.nativeKey))
     return false;
 #else
-  // qDebug() << "register: " << keyString << keyName.nativeMods << keyName.nativeKey;
-  auto const x11Application = qGuiApp->nativeInterface<QNativeInterface::QX11Application>();
-  auto const display = x11Application->display();
-  Window root = DefaultRootWindow(display);
-  XGrabKey(display, keyName.nativeKey, keyName.nativeMods, root, True, GrabModeAsync, GrabModeAsync);
+  if (!m_Display || !m_GrabWindow) return false;
+  auto ret = ::XGrabKey(m_Display, keyName.nativeKey, keyName.nativeMods, m_GrabWindow, False, GrabModeAsync, GrabModeAsync);
+  if (ret != 1) return false;
 #endif
   m_HotKeyIds[keyName] = id;
   m_HotKeyNames[id] = keyString;
@@ -228,16 +218,15 @@ bool Shortcut::UnregisterHotKey(const std::u8string& keyString) {
   auto iter = m_HotKeyIds.find(keyName);
   if (iter != m_HotKeyIds.end()) {
 #ifdef __linux__
-    auto const x11Application = qGuiApp->nativeInterface<QNativeInterface::QX11Application>();
-    auto const display = x11Application->display();
-    Window root = DefaultRootWindow(display);
-    auto const ret = XUngrabKey(display, keyName.nativeKey, keyName.nativeMods, root) == 0;
+    if (!m_Display) return false;
+    auto const ret = ::XUngrabKey(m_Display, keyName.nativeKey, keyName.nativeMods, m_GrabWindow);
+    if (ret != 1) return false;
 #else
     auto const ret = ::UnregisterHotKey(NULL, iter->second);
 #endif
     m_HotKeyNames.erase(iter->second);
     m_HotKeyIds.erase(iter);
-    return ret;
+    return true;
   }
   return false;
 }
@@ -313,8 +302,9 @@ uint32_t Shortcut::GetNativeKeycode(Qt::Key key) {
   if (keysym == NoSymbol)
       keysym = static_cast<ushort>(key);
 
-  auto const x11Application = qGuiApp->nativeInterface<QNativeInterface::QX11Application>();
-  return XKeysymToKeycode(x11Application->display(), keysym);
+  // auto const x11Application = qGuiApp->nativeInterface<QNativeInterface::QX11Application>();
+  // return XKeysymToKeycode(x11Application->display(), keysym);
+  return ::XKeysymToKeycode(m_Display, keysym);
 #else
   switch (key) {
     case Qt::Key_Escape:
