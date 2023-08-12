@@ -42,8 +42,8 @@ void FreeArgList(const std::vector<char*>& args) {
 
 bool Shortcut::nativeEventFilter(const QByteArray &eventType, void *message, qintptr *)
 {
-#ifdef _WIN32
   if (PluginCenter::m_Instance) return false;
+#ifdef _WIN32
   if(eventType != "windows_generic_MSG" && eventType != "windows_dispatcher_MSG") {
     return false;
   }

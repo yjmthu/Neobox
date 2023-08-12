@@ -142,8 +142,11 @@ bool ItemBase::PluginDownload()
           mgr->ShowMsgbox(L"失败", L"无法解压文件");
         }
 #else
-        if (!fs::exists(pluginDst))
-          fs::create_directories(pluginDst);
+        std::error_code error;
+        if (!fs::exists(pluginDst) && !fs::create_directories(pluginDst, error)) {
+          mgr->ShowMsgbox(L"失败", std::format(L"创建文件夹失败，错误码：{}。", error.value()));
+          return;
+        }
         QProcess process;
         const auto ret = process.execute("tar", QStringList {
           QStringLiteral("-xzf"),

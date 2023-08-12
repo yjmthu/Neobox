@@ -73,7 +73,7 @@ void PluginName::InitFunctionMap() {
 #else
           // KWindowEffects::enableBlurBehind(
           //   qobject_cast<QWindow*>(m_Speedbox), *reinterpret_cast<bool *>(data));
-          mgr->ShowMsg("暂不可用");
+          mgr->ShowMsg("模糊效果暂不可用");
 #endif
         } else if (event == PluginEvent::BoolGet) {
           *reinterpret_cast<bool *>(data) = m_Settings.GetColorEffect();
