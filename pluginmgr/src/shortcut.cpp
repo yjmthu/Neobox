@@ -121,8 +121,6 @@ bool Shortcut::nativeEventFilter(const QByteArray &eventType, void *message, qin
 
 }
 
-using QNativeInterface::QX11Application;
-
 Shortcut::Shortcut(YJson& data)
   : m_Data(data)
 #ifdef __linux__
