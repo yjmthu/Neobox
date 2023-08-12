@@ -22,15 +22,11 @@ enum class OperatorType {
   Next, UNext, Dislike, UDislike, Favorite, UFavorite
 };
 
-
 class Wallpaper {
-  enum class Desktop { WIN, KDE, DDE, GNOME, XFCE, UNKNOWN };
 public:
   using Locker = WallBase::Locker;
   using LockerEx = WallBase::LockerEx;
 private:
-  static bool SetWallpaper(fs::path imagePath);
-  static Desktop GetDesktop();
   fs::path Url2Name(const std::u8string& url);
   void AppendBlackList(const fs::path& path);
   void WriteBlackList();

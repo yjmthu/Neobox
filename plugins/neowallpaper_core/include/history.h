@@ -19,6 +19,7 @@ private:
   using WallpaperHistoryBase::back;
   using WallpaperHistoryBase::front;
 public:
+
   explicit WallpaperHistory();
   ~WallpaperHistory();
 

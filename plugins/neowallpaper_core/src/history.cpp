@@ -1,9 +1,7 @@
 #include <history.h>
 #include <fstream>
 #include <systemapi.h>
-#ifdef _WIN32
-#include <Windows.h>
-#endif
+#include <platform.hpp>
 
 WallpaperHistory::WallpaperHistory()
   : WallpaperHistoryBase()
@@ -16,25 +14,19 @@ WallpaperHistory::~WallpaperHistory()
   WriteSettings();
 }
 
-
-#ifdef _WIN32
 void WallpaperHistory::UpdateRegString()
 {
-  fs::path curWallpaper = RegReadString(HKEY_CURRENT_USER, L"Control Panel\\Desktop", L"WallPaper");
-  if (!curWallpaper.empty() && fs::exists(curWallpaper)) {
-    auto curImage = GetCurrent();
-    if (!curImage || *curImage != curWallpaper) {
-      PushBack(std::move(curWallpaper));
-    }
+  auto res = WallpaperPlatform::GetWallpaper();
+
+  if (!res) return;
+  auto curImage = GetCurrent();
+  if (!curImage || *curImage != *res) {
+#ifdef _DEBUG
+    std::cout << "系统之前壁纸为：" << *res << std::endl;
+#endif
+    PushBack(std::move(*res));
   }
 }
-#else
-void WallpaperHistory::UpdateRegString()
-{
-  //
-}
-#endif
-
 
 void WallpaperHistory::ReadSettings()
 {

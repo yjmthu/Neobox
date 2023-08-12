@@ -8,6 +8,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <array>
 
 #ifdef _WIN32
 #include <tchar.h>
@@ -198,13 +199,13 @@ BOOL SetWindowCompositionAttribute(HWND hWnd,
 
 template <typename _Ty>
 void GetCmdOutput(const char* cmd, _Ty& result) {
-  char buffer[1024];
+  std::array<char, (1<<10)> buffer;
   FILE* ptr;
   result.emplace_back();
   std::stringstream stream;
   if ((ptr = popen(cmd, "r"))) {
-    while (fgets((char*)buffer, 1024, ptr)) {
-      stream << buffer;
+    while (fgets(buffer.data(), buffer.size(), ptr)) {
+      stream << buffer.data();
     }
     pclose(ptr);
   }

@@ -294,4 +294,3 @@ void Wallhaven::SetJson(const YJson& json)
   m_Data.m_ApiUrl.clear();
   m_Data.SaveData();
 }
-

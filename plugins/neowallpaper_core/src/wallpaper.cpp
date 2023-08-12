@@ -5,10 +5,8 @@
 #include <neotimer.h>
 #include <pluginmgr.h>
 #include <download.h>
+#include <platform.hpp>
 
-#ifdef __linux__
-#include <unistd.h>
-#endif
 #include <wallpaper.h>
 #include <ranges>
 #include <regex>
@@ -21,100 +19,6 @@ using namespace std::literals;
 
 constexpr char Wallpaper::m_szWallScript[];
 
-Wallpaper::Desktop Wallpaper::GetDesktop() {
-#ifdef _WIN32
-  return Desktop::WIN;
-#elif defined(__linux__)
-  auto const ndeEnv = std::getenv("XDG_CURRENT_DESKTOP");
-  if (!ndeEnv) {
-    return Desktop::UNKNOWN;
-  }
-  std::string nde = ndeEnv;
-  if (nde.find("KDE") != std::string::npos) {
-    return Desktop::KDE;
-  } else if (nde.find("GNOME") != std::string::npos) {
-    return Desktop::DDE;
-  } else if (nde.find("DDE") != std::string::npos) {
-    return Desktop::DDE;
-  } else if (nde.find("XFCE") != std::string::npos) {
-    return Desktop::XFCE;
-  } else {
-    return Desktop::UNKNOWN;
-  }
-#else
-#endif
-}
-
-bool Wallpaper::SetWallpaper(fs::path imagePath) {
-#ifdef __linux__
-  static auto const m_DesktopType = GetDesktop();
-#endif
-  if (!fs::exists(imagePath) || !fs::is_regular_file(imagePath)) {
-    return false;
-  }
-#if defined(_WIN32)
-  std::thread([imagePath]() mutable {
-    // use preferred separator to prevent win32 api crash.
-    imagePath.make_preferred();
-    std::wstring str = imagePath.wstring();
-    ::SystemParametersInfoW(
-      SPI_SETDESKWALLPAPER, UINT(0),
-      const_cast<WCHAR*>(str.c_str()),
-      SPIF_SENDCHANGE | SPIF_UPDATEINIFILE);
-  }).detach();
-  return true;
-#elif defined(__linux__)
-  std::string argStr;
-  switch (m_DesktopType) {
-    case Desktop::KDE:
-      argStr = std::format("var allDesktops = desktops(); print(allDesktops); for (i=0; i < allDesktops.length; i++){{ d = allDesktops[i]; d.wallpaperPlugin = \"org.kde.image\"; d.currentConfigGroup = Array(\"Wallpaper\", \"org.kde.image\", \"General\"); d.writeConfig(\"Image\", \"file://{}\")}}", imagePath.string());
-      argStr.push_back('\0');
-      if (fork() == 0) {
-        execlp(
-          "qdbus", "qdbus",
-          "org.kde.plasmashell", "/PlasmaShell",
-          "org.kde.PlasmaShell.evaluateScript",
-          argStr.data(), nullptr
-        );
-      }
-      break;
-    case Desktop::GNOME:
-      argStr = std::format("\"file:{}\"", imagePath.string());
-      argStr.push_back('\0');
-      if (fork() == 0) {
-        execlp(
-          "gsettings", "gsettings",
-          "set", "org.gnome.desktop.background", "picture-uri",
-          argStr.data(), nullptr
-        );
-      }
-      break;
-      // cmdStr = "gsettings set org.gnome.desktop.background picture-uri \"file:" + imagePath.string();
-    case Desktop::DDE:
-    /*
-      Old deepin:
-      std::string m_sCmd ("gsettings set
-      com.deepin.wrap.gnome.desktop.background picture-uri \"");
-    */
-      // xrandr|grep 'connected primary'|awk '{print $1}' ======> eDP
-      argStr = std::format("string:\"file://\"", imagePath.string());
-      argStr.push_back('\0');
-      if (fork()) {
-        execlp(
-          "dbus-send", "dbus-send",
-          "--dest=com.deepin.daemon.Appearance", "/com/deepin/daemon/Appearance", "--print-reply",
-          "com.deepin.daemon.Appearance.SetMonitorBackground", "string:\"eDP\"",
-          argStr.data(), nullptr
-        );
-      }
-      break;
-    default:
-      std::cerr << "不支持的桌面类型；\n";
-      return false;
-  }
-  return true;
-#endif
-}
 
 Wallpaper::Wallpaper(YJson& settings)
   : m_Settings(settings)
@@ -247,7 +151,7 @@ void Wallpaper::UnSetNext() {
       m_NextImgs.push(std::move(*cur));
     }
     locker.unlock();
-    SetWallpaper(*prev);
+    WallpaperPlatform::SetWallpaper(*prev);
   } else {
     mgr->ShowMsgbox(L"提示", L"当前已经是第一张壁纸！");
   }
@@ -273,7 +177,7 @@ void Wallpaper::UnSetDislike() {
   }
   fs::rename(back.first, back.second);
   locker.unlock();
-  if (!SetWallpaper(back.second))
+  if (!WallpaperPlatform::SetWallpaper(back.second))
     return;
 
   locker.lock();
@@ -344,7 +248,7 @@ void Wallpaper::SetDropFile(std::queue<std::u8string_view> urls) {
       } else {                     // don't move wallpaper to the same directory.
         fs::copy(oldName, imageName);
       }
-      if (SetWallpaper(imageName)) {
+      if (WallpaperPlatform::SetWallpaper(imageName)) {
         m_DataMutex.lock();
         m_PrevImgs.PushBack(std::move(imageName));
         m_DataMutex.unlock();
@@ -358,7 +262,7 @@ void Wallpaper::PushBack(ImageInfoEx ptr,
 {
   
   DownloadJob::DownloadImage(ptr, [this, ptr, callback](){
-    if (!SetWallpaper(ptr->ImagePath))
+    if (!WallpaperPlatform::SetWallpaper(ptr->ImagePath))
       return;
     
     LockerEx locker(m_DataMutex);
@@ -376,7 +280,7 @@ bool Wallpaper::MoveRight() {
   fs::path next { std::move(m_NextImgs.top()) };
   m_NextImgs.pop();
   locker.unlock();
-  if (!SetWallpaper(next)) {
+  if (!WallpaperPlatform::SetWallpaper(next)) {
     return false;
   }
   locker.lock();
