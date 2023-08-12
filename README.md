@@ -149,6 +149,8 @@
 
 ![热键管理](https://cloud.tsinghua.edu.cn/f/11eae0e195d6402685d9/?dl=1)
 
+> Linux+X11下如果快捷键无效，可能是 `NumLock`键被按下了，需要取消该键。
+
 </details>
 
 <details>
