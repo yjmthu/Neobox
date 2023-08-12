@@ -40,12 +40,12 @@ std::nullptr_t WallBase::Initialize(YJson& setting) {
   SaveSetting = std::bind(&YJson::toFile, &setting, m_ConfigPath, true, YJson::UTF8);
 
   m_Instances = {
-    new Wallhaven(setting[u8"壁纸天堂"]),
-    new BingApi(setting[u8"必应壁纸"]),
-    new DirectApi(setting[u8"直链壁纸"]),
-    new Native(setting[u8"本地壁纸"]),
-    new ScriptOutput(setting[u8"脚本输出"]),
-    new Favorite(setting[u8"收藏壁纸"]),
+    new Wallhaven(setting[Wallhaven::m_Name]),
+    new BingApi(setting[BingApi::m_Name]),
+    new DirectApi(setting[DirectApi::m_Name]),
+    new Native(setting[Native::m_Name]),
+    new ScriptOutput(setting[ScriptOutput::m_Name]),
+    new Favorite(setting[Favorite::m_Name]),
   };
 
   return nullptr;

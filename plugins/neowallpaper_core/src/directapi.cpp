@@ -39,9 +39,9 @@ YJson& DirectApi::InitSetting(YJson& setting)
           u8"/random/2500x1600"
         }},
         {u8"Directory"sv, GetStantardDir(u8"Unsplash壁纸")},
-        {u8"ImageNameFormat"sv, u8"{0:%Y-%m-%d} {0:%H%M%S}.jpg"sv}
+        {u8"ImageNameFormat"sv, u8"Unsplash {0:%Y-%m-%d} {0:%H%M%S}.jpg"sv}
       }},
-      {u8"Xiaowai"sv, YJson::O{
+      {u8"小歪壁纸"sv, YJson::O {
         {u8"Url"sv, u8"https://api.aixiaowai.cn"sv},
         {u8"CurPath"sv, 0},
         {u8"Paths"sv, YJson::A {
@@ -50,30 +50,12 @@ YJson& DirectApi::InitSetting(YJson& setting)
           u8"/gqapi/gqapi.php"sv
         }},
         {u8"Directory"sv, GetStantardDir(u8"小歪壁纸")},
-#ifdef _WIN32
-        {u8"ImageNameFormat"sv, u8"{0:%Y-%m-%d} {0:%H%M%S}.jpg"sv}
-#else
-        {u8"ImageNameFormat"sv, u8"{1:04d}-{2:02d}-{3:02d} {4:02d}{5:02d}{6:02d}.jpg"sv}
-#endif
+        {u8"ImageNameFormat"sv, u8"小歪 {0:%Y-%m-%d} {0:%H%M%S}.jpg"sv}
       }}
     }},
   };
   return setting;
 }
-/*
-  auto& data =
-        m_pSetting->find(u8"ApiData"sv)
-            ->second
-            .find(m_pSetting->find(u8"ApiUrl"sv)->second.getValueString())
-            ->second;
-    m_u8strApiUrl = data[u8"Url"sv].getValueString();
-    m_ImageDir = data[u8"Directory"].getValueString();
-    m_u8strApiPath = data[u8"Paths"sv][data[u8"CurPath"sv].getValueInt()]
-                    .getValueString();
-    m_u8strImgNameFmt = data[u8"ImageNameFormat"sv].getValueString();
-    return true;
-  }
-*/
 
 void DirectApi::GetNext(Callback callback)
 {
@@ -93,17 +75,6 @@ YJson& DirectApi::GetCurInfo()
 {
   return m_Setting[u8"ApiData"][m_Setting[u8"ApiUrl"].getValueString()];
 }
-
-// fs::path DirectApi::GetImageDir() const
-// {
-//   return GetCurInfo()[u8"Directory"].getValueString();
-// }
-
-// void DirectApi::SetCurDir(const std::u8string& sImgPath)
-// {
-//   GetCurInfo()[u8"Directory"] = sImgPath;
-//   SaveSetting();
-// }
 
 void DirectApi::SetJson(const YJson& json)
 {

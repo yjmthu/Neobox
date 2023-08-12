@@ -107,7 +107,7 @@ void ItemNative::DoFinished(FinishedType type, bool ok)
         auto item = lst->item(i);
         auto w = lst->itemWidget(item);
         if (w == this) {
-          delete this;
+          this->deleteLater();
           delete item;
           break;   // 在遍历循环中改变容器，break 非常重要！
         }

@@ -12,6 +12,7 @@ public:
 public:
   void GetNext(Callback callback) override;
   void SetJson(const YJson& json) override;
+  inline static const auto m_Name = u8"本地壁纸"s;
 
 private:
   YJson& InitSetting(YJson& setting);

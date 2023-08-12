@@ -16,7 +16,7 @@ YJson& Favorite::InitSetting(YJson& setting)
 {
   if (!setting.isObject()) {
     setting = YJson::O {
-      { u8"Directory", GetStantardDir(u8"收藏壁纸") },
+      { u8"Directory", GetStantardDir(m_Name) },
       { u8"MaxCount", 100 },
       { u8"NameFormat", u8"{0}" },
       { u8"Random", true },

@@ -152,7 +152,7 @@ YJson& Wallhaven::InitSetting(YJson& setting)
         {u8"极简壁纸"s, false, u8"q"s, u8"minimalism"s},
         // {u8"鬼刀壁纸"s, false, u8"q"s, u8"ghostblade"s}
     };
-    const auto initDir = GetStantardDir(u8"壁纸天堂");
+    const auto initDir = GetStantardDir(m_Name);
 
     for (const auto& [i, j, k, l] : paramLIst) {
       auto& item = m_ApiObject.append(YJson::Object, i)->second;

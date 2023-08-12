@@ -15,6 +15,7 @@ public:
   // void InitData();
   void GetNext(Callback callback) override;
   fs::path GetImageDir() const;
+  inline static const auto m_Name = u8"收藏壁纸"s;
 
   void Dislike(std::u8string_view sImgPath) override;
   void UndoDislike(std::u8string_view sImgPath) override;

@@ -14,6 +14,7 @@ public:
 public:
   void GetNext(Callback callback) override;
   void SetJson(const YJson& json) override;
+  inline static const auto m_Name = u8"必应壁纸"s;
 
 private:
   void AutoDownload();

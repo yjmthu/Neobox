@@ -34,7 +34,7 @@ YJson& ScriptOutput::InitSetting(YJson& setting)
     {u8"cmds", YJson::O {
       {u8"默认脚本", YJson::O{
         {u8"command", u8"python.exe \"scripts/getpic.py\""},
-        {u8"directory", GetStantardDir(u8"脚本获取")}
+        {u8"directory", GetStantardDir(m_Name)}
       }}
     }}
   };

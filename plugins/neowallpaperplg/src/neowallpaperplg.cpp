@@ -316,8 +316,9 @@ void PluginName::LoadWallpaperExMenu(MenuBase* parent)
     &PluginName::LoadScriptMenu,
     &PluginName::LoadFavoriteMenu,
   };
-  delete m_MoreSettingsAction->menu();
-  auto const menu = (this->*m_MenuLoaders[static_cast<size_t>(m_Wallpaper->m_Settings.GetImageType())])(parent);
+  auto menu = m_MoreSettingsAction->menu();
+  if (menu) menu->deleteLater();
+  menu = (this->*m_MenuLoaders[static_cast<size_t>(m_Wallpaper->m_Settings.GetImageType())])(parent);
   m_MoreSettingsAction->setMenu(menu);
 }
 

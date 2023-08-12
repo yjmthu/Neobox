@@ -6,6 +6,7 @@ public:
   explicit ScriptOutput(YJson& setting);
   ~ScriptOutput() override;
   void GetNext(Callback callback) override;
+  inline static const auto m_Name = u8"脚本输出"s;
 
 private:
   YJson& InitSetting(YJson& setting);

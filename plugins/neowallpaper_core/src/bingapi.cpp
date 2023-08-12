@@ -41,7 +41,7 @@ YJson& BingApi::InitSetting(YJson& setting) {
     if (!copyrightlink.isString())
       copyrightlink = YJson::String;
   } else {
-    auto const initDir = GetStantardDir(u8"必应壁纸");
+    auto const initDir = GetStantardDir(m_Name);
     setting = YJson::O {
       { u8"api", u8"https://global.bing.com"},
       { u8"curday"sv,    GetToday() },
@@ -68,7 +68,9 @@ void BingApi::InitData()
   try {
     m_Data = new YJson(m_DataPath, YJson::UTF8);
   } catch (std::runtime_error error) {
+#ifdef _DEBUG
     std::cerr << error.what() << std::endl;
+#endif
     delete m_Data;
     m_Data = nullptr;
   }

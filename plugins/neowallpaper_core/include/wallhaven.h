@@ -52,6 +52,7 @@ public:
   explicit Wallhaven(YJson& setting);
   virtual ~Wallhaven();
   void SetJson(const YJson& json) override;
+  inline static const auto m_Name = u8"壁纸天堂"s;
 
 private:
   YJson& InitSetting(YJson& setting);
