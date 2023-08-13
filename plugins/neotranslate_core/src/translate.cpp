@@ -243,22 +243,26 @@ void Translate::GetResultBaidu(const Utf8Array& text) {
   HttpLib::Callback callback = {
     .m_FinishCallback = [this](auto message, auto res) {
       if (message.empty() && (res->status / 100 == 2)) {
-        YJson jsData(res->body.begin(), res->body.end());
-        if (auto iter = jsData.find(u8"error_msg"); iter != jsData.endO()) {
-          // Access token expired
-          m_Callback(res->body.data(), res->body.size());
-          return;
-          // return iter->second.getValueString();
-        }
-        const auto& obTransResult =
-            jsData[u8"trans_result"].getArray();
+        try {
+          YJson jsData(res->body.begin(), res->body.end());
+          if (auto iter = jsData.find(u8"error_msg"); iter != jsData.endO()) {
+            // Access token expired
+            m_Callback(res->body.data(), res->body.size());
+            return;
+            // return iter->second.getValueString();
+          }
+          const auto& obTransResult =
+              jsData[u8"trans_result"].getArray();
 
-        std::u8string content;
-        for (auto& item : obTransResult) {
-          content.append(item[u8"dst"].getValueString());
-          content.push_back('\n');
+          std::u8string content;
+          for (auto& item : obTransResult) {
+            content.append(item[u8"dst"].getValueString());
+            content.push_back('\n');
+          }
+          m_Callback(content.data(), content.size());
+        } catch (std::runtime_error error[[maybe_unused]]) {
+          m_Callback(res->body.data(), res->body.size());
         }
-        m_Callback(content.data(), content.size());
         return;
       }
       m_Callback(badNet.data(), badNet.size());
@@ -300,7 +304,11 @@ void Translate::GetResultYoudao(const Utf8Array& text) {
   HttpLib::Callback callback = {
     .m_FinishCallback = [this](auto message, auto res) {
       if (message.empty() && (res->status / 100 == 2)) {
-        FormatYoudaoResult(YJson(res->body.begin(), res->body.end()));
+        try {
+          FormatYoudaoResult(YJson(res->body.begin(), res->body.end()));
+        } catch (std::runtime_error error[[maybe_unused]]) {
+          m_Callback(res->body.data(), res->body.size());
+        }
       }
     }
   };
@@ -425,7 +433,11 @@ void Translate::GetResultBingSimple(const Utf8Array& text) {
   HttpLib::Callback callback = {
     .m_FinishCallback = [this](auto message, auto res) {
       if (message.empty() && (res->status / 100 == 2)) {
-        m_Callback(res->body.data(), res->body.size());
+        try {
+          m_Callback(res->body.data(), res->body.size());
+        } catch (std::runtime_error error[[maybe_unused]]) {
+          m_Callback(res->body.data(), res->body.size());
+        }
       } else {
         std::wstring msg = std::format(L"error: {}\ncode:{}", message, res->status);
         auto u8msg = Wide2Utf8String(msg);
@@ -585,13 +597,12 @@ void Translate::GetResultDictionary(const Utf8Array& text)
   HttpLib::Callback callback = {
     .m_FinishCallback = [this](auto message, auto res) {
       if (message.empty() && (res->status / 100 == 2)) {
-#if 0
-        m_Callback(res->body.data(), res->body.size());
-        return;
-#else
-        YJson root(res->body.begin(), res->body.end());
-        FormatDictionaryResult(root);
-#endif
+        try {
+          YJson root(res->body.begin(), res->body.end());
+          FormatDictionaryResult(root);
+        } catch (std::runtime_error error[[maybe_unused]]) {
+          m_Callback(res->body.data(), res->body.size());
+        } 
       } else {
         std::wstring msg = std::format(L"error: {}\ncode:{}", message, res->status);
         auto u8msg = Wide2Utf8String(msg);
