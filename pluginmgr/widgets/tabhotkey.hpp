@@ -54,7 +54,7 @@ private:
   bool IsDataInvalid() const;
 private slots:
   void UpdateHotKeyEditor(QString text);
-  void UpdatePluginMethord(int index);
+  void UpdatePluginMethord(size_t index);
   void ChangeEnabled(bool on);
   void ChooseDirectory();
   void EditArgList();

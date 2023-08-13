@@ -106,4 +106,6 @@ void NeoMsgDlg::showEvent(QShowEvent *event)
   move(x >> 1, y >> 1);
 
   m_pOpacity->setOpacity(1);
+
+  QWidget::showEvent(event);
 }

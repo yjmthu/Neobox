@@ -63,6 +63,7 @@ void WidgetBase::showEvent(QShowEvent *event)
 void WidgetBase::hideEvent(QHideEvent *event)
 {
   if (m_ResizeAble) setMouseTracking(false);
+  event->accept();
 }
 
 void WidgetBase::mousePressEvent(QMouseEvent* event)
@@ -377,7 +378,8 @@ void WidgetBase::UpdateBorderRect()
   pressedRect[7] = QRect(width - padding, height - padding, padding, padding);
 }
 
-bool WidgetBase::nativeEvent(const QByteArray &eventType, void *message, qintptr *result)
+bool WidgetBase::nativeEvent(const QByteArray &eventType[[maybe_unused]],
+  void *message[[maybe_unused]], qintptr *result[[maybe_unused]])
 {
   if (!m_ResizeAble) return false;
 #ifdef _WIN32

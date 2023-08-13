@@ -171,6 +171,7 @@ void PluginUpdate::DownloadUpgrade(Callback cb)
             cb(*this);
           }
         },
+        .m_ProcessCallback = std::nullopt,
       };
       m_DataRequest->GetAsync(std::move(callback));
     }).detach();
@@ -186,12 +187,14 @@ void PluginUpdate::CheckUpdate(Callback cb)
 
   m_DataRequest->SetHeader(u8"User-Agent", u8"Libcurl in Neobox App/1.0");
   HttpLib::Callback callback = {
+    .m_WriteCallback = std::nullopt,
     .m_FinishCallback = [this, cb](auto msg, auto res) {
       if (msg.empty() && res->status == 200) {
         m_LatestData = std::make_unique<YJson>(res->body.begin(), res->body.end());
         cb(*this);
       }
     },
+    .m_ProcessCallback = std::nullopt,
   };
   m_DataRequest->GetAsync(std::move(callback));
 }

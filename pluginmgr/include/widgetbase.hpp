@@ -28,7 +28,7 @@ public:
   explicit WidgetBase(QWidget* parent, bool resizeAble=false, bool stayTop=false);
   virtual ~WidgetBase();
 protected:
-  virtual void SaveTopState(bool isTop) {}
+  virtual void SaveTopState(bool isTop[[maybe_unused]]) {}
   void AddTopButton();
   void AddCloseButton();
   void AddMinButton();

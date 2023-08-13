@@ -11,8 +11,8 @@
 struct UpgradeConfig: NeoConfig
 {
   ConfigConsruct(UpgradeConfig)
-  CfgString(LastCheck);
-  CfgInt(UpgradeCycle);
+  CfgString(LastCheck)
+  CfgInt(UpgradeCycle)
   CfgBool(AutoCheck)
   CfgBool(AutoUpgrade)
 };

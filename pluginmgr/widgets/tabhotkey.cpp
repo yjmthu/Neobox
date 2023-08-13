@@ -152,10 +152,10 @@ void TabHotKey::UpdateHotKeyEditor(QString text)
   }
 }
 
-void TabHotKey::UpdatePluginMethord(int index)
+void TabHotKey::UpdatePluginMethord(size_t index)
 {
   ui->cBoxCallBack->clear();
-  if (index < 0 || index >= m_PluginNames.size()) {
+  if (index >= m_PluginNames.size()) {
     return;
   }
   auto& pluginName = m_PluginNames[index];

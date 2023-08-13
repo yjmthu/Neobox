@@ -98,9 +98,9 @@ public:
   explicit HttpLib(HttpUrl url, bool async = false, std::chrono::seconds timeout=30s)
     : m_Url(std::move(url))
     , m_hSession(nullptr)
+    , m_TimeOut(timeout)
     , m_ProxySet(false)
     , m_AsyncSet(async)
-    , m_TimeOut(timeout)
   {
     IntoPool();
     HttpPrepare();

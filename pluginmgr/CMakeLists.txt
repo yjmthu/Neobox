@@ -30,10 +30,17 @@ else()
   list(APPEND system_shared_files curl)
 endif()
 
-add_library(pluginmgr SHARED
+set(target_name pluginmgr)
+add_library(${target_name} SHARED
   ${source_files}
   ${wrap_files}
 )
+
+if(MSVC)
+  target_compile_options(${target_name} PRIVATE /W4 /WX)
+else()
+  target_compile_options(${target_name} PRIVATE -Wall -Wextra -pedantic) # -Werror
+endif()
 
 set(resource_files
   fonts/*.ttf
@@ -43,15 +50,15 @@ set(resource_files
   scripts/*.desktop
   styles/*.qss
 )
-load_resources(pluginmgr resource_files)
+load_resources(${target_name} resource_files)
 
-target_link_libraries(pluginmgr PUBLIC
+target_link_libraries(${target_name} PUBLIC
   ${pliugin_libfiles}
   ${qt_shared_files}
   ${system_shared_files}
 )
 
-install(TARGETS pluginmgr
+install(TARGETS ${target_name}
   LIBRARY DESTINATION bin
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
@@ -64,7 +71,7 @@ if (MSVC)
   add_executable(uninstaller WIN32 src/uninstall.cc)
   set(app_helper update installer uninstaller)
   foreach(app ${app_helper})
-    target_link_libraries(${app} PRIVATE pluginmgr)
+    target_link_libraries(${app} PRIVATE ${target_name})
   endforeach()
 
   if (MSVC)

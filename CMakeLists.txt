@@ -13,10 +13,11 @@ set(CMAKE_INSTALL_PREFIX "install")
 string(TIMESTAMP COMPILE_TIME %Y-%m-%d)
 set(NEOBOX_BUILD_TIME ${COMPILE_TIME})
 
-project(neobox VERSION 2.4.3 LANGUAGES CXX C)
+set(target_name neobox)
+project(${target_name} VERSION 2.4.3 LANGUAGES CXX C)
 
 if (NOT CMAKE_BUILD_TYPE)
-  message("编译类型未定义，默认设置为Debug")
+  message("编译类型未定义target_name默认设置为Debug")
   set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
@@ -77,14 +78,20 @@ add_subdirectory(plugins)
 add_subdirectory(example)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
-add_executable(neobox WIN32 main.cpp logo.rc)
+add_executable(${target_name} WIN32 main.cpp logo.rc)
 
-target_link_libraries(neobox PUBLIC
+target_link_libraries(${target_name} PUBLIC
   pluginmgr
   Qt6::Widgets
 )
 
-install(TARGETS neobox
+if(MSVC)
+  target_compile_options(${target_name} PRIVATE /W4 /WX)
+else()
+  target_compile_options(${target_name} PRIVATE -Wall -Wextra -pedantic) # -Werror 
+endif()
+
+install(TARGETS ${target_name}
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin

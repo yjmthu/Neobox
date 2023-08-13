@@ -17,14 +17,17 @@
 #ifdef _WIN32
 #include <Windows.h>
 #elif defined (__linux__)
-#else
+#include <QStandardPaths>
+#include <fstream>
+#include <filesystem>
+namespace fs = std::filesystem;
 #endif
 
 NeoMenu::NeoMenu()
   : MenuBase(nullptr)
-  , m_PluginMenu(new MenuBase(this))
-  , m_ControlPanel(new QAction("控制面板"))
   , m_SettingMenu(new MenuBase(this))
+  , m_ControlPanel(new QAction("控制面板"))
+  , m_PluginMenu(new MenuBase(this))
 {
   InitStyleSheet();
   InitSettingMenu();
@@ -86,6 +89,19 @@ void NeoMenu::InitFunctionMap() {
   connect(m_SettingMenu->addAction("退出软件"), &QAction::triggered, this, QApplication::quit);
 }
 
+#ifdef __linux__
+static QString GetStartCommand() {
+  return QStringLiteral("(sleep 10 && \"%1\") &").arg(
+    QDir::toNativeSeparators(qApp->applicationFilePath()));
+}
+
+static auto GetProfilePath() {
+  fs::path home = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)).toStdWString();
+  return (home / ".profile").string();
+}
+
+#endif
+
 bool NeoMenu::IsAutoStart()
 {
 #ifdef _WIN32
@@ -93,6 +109,20 @@ bool NeoMenu::IsAutoStart()
   return std::format(L"\"{}\"", GetExeFullPath()) ==
           RegReadString(HKEY_CURRENT_USER, pPath, L"Neobox");
 #else
+  auto const profile = GetProfilePath();
+  if (!fs::exists(profile)) {
+    return false;
+  }
+  auto start = GetStartCommand().toStdString();
+  auto cmd = std::format("grep '{}' '{}'", start, profile);
+  std::vector<std::string> result;
+  GetCmdOutput(cmd.c_str(), result);
+  std::cout << result.front() << std::endl;
+  for (auto& data: result) {
+    if (data == start) {
+      return true;
+    }
+  }
   return false;
 #endif
 }
@@ -121,7 +151,26 @@ void NeoMenu::SetAutoSatrt(QAction* action, bool on)
     }
   }
 #else
-  mgr->ShowMsg("功能不可用！");
-  return;
+  auto const start = GetStartCommand();
+  bool succeed = false;
+  if (on) {
+    std::ofstream file(GetProfilePath(), std::ios::app);
+    if (file.is_open()) {
+      file << start.toStdString() << std::endl;
+      file.close();
+      succeed = true;
+    }
+  } else {
+    auto profile = QString::fromStdString(GetProfilePath());
+    succeed = !QProcess::execute("sed", {
+      "-i", QStringLiteral("\\#^%1$#d").arg(start), profile
+    });
+  }
+  if (succeed) {
+    mgr->ShowMsg("设置成功！");
+  } else {
+    action->setChecked(!on);
+    mgr->ShowMsg("设置失败！");
+  }
 #endif
 }
