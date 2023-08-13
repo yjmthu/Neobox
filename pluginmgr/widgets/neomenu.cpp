@@ -97,7 +97,18 @@ static QString GetStartCommand() {
 
 static auto GetProfilePath() {
   fs::path home = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)).toStdWString();
-  return (home / ".profile").string();
+  auto cshell = std::getenv("SHELL");
+  fs::path profile = ".profile";
+  if (cshell) {
+    fs::path shell = cshell;
+    shell = shell.filename();
+    if (shell == "zsh") {
+      profile = ".zprofile";
+    } else if (shell == "bash") {
+      profile = ".bash_profile";
+    }
+  }
+  return (home / profile).string();
 }
 
 #endif
