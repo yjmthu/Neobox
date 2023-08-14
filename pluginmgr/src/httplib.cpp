@@ -720,6 +720,8 @@ bool HttpLib::SendRequest()
       WINHTTP_NO_REQUEST_DATA, 0, 0,
       static_cast<DWORD_PTR>(m_AsyncId)
     );
+#else
+    return true;
 #endif
   }
 }
