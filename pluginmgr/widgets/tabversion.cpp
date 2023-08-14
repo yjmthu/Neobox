@@ -34,9 +34,9 @@ TabVersion::TabVersion(PluginCenter* parent)
   : QWidget(parent)
   , m_UpdateMgr(*mgr->m_UpdateMgr)
   , m_MainLayout(new QHBoxLayout(this))
-  , m_TextRaw(FormatString())
   , m_AutoUpdate(new QCheckBox("自动检查更新", this))
   , m_AutoInstall(new QCheckBox("自动安装更新", this))
+  , m_TextRaw(FormatString())
 {
   InitLayout();
   Connect();

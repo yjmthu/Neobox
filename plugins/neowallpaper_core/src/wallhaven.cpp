@@ -17,7 +17,7 @@ using namespace std::literals;
 YJson WallhavenData::InitData() {
   try {
     return YJson(m_DataPath, YJson::UTF8);
-  } catch (std::runtime_error error) {
+  } catch (std::runtime_error error[[maybe_unused]]) {
     return YJson::O {
       {u8"Api"s,        YJson::String},
       {u8"Unused"s,     YJson::Array},

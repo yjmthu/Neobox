@@ -90,8 +90,8 @@ PluginMgr::PluginMgr()
   , m_MsgDlg(new NeoMsgDlg(m_Menu))
   , m_Settings((mgr = this, InitSettings()))
   , m_SharedTimer(new NeoTimer)
-  , m_UpdateMgr(new PluginUpdate((*m_Settings)[u8"Upgrade"]))
   , m_Shortcut { new Shortcut(m_Settings->find(u8"EventMap")->second) }
+  , m_UpdateMgr(new PluginUpdate((*m_Settings)[u8"Upgrade"]))
 {
   m_Tray->setContextMenu(m_Menu);
   m_Tray->show();
@@ -135,7 +135,7 @@ void PluginMgr::SaveSettings()
 
 void PluginMgr::LoadManageAction()
 {
-  QObject::connect(m_Menu->m_ControlPanel, &QAction::triggered, m_Menu, [this](){
+  QObject::connect(m_Menu->m_ControlPanel, &QAction::triggered, m_Menu, [](){
     auto instance = PluginCenter::m_Instance;
     if (instance) {
       instance->activateWindow();
@@ -164,9 +164,7 @@ void PluginMgr::LoadPlugins()
 {
   for (auto& [i, j]: m_Settings->find(u8"Plugins")->second.getObject()) {
     const auto name = i;
-    const char* data = (const char*) name.c_str();
     if (!j[u8"Enabled"].isTrue()) continue;
-    auto& pluginSttings = m_Settings->find(u8"PluginsConfig")->second[name];
     if (!LoadPlugin(name, m_Plugins[name])) {
       m_Plugins.erase(name);
       j[u8"Enabled"] = false;

@@ -67,12 +67,10 @@ void BingApi::InitData()
   }
   try {
     m_Data = new YJson(m_DataPath, YJson::UTF8);
-  } catch (std::runtime_error error) {
+  } catch (std::runtime_error error[[maybe_unused]]) {
 #ifdef _DEBUG
     std::cerr << error.what() << std::endl;
 #endif
-    delete m_Data;
-    m_Data = nullptr;
   }
 }
 
