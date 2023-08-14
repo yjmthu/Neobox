@@ -4,7 +4,10 @@
 #include <neotimer.h>
 #include <systemapi.h>
 #include <neomenu.hpp>
+
+#ifdef _WIN32
 #include <zip.h>
+#endif
 
 #include <chrono>
 #include <utility>
@@ -121,6 +124,7 @@ void PluginUpdate::CopyExecutable() const
   const auto pluginTempPath = GetTempFilePath();
   const auto pluginTemp= pluginTempPath.string();
   const auto pluginDst = pluginTempPath.parent_path().string();
+#ifdef _WIN32
   const auto ret = zip_extract(pluginTemp.c_str(), pluginDst.c_str(), nullptr, nullptr);
   if (ret < 0) return;
   fs::remove(pluginTempPath);
@@ -137,6 +141,8 @@ void PluginUpdate::CopyExecutable() const
   emit QuitApp(QString::fromStdWString(exePath.wstring()), {
     QDir::toNativeSeparators(qApp->applicationDirPath())
   });
+#else
+#endif
 }
 
 void PluginUpdate::DownloadUpgrade(Callback cb)

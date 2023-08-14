@@ -7,7 +7,10 @@
 #include <httplib.h>
 #include <config.h>
 #include <update.hpp>
+
+#ifdef _WIN32
 #include <zip.h>
+#endif
 
 #include <format>
 #include <vector>
@@ -176,7 +179,8 @@ void TabVersion::GetUpdate()
 //   setGeometry(rect);
 // }
 
-bool TabVersion::DownloadNew(std::u8string_view url) {
+bool TabVersion::DownloadNew(std::u8string_view url[[maybe_unused]]) {
+#ifdef _WIN32
   if (!HttpLib::IsOnline()) {
     mgr->ShowMsgbox(L"失败", L"请检查网络连接！");
     return false;
@@ -232,7 +236,10 @@ bool TabVersion::DownloadNew(std::u8string_view url) {
     fs::remove(pluginTemp);
   }
   return result;
-
+#else
+  mgr->ShowMsg("暂不支持直接下载更新，请使用命令行更新！");
+  return false;
+#endif
 }
 
 void TabVersion::DoUpgrade(const YJson& data)

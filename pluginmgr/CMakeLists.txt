@@ -31,7 +31,14 @@ else()
 endif()
 
 add_subdirectory(../thirdlib/YJson yjson)
-add_subdirectory(../thirdlib/zip zip)
+if(WIN32)
+  add_subdirectory(../thirdlib/zip zip)
+endif()
+
+set(third_include ../thirdlib/YJson/include)
+if(WIN32)
+  list(APPEND third_include ../thirdlib/zip/src)
+endif()
 
 set(target_name pluginmgr)
 add_library(${target_name} SHARED
@@ -40,9 +47,8 @@ add_library(${target_name} SHARED
 )
 
 target_include_directories(${target_name} PUBLIC
-  ../thirdlib/YJson/include
-  ../thirdlib/zip/src
   include
+  ${third_include}
 )
 
 if(MSVC)
