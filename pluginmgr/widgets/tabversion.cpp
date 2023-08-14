@@ -6,6 +6,7 @@
 #include <neobox/httplib.h>
 #include <config.h>
 #include <neobox/update.hpp>
+#include <neobox/downloadingdlg.hpp>
 
 #ifdef _WIN32
 #include <zip.h>
@@ -135,8 +136,8 @@ void TabVersion::GetUpdate()
     QMessageBox::information(this, "提示", "当前没有网络，请稍后再试！");
     return;
   }
-  const auto url = u8"" NEOBOX_LATEST_URL ""sv;
-  auto res = PluginCenter::m_Instance->DownloadFile(url);
+  const auto apiUrl = u8"" NEOBOX_LATEST_URL ""sv;
+  auto res = PluginCenter::m_Instance->DownloadFile(apiUrl);
   if (!res) {
     QMessageBox::information(this, "提示", "下载失败，请稍后再试！");
     return;
@@ -157,8 +158,8 @@ void TabVersion::GetUpdate()
     buffer.append(u8"<h3>下载链接：</h3><ol>");
     for (auto& item: array) {
       auto& name = item[u8"name"].getValueString();
-      auto& url = item[u8"browser_download_url"].getValueString();
-      buffer += u8"<li><a href='" + url + u8"'>" + name + u8"</a></li>";
+      auto& downloadUrl = item[u8"browser_download_url"].getValueString();
+      buffer += u8"<li><a href='" + downloadUrl + u8"'>" + name + u8"</a></li>";
     }
     buffer.append(u8"</ol>");
   }
@@ -241,9 +242,9 @@ bool TabVersion::DownloadNew(std::u8string_view url[[maybe_unused]]) {
 #endif
 }
 
-void TabVersion::DoUpgrade(const YJson& data)
+void TabVersion::DoUpgrade(const YJson& apiData)
 {
-  auto const vNew = PluginUpdate::ParseVersion(Utf82WideString(data[u8"tag_name"].getValueString()));
+  auto const vNew = PluginUpdate::ParseVersion(Utf82WideString(apiData[u8"tag_name"].getValueString()));
   auto const vOld = PluginUpdate::ParseVersion(L"" NEOBOX_VERSION);
   // 只判断等于，方便debug
   if (vNew == vOld) {
@@ -253,7 +254,7 @@ void TabVersion::DoUpgrade(const YJson& data)
   if (QMessageBox::question(this, "提示", "有新版本可用！请确保能流畅访问GitHub，是否立即下载安装？") != QMessageBox::Yes) {
     return;
   }
-  for (auto& asset: data[u8"assets"].getArray()) {
+  for (auto& asset: apiData[u8"assets"].getArray()) {
     auto& url = asset[u8"browser_download_url"].getValueString();
 #ifdef _WIN32
     if (!url.ends_with(u8".zip")) {

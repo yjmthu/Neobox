@@ -116,9 +116,9 @@ void ItemNative::DoFinished(FinishedType type, bool ok)
   }
 }
 
-void ItemNative::GetContent(YJson& data) const
+void ItemNative::GetContent(YJson& pluginData) const
 {
-  data.append(YJson::O {
+  pluginData.append(YJson::O {
     {u8"Enabled", m_ChkEnable->IsChecked()},
     {u8"FriendlyName", m_PluginFriendlyName},
     {u8"Description", m_PluginDescription},

@@ -322,9 +322,9 @@ bool PluginMgr::LoadPlugEnv(const fs::path& dir)
   }
 #ifdef _WIN32
   constexpr char seperator = ';';
-  auto const dwSize = GetEnvironmentVariableA("PATH", nullptr, 0); // GetEnvironmentVariableA(varName, strEnvPaths.data(), strEnvPaths.size());
+  auto dwSize = GetEnvironmentVariableA("PATH", nullptr, 0); // GetEnvironmentVariableA(varName, strEnvPaths.data(), strEnvPaths.size());
   std::string strEnvPaths(dwSize, 0);
-  auto const pathEnv = GetEnvironmentVariableA("PATH", strEnvPaths.data(), dwSize);
+  dwSize = GetEnvironmentVariableA("PATH", strEnvPaths.data(), dwSize);
   if (strEnvPaths.ends_with('\0'))
     strEnvPaths.pop_back();
 #else

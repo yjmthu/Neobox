@@ -11,10 +11,10 @@ private:
 
   struct KeyName {
     union {
-      struct {
+      struct KeyData {
         uint32_t nativeKey;
         uint32_t nativeMods;
-      };
+      } data;
       uint64_t big;
     };
     bool operator<(const KeyName& other) const {

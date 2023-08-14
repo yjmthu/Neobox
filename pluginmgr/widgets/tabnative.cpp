@@ -28,12 +28,12 @@ TabNative::~TabNative()
 {
 }
 
-void TabNative::AddItem(std::u8string_view pluginName, const YJson& data)
+void TabNative::AddItem(std::u8string_view pluginName, const YJson& pluginData)
 {
   auto const item = new QListWidgetItem;
   item->setSizeHint(QSize(300, 70));
   m_ListWidget->addItem(item);
-  m_ListWidget->setItemWidget(item, new ItemNative(pluginName, data, m_ListWidget));
+  m_ListWidget->setItemWidget(item, new ItemNative(pluginName, pluginData, m_ListWidget));
 }
 
 void TabNative::UpdateItem(std::u8string_view pluginName)
@@ -85,14 +85,14 @@ void TabNative::UpgradeAllPlugins()
 
 void TabNative::SaveContent()
 {
-  YJson data(YJson::Object);    // 不能是 YJson data = YJson::Object 或 YJson data { YJson::Object }
+  YJson dataNaive(YJson::Object);    // 不能是 YJson data = YJson::Object 或 YJson data { YJson::Object }
 
   for (auto i = 0; i != m_ListWidget->count(); ++i) {
     auto const w = m_ListWidget->itemWidget(m_ListWidget->item(i));
-    qobject_cast<const ItemNative*>(w)->GetContent(data);
+    qobject_cast<const ItemNative*>(w)->GetContent(dataNaive);
   }
 
-  mgr->UpdatePluginOrder(std::move(data));
+  mgr->UpdatePluginOrder(std::move(dataNaive));
 }
 
 void TabNative::InitControls()
@@ -149,10 +149,10 @@ void TabNative::MoveUp()
   if(curRow <= 0) return;
 
   // 不能写成 { YJson::Object }，会出大问题
-  YJson data(YJson::Object);
+  YJson dataNew(YJson::Object);
   auto const widget = qobject_cast<ItemNative*>(m_ListWidget->itemWidget(m_ListWidget->item(curRow)));
-  widget->GetContent(data);
-  auto& [pluginName, info] = data.frontO();
+  widget->GetContent(dataNew);
+  auto& [pluginName, info] = dataNew.frontO();
 
   auto item = m_ListWidget->takeItem(curRow);
   m_ListWidget->insertItem(curRow - 1, item);
@@ -168,10 +168,10 @@ void TabNative::MoveDown()
   auto const curRow = m_ListWidget->currentRow();
   if(curRow + 1 >= m_ListWidget->count()) return;
 
-  YJson data(YJson::Object);
+  YJson pluginData(YJson::Object);
   auto const widget = qobject_cast<ItemNative*>(m_ListWidget->itemWidget(m_ListWidget->item(curRow)));
-  widget->GetContent(data);
-  auto& [pluginName, info] = data.frontO();
+  widget->GetContent(pluginData);
+  auto& [pluginName, info] = pluginData.frontO();
 
   auto const item = m_ListWidget->takeItem(curRow);
   m_ListWidget->insertItem(curRow + 1, item);

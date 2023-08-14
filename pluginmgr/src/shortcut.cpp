@@ -104,12 +104,12 @@ bool Shortcut::nativeEventFilter(const QByteArray &eventType, void *message, qin
     QString exe = arglist.front();
     arglist.pop_front();
     QProcess:: startDetached(exe, arglist, QString::fromUtf8(directory.data(), directory.size()));
-  } else if (auto iterData = iter->find(u8"Plugin"); iterData != iter->endO()) {
+  } else if (iterData = iter->find(u8"Plugin"); iterData != iter->endO()) {
     auto& data = iterData->second;
     auto& pluginName = data[u8"PluginName"].getValueString();
     auto& function = data[u8"Function"].getValueString();
-    if (auto iter = mgr->m_Plugins.find(pluginName); iter != mgr->m_Plugins.end()) {
-      auto& funcMap = iter->second.plugin->m_PluginMethod;
+    if (auto iterPlugin = mgr->m_Plugins.find(pluginName); iterPlugin != mgr->m_Plugins.end()) {
+      auto& funcMap = iterPlugin->second.plugin->m_PluginMethod;
       auto iterFunc = funcMap.find(function);
       if (iterFunc != funcMap.end()) {
         iterFunc->second.function(PluginEvent::HotKey, nullptr);
@@ -179,7 +179,10 @@ Shortcut::KeyName Shortcut::GetKeyName(const QKeySequence& shortcut) {
       GetNativeKeycode(shortcut.isEmpty() ? Qt::Key(0) : shortcut[0].key());
   const uint32_t nativeMods =
       GetNativeModifiers(shortcut.isEmpty() ? Qt::KeyboardModifiers(0) : shortcut[0].keyboardModifiers());
-  return KeyName { {nativeKey, nativeMods} };
+  return KeyName { {{
+    .nativeKey = nativeKey,
+    .nativeMods = nativeMods
+  }} };
 }
 
 bool Shortcut::RegisterPlugin(std::u8string_view pluginName)
@@ -216,7 +219,7 @@ bool Shortcut::RegisterHotKey(const std::u8string& keyString)
   const auto id = GetHotKeyId();
 #ifdef _WIN32
   if (!::RegisterHotKey(NULL, id,
-      keyName.nativeMods, keyName.nativeKey))
+      keyName.data.nativeMods, keyName.data.nativeKey))
     return false;
 #else
   if (!m_Display || !m_GrabWindow) return false;
@@ -239,6 +242,7 @@ bool Shortcut::UnregisterHotKey(const std::u8string& keyString) {
     if (ret != 1) return false;
 #else
     auto const ret = ::UnregisterHotKey(NULL, iter->second);
+    if (ret == 0) return false;
 #endif
     m_HotKeyNames.erase(iter->second);
     m_HotKeyIds.erase(iter);

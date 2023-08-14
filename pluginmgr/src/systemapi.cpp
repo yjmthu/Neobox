@@ -44,7 +44,7 @@ BOOL SetWindowCompositionAttribute(HWND hWnd,
 
 typedef BOOL(WINAPI* pGetWindowCompositionAttribute)(HWND, WINCOMPATTRDATA*);
 
-BOOL GetWindowCompositionAttribute(HWND hWnd, ACCENT_POLICY* accent) {
+BOOL GetWindowCompositionAttribute(HWND hWnd, ACCENT_POLICY* accent[[maybe_unused]]) {
   BOOL ret = FALSE;
   HMODULE hUser = GetModuleHandleW(L"user32.dll");
   if (hUser) {

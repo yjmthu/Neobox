@@ -1,4 +1,4 @@
-#include "downloadingdlg.hpp"
+#include <neobox/downloadingdlg.hpp>
 #include "itembase.hpp"
 #include "plugincenter.hpp"
 
@@ -222,13 +222,13 @@ void ItemBase::PluginUpgrade()
   }
 
   if (result) {
-    auto& data = pluginsInfo->find(m_PluginName)->second;
-    data[u8"Enabled"] = pluginEnabled;
-    result = PluginDownload() && mgr->UpdatePlugin(m_PluginName, &data);
+    auto& pluginData = pluginsInfo->find(m_PluginName)->second;
+    pluginData[u8"Enabled"] = pluginEnabled;
+    result = PluginDownload() && mgr->UpdatePlugin(m_PluginName, &pluginData);
     if (result) {
-      GetVersion(m_PluginNewVersion, data[u8"Version"]);
-      m_PluginFriendlyName = data[u8"FriendlyName"].getValueString();
-      m_PluginDescription = data[u8"Description"].getValueString();
+      GetVersion(m_PluginNewVersion, pluginData[u8"Version"]);
+      m_PluginFriendlyName = pluginData[u8"FriendlyName"].getValueString();
+      m_PluginDescription = pluginData[u8"Description"].getValueString();
       UpdateUi();
     }
   }

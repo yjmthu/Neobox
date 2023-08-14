@@ -1,4 +1,4 @@
-#include "downloadingdlg.hpp"
+#include <neobox/downloadingdlg.hpp>
 
 #include <format>
 
@@ -31,8 +31,8 @@ DownloadingDlg::~DownloadingDlg()
 void DownloadingDlg::SetPercent(size_t count, size_t size)
 {
   std::wstring const text = std::format(L"正在下载：{}/{}", count, size);
-  m_ProgressBar->setRange(0, size);
-  if (size) m_ProgressBar->setValue(count + 1);
+  m_ProgressBar->setRange(0, static_cast<int>(size));
+  if (size) m_ProgressBar->setValue(static_cast<int>(count + 1));
   m_Label->setText(QString::fromStdWString(text));
 }
 

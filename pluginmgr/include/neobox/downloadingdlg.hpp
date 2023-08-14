@@ -9,7 +9,7 @@ class DownloadingDlg: public QDialog
 
 signals:
   void DownloadFinished();
-  void Downloading(int, int);
+  void Downloading(size_t, size_t);
   void Terminate();
 protected:
   void closeEvent(QCloseEvent *) override;

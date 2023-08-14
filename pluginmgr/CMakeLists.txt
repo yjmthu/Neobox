@@ -34,7 +34,7 @@ add_subdirectory(../thirdlib/YJson yjson)
 if(WIN32)
   add_subdirectory(../thirdlib/zip zip)
 else()
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpic")  # std::format
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 endif()
 
 set(third_include ../thirdlib/YJson/include)

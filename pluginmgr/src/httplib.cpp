@@ -1,5 +1,5 @@
 #ifdef _WIN32
-#include <systemapi.h>
+#include <neobox/systemapi.h>
 #include <Shlobj.h>
 #include <winhttp.h>
 #else
@@ -27,7 +27,6 @@ static HttpLib::Mutex m_AsyncMutex;
 #ifdef _WIN32
 // https://github.com/JGRennison/OpenTTD-patches/blob/dcc52f7696f4ef2601b9fbca1ca78abcd1211734/src/network/core/http_winhttp.cpp#L145
 void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DWORD dwInternetStatus, LPVOID lpvStatusInformation, DWORD dwInternetInformationLength) {
-  constexpr auto bufferSize = 8 << 10;
   // sometimes maybe nullptr
   if (!dwContext) return;
 
@@ -122,8 +121,8 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
   case WINHTTP_CALLBACK_STATUS_SECURE_FAILURE:
   case WINHTTP_CALLBACK_STATUS_REQUEST_ERROR: {
     auto const* pAsyncResult = (WINHTTP_ASYNC_RESULT*)lpvStatusInformation;
-    DWORD dwError = pAsyncResult->dwError; // The error code
-    DWORD dwResult = pAsyncResult->dwResult; // The ID of the called function
+    auto dwError = pAsyncResult->dwError; // The error code
+    auto dwResult = pAsyncResult->dwResult; // The ID of the called function
     object.EmitFinish(std::format(L"Winhttp status error. Error code: {}, error id: {}.", dwError, dwResult));
     break;
   }
@@ -307,7 +306,7 @@ void HttpUrl::UrlDecode(StringView text, String& out)
         if (text.cend() - i < 2) {
           throw std::logic_error("HttpUrl Error: Url decode error.");
         }
-        auto const c = FromHex(*++i) << 4;
+        StringView::value_type const c = FromHex(*++i) << 4;
         out.push_back(c | FromHex(*++i));
         break;
       }
@@ -490,7 +489,7 @@ HttpLib::~HttpLib() {
 void HttpLib::SetAsyncCallback()
 {
 #ifdef _WIN32
-  WINHTTP_STATUS_CALLBACK hCallback = WinHttpSetStatusCallback(
+  WINHTTP_STATUS_CALLBACK hCallbackPrev [[maybe_unused]] = WinHttpSetStatusCallback(
     m_hSession,
     RequestStatusCallback,
     WINHTTP_CALLBACK_FLAG_ALL_NOTIFICATIONS,
@@ -652,9 +651,16 @@ bool HttpLib::SetProxyAfter()
   auto username = Utf82WideString(m_Proxy->GetUsername());
   auto password = Utf82WideString(m_Proxy->GetPassword());
 
-  bResult = WinHttpSetOption(m_hRequest, WINHTTP_OPTION_PROXY_USERNAME, username.data(), username.size() * sizeof(wchar_t));
+  bResult = WinHttpSetOption(m_hRequest,
+    WINHTTP_OPTION_PROXY_USERNAME,
+    username.data(),
+    static_cast<DWORD>(username.size() * sizeof(wchar_t)));
   if (bResult) {
-    bResult = WinHttpSetOption(m_hRequest, WINHTTP_OPTION_PROXY_PASSWORD, password.data(), password.size() * sizeof(wchar_t));
+    bResult = WinHttpSetOption(
+      m_hRequest, WINHTTP_OPTION_PROXY_PASSWORD,
+      password.data(),
+      static_cast<DWORD>(password.size() * sizeof(wchar_t))
+    );
   } else {
     std::wcerr << L"Winhttp SetProxyAfter Failed!" << std::endl;
   }
@@ -688,8 +694,9 @@ bool HttpLib::SendRequest()
 #ifdef _WIN32
     return WinHttpSendRequest(m_hRequest,
       WINHTTP_NO_ADDITIONAL_HEADERS, 0,
-      m_PostData.data, m_PostData.size,
-      m_PostData.size,
+      m_PostData.data,
+      static_cast<DWORD>(m_PostData.size),
+      static_cast<DWORD>(m_PostData.size),
       static_cast<DWORD_PTR>(m_AsyncId)
     );
 #else
@@ -714,7 +721,6 @@ bool HttpLib::SendRequest()
       static_cast<DWORD_PTR>(m_AsyncId)
     );
 #endif
-    return true;
   }
 }
 
@@ -752,7 +758,8 @@ bool HttpLib::SendHeaders()
   if (bResults) {
     for (auto& [i, j]: m_Headers) {
       auto header = Utf82WideString(i + u8": " + j);
-      bResults = WinHttpAddRequestHeaders(m_hRequest, header.data(), header.size(), WINHTTP_ADDREQ_FLAG_ADD);
+      bResults = WinHttpAddRequestHeaders(
+        m_hRequest, header.data(), static_cast<DWORD>(header.size()), WINHTTP_ADDREQ_FLAG_ADD);
       if (!bResults) {
         std::wcerr << L"Winhttp add headers failed!" << std::endl;
         break;
@@ -1052,7 +1059,7 @@ void HttpLib::SetTimeOut(std::chrono::seconds timeOut) {
   // Use WinHttpSetTimeouts to set a new time-out values.
   m_TimeOut = timeOut;
 #ifdef _WIN32
-  const auto t = m_TimeOut.count() * 1000;
+  const auto t = static_cast<int>(m_TimeOut.count() * 1000);
   if (!WinHttpSetTimeouts(m_hSession, t, t, t, t)) {
     std::wcerr << L"HttpLib Error: " << GetLastError() << L" in WinHttpSetTimeouts.\n";
   }
@@ -1082,11 +1089,11 @@ void HttpLib::GetAsync(Callback callback)
       return true;
     };
   } else {
-    auto callback = std::move(*m_AsyncCallback.m_WriteCallback);
-    m_WriteCallback = [this, callback](auto data, auto size) {
+    auto cb = std::move(*m_AsyncCallback.m_WriteCallback);
+    m_WriteCallback = [this, cb](auto data, auto size) {
       if (m_Finished) return false;
       m_RecieveSize += size;
-      callback(data, size);
+      cb(data, size);
       EmitProcess();
       return true;
     };

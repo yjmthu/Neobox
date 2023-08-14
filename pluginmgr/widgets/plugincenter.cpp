@@ -1,11 +1,11 @@
 #include "plugincenter.hpp"
-#include "downloadingdlg.hpp"
 #include "tabnative.hpp"
 #include "tabonline.hpp"
 #include "tabversion.hpp"
 #include "tabnetproxy.hpp"
 #include "tabhotkey.hpp"
 
+#include <neobox/downloadingdlg.hpp>
 #include <neobox/httplib.h>
 #include <yjson/yjson.h>
 #include <neobox/menubase.hpp>

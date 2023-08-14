@@ -95,7 +95,7 @@ void TabHotKey::InitDataStruct()
     ui->listWidget->addItem(keySequence);
     if (auto iter = info.find(u8"Plugin"); iter != info.endO()) {
       m_Plugins[keySequence] = std::make_unique<HotKeyInfoPlugin>(iter->second, enabled);
-    } else if (auto iter = info.find(u8"Command"); iter != info.endO()) {
+    } else if (iter = info.find(u8"Command"); iter != info.endO()) {
       auto exe = iter->second.find(u8"Executable");
       if (exe != iter->second.endO()) {
         iter->second[u8"Arguments"] = YJson::A { exe->second.getValueString() };
@@ -123,15 +123,15 @@ void TabHotKey::UpdateHotKeyEditor(QString text)
   ui->pBtnHotKey->setText(text);
 
   bool a = true, b = true;
-  if (auto iter = m_Plugins.find(text); iter != m_Plugins.end()) {
-    const auto& info = *iter->second;
+  if (auto iterPlugin = m_Plugins.find(text); iterPlugin != m_Plugins.end()) {
+    const auto& info = *iterPlugin->second;
     ui->rBtnPlugin->setChecked(true);
     ui->chkRegisterHotKey->setChecked(info.enabled);
     ui->cBoxPlugin->setCurrentText(PluginObject::Utf82QString(mgr->GetPluginsInfo()[info.pluginName][u8"FriendlyName"].getValueString()));
     ui->cBoxCallBack->setCurrentText(PluginObject::Utf82QString(info.function));
     b = false;
-  } else if (auto iter = m_Commands.find(text); iter != m_Commands.end()) {
-    const auto& info = *iter->second;
+  } else if (auto iterCommad = m_Commands.find(text); iterCommad != m_Commands.end()) {
+    const auto& info = *iterCommad->second;
     ui->rBtnProcess->setChecked(true);
     ui->chkRegisterHotKey->setChecked(info.enabled);
     ui->lineDirectory->setText(PluginObject::Utf82QString(info.directory));
@@ -237,16 +237,16 @@ void TabHotKey::EditArgList()
   // if (fileString.isEmpty()) return;
   // ui->lineProgram->setText(QDir::toNativeSeparators(fileString));
 
-  ListEditor editor("输入程序参数列表", m_ArgList, [this](bool changed, const YJson& data)->void {
+  ListEditor editor("输入程序参数列表", m_ArgList, [this](bool changed, const YJson& argData)->void {
     if (!changed) {
       mgr->ShowMsg("取消输入成功！");
       return;
     }
-    if (data.emptyA()) {
+    if (argData.emptyA()) {
       mgr->ShowMsg("列表不能为空！");
     }
 
-    m_ArgList = data.getArray();
+    m_ArgList = argData.getArray();
 
   });
   editor.m_ArgEditTitle = "文字输入";
@@ -302,7 +302,7 @@ bool TabHotKey::SaveHotKeyData()
     // 保存现在的数据
     auto u8CurrKey = PluginObject::QString2Utf8(currKey);
     if (ui->rBtnProcess->isChecked()) {
-      auto iter = m_Settings.append(YJson::O {
+      iter = m_Settings.append(YJson::O {
         {u8"KeySequence", u8CurrKey},
         {u8"Enabled", enabled},
         {u8"Command", YJson::O {
@@ -316,7 +316,7 @@ bool TabHotKey::SaveHotKeyData()
       );
       ptrEnabled = &iter->find(u8"Enabled")->second;
     } else {
-      auto iter = m_Settings.append(YJson::O {
+      iter = m_Settings.append(YJson::O {
         {u8"KeySequence", u8CurrKey},
         {u8"Enabled", enabled},
         {u8"Plugin", YJson::O {
@@ -344,15 +344,15 @@ bool TabHotKey::SaveHotKeyData()
     ptrEnabled = &jsData.find(u8"Enabled")->second;
 
     // 在之前的插件热键地图中寻找当前热键
-    if (auto iter = m_Plugins.find(prevKey); iter != m_Plugins.end()) {
-      auto& info =  *iter->second;
+    if (auto iterPlugin = m_Plugins.find(prevKey); iterPlugin != m_Plugins.end()) {
+      auto& info =  *iterPlugin->second;
       prevRegisterKey = info.enabled;
       ptrMapEnabled = &info.enabled;
       auto jsIter = jsData.find(u8"Plugin");
 
       // 之前为插件热键，现在为进程热键
       if (ui->rBtnProcess->isChecked()) {
-        m_Plugins.erase(iter);
+        m_Plugins.erase(iterPlugin);
         jsIter->first = u8"Command";
         jsIter->second = YJson::O {
           {u8"Directory", PluginObject::QString2Utf8(ui->lineDirectory->text())},
@@ -498,8 +498,8 @@ void TabHotKey::RemoveItem()
   if (text.isEmpty()) return;
 
   auto keyString = PluginObject::QString2Utf8(text);
-  auto iter = std::find_if(m_Settings.beginA(), m_Settings.endA(), [&keyString](const YJson& data){
-    return data[u8"KeySequence"].getValueString() == keyString;
+  auto iter = std::find_if(m_Settings.beginA(), m_Settings.endA(), [&keyString](const YJson& keyData) {
+    return keyData[u8"KeySequence"].getValueString() == keyString;
   });
 
   if (iter == m_Settings.endA()) return;

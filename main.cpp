@@ -8,8 +8,8 @@ int main(int argc, char* argv[]) {
   QApplication a(argc, argv);
   a.setQuitOnLastWindowClosed(false);
   try {
-    PluginMgr mgr;
-    mgr.Exec();
+    PluginMgr manager;
+    manager.Exec();
   } catch (const std::runtime_error& error) {
     auto msg = QString::fromLocal8Bit(error.what());
     QMessageBox::critical(nullptr, "Runtime Error", msg);

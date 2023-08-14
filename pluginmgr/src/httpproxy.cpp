@@ -2,7 +2,7 @@
 #include <yjson/yjson.h>
 
 #ifdef _WIN32
-#include <systemapi.h>
+#include <neobox/systemapi.h>
 #endif
 
 static const wchar_t regProxyPath[] = LR"(Software\Microsoft\Windows\CurrentVersion\Internet Settings)";
