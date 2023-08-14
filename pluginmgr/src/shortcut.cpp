@@ -69,23 +69,23 @@ bool Shortcut::nativeEventFilter(const QByteArray &eventType, void *message, qin
   }
   auto const kev = reinterpret_cast<xcb_key_press_event_t *>(ev);
   // unsigned char keycode = kev->detail;
-  KeyName keyName {{0, 0}};
+  KeyName keyName {{{0,0}}};
   // Mod1Mask == Alt, Mod4Mask == Meta, Mod2Mask == Num Lock, Mod3Mask = Scroll Lock
   if (kev->state & XCB_MOD_MASK_1)
-    keyName.nativeMods |= Mod1Mask;
+    keyName.data.nativeMods |= Mod1Mask;
   // if (kev->state & XCB_MOD_MASK_2)
   //   keyName.nativeMods |= Mod2Mask;
   // if (kev->state & XCB_MOD_MASK_3)
   //   keyName.nativeMods |= Mod3Mask;
   if (kev->state & XCB_MOD_MASK_4)
-    keyName.nativeMods |= Mod4Mask;
+    keyName.data.nativeMods |= Mod4Mask;
   
   if (kev->state & XCB_MOD_MASK_CONTROL)
-    keyName.nativeMods |= ControlMask;
+    keyName.data.nativeMods |= ControlMask;
   if (kev->state & XCB_MOD_MASK_SHIFT)
-    keyName.nativeMods |= ShiftMask;
+    keyName.data.nativeMods |= ShiftMask;
   
-  keyName.nativeKey = kev->detail;
+  keyName.data.nativeKey = kev->detail;
   auto& keyString = GetCallbackInfo(keyName);
 #endif
   auto iter = FindShortcutData(keyString);
@@ -223,7 +223,7 @@ bool Shortcut::RegisterHotKey(const std::u8string& keyString)
     return false;
 #else
   if (!m_Display || !m_GrabWindow) return false;
-  auto ret = ::XGrabKey(m_Display, keyName.nativeKey, keyName.nativeMods, m_GrabWindow, False, GrabModeAsync, GrabModeAsync);
+  auto ret = ::XGrabKey(m_Display, keyName.data.nativeKey, keyName.data.nativeMods, m_GrabWindow, False, GrabModeAsync, GrabModeAsync);
   if (ret != 1) return false;
 #endif
   m_HotKeyIds[keyName] = id;
@@ -238,7 +238,7 @@ bool Shortcut::UnregisterHotKey(const std::u8string& keyString) {
   if (iter != m_HotKeyIds.end()) {
 #ifdef __linux__
     if (!m_Display) return false;
-    auto const ret = ::XUngrabKey(m_Display, keyName.nativeKey, keyName.nativeMods, m_GrabWindow);
+    auto const ret = ::XUngrabKey(m_Display, keyName.data.nativeKey, keyName.data.nativeMods, m_GrabWindow);
     if (ret != 1) return false;
 #else
     auto const ret = ::UnregisterHotKey(NULL, iter->second);
