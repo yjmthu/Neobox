@@ -2,7 +2,7 @@
 #define NEOSYSTEMTRAY_HPP
 
 #include <QSystemTrayIcon>
-#include <pluginobject.h>
+#include <neobox/pluginobject.h>
 
 class NeoSystemTray: public QSystemTrayIcon
 {

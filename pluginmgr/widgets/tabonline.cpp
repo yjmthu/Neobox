@@ -2,9 +2,9 @@
 #include "plugincenter.hpp"
 #include "itemonline.hpp"
 
-#include <pluginobject.h>
-#include <pluginmgr.h>
-#include <yjson.h>
+#include <neobox/pluginobject.h>
+#include <neobox/pluginmgr.h>
+#include <yjson/yjson.h>
 
 #include <QListWidget>
 #include <QVBoxLayout>

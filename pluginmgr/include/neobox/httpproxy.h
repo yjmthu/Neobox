@@ -1,7 +1,7 @@
 ﻿#ifndef HTTPPROXY_H
 #define HTTPPROXY_H
 
-#include <neoconfig.h>
+#include <neobox/neoconfig.h>
 #include <string>
 
 class HttpProxy: public NeoConfig

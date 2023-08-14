@@ -4,7 +4,7 @@
 #include <filesystem>
 #include <string>
 #include <map>
-#include <httpproxy.h>
+#include <neobox/httpproxy.h>
 #include <memory>
 #include <atomic>
 #include <chrono>

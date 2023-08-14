@@ -1,4 +1,4 @@
-#include <neosystemtray.hpp>
+#include <neobox/neosystemtray.hpp>
 
 #include <QDir>
 #include <QStandardPaths>

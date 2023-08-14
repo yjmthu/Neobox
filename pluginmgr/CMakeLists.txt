@@ -18,7 +18,7 @@ qt_wrap_ui(wrap_files
   widgets/tabhotkey.ui
 ) # 根据UI文件生成头文件
 
-file(GLOB source_files include/*.hpp src/*.cpp widgets/*.cpp widgets/*.hpp)
+file(GLOB source_files include/*/*.hpp src/*.cpp widgets/*.cpp widgets/*.hpp)
 
 set(system_shared_files)
 set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui)
@@ -33,6 +33,8 @@ endif()
 add_subdirectory(../thirdlib/YJson yjson)
 if(WIN32)
   add_subdirectory(../thirdlib/zip zip)
+else()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpic")  # std::format
 endif()
 
 set(third_include ../thirdlib/YJson/include)
@@ -80,7 +82,7 @@ install(TARGETS ${target_name}
   RUNTIME DESTINATION bin
 )
 
-file(GLOB header_files include/*)
+file(GLOB header_files include/neobox/*)
 install(FILES ${header_files} DESTINATION "include/neobox")
 
 if (MSVC)

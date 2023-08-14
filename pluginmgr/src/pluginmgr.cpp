@@ -1,12 +1,12 @@
-#include <pluginmgr.h>
-#include <pluginobject.h>
-#include <yjson.h>
-#include <systemapi.h>
-#include <shortcut.h>
-#include <httplib.h>
-#include <menubase.hpp>
+#include <neobox/pluginmgr.h>
+#include <neobox/pluginobject.h>
+#include <yjson/yjson.h>
+#include <neobox/systemapi.h>
+#include <neobox/shortcut.h>
+#include <neobox/httplib.h>
+#include <neobox/menubase.hpp>
 #include <config.h>
-#include <neotimer.h>
+#include <neobox/neotimer.h>
 
 #include <QAction>
 #include <QMessageBox>
@@ -18,10 +18,10 @@
 #include <cstdlib>
 #include <filesystem>
 
-#include <update.hpp>
-#include <neomsgdlg.hpp>
-#include <neosystemtray.hpp>
-#include <neomenu.hpp>
+#include <neobox/update.hpp>
+#include <neobox/neomsgdlg.hpp>
+#include <neobox/neosystemtray.hpp>
+#include <neobox/neomenu.hpp>
 #include "../widgets/plugincenter.hpp"
 
 #ifdef _WIN32

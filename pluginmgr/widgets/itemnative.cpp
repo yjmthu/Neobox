@@ -3,9 +3,9 @@
 #include "tabnative.hpp"
 #include "tabonline.hpp"
 
-#include <pluginobject.h>
-#include <pluginmgr.h>
-#include <yjson.h>
+#include <neobox/pluginobject.h>
+#include <neobox/pluginmgr.h>
+#include <yjson/yjson.h>
 
 #include <QListWidget>
 #include <QHBoxLayout>
@@ -13,7 +13,7 @@
 #include <QPushButton>
 #include <QLabel>
 
-#include <switchbutton.hpp>
+#include <neobox/switchbutton.hpp>
 
 
 ItemNative::ItemNative(std::u8string_view pluginName, const YJson& data, QWidget* parent)

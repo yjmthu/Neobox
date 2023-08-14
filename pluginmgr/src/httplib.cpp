@@ -7,7 +7,8 @@
 #include <curl/header.h>
 #endif  // _WIN32
 
-#include <httplib.h>
+#include <neobox/httplib.h>
+
 #include <filesystem>
 #include <stdexcept>
 #include <iostream>

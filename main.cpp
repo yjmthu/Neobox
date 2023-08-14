@@ -1,5 +1,5 @@
 #include <QApplication>
-#include <pluginmgr.h>
+#include <neobox/pluginmgr.h>
 #include <QMessageBox>
 
 // #include <winrt/Windows.Foundation.h>

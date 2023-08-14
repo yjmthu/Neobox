@@ -3,9 +3,9 @@
 
 #include <QDialog>
 #include <QString>
-#include <editorbase.hpp>
+#include <neobox/editorbase.hpp>
 
-#include <yjson.h>
+#include <yjson/yjson.h>
 
 class ListEditor: public EditorBase
 {

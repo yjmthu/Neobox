@@ -1,11 +1,11 @@
 #include "tabnetproxy.hpp"
 
-#include <yjson.h>
-#include <pluginmgr.h>
-#include <systemapi.h>
+#include <yjson/yjson.h>
+#include <neobox/pluginmgr.h>
+#include <neobox/systemapi.h>
 #include <ui_tabnetproxy.h>
-#include <pluginobject.h>
-#include <httplib.h>
+#include <neobox/pluginobject.h>
+#include <neobox/httplib.h>
 
 #include <QIntValidator>
 #include <QButtonGroup>

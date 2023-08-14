@@ -1,9 +1,9 @@
-#include <update.hpp>
-#include <httplib.h>
+#include <neobox/update.hpp>
+#include <neobox/httplib.h>
 #include <config.h>
-#include <neotimer.h>
-#include <systemapi.h>
-#include <neomenu.hpp>
+#include <neobox/neotimer.h>
+#include <neobox/systemapi.h>
+#include <neobox/neomenu.hpp>
 
 #ifdef _WIN32
 #include <zip.h>

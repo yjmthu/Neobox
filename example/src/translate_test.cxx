@@ -1,6 +1,6 @@
 #include <systemapi.h>
 #include <translate.h>
-#include <yjson.h>
+#include <yjson/yjson.h>
 #include <iostream>
 
 using namespace std::literals;

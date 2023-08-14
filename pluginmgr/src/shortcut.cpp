@@ -1,8 +1,8 @@
-#include <shortcut.h>
-#include <pluginobject.h>
-#include <yjson.h>
-#include <systemapi.h>
-#include <pluginmgr.h>
+#include <neobox/shortcut.h>
+#include <neobox/pluginobject.h>
+#include <yjson/yjson.h>
+#include <neobox/systemapi.h>
+#include <neobox/pluginmgr.h>
 #include <../widgets/plugincenter.hpp>
 
 #include <QWidget>

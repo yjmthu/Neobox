@@ -1,5 +1,5 @@
-﻿#include <httpproxy.h>
-#include <yjson.h>
+﻿#include <neobox/httpproxy.h>
+#include <yjson/yjson.h>
 
 #ifdef _WIN32
 #include <systemapi.h>

@@ -1,7 +1,7 @@
 #ifndef NEOMENU_HPP
 #define NEOMENU_HPP
 
-#include <menubase.hpp>
+#include <neobox/menubase.hpp>
 
 #include <functional>
 

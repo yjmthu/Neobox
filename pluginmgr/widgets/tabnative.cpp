@@ -2,8 +2,8 @@
 #include "itemnative.hpp"
 #include "tabnative.hpp"
 
-#include <pluginmgr.h>
-#include <yjson.h>
+#include <neobox/pluginmgr.h>
+#include <yjson/yjson.h>
 
 #include <QListWidget>
 #include <QHBoxLayout>

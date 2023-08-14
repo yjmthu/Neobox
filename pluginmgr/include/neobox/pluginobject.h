@@ -1,7 +1,7 @@
 #ifndef PLUGINOBJECT_H
 #define PLUGINOBJECT_H
 
-#include <pluginevent.h>
+#include <neobox/pluginevent.h>
 
 #include <string>
 #include <map>

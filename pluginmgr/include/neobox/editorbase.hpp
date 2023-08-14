@@ -1,7 +1,7 @@
 ﻿#ifndef EDITORBASE_HPP
 #define EDITORBASE_HPP
 
-#include <yjson.h>
+#include <yjson/yjson.h>
 #include <functional>
 #include <QDialog>
 

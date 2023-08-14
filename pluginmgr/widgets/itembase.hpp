@@ -3,7 +3,7 @@
 
 #include <QWidget>
 #include <array>
-#include <yjson.h>
+#include <yjson/yjson.h>
 
 class QLabel;
 

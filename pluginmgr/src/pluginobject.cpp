@@ -1,8 +1,8 @@
-#include <pluginobject.h>
-#include <pluginmgr.h>
-#include <neomenu.hpp>
+#include <neobox/pluginobject.h>
+#include <neobox/pluginmgr.h>
+#include <neobox/neomenu.hpp>
 
-#include <menubase.hpp>
+#include <neobox/menubase.hpp>
 #include <QAction>
 
 #include <vector>

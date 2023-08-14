@@ -4,7 +4,7 @@
 #include <QWidget>
 #include <map>
 
-#include <yjson.h>
+#include <yjson/yjson.h>
 
 namespace Ui {
     class FormHotKey;

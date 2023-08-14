@@ -2,7 +2,7 @@
 #include "plugincenter.hpp"
 #include "tabnative.hpp"
 
-#include <pluginmgr.h>
+#include <neobox/pluginmgr.h>
 
 #include <QHBoxLayout>
 #include <QPushButton>

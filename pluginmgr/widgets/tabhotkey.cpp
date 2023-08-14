@@ -1,13 +1,13 @@
 #include "tabhotkey.hpp"
 #include "plugincenter.hpp"
 
-#include <pluginmgr.h>
-#include <pluginobject.h>
-#include <yjson.h>
+#include <neobox/pluginmgr.h>
+#include <neobox/pluginobject.h>
+#include <yjson/yjson.h>
 #include <ui_tabhotkey.h>
-#include <shortcut.h>
-#include <neomenu.hpp>
-#include <listeditor.h>
+#include <neobox/shortcut.h>
+#include <neobox/neomenu.hpp>
+#include <neobox/listeditor.h>
 
 #include <QStandardItemModel>
 #include <QStandardItem>

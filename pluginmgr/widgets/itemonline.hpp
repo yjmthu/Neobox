@@ -2,7 +2,7 @@
 #define ITEMONLINE_HPP
 
 #include "itembase.hpp"
-#include <yjson.h>
+#include <yjson/yjson.h>
 
 class ItemOnline: public ItemBase
 {

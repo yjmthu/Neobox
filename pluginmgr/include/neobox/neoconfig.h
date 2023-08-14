@@ -2,9 +2,9 @@
 #define NEOCONFIG_H
 
 #include <mutex>
-#include <yjson.h>
+#include <yjson/yjson.h>
 #include <functional>
-#include <pluginmgr.h>
+#include <neobox/pluginmgr.h>
 
 #define CfgBool(VarName)                                       \
 public:                                                        \

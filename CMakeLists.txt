@@ -42,7 +42,6 @@ elseif(UNIX)
     add_link_options(-stdlib=libc++)   # New command on CMake master, not in 3.12 release
     # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexperimental-library")  # std::format
   endif()
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpic")  # std::format
 endif()
 
 

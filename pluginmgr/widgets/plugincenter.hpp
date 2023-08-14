@@ -1,7 +1,7 @@
 #ifndef PLUGINCENTER_HPP
 #define PLUGINCENTER_HPP
 
-#include <widgetbase.hpp>
+#include <neobox/widgetbase.hpp>
 
 class PluginCenter: public WidgetBase
 {

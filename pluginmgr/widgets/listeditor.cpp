@@ -1,6 +1,6 @@
-#include <listeditor.h>
-#include <pluginobject.h>
-#include <yjson.h>
+#include <neobox/listeditor.h>
+#include <neobox/pluginobject.h>
+#include <yjson/yjson.h>
 
 #include <QWidget>
 #include <QListWidget>

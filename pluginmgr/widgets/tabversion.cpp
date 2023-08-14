@@ -1,12 +1,11 @@
 #include "tabversion.hpp"
 #include "plugincenter.hpp"
-#include "downloadingdlg.hpp"
 
-#include <systemapi.h>
-#include <yjson.h>
-#include <httplib.h>
+#include <neobox/systemapi.h>
+#include <yjson/yjson.h>
+#include <neobox/httplib.h>
 #include <config.h>
-#include <update.hpp>
+#include <neobox/update.hpp>
 
 #ifdef _WIN32
 #include <zip.h>

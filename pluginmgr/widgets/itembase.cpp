@@ -2,8 +2,8 @@
 #include "itembase.hpp"
 #include "plugincenter.hpp"
 
-#include <httplib.h>
-#include <pluginmgr.h>
+#include <neobox/httplib.h>
+#include <neobox/pluginmgr.h>
 
 #include <format>
 #include <filesystem>

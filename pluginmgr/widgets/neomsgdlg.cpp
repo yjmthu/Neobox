@@ -1,4 +1,4 @@
-#include <neomsgdlg.hpp>
+#include <neobox/neomsgdlg.hpp>
 
 #include <QGuiApplication>
 #include <QFrame>

@@ -6,11 +6,11 @@
 #include "tabnetproxy.hpp"
 #include "tabhotkey.hpp"
 
-#include <httplib.h>
-#include <yjson.h>
-#include <menubase.hpp>
-#include <pluginmgr.h>
-#include <neomenu.hpp>
+#include <neobox/httplib.h>
+#include <yjson/yjson.h>
+#include <neobox/menubase.hpp>
+#include <neobox/pluginmgr.h>
+#include <neobox/neomenu.hpp>
 
 #include <QLabel>
 #include <QPushButton>

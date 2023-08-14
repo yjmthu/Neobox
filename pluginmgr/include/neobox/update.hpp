@@ -3,8 +3,8 @@
 
 #include <memory>
 #include <functional>
-#include <yjson.h>
-#include <neoconfig.h>
+#include <yjson/yjson.h>
+#include <neobox/neoconfig.h>
 
 #include <QObject>
 

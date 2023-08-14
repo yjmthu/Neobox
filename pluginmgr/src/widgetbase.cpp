@@ -1,4 +1,4 @@
-#include <widgetbase.hpp>
+#include <neobox/widgetbase.hpp>
 
 #include <QPushButton>
 #include <QMouseEvent>

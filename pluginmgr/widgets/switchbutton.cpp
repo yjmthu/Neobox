@@ -1,4 +1,4 @@
-#include "switchbutton.hpp"
+#include <neobox/switchbutton.hpp>
 
 #include <QPainter>
 #include <QPainterPath>

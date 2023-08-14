@@ -2,7 +2,7 @@
 
 #include <pluginobject.h>
 #include <pluginmgr.h>
-#include <yjson.h>
+#include <yjson/yjson.h>
 
 PluginMgr *mgr;
 

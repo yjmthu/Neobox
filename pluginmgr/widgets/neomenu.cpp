@@ -1,6 +1,6 @@
-#include <neomenu.hpp>
-#include <pluginmgr.h>
-#include <systemapi.h>
+#include <neobox/neomenu.hpp>
+#include <neobox/pluginmgr.h>
+#include <neobox/systemapi.h>
 
 #include <QApplication>
 #include <QDesktopServices>
