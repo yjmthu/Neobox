@@ -1,7 +1,7 @@
 #ifdef PluginName
 
-#include <pluginobject.h>
-#include <pluginmgr.h>
+#include <neobox/pluginobject.h>
+#include <neobox/pluginmgr.h>
 #include <yjson/yjson.h>
 
 PluginMgr *mgr;
