@@ -82,8 +82,7 @@ install(TARGETS ${target_name}
   RUNTIME DESTINATION bin
 )
 
-file(GLOB header_files include/neobox/*)
-install(FILES ${header_files} DESTINATION "include/neobox")
+install(DIRECTORY include/neobox DESTINATION "include")
 
 if (MSVC)
   add_executable(update WIN32 src/update.cc)
