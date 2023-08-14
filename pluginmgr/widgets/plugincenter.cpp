@@ -35,8 +35,8 @@ PluginCenter* PluginCenter::m_Instance = nullptr;
 
 PluginCenter::PluginCenter()
   : WidgetBase(nullptr)
-  , m_Setting(mgr->GetPluginsInfo())
   , m_PluginData(nullptr)
+  , m_Setting(mgr->GetPluginsInfo())
   , m_MainLayout(new QVBoxLayout(this))
   , m_TabWidget(new QTabWidget(this))
   , m_TabNative(new TabNative(this))

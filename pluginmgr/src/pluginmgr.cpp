@@ -41,7 +41,7 @@ YJson* PluginMgr::InitSettings()
   YJson* setting = nullptr;
   try {
     setting = new YJson(m_SettingFileName, YJson::UTF8);
-  } catch (std::runtime_error err) {
+  } catch (const std::runtime_error& err[[maybe_unused]]) {
     delete setting;
     setting = new YJson(YJson::O {
       { u8"Plugins", YJson::Object },
@@ -460,10 +460,33 @@ bool PluginMgr::IsPluginEnabled(const std::u8string& plugin) const
 
 void PluginMgr::ShowMsgbox(const std::wstring& title,
                  const std::wstring& text,
-                 int type) {
+                 MsgboxType type) {
   QMetaObject::invokeMethod(m_Menu, [=, this](){
-    QMessageBox::information(m_Menu, QString::fromStdWString(title),
-      QString::fromStdWString(text));
+    using enum MsgboxType;
+    switch (type) {
+    case Information:
+      QMessageBox::information(m_Menu, QString::fromStdWString(title),
+        QString::fromStdWString(text));
+      break;
+    case Critical:
+      QMessageBox::critical(m_Menu, QString::fromStdWString(title),
+        QString::fromStdWString(text));
+      break;
+    case Warning:
+      QMessageBox::warning(m_Menu, QString::fromStdWString(title),
+        QString::fromStdWString(text));
+      break;
+    case About:
+      QMessageBox::about(m_Menu, QString::fromStdWString(title),
+        QString::fromStdWString(text));
+      break;
+    case Question:
+      QMessageBox::question(m_Menu, QString::fromStdWString(title),
+        QString::fromStdWString(text));
+      break;
+    default:
+      break;
+    }
   });
 }
 

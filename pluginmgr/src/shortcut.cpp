@@ -69,7 +69,7 @@ bool Shortcut::nativeEventFilter(const QByteArray &eventType, void *message, qin
   }
   auto const kev = reinterpret_cast<xcb_key_press_event_t *>(ev);
   // unsigned char keycode = kev->detail;
-  KeyName keyName {0, 0};
+  KeyName keyName {{0, 0}};
   // Mod1Mask == Alt, Mod4Mask == Meta, Mod2Mask == Num Lock, Mod3Mask = Scroll Lock
   if (kev->state & XCB_MOD_MASK_1)
     keyName.nativeMods |= Mod1Mask;
@@ -179,7 +179,7 @@ Shortcut::KeyName Shortcut::GetKeyName(const QKeySequence& shortcut) {
       GetNativeKeycode(shortcut.isEmpty() ? Qt::Key(0) : shortcut[0].key());
   const uint32_t nativeMods =
       GetNativeModifiers(shortcut.isEmpty() ? Qt::KeyboardModifiers(0) : shortcut[0].keyboardModifiers());
-  return KeyName { nativeKey, nativeMods };
+  return KeyName { {nativeKey, nativeMods} };
 }
 
 bool Shortcut::RegisterPlugin(std::u8string_view pluginName)

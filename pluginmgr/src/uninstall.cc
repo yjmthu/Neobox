@@ -65,7 +65,7 @@ bool ExitAppInstance(fs::path appFile) {
       while (!quit && fs::exists(appFile)) {
         try {
           fs::remove(appFile);
-        } catch (fs::filesystem_error error) {
+        } catch (const fs::filesystem_error& error) {
           continue;
         }
       }

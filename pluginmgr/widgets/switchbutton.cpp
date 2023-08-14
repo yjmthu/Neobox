@@ -16,9 +16,9 @@ static constexpr int to = w - d - 2 * r;
 
 SwitchButton::SwitchButton(QWidget* parent)
   : QWidget(parent)
-  , checked(false)
-  , value(::from)
   , m_Animation(new QVariantAnimation(this))
+  , value(::from)
+  , checked(false)
 {
   setFixedSize(QSize(::w, ::h));
   setCursor(Qt::PointingHandCursor);
@@ -89,6 +89,8 @@ void SwitchButton::paintEvent(QPaintEvent* event)
     painter.setBrush(QBrush(QColor(209, 209, 209)));
   }
   painter.drawEllipse(value, d, r * 2, r * 2);
+
+  event->accept();
 }
 
 void SwitchButton::mousePressEvent(QMouseEvent *event)

@@ -15,6 +15,11 @@ class QSharedMemory;
 class NeoSystemTray;
 class NeoMsgDlg;
 
+enum class MsgboxType {
+  Information, Critical,
+  Warning, About, Question
+};
+
 class PluginMgr {
 public:
   struct PluginInfo {
@@ -68,7 +73,8 @@ public:
 
   void ShowMsg(class QString text);
   void ShowMsgbox(const std::wstring& title,
-    const std::wstring& text, int type = 0);
+    const std::wstring& text,
+    MsgboxType type = MsgboxType::Information);
   static int Exec();
   static void Quit();
   void Restart();

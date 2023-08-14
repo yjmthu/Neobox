@@ -11,9 +11,9 @@
 
 NeoMsgDlg::NeoMsgDlg(QWidget* parent)
   : QWidget(parent,
-              Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool),
-    m_pAnimation(new QPropertyAnimation(this)),
-    m_pOpacity(new QGraphicsOpacityEffect(this))
+              Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool)
+  , m_pOpacity(new QGraphicsOpacityEffect(this))
+  , m_pAnimation(new QPropertyAnimation(this))
 {
   InitWindowStyle();
   InitContent();
