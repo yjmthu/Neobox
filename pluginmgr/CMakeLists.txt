@@ -30,10 +30,19 @@ else()
   list(APPEND system_shared_files curl)
 endif()
 
+add_subdirectory(../thirdlib/YJson yjson)
+add_subdirectory(../thirdlib/zip zip)
+
 set(target_name pluginmgr)
 add_library(${target_name} SHARED
   ${source_files}
   ${wrap_files}
+)
+
+target_include_directories(${target_name} PUBLIC
+  ../thirdlib/YJson/include
+  ../thirdlib/zip/src
+  include
 )
 
 if(MSVC)
@@ -59,10 +68,10 @@ target_link_libraries(${target_name} PUBLIC
 )
 
 install(TARGETS ${target_name}
-  LIBRARY DESTINATION bin
+  LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
-  PUBLIC_HEADER DESTINATION include
+  PUBLIC_HEADER DESTINATION "include/${neobox}"
 )
 
 if (MSVC)

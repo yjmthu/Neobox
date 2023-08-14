@@ -7,7 +7,7 @@ foreach(item ${sources})
   string(REGEX REPLACE "src/" "test_" target_name ${target_name})
   string(REGEX REPLACE "/|\\." "_" target_name ${target_name})
   add_executable(${target_name} ${item})
-  target_link_libraries(${target_name} pluginmgr translate_core)
+  target_link_libraries(${target_name} pluginmgr)
 endforeach()
 
 if(UNIX)

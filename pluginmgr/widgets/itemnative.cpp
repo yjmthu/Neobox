@@ -18,8 +18,8 @@
 
 ItemNative::ItemNative(std::u8string_view pluginName, const YJson& data, QWidget* parent)
   : ItemBase(pluginName, data, parent)
-  , m_BtnUninstall(new QPushButton("卸载", this))
   , m_BtnUpgrade(new QPushButton("更新", this))
+  , m_BtnUninstall(new QPushButton("卸载", this))
   , m_ChkEnable(new SwitchButton(this))
 {
   m_ChkEnable->SetChecked(data[u8"Enabled"].isTrue());

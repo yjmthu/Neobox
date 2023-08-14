@@ -7,8 +7,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 # 导出ninja编译命令
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-# 安装目录
-set(CMAKE_INSTALL_PREFIX "install")
 
 string(TIMESTAMP COMPILE_TIME %Y-%m-%d)
 set(NEOBOX_BUILD_TIME ${COMPILE_TIME})
@@ -28,8 +26,8 @@ if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 else()
   add_definitions(-D_RELEASE)
   message("定义Rlease宏, 类型${CMAKE_BUILD_TYPE}。")
-  set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
-  set(CMAKE_INSTALL_RPATH "\${ORIGIN}/") #指定运行时动态库的加载路径,ORIGIN指运行文件所在目录
+  # set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
+  # set(CMAKE_INSTALL_RPATH "\${ORIGIN}/") #指定运行时动态库的加载路径,ORIGIN指运行文件所在目录
 endif()
 
 if (WIN32)
@@ -67,14 +65,8 @@ function(load_resources plugin_name files_list)
 endfunction()
 
 link_directories(build/pluginmgr)
-include_directories(pluginmgr/include)
-include_directories(thirdlib/YJson/include)
-include_directories(thirdlib/zip/src)
 
-add_subdirectory(thirdlib/YJson yjson)
-add_subdirectory(thirdlib/zip zip)
 add_subdirectory(pluginmgr)
-add_subdirectory(plugins)
 add_subdirectory(example)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
@@ -91,9 +83,4 @@ else()
   target_compile_options(${target_name} PRIVATE -Wall -Wextra -pedantic) # -Werror 
 endif()
 
-install(TARGETS ${target_name}
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-  RUNTIME DESTINATION bin
-  PUBLIC_HEADER DESTINATION include
-)
+install(TARGETS ${target_name})

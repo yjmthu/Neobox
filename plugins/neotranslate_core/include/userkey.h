@@ -1,5 +1,0 @@
-﻿#define ICIBA_KEY "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-#define BAIDU_ID "xxxxxxxxxxxxxxxxx"
-#define BAIDU_KEY "xxxxxxxxxxxxxxxxxxxx"
-#define YOUDAO_ID "xxxxxxxxxxxxxxxx"
-#define YOUDAO_KEY "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
