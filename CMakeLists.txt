@@ -26,8 +26,8 @@ if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 else()
   add_definitions(-D_RELEASE)
   message("定义Rlease宏, 类型${CMAKE_BUILD_TYPE}。")
-  # set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
-  # set(CMAKE_INSTALL_RPATH "\${ORIGIN}/") #指定运行时动态库的加载路径,ORIGIN指运行文件所在目录
+  set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
+  set(CMAKE_INSTALL_RPATH "\${ORIGIN}/../lib") #指定运行时动态库的加载路径,ORIGIN指运行文件所在目录
 endif()
 
 if (WIN32)
