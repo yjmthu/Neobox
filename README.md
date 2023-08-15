@@ -55,7 +55,7 @@
 git clone https://github.com/yjmthu/Neobox.git
 cd Neobox
 git submodule update --init --recursive
-cmake -S . -GNinja -DCMAKE_BUILD_TYPE="Debug" -B build/Debug
+cmake -S . -B -GNinja build/Debug -DCMAKE_INSTALL_PREFIX=install -DCMAKE_BUILD_TYPE="Debug"
 cmake --build "./build/Debug"
 cmake -P "./build/Debug/cmake_install.cmake"
 ```
@@ -69,7 +69,7 @@ sudo pacman -S qt6-base curl cmake ninja
 git clone https://github.com/yjmthu/Neobox.git
 cd Neobox
 git submodule update --init --recursive
-cmake -GNinja -B build/Debug -S . -DCMAKE_BUILD_TYPE="Debug"
+cmake -GNinja -B build/Debug -S . -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_INSTALL_PREFIX=install
 cmake --build build/Debug
 cmake -P build/Debug/cmake_install.cmake
 ```
