@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.10.1)
 
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "None")
+  message("---- skip build example ----")
+endif()
+
 file(GLOB sources src/*.cpp)
 
 foreach(item ${sources})

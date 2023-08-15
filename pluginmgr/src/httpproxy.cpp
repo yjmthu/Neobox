@@ -3,9 +3,8 @@
 
 #ifdef _WIN32
 #include <neobox/systemapi.h>
-#endif
-
 static const wchar_t regProxyPath[] = LR"(Software\Microsoft\Windows\CurrentVersion\Internet Settings)";
+#endif
 
 HttpProxy::HttpProxy(YJson& settings)
   : NeoConfig(InitSettings(settings))

@@ -14,34 +14,22 @@ set(NEOBOX_BUILD_TIME ${COMPILE_TIME})
 set(target_name neobox)
 project(${target_name} VERSION 2.4.3 LANGUAGES CXX C)
 
-# if (NOT CMAKE_BUILD_TYPE)
-#   message("编译类型未定义target_name默认设置为Debug")
-#   set(CMAKE_BUILD_TYPE "Debug")
-# endif()
-
-message("编译类型：${CMAKE_BUILD_TYPE}")
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
   add_definitions(-D_DEBUG)
-  message("定义Debug宏, 类型${CMAKE_BUILD_TYPE}。")
-else()
-  add_definitions(-D_RELEASE)
-  message("定义Rlease宏, 类型${CMAKE_BUILD_TYPE}。")
+  message("====== defined _DEBUG ======")
   set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
   set(CMAKE_INSTALL_RPATH "\${ORIGIN}/../lib") #指定运行时动态库的加载路径,ORIGIN指运行文件所在目录
+else()
+  add_definitions(-D_RELEASE)
+  message("====== defined _RLEASE ======")
 endif()
 
 if (WIN32)
   add_definitions(-DUNICODE -D_UNICODE)
-  if(MSVC)
-    add_compile_options("/utf-8")
-  endif()
-elseif(UNIX)
-  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT ANDROID)
-    add_compile_options(-stdlib=libc++)
-    # Presumably need the above for linking too, maybe other options missing as well
-    add_link_options(-stdlib=libc++)   # New command on CMake master, not in 3.12 release
-    # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexperimental-library")  # std::format
-  endif()
+endif()
+
+if(MSVC)
+  add_compile_options("/utf-8")
 endif()
 
 
