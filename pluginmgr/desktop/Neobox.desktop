@@ -1,0 +1,9 @@
+[Desktop-Entry]
+Type=Application
+Version=1.0
+Name=Neobox
+Comment=A plugin management program written in C++20.
+Icon=/usr/share/pixmaps/neobox-git.png
+Exec=env LANG=en_US.UTF-8 neobox %U
+Terminal=false
+Path=/usr/bin
