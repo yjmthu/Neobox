@@ -7,3 +7,4 @@ Icon=/usr/share/pixmaps/neobox-git.png
 Exec=env LANG=en_US.UTF-8 neobox %U
 Terminal=false
 Path=/usr/bin
+Categories=System;Utilities;
