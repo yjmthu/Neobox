@@ -59,7 +59,7 @@ cmake -P "./build/Debug/cmake_install.cmake"
 - CMake 命令【linux】
 
 ```shell
-sudo pacman -S qt6-base curl cmake ninja clang libc++
+sudo pacman -S qt6-base curl cmake ninja
 git clone https://github.com/yjmthu/Neobox.git
 cd Neobox
 git submodule update --init --recursive
