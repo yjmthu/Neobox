@@ -498,15 +498,17 @@ void PluginMgr::ShowMsg(class QString text)
 
 int PluginMgr::Exec()
 {
-  auto arg = qApp->arguments();
-  if (!arg.empty()) {
-    if (arg.front() == "show") {
+  auto arguments = qApp->arguments();
+  if (arguments.size() > 1) {
+    auto arg = arguments[1];
+    if (arg == "show") {
+      qDebug() << "控制面板已打开！" << Qt::endl;
       m_Menu->m_ControlPanel->trigger();
-    } else if (arg.front() == "disable") {
-      qDebug() << "暂不支持。";
-    } else if (arg.front() == "help") {
-      qDebug() << "show -- 显示控制面板；"
-        << "disable -- 禁用所有插件";
+    } else if (arg== "disable") {
+      qDebug() << "暂不支持。" << Qt::endl;
+    } else if (arg== "help") {
+      qDebug() << "show -- 显示控制面板；" << Qt::endl
+        << "disable -- 禁用所有插件" << Qt::endl;
     }
   }
   return QApplication::exec();

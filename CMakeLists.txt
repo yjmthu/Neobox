@@ -17,8 +17,6 @@ project(${target_name} VERSION 2.4.3 LANGUAGES CXX C)
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
   add_definitions(-D_DEBUG)
   message("====== defined _DEBUG ======")
-  set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
-  set(CMAKE_INSTALL_RPATH "\${ORIGIN}/../lib") #指定运行时动态库的加载路径,ORIGIN指运行文件所在目录
 else()
   add_definitions(-D_RELEASE)
   message("====== defined _RLEASE ======")
@@ -63,6 +61,12 @@ target_link_libraries(${target_name} PUBLIC
   pluginmgr
   Qt6::Widgets
 )
+
+if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "None")
+  message("set runtime lib path.")
+  set_target_properties(${target_name} PROPERTIES
+    INSTALL_RPATH "$ORIGIN;/usr/lib;$ORIGIN/../lib")
+endif()
 
 if(MSVC)
   target_compile_options(${target_name} PRIVATE /W4 /WX)
