@@ -75,7 +75,7 @@ public:
   void ShowMsgbox(const std::wstring& title,
     const std::wstring& text,
     MsgboxType type = MsgboxType::Information);
-  static int Exec();
+  int Exec();
   static void Quit();
   void Restart();
   static std::filesystem::path GetJunkDir();

@@ -14,6 +14,7 @@
 #include <QApplication>
 #include <QProcess>
 #include <QSharedMemory>
+#include <QDebug>
 
 #include <cstdlib>
 #include <filesystem>
@@ -497,6 +498,17 @@ void PluginMgr::ShowMsg(class QString text)
 
 int PluginMgr::Exec()
 {
+  auto arg = qApp->arguments();
+  if (!arg.empty()) {
+    if (arg.front() == "show") {
+      m_Menu->m_ControlPanel->trigger();
+    } else if (arg.front() == "disable") {
+      qDebug() << "暂不支持。";
+    } else if (arg.front() == "help") {
+      qDebug() << "show -- 显示控制面板；"
+        << "disable -- 禁用所有插件";
+    }
+  }
   return QApplication::exec();
 }
 
