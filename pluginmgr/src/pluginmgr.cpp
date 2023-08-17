@@ -209,7 +209,7 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
   fs::path path = GetPluginDir() / pluginName;
 #else
   fs::path path = __FILE__;
-  path = path.parent_path().parent_path().parent_path() / "build/Debug/plugins" / pluginName;
+  path = path.parent_path().parent_path().parent_path().parent_path() / "neobox-plugins/install";
   path.make_preferred();
 #endif
   if (!LoadPlugEnv(path)) {

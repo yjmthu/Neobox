@@ -128,9 +128,10 @@ static Display* GetX11Display() {
   return x11App->display();
 }
 static wl_display* GetWaylandDisplay() {
-  auto wayland = qGuiApp->nativeInterface<QNativeInterface::QWaylandApplication>();
-  if (!wayland) return nullptr;
-  return wayland->display();
+  // auto wayland = qGuiApp->nativeInterface<QNativeInterface::QWaylandApplication>();
+  // if (!wayland) return nullptr;
+  // return wayland->display();
+  return nullptr;
 }
 #endif
 

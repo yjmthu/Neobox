@@ -4,7 +4,10 @@
 #include <winhttp.h>
 #else
 #include <curl/curl.h>
-#include <curl/header.h>
+#include <curl/easy.h>
+#ifndef CURL_WRITEFUNC_ERROR
+#define CURL_WRITEFUNC_ERROR -1
+#endif
 #endif  // _WIN32
 
 #include <neobox/httplib.h>
