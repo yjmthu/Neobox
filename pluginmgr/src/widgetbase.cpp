@@ -124,7 +124,8 @@ void WidgetBase::mouseMoveEvent(QMouseEvent* event)
 
   //根据按下处的位置判断是否是移动控件还是拉伸控件
   if (!pressedArea) {
-#ifdef __linux__
+// #ifdef __linux__
+#if 0
     auto x11App = 
       qGuiApp->nativeInterface<QNativeInterface::QX11Application>();
     if (x11App) {
@@ -149,6 +150,8 @@ void WidgetBase::mouseMoveEvent(QMouseEvent* event)
         SubstructureNotifyMask | SubstructureRedirectMask,
         &event);
       XFlush(display);
+    } else {
+      this->move(this->x() + offsetX, this->y() + offsetY);
     }
 #else
     this->move(this->x() + offsetX, this->y() + offsetY);
