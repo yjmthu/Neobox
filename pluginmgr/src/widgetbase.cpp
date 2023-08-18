@@ -124,7 +124,35 @@ void WidgetBase::mouseMoveEvent(QMouseEvent* event)
 
   //根据按下处的位置判断是否是移动控件还是拉伸控件
   if (!pressedArea) {
+#ifdef __linux__
+    auto x11App = 
+      qGuiApp->nativeInterface<QNativeInterface::QX11Application>();
+    if (x11App) {
+      XEvent event {};
+
+      auto display = x11App->display();
+      event.xclient.type = ClientMessage;
+      event.xclient.message_type = XInternAtom(display, "_NET_WM_MOVERESIZE", False);
+      event.xclient.display = display;
+      event.xclient.window = (XID)(this->winId());
+      event.xclient.format = 32;
+      event.xclient.data.l[0] = this->x() + offsetX;
+      event.xclient.data.l[1] = this->y() + offsetY;
+      event.xclient.data.l[2] = 8;
+      event.xclient.data.l[3] = Button1;
+      event.xclient.data.l[4] = 1;
+
+      XUngrabPointer(display, CurrentTime);
+      XSendEvent(display,
+        DefaultRootWindow(display),
+        False,
+        SubstructureNotifyMask | SubstructureRedirectMask,
+        &event);
+      XFlush(display);
+    }
+#else
     this->move(this->x() + offsetX, this->y() + offsetY);
+#endif
   }
 
   int rectX = mouseRect.x();

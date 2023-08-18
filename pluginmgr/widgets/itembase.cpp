@@ -162,6 +162,7 @@ bool ItemBase::PluginDownload()
       fs::remove(pluginTemp);
       emit DownloadFinished();
     },
+    .m_ProcessCallback = std::nullopt,
   };
   connect(&dialog, &DownloadingDlg::Terminate, std::bind(&HttpLib::ExitAsync, &clt));
 
