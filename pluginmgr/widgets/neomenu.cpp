@@ -184,7 +184,7 @@ void NeoMenu::SetAutoSatrt(QAction* action, bool on)
   } else if (fs::exists(shortcut)) {
     if (fs::exists(autostart) || fs::create_directories(autostart, code)) {
       autostart /= "neobox.desktop";
-      succeed = !QProcess::startDetached("ln", {
+      succeed = !QProcess::execute("ln", {
         "-s", QString::fromStdWString(shortcut.wstring()), QString::fromStdWString(autostart.wstring())
       });
     }
