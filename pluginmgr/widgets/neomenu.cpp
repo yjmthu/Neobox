@@ -95,8 +95,12 @@ static QString GetStartCommand() {
     QDir::toNativeSeparators(qApp->applicationFilePath()));
 }
 
+static inline fs::path GetHomePath() {
+  return QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)).toStdWString();
+}
+
 static auto GetProfilePath() {
-  fs::path home = QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)).toStdWString();
+  auto home { GetHomePath() };
   auto cshell = std::getenv("SHELL");
   fs::path profile = ".profile";
   if (cshell) {
@@ -121,20 +125,24 @@ bool NeoMenu::IsAutoStart()
           RegReadString(HKEY_CURRENT_USER, pPath, L"Neobox");
 #else
   auto const profile = GetProfilePath();
-  if (!fs::exists(profile)) {
-    return false;
-  }
-  auto start = GetStartCommand().toStdString();
-  auto cmd = std::format("grep '{}' '{}'", start, profile);
-  std::vector<std::string> result;
-  GetCmdOutput(cmd.c_str(), result);
-  std::cout << result.front() << std::endl;
-  for (auto& data: result) {
-    if (data == start) {
-      return true;
+  if (fs::exists(profile)) {
+    auto start = GetStartCommand().toStdString();
+    auto cmd = std::format("grep '{}' '{}'", start, profile);
+    std::vector<std::string> result;
+    GetCmdOutput(cmd.c_str(), result);
+    std::cout << result.front() << std::endl;
+    for (auto& data: result) {
+      if (data == start) {
+        auto profile = QString::fromStdString(GetProfilePath());
+        QProcess::execute("sed", {
+          "-i", QStringLiteral("\\#^%1$#d").arg(QString::fromStdString(start)), profile
+        });
+        break;
+      }
     }
   }
-  return false;
+  auto autostart { GetHomePath() / ".config/autostart/neobox.desktop" };
+  return fs::exists(autostart);
 #endif
 }
 
@@ -162,20 +170,26 @@ void NeoMenu::SetAutoSatrt(QAction* action, bool on)
     }
   }
 #else
-  auto const start = GetStartCommand();
   bool succeed = false;
-  if (on) {
-    std::ofstream file(GetProfilePath(), std::ios::app);
-    if (file.is_open()) {
-      file << start.toStdString() << std::endl;
-      file.close();
+  std::error_code code;
+  fs::path shortcut { "/usr/share/applications/neobox.desktop" };
+  auto autostart { GetHomePath() / ".config/autostart" };
+  if (!on) {
+    autostart /= "neobox.desktop";
+    if (fs::exists(autostart)) {
+      succeed = fs::remove(autostart, code);
+    } else {
       succeed = true;
     }
+  } else if (fs::exists(shortcut)) {
+    if (fs::exists(autostart) || fs::create_directories(autostart, code)) {
+      autostart /= "neobox.desktop";
+      succeed = !QProcess::startDetached("ln", {
+        "-s", QString::fromStdWString(shortcut.wstring()), QString::fromStdWString(autostart.wstring())
+      });
+    }
   } else {
-    auto profile = QString::fromStdString(GetProfilePath());
-    succeed = !QProcess::execute("sed", {
-      "-i", QStringLiteral("\\#^%1$#d").arg(start), profile
-    });
+    succeed = false;
   }
   if (succeed) {
     mgr->ShowMsg("设置成功！");
