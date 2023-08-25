@@ -226,6 +226,11 @@ bool Shortcut::RegisterHotKey(const std::u8string& keyString)
   if (!m_Display || !m_GrabWindow) return false;
   auto ret = ::XGrabKey(m_Display, keyName.data.nativeKey, keyName.data.nativeMods, m_GrabWindow, False, GrabModeAsync, GrabModeAsync);
   if (ret != 1) return false;
+  ret = ::XGrabKey(m_Display, keyName.data.nativeKey, keyName.data.nativeMods | Mod2Mask, m_GrabWindow, False, GrabModeAsync, GrabModeAsync);
+  if (ret != 1) {
+    ::XUngrabKey(m_Display, keyName.data.nativeKey, keyName.data.nativeMods, m_GrabWindow);
+    return false;
+  }
 #endif
   m_HotKeyIds[keyName] = id;
   m_HotKeyNames[id] = keyString;
@@ -239,8 +244,9 @@ bool Shortcut::UnregisterHotKey(const std::u8string& keyString) {
   if (iter != m_HotKeyIds.end()) {
 #ifdef __linux__
     if (!m_Display) return false;
-    auto const ret = ::XUngrabKey(m_Display, keyName.data.nativeKey, keyName.data.nativeMods, m_GrabWindow);
-    if (ret != 1) return false;
+    auto ret1 = ::XUngrabKey(m_Display, keyName.data.nativeKey, keyName.data.nativeMods, m_GrabWindow);
+    auto ret2 = ::XUngrabKey(m_Display, keyName.data.nativeKey, keyName.data.nativeMods | Mod2Mask, m_GrabWindow);
+    if (ret1 != 1 || ret2 != 1) return false;
 #else
     auto const ret = ::UnregisterHotKey(NULL, iter->second);
     if (ret == 0) return false;
