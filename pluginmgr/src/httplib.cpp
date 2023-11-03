@@ -844,12 +844,13 @@ void HttpLib::ParseHeaders(const std::u8string& outBuffer)
     cursor += 2;
   }
   for (; cursor != outBuffer.npos; cursor += 2) {
+    auto left = cursor;
     auto mid = outBuffer.find(u8':', cursor);
     cursor = outBuffer.find(u8"\r\n", mid);
     if (mid == outBuffer.npos || cursor == outBuffer.npos) {
       break;
     }
-    auto key = outBuffer.substr(0, mid);
+    auto key = outBuffer.substr(left, mid - left);
     mid = outBuffer.find_first_not_of(u8' ', ++mid);
     auto value = outBuffer.substr(mid, cursor - mid);
     m_Response.headers[key] = value;

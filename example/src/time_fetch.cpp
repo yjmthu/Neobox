@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string>
 #include <memory>
+#include <atomic>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -16,12 +17,17 @@ using namespace std::literals;
 static const auto strMonths = "JanFebMarAprMayJunJulAugSepOctNovDec"s;
 static const auto strWeeks = "SunMonTueWedThuFriSat"s;
 
+
+std::ostream& operator<<(std::ostream& o, const std::u8string& data) {
+  return o.write(reinterpret_cast<const char*>(data.data()), data.size());
+};
+
 // Date:  Sat, 24 Dec 2022 17:19:03 GMT
 static auto GetDateTime(std::u8string dateU8Str)
 {
   std::string dateStr(dateU8Str.begin(), dateU8Str.end());
   std::cout << "inital string is {" << dateStr << "} size <" << dateStr.size() << ">" << std::endl;
-  std::regex pattern(" (\\w{3}), {1,2}(\\d{1,2}) (\\w{3}) (\\d{4}) (\\d{2})\\:(\\d{2})\\:(\\d{2}) GMT");
+  std::regex pattern("(\\w{3}), {1,2}(\\d{1,2}) (\\w{3}) (\\d{4}) (\\d{2})\\:(\\d{2})\\:(\\d{2}) GMT");
   std::smatch result;
   if (!std::regex_match(dateStr, result, pattern)) {
     throw std::runtime_error("can't match string!");
@@ -50,13 +56,17 @@ void SetDateTime(SYSTEMTIME& datetime)
 }
 
 
-int main()
-{
-  std::cout << "============Begin============" << std::endl;
-  HttpLib clt(HttpUrl(u8"https://beijing-time.org/"sv));
-  auto res = clt.Get();
+void ParseDateTime(const HttpLib::Response& res) {
   try {
-    auto ptr = GetDateTime(res->headers[u8"Date"]);
+    HttpLib::Headers map = res.headers;
+    auto date = res.headers.find(u8"Date");
+    // for (auto& [i, j]: map) {
+    //   std::cout << i << ": " << j << std::endl;
+    // }
+    if (date == res.headers.end()) {
+      throw std::runtime_error("can't find 'Date' in header.");
+    }
+    auto ptr = GetDateTime(date->second);
     auto& datetime = *ptr;
     std::cout << std::format("{:04}-{:02}-{:02} {:02}:{:02}:{:02} {}\n",
         datetime.wYear, datetime.wMonth, datetime.wDay,
@@ -69,8 +79,26 @@ int main()
   } catch (...) {
     std::cerr << "other errors occured." << std::endl;
   }
+}
+
+int main()
+{
+  std::cout << "============Begin============" << std::endl;
+  static std::atomic_bool finished = false;
+  HttpLib clt(HttpUrl(u8"https://beijing-time.org/"sv), true);
+  HttpLib::Callback callback {
+    .m_WriteCallback = [](auto data, auto size) {},
+    .m_FinishCallback = [](auto msg, auto res){
+      if (msg.empty() && res->status == 200) {
+        ParseDateTime(*res);
+      }
+      finished = true;
+    },
+  };
+  clt.GetAsync(std::move(callback));
+  while (!finished);
+  
   std::cout << "============End============" << std::endl;
-  // std::getchar();
   return 0;
 }
 #else
