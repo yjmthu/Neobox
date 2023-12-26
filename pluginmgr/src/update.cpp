@@ -4,12 +4,14 @@
 #include <neobox/neotimer.h>
 #include <neobox/systemapi.h>
 #include <neobox/neomenu.hpp>
+#include <neobox/neosystemtray.hpp>
 
 #ifdef _WIN32
 #include <zip.h>
+#include <wintoastlib.h>
 #endif
 
-#include <chrono>
+// #include <chrono>
 #include <utility>
 #include <array>
 #include <regex>
@@ -21,20 +23,78 @@
 #include <QDir>
 
 using namespace std::literals;
+using namespace WinToastLib;
 namespace fs = std::filesystem;
+
+class CutomHanderForUpdate : public IWinToastHandler
+{
+public:
+  explicit CutomHanderForUpdate(PluginUpdate& obj)
+    : m_Obj(obj)
+  {};
+private:
+  PluginUpdate& m_Obj;
+public:
+  void toastActivated() const override
+  {
+    // std::wcout << L"The user clicked in this toast" << std::endl;
+  }
+
+  void toastActivated(int actionIndex) const override
+  {
+    // std::wcout << L"The user clicked on action #" << actionIndex << std::endl;
+    if (actionIndex == 0) {
+      m_Obj.DownloadUpgrade([](PluginUpdate& obj){
+        obj.CopyExecutable();
+      });
+    }
+  }
+
+  void toastDismissed(WinToastDismissalReason state) const override
+  {
+    // std::wcout << L"The toast has been dismissed" << std::endl;
+    // std::wcout << L"Reason: ";
+    switch (state) {
+    case UserCanceled:
+      // std::wcout << L"UserCanceled" << std::endl;
+      break;
+    case ApplicationHidden:
+      // std::wcout << L"ApplicationHidden" << std::endl;
+      break;
+    case TimedOut:
+      // std::wcout << L"TimedOut" << std::endl;
+      break;
+    default:
+      // std::wcout << L"ApplicationNotInForeground" << std::endl;
+      break;
+    }
+  }
+
+  void toastFailed() const override
+  {
+    // std::wcout << L"Error showing current toast" << std::endl;
+  }
+};
 
 PluginUpdate::PluginUpdate(YJson& settings)
   : m_Settings(InitSettings(settings))
   , m_Timer(new NeoTimer)
+#ifdef _WIN32
+  , m_Handler(new CutomHanderForUpdate(*this))
+#endif
 {
 #if 1
   connect(this, &PluginUpdate::AskInstall, this, [this](){
-    if (QMessageBox::question(mgr->m_Menu, "提示", "有新版本可用，是否下载更新？") == QMessageBox::No)
-      return;
-    
-    DownloadUpgrade([](PluginUpdate& obj){
-      obj.CopyExecutable();
-    });
+    // show notifaction on Windows to ask if user want to update
+
+    WinToastTemplate templ = WinToastTemplate(WinToastTemplate::ImageAndText01);
+    templ.setTextField(L"Neobox有新版本，是否更新？", WinToastTemplate::FirstLine);
+
+    std::vector<std::wstring> actions {
+      L"立即更新", L"下次提醒"
+    };
+
+    WinToast::instance()->showToast(templ, m_Handler);
   });
   connect(this, &PluginUpdate::QuitApp, this, [](QString exe, QStringList arg){
     qApp->quit();
@@ -48,7 +108,7 @@ PluginUpdate::PluginUpdate(YJson& settings)
   });
 #endif
   if (m_Settings.GetAutoCheck()) {
-    m_Timer->StartTimer(10s, [this]() {
+    m_Timer->StartTimer(90s, [this]() {
       Callback callback = [this](PluginUpdate& self) {
         if (!self.NeedUpgrade()) return;
         if (!self.m_Settings.GetAutoUpgrade()) {
@@ -68,6 +128,7 @@ PluginUpdate::PluginUpdate(YJson& settings)
 
 PluginUpdate::~PluginUpdate()
 {
+  delete m_Handler;
   delete m_Timer;
   m_DataRequest = nullptr;
 }

@@ -4,3 +4,6 @@
 [submodule "thirdlib/zip"]
 	path = thirdlib/zip
 	url = https://github.com/kuba--/zip.git
+[submodule "thirdlib/WinToast"]
+	path = thirdlib/WinToast
+	url = https://github.com/mohabouje/WinToast.git

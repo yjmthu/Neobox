@@ -37,6 +37,9 @@ public:
   UpgradeConfig m_Settings;
 private:
   class NeoTimer* m_Timer;
+#ifdef _WIN32
+  class CutomHanderForUpdate* m_Handler;
+#endif
   std::u8string m_ZipUrl;
   std::unique_ptr<YJson> m_LatestData;
   std::unique_ptr<class HttpLib> m_DataRequest;
