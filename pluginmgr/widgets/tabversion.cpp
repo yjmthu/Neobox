@@ -284,6 +284,8 @@ void TabVersion::DoUpgrade(const YJson& apiData)
       return;
     }
 #ifdef _WIN32
+    delete mgr;
+    mgr = nullptr;
     QProcess::startDetached(QString::fromStdWString(exePath.wstring()), {
       QDir::currentPath(),
     }, qApp->applicationDirPath());

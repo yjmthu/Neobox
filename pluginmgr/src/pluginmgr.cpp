@@ -125,6 +125,8 @@ PluginMgr::~PluginMgr()
   delete m_SharedTimer;
 
   DetachSharedMemory();   // 在构造函数抛出异常后析构函数将不再被调用
+
+  mgr = nullptr;
 }
 
 void PluginMgr::SaveSettings()
@@ -510,7 +512,9 @@ int PluginMgr::Exec()
         << "disable -- 禁用所有插件" << Qt::endl;
     }
   }
-  return QApplication::exec();
+  auto ret = QApplication::exec();
+  delete mgr;
+  return ret;
 }
 
 void PluginMgr::Quit()
@@ -521,6 +525,7 @@ void PluginMgr::Quit()
 void PluginMgr::Restart()
 {
   WriteSharedFlag(m_SharedMemory, 1);
+  delete mgr;
   QProcess::startDetached(
     QApplication::applicationFilePath(), QStringList {}
   );

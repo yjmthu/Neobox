@@ -1,3 +1,4 @@
+#include <neobox/pluginmgr.h>
 #include <neobox/neosystemtray.hpp>
 
 #include <QDir>
@@ -30,7 +31,7 @@ void NeoSystemTray::InitDirs()
     mgr->glbWriteSharedFlag(1);
     QProcess::startDetached(QApplication::applicationFilePath(), QStringList {});
 #endif
-    qApp->quit();
+    mgr->Quit();
     return;
   }
 }

@@ -94,13 +94,13 @@ PluginUpdate::PluginUpdate(YJson& settings)
       L"立即更新", L"下次提醒"
     };
     for (auto const &action : actions) {
-        templ.addAction(action);
+      templ.addAction(action);
     }
 
     WinToast::instance()->showToast(templ, m_Handler);
   });
   connect(this, &PluginUpdate::QuitApp, this, [](QString exe, QStringList arg){
-    qApp->quit();
+    mgr->Quit();
 #ifdef _WIN32
     // 设置进程优先级-实时，使其抢先于操作系统组件之前运行
     SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
@@ -139,6 +139,7 @@ PluginUpdate::PluginUpdate(YJson& settings)
 
 PluginUpdate::~PluginUpdate()
 {
+  WinToast::instance()->clear();
   delete m_Handler;
   delete m_Timer;
   m_DataRequest = nullptr;
