@@ -47,6 +47,8 @@ public:
       m_Obj.DownloadUpgrade([](PluginUpdate& obj){
         obj.CopyExecutable();
       });
+    } else {
+      m_Obj.m_Timer->Expire();
     }
   }
 
@@ -56,7 +58,7 @@ public:
     // std::wcout << L"Reason: ";
     switch (state) {
     case UserCanceled:
-      // std::wcout << L"UserCanceled" << std::endl;
+      m_Obj.m_Timer->Expire();
       break;
     case ApplicationHidden:
       // std::wcout << L"ApplicationHidden" << std::endl;
@@ -85,14 +87,15 @@ PluginUpdate::PluginUpdate(YJson& settings)
 {
 #if 1
   connect(this, &PluginUpdate::AskInstall, this, [this](){
-    // show notifaction on Windows to ask if user want to update
-
     WinToastTemplate templ = WinToastTemplate(WinToastTemplate::ImageAndText01);
     templ.setTextField(L"Neobox有新版本，是否更新？", WinToastTemplate::FirstLine);
 
     std::vector<std::wstring> actions {
       L"立即更新", L"下次提醒"
     };
+    for (auto const &action : actions) {
+        templ.addAction(action);
+    }
 
     WinToast::instance()->showToast(templ, m_Handler);
   });
@@ -107,8 +110,16 @@ PluginUpdate::PluginUpdate(YJson& settings)
     QProcess::startDetached(exe, arg);
   });
 #endif
+
+#ifdef _WIN32
+  WinToast::instance()->setAppName(L"Neobox");
+  WinToast::instance()->setAppUserModelId(WinToast::configureAUMI(L"yjmthu", L"neobox", L"neoboxupdate", L"20231226"));
+  if (!WinToast::instance()->initialize()) {
+    mgr->ShowMsg(u8"Error, your system in not compatible!");
+  }
+#endif
   if (m_Settings.GetAutoCheck()) {
-    m_Timer->StartTimer(90s, [this]() {
+    m_Timer->StartTimer(10s, [this]() {
       Callback callback = [this](PluginUpdate& self) {
         if (!self.NeedUpgrade()) return;
         if (!self.m_Settings.GetAutoUpgrade()) {

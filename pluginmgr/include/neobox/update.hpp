@@ -25,6 +25,7 @@ public:
   typedef std::function<void(PluginUpdate&)> Callback;
 private:
   static YJson& InitSettings(YJson& settings);
+  friend class CutomHanderForUpdate;
 public:
   explicit PluginUpdate(YJson& settings);
   ~PluginUpdate();

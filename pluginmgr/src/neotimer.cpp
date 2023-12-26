@@ -1,5 +1,4 @@
 #include <neobox/neotimer.h>
-#include <stdint.h>
 #include <utility>
 
 using namespace std::literals;
