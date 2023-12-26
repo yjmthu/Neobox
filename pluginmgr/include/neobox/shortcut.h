@@ -35,10 +35,11 @@ public:
   bool UnregisterPlugin(std::u8string_view pluginName);
   bool RegisterHotKey(const std::u8string& keyString);
   bool UnregisterHotKey(const std::u8string& keyString);
-  YJson* FindPluginData(std::u8string_view pluginName);
+  std::vector<YJson*> FindPluginData(std::u8string_view pluginName);
+  std::vector<YJson*> FindProcData();
   YJson* FindShortcutData(std::u8string_view keyString);
-  const std::u8string_view GetCallbackInfo(int id);
-  const std::u8string_view GetCallbackInfo(KeyName keyName);
+  std::optional<std::u8string_view> GetCallbackInfo(int id);
+  std::optional<std::u8string_view> GetCallbackInfo(KeyName keyName);
 
 private:
   bool IsKeyRegistered(QString shortcut);

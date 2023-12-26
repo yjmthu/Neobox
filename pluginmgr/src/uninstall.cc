@@ -3,6 +3,7 @@
 #include <atomic>
 #include <filesystem>
 #include <format>
+#include <thread>
 
 
 #include <Shlobj.h>

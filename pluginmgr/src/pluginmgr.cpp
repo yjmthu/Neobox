@@ -16,7 +16,6 @@
 #include <QSharedMemory>
 #include <QDebug>
 
-#include <cstdlib>
 #include <filesystem>
 
 #include <neobox/update.hpp>

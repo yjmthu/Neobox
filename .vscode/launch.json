@@ -15,7 +15,7 @@
       "environment": [
         {
           "name": "PATH",
-          "value": "${workspaceFolder}\\build\\Debug\\pluginmgr;${workspaceFolder}\\build\\Debug\\plugins;${env:PATH}"
+          "value": "${workspaceFolder}\\build\\Debug\\pluginmgr;${workspaceFolder}\\build\\Debug\\pluginmgr\\yjson;${workspaceFolder}\\..\\neobox-plugins\\install\\plugins;${env:PATH}"
         }
       ],
       "console": "externalTerminal"
