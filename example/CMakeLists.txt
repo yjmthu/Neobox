@@ -19,3 +19,13 @@ if(UNIX)
   add_executable(x11_test src/x11_test.cc)
   target_link_libraries(x11_test PUBLIC X11)
 endif()
+
+if (MSVC)
+  set(ADMIN_APPS test_time_fetch_cpp test_shanghai_cpp test_timeapi_cpp)
+  set_target_properties(${ADMIN_APPS} PROPERTIES LINK_FLAGS
+    "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\" /SUBSYSTEM:CONSOLE"
+  )
+  install(TARGETS ${ADMIN_APPS}
+    RUNTIME DESTINATION bin
+  )
+endif()

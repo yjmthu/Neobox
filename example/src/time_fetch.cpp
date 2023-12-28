@@ -81,6 +81,7 @@ void ParseDateTime(const HttpLib::Response& res) {
   }
 }
 
+// int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 int main()
 {
   std::cout << "============Begin============" << std::endl;
@@ -96,9 +97,12 @@ int main()
     },
   };
   clt.GetAsync(std::move(callback));
-  while (!finished);
+  while (!finished) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
   
   std::cout << "============End============" << std::endl;
+  getchar();
   return 0;
 }
 #else
