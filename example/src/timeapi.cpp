@@ -1,7 +1,9 @@
 #include <neobox/httplib.h>
-#include <iostream>
+#include <fstream>
 #include <array>
 #include <windows.h>
+
+namespace chrono = std::chrono;
 
 // https://www.timeapi.io/api/Time/current/zone?timeZone=UTC
 
@@ -27,10 +29,41 @@ const std::array strWeeks = {
   u8"Sunday", u8"Monday", u8"Tuesday", u8"Wednesday", u8"Thursday", u8"Friday", u8"Saturday"
 };
 
-int main() {
+int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+{
   SetConsoleOutputCP(CP_UTF8);
 
-  std::cout << "============Begin============" << std::endl;
+  if (lpCmdLine) {
+    // check if lpCmdLine is interger
+    const std::string delayStr = lpCmdLine;
+    if (delayStr.find_first_not_of("0123456789") != std::string::npos) {
+      // std::cout << "invalid delay: " << lpCmdLine << std::endl;
+    } else {
+      // std::cout << "delay: " << delayStr << std::endl;
+      int delay = std::stoi(delayStr);
+      std::this_thread::sleep_for(std::chrono::seconds(delay));
+    }
+  }
+
+  std::wstring exeFilePath(MAX_PATH + 1, 0);
+  GetModuleFileNameW(nullptr, exeFilePath.data(), exeFilePath.size());
+  exeFilePath.resize(exeFilePath.find_last_of(L"\\") + 1);
+  std::filesystem::path logFilePath = exeFilePath;
+  logFilePath /= L"timeapi.log";
+
+  auto tpDay = chrono::time_point_cast<chrono::days>(chrono::system_clock::now());
+  const auto totalDays = tpDay.time_since_epoch().count();
+  std::ifstream fileIn(logFilePath, std::ios::in);
+  if (fileIn.is_open()) {
+    uint64_t oldDays;
+    fileIn >> oldDays;
+    if (totalDays < oldDays || totalDays - oldDays < 6) {
+      return 0;
+    }
+    fileIn.close();
+  }
+
+  // std::cout << "============Begin============" << std::endl;
   std::unique_ptr<SYSTEMTIME> current;
   static std::atomic_bool finished = false;
   HttpLib clt(HttpUrl(u8"https://www.timeapi.io/api/Time/current/zone?timeZone=UTC"sv), true);
@@ -49,8 +82,6 @@ int main() {
           static_cast<unsigned short>(json[u8"seconds"].getValueInt()),
           static_cast<unsigned short>(json[u8"milliSeconds"].getValueInt()),
         });
-      } else {
-        std::cout << "failed: " << std::endl;
       }
       finished = true;
     },
@@ -61,21 +92,19 @@ int main() {
   }
 
   if (current) {
-    std::cout << "year: " << current->wYear << std::endl;
-    std::cout << "month: " << current->wMonth << std::endl;
-    std::cout << "day: " << current->wDay << std::endl;
-    std::cout << "hour: " << current->wHour << std::endl;
-    std::cout << "minute: " << current->wMinute << std::endl;
-    std::cout << "second: " << current->wSecond << std::endl;
-    std::cout << "milliseconds: " << current->wMilliseconds << std::endl;
     SetSystemTime(current.get());
+    std::ofstream fileOut(logFilePath, std::ios::out);
+    if (fileOut.is_open()) {
+      fileOut << totalDays << std::endl;
+      fileOut.close();
+    }
+    MessageBoxW(nullptr, L"set current time success", L"Success", MB_OK);
+
   } else {
-    std::cout << "failed to get current time" << std::endl;
+    MessageBoxW(nullptr, L"failed to get current time", L"Error", MB_OK);
   }
 
-  std::cout << "============End============" << std::endl;
-
-  getchar();
+  std::this_thread::sleep_for(1s);
 
   return 0;
 }

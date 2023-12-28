@@ -21,11 +21,15 @@ if(UNIX)
 endif()
 
 if (MSVC)
-  set(ADMIN_APPS test_time_fetch_cpp test_shanghai_cpp test_timeapi_cpp)
-  set_target_properties(${ADMIN_APPS} PROPERTIES LINK_FLAGS
+  set(ADMIN_CONSOLE_APPS test_time_fetch_cpp test_shanghai_cpp)
+  set(ADMIN_WINDOWS_APPS test_timeapi_cpp)
+  set_target_properties(${ADMIN_CONSOLE_APPS} PROPERTIES LINK_FLAGS
     "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\" /SUBSYSTEM:CONSOLE"
   )
-  install(TARGETS ${ADMIN_APPS}
+  set_target_properties(${ADMIN_WINDOWS_APPS} PROPERTIES LINK_FLAGS
+    "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\" /SUBSYSTEM:WINDOWS"
+  )
+  install(TARGETS ${ADMIN_CONSOLE_APPS} ${ADMIN_WINDOWS_APPS}
     RUNTIME DESTINATION bin
   )
 endif()
