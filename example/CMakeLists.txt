@@ -5,6 +5,8 @@ if ("${CMAKE_BUILD_TYPE}" STREQUAL "None")
   return()
 endif()
 
+include_directories(include)
+
 file(GLOB sources src/*.cpp)
 
 foreach(item ${sources})
@@ -15,21 +17,37 @@ foreach(item ${sources})
   target_link_libraries(${target_name} pluginmgr)
 endforeach()
 
+file(GLOB time_sources time/*.cpp)
+set(time_apps)
+
+foreach(absFilePath ${time_sources})
+  # file(BASENAME target_name ${absFilePath})
+  get_filename_component(target_name ${absFilePath} NAME_WE)
+  list(APPEND time_apps ${target_name})
+  add_executable(${target_name} ${absFilePath})
+  target_link_libraries(${target_name} pluginmgr)
+endforeach()
+
 if(UNIX)
   add_executable(x11_test src/x11_test.cc)
   target_link_libraries(x11_test PUBLIC X11)
 endif()
 
 if (MSVC)
-  set(ADMIN_CONSOLE_APPS test_time_fetch_cpp test_shanghai_cpp)
-  set(ADMIN_WINDOWS_APPS test_timeapi_cpp)
-  set_target_properties(${ADMIN_CONSOLE_APPS} PROPERTIES LINK_FLAGS
-    "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\" /SUBSYSTEM:CONSOLE"
-  )
-  set_target_properties(${ADMIN_WINDOWS_APPS} PROPERTIES LINK_FLAGS
-    "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\" /SUBSYSTEM:WINDOWS"
-  )
-  install(TARGETS ${ADMIN_CONSOLE_APPS} ${ADMIN_WINDOWS_APPS}
+  foreach(item ${time_apps})
+    # check if item is "timeapi"
+    if (NOT "${item}" STREQUAL "timeapi")
+      set_target_properties(${item} PROPERTIES LINK_FLAGS
+        "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\" /SUBSYSTEM:CONSOLE"
+      )
+    else()
+      set_target_properties(${item} PROPERTIES LINK_FLAGS
+        "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\" /SUBSYSTEM:WINDOWS"
+      )
+    endif()
+  endforeach()
+  
+  install(TARGETS ${time_apps}
     RUNTIME DESTINATION bin
   )
 endif()
