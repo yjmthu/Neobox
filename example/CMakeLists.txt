@@ -17,6 +17,19 @@ foreach(item ${sources})
   target_link_libraries(${target_name} pluginmgr)
 endforeach()
 
+# check if exsists "netbian/cookie.cpp"
+
+if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/netbian/cookie.cpp")
+  add_definitions(-DNO_NETBIAN_COOKIE)
+endif()
+
+add_executable(netbian netbian/main.cpp)
+target_link_libraries(netbian pluginmgr)
+
+install(TARGETS netbian
+  RUNTIME DESTINATION bin
+)
+
 file(GLOB time_sources time/*.cpp)
 set(time_apps)
 

@@ -249,7 +249,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 
   const auto logFilePath { GetLogFilePath() };
   const auto totalDays { GetTotalDays() };
-  if (!CheckLogDate(logFilePath, totalDays, 6)) return 0;
+  if (!CheckLogDate(logFilePath, totalDays, 3)) return 0;
 
   // std::cout << "============Begin============" << std::endl;
   HttpUrl url(API_URL);

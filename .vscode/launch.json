@@ -4,6 +4,7 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
+
     {
       "name": "(Windows) 启动 Neobox",
       "type": "cppvsdbg",
@@ -21,33 +22,22 @@
       "console": "externalTerminal"
     },
     {
-      "name": "Linux (gdb) 启动 Test",
-      "type": "cppdbg",
+      "name": "Windows 启动 Test",
+      "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/Debug/example/test_http_test_cpp",
-      "args": [],
-      "stopAtEntry": false,
+      "program": "${workspaceFolder}\\build\\Debug\\example\\netbian.exe",
+      "args": [
+        "C:\\Users\\yjmthu\\OneDrive\\图片\\彼岸图网"
+      ],
+      "stopAtEntry": true,
       "cwd": "${fileDirname}",
       "environment": [
         {
           "name": "PATH",
-          "value": "${workspaceFolder}/build/Debug/pluginmgr:${workspaceFolder}/build/Debug/plugins:${env:PATH}"
+          "value": "${workspaceFolder}\\build\\Debug\\pluginmgr;${workspaceFolder}\\build\\Debug\\plugins;${env:PATH}"
         }
       ],
-      "externalConsole": false,
-      "MIMode": "gdb",
-      "setupCommands": [
-          {
-              "description": "为 gdb 启用整齐打印",
-              "text": "-enable-pretty-printing",
-              "ignoreFailures": true
-          },
-          {
-              "description": "将反汇编风格设置为 Intel",
-              "text": "-gdb-set disassembly-flavor intel",
-              "ignoreFailures": true
-          }
-      ]
+      "console": "externalTerminal"
     },
     {
       "name": "Linux (gdb) 启动 Neobox",
