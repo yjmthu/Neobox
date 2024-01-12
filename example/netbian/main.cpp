@@ -18,7 +18,8 @@
 
 using namespace std::literals;
 namespace fs = std::filesystem;
-const std::u8string host = u8"https://pic.netbian.com";
+const std::u8string domain = u8"pic.netbian.com";
+const std::u8string host = u8"https://" + domain;;
 
 std::ostream& operator<<(std::ostream& os, std::u8string_view res) {
   os.write(reinterpret_cast<const char*>(res.data()), res.size());
@@ -107,7 +108,7 @@ std::vector<IndexPage> GetIndexPages() {
 }
 
 int GetPageCount(const IndexPage& indexPage) {
-  TargetPasser passer(HttpUrl(host + indexPage.href));
+  TargetPasser passer(HttpUrl(domain, indexPage.href, {}, u8"https", 443));
   passer.left = "<div class=\"page\">"s;
   passer.right = "</div>"s;
   // <a href="/4kfengjing/index_204.html">204</a>
@@ -163,7 +164,7 @@ std::u8string GetPictureUrl(const PictureDetail& detail) {
 
   auto dataId = Wide2Utf8String(std::to_wstring(detail.dataId));
   auto random = Wide2Utf8String(std::format(L"{}", distribution(engine)));
-  HttpUrl url(u8"pic.netbian.com", u8"/e/extend/downpic.php?"s, {
+  HttpUrl url(domain, u8"/e/extend/downpic.php?"s, {
     { u8"id"s, dataId },
     { u8"t"s, random },
   }, u8"https", 443);
@@ -188,11 +189,11 @@ std::u8string GetPictureUrl(const PictureDetail& detail) {
   return host + json[u8"pic"].getValueString();
 }
 
-void DownloadPicture(const fs::path folder, const PictureDetail& detail) {
+int DownloadPicture(const fs::path folder, const PictureDetail& detail) {
   auto filePath = folder / (detail.name + u8".jpg"s);
   if (fs::exists(filePath)) {
     std::cout << "File exists: " << filePath.u8string() << std::endl;
-    return;
+    return 1;
   }
   static std::atomic_bool finished;
   finished = false;
@@ -206,7 +207,7 @@ void DownloadPicture(const fs::path folder, const PictureDetail& detail) {
   std::ofstream fileOut(filePath, std::ios::binary);
   if (!fileOut.is_open()) {
     std::cerr << "Error: can not open file: " << filePath.u8string() << std::endl;
-    return;
+    return -1;
   }
 
   const float barWidth = 70.0;
@@ -229,15 +230,9 @@ void DownloadPicture(const fs::path folder, const PictureDetail& detail) {
       auto percent = float(current) / total;
       int pos = barWidth * percent;
       std::cout << "[";
-      for (int i = 0; i < barWidth; ++i) {
-        if (i < pos)
-          std::cout << "=";
-        else if (i == pos)
-          std::cout << ">";
-        else
-          std::cout << " ";
-      }
-      std::cout << "]" << int(percent * 100.0) << " %\r";
+      std::cout << std::setfill('=') << std::setw(pos + 1) << '>';
+      std::cout << std::setfill(' ') << std::setw(barWidth - pos) << ']';
+      std::cout << std::setw(4) << int(percent * 100.0) << " %\r";
       std::cout.flush();
     },
   };
@@ -248,6 +243,17 @@ void DownloadPicture(const fs::path folder, const PictureDetail& detail) {
   }
 
   fileOut.close();
+
+  return 0;
+}
+
+void SleepRandom() {
+  static auto engine = std::default_random_engine();
+  static std::uniform_int_distribution<int> distribution(0, 500);
+  auto const random = distribution(engine);
+  std::cout << "Begin sleep: " << 500 + random << "ms. " << std::flush;
+  std::this_thread::sleep_for(500ms + 1ms * random);
+  std::cout << "End sleep." << std::endl;
 }
 
 int main(int argc, char** argv) {
@@ -298,10 +304,17 @@ int main(int argc, char** argv) {
       std::cerr << "Error: empty picture list" << std::endl;
       return 1;
     }
+    // Output in this format: "**************** page index: 1 ****************"
+    std::cout << std::setfill('*') << std::setw(16) << ' '
+      << "Page " << std::setfill('0') << std::setw(3) << i << ' '
+      << std::setfill('*') << std::setw(16) << ' ' << std::endl;
+    SleepRandom();
     for (auto const& picture : pictures) {
       std::cout << picture.dataId  << ": " << picture.name << std::endl;
-      DownloadPicture(folder, picture);
-      std::this_thread::sleep_for(500ms);
+      auto res = DownloadPicture(folder, picture);
+      if (res == 1) continue;
+      // get random integer from 0 to 500
+      SleepRandom();
     }
   }
   return 0;
