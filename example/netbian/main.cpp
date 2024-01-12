@@ -182,9 +182,23 @@ std::u8string GetPictureUrl(const PictureDetail& detail) {
   auto jsonGBK = std::string_view(reinterpret_cast<const char*>(res->body.data()), res->body.size());
   auto jsonU8 = Ansi2Utf8String(jsonGBK);
   YJson json(jsonU8.begin(), jsonU8.end());
-  if (json[u8"msg"] != 4) {
-    std::cerr << "Error: " << json << std::endl;
-    return {};
+  
+  auto const code = json[u8"msg"].getValueInt();
+  switch (code) {
+    case 4:
+      break;
+    case 3:
+      if (!json[u8"pic"].getValueString().empty()) {
+        std::cout << "下载过于频繁，3秒后下载。" << std::endl;
+      } else {
+        std::cout << json[u8"info"] << std::endl;
+        exit(1);
+      }
+      std::this_thread::sleep_for(3s);
+      break;
+    default:
+      std::cerr << "Error: " << json << std::endl;
+      return {};
   }
   return host + json[u8"pic"].getValueString();
 }
