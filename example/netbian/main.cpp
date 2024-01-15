@@ -245,7 +245,8 @@ int DownloadPicture(const fs::path folder, const PictureDetail& detail) {
       int pos = barWidth * percent;
       std::cout << "[";
       std::cout << std::setfill('=') << std::setw(pos + 1) << '>';
-      std::cout << std::setfill(' ') << std::setw(barWidth - pos) << ']';
+      if (pos == barWidth) std::cout << "\b=";
+      std::cout << std::setfill(' ') << std::setw(barWidth - pos + 1) << ']';
       std::cout << std::setw(4) << int(percent * 100.0) << " %\r";
       std::cout.flush();
     },
@@ -264,9 +265,9 @@ int DownloadPicture(const fs::path folder, const PictureDetail& detail) {
 void SleepRandom() {
   static auto engine = std::default_random_engine();
   static std::uniform_int_distribution<int> distribution(0, 500);
-  auto const random = distribution(engine);
-  std::cout << "Begin sleep: " << 500 + random << "ms. " << std::flush;
-  std::this_thread::sleep_for(500ms + 1ms * random);
+  const auto sleepTime = 3s + 2ms * distribution(engine);
+  std::cout << "Begin sleep: " << sleepTime.count() << "ms. " << std::flush;
+  std::this_thread::sleep_for(sleepTime);
   std::cout << "End sleep." << std::endl;
 }
 
