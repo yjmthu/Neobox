@@ -7,8 +7,8 @@
 
 namespace chrono = std::chrono;
 
-// #define USE_TIME_API
-#define USE_TAOBAO
+#define USE_TIME_API
+// #define USE_TAOBAO
 // #define USE_WORLD_TIME_API
 // #define USE_BEIJING_TIME
 
@@ -33,9 +33,9 @@ namespace chrono = std::chrono;
 }
 */
 
-SYSTEMTIME TimeApiCb(const HttpLib::Response& res) {
+SYSTEMTIME* TimeApiCb(const HttpLib::Response& res) {
   YJson json(res.body.begin(), res.body.end());
-  return SYSTEMTIME {
+  return new SYSTEMTIME {
     static_cast<unsigned short>(json[u8"year"].getValueInt()),
     static_cast<unsigned short>(json[u8"month"].getValueInt()),
     static_cast<unsigned short>(GetWeekNumber(json[u8"dayOfWeek"].getValueString())), // wday
@@ -249,14 +249,17 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 
   const auto logFilePath { GetLogFilePath() };
   const auto totalDays { GetTotalDays() };
-  if (!CheckLogDate(logFilePath, totalDays, 3)) return 0;
+  if (!CheckLogDate(logFilePath, totalDays, 3)) {
+    // MessageBoxW(nullptr, L"please wait for 3 days", L"Error", MB_OK);
+    return 0;
+  }
 
   // std::cout << "============Begin============" << std::endl;
   HttpUrl url(API_URL);
 
   if (GetNetworkTime(std::move(url), API_CALLBACK)) {
     UpdateLogDate(logFilePath, totalDays);
-    MessageBoxW(nullptr, L"set current time success", L"Success", MB_OK);
+    // MessageBoxW(nullptr, L"set current time success", L"Success", MB_OK);
   } else {
     MessageBoxW(nullptr, L"failed to get current time", L"Error", MB_OK);
   }
