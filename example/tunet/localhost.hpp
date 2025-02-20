@@ -2,7 +2,9 @@
 #define LOCALHOST_H
 
 #include <string>
+#include <set>
 
-std::u8string GetLocalIPAddressWithDNSSuffix(std::u8string const dnsSuffix);
+typedef std::set<std::u8string> SuffixSet;
+std::u8string GetLocalIPAddressWithDNSSuffix(SuffixSet dnsSuffix);
 
 #endif // LOCALHOST_H

@@ -4,6 +4,8 @@
 #include <neobox/httplib.h>
 #include "localhost.hpp"
 #include <QByteArray>
+#include <QCryptographicHash>
+#include <md5.hpp>
 
 using namespace std::literals;
 
@@ -40,6 +42,8 @@ namespace ApiList {
 };
 
 struct Portal {
+  std::u8string timestamp, token;
+
   enum class Type {
     Account
   } type;
@@ -53,9 +57,46 @@ struct Portal {
 
   typedef std::function<void(std::u8string)> Callback;
 
+  static std::u8string getTimestamp() {
+    using namespace std::chrono;
+    auto timeMs = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+    auto count =  std::to_string(timeMs.count());
+    return std::u8string(count.begin(), count.end());
+  }
+
+  static std::u8string base64(std::u8string data, const std::u8string& alpha) {
+    uint8_t cursor = 0;
+    std::u8string result;
+    result.reserve(data.size() * 4 / 3 + 1);
+    for (auto iter = data.begin(); iter != data.end(); ++iter) {
+      // number before cursor is rubish
+      uint8_t const c = *iter;
+      if (cursor <= 2) {
+        uint8_t code = c << cursor;
+        code >>= 2;
+        result.push_back(alpha[code]);
+        cursor += 6;
+      }
+      if (cursor == 8) {
+        cursor = 0;
+        continue;
+      }
+
+      uint8_t code = c << cursor;
+      code >>= 2;
+      if (iter + 1 != data.end()) {
+        cursor -= 2;
+        code |= iter[1] >> (8 - cursor);
+      }
+      result.push_back(alpha[code]);
+    }
+
+    return result;
+  }
+
   void login(Type type);
 
-  std::u8string encode(YJson info, std::u8string token);
+  std::u8string encodeUserInfo(YJson info, std::u8string token);
 
   void sendAuth(std::u8string host, bool defaultStack);
 
@@ -63,12 +104,88 @@ struct Portal {
 };
 
 void Portal::login(Type type) {
-  std::u8string host = u8"tsinghua.edu.cn";
-  userInfo.ip = GetLocalIPAddressWithDNSSuffix(host);
-  std::cout << std::string(userInfo.ip.begin(), userInfo.ip.end()) << std::endl;
+  static std::u8string host = u8"tsinghua.edu.cn";
+  SuffixSet s = { u8"WLAN", host };
+  userInfo.ip = GetLocalIPAddressWithDNSSuffix(s);
+  std::cout << "ip: " << std::string(userInfo.ip.begin(), userInfo.ip.end()) << std::endl;
+  if (userInfo.ip.empty()) {
+    userInfo.ip = u8"101.5.106.17";
+  }
 
-  getToken(u8"auth4." + host, userInfo.ip, [](auto token) {
-    std::cout << std::string(token.begin(), token.end()) << std::endl;
+  getToken(u8"auth4." + host, userInfo.ip, [this](auto token) {
+    std::cout << "Token: " << std::string(token.begin(), token.end()) << std::endl;
+    std::u8string const acID = u8"222";
+    std::u8string n = u8"200", type = u8"1";
+    YJson info = YJson::O {
+      { u8"username", userInfo.username },
+      { u8"password", userInfo.password },
+      { u8"ip", userInfo.ip },
+      { u8"acid", acID },
+      { u8"enc_ver", u8"srun_bx1" },
+    };
+
+    const auto i = encodeUserInfo(info, token);
+    std::cout << "Encode: " << (const char*)i.c_str() << std:: endl; 
+    
+    std::u8string str = token + userInfo.username;
+    auto hmd5Array = QCryptographicHash::hash(QByteArray(reinterpret_cast<const char*>(str.data()), str.size()), QCryptographicHash::Md5).toHex();
+    std::u8string hmd5(hmd5Array.begin(), hmd5Array.end());
+    str += token + hmd5;
+    str += token + acID;
+    str += token + userInfo.ip;
+    str += token + n;
+    str += token + type;
+    str += token + i;
+
+    // sha1 of str
+    auto sha1 = QCryptographicHash::hash(QByteArray(reinterpret_cast<const char*>(str.data()), str.size()), QCryptographicHash::Sha1).toHex();
+    std::u8string chksum(sha1.begin(), sha1.end());
+
+    HttpUrl url(host, ApiList::auth, {
+      { u8"callback", u8"_" },
+      { u8"action", u8"login" },
+      { u8"username", userInfo.username },
+      { u8"password", u8"{MD5}" + hmd5 },
+      { u8"os", u8"Windows 10" },
+      { u8"name", u8"Windows" },
+      { u8"double_stack", 0 },
+      { u8"chksum", chksum },
+      { u8"info", i },
+      { u8"ac_id", acID },
+      { u8"ip", userInfo.ip },
+      { u8"n", n },
+      { u8"type", type },
+      { u8"_", getTimestamp() }
+    }, u8"https", 443);
+
+    auto full = url.GetFullUrl();
+    std::cout << (const char*)full.c_str() << std::endl;
+
+    HttpLib clt(url, true);
+    std::atomic_bool finished = false;
+    HttpLib::Callback cb {
+      .m_FinishCallback = [&finished](auto msg, auto res) {
+        if (msg.empty() && res->status == 200) {
+          // std::cout << (const char*)res->body.c_str() << std::endl;
+          auto start = res->body.find(u8'{'), end = res->body.rfind(u8'}');
+          YJson json(res->body.begin() + start, res->body.begin() + end + 1);
+          std::cout << json << std::endl;
+        } else {
+          std::cerr << "Error: " << res->status << std::endl;
+        }
+        std::cout << "Finished\n";
+        finished = true;
+      },
+      .m_ProcessCallback = [](auto current, auto total) {
+        std::cout << current << "/" << total << std::endl;
+      },
+    };
+
+    clt.GetAsync(std::move(cb));
+    while (!finished) {
+      std::this_thread::sleep_for(10ms);
+      std::cout << "wait...\n";
+    }
   });
 }
 
@@ -77,14 +194,16 @@ void Portal::sendAuth(std::u8string host, bool defaultStack) {
 }
 
 void Portal::getToken(std::u8string host, std::u8string ip, Callback callback) {
-  using namespace std::chrono;
-  auto timeMs = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-  auto timestamp = std::to_string(timeMs.count());
+  if (!this->timestamp.empty()) {
+    callback(this->token);
+    return;
+  }
+  auto timestamp = getTimestamp();
   HttpUrl url(host, ApiList::token, {
-    { u8"username"s, userInfo.username},
+    { u8"username"s, userInfo.username },
     { u8"ip"s, ip },
-    { u8"_", std::u8string(timestamp.begin(), timestamp.end())},
-    { u8"callback", u8"_"}
+    { u8"_", timestamp },
+    { u8"callback", u8"_" }
   }, u8"https", 443);
   std:std::u8string full = url.GetFullUrl();
   std::cout << std::string(full.begin(), full.end()) << std::endl;
@@ -117,29 +236,26 @@ void Portal::getToken(std::u8string host, std::u8string ip, Callback callback) {
   }
 }
 
-std::u8string Portal::encode(YJson info, std::u8string token) {
-  // base64.setAlpha('LVoJPiCN2R8G90yg+hmFHuacZ1OWMnrsSTXkYpUq/3dlbfKwv6xztjI7DeBE45QA'); // 用户信息转 JSON
-
+std::u8string Portal::encodeUserInfo(YJson info, std::u8string token) {
   auto s = [](std::u8string a, bool b) {
-    auto const cc = a.length();
-    auto c = cc;
+    auto car = a.length(), c = car;
     const auto remainder = c & 0b11;
     if (remainder) {
       c += 4 - remainder;
       a.resize(c, 0);
     }
 
-    std::vector<char32_t> v(c >> 2, 0);
+    std::vector<uint32_t> v(c >> 2, 0);
 
-    for (size_t i = 0; i < cc; i += 4) {
+    for (size_t i = 0; i < car; i += 4) {
       v[i >> 2] = a[i] | a[i + 1] << 8 | a[i + 2] << 16 | a[i + 3] << 24;
     }
 
-    if (b) v.push_back(cc);
+    if (b) v.push_back(car);
     return v;
   };
 
-  auto l = [](std::vector<char32_t> a, bool b) {
+  auto l = [](std::vector<uint32_t> a, bool b) {
     auto d = a.size();
     auto c = (d - 1) << 2;
 
@@ -167,6 +283,7 @@ std::u8string Portal::encode(YJson info, std::u8string token) {
     if (str.empty()) return decltype(l({}, 0)) {};
     auto v = s(str, true);
     auto k = s(key, false);
+
     if (k.size() < 4) k.resize(4, 0);
     char32_t n = v.size() - 1,
         z = v[n],
@@ -200,8 +317,9 @@ std::u8string Portal::encode(YJson info, std::u8string token) {
     return l(v, false);
   };
 
-  auto const code = encode(info.toString(), token);
-  auto const base64 = QByteArray(reinterpret_cast<const char*>(code.data()), code.size()).toBase64();
+  auto alpha = u8"LVoJPiCN2R8G90yg+hmFHuacZ1OWMnrsSTXkYpUq/3dlbfKwv6xztjI7DeBE45QA"s; // 用户信息转 JSON
+  auto const data = encode(info.toString(), token);
+  auto const base64 = Portal::base64(data, alpha);
   auto result = u8"{SRBX1}"s;
   result.resize(result.size() + base64.size());
   std::copy(base64.begin(), base64.end(), result.begin() + 7);
@@ -211,6 +329,11 @@ std::u8string Portal::encode(YJson info, std::u8string token) {
 
 int main() {
   Portal p;
-  p.login(Portal::Type::Account);
+  p.userInfo.username = u8"yijm24";
+  p.userInfo.password = u8"JJmV3FCAA33a";
+  p.timestamp = u8"1740059176348";
+  p.token = u8"96710563e2a0120106fef18a6f76b1a03fefc4b0fb2ddc13bb5582a74743596d";
+  // p.login(Portal::Type::Account);
+  test();
   return 0;
 }

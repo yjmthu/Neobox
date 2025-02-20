@@ -6,7 +6,7 @@
 
 #pragma comment(lib, "ws2_32.lib")
 
-std::u8string GetLocalIPAddressWithDNSSuffix(std::u8string const dnsSuffix) {
+std::u8string GetLocalIPAddressWithDNSSuffix(SuffixSet dnsSuffix) {
   WSADATA wsaData;
   if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
     // Winsock 初始化失败
@@ -54,14 +54,21 @@ std::u8string GetLocalIPAddressWithDNSSuffix(std::u8string const dnsSuffix) {
       continue;
     }
 
+    // std::cout << (char*) ipBuffer << std::endl;
+
     // 检查DNS后缀是否匹配
     if (!dnsSuffix.empty()) {
       char8_t canonicalName[256];
       if (getnameinfo(ptr->ai_addr, ptr->ai_addrlen,
                       reinterpret_cast<char *>(canonicalName),
                       sizeof(canonicalName), NULL, 0, NI_NAMEREQD) == 0) {
+        // std::cout << (char*) canonicalName << std::endl;
         std::u8string canonical(canonicalName);
-        if (canonical.ends_with(dnsSuffix)) {
+        auto iter = std::find_if(dnsSuffix.cbegin(), dnsSuffix.cend(), [&canonical](auto suffix){
+          return canonical.ends_with(suffix);
+        });
+
+        if (iter != dnsSuffix.end()) {
           ipStr = ipBuffer;
           break;
         }
@@ -79,8 +86,8 @@ std::u8string GetLocalIPAddressWithDNSSuffix(std::u8string const dnsSuffix) {
   return ipStr;
 }
 
-int test() {
-  const auto dnsSuffix = u8"tsinghua.edu.cn"; // 替换为你的DNS后缀
+static int test() {
+  const SuffixSet dnsSuffix = { u8"tsinghua.edu.cn" }; // 替换为你的DNS后缀
   std::u8string ip = GetLocalIPAddressWithDNSSuffix(dnsSuffix);
   if (ip.empty()) {
     std::cout << "无法获取具有指定DNS后缀的本机IP地址" << std::endl;
