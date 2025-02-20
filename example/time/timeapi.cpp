@@ -233,33 +233,48 @@ bool GetNetworkTime(HttpUrl url, std::function<SYSTEMTIME* (const HttpLib::Respo
 
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
+#ifdef _DEBUG
+  MessageBoxW(nullptr, L"==================Begin=================", L"Error", MB_OK);
+#endif
   SetConsoleOutputCP(CP_UTF8);
 
   if (lpCmdLine) {
     // check if lpCmdLine is interger
     const std::string delayStr = lpCmdLine;
-    if (delayStr.find_first_not_of("0123456789") != std::string::npos) {
-      // std::cout << "invalid delay: " << lpCmdLine << std::endl;
+    const auto pos = delayStr.find_first_not_of("0123456789");
+    if (pos != std::string::npos) {
+      MessageBoxW(nullptr, L"invalid delay", L"Error", MB_OK);
     } else {
-      // std::cout << "delay: " << delayStr << std::endl;
-      int delay = std::stoi(delayStr);
-      std::this_thread::sleep_for(std::chrono::seconds(delay));
+#ifdef _DEBUG
+      auto info = std::format("delay: {}.", delayStr);
+      MessageBoxA(nullptr, info.c_str(), "Error", MB_OK);
+#endif
+      if (!delayStr.empty()) {
+        const int delay = std::stoi(delayStr);
+        std::this_thread::sleep_for(std::chrono::seconds(delay));
+      }
     }
   }
 
   const auto logFilePath { GetLogFilePath() };
   const auto totalDays { GetTotalDays() };
   if (!CheckLogDate(logFilePath, totalDays, 3)) {
-    // MessageBoxW(nullptr, L"please wait for 3 days", L"Error", MB_OK);
+#ifdef _DEBUG
+    MessageBoxW(nullptr, L"please wait for 3 days", L"Error", MB_OK);
+#endif
     return 0;
   }
 
-  // std::cout << "============Begin============" << std::endl;
+#ifdef _DEBUG
+  MessageBoxW(nullptr, L"Fetching network time......", L"Info", MB_OK);
+#endif
   HttpUrl url(API_URL);
 
   if (GetNetworkTime(std::move(url), API_CALLBACK)) {
     UpdateLogDate(logFilePath, totalDays);
-    // MessageBoxW(nullptr, L"set current time success", L"Success", MB_OK);
+#ifdef _DEBUG
+    MessageBoxW(nullptr, L"set current time success", L"Success", MB_OK);
+#endif
   } else {
     MessageBoxW(nullptr, L"failed to get current time", L"Error", MB_OK);
   }

@@ -350,6 +350,11 @@ void HttpUrl::SetUrl(StringView url)
 HttpUrl::String HttpUrl::GetObjectString() const
 {
   auto object = path;
+  if (!parameters.empty()) {
+    if (!object.ends_with(u8'?')) {
+      object.push_back(u8'?');
+    }
+  }
   for (auto& [key, value]: parameters) {
     UrlEncode(key, object);
     object.push_back(u8'=');
@@ -362,6 +367,11 @@ HttpUrl::String HttpUrl::GetObjectString() const
   }
 
   return object;
+}
+
+HttpUrl::String HttpUrl::GetFullUrl() const {
+  std::string p = std::to_string(port);
+  return scheme + u8"://" + host + u8":" + std::u8string(p.begin(), p.end()) + GetObjectString();
 }
 
 bool HttpLib::IsOnline() {

@@ -164,7 +164,7 @@ std::u8string GetPictureUrl(const PictureDetail& detail) {
 
   auto dataId = Wide2Utf8String(std::to_wstring(detail.dataId));
   auto random = Wide2Utf8String(std::format(L"{}", distribution(engine)));
-  HttpUrl url(domain, u8"/e/extend/downpic.php?"s, {
+  HttpUrl url(domain, u8"/e/extend/downpic.php"s, {
     { u8"id"s, dataId },
     { u8"t"s, random },
   }, u8"https", 443);

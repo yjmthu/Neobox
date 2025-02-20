@@ -44,6 +44,14 @@ endforeach()
 if(UNIX)
   add_executable(x11_test src/x11_test.cc)
   target_link_libraries(x11_test PUBLIC X11)
+elseif(WIN32)
+  add_executable(tunet tunet/main.cpp tunet/localhost.cpp)
+  target_include_directories(tunet PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tunet)
+  target_link_libraries(tunet pluginmgr)
+  install(TARGETS tunet
+    RUNTIME DESTINATION bin
+  )
+
 endif()
 
 if (MSVC)
