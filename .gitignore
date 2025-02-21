@@ -11,6 +11,7 @@
 *.a
 *.d
 *.o
+*.js
 Makefile
 build
 install

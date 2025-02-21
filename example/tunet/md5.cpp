@@ -7,60 +7,145 @@
 #include <iomanip>
 #include <stdexcept>
 
+constexpr uint32_t s11 = 7, s12 = 12, s13 = 17, s14 = 22;
+constexpr uint32_t s21 = 5, s22 = 9, s23 = 14, s24 = 20;
+constexpr uint32_t s31 = 4, s32 = 11, s33 = 16, s34 = 23;
+constexpr uint32_t s41 = 6, s42 = 10, s43 = 15, s44 = 21;
 
-uint32_t t(uint32_t n, uint32_t t) {
-  uint32_t r = (0xFFFF & n) + (0xFFFF & t);
-  return ((n >> 16) + (t >> 16) + (r >> 16)) << 16 | (0xFFFF & r);
+
+constexpr inline uint32_t F(uint32_t x, uint32_t y, uint32_t z) {
+  return ((x & y) | (~x & z));
 }
 
-uint32_t r(uint32_t n, uint32_t t) { return (n << t) | (n >> (32 - t)); }
-
-uint32_t e(uint32_t n, uint32_t e, uint32_t o, uint32_t u, uint32_t c,
-           uint32_t f) {
-  return t(r(t(t(e, n), t(u, f)), c), o);
+constexpr inline uint32_t G(uint32_t x, uint32_t y, uint32_t z) {
+  return ((x & z) | (y & ~z));
 }
 
-uint32_t o(uint32_t n, uint32_t t, uint32_t r, uint32_t o, uint32_t u,
-           uint32_t c, uint32_t f) {
-  return e((t & r) | (~t & o), n, t, u, c, f);
+constexpr inline uint32_t H(uint32_t x, uint32_t y, uint32_t z) {
+  return (x ^ y ^ z);
 }
 
-uint32_t u(uint32_t n, uint32_t t, uint32_t r, uint32_t o, uint32_t u,
-           uint32_t c, uint32_t f) {
-  return e((t & o) | (r & ~o), n, t, u, c, f);
+constexpr inline uint32_t I(uint32_t x, uint32_t y, uint32_t z) {
+  return (y ^ (x | ~z));
 }
 
-uint32_t c(uint32_t n, uint32_t t, uint32_t r, uint32_t o, uint32_t u,
-           uint32_t c, uint32_t f) {
-  return e(t ^ r ^ o, n, t, u, c, f);
+inline void ROTATELEFT(uint32_t& a, uint32_t t) { a = (a << t) | (a >> (32 - t)); }
+
+inline void FF(uint32_t& a, uint32_t b, uint32_t c, uint32_t d, uint32_t x, uint32_t s, uint32_t ac) {
+  a += F(b, c, d) + x + ac;
+  ROTATELEFT(a, s);
+  a += b;
 }
 
-uint32_t f(uint32_t n, uint32_t t, uint32_t r, uint32_t o, uint32_t u,
-           uint32_t c, uint32_t f) {
-  return e(r ^ (t | ~o), n, t, u, c, f);
+inline void GG(uint32_t& a, uint32_t b, uint32_t c, uint32_t d, uint32_t x, uint32_t s, uint32_t ac) {
+  a += G(b, c, d) + x + ac;
+  ROTATELEFT(a, s);
+  a += b;
+}
+
+inline void HH(uint32_t& a, uint32_t b, uint32_t c, uint32_t d, uint32_t x, uint32_t s, uint32_t ac) {
+  a += H(b, c, d) + x + ac;
+  ROTATELEFT(a, s);
+  a += b;
+}
+
+inline void II(uint32_t& a, uint32_t b, uint32_t c, uint32_t d, uint32_t x, uint32_t s, uint32_t ac) {
+  a += I(b, c, d) + x + ac;
+  ROTATELEFT(a, s);
+  a += b;
 }
 
 using namespace std;
 
-vector<uint32_t> i(vector<uint32_t>n, uint32_t r) {
-  n[r >> 5] |= 128 << r % 32,
+vector<uint32_t> transform(vector<uint32_t>n, uint32_t r) {
+  n.resize((r >> 5) + 1, 0);
+  n.back() |= 128 << r % 32,
   n[14 + ((r + 64) >> 9 << 4)] = r;
-  uint32_t e, i, a, d, h, l = 1732584193, g = -271733879, v = -1732584194, m = 271733878;
+  uint32_t e, a, b, c, d, A = 0x67452301, B = 0xEFCDAB89, C = 0x98BADCFE, D = 0x10325476;
   for (e = 0; e < n.size(); e += 16) {
-    i = l,
-    a = g,
-    d = v,
-    h = m,
-    g = f(g = f(g = f(g = f(g = c(g = c(g = c(g = c(g = u(g = u(g = u(g = u(g = o(g = o(g = o(g = o(g, v = o(v, m = o(m, l = o(l, g, v, m, n[e], 7, -680876936), g, v, n[e + 1], 12, -389564586), l, g, n[e + 2], 17, 606105819), m, l, n[e + 3], 22, -1044525330), v = o(v, m = o(m, l = o(l, g, v, m, n[e + 4], 7, -176418897), g, v, n[e + 5], 12, 1200080426), l, g, n[e + 6], 17, -1473231341), m, l, n[e + 7], 22, -45705983), v = o(v, m = o(m, l = o(l, g, v, m, n[e + 8], 7, 1770035416), g, v, n[e + 9], 12, -1958414417), l, g, n[e + 10], 17, -42063), m, l, n[e + 11], 22, -1990404162), v = o(v, m = o(m, l = o(l, g, v, m, n[e + 12], 7, 1804603682), g, v, n[e + 13], 12, -40341101), l, g, n[e + 14], 17, -1502002290), m, l, n[e + 15], 22, 1236535329), v = u(v, m = u(m, l = u(l, g, v, m, n[e + 1], 5, -165796510), g, v, n[e + 6], 9, -1069501632), l, g, n[e + 11], 14, 643717713), m, l, n[e], 20, -373897302), v = u(v, m = u(m, l = u(l, g, v, m, n[e + 5], 5, -701558691), g, v, n[e + 10], 9, 38016083), l, g, n[e + 15], 14, -660478335), m, l, n[e + 4], 20, -405537848), v = u(v, m = u(m, l = u(l, g, v, m, n[e + 9], 5, 568446438), g, v, n[e + 14], 9, -1019803690), l, g, n[e + 3], 14, -187363961), m, l, n[e + 8], 20, 1163531501), v = u(v, m = u(m, l = u(l, g, v, m, n[e + 13], 5, -1444681467), g, v, n[e + 2], 9, -51403784), l, g, n[e + 7], 14, 1735328473), m, l, n[e + 12], 20, -1926607734), v = c(v, m = c(m, l = c(l, g, v, m, n[e + 5], 4, -378558), g, v, n[e + 8], 11, -2022574463), l, g, n[e + 11], 16, 1839030562), m, l, n[e + 14], 23, -35309556), v = c(v, m = c(m, l = c(l, g, v, m, n[e + 1], 4, -1530992060), g, v, n[e + 4], 11, 1272893353), l, g, n[e + 7], 16, -155497632), m, l, n[e + 10], 23, -1094730640), v = c(v, m = c(m, l = c(l, g, v, m, n[e + 13], 4, 681279174), g, v, n[e], 11, -358537222), l, g, n[e + 3], 16, -722521979), m, l, n[e + 6], 23, 76029189), v = c(v, m = c(m, l = c(l, g, v, m, n[e + 9], 4, -640364487), g, v, n[e + 12], 11, -421815835), l, g, n[e + 15], 16, 530742520), m, l, n[e + 2], 23, -995338651), v = f(v, m = f(m, l = f(l, g, v, m, n[e], 6, -198630844), g, v, n[e + 7], 10, 1126891415), l, g, n[e + 14], 15, -1416354905), m, l, n[e + 5], 21, -57434055), v = f(v, m = f(m, l = f(l, g, v, m, n[e + 12], 6, 1700485571), g, v, n[e + 3], 10, -1894986606), l, g, n[e + 10], 15, -1051523), m, l, n[e + 1], 21, -2054922799), v = f(v, m = f(m, l = f(l, g, v, m, n[e + 8], 6, 1873313359), g, v, n[e + 15], 10, -30611744), l, g, n[e + 6], 15, -1560198380), m, l, n[e + 13], 21, 1309151649), v = f(v, m = f(m, l = f(l, g, v, m, n[e + 4], 6, -145523070), g, v, n[e + 11], 10, -1120210379), l, g, n[e + 2], 15, 718787259), m, l, n[e + 9], 21, -343485551),
-    l = t(l, i),
-    g = t(g, a),
-    v = t(v, d),
-    m = t(m, h);
+    a = A;
+    b = B;
+    c = C;
+    d = D;
+
+    FF(a, b, c, d, n[e + 0], s11, 0xD76AA478);
+    FF(d, a, b, c, n[e + 1], s12, 0xE8C7B756);
+    FF(c, d, a, b, n[e + 2], s13, 0x242070DB);
+    FF(b, c, d, a, n[e + 3], s14, 0xC1BDCEEE);
+    FF(a, b, c, d, n[e + 4], s11, 0xF57C0FAF);
+    FF(d, a, b, c, n[e + 5], s12, 0x4787C62A);
+    FF(c, d, a, b, n[e + 6], s13, 0xA8304613);
+    FF(b, c, d, a, n[e + 7], s14, 0xFD469501);
+    FF(a, b, c, d, n[e + 8], s11, 0x698098D8);
+    FF(d, a, b, c, n[e + 9], s12, 0x8B44F7AF);
+    FF(c, d, a, b, n[e + 10], s13, 0xFFFF5BB1);
+    FF(b, c, d, a, n[e + 11], s14, 0x895CD7BE);
+    FF(a, b, c, d, n[e + 12], s11, 0x6B901122);
+    FF(d, a, b, c, n[e + 13], s12, 0xFD987193);
+    FF(c, d, a, b, n[e + 14], s13, 0xA679438E);
+    FF(b, c, d, a, n[e + 15], s14, 0x49B40821);
+
+    GG(a, b, c, d, n[e + 1], s21, 0xF61E2562);
+    GG(d, a, b, c, n[e + 6], s22, 0xC040B340);
+    GG(c, d, a, b, n[e + 11], s23, 0x265E5A51);
+    GG(b, c, d, a, n[e + 0], s24, 0xE9B6C7AA);
+    GG(a, b, c, d, n[e + 5], s21, 0xD62F105D);
+    GG(d, a, b, c, n[e + 10], s22, 0x2441453);
+    GG(c, d, a, b, n[e + 15], s23, 0xD8A1E681);
+    GG(b, c, d, a, n[e + 4], s24, 0xE7D3FBC8);
+    GG(a, b, c, d, n[e + 9], s21, 0x21E1CDE6);
+    GG(d, a, b, c, n[e + 14], s22, 0xC33707D6);
+    GG(c, d, a, b, n[e + 3], s23, 0xF4D50D87);
+    GG(b, c, d, a, n[e + 8], s24, 0x455A14ED);
+    GG(a, b, c, d, n[e + 13], s21, 0xA9E3E905);
+    GG(d, a, b, c, n[e + 2], s22, 0xFCEFA3F8);
+    GG(c, d, a, b, n[e + 7], s23, 0x676F02D9);
+    GG(b, c, d, a, n[e + 12], s24, 0x8D2A4C8A);
+
+    HH(a, b, c, d, n[e + 5], s31, 0xFFFA3942);
+    HH(d, a, b, c, n[e + 8], s32, 0x8771F681);
+    HH(c, d, a, b, n[e + 11], s33, 0x6D9D6122);
+    HH(b, c, d, a, n[e + 14], s34, 0xFDE5380C);
+    HH(a, b, c, d, n[e + 1], s31, 0xA4BEEA44);
+    HH(d, a, b, c, n[e + 4], s32, 0x4BDECFA9);
+    HH(c, d, a, b, n[e + 7], s33, 0xF6BB4B60);
+    HH(b, c, d, a, n[e + 10], s34, 0xBEBFBC70);
+    HH(a, b, c, d, n[e + 13], s31, 0x289B7EC6);
+    HH(d, a, b, c, n[e + 0], s32, 0xEAA127FA);
+    HH(c, d, a, b, n[e + 3], s33, 0xD4EF3085);
+    HH(b, c, d, a, n[e + 6], s34, 0x4881D05);
+    HH(a, b, c, d, n[e + 9], s31, 0xD9D4D039);
+    HH(d, a, b, c, n[e + 12], s32, 0xE6DB99E5);
+    HH(c, d, a, b, n[e + 15], s33, 0x1FA27CF8);
+    HH(b, c, d, a, n[e + 2], s34, 0xC4AC5665);
+
+    II(a, b, c, d, n[e + 0], s41, 0xF4292244);
+    II(d, a, b, c, n[e + 7], s42, 0x432AFF97);
+    II(c, d, a, b, n[e + 14], s43, 0xAB9423A7);
+    II(b, c, d, a, n[e + 5], s44, 0xFC93A039);
+    II(a, b, c, d, n[e + 12], s41, 0x655B59C3);
+    II(d, a, b, c, n[e + 3], s42, 0x8F0CCC92);
+    II(c, d, a, b, n[e + 10], s43, 0xFFEFF47D);
+    II(b, c, d, a, n[e + 1], s44, 0x85845DD1);
+    II(a, b, c, d, n[e + 8], s41, 0x6FA87E4F);
+    II(d, a, b, c, n[e + 15], s42, 0xFE2CE6E0);
+    II(c, d, a, b, n[e + 6], s43, 0xA3014314);
+    II(b, c, d, a, n[e + 13], s44, 0x4E0811A1);
+    II(a, b, c, d, n[e + 4], s41, 0xF7537E82);
+    II(d, a, b, c, n[e + 11], s42, 0xBD3AF235);
+    II(c, d, a, b, n[e + 2], s43, 0x2AD7D2BB);
+    II(b, c, d, a, n[e + 9], s44, 0xEB86D391);
+
+    A += a;
+    B += b;
+    C += c;
+    D += d;
   }
-  return vector<uint32_t>{ l, g, v, m };
+  
+  return {A, B, C, D};
 }
 
-string a(const vector<uint32_t> &n) {
+string decode(const vector<uint32_t> &n) {
   string r = "";
   size_t e = 32 * n.size();
   for (size_t t = 0; t < e; t += 8) {
@@ -69,46 +154,47 @@ string a(const vector<uint32_t> &n) {
   return r;
 }
 
-vector<uint32_t> d(const string &n) {
-  vector<uint32_t> r((n.length() >> 2)); // Equivalent to (n.length() / 4)
-  for (size_t t = 0; t < r.size(); ++t) {
-    r[t] = 0;
-  }
+vector<uint32_t> encode(const string &n) {
+  vector<uint32_t> r((n.length() >> 2), 0); // Equivalent to (n.length() / 4)
 
-  size_t e = 8 * n.length();
+  size_t e = 8 * n.length(); // Total number of bits
   for (size_t t = 0; t < e; t += 8) {
+    // t >> 5 is equivalent to t / 32, and t % 32 is the remainder of t / 32
     r[t >> 5] |= (static_cast<uint32_t>(n[t / 8]) & 255) << (t % 32);
   }
   return r;
 }
 
-string h(const string &n) { return a(i(d(n), 8 * n.length())); }
+string h(const string &n) { return decode(transform(encode(n), 8 * n.length())); }
 
-string l(const string &n, const string &t) {
-  vector<uint32_t> o = d(n);
+string l(const string &a, const string &b) {
+  vector<uint32_t> o = encode(a);
   vector<uint32_t> u(16);
   vector<uint32_t> c(16);
 
   if (o.size() > 16) {
-    o = i(o, 8 * n.length());
+    o = transform(o, 8 * a.length());
   }
+  o.resize(16, 0);
 
   for (size_t r = 0; r < 16; ++r) {
-    u[r] = 909522486 ^ o[r];
-    c[r] = 1549556828 ^ o[r];
+    u[r] = 0x36363636 ^ o[r];
+    c[r] = 0x5c5c5c5c ^ o[r];
   }
 
-  vector<uint32_t> e = i(u, 512 + 8 * t.length());
-  e.insert(e.end(), d(t).begin(), d(t).end()); // Concatenate u and d(t)
+  vector<uint32_t> s(u.begin(), u.end()), t = encode(b);
+  s.insert(s.end(), t.begin(), t.end());
+  vector<uint32_t> e = transform(s, 512 + 8 * b.length()); // 512 = 32 * 16
 
   vector<uint32_t> combined;
-  combined.insert(combined.end(), c.begin(), c.end());
-  combined.insert(combined.end(), e.begin(), e.end());
+  combined.reserve(32);
+  combined.insert(combined.end(), c.begin(), c.end()); // 32 * 16
+  combined.insert(combined.end(), e.begin(), e.end()); // 32 * 4
 
-  return a(i(combined, 640));
+  return decode(transform(combined, 640));  // 640 = 32 * (16 + 4)
 }
 
-string g(const string &n) {
+string format(const string &n) {
   string e = "";
   for (size_t r = 0; r < n.length(); ++r) {
     unsigned char t = n[r];
@@ -179,11 +265,11 @@ string v(const string &n) { return unescape(encodeURIComponent(n)); }
 
 string m(const string &n) { return h(v(n)); }
 
-string p(const string &n) { return g(m(n)); }
+string p(const string &n) { return format(m(n)); }
 
 string s(const string &n, const string &t) { return l(v(n), v(t)); }
 
-string C(const string &n, const string &t) { return g(s(n, t)); }
+string C(const string &n, const string &t) { return format(s(n, t)); }
 
 string md5(const string &n, const string &t, bool r) {
   if (!t.empty()) {

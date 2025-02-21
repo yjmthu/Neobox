@@ -329,8 +329,6 @@ std::u8string Portal::encodeUserInfo(YJson info, std::u8string token) {
 
 int main() {
   Portal p;
-  p.userInfo.username = u8"yijm24";
-  p.userInfo.password = u8"JJmV3FCAA33a";
   p.timestamp = u8"1740059176348";
   p.token = u8"96710563e2a0120106fef18a6f76b1a03fefc4b0fb2ddc13bb5582a74743596d";
   // p.login(Portal::Type::Account);
