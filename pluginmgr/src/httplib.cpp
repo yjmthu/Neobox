@@ -371,7 +371,8 @@ HttpUrl::String HttpUrl::GetObjectString() const
 
 HttpUrl::String HttpUrl::GetFullUrl() const {
   std::string p = std::to_string(port);
-  return scheme + u8"://" + host + u8":" + std::u8string(p.begin(), p.end()) + GetObjectString();
+  auto object = GetObjectString();
+  return scheme + u8"://" + host + u8":" + std::u8string(p.begin(), p.end()) + object;
 }
 
 bool HttpLib::IsOnline() {
@@ -975,7 +976,7 @@ void HttpLib::HttpPerform()
   }
 
   if (bResults) {
-    bResults = m_Response.status == 200;
+    bResults = m_Response.status == 200 || m_Response.status == 302;
   } else {
     std::wcerr << L"WinHttp read status code failed." << std::endl;
   }

@@ -1,13 +1,21 @@
 #include <iostream>
 #include <chrono>
+#include <Windows.h>
 #include <yjson/yjson.h>
 #include <neobox/httplib.h>
-#include "localhost.hpp"
 #include <QByteArray>
 #include <QCryptographicHash>
-#include <md5.hpp>
+#include <mutex>
+#include <regex>
+
+#include <filesystem>
 
 using namespace std::literals;
+
+std::ostream& operator<<(std::ostream& os, std::u8string_view res) {
+  os.write(reinterpret_cast<const char*>(res.data()), res.size());
+  return os;
+}
 
 namespace ApiList {
   auto info = u8"/cgi-bin/rad_user_info"s;
@@ -43,12 +51,25 @@ namespace ApiList {
 
 struct Portal {
   std::u8string timestamp, token;
+  std::mutex mtx;
+
+  Portal(std::u8string username, std::u8string password) {
+    userInfo.username = username;
+    userInfo.password = password;
+  }
+
+  ~Portal() {
+    std::lock_guard<std::mutex> lock(mtx);
+  }
+
+  std::u8string const mainHost = u8"tsinghua.edu.cn";
 
   enum class Type {
     Account
   } type;
 
   struct UserInfo {
+    std::u8string acID = u8"21";
     std::u8string username;
     std::u8string password;
     std::u8string domain;
@@ -67,7 +88,7 @@ struct Portal {
   static std::u8string base64(std::u8string data, const std::u8string& alpha) {
     uint8_t cursor = 0;
     std::u8string result;
-    result.reserve(data.size() * 4 / 3 + 1);
+    result.reserve(data.size() * 4 / 3 + 2);
     for (auto iter = data.begin(); iter != data.end(); ++iter) {
       // number before cursor is rubish
       uint8_t const c = *iter;
@@ -91,36 +112,112 @@ struct Portal {
       result.push_back(alpha[code]);
     }
 
+    result.push_back(u8'=');
+
     return result;
   }
+
+  bool init(std::u8string subHost);
 
   void login(Type type);
 
   std::u8string encodeUserInfo(YJson info, std::u8string token);
 
-  void sendAuth(std::u8string host, bool defaultStack);
+  void sendAuth(std::u8string subHost, bool defaultStack);
 
-  void getToken(std::u8string host, std::u8string ip, Callback callback);
+  void getToken(std::u8string subHost, std::u8string ip, Callback callback);
+
+  static std::u8string hmd5(std::u8string_view str, std::u8string_view key);
 };
 
-void Portal::login(Type type) {
-  static std::u8string host = u8"tsinghua.edu.cn";
-  SuffixSet s = { u8"WLAN", host };
-  userInfo.ip = GetLocalIPAddressWithDNSSuffix(s);
-  std::cout << "ip: " << std::string(userInfo.ip.begin(), userInfo.ip.end()) << std::endl;
-  if (userInfo.ip.empty()) {
-    userInfo.ip = u8"101.5.106.17";
+bool Portal::init(std::u8string subHost) {
+  HttpUrl url(subHost, u8"/", {}, u8"https", 443);
+  HttpLib clt(url);
+  // clt.SetRedirect(3);
+  auto res = clt.Get();
+  if (res->status != 302) {
+    return false;
+  }
+  // std::cout << res->headers.at(u8"Location") << std::endl;
+  auto location = res->headers[u8"Location"];
+  if (location.empty()) {
+    return false;
+  }
+  std::cout << "Redirect to: " << url.GetFullUrl() << std::endl;
+  clt.SetUrl(location);
+
+  res = clt.Get();
+  if (res->status != 200) {
+    return false;
+  }
+  // std::cout << "Init success\n" << res->body << std::endl;
+  {
+    std::regex re(R"(url=(/srun_portal_pc\?ac_id=\d+[^"]*))");
+    std::cmatch match;
+    if (!std::regex_search(reinterpret_cast<const char*>(res->body.data()), match, re)) {
+      return false;
+    }
+    // std::cout << "Match: " << match[2] << std::endl;
+    std::string path = match[1];
+    clt.SetUrl(url.scheme + u8"://" + subHost + std::u8string(path.begin(), path.end()));
+    
+    res = clt.Get();
+    if (res->status != 200) {
+      return false;
+    }
   }
 
-  getToken(u8"auth4." + host, userInfo.ip, [this](auto token) {
+  {
+    std::regex re(R"(CONFIG = (\{[^}]+\}))");
+    std::cmatch match;
+    if (!std::regex_search(reinterpret_cast<const char*>(res->body.data()), match, re)) {
+      return false;
+    }
+    // std::cout << "Match: " << match[1] << std::endl;
+    // std::cout << "Init success\n" << res->body << std::endl;
+  }
+  
+  {
+    std::regex re(R"(ip\s*:\s*"([^"]+)\")");
+    std::cmatch match;
+    if (!std::regex_search(reinterpret_cast<const char*>(res->body.data()), match, re)) {
+      return false;
+    }
+
+    // std::cout << "Match: " << match[1] << std::endl;
+    std::string ip = match[1];
+    userInfo.ip = std::u8string(ip.begin(), ip.end());
+    return true;
+  }
+  return false;
+}
+
+void Portal::login(Type type) {
+  auto subHost = u8"auth4." + mainHost;
+  if (!init(subHost)) {
+    std::cerr << "Init failed\n";
+    return;
+  }
+  if (userInfo.ip.empty()) {
+    std::cerr << "Network not found.\n";
+    return;
+  }
+  std::cout << "ip: " << std::string(userInfo.ip.begin(), userInfo.ip.end()) << std::endl;
+  sendAuth(subHost, false);
+}
+
+void Portal::sendAuth(std::u8string subHost, bool defaultStack) {
+  std::cout << "Get Token\n";
+  getToken(subHost, userInfo.ip, [this, subHost](auto token) {
     std::cout << "Token: " << std::string(token.begin(), token.end()) << std::endl;
-    std::u8string const acID = u8"222";
+    // std::u8string const acID = u8"222";
+    // std::u8string const acID = u8"21";
     std::u8string n = u8"200", type = u8"1";
     YJson info = YJson::O {
       { u8"username", userInfo.username },
       { u8"password", userInfo.password },
       { u8"ip", userInfo.ip },
-      { u8"acid", acID },
+      { u8"acid", userInfo.acID },
       { u8"enc_ver", u8"srun_bx1" },
     };
 
@@ -128,10 +225,9 @@ void Portal::login(Type type) {
     std::cout << "Encode: " << (const char*)i.c_str() << std:: endl; 
     
     std::u8string str = token + userInfo.username;
-    auto hmd5Array = QCryptographicHash::hash(QByteArray(reinterpret_cast<const char*>(str.data()), str.size()), QCryptographicHash::Md5).toHex();
-    std::u8string hmd5(hmd5Array.begin(), hmd5Array.end());
+    std::u8string hmd5 = this->hmd5(userInfo.password, token);
     str += token + hmd5;
-    str += token + acID;
+    str += token + userInfo.acID;
     str += token + userInfo.ip;
     str += token + n;
     str += token + type;
@@ -140,66 +236,67 @@ void Portal::login(Type type) {
     // sha1 of str
     auto sha1 = QCryptographicHash::hash(QByteArray(reinterpret_cast<const char*>(str.data()), str.size()), QCryptographicHash::Sha1).toHex();
     std::u8string chksum(sha1.begin(), sha1.end());
+    // std::cout << (const char*)str.c_str() << "\n" << sha1.toStdString() << std::endl;
 
-    HttpUrl url(host, ApiList::auth, {
+    HttpUrl url(subHost, ApiList::auth, {
       { u8"callback", u8"_" },
       { u8"action", u8"login" },
       { u8"username", userInfo.username },
       { u8"password", u8"{MD5}" + hmd5 },
       { u8"os", u8"Windows 10" },
       { u8"name", u8"Windows" },
-      { u8"double_stack", 0 },
+      { u8"double_stack", u8"0" },
       { u8"chksum", chksum },
       { u8"info", i },
-      { u8"ac_id", acID },
+      { u8"ac_id", userInfo.acID },
       { u8"ip", userInfo.ip },
       { u8"n", n },
       { u8"type", type },
       { u8"_", getTimestamp() }
     }, u8"https", 443);
 
-    auto full = url.GetFullUrl();
-    std::cout << (const char*)full.c_str() << std::endl;
+    mtx.lock();
+    std::thread([url, this](){
+      // auto full = url.GetFullUrl();
+      // std::cout << (const char*)full.c_str() << std::endl;
 
-    HttpLib clt(url, true);
-    std::atomic_bool finished = false;
-    HttpLib::Callback cb {
-      .m_FinishCallback = [&finished](auto msg, auto res) {
-        if (msg.empty() && res->status == 200) {
-          // std::cout << (const char*)res->body.c_str() << std::endl;
-          auto start = res->body.find(u8'{'), end = res->body.rfind(u8'}');
-          YJson json(res->body.begin() + start, res->body.begin() + end + 1);
-          std::cout << json << std::endl;
-        } else {
-          std::cerr << "Error: " << res->status << std::endl;
-        }
-        std::cout << "Finished\n";
-        finished = true;
-      },
-      .m_ProcessCallback = [](auto current, auto total) {
-        std::cout << current << "/" << total << std::endl;
-      },
-    };
+      HttpLib clt(url, true);
+      std::atomic_bool finished = false;
+      HttpLib::Callback cb {
+        .m_FinishCallback = [&finished](auto msg, auto res) {
+          if (msg.empty() && res->status == 200) {
+            // std::cout << (const char*)res->body.c_str() << std::endl;
+            auto start = res->body.find(u8'{'), end = res->body.rfind(u8'}');
+            YJson json(res->body.begin() + start, res->body.begin() + end + 1);
+            std::cout << json << std::endl;
+          } else {
+            std::cerr << "Connect Error: " << res->status << std::endl;
+          }
+          std::cout << "Finished\n";
+          finished = true;
+        },
+        .m_ProcessCallback = [](auto current, auto total) {
+          std::cout << current << "/" << total << std::endl;
+        },
+      };
 
-    clt.GetAsync(std::move(cb));
-    while (!finished) {
-      std::this_thread::sleep_for(10ms);
-      std::cout << "wait...\n";
-    }
+      clt.GetAsync(std::move(cb));
+      while (!finished) {
+        std::this_thread::sleep_for(10ms);
+        std::cout << "wait...\n";
+      }
+      mtx.unlock();
+    }).detach();
   });
 }
 
-void Portal::sendAuth(std::u8string host, bool defaultStack) {
-  auto const ip = defaultStack ? userInfo.ip : u8""s;
-}
-
-void Portal::getToken(std::u8string host, std::u8string ip, Callback callback) {
+void Portal::getToken(std::u8string subHost, std::u8string ip, Callback callback) {
   if (!this->timestamp.empty()) {
     callback(this->token);
     return;
   }
   auto timestamp = getTimestamp();
-  HttpUrl url(host, ApiList::token, {
+  HttpUrl url(subHost, ApiList::token, {
     { u8"username"s, userInfo.username },
     { u8"ip"s, ip },
     { u8"_", timestamp },
@@ -207,33 +304,63 @@ void Portal::getToken(std::u8string host, std::u8string ip, Callback callback) {
   }, u8"https", 443);
   std:std::u8string full = url.GetFullUrl();
   std::cout << std::string(full.begin(), full.end()) << std::endl;
+
   HttpLib clt(url, true);
   std::atomic_bool finished = false;
-  HttpLib::Callback cb {
-    .m_FinishCallback = [callback, &finished](auto msg, auto res) {
-      if (msg.empty() && res->status == 200) {
-        auto begin = res->body.find(u8'{');
-        auto end = res->body.rfind(u8'}');
-        YJson json(res->body.begin() + begin, res->body.begin() + end + 1);
-        // std::cout << json;
-        auto const token = json[u8"challenge"].getValueString();
-        callback(token);
-      } else {
-        std::cerr << "Error: " << res->status << std::endl;
-      }
-      std::cout << "Finished\n";
-      finished = true;
-    },
-    .m_ProcessCallback = [](auto current, auto total) {
-      std::cout << current << "/" << total << std::endl;
-    },
+  HttpLib::Callback cb{
+      .m_FinishCallback =
+          [callback, &finished](auto msg, auto res) {
+            if (msg.empty() && res->status == 200) {
+              auto begin = res->body.find(u8'{');
+              auto end = res->body.rfind(u8'}');
+              YJson json(res->body.begin() + begin,
+                          res->body.begin() + end + 1);
+              // std::cout << json;
+              auto const token = json[u8"challenge"].getValueString();
+              callback(token);
+            } else {
+              std::cerr << "Error: " << res->status << std::endl;
+            }
+            std::cout << "Finished\n";
+            finished = true;
+          },
+      .m_ProcessCallback =
+          [](auto current, auto total) {
+            std::cout << current << "/" << total << std::endl;
+          },
   };
   clt.GetAsync(std::move(cb));
-  
+
   while (!finished) {
     std::this_thread::sleep_for(10ms);
     std::cout << "wait...\n";
   }
+}
+
+std::u8string Portal::hmd5(std::u8string_view key, std::u8string_view str) {
+  constexpr size_t pageSize = 64;
+  QByteArray strArray(reinterpret_cast<const char*>(str.data()), str.size());
+  QByteArray u(pageSize, 0x36), c(pageSize, 0x5c);
+
+  if (strArray.length() > pageSize) {
+    // str -> md(str)
+    strArray = QCryptographicHash::hash(strArray, QCryptographicHash::Md5);
+  }
+
+  strArray.resize(pageSize, u8'\0');
+
+  for (size_t i = 0; i < pageSize; i++) {
+    u[i] ^= strArray[i];
+    c[i] ^= strArray[i];
+  }
+
+  u.append(reinterpret_cast<const char*>(key.data()), key.size());
+  c.append(QCryptographicHash::hash(u, QCryptographicHash::Md5));
+  auto hmd5 = QCryptographicHash::hash(c, QCryptographicHash::Md5).toHex();
+
+  // std::cout << c.toHex().toStdString() << "/" << c.size() << std::endl;
+
+  return std::u8string(hmd5.begin(), hmd5.end());
 }
 
 std::u8string Portal::encodeUserInfo(YJson info, std::u8string token) {
@@ -328,10 +455,11 @@ std::u8string Portal::encodeUserInfo(YJson info, std::u8string token) {
 }
 
 int main() {
-  Portal p;
-  p.timestamp = u8"1740059176348";
-  p.token = u8"96710563e2a0120106fef18a6f76b1a03fefc4b0fb2ddc13bb5582a74743596d";
-  // p.login(Portal::Type::Account);
-  test();
+  SetConsoleOutputCP(CP_UTF8);
+  std::filesystem::path path = __FILE__;
+  YJson json(path.parent_path() / u8"pwd.json", YJson::UTF8);
+  std::cout << json << std::endl;
+  Portal p(json[0].getValueString(), json[0].getValueString());
+  p.login(Portal::Type::Account);
   return 0;
 }
