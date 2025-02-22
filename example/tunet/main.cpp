@@ -1,14 +1,14 @@
-#include <iostream>
-#include <chrono>
+#include "portal.h"
+
 #include <Windows.h>
 #include <yjson/yjson.h>
 #include <neobox/httplib.h>
 #include <QByteArray>
 #include <QCryptographicHash>
-#include <mutex>
-#include <regex>
 
+#include <chrono>
 #include <filesystem>
+#include <regex>
 
 using namespace std::literals;
 
@@ -17,7 +17,8 @@ static std::ostream& operator<<(std::ostream& os, std::u8string_view res) {
   return os;
 }
 
-static std::u8string operator+(std::u8string a, const std::string& b) {
+template <typename Char>
+static std::u8string operator+(std::u8string a, std::basic_string_view<Char> b) {
   return a.append(b.begin(), b.end());
 }
 
@@ -53,159 +54,26 @@ namespace ApiList {
   auto bgSwitch = u8"/v2/srun_portal_bg_switch"s;
 };
 
-struct Portal {
-  std::u8string timestamp, token;
-  std::mutex mtx;
+struct UnicodeSearch {
+  std::match_results<std::string_view::const_iterator> match;
 
-  std::u8string const mainHost = u8"tsinghua.edu.cn";
-  std::u8string const subHost = u8"auth4." + mainHost;
-
-
-  Portal(std::u8string username, std::u8string password) {
-    userInfo.username = username;
-    userInfo.password = password;
-    if (!init()) {
-      std::cerr << "Init failed\n";
-      return;
-    }
+  bool match_view(std::u8string_view str, std::string re) {
+    std::string_view strv(reinterpret_cast<const char*>(str.data()), str.size());
+    return std::regex_search(strv.begin(), strv.end(), match, std::regex(re));
   }
 
-  ~Portal() {
-    std::lock_guard<std::mutex> lock(mtx);
+  std::u8string_view view(size_t n) {
+    const auto& result = match[n];
+    auto i = reinterpret_cast<const char8_t*>(&*result.first);
+    return std::u8string_view(i, result.second - result.first);
   }
-
-  enum class Type {
-    Account
-  } type;
-
-  struct UserInfo {
-    std::u8string acID;
-    std::u8string username;
-    std::u8string password;
-    std::u8string domain;
-    std::u8string ip;
-    boolean isLogin = false;
-  } userInfo;
-
-  typedef std::function<void(std::u8string)> Callback;
-
-  static std::u8string getTimestamp() {
-    using namespace std::chrono;
-    auto timeMs = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-    auto count =  std::to_string(timeMs.count());
-    return std::u8string(count.begin(), count.end());
-  }
-
-  static std::u8string base64(std::u8string data, const std::u8string& alpha) {
-    uint8_t cursor = 0;
-    std::u8string result;
-    result.reserve(data.size() * 4 / 3 + 2);
-    for (auto iter = data.begin(); iter != data.end(); ++iter) {
-      // number before cursor is rubish
-      uint8_t const c = *iter;
-      if (cursor <= 2) {
-        uint8_t code = c << cursor;
-        code >>= 2;
-        result.push_back(alpha[code]);
-        cursor += 6;
-      }
-      if (cursor == 8) {
-        cursor = 0;
-        continue;
-      }
-
-      uint8_t code = c << cursor;
-      code >>= 2;
-      if (iter + 1 != data.end()) {
-        cursor -= 2;
-        code |= iter[1] >> (8 - cursor);
-      }
-      result.push_back(alpha[code]);
-    }
-
-    result.push_back(u8'=');
-
-    return result;
-  }
-
-  bool init();
-
-  void getInfo();
-
-  void login(Type type);
-
-  void logout();
-
-  std::u8string encodeUserInfo(YJson info, std::u8string token);
-
-  void sendAuth(bool defaultStack);
-
-  void getToken(std::u8string ip, Callback callback);
-
-  static std::u8string hmd5(std::u8string_view str, std::u8string_view key);
 };
 
 bool Portal::init() {
   HttpLib clt(HttpUrl (u8"login." + mainHost, u8"/"));
   
-  auto loginPage = [](HttpLib::Response* res) ->std::u8string {
-    // std::cout << "Init login page: \n" << res->body << std::endl;
-
-    std::regex re(R"(URL=(https://[^"]*_\d+\.html))");
-    std::cmatch match;
-    if (!std::regex_search(reinterpret_cast<const char*>(res->body.c_str()), match, re)) {
-      std::cerr << "Can not find redirect url in login page.\n";
-      return {};
-    }
-    std::string link = match[1];
-    std::cout << "Redirect to: " << link << std::endl;
-    
-    return std::u8string(link.begin(), link.end());
-  };
-
-  auto redirectPage = [this](HttpLib::Response* res) ->std::u8string {
-    // std::cout << res->body << std::endl;
-
-    std::regex re(R"(url=(.*ac_id=(\d+)[^"]*))");
-    std::cmatch match;
-    if (!std::regex_search(reinterpret_cast<const char*>(res->body.c_str()), match, re)) {
-      std::cerr << "Can not find auth page url.\n";
-      return {};
-    }
-    
-    auto const path = u8"https://" + subHost + match[1];
-    std::string acid = match[2];
-    userInfo.acID = std::u8string(acid.begin(), acid.end());
-    std::cout << "Auth page url: <" << path << ">, ACID： <" << acid << ">" << std::endl;
-    return path;
-  };
-
-
-  auto authPage = [this](HttpLib::Response* res) ->bool {
-    // std::cout << "Init success\n" << res->body << std::endl;
-
-    std::regex re(R"(CONFIG = (\{[^}]+\}))");
-    std::cmatch match;
-    if (!std::regex_search(reinterpret_cast<const char*>(res->body.c_str()), match, re)) {
-      std::cerr << "Can not find CONFIG.\n";
-      return false;
-    }
-    std::string config = match[1];
-    // std::cout << "Match Config: " << config << std::endl;
-
-    std::regex reIP(R"(ip\s*:\s*"([^"]+)\")");
-    std::smatch smatch;
-    if (!std::regex_search(config, smatch, reIP)) {
-      std::cerr << "Can not find ip.\n";
-      return false;
-    }
-
-    std::string ip = smatch[1];
-    std::cout << "Match ip: " << ip << std::endl;
-    userInfo.ip = std::u8string(ip.begin(), ip.end());
-    return true;
-  };
-
+  UnicodeSearch search;
+  
   auto res = clt.Get();
 
   if (res->status != 200) {
@@ -213,8 +81,10 @@ bool Portal::init() {
     return false;
   }
 
-  auto url = loginPage(res);
-  if (!url.empty()) {
+  // std::cout << res->body << std::endl;
+  if (search.match_view(res->body, R"(URL=(https://[^"]*_\d+\.html))")) {
+    std::cout << "Find URL\n";
+    auto url = search.view(1);
     clt.SetUrl(url);
     res = clt.Get();
     if (res->status != 200) {
@@ -222,19 +92,39 @@ bool Portal::init() {
       return false;
     }
   }
-  url = redirectPage(res);
-  if (url.empty()) {
-    std::cerr << "Can not find redirect url in redirect page.\n";
-    return false;
-  }
-  clt.SetUrl(url);
-  res = clt.Get();
-  if (res->status != 200) {
-    std::cerr << "Can not go to <" << clt.GetUrl() << ">\n";
+
+  // std::cout << res->body << std::endl;
+  if (search.match_view(res->body, R"(url=(.*ac_id=(\d+)[^"]*))")) {
+    auto url = u8"https://" + subHost + search.view(1);
+    userInfo.acID = search.view(2);
+    std::cout << "Find ac_id: " << userInfo.acID << std::endl
+              << "URL: " << url << std::endl;
+    clt.SetUrl(url);
+    res = clt.Get();
+    if (res->status != 200) {
+      std::cerr << "Can not go to <" << clt.GetUrl() << ">\n";
+      return false;
+    }
+  } else {
+    std::cerr << "Can not find ac_id.\n";
     return false;
   }
 
-  return authPage(res);
+  // std::cout << res->body << std::endl;
+  if (search.match_view(res->body, R"(CONFIG = (\{[^}]+\}))")) {
+    auto config = search.view(1);
+    if (search.match_view(config, R"(ip\s*:\s*"([^"]+)\")")) {
+      userInfo.ip = search.view(1);
+    } else {
+      std::cerr << "Can not find ip.\n";
+      return false;
+    }
+  } else {
+    std::cerr << "Can not find CONFIG.\n";
+    return false;
+  }
+
+  return true;
 }
 
 void Portal::getInfo() {
@@ -504,7 +394,7 @@ std::u8string Portal::hmd5(std::u8string_view key, std::u8string_view str) {
   return std::u8string(hmd5.begin(), hmd5.end());
 }
 
-std::u8string Portal::encodeUserInfo(YJson info, std::u8string token) {
+std::u8string Portal::encodeUserInfo(const YJson& info, std::u8string token) {
   auto s = [](std::u8string a, bool b) {
     auto car = a.length(), c = car;
     const auto remainder = c & 0b11;
@@ -599,10 +489,12 @@ int main() {
   SetConsoleOutputCP(CP_UTF8);
   std::filesystem::path path = __FILE__;
   YJson json(path.parent_path() / u8"pwd.json", YJson::UTF8);
-  std::cout << json << std::endl;
   Portal p(json[0].getValueString(), json[1].getValueString());
+
+  std::cout << "Press any key to login\n";
+  std::cin.get();
   p.login(Portal::Type::Account);
-  std::this_thread::sleep_for(5s);
+  // std::this_thread::sleep_for(5s);
   std::cout << "Press any key to logout\n";
   std::cin.get();
   p.logout();
