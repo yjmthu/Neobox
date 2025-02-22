@@ -369,6 +369,21 @@ HttpUrl::String HttpUrl::GetObjectString() const
   return object;
 }
 
+void HttpAwaiter::await_suspend(HttpAsyncAction::Handle handle) {
+  m_Lib->StartAsync(handle);
+  m_Finished = true;
+}
+
+HttpResponse* HttpAwaiter::await_resume() {
+  return &m_Lib->m_Response;
+};
+
+HttpAwaiter::~HttpAwaiter() {
+  if (!m_Finished) {
+    m_Lib->StartAsync(nullptr);
+  }
+}
+
 bool HttpLib::IsOnline() {
 #ifdef _WIN32
   BOOL bResult = FALSE;
@@ -1018,6 +1033,10 @@ void HttpLib::EmitFinish(std::wstring message)
     );
   }
 #endif
+  // Locker locker(m_AsyncMutex);
+   delete reinterpret_cast<std::u8string*>(m_DataBuffer);
+   m_DataBuffer = nullptr;
+
   auto& callback = m_AsyncCallback.m_FinishCallback;
   if (callback) {
     /* To prevent infinite recursion at destructor time,
@@ -1027,9 +1046,6 @@ void HttpLib::EmitFinish(std::wstring message)
     callback = std::nullopt;
     cb(message, &m_Response);
   }
-  // Locker locker(m_AsyncMutex);
-   delete reinterpret_cast<std::u8string*>(m_DataBuffer);
-   m_DataBuffer = nullptr;
 }
 
 HttpLib::Response* HttpLib::Get()
@@ -1080,7 +1096,7 @@ void HttpLib::SetTimeOut(std::chrono::seconds timeOut) {
 #endif
 }
 
-void HttpLib::GetAsync(Callback callback)
+HttpAwaiter HttpLib::GetAsync(std::optional<Callback> callback)
 {
   if (!m_AsyncSet) {
     throw std::logic_error("HttpLib Error: HttpAync wasn't set!");
@@ -1089,8 +1105,17 @@ void HttpLib::GetAsync(Callback callback)
   m_Finished = false;
 
   m_Response.body.clear();
-  m_AsyncCallback = std::move(callback);
+  if (callback) {
+    m_AsyncCallback = std::move(*callback);
+  } else {
+    m_AsyncCallback = {
+      .m_WriteCallback = std::nullopt,
+      .m_FinishCallback = std::nullopt,
+      .m_ProcessCallback = std::nullopt,
+    };
+  }
   m_DataBuffer = new std::u8string;
+
   if (!m_AsyncCallback.m_WriteCallback) {
     m_WriteCallback = [this](auto data, auto size){
       if (m_Finished) return false;
@@ -1108,6 +1133,27 @@ void HttpLib::GetAsync(Callback callback)
       EmitProcess();
       return true;
     };
+  }
+
+  return HttpAwaiter {this};
+}
+
+void HttpLib::StartAsync(HttpAsyncAction::Handle handle)
+{
+  if (handle != nullptr) {
+    if (m_AsyncCallback.m_FinishCallback) {
+      auto finish = std::move(*m_AsyncCallback.m_FinishCallback);
+      m_AsyncCallback.m_FinishCallback = [finish, handle](auto message, auto response) {
+        finish(message, response);
+        std::thread([handle]() { handle.resume(); }).detach();
+        // handle.resume();
+      };
+    } else {
+      m_AsyncCallback.m_FinishCallback = [handle](auto, auto) {
+        std::thread([handle]() { handle.resume(); }).detach();
+        // handle.resume();
+      };
+    }
   }
 
   bool init = m_hSession;

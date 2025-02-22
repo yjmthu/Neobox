@@ -1,11 +1,11 @@
 #ifndef HTTPLIB_H
 #define HTTPLIB_H
 
+#include <coroutine>
 #include <filesystem>
 #include <string>
 #include <map>
 #include <neobox/httpproxy.h>
-#include <memory>
 #include <atomic>
 #include <chrono>
 
@@ -31,6 +31,14 @@ public:
   void SetUrl(StringView url);
   String GetObjectString() const;
   bool IsHttps() const { return scheme.back() == u8's'; }
+  HttpUrl& operator=(HttpUrl&& url) noexcept {
+    scheme = std::move(url.scheme);
+    host = std::move(url.host);
+    path = std::move(url.path);
+    port = url.port;
+    parameters = std::move(url.parameters);
+    return *this;
+  }
 public:
   String scheme = u8"http";
   String host;
@@ -65,6 +73,79 @@ public:
   static void UrlDecode(StringView text, String& out);
 };
 
+struct HttpAsyncAction {
+  struct promise_type {
+    auto get_return_object() -> HttpAsyncAction {
+      return HttpAsyncAction{Handle::from_promise(*this)};
+    }
+    auto initial_suspend() -> std::suspend_never { return {}; }
+    auto final_suspend() noexcept -> std::suspend_never { return {}; }
+    auto unhandled_exception() -> void {}
+
+    void return_void() {
+      m_Mutex.lock();
+      m_Finished = true;
+      m_Mutex.unlock();
+
+      m_CV.notify_all();
+    }
+
+    void wait_return() {
+      std::unique_lock<std::mutex> lock(m_Mutex);
+      m_CV.wait(lock, [this] { return m_Finished; });
+    }
+  private:
+    std::mutex m_Mutex;
+    std::condition_variable m_CV;
+    bool m_Finished = false;
+  };
+  using Handle = std::coroutine_handle<promise_type>;
+
+  Handle m_Handle;
+  HttpAsyncAction(Handle handle) : m_Handle(handle) {}
+
+  HttpAsyncAction(HttpAsyncAction&& other) noexcept
+    : m_Handle(other.m_Handle)
+  {
+    other.m_Handle = nullptr;
+  }
+
+  ~HttpAsyncAction() {
+    // if (m_Handle) {
+    //   m_Handle.destroy();
+    // }
+  }
+
+  void get() { m_Handle.promise().wait_return(); }
+};
+
+struct HttpResponse {
+  typedef std::map<std::u8string, std::u8string> Headers;
+
+  std::u8string version;
+  long status = -1;
+  std::u8string reason;
+  Headers headers;
+  std::u8string body;
+  std::u8string location; // Redirect location
+};
+
+class HttpAwaiter {
+  HttpLib* const m_Lib;
+  bool m_Finished = false;
+public:
+  bool await_ready() const { return false; }
+  void await_suspend(HttpAsyncAction::Handle handle);
+  HttpResponse* await_resume();
+
+  HttpAwaiter(HttpLib* lib) : m_Lib(lib) {}
+  HttpAwaiter(HttpAwaiter&& other) : m_Lib(other.m_Lib) {
+    // m_Finished = other.m_Finished;
+    other.m_Finished = true;
+  }
+  ~HttpAwaiter();
+};
+
 class HttpLib {
 public:
   typedef std::mutex Mutex;
@@ -72,19 +153,12 @@ private:
   typedef std::lock_guard<Mutex> Locker;
   typedef std::unique_lock<Mutex> LockerEx;
 public:
+  typedef HttpResponse Response;
+  typedef Response::Headers Headers;
   typedef uint64_t HttpId;
-  typedef std::map<std::u8string, std::u8string> Headers;
   typedef size_t( CallbackFunction )(void*, size_t, size_t, void*);
 
   struct PostData { void* data; size_t size; } m_PostData;
-  struct Response {
-    std::u8string version;
-    long status = -1;
-    std::u8string reason;
-    Headers headers;
-    std::u8string body;
-    std::u8string location; // Redirect location
-  };
 
   typedef std::function<void(const void*, size_t)> WriteCallback;
   typedef std::function<void(size_t, size_t)> ProcessCallback;
@@ -113,6 +187,11 @@ public:
     HttpUninitialize();
     HttpInitialize();
   }
+  void SetUrl(HttpUrl url) {
+    m_Url = std::move(url);
+    HttpUninitialize();
+    HttpInitialize();
+  }
   void SetHeader(std::u8string key, std::u8string value) {
     m_Headers[key] = value;
   }
@@ -128,13 +207,14 @@ public:
   Response* Get(const std::filesystem::path& path);
   Response* Get(CallbackFunction* callback, void* userData);
   void SetTimeOut(std::chrono::seconds timeOut);
-  void GetAsync(Callback callback);
+  HttpAwaiter GetAsync(std::optional<Callback> callback = std::nullopt);
   void ExitAsync();
   bool IsFinished() const { return m_Finished; }
   static bool IsOnline();
 public:
   static std::optional<HttpProxy> m_Proxy;
 private:
+  friend HttpAwaiter;
   Headers m_Headers;
   Response m_Response;
   HttpUrl m_Url;
@@ -151,6 +231,7 @@ private:
   size_t m_RecieveSize = 0;
   size_t m_ConnectLength = 0;
 private:
+  void StartAsync(HttpAsyncAction::Handle handle);
   void IntoPool();
   void HttpInitialize();
   void HttpUninitialize();

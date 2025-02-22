@@ -67,27 +67,39 @@ struct UnicodeSearch {
   }
 };
 
-bool Portal::init() {
-  HttpLib clt(HttpUrl (u8"login." + mainHost, u8"/"));
+std::optional<YJson> Portal::parseJson(HttpResponse* res) {
+  if (res->status != 200) {
+    return std::nullopt;
+  }
+  auto& data = res->body;
+
+  auto i = data.find(u8'{'), j = data.rfind(u8'}');
+  if (i == data.npos || j == data.npos) {
+    return std::nullopt;
+  }
+  return YJson(data.begin() + i, data.begin() + j + 1);
+}
+
+HttpAsyncAction Portal::init() {
   
   UnicodeSearch search;
   
-  auto res = clt.Get();
+  auto res = co_await client.GetAsync();
 
   if (res->status != 200) {
-    std::cerr << "Can not go to <" << clt.GetUrl() << ">\n";
-    return false;
+    std::cerr << "Can not go to <" << client.GetUrl() << ">\n";
+    co_return;
   }
 
   // std::cout << res->body << std::endl;
   if (search.match_view(res->body, R"(URL=(https://[^"]*_\d+\.html))")) {
     std::cout << "Find URL\n";
     auto url = search.view(1);
-    clt.SetUrl(url);
-    res = clt.Get();
+    client.SetUrl(url);
+    res = co_await client.GetAsync();
     if (res->status != 200) {
-      std::cerr << "Can not go to <" << clt.GetUrl() << ">\n";
-      return false;
+      std::cerr << "Can not go to <" << client.GetUrl() << ">\n";
+      co_return;
     }
   }
 
@@ -97,15 +109,21 @@ bool Portal::init() {
     userInfo.acID = search.view(2);
     std::cout << "Find ac_id: " << userInfo.acID << std::endl
               << "URL: " << url << std::endl;
-    clt.SetUrl(url);
-    res = clt.Get();
+    client.SetUrl(url);
+    res = co_await client.GetAsync(HttpLib::Callback
+      {
+        .m_ProcessCallback = [](auto current, auto total) {
+          std::cout << current << "/" << total << std::endl;
+        },
+      }
+    );
     if (res->status != 200) {
-      std::cerr << "Can not go to <" << clt.GetUrl() << ">\n";
-      return false;
+      std::cerr << "Can not go to <" << client.GetUrl() << ">\n";
+      co_return;
     }
   } else {
     std::cerr << "Can not find ac_id.\n";
-    return false;
+    co_return;
   }
 
   // std::cout << res->body << std::endl;
@@ -115,32 +133,23 @@ bool Portal::init() {
       userInfo.ip = search.view(1);
     } else {
       std::cerr << "Can not find ip.\n";
-      return false;
     }
   } else {
     std::cerr << "Can not find CONFIG.\n";
-    return false;
   }
-
-  return true;
 }
 
-void Portal::getInfo() {
-  if (userInfo.ip.empty()) {
-    std::cerr << "Network not found.\n";
-    return;
-  }
-
+HttpAwaiter Portal::getInfo() {
   HttpUrl url(subHost, ApiList::info, {
     { u8"callback", u8"_" },
     { u8"ip", userInfo.ip },
     { u8"_", getTimestamp() }
   }, u8"https", 443);
 
-  HttpLib clt(url, true);
-  std::atomic_bool finished = false;
+  client.SetUrl(std::move(url));
+
   HttpLib::Callback cb {
-    .m_FinishCallback = [&finished, this](auto msg, auto res) {
+    .m_FinishCallback = [this](auto msg, auto res) {
       if (msg.empty() && res->status == 200) {
         auto i = res->body.find(u8'{'), j = res->body.rfind(u8'}');
         if (i == res->body.npos || j == res->body.npos) {
@@ -155,42 +164,59 @@ void Portal::getInfo() {
         userInfo.isLogin = false;
         std::cerr << "Connect Error: " << res->status << std::endl;
       }
-      finished = true;
     },
     .m_ProcessCallback = [](auto current, auto total) {
       std::cout << current << "/" << total << std::endl;
     },
   };
 
-  clt.GetAsync(std::move(cb));
-
-  while (!finished) {
-    std::this_thread::sleep_for(10ms);
-    // std::cout << "wait...\n";
-  }
+  return client.GetAsync(std::move(cb));
 }
 
-void Portal::login(Type type) {
+HttpAsyncAction Portal::login(Type type) {
   if (userInfo.ip.empty()) {
     std::cerr << "Network not found.\n";
-    return;
+    co_return;
   }
   std::cout << "ip: " << std::string(userInfo.ip.begin(), userInfo.ip.end()) << std::endl;
-  getInfo();
+  auto info = co_await getInfo();
   if (userInfo.isLogin) {
     std::cout << "Already login\n";
-    return;
+    co_return;
   }
   userInfo.isLogin = true;
-  sendAuth(false);
+
+  auto res = co_await getToken(userInfo.ip);
+  auto json = parseJson(res);
+
+  if (!json) {
+    std::cerr << "Can not get token.\n";
+    co_return;
+  }
+
+  res = co_await sendAuth(parseToken(*json));
+  json = parseJson(res);
+  
+  if (!json) {
+    std::cerr << "Can not get token.\n";
+    co_return;
+  }
+
+  std::cout << *json << std::endl;
 }
 
-void Portal::logout() {
+HttpAsyncAction Portal::logout() {
+
+  if (!userInfo.isLogin) {
+    std::cout << "Already logout\n";
+    co_return;
+  }
+
   userInfo.isLogin = false;
 
   if (userInfo.ip.empty()) {
     std::cerr << "Network not found.\n";
-    return;
+    co_return;
   }
 
   // current time in date
@@ -212,156 +238,108 @@ void Portal::logout() {
     { u8"_", getTimestamp() }
   }, u8"https", 443);
 
-  HttpLib clt(url, true);
-  std::atomic_bool finished = false;
+  client.SetUrl(std::move(url));
+
   HttpLib::Callback cb {
-    .m_FinishCallback = [&finished](auto msg, auto res) {
-      if (msg.empty() && res->status == 200) {
-        std::cout << (const char*)res->body.c_str() << std::endl;
-      } else {
-        std::cerr << "Connect Error: " << res->status << std::endl;
-      }
-      std::cout << "Finished\n";
-      finished = true;
-    },
     .m_ProcessCallback = [](auto current, auto total) {
       std::cout << current << "/" << total << std::endl;
     },
   };
 
-  clt.GetAsync(std::move(cb));
-
-  while (!finished) {
-    std::this_thread::sleep_for(10ms);
-    // std::cout << "wait...\n";
-  }
+  auto res = co_await client.GetAsync(std::move(cb));
+  
+  std::cout << res->body << std::endl;
 }
 
-void Portal::sendAuth(bool defaultStack) {
-  std::cout << "Get Token\n";
-  getToken(userInfo.ip, [this](auto token) {
-    std::cout << "Token: " << std::string(token.begin(), token.end()) << std::endl;
-    std::u8string const n = u8"200", type = u8"1";
-    YJson info = YJson::O {
-      { u8"username", userInfo.username },
-      { u8"password", userInfo.password },
-      { u8"ip", userInfo.ip },
-      { u8"acid", userInfo.acID },
-      { u8"enc_ver", u8"srun_bx1" },
-    };
+HttpAwaiter Portal::sendAuth(std::u8string_view token) {
+  std::cout << "Token: " << std::string(token.begin(), token.end()) << std::endl;
+  std::u8string const n = u8"200", type = u8"1";
+  YJson info = YJson::O {
+    { u8"username", userInfo.username },
+    { u8"password", userInfo.password },
+    { u8"ip", userInfo.ip },
+    { u8"acid", userInfo.acID },
+    { u8"enc_ver", u8"srun_bx1" },
+  };
 
-    const auto i = encodeUserInfo(info, token);
-    std::cout << "Info: " << info << "\nEncode: " << (const char*)i.c_str() << std:: endl; 
-    
-    std::u8string str = token + userInfo.username;
-    std::u8string hmd5 = this->hmd5(userInfo.password, token);
-    str += token + hmd5;
-    str += token + userInfo.acID;
-    str += token + userInfo.ip;
-    str += token + n;
-    str += token + type;
-    str += token + i;
+  const auto i = encodeUserInfo(info, token);
+  std::cout << "Info: " << info << "\nEncode: " << (const char*)i.c_str() << std:: endl; 
+  
+  std::u8string str(token);
+  str += userInfo.username;
+  std::u8string hmd5 = this->hmd5(userInfo.password, token);
+  str += token;
+  str += hmd5;
+  str += token;
+  str += userInfo.acID;
+  str += token;
+  str += userInfo.ip;
+  str += token;
+  str += n;
+  str += token;
+  str += type;
+  str += token;
+  str += i;
 
-    // sha1 of str
-    auto sha1 = QCryptographicHash::hash(QByteArray(reinterpret_cast<const char*>(str.data()), str.size()), QCryptographicHash::Sha1).toHex();
-    std::u8string chksum(sha1.begin(), sha1.end());
-    // std::cout << (const char*)str.c_str() << "\n" << sha1.toStdString() << std::endl;
+  // sha1 of str
+  auto sha1 = QCryptographicHash::hash(QByteArray(reinterpret_cast<const char*>(str.data()), str.size()), QCryptographicHash::Sha1).toHex();
+  std::u8string chksum(sha1.begin(), sha1.end());
+  // std::cout << (const char*)str.c_str() << "\n" << sha1.toStdString() << std::endl;
 
-    HttpUrl url(subHost, ApiList::auth, {
-      { u8"callback", u8"_" },
-      { u8"action", u8"login" },
-      { u8"username", userInfo.username },
-      { u8"password", u8"{MD5}" + hmd5 },
-      { u8"os", u8"Windows 10" },
-      { u8"name", u8"Windows" },
-      { u8"double_stack", u8"0" },
-      { u8"chksum", chksum },
-      { u8"info", i },
-      { u8"ac_id", userInfo.acID },
-      { u8"ip", userInfo.ip },
-      { u8"n", n },
-      { u8"type", type },
-      { u8"_", getTimestamp() }
-    }, u8"https", 443);
-
-    mtx.lock();
-    std::thread([url, this](){
-      // auto full = url.GetFullUrl();
-      // std::cout << (const char*)full.c_str() << std::endl;
-
-      HttpLib clt(url, true);
-      std::atomic_bool finished = false;
-      HttpLib::Callback cb {
-        .m_FinishCallback = [&finished](auto msg, auto res) {
-          if (msg.empty() && res->status == 200) {
-            // std::cout << (const char*)res->body.c_str() << std::endl;
-            auto start = res->body.find(u8'{'), end = res->body.rfind(u8'}');
-            YJson json(res->body.begin() + start, res->body.begin() + end + 1);
-            std::cout << json << std::endl;
-          } else {
-            std::cerr << "Connect Error: " << res->status << std::endl;
-          }
-          std::cout << "Finished\n";
-          finished = true;
-        },
-        .m_ProcessCallback = [](auto current, auto total) {
-          std::cout << current << "/" << total << std::endl;
-        },
-      };
-
-      clt.GetAsync(std::move(cb));
-      while (!finished) {
-        std::this_thread::sleep_for(10ms);
-        // std::cout << "wait...\n";
-      }
-      mtx.unlock();
-    }).detach();
-  });
-}
-
-void Portal::getToken(std::u8string ip, Callback callback) {
-  if (!this->timestamp.empty()) {
-    callback(this->token);
-    return;
-  }
-  auto timestamp = getTimestamp();
-  HttpUrl url(subHost, ApiList::token, {
-    { u8"username"s, userInfo.username },
-    { u8"ip"s, ip },
-    { u8"_", timestamp },
-    { u8"callback", u8"_" }
+  HttpUrl url(subHost, ApiList::auth, {
+    { u8"callback", u8"_" },
+    { u8"action", u8"login" },
+    { u8"username", userInfo.username },
+    { u8"password", u8"{MD5}" + hmd5 },
+    { u8"os", u8"Windows 10" },
+    { u8"name", u8"Windows" },
+    { u8"double_stack", u8"0" },
+    { u8"chksum", chksum },
+    { u8"info", i },
+    { u8"ac_id", userInfo.acID },
+    { u8"ip", userInfo.ip },
+    { u8"n", n },
+    { u8"type", type },
+    { u8"_", getTimestamp() }
   }, u8"https", 443);
 
-  HttpLib clt(url, true);
-  std::atomic_bool finished = false;
+  client.SetUrl(std::move(url));
+
   HttpLib::Callback cb{
-      .m_FinishCallback =
-          [callback, &finished](auto msg, auto res) {
-            if (msg.empty() && res->status == 200) {
-              auto begin = res->body.find(u8'{');
-              auto end = res->body.rfind(u8'}');
-              YJson json(res->body.begin() + begin,
-                          res->body.begin() + end + 1);
-              // std::cout << json;
-              auto const token = json[u8"challenge"].getValueString();
-              callback(token);
-            } else {
-              std::cerr << "Error: " << res->status << std::endl;
-            }
-            std::cout << "Finished\n";
-            finished = true;
-          },
       .m_ProcessCallback =
           [](auto current, auto total) {
             std::cout << current << "/" << total << std::endl;
           },
   };
-  clt.GetAsync(std::move(cb));
 
-  while (!finished) {
-    std::this_thread::sleep_for(10ms);
-    // std::cout << "wait...\n";
-  }
+  return client.GetAsync(std::move(cb));
+}
+
+HttpAwaiter Portal::getToken(std::u8string_view ip) {
+  // if (!this->timestamp.empty()) {
+  //   callback(this->token);
+  //   return;
+  // }
+  auto timestamp = getTimestamp();
+  HttpUrl url(subHost, ApiList::token, {
+    { u8"username"s, userInfo.username },
+    { u8"ip"s, std::u8string(ip) },
+    { u8"_", timestamp },
+    { u8"callback", u8"_" }
+  }, u8"https", 443);
+
+  client.SetUrl(std::move(url));
+  HttpLib::Callback cb{
+      .m_ProcessCallback =
+          [](auto current, auto total) {
+            std::cout << current << "/" << total << std::endl;
+          },
+  };
+  return client.GetAsync(std::move(cb));
+}
+
+std::u8string_view Portal::parseToken(YJson& json) {
+  return json[u8"challenge"].getValueString();
 }
 
 std::u8string Portal::hmd5(std::u8string_view key, std::u8string_view str) {
@@ -390,7 +368,39 @@ std::u8string Portal::hmd5(std::u8string_view key, std::u8string_view str) {
   return std::u8string(hmd5.begin(), hmd5.end());
 }
 
-std::u8string Portal::encodeUserInfo(const YJson& info, std::u8string token) {
+std::u8string Portal::base64(std::u8string data, const std::u8string& alpha) {
+  uint8_t cursor = 0;
+  std::u8string result;
+  result.reserve(data.size() * 4 / 3 + 2);
+  for (auto iter = data.begin(); iter != data.end(); ++iter) {
+    // number before cursor is rubish
+    uint8_t const c = *iter;
+    if (cursor <= 2) {
+      uint8_t code = c << cursor;
+      code >>= 2;
+      result.push_back(alpha[code]);
+      cursor += 6;
+    }
+    if (cursor == 8) {
+      cursor = 0;
+      continue;
+    }
+
+    uint8_t code = c << cursor;
+    code >>= 2;
+    if (iter + 1 != data.end()) {
+      cursor -= 2;
+      code |= iter[1] >> (8 - cursor);
+    }
+    result.push_back(alpha[code]);
+  }
+
+  result.push_back(u8'=');
+
+  return result;
+}
+
+std::u8string Portal::encodeUserInfo(const YJson& info, std::u8string_view token) {
   auto s = [](std::u8string a, bool b) {
     auto car = a.length(), c = car;
     const auto remainder = c & 0b11;
@@ -472,7 +482,7 @@ std::u8string Portal::encodeUserInfo(const YJson& info, std::u8string token) {
   };
 
   auto alpha = u8"LVoJPiCN2R8G90yg+hmFHuacZ1OWMnrsSTXkYpUq/3dlbfKwv6xztjI7DeBE45QA"s; // 用户信息转 JSON
-  auto const data = encode(info.toString(), token);
+  auto const data = encode(info.toString(), std::u8string(token));
   auto const base64 = Portal::base64(data, alpha);
   auto result = u8"{SRBX1}"s;
   result.resize(result.size() + base64.size());

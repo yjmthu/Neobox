@@ -13,10 +13,12 @@ int main() {
 
   std::cout << "Press any key to login\n";
   std::cin.get();
-  p.login(Portal::Type::Account);
+  p.login(Portal::Type::Account).get();
   // std::this_thread::sleep_for(5s);
   std::cout << "Press any key to logout\n";
   std::cin.get();
-  p.logout();
+  p.logout().get();
+  std::cout << "Press any key to exit\n";
+  std::cin.get();
   return 0;
 }

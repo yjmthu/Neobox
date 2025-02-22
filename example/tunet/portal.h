@@ -3,28 +3,27 @@
 
 #include <string>
 #include <functional>
-#include <iostream>
 #include <mutex>
+#include <neobox/httplib.h>
 
 struct Portal {
   std::u8string timestamp, token;
   using Mutex = std::mutex;
-  Mutex mtx;
+  // Mutex mtx;
 
   std::u8string const mainHost = u8"tsinghua.edu.cn";
   std::u8string const subHost = u8"auth4." + mainHost;
 
-
-  Portal(std::u8string username, std::u8string password) {
+  Portal(std::u8string username, std::u8string password)
+    : client(HttpUrl(u8"login." + mainHost, u8"/"), true)
+  {
     userInfo.username = username;
     userInfo.password = password;
-    if (!init()) {
-      std::cerr << "Init failed\n";
-    }
+    init().get();
   }
 
   ~Portal() {
-    std::lock_guard<Mutex> lock(mtx);
+    // std::lock_guard<Mutex> lock(mtx);
   }
 
   enum class Type {
@@ -48,52 +47,22 @@ struct Portal {
     auto count =  std::to_string(timeMs.count());
     return std::u8string(count.begin(), count.end());
   }
+  
+  HttpLib client;
 
-  static std::u8string base64(std::u8string data, const std::u8string& alpha) {
-    uint8_t cursor = 0;
-    std::u8string result;
-    result.reserve(data.size() * 4 / 3 + 2);
-    for (auto iter = data.begin(); iter != data.end(); ++iter) {
-      // number before cursor is rubish
-      uint8_t const c = *iter;
-      if (cursor <= 2) {
-        uint8_t code = c << cursor;
-        code >>= 2;
-        result.push_back(alpha[code]);
-        cursor += 6;
-      }
-      if (cursor == 8) {
-        cursor = 0;
-        continue;
-      }
+  HttpAsyncAction init();
+  HttpAsyncAction login(Type type);
+  HttpAsyncAction logout();
 
-      uint8_t code = c << cursor;
-      code >>= 2;
-      if (iter + 1 != data.end()) {
-        cursor -= 2;
-        code |= iter[1] >> (8 - cursor);
-      }
-      result.push_back(alpha[code]);
-    }
+  HttpAwaiter getInfo();
+  HttpAwaiter sendAuth(std::u8string_view token);
+  HttpAwaiter getToken(std::u8string_view ip);
+  std::optional<YJson> parseJson(HttpResponse* res);
+  std::u8string_view parseToken(YJson& json);
+  // std::u8string_view parseInfo(YJson& json);
 
-    result.push_back(u8'=');
-
-    return result;
-  }
-
-  bool init();
-
-  void getInfo();
-
-  void login(Type type);
-
-  void logout();
-
-  void sendAuth(bool defaultStack);
-
-  void getToken(std::u8string ip, Callback callback);
-
-  static std::u8string encodeUserInfo(const class YJson& info, std::u8string token);
+  static std::u8string base64(std::u8string data, const std::u8string& alpha);
+  static std::u8string encodeUserInfo(const class YJson& info, std::u8string_view token);
   static std::u8string hmd5(std::u8string_view str, std::u8string_view key);
 };
 
