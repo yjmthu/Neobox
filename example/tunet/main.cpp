@@ -487,6 +487,7 @@ std::u8string Portal::encodeUserInfo(const YJson& info, std::u8string token) {
 
 int main() {
   SetConsoleOutputCP(CP_UTF8);
+
   std::filesystem::path path = __FILE__;
   YJson json(path.parent_path() / u8"pwd.json", YJson::UTF8);
   Portal p(json[0].getValueString(), json[1].getValueString());
