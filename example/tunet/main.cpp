@@ -333,8 +333,6 @@ void Portal::getToken(std::u8string ip, Callback callback) {
     { u8"_", timestamp },
     { u8"callback", u8"_" }
   }, u8"https", 443);
-  std:std::u8string full = url.GetFullUrl();
-  std::cout << std::string(full.begin(), full.end()) << std::endl;
 
   HttpLib clt(url, true);
   std::atomic_bool finished = false;

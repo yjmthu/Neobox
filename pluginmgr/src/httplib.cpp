@@ -369,12 +369,6 @@ HttpUrl::String HttpUrl::GetObjectString() const
   return object;
 }
 
-HttpUrl::String HttpUrl::GetFullUrl() const {
-  std::string p = std::to_string(port);
-  auto object = GetObjectString();
-  return scheme + u8"://" + host + u8":" + std::u8string(p.begin(), p.end()) + object;
-}
-
 bool HttpLib::IsOnline() {
 #ifdef _WIN32
   BOOL bResult = FALSE;

@@ -31,7 +31,6 @@ public:
   void SetUrl(StringView url);
   String GetObjectString() const;
   bool IsHttps() const { return scheme.back() == u8's'; }
-  String GetFullUrl() const;
 public:
   String scheme = u8"http";
   String host;
