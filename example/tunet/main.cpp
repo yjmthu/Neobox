@@ -12,12 +12,12 @@
 
 using namespace std::literals;
 
-std::ostream& operator<<(std::ostream& os, std::u8string_view res) {
+static std::ostream& operator<<(std::ostream& os, std::u8string_view res) {
   os.write(reinterpret_cast<const char*>(res.data()), res.size());
   return os;
 }
 
-std::u8string operator+(std::u8string a, const std::string& b) {
+static std::u8string operator+(std::u8string a, const std::string& b) {
   return a.append(b.begin(), b.end());
 }
 
@@ -84,6 +84,7 @@ struct Portal {
     std::u8string password;
     std::u8string domain;
     std::u8string ip;
+    boolean isLogin = false;
   } userInfo;
 
   typedef std::function<void(std::u8string)> Callback;
@@ -129,6 +130,8 @@ struct Portal {
 
   bool init();
 
+  void getInfo();
+
   void login(Type type);
 
   void logout();
@@ -143,78 +146,140 @@ struct Portal {
 };
 
 bool Portal::init() {
-  HttpUrl url(u8"login." + mainHost, u8"/");
-  std::cout << url.GetFullUrl() << std::endl;
-  HttpLib clt(url);
-  // clt.SetRedirect(3);
-  auto res = clt.Get();
-  if (res->status != 200) {
-    return false;
-  }
-  std::cout << "Init success\n" << res->body << std::endl;
-  {
-    std::regex re(R"(URL=(https://[^"]*_(\d+)\.html))");
-    std::cmatch match;
-    if (!std::regex_search(reinterpret_cast<const char*>(res->body.data()), match, re)) {
-      return false;
-    }
-    std::string url = match[1], acid = match[2];
-    // std::cout << "Redirect to: " << path << " ACID: " << acid << std::endl;
-    clt.SetUrl(std::u8string_view(reinterpret_cast<char8_t*>(url.data()), url.size()));
-    
-    userInfo.acID = std::u8string(acid.begin(), acid.end());
-    
-    res = clt.Get();
-    if (res->status != 200) {
-      std::cerr << "Can not go to <" << url << ">\n";
-      return false;
-    }
-  }
+  HttpLib clt(HttpUrl (u8"login." + mainHost, u8"/"));
+  
+  auto loginPage = [](HttpLib::Response* res) ->std::u8string {
+    // std::cout << "Init login page: \n" << res->body << std::endl;
 
-  {
-    std::regex re(R"(url=([^"]+))");
+    std::regex re(R"(URL=(https://[^"]*_\d+\.html))");
     std::cmatch match;
-    if (!std::regex_search(reinterpret_cast<const char*>(res->body.data()), match, re)) {
-      std::cerr << "Can not find <Login Page>.\n";
-      return false;
+    if (!std::regex_search(reinterpret_cast<const char*>(res->body.c_str()), match, re)) {
+      std::cerr << "Can not find redirect url in login page.\n";
+      return {};
+    }
+    std::string link = match[1];
+    std::cout << "Redirect to: " << link << std::endl;
+    
+    return std::u8string(link.begin(), link.end());
+  };
+
+  auto redirectPage = [this](HttpLib::Response* res) ->std::u8string {
+    // std::cout << res->body << std::endl;
+
+    std::regex re(R"(url=(.*ac_id=(\d+)[^"]*))");
+    std::cmatch match;
+    if (!std::regex_search(reinterpret_cast<const char*>(res->body.c_str()), match, re)) {
+      std::cerr << "Can not find auth page url.\n";
+      return {};
     }
     
     auto const path = u8"https://" + subHost + match[1];
-    std::cout << "New page: <" << path << ">" << std::endl;
-    clt.SetUrl(path);
+    std::string acid = match[2];
+    userInfo.acID = std::u8string(acid.begin(), acid.end());
+    std::cout << "Auth page url: <" << path << ">, ACID： <" << acid << ">" << std::endl;
+    return path;
+  };
 
-    res = clt.Get();
-    if (res->status != 200) {
-      std::cerr << "Can not go to <" << path << ">\n";
-      return false;
-    }
-  }
 
-  {
-    std::cout << "Init success\n" << res->body << std::endl;
+  auto authPage = [this](HttpLib::Response* res) ->bool {
+    // std::cout << "Init success\n" << res->body << std::endl;
 
     std::regex re(R"(CONFIG = (\{[^}]+\}))");
     std::cmatch match;
-    if (!std::regex_search(reinterpret_cast<const char*>(res->body.data()), match, re)) {
+    if (!std::regex_search(reinterpret_cast<const char*>(res->body.c_str()), match, re)) {
       std::cerr << "Can not find CONFIG.\n";
       return false;
     }
-    // std::cout << "Match: " << match[1] << std::endl;
-  }
-  
-  {
-    std::regex re(R"(ip\s*:\s*"([^"]+)\")");
-    std::cmatch match;
-    if (!std::regex_search(reinterpret_cast<const char*>(res->body.data()), match, re)) {
+    std::string config = match[1];
+    // std::cout << "Match Config: " << config << std::endl;
+
+    std::regex reIP(R"(ip\s*:\s*"([^"]+)\")");
+    std::smatch smatch;
+    if (!std::regex_search(config, smatch, reIP)) {
       std::cerr << "Can not find ip.\n";
       return false;
     }
 
-    // std::cout << "Match: " << match[1] << std::endl;
-    std::string ip = match[1];
+    std::string ip = smatch[1];
+    std::cout << "Match ip: " << ip << std::endl;
     userInfo.ip = std::u8string(ip.begin(), ip.end());
+    return true;
+  };
+
+  auto res = clt.Get();
+
+  if (res->status != 200) {
+    std::cerr << "Can not go to <" << clt.GetUrl() << ">\n";
+    return false;
   }
-  return true;
+
+  auto url = loginPage(res);
+  if (!url.empty()) {
+    clt.SetUrl(url);
+    res = clt.Get();
+    if (res->status != 200) {
+      std::cerr << "Can not go to <" << clt.GetUrl() << ">\n";
+      return false;
+    }
+  }
+  url = redirectPage(res);
+  if (url.empty()) {
+    std::cerr << "Can not find redirect url in redirect page.\n";
+    return false;
+  }
+  clt.SetUrl(url);
+  res = clt.Get();
+  if (res->status != 200) {
+    std::cerr << "Can not go to <" << clt.GetUrl() << ">\n";
+    return false;
+  }
+
+  return authPage(res);
+}
+
+void Portal::getInfo() {
+  if (userInfo.ip.empty()) {
+    std::cerr << "Network not found.\n";
+    return;
+  }
+
+  HttpUrl url(subHost, ApiList::info, {
+    { u8"callback", u8"_" },
+    { u8"ip", userInfo.ip },
+    { u8"_", getTimestamp() }
+  }, u8"https", 443);
+
+  HttpLib clt(url, true);
+  std::atomic_bool finished = false;
+  HttpLib::Callback cb {
+    .m_FinishCallback = [&finished, this](auto msg, auto res) {
+      if (msg.empty() && res->status == 200) {
+        auto i = res->body.find(u8'{'), j = res->body.rfind(u8'}');
+        if (i == res->body.npos || j == res->body.npos) {
+          std::cerr << "Can not find json content.\n";
+          return;
+        }
+        YJson json(res->body.begin() + i, res->body.begin() + j + 1);
+        auto& err = json[u8"error"];
+        userInfo.isLogin = err.isString() && err.getValueString() == u8"ok";
+        std::cout << json << std::endl;
+      } else {
+        userInfo.isLogin = false;
+        std::cerr << "Connect Error: " << res->status << std::endl;
+      }
+      finished = true;
+    },
+    .m_ProcessCallback = [](auto current, auto total) {
+      std::cout << current << "/" << total << std::endl;
+    },
+  };
+
+  clt.GetAsync(std::move(cb));
+
+  while (!finished) {
+    std::this_thread::sleep_for(10ms);
+    // std::cout << "wait...\n";
+  }
 }
 
 void Portal::login(Type type) {
@@ -223,10 +288,18 @@ void Portal::login(Type type) {
     return;
   }
   std::cout << "ip: " << std::string(userInfo.ip.begin(), userInfo.ip.end()) << std::endl;
+  getInfo();
+  if (userInfo.isLogin) {
+    std::cout << "Already login\n";
+    return;
+  }
+  userInfo.isLogin = true;
   sendAuth(false);
 }
 
 void Portal::logout() {
+  userInfo.isLogin = false;
+
   if (userInfo.ip.empty()) {
     std::cerr << "Network not found.\n";
     return;
@@ -272,7 +345,7 @@ void Portal::logout() {
 
   while (!finished) {
     std::this_thread::sleep_for(10ms);
-    std::cout << "wait...\n";
+    // std::cout << "wait...\n";
   }
 }
 
@@ -351,7 +424,7 @@ void Portal::sendAuth(bool defaultStack) {
       clt.GetAsync(std::move(cb));
       while (!finished) {
         std::this_thread::sleep_for(10ms);
-        std::cout << "wait...\n";
+        // std::cout << "wait...\n";
       }
       mtx.unlock();
     }).detach();
@@ -401,7 +474,7 @@ void Portal::getToken(std::u8string ip, Callback callback) {
 
   while (!finished) {
     std::this_thread::sleep_for(10ms);
-    std::cout << "wait...\n";
+    // std::cout << "wait...\n";
   }
 }
 
