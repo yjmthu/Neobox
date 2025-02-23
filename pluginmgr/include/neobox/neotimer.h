@@ -18,20 +18,16 @@ public:
   }
   void Destroy();
   bool StartTimer(Ms time, std::function<void()> task);
+  bool StartOnce(Ms duration, std::function<void()> task);
   bool ResetTime(Ms time, const std::function<void()>& task);
   bool IsActive() const;
   void Expire();
 
-  bool StartOnce(Ms duration, std::function<void()> task) {
-    return StartTimer(duration, [this, task]() {
-      task();
-      Expire();
-    });
-  }
-
 private:
   NeoTimer();
   ~NeoTimer();
+
+  bool Prepare();
 
   bool m_Expired;
   bool m_ToExpire;

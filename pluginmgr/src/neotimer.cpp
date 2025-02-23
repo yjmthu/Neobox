@@ -17,23 +17,28 @@ void NeoTimer::Destroy() {
   delete this;
 }
 
+bool NeoTimer::Prepare() {
+  Locker locker(m_Mutex);
+  // if (!m_Expired || m_ToExpire) return false;
+  if (!m_Expired) {
+    if (m_ThreadId == std::this_thread::get_id()) {
+      return false;
+    }
+    if (!m_ToExpire) {
+      m_ToExpire = true;
+    }
+    m_Condition.wait(locker, [this] { return m_Expired; });
+  }
+  m_Expired = false;
+
+  return true;
+}
+
 bool NeoTimer::StartTimer(Ms time, std::function<void()> task) {
   // 检查是否已经开启线程
-  {
-    Locker locker(m_Mutex);
-    // if (!m_Expired || m_ToExpire) return false;
-    if (!m_Expired) {
-      if (m_ThreadId == std::this_thread::get_id()) {
-        return false;
-      }
-      if (!m_ToExpire) {
-        m_ToExpire = true;
-      }
-      m_Condition.wait(locker, [this] { return m_Expired; });
-    }
-    m_Expired = false;
-  }
+  if (!Prepare()) return false;
 
+  Locker locker(m_Mutex);
   m_Ms = time;
   m_Task = std::move(task);
 
@@ -60,6 +65,35 @@ bool NeoTimer::StartTimer(Ms time, std::function<void()> task) {
   return true;
 }
 
+bool NeoTimer::StartOnce(Ms duration, std::function<void()> task) {
+  if (!Prepare()) return false;
+
+  Locker locker(m_Mutex);
+  m_Ms = duration;
+  m_Task = std::move(task);
+
+  std::thread([this]() {
+    Locker locker(m_Mutex);
+    m_ThreadId = std::this_thread::get_id();
+
+    if (!m_ToExpire) {
+      auto const r = m_Condition.wait_for(locker, m_Ms, [this] {
+        return m_ToExpire;
+      });
+      if (!m_ToExpire && !r) {
+        m_Task();
+      }
+    }
+
+    m_Expired = true;
+    m_ToExpire = false;
+
+    locker.unlock();
+    m_Condition.notify_all();
+  }).detach();
+
+  return true;
+}
 
 bool NeoTimer::IsActive() const {
   return m_Expired;
