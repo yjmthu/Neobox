@@ -50,9 +50,9 @@ struct Portal {
   
   HttpLib client;
 
-  HttpAsyncAction init();
-  HttpAsyncAction login(Type type);
-  HttpAsyncAction logout();
+  HttpAction<void> init();
+  HttpAction<void> login(Type type);
+  HttpAction<void> logout();
 
   HttpAwaiter getInfo();
   HttpAwaiter sendAuth(std::u8string_view token);

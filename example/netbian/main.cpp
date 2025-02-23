@@ -203,14 +203,12 @@ std::u8string GetPictureUrl(const PictureDetail& detail) {
   return host + json[u8"pic"].getValueString();
 }
 
-int DownloadPicture(const fs::path folder, const PictureDetail& detail) {
+HttpAction<int> DownloadPicture(const fs::path folder, const PictureDetail& detail) {
   auto filePath = folder / (detail.name + u8".jpg"s);
   if (fs::exists(filePath)) {
     std::cout << "File exists: " << filePath.u8string() << std::endl;
-    return 1;
+    co_return 1;
   }
-  static std::atomic_bool finished;
-  finished = false;
   HttpUrl url { GetPictureUrl(detail) };
   std::cout << "url: " << url.GetUrl() << std::endl;
   HttpLib clt(std::move(url), true);
@@ -221,7 +219,7 @@ int DownloadPicture(const fs::path folder, const PictureDetail& detail) {
   std::ofstream fileOut(filePath, std::ios::binary);
   if (!fileOut.is_open()) {
     std::cerr << "Error: can not open file: " << filePath.u8string() << std::endl;
-    return -1;
+    co_return -1;
   }
 
   const float barWidth = 70.0;
@@ -237,7 +235,6 @@ int DownloadPicture(const fs::path folder, const PictureDetail& detail) {
       } else {
         std::cerr << "Error: " << Wide2Utf8String(msg) << std::endl;
       }
-      finished = true;
     },
     .m_ProcessCallback = [barWidth](auto current, auto total) {
       // std::cout << "Progress: " << current << "/" << total << std::endl;
@@ -252,14 +249,16 @@ int DownloadPicture(const fs::path folder, const PictureDetail& detail) {
     },
   };
 
-  clt.GetAsync(std::move(callback));
-  while (!finished) {
-    std::this_thread::sleep_for(100ms);
-  }
-
+  auto res = co_await clt.GetAsync(std::move(callback));
   fileOut.close();
 
-  return 0;
+  if (res->status != 200) {
+    fs::remove(filePath);
+    std::cerr << "Error: " << res->status << std::endl;
+    co_return -1;
+  }
+
+  co_return 0;
 }
 
 void SleepRandom() {
@@ -326,7 +325,7 @@ int main(int argc, char** argv) {
     SleepRandom();
     for (auto const& picture : pictures) {
       std::cout << picture.dataId  << ": " << picture.name << std::endl;
-      auto res = DownloadPicture(folder, picture);
+      auto res = DownloadPicture(folder, picture).get();
       if (res == 1) continue;
       // get random integer from 0 to 500
       SleepRandom();

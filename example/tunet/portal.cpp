@@ -80,7 +80,7 @@ std::optional<YJson> Portal::parseJson(HttpResponse* res) {
   return YJson(data.begin() + i, data.begin() + j + 1);
 }
 
-HttpAsyncAction Portal::init() {
+HttpAction<void> Portal::init() {
   
   UnicodeSearch search;
   
@@ -173,7 +173,7 @@ HttpAwaiter Portal::getInfo() {
   return client.GetAsync(std::move(cb));
 }
 
-HttpAsyncAction Portal::login(Type type) {
+HttpAction<void> Portal::login(Type type) {
   if (userInfo.ip.empty()) {
     std::cerr << "Network not found.\n";
     co_return;
@@ -205,7 +205,7 @@ HttpAsyncAction Portal::login(Type type) {
   std::cout << *json << std::endl;
 }
 
-HttpAsyncAction Portal::logout() {
+HttpAction<void> Portal::logout() {
 
   if (!userInfo.isLogin) {
     std::cout << "Already logout\n";

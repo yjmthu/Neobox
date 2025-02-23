@@ -73,50 +73,89 @@ public:
   static void UrlDecode(StringView text, String& out);
 };
 
-struct HttpAsyncAction {
-  struct promise_type {
-    auto get_return_object() -> HttpAsyncAction {
-      return HttpAsyncAction{Handle::from_promise(*this)};
-    }
-    auto initial_suspend() -> std::suspend_never { return {}; }
-    auto final_suspend() noexcept -> std::suspend_never { return {}; }
-    auto unhandled_exception() -> void {}
+class HttpPromise {
+public:
+  auto initial_suspend() -> std::suspend_never { return {}; }
+  auto final_suspend() noexcept -> std::suspend_never { return {}; }
+  auto unhandled_exception() -> void {}
 
-    void return_void() {
-      m_Mutex.lock();
-      m_Finished = true;
-      m_Mutex.unlock();
+  void wait_return() {
+    std::unique_lock<std::mutex> lock(m_Mutex);
+    m_CV.wait(lock, [this] { return m_Finished; });
+  }
+protected:
+  void notify_return() {
+    m_Mutex.lock();
+    m_Finished = true;
+    m_Mutex.unlock();
 
-      m_CV.notify_all();
-    }
+    m_CV.notify_all();
+  }
+private:
+  std::mutex m_Mutex;
+  std::condition_variable m_CV;
+  bool m_Finished = false;
+};
 
-    void wait_return() {
-      std::unique_lock<std::mutex> lock(m_Mutex);
-      m_CV.wait(lock, [this] { return m_Finished; });
+template<typename ReturnType>
+class HttpAction {
+public:
+  class promise_type : public HttpPromise {
+  public:
+    auto get_return_object() {
+      return HttpAction(std::coroutine_handle<promise_type>::from_promise(*this));
     }
-  private:
-    std::mutex m_Mutex;
-    std::condition_variable m_CV;
-    bool m_Finished = false;
+    auto return_value(ReturnType value) -> void {
+      m_Value = std::move(value);
+      this->notify_return();
+    }
+    ReturnType m_Value;
   };
-  using Handle = std::coroutine_handle<promise_type>;
+
+  typedef std::coroutine_handle<promise_type> Handle;
 
   Handle m_Handle;
-  HttpAsyncAction(Handle handle) : m_Handle(handle) {}
+  HttpAction(Handle handle) : m_Handle(handle) {}
 
-  HttpAsyncAction(HttpAsyncAction&& other) noexcept
+  HttpAction(HttpAction&& other) noexcept
     : m_Handle(other.m_Handle)
   {
     other.m_Handle = nullptr;
   }
 
-  ~HttpAsyncAction() {
-    // if (m_Handle) {
-    //   m_Handle.destroy();
-    // }
+  ReturnType get() {
+    m_Handle.promise().wait_return();
+    return m_Handle.promise().m_Value;
+  }
+};
+
+template<>
+class HttpAction<void> {
+public:
+  class promise_type : public HttpPromise {
+  public:
+    auto get_return_object() {
+      return HttpAction(std::coroutine_handle<promise_type>::from_promise(*this));
+    }
+    auto return_void() -> void {
+      this->notify_return();
+    }
+  };
+
+  using Handle = std::coroutine_handle<promise_type>;
+
+  Handle m_Handle;
+  HttpAction(Handle handle) : m_Handle(handle) {}
+
+  HttpAction(HttpAction&& other) noexcept
+    : m_Handle(other.m_Handle)
+  {
+    other.m_Handle = nullptr;
   }
 
-  void get() { m_Handle.promise().wait_return(); }
+  void get() {
+    m_Handle.promise().wait_return();
+  }
 };
 
 struct HttpResponse {
@@ -135,7 +174,7 @@ class HttpAwaiter {
   bool m_Finished = false;
 public:
   bool await_ready() const { return false; }
-  void await_suspend(HttpAsyncAction::Handle handle);
+  void await_suspend(std::coroutine_handle<> handle);
   HttpResponse* await_resume();
 
   HttpAwaiter(HttpLib* lib) : m_Lib(lib) {}
@@ -231,7 +270,7 @@ private:
   size_t m_RecieveSize = 0;
   size_t m_ConnectLength = 0;
 private:
-  void StartAsync(HttpAsyncAction::Handle handle);
+  void StartAsync(std::coroutine_handle<> handle);
   void IntoPool();
   void HttpInitialize();
   void HttpUninitialize();

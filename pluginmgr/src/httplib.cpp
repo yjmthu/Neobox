@@ -369,7 +369,7 @@ HttpUrl::String HttpUrl::GetObjectString() const
   return object;
 }
 
-void HttpAwaiter::await_suspend(HttpAsyncAction::Handle handle) {
+void HttpAwaiter::await_suspend(std::coroutine_handle<> handle) {
   m_Lib->StartAsync(handle);
   m_Finished = true;
 }
@@ -1140,7 +1140,7 @@ HttpAwaiter HttpLib::GetAsync(std::optional<Callback> callback)
   return HttpAwaiter {this};
 }
 
-void HttpLib::StartAsync(HttpAsyncAction::Handle handle)
+void HttpLib::StartAsync(std::coroutine_handle<> handle)
 {
   if (handle != nullptr) {
     if (m_AsyncCallback.m_FinishCallback) {

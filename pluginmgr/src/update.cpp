@@ -202,7 +202,7 @@ void PluginUpdate::CopyExecutable() const
 #endif
 }
 
-HttpAsyncAction PluginUpdate::DownloadUpgrade()
+HttpAction<void> PluginUpdate::DownloadUpgrade()
 {
   if (!m_LatestData) co_return;
 
@@ -250,7 +250,7 @@ HttpAwaiter PluginUpdate::CheckUpdate()
 }
 
 
-HttpAsyncAction PluginUpdate::StartAutoCheck() {
+HttpAction<void> PluginUpdate::StartAutoCheck() {
   if (IsBusy()) co_return;
 
   auto result = co_await CheckUpdate();

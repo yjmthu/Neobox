@@ -31,13 +31,13 @@ public:
   explicit PluginUpdate(YJson& settings);
   ~PluginUpdate();
   HttpAwaiter CheckUpdate();
-  HttpAsyncAction DownloadUpgrade();
+  HttpAction<void> DownloadUpgrade();
   bool NeedUpgrade() const;
   static std::array<int, 3> ParseVersion(const std::wstring& vStr);
   std::filesystem::path GetTempFilePath() const;
   UpgradeConfig m_Settings;
 private:
-  HttpAsyncAction StartAutoCheck();
+  HttpAction<void> StartAutoCheck();
   bool IsBusy() const { return m_DataRequest && !m_DataRequest->IsFinished(); }
   void CopyExecutable() const;
   class NeoTimer* m_Timer;
