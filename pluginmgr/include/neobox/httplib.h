@@ -97,13 +97,32 @@ private:
   bool m_Finished = false;
 };
 
+class HttpActionBase {
+public:
+  HttpActionBase(void* handle) : m_Handle(handle) {}
+  HttpActionBase(HttpActionBase&& other) noexcept
+    : m_Handle(other.m_Handle)
+  {
+    other.m_Handle = nullptr;
+  }
+protected:
+  template<typename PromiseType>
+  std::coroutine_handle<PromiseType> get_handle() {
+    return std::coroutine_handle<PromiseType>::from_address(m_Handle);
+  }
+private:
+  void* m_Handle;
+};
+
 template<typename ReturnType>
-class HttpAction {
+class HttpAction : public HttpActionBase {
 public:
   class promise_type : public HttpPromise {
+    typedef std::coroutine_handle<promise_type> Handle;
   public:
     auto get_return_object() {
-      return HttpAction(std::coroutine_handle<promise_type>::from_promise(*this));
+      Handle handle = Handle::from_promise(*this);
+      return HttpAction(handle.address());
     }
     auto return_value(ReturnType value) -> void {
       m_Value = std::move(value);
@@ -112,49 +131,30 @@ public:
     ReturnType m_Value;
   };
 
-  typedef std::coroutine_handle<promise_type> Handle;
-
-  Handle m_Handle;
-  HttpAction(Handle handle) : m_Handle(handle) {}
-
-  HttpAction(HttpAction&& other) noexcept
-    : m_Handle(other.m_Handle)
-  {
-    other.m_Handle = nullptr;
-  }
-
   ReturnType get() {
-    m_Handle.promise().wait_return();
-    return m_Handle.promise().m_Value;
+    auto& promise = get_handle<promise_type>().promise();
+    promise.wait_return();
+    return promise.m_Value;
   }
 };
 
 template<>
-class HttpAction<void> {
+class HttpAction<void> : public HttpActionBase {
 public:
   class promise_type : public HttpPromise {
+    using Handle = std::coroutine_handle<promise_type>;
   public:
     auto get_return_object() {
-      return HttpAction(std::coroutine_handle<promise_type>::from_promise(*this));
+      Handle handle = Handle::from_promise(*this);
+      return HttpAction(handle.address());
     }
     auto return_void() -> void {
       this->notify_return();
     }
   };
 
-  using Handle = std::coroutine_handle<promise_type>;
-
-  Handle m_Handle;
-  HttpAction(Handle handle) : m_Handle(handle) {}
-
-  HttpAction(HttpAction&& other) noexcept
-    : m_Handle(other.m_Handle)
-  {
-    other.m_Handle = nullptr;
-  }
-
   void get() {
-    m_Handle.promise().wait_return();
+    get_handle<promise_type>().promise().wait_return();
   }
 };
 
