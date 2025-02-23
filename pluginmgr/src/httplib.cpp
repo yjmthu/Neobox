@@ -16,7 +16,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <fstream>
-#include <thread>
+// #include <thread>
 #include <format>
 
 using namespace std::literals;
@@ -500,6 +500,7 @@ size_t HttpLib::WriteFunction(void* buffer, size_t size, size_t nmemb, void* use
 HttpLib::~HttpLib() {
   if (m_AsyncSet) {
     ExitAsync();
+    HttpUninitialize();
     m_AsyncMutex.lock();
     m_AsyncPool.erase(m_AsyncId);
     m_AsyncMutex.unlock();
@@ -965,7 +966,8 @@ void HttpLib::HttpPerform()
 #ifdef _WIN32
   if (m_AsyncSet) {
     if (!bResults) {
-      std::thread(&HttpLib::ExitAsync, this).detach();
+      // std::thread(&HttpLib::ExitAsync, this).detach();
+      ExitAsync();
     }
     return;
   }
@@ -1145,13 +1147,11 @@ void HttpLib::StartAsync(HttpAsyncAction::Handle handle)
       auto finish = std::move(*m_AsyncCallback.m_FinishCallback);
       m_AsyncCallback.m_FinishCallback = [finish, handle](auto message, auto response) {
         finish(message, response);
-        std::thread([handle]() { handle.resume(); }).detach();
-        // handle.resume();
+        handle.resume();
       };
     } else {
       m_AsyncCallback.m_FinishCallback = [handle](auto, auto) {
-        std::thread([handle]() { handle.resume(); }).detach();
-        // handle.resume();
+        handle.resume();
       };
     }
   }
@@ -1162,7 +1162,8 @@ void HttpLib::StartAsync(HttpAsyncAction::Handle handle)
 #endif
 
   if (!init) {
-    std::thread(&HttpLib::ExitAsync, this).detach();
+    // std::thread(&HttpLib::ExitAsync, this).detach();
+    ExitAsync();
     return;
   }
 #ifdef _WIN32
@@ -1173,9 +1174,7 @@ void HttpLib::StartAsync(HttpAsyncAction::Handle handle)
 }
 
 void HttpLib::ExitAsync() {
-  m_AsyncMutex.lock();
+  Locker locker(m_AsyncMutex);
   m_Response.status = -1;
   EmitFinish(L"Httplib Error: User terminate.");
-  m_AsyncMutex.unlock();
-  HttpUninitialize();
 }

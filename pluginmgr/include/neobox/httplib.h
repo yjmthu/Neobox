@@ -148,7 +148,7 @@ public:
 
 class HttpLib {
 public:
-  typedef std::mutex Mutex;
+  typedef std::recursive_mutex Mutex;
 private:
   typedef std::lock_guard<Mutex> Locker;
   typedef std::unique_lock<Mutex> LockerEx;
