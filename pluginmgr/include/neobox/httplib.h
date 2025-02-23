@@ -134,7 +134,7 @@ public:
   ReturnType get() {
     auto& promise = get_handle<promise_type>().promise();
     promise.wait_return();
-    return promise.m_Value;
+    return std::move(promise.m_Value);
   }
 };
 
