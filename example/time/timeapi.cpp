@@ -207,28 +207,21 @@ void UpdateLogDate(const std::filesystem::path& filePath, uint64_t totalDays) {
   }
 }
 
-bool GetNetworkTime(HttpUrl url, std::function<SYSTEMTIME* (const HttpLib::Response&)> callback) {
-  static std::atomic_bool finished = false;
+HttpAction<bool> GetNetworkTime(HttpUrl url, std::function<SYSTEMTIME* (const HttpLib::Response&)> callback) {
   bool success = false;
   HttpLib clt(std::move(url), true);
-  HttpLib::Callback cb {
-    .m_FinishCallback = [&callback, &success](auto msg, auto res) {
-      if (msg.empty() && res->status == 200) {
-        auto const current = callback(*res);
-        if (current) {
-          success = true;
-          SetSystemTime(current);
-          delete current;
-        }
-      }
-      finished = true;
-    },
-  };
-  clt.GetAsync(std::move(cb));
-  while (!finished) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  auto res = co_await clt.GetAsync();
+  if (res->status != 200) {
+    std::cerr << "Error: " << res->status << std::endl;
+  } else {
+    auto const current = callback(*res);
+    if (current) {
+      success = true;
+      SetSystemTime(current);
+      delete current;
+    }
   }
-  return success;
+  co_return success;
 }
 
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
@@ -268,9 +261,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 #ifdef _DEBUG
   MessageBoxW(nullptr, L"Fetching network time......", L"Info", MB_OK);
 #endif
-  HttpUrl url(API_URL);
 
-  if (GetNetworkTime(std::move(url), API_CALLBACK)) {
+  auto r = GetNetworkTime(API_URL, API_CALLBACK);
+  if (r.get()) {
     UpdateLogDate(logFilePath, totalDays);
 #ifdef _DEBUG
     MessageBoxW(nullptr, L"set current time success", L"Success", MB_OK);

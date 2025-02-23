@@ -78,7 +78,7 @@ public:
 
 PluginUpdate::PluginUpdate(YJson& settings)
   : m_Settings(InitSettings(settings))
-  , m_Timer(new NeoTimer)
+  , m_Timer(NeoTimer::New())
 #ifdef _WIN32
   , m_Handler(new CutomHanderForUpdate(*this))
 #endif
@@ -125,7 +125,7 @@ PluginUpdate::~PluginUpdate()
 {
   WinToast::instance()->clear();
   delete m_Handler;
-  delete m_Timer;
+  m_Timer->Destroy();
   m_DataRequest = nullptr;
 }
 

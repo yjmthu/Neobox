@@ -12,7 +12,7 @@ file(GLOB sources src/*.cpp)
 foreach(item ${sources})
   string(REGEX MATCH "src/.*" target_name ${item})
   string(REGEX REPLACE "src/" "test_" target_name ${target_name})
-  string(REGEX REPLACE "/|\\." "_" target_name ${target_name})
+  string(REGEX REPLACE "/|\\.cpp$" "" target_name ${target_name})
   add_executable(${target_name} ${item})
   target_link_libraries(${target_name} pluginmgr)
 endforeach()
@@ -48,7 +48,7 @@ elseif(WIN32)
   add_executable(tunet tunet/main.cpp tunet/portal.cpp)
   target_include_directories(tunet PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tunet)
   target_link_libraries(tunet pluginmgr)
-  install(TARGETS tunet
+  install(TARGETS tunet test_timer
     RUNTIME DESTINATION bin
   )
 

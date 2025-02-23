@@ -89,7 +89,7 @@ PluginMgr::PluginMgr()
   , m_Menu(new NeoMenu)
   , m_MsgDlg(new NeoMsgDlg(m_Menu))
   , m_Settings((mgr = this, InitSettings()))
-  , m_SharedTimer(new NeoTimer)
+  , m_SharedTimer(NeoTimer::New())
   , m_Shortcut { new Shortcut(m_Settings->find(u8"EventMap")->second) }
   , m_UpdateMgr(new PluginUpdate((*m_Settings)[u8"Upgrade"]))
 {
@@ -122,7 +122,7 @@ PluginMgr::~PluginMgr()
 
   delete m_Menu;
   delete m_Tray;
-  delete m_SharedTimer;
+  m_SharedTimer->Destroy();
 
   DetachSharedMemory();   // 在构造函数抛出异常后析构函数将不再被调用
 

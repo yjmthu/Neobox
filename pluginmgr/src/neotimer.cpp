@@ -5,82 +5,95 @@ using namespace std::literals;
 
 NeoTimer::NeoTimer() : m_Expired(true), m_ToExpire(false) {}
 
-NeoTimer::NeoTimer(const NeoTimer& t) {
-  m_Expired = t.m_Expired.load();
-  m_ToExpire = t.m_ToExpire.load();
-}
 NeoTimer::~NeoTimer() {
   Expire();
-  while (m_ToExpire);
   Locker _(m_Mutex);
-  //      std::cout << "timer destructed!" << std::endl;
 }
 
-void NeoTimer::StartTimer(std::chrono::seconds seconds, std::function<void()> task) {
+void NeoTimer::Destroy() {
+  if (m_ThreadId == std::this_thread::get_id()) {
+    throw std::logic_error("Can not destroy timer in its own thread.");
+  }
+  delete this;
+}
+
+bool NeoTimer::StartTimer(Ms time, std::function<void()> task) {
   // 检查是否已经开启线程
   {
     Locker locker(m_Mutex);
-    if (!m_Expired) return;
+    // if (!m_Expired || m_ToExpire) return false;
+    if (!m_Expired) {
+      if (m_ThreadId == std::this_thread::get_id()) {
+        return false;
+      }
+      if (!m_ToExpire) {
+        m_ToExpire = true;
+      }
+      m_Condition.wait(locker, [this] { return m_Expired; });
+    }
     m_Expired = false;
   }
 
+  m_Ms = time;
+  m_Task = std::move(task);
+
   // 开启线程
-  auto count = seconds.count();
-  std::thread([this, count, task]() {
-    while (true) {
-      for (auto temp = count; !m_ToExpire && temp--; ) {
-        std::this_thread::sleep_for(1s);
-      }
-      if (m_ToExpire) {
-        // 线程退出
-        Locker locker(m_Mutex);
-        m_Expired = true;
-        m_Condition.notify_one();
-        break;
-      } else {
-        task();
-      }
+  std::thread([this]() {
+    Locker locker(m_Mutex);
+    m_ThreadId = std::this_thread::get_id();
+
+    while (!m_ToExpire) {
+      auto const r = m_Condition.wait_for(locker, m_Ms, [this] {
+        return m_ToExpire;
+      });
+      if (m_ToExpire || r) break;
+      m_Task();
     }
+    // 线程退出
+    m_Expired = true;
+    m_ToExpire = false;
+
+    locker.unlock();
+    m_Condition.notify_all();
   }).detach();
+
+  return true;
 }
 
-
-void NeoTimer::StartTimer(std::chrono::minutes minutes, std::function<void()> task)
-{
-  auto seconds = static_cast<std::chrono::seconds>(minutes);
-  StartTimer(seconds, std::move(task));
-}
 
 bool NeoTimer::IsActive() const {
-  return m_Expired.load();
+  return m_Expired;
 }
 
-void NeoTimer::ResetTime(std::chrono::minutes minutes, const std::function<void()>& task) {
-  Expire();
-  StartTimer(minutes, task);
-}
+bool NeoTimer::ResetTime(Ms time, const std::function<void()>& task) {
+  Locker locker(m_Mutex);
 
-void NeoTimer::ResetTime(std::chrono::seconds seconds, const std::function<void()>& task) {
-  Expire();
-  StartTimer(seconds, task);
+  if (!m_Expired && std::this_thread::get_id() == m_ThreadId) {
+    m_ToExpire = false;
+    m_Expired = false;
+    m_Ms = time;
+    m_Task = task;
+  } else {
+    return StartTimer(time, task);
+  }
+
+  return true;
 }
 
 void NeoTimer::Expire() {
-  // 检查是否未开启线程
-  if (m_Expired) return;
-
   Locker locker(m_Mutex);
 
-  if (m_ToExpire) return;
+  // 检查是否未开启线程
+  if (m_Expired || m_ToExpire) return;
+
   m_ToExpire = true;
 
-  // 这样在task中也能成功调用Expire，但是需要等待结束
-  std::thread([this]() {
-    std::unique_lock<std::mutex> locker(m_Mutex);
-    // 释放锁，等待定时器被释放
-    m_Condition.wait(locker, [this](){
-      return m_Expired == true;
-    });
-    m_ToExpire = false;
-  }).detach();
+  if (std::this_thread::get_id() == m_ThreadId) return;
+
+  locker.unlock();
+  m_Condition.notify_all();
+
+  locker.lock();
+  // 释放锁，等待定时器被释放
+  m_Condition.wait(locker, [this] { return m_Expired; });
 }

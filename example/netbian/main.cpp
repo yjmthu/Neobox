@@ -136,7 +136,6 @@ std::vector<PictureDetail> GetPictureList(const IndexPage& pageInfo, int pageInd
   TargetPasser passer((HttpUrl(url)));
   passer.left = "<ul class=\"clearfix\">"s;
   passer.right = "</ul>"s;
-  // <li><a href="/tupian/33059.html" target="_blank"><img src="/uploads/allimg/240109/232709-17048140290838.jpg" alt="以闪亮之名 美少女 4k游 戏壁纸" /><b>以闪亮之名 美少女 4k游</b></a></li>
   passer.pattern = "<li><a href=\"(.+?)\" target=\"_blank\"><img src=\".+?\" alt=\"(.+?)\" /><b>.+?</b></a></li>"s;
   if (!passer.perform()) {
     return {};

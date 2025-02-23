@@ -4,39 +4,42 @@
 #include <atomic>
 #include <chrono>
 #include <functional>
-#include <memory>
 #include <mutex>
-#include <thread>
 #include <condition_variable>
 #include <chrono>
 
 class NeoTimer {
-  typedef std::lock_guard<std::mutex> Locker;
+  typedef std::recursive_mutex Mutex;
+  typedef std::unique_lock<Mutex> Locker;
+  typedef std::chrono::milliseconds Ms;
 public:
-  NeoTimer();
-  NeoTimer(const NeoTimer& t);
-  ~NeoTimer();
-  void StartTimer(std::chrono::minutes minutes, std::function<void()> task);
-  void StartTimer(std::chrono::seconds seconds, std::function<void()> task);
-  void ResetTime(std::chrono::seconds seconds, const std::function<void()>& task);
-  void ResetTime(std::chrono::minutes minutes, const std::function<void()>& task);
+  static NeoTimer* New() {
+    return new NeoTimer();
+  }
+  void Destroy();
+  bool StartTimer(Ms time, std::function<void()> task);
+  bool ResetTime(Ms time, const std::function<void()>& task);
   bool IsActive() const;
   void Expire();
 
-  template<typename Rep, typename Period>
-  void StartOnce(std::chrono::duration<Rep, Period> duration, std::function<void()> task) {
-    StartTimer(duration, [this, task]() {
+  bool StartOnce(Ms duration, std::function<void()> task) {
+    return StartTimer(duration, [this, task]() {
       task();
       Expire();
     });
   }
 
 private:
+  NeoTimer();
+  ~NeoTimer();
 
-  std::atomic<bool> m_Expired;
-  std::atomic<bool> m_ToExpire;
-  std::mutex m_Mutex;
-  std::condition_variable m_Condition;
+  bool m_Expired;
+  bool m_ToExpire;
+  std::thread::id m_ThreadId;
+  Ms m_Ms;
+  std::function<void()> m_Task;
+  Mutex m_Mutex;
+  std::condition_variable_any m_Condition;
 };
 
 #endif  // TIMER_H
