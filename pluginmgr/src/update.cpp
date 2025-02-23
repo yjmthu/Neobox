@@ -44,9 +44,7 @@ public:
   {
     // std::wcout << L"The user clicked on action #" << actionIndex << std::endl;
     if (actionIndex == 0) {
-      m_Obj.DownloadUpgrade([](PluginUpdate& obj){
-        obj.CopyExecutable();
-      });
+      m_Obj.DownloadUpgrade().get();
     } else {
       m_Obj.m_Timer->Expire();
     }
@@ -119,21 +117,7 @@ PluginUpdate::PluginUpdate(YJson& settings)
   }
 #endif
   if (m_Settings.GetAutoCheck()) {
-    m_Timer->StartTimer(10s, [this]() {
-      Callback callback = [this](PluginUpdate& self) {
-        if (!self.NeedUpgrade()) return;
-        if (!self.m_Settings.GetAutoUpgrade()) {
-          emit AskInstall();
-        } else {
-          // mgr->ShowMsg("开始更新！");
-          self.DownloadUpgrade([](PluginUpdate& obj){
-            obj.CopyExecutable();
-          });
-        }
-      };
-      CheckUpdate(std::move(callback));
-      m_Timer->Expire();
-    });
+    m_Timer->StartOnce(30s, [this]() { this->StartAutoCheck().get(); });
   }
 }
 
@@ -218,9 +202,9 @@ void PluginUpdate::CopyExecutable() const
 #endif
 }
 
-void PluginUpdate::DownloadUpgrade(Callback cb)
+HttpAsyncAction PluginUpdate::DownloadUpgrade()
 {
-  if (!m_LatestData) return;
+  if (!m_LatestData) co_return;
 
   for (auto& asset: (*m_LatestData)[u8"assets"].getArray()) {
     auto& url = asset[u8"browser_download_url"].getValueString();
@@ -233,47 +217,53 @@ void PluginUpdate::DownloadUpgrade(Callback cb)
       continue;
     }
 #endif
-    m_ZipUrl = url;
-    m_File.open(GetTempFilePath(), std::ios::out | std::ios::binary);
-    if (!m_File.is_open()) return;
+  m_ZipUrl = url;
+  m_File.open(GetTempFilePath(), std::ios::out | std::ios::binary);
+  if (!m_File.is_open()) co_return;
 
-    std::thread([this, cb](){
-      m_DataRequest = std::make_unique<HttpLib>(HttpUrl(m_ZipUrl), true);
+    m_DataRequest = std::make_unique<HttpLib>(HttpUrl(m_ZipUrl), true);
 
-      HttpLib::Callback callback = {
-        .m_WriteCallback = [this](auto data, auto size) {
-          m_File.write(reinterpret_cast<const char*>(data), size);
-        },
-        .m_FinishCallback = [cb, this](auto msg, auto res){
-          m_File.close();
-          if (msg.empty() && res->status == 200) {
-            cb(*this);
-          }
-        },
-        .m_ProcessCallback = std::nullopt,
-      };
-      m_DataRequest->GetAsync(std::move(callback));
-    }).detach();
-    return;
+    HttpLib::Callback callback = {
+      .m_WriteCallback = [this](auto data, auto size) {
+        m_File.write(reinterpret_cast<const char*>(data), size);
+      },
+      .m_FinishCallback = std::nullopt,
+      .m_ProcessCallback = std::nullopt,
+    };
+    auto res = co_await m_DataRequest->GetAsync(std::move(callback));
+    m_File.close();
+
+    if (res->status != 200) {
+      fs::remove(GetTempFilePath());
+      co_return;
+    }
+    CopyExecutable();
   }
 }
 
-void PluginUpdate::CheckUpdate(Callback cb)
+HttpAwaiter PluginUpdate::CheckUpdate()
 {
-  if (m_DataRequest && !m_DataRequest->IsFinished()) return;
-
   m_DataRequest = std::make_unique<HttpLib>(u8"" NEOBOX_LATEST_URL ""sv, true);
 
   m_DataRequest->SetHeader(u8"User-Agent", u8"Libcurl in Neobox App/1.0");
-  HttpLib::Callback callback = {
-    .m_WriteCallback = std::nullopt,
-    .m_FinishCallback = [this, cb](auto msg, auto res) {
-      if (msg.empty() && res->status == 200) {
-        m_LatestData = std::make_unique<YJson>(res->body.begin(), res->body.end());
-        cb(*this);
-      }
-    },
-    .m_ProcessCallback = std::nullopt,
-  };
-  m_DataRequest->GetAsync(std::move(callback));
+  return m_DataRequest->GetAsync();
+}
+
+
+HttpAsyncAction PluginUpdate::StartAutoCheck() {
+  if (IsBusy()) co_return;
+
+  auto result = co_await CheckUpdate();
+  if (result->status != 200) {
+    co_return;
+  }
+  m_LatestData = std::make_unique<YJson>(result->body.begin(), result->body.end());
+  if (!NeedUpgrade()) {
+    co_return;
+  }
+  if (m_Settings.GetAutoUpgrade()) {
+    DownloadUpgrade().get();
+  } else {
+    emit AskInstall();
+  }
 }

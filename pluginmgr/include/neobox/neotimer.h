@@ -23,6 +23,14 @@ public:
   bool IsActive() const;
   void Expire();
 
+  template<typename Rep, typename Period>
+  void StartOnce(std::chrono::duration<Rep, Period> duration, std::function<void()> task) {
+    StartTimer(duration, [this, task]() {
+      task();
+      Expire();
+    });
+  }
+
 private:
 
   std::atomic<bool> m_Expired;

@@ -5,6 +5,7 @@
 #include <functional>
 #include <yjson/yjson.h>
 #include <neobox/neoconfig.h>
+#include <neobox/httplib.h>
 
 #include <QObject>
 
@@ -29,14 +30,16 @@ private:
 public:
   explicit PluginUpdate(YJson& settings);
   ~PluginUpdate();
-  void CheckUpdate(Callback callback);
+  HttpAwaiter CheckUpdate();
+  HttpAsyncAction DownloadUpgrade();
   bool NeedUpgrade() const;
-  void DownloadUpgrade(Callback callback);
-  void CopyExecutable() const;
   static std::array<int, 3> ParseVersion(const std::wstring& vStr);
   std::filesystem::path GetTempFilePath() const;
   UpgradeConfig m_Settings;
 private:
+  HttpAsyncAction StartAutoCheck();
+  bool IsBusy() const { return m_DataRequest && !m_DataRequest->IsFinished(); }
+  void CopyExecutable() const;
   class NeoTimer* m_Timer;
 #ifdef _WIN32
   class CutomHanderForUpdate* m_Handler;
