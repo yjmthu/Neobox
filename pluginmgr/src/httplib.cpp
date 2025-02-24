@@ -1101,6 +1101,7 @@ void HttpLib::SetTimeOut(std::chrono::seconds timeOut) {
 HttpAwaiter HttpLib::GetAsync(std::optional<Callback> callback)
 {
   if (!m_AsyncSet) {
+    // std::wcerr << L"HttpLib Error: HttpAync wasn't set!" << std::endl;
     throw std::logic_error("HttpLib Error: HttpAync wasn't set!");
   }
 

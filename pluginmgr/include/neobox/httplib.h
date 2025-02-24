@@ -79,7 +79,10 @@ public:
   auto initial_suspend() -> std::suspend_never { return {}; }
   auto final_suspend() noexcept -> std::suspend_never { return {}; }
   auto unhandled_exception() -> void {
-    if (m_Exception) m_Exception->operator()();
+    if (m_Exception) {
+      m_Exception->operator()();
+    }
+    notify_return();
   }
 
   void wait_return() {
@@ -138,7 +141,7 @@ public:
   private:
     friend class HttpAction;
     std::optional<Callback> m_Callback = std::nullopt;
-    ReturnType m_Value;
+    ReturnType m_Value {};
   };
 
   ReturnType get() {
@@ -149,6 +152,11 @@ public:
 
   auto& then(promise_type::Callback callback) {
     get_promise<promise_type>().m_Callback = std::move(callback);
+    return *this;
+  }
+
+  auto& cat(std::function<void()> callback) {
+    get_promise<promise_type>().m_Exception = std::move(callback);
     return *this;
   }
 };
@@ -182,7 +190,7 @@ public:
     return *this;
   }
 
-  auto& exception(std::function<void()> callback) {
+  auto& cat(std::function<void()> callback) {
     get_promise<promise_type>().m_Exception = std::move(callback);
     return *this;
   }
