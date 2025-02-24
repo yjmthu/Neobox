@@ -74,10 +74,13 @@ public:
 };
 
 class HttpPromise {
+  typedef std::function<void()> Callback;
 public:
   auto initial_suspend() -> std::suspend_never { return {}; }
   auto final_suspend() noexcept -> std::suspend_never { return {}; }
-  auto unhandled_exception() -> void {}
+  auto unhandled_exception() -> void {
+    if (m_Exception) m_Exception->operator()();
+  }
 
   void wait_return() {
     std::unique_lock<std::mutex> lock(m_Mutex);
@@ -91,6 +94,8 @@ protected:
 
     m_CV.notify_all();
   }
+  std::optional<Callback> m_Exception = std::nullopt;
+
 private:
   std::mutex m_Mutex;
   std::condition_variable m_CV;
@@ -107,8 +112,8 @@ public:
   }
 protected:
   template<typename PromiseType>
-  std::coroutine_handle<PromiseType> get_handle() {
-    return std::coroutine_handle<PromiseType>::from_address(m_Handle);
+  PromiseType& get_promise() {
+    return std::coroutine_handle<PromiseType>::from_address(m_Handle).promise();
   }
 private:
   void* m_Handle;
@@ -120,21 +125,31 @@ public:
   class promise_type : public HttpPromise {
     typedef std::coroutine_handle<promise_type> Handle;
   public:
+    typedef std::function<void(ReturnType&)> Callback;
     auto get_return_object() {
       Handle handle = Handle::from_promise(*this);
       return HttpAction(handle.address());
     }
     auto return_value(ReturnType value) -> void {
       m_Value = std::move(value);
+      if (m_Callback) m_Callback->operator()(m_Value);
       this->notify_return();
     }
+  private:
+    friend class HttpAction;
+    std::optional<Callback> m_Callback = std::nullopt;
     ReturnType m_Value;
   };
 
   ReturnType get() {
-    auto& promise = get_handle<promise_type>().promise();
+    auto& promise = get_promise<promise_type>();
     promise.wait_return();
     return std::move(promise.m_Value);
+  }
+
+  auto& then(promise_type::Callback callback) {
+    get_promise<promise_type>().m_Callback = std::move(callback);
+    return *this;
   }
 };
 
@@ -142,19 +157,34 @@ template<>
 class HttpAction<void> : public HttpActionBase {
 public:
   class promise_type : public HttpPromise {
-    using Handle = std::coroutine_handle<promise_type>;
+    typedef std::coroutine_handle<promise_type> Handle;
   public:
+    typedef std::function<void()> Callback;
     auto get_return_object() {
       Handle handle = Handle::from_promise(*this);
       return HttpAction(handle.address());
     }
     auto return_void() -> void {
+      if (m_Callback) m_Callback->operator()();
       this->notify_return();
     }
+  private:
+    friend class HttpAction;
+    std::optional<Callback> m_Callback = std::nullopt;
   };
 
   void get() {
-    get_handle<promise_type>().promise().wait_return();
+    get_promise<promise_type>().wait_return();
+  }
+
+  auto& then(promise_type::Callback callback) {
+    get_promise<promise_type>().m_Callback = std::move(callback);
+    return *this;
+  }
+
+  auto& exception(std::function<void()> callback) {
+    get_promise<promise_type>().m_Exception = std::move(callback);
+    return *this;
   }
 };
 
