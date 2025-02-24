@@ -211,7 +211,7 @@ class HttpAwaiter {
   HttpLib* const m_Lib;
   bool m_Finished = false;
 public:
-  bool await_ready() const { return false; }
+  bool await_ready() const { return !m_Lib; }
   void await_suspend(std::coroutine_handle<> handle);
   HttpResponse* await_resume();
 

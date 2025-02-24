@@ -7,7 +7,6 @@
 
 #include <format>
 #include <filesystem>
-#include <thread>
 
 #ifdef _WIN32
 #include <zip.h>

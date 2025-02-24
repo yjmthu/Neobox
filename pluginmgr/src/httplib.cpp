@@ -370,16 +370,20 @@ HttpUrl::String HttpUrl::GetObjectString() const
 }
 
 void HttpAwaiter::await_suspend(std::coroutine_handle<> handle) {
-  m_Lib->StartAsync(handle);
+  if (m_Lib) {
+    m_Lib->StartAsync(handle);
+  } else {
+    handle.resume();
+  }
   m_Finished = true;
 }
 
 HttpResponse* HttpAwaiter::await_resume() {
-  return &m_Lib->m_Response;
+  return m_Lib ? &m_Lib->m_Response : nullptr;
 };
 
 HttpAwaiter::~HttpAwaiter() {
-  if (!m_Finished) {
+  if (!m_Finished && m_Lib) {
     m_Lib->StartAsync(nullptr);
   }
 }
@@ -1101,8 +1105,8 @@ void HttpLib::SetTimeOut(std::chrono::seconds timeOut) {
 HttpAwaiter HttpLib::GetAsync(std::optional<Callback> callback)
 {
   if (!m_AsyncSet) {
-    // std::wcerr << L"HttpLib Error: HttpAync wasn't set!" << std::endl;
-    throw std::logic_error("HttpLib Error: HttpAync wasn't set!");
+    // throw std::logic_error("HttpLib Error: HttpAync wasn't set!");
+    return HttpAwaiter { nullptr };
   }
 
   m_Finished = false;
