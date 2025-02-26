@@ -95,17 +95,39 @@ protected:
     m_Finished = true;
     m_Mutex.unlock();
 
-    m_CV.notify_all();
+    if (m_ReturnHandle) m_ReturnHandle.resume();
+    else m_CV.notify_all();
   }
   std::optional<Callback> m_Exception = std::nullopt;
 
+  bool get_return_finished() const {
+    std::lock_guard<std::mutex> lock(m_Mutex);
+    return m_Finished;
+  }
+
 private:
-  std::mutex m_Mutex;
+  std::mutex mutable m_Mutex;
   std::condition_variable m_CV;
   bool m_Finished = false;
+protected:
+  std::coroutine_handle<> m_ReturnHandle {};
 };
 
 class HttpActionBase {
+protected:
+  virtual bool get_return_finished() const = 0;
+  virtual void set_return_handle(std::coroutine_handle<>) = 0;
+  class Awaiter {
+  protected:
+    HttpActionBase& m_Action;
+  public:
+    Awaiter(HttpActionBase& action) : m_Action(action) {}
+    bool await_ready() const { return m_Action.get_return_finished(); }
+    void await_suspend(std::coroutine_handle<> handle) {
+      m_Action.set_return_handle(handle);
+    }
+    void await_resume() {}
+  };
 public:
   HttpActionBase(void* handle) : m_Handle(handle) {}
   HttpActionBase(HttpActionBase&& other) noexcept
@@ -115,7 +137,7 @@ public:
   }
 protected:
   template<typename PromiseType>
-  PromiseType& get_promise() {
+  PromiseType& get_promise() const {
     return std::coroutine_handle<PromiseType>::from_address(m_Handle).promise();
   }
 private:
@@ -128,7 +150,7 @@ public:
   class promise_type : public HttpPromise {
     typedef std::coroutine_handle<promise_type> Handle;
   public:
-    typedef std::function<void(ReturnType&)> Callback;
+    typedef std::function<void(std::optional<ReturnType>&)> Callback;
     auto get_return_object() {
       Handle handle = Handle::from_promise(*this);
       return HttpAction(handle.address());
@@ -141,10 +163,12 @@ public:
   private:
     friend class HttpAction;
     std::optional<Callback> m_Callback = std::nullopt;
-    ReturnType m_Value {};
+    std::optional<ReturnType> m_Value = std::nullopt;
   };
 
-  ReturnType get() {
+  HttpAction(void* handle) : HttpActionBase(handle) {}
+
+  std::optional<ReturnType> get() {
     auto& promise = get_promise<promise_type>();
     promise.wait_return();
     return std::move(promise.m_Value);
@@ -159,6 +183,25 @@ public:
     get_promise<promise_type>().m_Exception = std::move(callback);
     return *this;
   }
+
+  auto awaiter() {
+    class AwaiterValue: public Awaiter {
+    public:
+      AwaiterValue(HttpAction& action) : Awaiter(action) {}
+      std::optional<ReturnType> await_resume() {
+        auto& promise = static_cast<HttpAction&>(m_Action).get_promise<promise_type>();
+        return std::move(promise.m_Value);
+      }
+    };
+    return AwaiterValue(*this);
+  }
+private:
+  bool get_return_finished() const override {
+    return get_promise<promise_type>().get_return_finished();
+  }
+  void set_return_handle(std::coroutine_handle<> handle) override {
+    get_promise<promise_type>().m_ReturnHandle = handle;
+  }
 };
 
 template<>
@@ -170,7 +213,7 @@ public:
     typedef std::function<void()> Callback;
     auto get_return_object() {
       Handle handle = Handle::from_promise(*this);
-      return HttpAction(handle.address());
+      return HttpAction<void>(handle.address());
     }
     auto return_void() -> void {
       if (m_Callback) m_Callback->operator()();
@@ -180,6 +223,8 @@ public:
     friend class HttpAction;
     std::optional<Callback> m_Callback = std::nullopt;
   };
+
+  HttpAction<void>(void* handle) : HttpActionBase(handle) {}
 
   void get() {
     get_promise<promise_type>().wait_return();
@@ -193,6 +238,17 @@ public:
   auto& cat(std::function<void()> callback) {
     get_promise<promise_type>().m_Exception = std::move(callback);
     return *this;
+  }
+
+  auto awaiter() {
+    return Awaiter(*this);
+  }
+private:
+  bool get_return_finished() const override {
+    return get_promise<promise_type>().get_return_finished();
+  }
+  void set_return_handle(std::coroutine_handle<> handle) override {
+    get_promise<promise_type>().m_ReturnHandle = handle;
   }
 };
 

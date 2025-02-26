@@ -32,7 +32,11 @@ int main(int argc, char* argv[]) {
 
 #if 1
   auto result = fun().then([](auto i){
-    std::cout << "Status: " << i << std::endl;
+    if (i != std::nullopt) {
+      std::cout << "Status: " << *i << std::endl;
+    } else {
+      std::cerr << "Error: status is null." << std::endl;
+    }
   }).cat([]{
     std::cerr << "Error: exception." << std::endl;
     try {
@@ -45,7 +49,11 @@ int main(int argc, char* argv[]) {
     }
   }).get();
 
-  std::cout << "Result: " << result << std::endl;
+  if (result != std::nullopt) {
+    std::cout << "Result: " << *result << std::endl;
+  } else {
+    std::cerr << "Error: result is null." << std::endl;
+  }
 #elif 1
   try {
     fun().get();
