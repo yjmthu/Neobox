@@ -21,7 +21,14 @@ HttpAction<int> GetBaidu() {
 }
 
 HttpAction<void> PrintBaidu() {
-  auto result = GetBaidu();
+  auto& result = GetBaidu().cat([]{
+    std::cerr << "Error: exception." << std::endl;
+    try {
+      std::rethrow_exception(std::current_exception());
+    } catch (const std::exception& e) {
+      std::cerr << e.what() << std::endl;
+    }
+  });
   auto i = co_await result.awaiter();
   if (i == std::nullopt) {
     std::cerr << "Error: status is null." << std::endl;
