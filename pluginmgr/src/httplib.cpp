@@ -369,25 +369,6 @@ HttpUrl::String HttpUrl::GetObjectString() const
   return object;
 }
 
-void HttpAwaiter::await_suspend(std::coroutine_handle<> handle) {
-  if (m_Lib) {
-    m_Lib->StartAsync(handle);
-  } else {
-    handle.resume();
-  }
-  m_Finished = true;
-}
-
-HttpResponse* HttpAwaiter::await_resume() {
-  return m_Lib ? &m_Lib->m_Response : nullptr;
-};
-
-HttpAwaiter::~HttpAwaiter() {
-  if (!m_Finished && m_Lib) {
-    m_Lib->StartAsync(nullptr);
-  }
-}
-
 bool HttpLib::IsOnline() {
 #ifdef _WIN32
   BOOL bResult = FALSE;
@@ -1102,11 +1083,11 @@ void HttpLib::SetTimeOut(std::chrono::seconds timeOut) {
 #endif
 }
 
-HttpAwaiter HttpLib::GetAsync(std::optional<Callback> callback)
+HttpAwaiter<HttpResponse> HttpLib::GetAsync(std::optional<Callback> callback)
 {
   if (!m_AsyncSet) {
     // throw std::logic_error("HttpLib Error: HttpAync wasn't set!");
-    return HttpAwaiter { nullptr };
+    return HttpAwaiter<HttpResponse> { nullptr };
   }
 
   m_Finished = false;
@@ -1145,7 +1126,7 @@ HttpAwaiter HttpLib::GetAsync(std::optional<Callback> callback)
   return HttpAwaiter {this};
 }
 
-void HttpLib::StartAsync(std::coroutine_handle<> handle)
+void HttpLib::DoSuspend(std::coroutine_handle<> handle)
 {
   if (handle != nullptr) {
     if (m_AsyncCallback.m_FinishCallback) {

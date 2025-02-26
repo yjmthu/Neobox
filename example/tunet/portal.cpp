@@ -139,7 +139,7 @@ HttpAction<void> Portal::init() {
   }
 }
 
-HttpAwaiter Portal::getInfo() {
+HttpAwaiter<> Portal::getInfo() {
   HttpUrl url(subHost, ApiList::info, {
     { u8"callback", u8"_" },
     { u8"ip", userInfo.ip },
@@ -251,7 +251,7 @@ HttpAction<void> Portal::logout() {
   std::cout << res->body << std::endl;
 }
 
-HttpAwaiter Portal::sendAuth(std::u8string_view token) {
+HttpAwaiter<> Portal::sendAuth(std::u8string_view token) {
   std::cout << "Token: " << std::string(token.begin(), token.end()) << std::endl;
   std::u8string const n = u8"200", type = u8"1";
   YJson info = YJson::O {
@@ -315,7 +315,7 @@ HttpAwaiter Portal::sendAuth(std::u8string_view token) {
   return client.GetAsync(std::move(cb));
 }
 
-HttpAwaiter Portal::getToken(std::u8string_view ip) {
+HttpAwaiter<> Portal::getToken(std::u8string_view ip) {
   // if (!this->timestamp.empty()) {
   //   callback(this->token);
   //   return;

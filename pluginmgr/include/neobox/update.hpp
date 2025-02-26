@@ -30,7 +30,7 @@ private:
 public:
   explicit PluginUpdate(YJson& settings);
   ~PluginUpdate();
-  HttpAwaiter CheckUpdate();
+  HttpAction<bool> CheckUpdate();
   HttpAction<void> DownloadUpgrade();
   bool NeedUpgrade() const;
   static std::array<int, 3> ParseVersion(const std::wstring& vStr);

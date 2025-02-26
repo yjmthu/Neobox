@@ -135,6 +135,7 @@ public:
   {
     other.m_Handle = nullptr;
   }
+  virtual ~HttpActionBase() = default;
 protected:
   template<typename PromiseType>
   PromiseType& get_promise() const {
@@ -167,6 +168,7 @@ public:
   };
 
   HttpAction(void* handle) : HttpActionBase(handle) {}
+  ~HttpAction() override = default;
 
   std::optional<ReturnType> get() {
     auto& promise = get_promise<promise_type>();
@@ -225,6 +227,7 @@ public:
   };
 
   HttpAction<void>(void* handle) : HttpActionBase(handle) {}
+  ~HttpAction() override = default;
 
   void get() {
     get_promise<promise_type>().wait_return();
@@ -263,23 +266,46 @@ struct HttpResponse {
   std::u8string location; // Redirect location
 };
 
+template<typename  ReturnType>
+class HttpAwaiterObject {
+public:
+  virtual void DoSuspend(std::coroutine_handle<>) = 0;
+  virtual ~HttpAwaiterObject() = default;
+  virtual ReturnType* GetResult() = 0;
+};
+
+template<typename ReturnType=HttpResponse>
 class HttpAwaiter {
-  HttpLib* const m_Lib;
+  HttpAwaiterObject<ReturnType>* const m_Object;
   bool m_Finished = false;
 public:
-  bool await_ready() const { return !m_Lib; }
-  void await_suspend(std::coroutine_handle<> handle);
-  HttpResponse* await_resume();
+  bool await_ready() const { return !m_Object; }
+  void await_suspend(std::coroutine_handle<> handle) {
+    if (m_Object) {
+      m_Object->DoSuspend(handle);
+    } else {
+      handle.resume();
+    }
+    m_Finished = true;
+  }
 
-  HttpAwaiter(HttpLib* lib) : m_Lib(lib) {}
-  HttpAwaiter(HttpAwaiter&& other) : m_Lib(other.m_Lib) {
+  auto await_resume() {
+    return m_Object ? m_Object->GetResult() : nullptr;
+  }
+
+  HttpAwaiter(HttpAwaiterObject<ReturnType>* object) : m_Object(object) {}
+  HttpAwaiter(HttpAwaiter&& other) : m_Object(other.m_Object) {
     // m_Finished = other.m_Finished;
     other.m_Finished = true;
   }
-  ~HttpAwaiter();
+  ~HttpAwaiter() {
+    if (!m_Finished && m_Object) {
+      m_Object->DoSuspend(nullptr);
+    }
+  }
 };
 
-class HttpLib {
+class HttpLib: public HttpAwaiterObject<HttpResponse> {
 public:
   typedef std::recursive_mutex Mutex;
 private:
@@ -340,14 +366,13 @@ public:
   Response* Get(const std::filesystem::path& path);
   Response* Get(CallbackFunction* callback, void* userData);
   void SetTimeOut(std::chrono::seconds timeOut);
-  HttpAwaiter GetAsync(std::optional<Callback> callback = std::nullopt);
+  HttpAwaiter<HttpResponse> GetAsync(std::optional<Callback> callback = std::nullopt);
   void ExitAsync();
   bool IsFinished() const { return m_Finished; }
   static bool IsOnline();
 public:
   static std::optional<HttpProxy> m_Proxy;
 private:
-  friend HttpAwaiter;
   Headers m_Headers;
   Response m_Response;
   HttpUrl m_Url;
@@ -364,7 +389,9 @@ private:
   size_t m_RecieveSize = 0;
   size_t m_ConnectLength = 0;
 private:
-  void StartAsync(std::coroutine_handle<> handle);
+  // void StartAsync(std::coroutine_handle<> handle);
+  void DoSuspend(std::coroutine_handle<> handle) override;
+  Response* GetResult() override { return &m_Response; }
   void IntoPool();
   void HttpInitialize();
   void HttpUninitialize();

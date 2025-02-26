@@ -241,23 +241,32 @@ HttpAction<void> PluginUpdate::DownloadUpgrade()
   }
 }
 
-HttpAwaiter PluginUpdate::CheckUpdate()
+HttpAction<bool> PluginUpdate::CheckUpdate()
 {
+  if (IsBusy()) co_return false;
+
   m_DataRequest = std::make_unique<HttpLib>(u8"" NEOBOX_LATEST_URL ""sv, true);
 
   m_DataRequest->SetHeader(u8"User-Agent", u8"Libcurl in Neobox App/1.0");
-  return m_DataRequest->GetAsync();
+  auto res = co_await m_DataRequest->GetAsync();
+
+  if (res->status != 200) {
+    co_return false;
+  }
+
+  m_LatestData = std::make_unique<YJson>(res->body.begin(), res->body.end());
+
+  co_return true;
 }
 
 
 HttpAction<void> PluginUpdate::StartAutoCheck() {
-  if (IsBusy()) co_return;
+  auto result = co_await CheckUpdate().awaiter();
 
-  auto result = co_await CheckUpdate();
-  if (result->status != 200) {
+  if (result == std::nullopt || !result.value() || !m_LatestData) {
     co_return;
   }
-  m_LatestData = std::make_unique<YJson>(result->body.begin(), result->body.end());
+
   if (!NeedUpgrade()) {
     co_return;
   }
