@@ -1028,6 +1028,9 @@ void HttpLib::EmitFinish(std::wstring message)
   if (callback) {
     /* To prevent infinite recursion at destructor time,
       the callback function is emptied after one execution.
+
+      we even can delete the this pointer in the callback function, which is useful
+      when we use coroutine to do some async task.
       */
     auto cb = std::move(*callback);
     callback = std::nullopt;
