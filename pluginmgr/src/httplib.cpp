@@ -377,9 +377,9 @@ bool HttpLib::IsOnline() {
   
   HMODULE hWininet = LoadLibraryW(L"Wininet.dll");
   if (hWininet) {
-    pInternetGetConnectedState InternetGetConnectedState =
-        (pInternetGetConnectedState)GetProcAddress(
-            hWininet, "InternetGetConnectedState");
+    void* const pTemp = reinterpret_cast<void*>(GetProcAddress(hWininet, "InternetGetConnectedState"));
+
+    auto const InternetGetConnectedState = reinterpret_cast<pInternetGetConnectedState>(pTemp);
     if (InternetGetConnectedState) {
       bResult = InternetGetConnectedState(&flags, 0);
     }

@@ -242,12 +242,13 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
     return false;
   }
   pluginInfo.handle = hdll;
-  newPlugin = reinterpret_cast<decltype(newPlugin)>
+  void * const pluginAdress = reinterpret_cast<void*>
 #ifdef _WIN32
   (GetProcAddress(hdll, "newPlugin"));
 #else
   (dlsym(hdll, "newPlugin"));
 #endif
+  newPlugin = reinterpret_cast<decltype(newPlugin)>(pluginAdress);
   if (!newPlugin) {
     ShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件函数加载失败！"));
     FreePlugin(pluginInfo);

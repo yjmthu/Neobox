@@ -74,4 +74,10 @@ else()
   target_compile_options(${target_name} PRIVATE -Wall -Wextra -pedantic) # -Werror 
 endif()
 
+if(WIN32)
+  set_target_properties(${target_name} PROPERTIES
+    LINK_FLAGS_DEBUG "/SUBSYSTEM:CONSOLE"
+  )
+endif()
+
 install(TARGETS ${target_name})
