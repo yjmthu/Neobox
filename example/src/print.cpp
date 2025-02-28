@@ -6,7 +6,7 @@
 #include <Windows.h>
 #endif
 
-std::ostream& operator<<(std::ostream& os, std::u8string_view res) {
+std::ostream& operator<<(std::ostream& os, std::u8string res) {
   os.write(reinterpret_cast<const char*>(res.data()), res.size());
   return os;
 }

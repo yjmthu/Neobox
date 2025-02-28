@@ -21,7 +21,7 @@ namespace fs = std::filesystem;
 const std::u8string domain = u8"pic.netbian.com";
 const std::u8string host = u8"https://" + domain;;
 
-std::ostream& operator<<(std::ostream& os, std::u8string_view res) {
+std::ostream& operator<<(std::ostream& os, const std::u8string& res) {
   os.write(reinterpret_cast<const char*>(res.data()), res.size());
   return os;
 }
