@@ -115,13 +115,7 @@ HttpAction<void> Portal::init() {
     std::cout << "Find ac_id: " << userInfo.acID << std::endl
               << "URL: " << url << std::endl;
     client.SetUrl(url);
-    res = co_await client.GetAsync(HttpLib::Callback
-      {
-        .m_ProcessCallback = [](auto current, auto total) {
-          std::cout << current << "/" << total << std::endl;
-        },
-      }
-    );
+    res = co_await client.GetAsync();
     if (res->status != 200) {
       std::cerr << "Can not go to <" << client.GetUrl() << ">\n";
       co_return;
@@ -154,7 +148,7 @@ HttpAwaiter<> Portal::getInfo() {
   client.SetUrl(std::move(url));
 
   HttpLib::Callback cb {
-    .m_FinishCallback = [this](auto msg, auto res) {
+    .onFinish = [this](auto msg, auto res) {
       if (msg.empty() && res->status == 200) {
         auto i = res->body.find(u8'{'), j = res->body.rfind(u8'}');
         if (i == res->body.npos || j == res->body.npos) {
@@ -169,9 +163,6 @@ HttpAwaiter<> Portal::getInfo() {
         userInfo.isLogin = false;
         std::cerr << "Connect Error: " << res->status << std::endl;
       }
-    },
-    .m_ProcessCallback = [](auto current, auto total) {
-      std::cout << current << "/" << total << std::endl;
     },
   };
 
@@ -245,13 +236,7 @@ HttpAction<void> Portal::logout() {
 
   client.SetUrl(std::move(url));
 
-  HttpLib::Callback cb {
-    .m_ProcessCallback = [](auto current, auto total) {
-      std::cout << current << "/" << total << std::endl;
-    },
-  };
-
-  auto res = co_await client.GetAsync(std::move(cb));
+  auto res = co_await client.GetAsync();
   
   std::cout << res->body << std::endl;
 }
@@ -310,14 +295,7 @@ HttpAwaiter<> Portal::sendAuth(std::u8string_view token) {
 
   client.SetUrl(std::move(url));
 
-  HttpLib::Callback cb{
-      .m_ProcessCallback =
-          [](auto current, auto total) {
-            std::cout << current << "/" << total << std::endl;
-          },
-  };
-
-  return client.GetAsync(std::move(cb));
+  return client.GetAsync();
 }
 
 HttpAwaiter<> Portal::getToken(std::u8string_view ip) {
@@ -334,13 +312,7 @@ HttpAwaiter<> Portal::getToken(std::u8string_view ip) {
   }, u8"https", 443);
 
   client.SetUrl(std::move(url));
-  HttpLib::Callback cb{
-      .m_ProcessCallback =
-          [](auto current, auto total) {
-            std::cout << current << "/" << total << std::endl;
-          },
-  };
-  return client.GetAsync(std::move(cb));
+  return client.GetAsync();
 }
 
 std::u8string_view Portal::parseToken(YJson& json) {
