@@ -40,7 +40,6 @@ private:
   HttpAction<void> StartAutoCheck();
   bool IsBusy() const { return m_DataRequest && !m_DataRequest->IsFinished(); }
   void CopyExecutable() const;
-  class NeoTimer* m_Timer;
 #ifdef _WIN32
 #endif
   std::u8string m_ZipUrl;

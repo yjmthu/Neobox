@@ -1,6 +1,49 @@
 #include <neobox/neotimer.h>
 
+#ifdef _DEBUG
+#include <iostream>
+#endif
+
 using namespace std::literals;
+
+struct Pool {
+  std::mutex m_PoolMutex;
+  uint32_t m_PoolCount;
+  std::condition_variable m_PoolCondition;
+
+  explicit Pool();
+  ~Pool();
+  void Add();
+  void Remove();
+};
+
+Pool::Pool() : m_PoolCount(0) {}
+Pool::~Pool() {
+  std::unique_lock _(m_PoolMutex);
+  if (m_PoolCount) {
+#ifdef _DEBUG
+    std::cout << "Pool is not empty, waiting..." << std::endl;
+#endif
+    m_PoolCondition.wait(_, [this] { return m_PoolCount == 0; });
+#ifdef _DEBUG
+    std::cout << "Pool is empty now, exit." << std::endl;
+#endif
+  }
+}
+void Pool::Add() {
+  std::unique_lock _(m_PoolMutex);
+  m_PoolCount++;
+}
+
+void Pool::Remove() {
+  std::unique_lock _(m_PoolMutex);
+  m_PoolCount--;
+  if (m_PoolCount == 0) {
+    m_PoolCondition.notify_all();
+  }
+}
+
+static Pool m_Pool = Pool();
 
 NeoTimer::NeoTimer() : m_Expired(true), m_ToExpire(false) {}
 
@@ -12,8 +55,15 @@ NeoTimer::~NeoTimer() {
   }
 }
 
+NeoTimer* NeoTimer::New() {
+  auto timer = new NeoTimer();
+  m_Pool.Add();
+  return timer;
+}
+
 void NeoTimer::Destroy() {
   delete this;
+  m_Pool.Remove();
 }
 
 void NeoTimer::StartTimer(Ms duration, std::function<void()> task) {
@@ -100,4 +150,12 @@ void NeoTimer::StartTask(Task task) {
       m_Condition.notify_all();
     }
   }).detach();
+}
+
+void NeoTimer::SingleShot(Ms duration, Task task) {
+  auto const timer = NeoTimer::New();
+  timer->StartTimer(duration, [timer, task = std::move(task)] {
+    task();
+    timer->Destroy();
+  });
 }

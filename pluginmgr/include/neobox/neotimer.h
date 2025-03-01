@@ -13,14 +13,14 @@ class NeoTimer {
   typedef std::chrono::milliseconds Ms;
   typedef std::function<void()> Task;
 public:
-  static NeoTimer* New() {
-    return new NeoTimer();
-  }
+  static NeoTimer* New();
   void Destroy();
   void StartTimer(Ms time, Task task);
   void StartOnce(Ms duration, Task task);
   bool IsActive() const;
   void Expire();
+  
+  static void SingleShot(Ms duration, Task task);
 
 private:
   NeoTimer();

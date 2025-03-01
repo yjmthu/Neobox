@@ -46,8 +46,6 @@ public:
     // std::wcout << L"The user clicked on action #" << actionIndex << std::endl;
     if (actionIndex == 0) {
       m_Obj.DownloadUpgrade().get();
-    } else {
-      m_Obj.m_Timer->Expire();
     }
   }
 
@@ -57,7 +55,6 @@ public:
     // std::wcout << L"Reason: ";
     switch (state) {
     case UserCanceled:
-      m_Obj.m_Timer->Expire();
       break;
     case ApplicationHidden:
       // std::wcout << L"ApplicationHidden" << std::endl;
@@ -79,7 +76,6 @@ public:
 
 PluginUpdate::PluginUpdate(YJson& settings)
   : m_Settings(InitSettings(settings))
-  , m_Timer(NeoTimer::New())
 #ifdef _WIN32
 #endif
 {
@@ -118,14 +114,16 @@ PluginUpdate::PluginUpdate(YJson& settings)
   }
 #endif
   if (m_Settings.GetAutoCheck()) {
-    m_Timer->StartOnce(30s, [this]() { this->StartAutoCheck().get(); });
+#ifdef _DEBUG
+    std::cout << "Auto check neobox update." << std::endl;
+#endif
+    NeoTimer::SingleShot(30s, [this] { this->StartAutoCheck().get(); });
   }
 }
 
 PluginUpdate::~PluginUpdate()
 {
   WinToast::instance()->clear();
-  m_Timer->Destroy();
   m_DataRequest = nullptr;
 }
 
@@ -263,14 +261,23 @@ HttpAction<bool> PluginUpdate::CheckUpdate()
 HttpAction<void> PluginUpdate::StartAutoCheck() {
   auto result = co_await CheckUpdate().awaiter();
 
-  if (result == std::nullopt || !result.value() || !m_LatestData) {
+  if (!result || !*result || !m_LatestData) {
+#ifdef _DEBUG
+    std::cout << "fetch update detail failed." << std::endl;
+#endif
     co_return;
   }
 
   if (!NeedUpgrade()) {
+#ifdef _DEBUG
+    std::cout << "No need to upgrade." << std::endl;
+#endif
     co_return;
   }
   if (m_Settings.GetAutoUpgrade()) {
+#ifdef _DEBUG
+    std::cout << "Auto upgrade neobox." << std::endl;
+#endif
     DownloadUpgrade().get();
   } else {
     emit AskInstall();
