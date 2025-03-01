@@ -28,10 +28,10 @@ void NeoSystemTray::InitDirs()
     QDir::setCurrent(dir.absolutePath());
   } else {
 #if 0
-    mgr->glbWriteSharedFlag(1);
+    if (mgr) mgr->glbWriteSharedFlag(1);
     QProcess::startDetached(QApplication::applicationFilePath(), QStringList {});
 #endif
-    mgr->Quit();
+    if (mgr) mgr->Quit();
     return;
   }
 }

@@ -3,8 +3,6 @@
 
 #include <neobox/menubase.hpp>
 
-#include <functional>
-
 class NeoMenu : public MenuBase {
   Q_OBJECT
 

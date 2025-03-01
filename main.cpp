@@ -13,8 +13,7 @@ int main(int argc, char* argv[]) {
   a.setQuitOnLastWindowClosed(false);
 #ifdef _RELEASE
   try {
-    auto* manager = new PluginMgr;
-    manager->Exec();
+    return PluginMgr::Exec();
   } catch (const std::runtime_error& error) {
     auto msg = QString::fromLocal8Bit(error.what());
     QMessageBox::critical(nullptr, "Runtime Error", msg);
@@ -26,8 +25,6 @@ int main(int argc, char* argv[]) {
 #ifdef _WIN32
   SetConsoleOutputCP(CP_UTF8);
 #endif
-  auto *manager = new PluginMgr();
-  manager->Exec();
+  return PluginMgr::Exec();
 #endif
-  return 0;
 }

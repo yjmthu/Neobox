@@ -2,9 +2,9 @@
 #define PLUGINMGR_H
 
 #include <map>
+#include <QStringList>
 #include <string>
 #include <filesystem>
-#include <functional>
 #include <mutex>
 
 class NeoMenu;
@@ -27,7 +27,7 @@ public:
     void* handle = nullptr;
   };
   mutable std::mutex m_Mutex;
-public:
+private:
   explicit PluginMgr();
   ~PluginMgr();
 public:
@@ -75,9 +75,10 @@ public:
   void ShowMsgbox(const std::wstring& title,
     const std::wstring& text,
     MsgboxType type = MsgboxType::Information);
-  int Exec();
+  static int Exec();
   static void Quit();
-  void Restart();
+  static void Delete();
+  static void Restart();
   static std::filesystem::path GetJunkDir();
   static std::filesystem::path GetPluginDir();
 private:

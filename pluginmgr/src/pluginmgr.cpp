@@ -32,7 +32,7 @@
 
 namespace fs = std::filesystem;
 using namespace std::literals;
-PluginMgr *mgr;
+PluginMgr *mgr = nullptr;
 
 const std::u8string PluginMgr::m_SettingFileName(u8"PluginSettings.json");
 
@@ -500,12 +500,13 @@ void PluginMgr::ShowMsg(class QString text)
 
 int PluginMgr::Exec()
 {
+  auto* const manager = new PluginMgr;
   auto arguments = qApp->arguments();
   if (arguments.size() > 1) {
     auto arg = arguments[1];
     if (arg == "show") {
       qDebug() << "控制面板已打开！" << Qt::endl;
-      m_Menu->m_ControlPanel->trigger();
+      manager->m_Menu->m_ControlPanel->trigger();
     } else if (arg== "disable") {
       qDebug() << "暂不支持。" << Qt::endl;
     } else if (arg== "help") {
@@ -514,7 +515,7 @@ int PluginMgr::Exec()
     }
   }
   auto ret = QApplication::exec();
-  delete mgr;
+  delete ::mgr;
   return ret;
 }
 
@@ -523,10 +524,16 @@ void PluginMgr::Quit()
   QApplication::quit();
 }
 
+void PluginMgr::Delete() {
+  delete ::mgr;
+}
+
 void PluginMgr::Restart()
 {
-  WriteSharedFlag(m_SharedMemory, 1);
-  delete mgr;
+  WriteSharedFlag(mgr->m_SharedMemory, 1);
+
+  Delete();
+
   QProcess::startDetached(
     QApplication::applicationFilePath(), QStringList {}
   );
