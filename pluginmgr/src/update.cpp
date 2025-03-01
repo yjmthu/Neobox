@@ -32,6 +32,7 @@ public:
   explicit CutomHanderForUpdate(PluginUpdate& obj)
     : m_Obj(obj)
   {};
+  virtual ~CutomHanderForUpdate() = default;
 private:
   PluginUpdate& m_Obj;
 public:
@@ -80,7 +81,6 @@ PluginUpdate::PluginUpdate(YJson& settings)
   : m_Settings(InitSettings(settings))
   , m_Timer(NeoTimer::New())
 #ifdef _WIN32
-  , m_Handler(new CutomHanderForUpdate(*this))
 #endif
 {
 #if 1
@@ -95,7 +95,8 @@ PluginUpdate::PluginUpdate(YJson& settings)
       templ.addAction(action);
     }
 
-    WinToast::instance()->showToast(templ, m_Handler);
+    auto handler(new CutomHanderForUpdate(*this));
+    WinToast::instance()->showToast(templ, handler);
   });
   connect(this, &PluginUpdate::QuitApp, this, [](QString exe, QStringList arg){
     mgr->Quit();
@@ -124,7 +125,6 @@ PluginUpdate::PluginUpdate(YJson& settings)
 PluginUpdate::~PluginUpdate()
 {
   WinToast::instance()->clear();
-  delete m_Handler;
   m_Timer->Destroy();
   m_DataRequest = nullptr;
 }

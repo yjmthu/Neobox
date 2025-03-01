@@ -42,7 +42,6 @@ private:
   void CopyExecutable() const;
   class NeoTimer* m_Timer;
 #ifdef _WIN32
-  class CutomHanderForUpdate* m_Handler;
 #endif
   std::u8string m_ZipUrl;
   std::unique_ptr<YJson> m_LatestData;

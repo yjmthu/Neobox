@@ -73,186 +73,199 @@ public:
   static void UrlDecode(StringView text, String& out);
 };
 
-class HttpPromise {
-  typedef std::function<void()> Callback;
-public:
-  auto initial_suspend() -> std::suspend_never { return {}; }
-  auto final_suspend() noexcept -> std::suspend_never { return {}; }
-  auto unhandled_exception() -> void {
-    if (m_Exception) {
-      m_Exception->operator()();
+class HttpActionBase {
+  typedef std::function<void()> ExceptionCallback;
+protected:
+  class Awaiter {
+  protected:
+    HttpActionBase& m_Action;
+  public:
+    Awaiter(HttpActionBase& action) : m_Action(action) {}
+    bool await_ready() const { return m_Action.finished(); }
+    void await_suspend(std::coroutine_handle<> handle) {
+      m_Action.m_AwaiterHandle = handle;
     }
-    notify_return();
+    void await_resume() {}
+  };
+public:
+  HttpActionBase()
+    : m_Finished(false)
+    , m_AwaiterHandle {}
+    , m_ExceptionCallback { }
+  {}
+  HttpActionBase(HttpActionBase&& other) = delete;
+  HttpActionBase(HttpActionBase& other) = delete;
+  HttpActionBase(HttpActionBase const& other) = delete;
+#ifdef _DEBUG
+  ~HttpActionBase() {
+    std::cout << "~HttpActionBase" << std::endl;
+  }
+#else
+  ~HttpActionBase() = default;
+#endif
+
+  void handle_exception() {
+    if (m_ExceptionCallback) m_ExceptionCallback();
+  }
+protected:
+  std::mutex mutable m_Mutex {};
+  std::condition_variable m_CV {};
+  bool m_Finished = false;
+  std::coroutine_handle<> m_AwaiterHandle;
+  ExceptionCallback m_ExceptionCallback;
+
+  void notify_return() {
+    m_Mutex.lock();
+    m_Finished = true;
+    m_Mutex.unlock();
+
+    if (m_AwaiterHandle) {
+      m_AwaiterHandle.resume();
+    } else {
+      m_CV.notify_all();
+    }
   }
 
   void wait_return() {
     std::unique_lock<std::mutex> lock(m_Mutex);
     m_CV.wait(lock, [this] { return m_Finished; });
   }
-protected:
-  void notify_return() {
-    m_Mutex.lock();
-    m_Finished = true;
-    m_Mutex.unlock();
 
-    if (m_ReturnHandle) m_ReturnHandle.resume();
-    else m_CV.notify_all();
-  }
-  std::optional<Callback> m_Exception = std::nullopt;
-
-  bool get_return_finished() const {
+  bool finished() const {
     std::lock_guard<std::mutex> lock(m_Mutex);
     return m_Finished;
   }
-
-private:
-  std::mutex mutable m_Mutex;
-  std::condition_variable m_CV;
-  bool m_Finished = false;
-protected:
-  std::coroutine_handle<> m_ReturnHandle {};
 };
 
-class HttpActionBase {
-protected:
-  virtual bool get_return_finished() const = 0;
-  virtual void set_return_handle(std::coroutine_handle<>) = 0;
-  class Awaiter {
-  protected:
-    HttpActionBase& m_Action;
-  public:
-    Awaiter(HttpActionBase& action) : m_Action(action) {}
-    bool await_ready() const { return m_Action.get_return_finished(); }
-    void await_suspend(std::coroutine_handle<> handle) {
-      m_Action.set_return_handle(handle);
-    }
-    void await_resume() {}
-  };
+class HttpPromise {
 public:
-  HttpActionBase(void* handle) : m_Handle(handle) {}
-  HttpActionBase(HttpActionBase&& other) noexcept
-    : m_Handle(other.m_Handle)
-  {
-    other.m_Handle = nullptr;
-  }
-  virtual ~HttpActionBase() = default;
-protected:
-  template<typename PromiseType>
-  PromiseType& get_promise() const {
-    return std::coroutine_handle<PromiseType>::from_address(m_Handle).promise();
-  }
-private:
-  void* m_Handle;
+  auto initial_suspend() -> std::suspend_never { return {}; }
+  auto final_suspend() noexcept -> std::suspend_never { return {}; }
 };
 
 template<typename ReturnType>
 class HttpAction : public HttpActionBase {
 public:
+  typedef std::function<void(std::optional<ReturnType>&)> Callback;
   class promise_type : public HttpPromise {
-    typedef std::coroutine_handle<promise_type> Handle;
   public:
-    typedef std::function<void(std::optional<ReturnType>&)> Callback;
     auto get_return_object() {
-      Handle handle = Handle::from_promise(*this);
-      return HttpAction(handle.address());
+      return HttpAction(this);
     }
     auto return_value(ReturnType value) -> void {
-      m_Value = std::move(value);
-      if (m_Callback) m_Callback->operator()(m_Value);
-      this->notify_return();
+      m_Action->return_value(std::move(value));
     }
+    void unhandled_exception() {
+      if (m_Action) m_Action->handle_exception();
+    }
+    
+    void set_action(HttpAction* action) {
+      m_Action = action;
+    }
+
   private:
-    friend class HttpAction;
-    std::optional<Callback> m_Callback = std::nullopt;
-    std::optional<ReturnType> m_Value = std::nullopt;
+    HttpAction* m_Action = nullptr;
   };
 
-  HttpAction(void* handle) : HttpActionBase(handle) {}
-  ~HttpAction() override = default;
-
-  std::optional<ReturnType> get() {
-    auto& promise = get_promise<promise_type>();
-    promise.wait_return();
-    return std::move(promise.m_Value);
+  HttpAction(promise_type* promise)
+    : HttpActionBase()
+    , m_Callback {}
+    , m_Value {}
+  {
+    promise->set_action(this);
   }
 
-  auto& then(promise_type::Callback callback) {
-    get_promise<promise_type>().m_Callback = std::move(callback);
+  std::optional<ReturnType> get() {
+    wait_return();
+    return std::move(m_Value);
+  }
+
+  auto& then(Callback callback) {
+    m_Callback = std::move(callback);
     return *this;
   }
 
   auto& cat(std::function<void()> callback) {
-    get_promise<promise_type>().m_Exception = std::move(callback);
+    m_ExceptionCallback = std::move(callback);
     return *this;
   }
 
   auto awaiter() {
     class AwaiterValue: public Awaiter {
     public:
-      AwaiterValue(HttpAction& action) : Awaiter(action) {}
+      AwaiterValue(HttpAction& action)
+        : Awaiter(action)
+        , m_Value(action.m_Value) {}
       std::optional<ReturnType> await_resume() {
-        auto& promise = static_cast<HttpAction&>(m_Action).get_promise<promise_type>();
-        return std::move(promise.m_Value);
+        return std::move(m_Value);
       }
+    private:
+      std::optional<ReturnType>& m_Value;
     };
     return AwaiterValue(*this);
   }
 private:
-  bool get_return_finished() const override {
-    return get_promise<promise_type>().get_return_finished();
+  void return_value(ReturnType value) {
+    m_Value = std::move(value);
+    if (m_Callback) m_Callback(m_Value);
+    this->notify_return();
   }
-  void set_return_handle(std::coroutine_handle<> handle) override {
-    get_promise<promise_type>().m_ReturnHandle = handle;
-  }
+  Callback m_Callback;
+  std::optional<ReturnType> m_Value;
 };
 
 template<>
 class HttpAction<void> : public HttpActionBase {
 public:
+  typedef std::function<void()> Callback;
   class promise_type : public HttpPromise {
-    typedef std::coroutine_handle<promise_type> Handle;
   public:
-    typedef std::function<void()> Callback;
     auto get_return_object() {
-      Handle handle = Handle::from_promise(*this);
-      return HttpAction<void>(handle.address());
+      return HttpAction<void>(this);
     }
     auto return_void() -> void {
-      if (m_Callback) m_Callback->operator()();
-      this->notify_return();
+      m_Action->return_void();
+    }
+    auto unhandled_exception() -> void {
+      if (m_Action) m_Action->handle_exception();
+    }
+
+    void set_action(HttpAction* action) {
+      m_Action = action;
     }
   private:
-    friend class HttpAction;
-    std::optional<Callback> m_Callback = std::nullopt;
+    HttpAction* m_Action = nullptr;
   };
 
-  HttpAction<void>(void* handle) : HttpActionBase(handle) {}
-  ~HttpAction() override = default;
-
-  void get() {
-    get_promise<promise_type>().wait_return();
+  HttpAction<void>(promise_type* promise)
+    : HttpActionBase()
+    , m_Callback {}
+  {
+    promise->set_action(this);
   }
 
-  auto& then(promise_type::Callback callback) {
-    get_promise<promise_type>().m_Callback = std::move(callback);
+  void get() { wait_return(); }
+
+  auto& then(Callback callback) {
+    m_Callback = callback;
     return *this;
   }
 
   auto& cat(std::function<void()> callback) {
-    get_promise<promise_type>().m_Exception = std::move(callback);
+    m_ExceptionCallback = callback;
     return *this;
   }
 
   auto awaiter() {
     return Awaiter(*this);
   }
+
+  void return_void() {
+    if (m_Callback) m_Callback();
+    this->notify_return();
+  }
 private:
-  bool get_return_finished() const override {
-    return get_promise<promise_type>().get_return_finished();
-  }
-  void set_return_handle(std::coroutine_handle<> handle) override {
-    get_promise<promise_type>().m_ReturnHandle = handle;
-  }
+  Callback m_Callback;
 };
 
 struct HttpResponse {

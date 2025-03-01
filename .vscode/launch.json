@@ -9,14 +9,14 @@
       "name": "(Windows) 启动 Neobox",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}\\install\\bin\\tunet.exe",
+      "program": "${workspaceFolder}\\install\\bin\\neobox.exe",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${fileDirname}",
       "environment": [
         {
           "name": "PATH",
-          "value": "${workspaceFolder}\\build\\Debug\\pluginmgr;${workspaceFolder}\\build\\Debug\\pluginmgr\\yjson;${workspaceFolder}\\..\\neobox-plugins\\install\\plugins;C:\\Qt\\6.8.0\\msvc2022_64\\bin;${env:PATH}"
+          "value": "${workspaceFolder}\\build\\Debug\\pluginmgr;${workspaceFolder}\\build\\Debug\\pluginmgr\\yjson;${workspaceFolder}\\..\\neobox-plugins\\install\\lugins;C:\\Qt\\6.8.0\\msvc2022_64\\bin;${env:PATH}"
         }
       ],
       "console": "externalTerminal"
