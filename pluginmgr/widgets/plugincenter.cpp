@@ -20,8 +20,6 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 
-#include <thread>
-
 using namespace std::literals;
 
 #ifdef _WIN32
@@ -123,10 +121,9 @@ std::optional<std::string> PluginCenter::DownloadFile(std::u8string_view url)
 
   std::string body;
   HttpLib::Callback callback = {
-    .m_WriteCallback = [&body](auto data, auto size) {
-      body.append(reinterpret_cast<const char*>(data), size);
-    },
-    .m_FinishCallback = [&result, &body, &dialog](auto msg, auto res) {
+    .onProcess = std::bind(&DownloadingDlg::emitProcess,
+      &dialog, std::placeholders::_1, std::placeholders::_2),
+    .onFinish = [&result, &body, &dialog](auto msg, auto res) {
       if (msg.empty() && res->status == 200) {
         result = std::move(body);
       } else {
@@ -139,8 +136,9 @@ std::optional<std::string> PluginCenter::DownloadFile(std::u8string_view url)
         dialog.emitFinished();
       }
     },
-    .m_ProcessCallback = std::bind(&DownloadingDlg::emitProcess,
-      &dialog, std::placeholders::_1, std::placeholders::_2)
+    .onWrite = [&body](auto data, auto size) {
+      body.append(reinterpret_cast<const char*>(data), size);
+    },
   };
 
   clt.GetAsync(callback);

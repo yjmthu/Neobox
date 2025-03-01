@@ -12,10 +12,7 @@
 #include <zip.h>
 #endif
 
-#include <format>
-#include <vector>
 #include <ranges>
-#include <regex>
 
 #include <QFile>
 #include <QMessageBox>
@@ -201,10 +198,10 @@ bool TabVersion::DownloadNew(std::u8string_view url[[maybe_unused]]) {
 
   HttpLib clt(HttpUrl(std::u8string_view(url)), true);
   HttpLib::Callback callback = {
-    .m_WriteCallback = [&file](auto data, auto size){
-      file.write(reinterpret_cast<const char*>(data), size);
+    .onProcess = [&](auto recieve, auto total) {
+      dialog.emitProcess(recieve, total);
     },
-    .m_FinishCallback = [&](std::wstring msg, const HttpLib::Response* res) {
+    .onFinish = [&](std::wstring msg, const HttpLib::Response* res) {
       file.close();
       if (msg.empty() && res->status == 200) {
         result = true;
@@ -220,8 +217,8 @@ bool TabVersion::DownloadNew(std::u8string_view url[[maybe_unused]]) {
       fs::remove(pluginTemp);
       dialog.emitFinished();
     },
-    .m_ProcessCallback = [&](auto recieve, auto total) {
-      dialog.emitProcess(recieve, total);
+    .onWrite = [&file](auto data, auto size){
+      file.write(reinterpret_cast<const char*>(data), size);
     },
   };
 

@@ -224,18 +224,7 @@ HttpAction<int> DownloadPicture(const fs::path folder, const PictureDetail& deta
   const float barWidth = 70.0;
 
   HttpLib::Callback callback {
-    .m_WriteCallback = [&fileOut](auto data, auto size) {
-      fileOut.write(reinterpret_cast<const char*>(data), size);
-    },
-    .m_FinishCallback = [](auto msg, auto res) {
-      std::cout << std::endl;
-      if (msg.empty() && res->status == 200) {
-        std::cout << "Download success" << std::endl;
-      } else {
-        std::cerr << "Error: " << Wide2Utf8String(msg) << std::endl;
-      }
-    },
-    .m_ProcessCallback = [barWidth](auto current, auto total) {
+    .onProcess = [barWidth](auto current, auto total) {
       // std::cout << "Progress: " << current << "/" << total << std::endl;
       auto percent = float(current) / total;
       int pos = barWidth * percent;
@@ -245,6 +234,17 @@ HttpAction<int> DownloadPicture(const fs::path folder, const PictureDetail& deta
       std::cout << std::setfill(' ') << std::setw(barWidth - pos + 1) << ']';
       std::cout << std::setw(4) << int(percent * 100.0) << " %\r";
       std::cout.flush();
+    },
+    .onFinish = [](auto msg, auto res) {
+      std::cout << std::endl;
+      if (msg.empty() && res->status == 200) {
+        std::cout << "Download success" << std::endl;
+      } else {
+        std::cerr << "Error: " << Wide2Utf8String(msg) << std::endl;
+      }
+    },
+    .onWrite = [&fileOut](auto data, auto size) {
+      fileOut.write(reinterpret_cast<const char*>(data), size);
     },
   };
 

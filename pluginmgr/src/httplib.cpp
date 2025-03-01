@@ -1001,9 +1001,9 @@ void HttpLib::HttpPerform()
 
 void HttpLib::EmitProcess()
 {
-  const auto& callback = m_AsyncCallback.m_ProcessCallback;
+  const auto& callback = m_AsyncCallback.onProcess;
   if (callback) {
-    (*callback)(m_RecieveSize, m_ConnectLength);
+    callback(m_RecieveSize, m_ConnectLength);
   }
 }
 
@@ -1024,7 +1024,7 @@ void HttpLib::EmitFinish(std::wstring message)
    delete reinterpret_cast<std::u8string*>(m_DataBuffer);
    m_DataBuffer = nullptr;
 
-  auto& callback = m_AsyncCallback.m_FinishCallback;
+  auto& callback = m_AsyncCallback.onFinish;
   if (callback) {
     /* To prevent infinite recursion at destructor time,
       the callback function is emptied after one execution.
@@ -1032,8 +1032,7 @@ void HttpLib::EmitFinish(std::wstring message)
       we even can delete the this pointer in the callback function, which is useful
       when we use coroutine to do some async task.
       */
-    auto cb = std::move(*callback);
-    callback = std::nullopt;
+    auto cb = std::move(callback);
     cb(message, &m_Response);
   }
 }
@@ -1100,14 +1099,14 @@ HttpAwaiter<HttpResponse> HttpLib::GetAsync(std::optional<Callback> callback)
     m_AsyncCallback = std::move(*callback);
   } else {
     m_AsyncCallback = {
-      .m_WriteCallback = std::nullopt,
-      .m_FinishCallback = std::nullopt,
-      .m_ProcessCallback = std::nullopt,
+      .onProcess = nullptr,
+      .onFinish = nullptr,
+      .onWrite = nullptr,
     };
   }
   m_DataBuffer = new std::u8string;
 
-  if (!m_AsyncCallback.m_WriteCallback) {
+  if (!m_AsyncCallback.onWrite) {
     m_WriteCallback = [this](auto data, auto size){
       if (m_Finished) return false;
       m_RecieveSize += size;
@@ -1116,8 +1115,8 @@ HttpAwaiter<HttpResponse> HttpLib::GetAsync(std::optional<Callback> callback)
       return true;
     };
   } else {
-    auto cb = std::move(*m_AsyncCallback.m_WriteCallback);
-    m_WriteCallback = [this, cb](auto data, auto size) {
+    auto cb = std::move(m_AsyncCallback.onWrite);
+    m_WriteCallback = [this, cb = std::move(cb)](auto data, auto size) {
       if (m_Finished) return false;
       m_RecieveSize += size;
       cb(data, size);
@@ -1132,14 +1131,14 @@ HttpAwaiter<HttpResponse> HttpLib::GetAsync(std::optional<Callback> callback)
 void HttpLib::DoSuspend(std::coroutine_handle<> handle)
 {
   if (handle != nullptr) {
-    if (m_AsyncCallback.m_FinishCallback) {
-      auto finish = std::move(*m_AsyncCallback.m_FinishCallback);
-      m_AsyncCallback.m_FinishCallback = [finish, handle](auto message, auto response) {
+    if (m_AsyncCallback.onFinish) {
+      auto finish = std::move(m_AsyncCallback.onFinish);
+      m_AsyncCallback.onFinish = [finish, handle](auto message, auto response) {
         finish(message, response);
         handle.resume();
       };
     } else {
-      m_AsyncCallback.m_FinishCallback = [handle](auto, auto) {
+      m_AsyncCallback.onFinish = [handle](auto, auto) {
         handle.resume();
       };
     }

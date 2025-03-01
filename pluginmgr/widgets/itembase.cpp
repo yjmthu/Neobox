@@ -122,10 +122,8 @@ bool ItemBase::PluginDownload()
   if (!file.is_open()) return false;
 
   HttpLib::Callback callback = {
-    .m_WriteCallback = [&file](auto data, auto size) {
-      file.write(reinterpret_cast<const char*>(data), size);
-    },
-    .m_FinishCallback = [&](auto msg, auto res) {
+    .onProcess = nullptr,
+    .onFinish = [&](auto msg, auto res) {
       file.close();
       if (!msg.empty() || res->status != 200) {
         mgr->ShowMsgbox(L"失败", L"下载清单失败！");
@@ -161,7 +159,9 @@ bool ItemBase::PluginDownload()
       fs::remove(pluginTemp);
       emit DownloadFinished();
     },
-    .m_ProcessCallback = std::nullopt,
+    .onWrite = [&file](auto data, auto size) {
+      file.write(reinterpret_cast<const char*>(data), size);
+    },
   };
   connect(&dialog, &DownloadingDlg::Terminate, std::bind(&HttpLib::ExitAsync, &clt));
 

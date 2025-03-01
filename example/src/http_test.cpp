@@ -49,12 +49,10 @@ int main()
       cv.notify_one();
     };
     HttpLib::Callback callback = {
-      .m_WriteCallback = [&file](const void* data, size_t size){
-        if (size) {
-          file.write(reinterpret_cast<const char*>(data), size);
-        }
+      .onProcess = [](size_t recieve, size_t total){
+        std::cout << recieve << '/' << total << std::endl;
       },
-      .m_FinishCallback = [&clt, &quitLoop](std::wstring error, auto res){
+      .onFinish = [&clt, &quitLoop](std::wstring error, auto res){
         if (error.empty()) {
           std::wcout << L"ALL OK.\n---------------" << res->status << std::endl;
           for (auto [i, j]: res->headers) {
@@ -66,9 +64,11 @@ int main()
         }
         quitLoop();
       },
-      .m_ProcessCallback = [](size_t recieve, size_t total){
-        std::cout << recieve << '/' << total << std::endl;
-      }
+      .onWrite = [&file](const void* data, size_t size){
+        if (size) {
+          file.write(reinterpret_cast<const char*>(data), size);
+        }
+      },
     };
     clt.GetAsync(callback);
     std::unique_lock locker(mutex);

@@ -16,7 +16,7 @@
       "environment": [
         {
           "name": "PATH",
-          "value": "${workspaceFolder}\\build\\Debug\\pluginmgr;${workspaceFolder}\\build\\Debug\\pluginmgr\\yjson;${workspaceFolder}\\..\\neobox-plugins\\install\\lugins;C:\\Qt\\6.8.0\\msvc2022_64\\bin;${env:PATH}"
+          "value": "${workspaceFolder}\\build\\Debug\\pluginmgr;${workspaceFolder}\\build\\Debug\\pluginmgr\\yjson;${workspaceFolder}\\install\\dbg;${workspaceFolder}\\..\\neobox-plugins\\install\\lugins;C:\\Qt\\6.8.0\\msvc2022_64\\bin;${env:PATH}"
         }
       ],
       "console": "externalTerminal"
@@ -27,7 +27,7 @@
       "request": "launch",
       "program": "${workspaceFolder}\\build\\Debug\\example\\netbian.exe",
       "args": [
-        "C:\\Users\\yjmthu\\OneDrive\\图片\\彼岸图网"
+        "C:\\Users\\Administrator\\Desktop\\test\\test.txt"
       ],
       "stopAtEntry": true,
       "cwd": "${fileDirname}",

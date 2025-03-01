@@ -224,11 +224,11 @@ HttpAction<void> PluginUpdate::DownloadUpgrade()
     m_DataRequest = std::make_unique<HttpLib>(HttpUrl(m_ZipUrl), true);
 
     HttpLib::Callback callback = {
-      .m_WriteCallback = [this](auto data, auto size) {
+      .onProcess = nullptr,
+      .onFinish = nullptr,
+      .onWrite = [this](auto data, auto size) {
         m_File.write(reinterpret_cast<const char*>(data), size);
       },
-      .m_FinishCallback = std::nullopt,
-      .m_ProcessCallback = std::nullopt,
     };
     auto res = co_await m_DataRequest->GetAsync(std::move(callback));
     m_File.close();

@@ -98,7 +98,7 @@ public:
   HttpActionBase(HttpActionBase const& other) = delete;
 #ifdef _DEBUG
   ~HttpActionBase() {
-    std::cout << "~HttpActionBase" << std::endl;
+    // std::cout << "~HttpActionBase" << std::endl;
   }
 #else
   ~HttpActionBase() = default;
@@ -336,9 +336,9 @@ public:
   typedef std::function<void(size_t, size_t)> ProcessCallback;
   typedef std::function<void(std::wstring, const Response*)> FinishCallback;
   struct Callback {
-    std::optional<WriteCallback> m_WriteCallback;
-    std::optional<FinishCallback> m_FinishCallback;
-    std::optional<ProcessCallback> m_ProcessCallback;
+    ProcessCallback onProcess = nullptr;
+    FinishCallback onFinish = nullptr;
+    WriteCallback onWrite = nullptr;
   };
 
   explicit HttpLib(HttpUrl url, bool async = false, std::chrono::seconds timeout=30s)
