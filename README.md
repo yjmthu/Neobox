@@ -74,6 +74,8 @@ cmake --build build/Debug
 cmake -P build/Debug/cmake_install.cmake
 ```
 
+> 软件在别人电脑上可能会缺失 `msvcp140.dll` 等文件，需要在 `C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Redist\MSVC\xx.xx.xxxx\x64\Microsoft.VCxx.CRT` 下面拷贝所有必要的 *dll* 文件一起发布，或者将该位置添加到环境变量后在运行 `windeployqt.exe`。对于插件的打包也应将 **vcpkg** 的库文件目录添加至环境变量。
+
 
 ## 现有功能增强方向
 
