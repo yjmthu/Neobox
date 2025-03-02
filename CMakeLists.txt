@@ -12,7 +12,7 @@ string(TIMESTAMP COMPILE_TIME %Y-%m-%d)
 set(NEOBOX_BUILD_TIME ${COMPILE_TIME})
 
 set(target_name neobox)
-project(${target_name} VERSION 2.4.6 LANGUAGES CXX C)
+project(${target_name} VERSION 2.4.7 LANGUAGES CXX C)
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
   add_definitions(-D_DEBUG)
