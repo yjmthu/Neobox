@@ -33,6 +33,7 @@ void NeoMsgDlg::HandleShowMsg()
       } else {
         while (m_Data.size() > 3) m_Data.pop();
         m_pLabel->setText(m_Data.front());
+        AdjustSize();
         HandleShowMsg();
       }
     }
@@ -97,15 +98,19 @@ void NeoMsgDlg::InitAnimation()
 
 void NeoMsgDlg::showEvent(QShowEvent *event)
 {
-  auto const screenSize = QGuiApplication::primaryScreen()->availableSize();
-  m_pLabel->adjustSize();
-  m_pFrame->adjustSize();
-  this->adjustSize();
-
-  const auto x = screenSize.width() - width(), y = screenSize.height() - height();
-  move(x >> 1, y >> 1);
+  AdjustSize();
 
   m_pOpacity->setOpacity(1);
 
   QWidget::showEvent(event);
+}
+
+void NeoMsgDlg::AdjustSize() {
+  auto const screenSize = QGuiApplication::primaryScreen()->availableSize();
+  m_pLabel->adjustSize();
+  m_pFrame->adjustSize();
+  adjustSize();
+
+  const auto x = screenSize.width() - width(), y = screenSize.height() - height();
+  move(x >> 1, y >> 1);
 }

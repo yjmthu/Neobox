@@ -23,6 +23,7 @@ public:
 protected:
   void showEvent(QShowEvent *event) override;
 private:
+  void AdjustSize();
   void HandleShowMsg();
   std::queue<QString> m_Data;
 };
