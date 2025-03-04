@@ -135,12 +135,12 @@ void TabVersion::GetUpdate()
   }
   const auto apiUrl = u8"" NEOBOX_LATEST_URL ""sv;
   auto res = PluginCenter::m_Instance->DownloadFile(apiUrl);
-  if (!res) {
+  if (res.empty()) {
     QMessageBox::information(this, "提示", "下载失败，请稍后再试！");
     return;
   }
   // QString qhtml = m_Text->text();
-  const YJson jsAboutNew(res->begin(), res->end());
+  const YJson jsAboutNew(res.begin(), res.end());
   std::u8string buffer(u8"<h2>最新版本</h2><p style='color: #FF00FF;'>");
   buffer.append(jsAboutNew[u8"name"].getValueString());
 

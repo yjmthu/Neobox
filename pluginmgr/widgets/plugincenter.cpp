@@ -96,18 +96,18 @@ bool PluginCenter::UpdatePluginData()
   if (m_PluginData) return true;
   auto const url = m_RawUrl + u8"plugins.json"s;
   auto result = DownloadFile(url);
-  if (!result) {
+  if (result.empty()) {
     return false;
   }
   // https://gitlab.com/yjmthu1/neoboxplg/-/raw/main/plugins/neohotkeyplg/manifest.json
-  m_PluginData = new YJson(result->begin(), result->end());
+  m_PluginData = new YJson(result.begin(), result.end());
 
   return true;
 }
 
-std::optional<std::string> PluginCenter::DownloadFile(std::u8string_view url)
+std::u8string PluginCenter::DownloadFile(std::u8string_view url)
 {
-  std::optional<std::string> result = std::nullopt;
+  std::u8string result;
 
   if (!HttpLib::IsOnline()) {
     mgr->ShowMsg(u8"请检查网络连接！");
@@ -119,25 +119,21 @@ std::optional<std::string> PluginCenter::DownloadFile(std::u8string_view url)
   HttpLib clt(url, true, 3s);
   clt.SetHeader(u8"User-Agent", u8"Libcurl in Neobox App/1.0");
 
-  std::string body;
   HttpLib::Callback callback = {
     .onProcess = std::bind(&DownloadingDlg::emitProcess,
       &dialog, std::placeholders::_1, std::placeholders::_2),
-    .onFinish = [&result, &body, &dialog](auto msg, auto res) {
+    .onFinish = [&result, &dialog](auto msg, auto res) {
       if (msg.empty() && res->status == 200) {
-        result = std::move(body);
+        result = std::move(res->body);
       } else {
         mgr->ShowMsg(QStringLiteral("下载失败！\n状态码：%1。\n错误信息：%2。")
           .arg(res->status)
           .arg(QString::fromStdWString(msg)));
       }
-      // 不是用户手动关闭对话框
-      if (res->status != -1) {
+      // if (res->status != -1) // 不是用户手动关闭对话框
+      {
         dialog.emitFinished();
       }
-    },
-    .onWrite = [&body](auto data, auto size) {
-      body.append(reinterpret_cast<const char*>(data), size);
     },
   };
 
