@@ -106,8 +106,6 @@ bool ItemBase::PluginDownload()
   }
   bool result = false;
   DownloadingDlg dialog(this);
-  connect(this, &ItemBase::DownloadFinished, &dialog, &QDialog::close);
-  connect(this, &ItemBase::Downloading, &dialog, &DownloadingDlg::SetPercent);
 
 #ifdef _WIN32
   auto const plugin = m_PluginName + u8".zip";
@@ -122,52 +120,61 @@ bool ItemBase::PluginDownload()
   if (!file.is_open()) return false;
 
   HttpLib::Callback callback = {
-    .onProcess = nullptr,
+    .onProcess = [&](auto count, auto size) {
+      dialog.emitProcess(count, size);
+    },
     .onFinish = [&](auto msg, auto res) {
       file.close();
-      if (!msg.empty() || res->status != 200) {
+
+      result = msg.empty() && res->status == 200;
+
+      if (!result) {
         mgr->ShowMsgbox(L"失败", L"下载清单失败！");
-        // result = false;
       } else {
-#ifdef _WIN32
-        auto temp = pluginTemp.string();
-        auto dst = pluginDst.string();
-        result = zip_extract(temp.c_str(), dst.c_str(), nullptr, nullptr) >= 0;
+        result = ExtractZip(pluginTemp, pluginDst);
         if (!result) {
           mgr->ShowMsgbox(L"失败", L"无法解压文件");
         }
-#else
-        std::error_code error;
-        if (!fs::exists(pluginDst) && !fs::create_directories(pluginDst, error)) {
-          mgr->ShowMsgbox(L"失败", std::format(L"创建文件夹失败，错误码：{}。", error.value()));
-          return;
-        }
-        QProcess process;
-        const auto ret = process.execute("tar", QStringList {
-          QStringLiteral("-xzf"),
-          QString::fromStdWString(pluginTemp.wstring()),
-          QStringLiteral("-C"),
-          QString::fromStdWString(pluginDst.wstring())
-        });
-        result = result == 0;
-        if (!result) {
-          mgr->ShowMsgbox(L"失败", std::format(L"解压文件出错，tar返回值：{}。", ret));
-        }
-#endif
       }
-
       fs::remove(pluginTemp);
-      emit DownloadFinished();
+
+      dialog.emitFinished();
     },
     .onWrite = [&file](auto data, auto size) {
       file.write(reinterpret_cast<const char*>(data), size);
     },
   };
-  connect(&dialog, &DownloadingDlg::Terminate, std::bind(&HttpLib::ExitAsync, &clt));
+  connect(&dialog, &DownloadingDlg::Terminate, &dialog, std::bind(&HttpLib::ExitAsync, &clt), Qt::DirectConnection);
 
   clt.GetAsync(std::move(callback));
   dialog.exec();
+
   return result;
+}
+
+bool ItemBase::ExtractZip(const fs::path& zipFile, const fs::path& dstDir)
+{
+#ifdef _WIN32
+  // auto temp = pluginTemp.string();
+  // auto dst = pluginDst.string();
+  auto zip = zipFile.string();
+  auto dst = dstDir.string();
+  return zip_extract(zip.c_str(), dst.c_str(), nullptr, nullptr) >= 0;
+#else
+  std::error_code error;
+  if (!fs::exists(dstDir) && !fs::create_directories(dstDir, error)) {
+    mgr->ShowMsgbox(L"失败", std::format(L"创建文件夹失败，错误码：{}。", error.value()));
+    return;
+  }
+  QProcess process;
+  const auto ret = process.execute("tar", QStringList {
+    QStringLiteral("-xzf"),
+    QString::fromStdWString(pluginTemp.wstring()),
+    QStringLiteral("-C"),
+    QString::fromStdWString(pluginDst.wstring())
+  });
+  return ret == 0;
+#endif
 }
 
 void ItemBase::PluginInstall()

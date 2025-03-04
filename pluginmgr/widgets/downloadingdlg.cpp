@@ -20,7 +20,7 @@ DownloadingDlg::DownloadingDlg(QWidget* parent)
   m_ProgressBar->setFixedHeight(6);
   m_ProgressBar->setRange(0, 0);
 
-  connect(this, &DownloadingDlg::DownloadFinished, this, &QDialog::close);
+  connect(this, &DownloadingDlg::DownloadFinished, this, &QDialog::close, Qt::QueuedConnection);
   connect(this, &DownloadingDlg::Downloading, this, &DownloadingDlg::SetPercent);
 }
 

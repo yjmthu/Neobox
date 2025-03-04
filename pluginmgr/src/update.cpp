@@ -222,8 +222,6 @@ HttpAction<void> PluginUpdate::DownloadUpgrade()
     m_DataRequest = std::make_unique<HttpLib>(HttpUrl(m_ZipUrl), true);
 
     HttpLib::Callback callback = {
-      .onProcess = nullptr,
-      .onFinish = nullptr,
       .onWrite = [this](auto data, auto size) {
         m_File.write(reinterpret_cast<const char*>(data), size);
       },

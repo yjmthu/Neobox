@@ -50,6 +50,7 @@ private:
 private:
   void SetupUi();
   void UpdateUi();
+  static bool ExtractZip(const std::filesystem::path& zipFile, const std::filesystem::path& dstDir);
 };
 
 #endif // ITEMBASE_HPP
