@@ -500,7 +500,7 @@ void PluginMgr::ShowMsg(class QString text)
 
 int PluginMgr::Exec()
 {
-  TimerGuard guard;
+  std::unique_ptr<TimerGuard> guard(new TimerGuard);
   auto* const manager = new PluginMgr;
   auto arguments = qApp->arguments();
   if (arguments.size() > 1) {
@@ -516,6 +516,7 @@ int PluginMgr::Exec()
     }
   }
   auto ret = QApplication::exec();
+  guard.reset(); // kill all single shot timers before delete manager
   delete ::mgr;
   return ret;
 }

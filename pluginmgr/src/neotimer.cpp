@@ -25,6 +25,9 @@ Pool::~Pool() {
     timer->Expire();
   }
   m_Condition.wait(locker, [this] { return m_Pool.empty(); });
+#ifdef _DEBUG
+  std::cout << "all single shot have been killed." << std::endl;
+#endif
 }
 
 NeoTimer* Pool::Add() {
