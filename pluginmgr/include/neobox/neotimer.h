@@ -35,4 +35,8 @@ private:
   std::condition_variable m_Condition;
 };
 
+struct TimerGuard {
+  TimerGuard();
+  ~TimerGuard();
+};
 #endif  // TIMER_H

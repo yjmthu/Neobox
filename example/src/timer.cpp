@@ -55,6 +55,7 @@ int main() {
 #elif 1
 
 int main () {
+  TimerGuard guard;
   NeoTimer::SingleShot(10s, [] {
     std::cout << "Hello, world!" << std::endl;
   });

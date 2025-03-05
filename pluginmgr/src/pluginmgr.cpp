@@ -500,6 +500,7 @@ void PluginMgr::ShowMsg(class QString text)
 
 int PluginMgr::Exec()
 {
+  TimerGuard guard;
   auto* const manager = new PluginMgr;
   auto arguments = qApp->arguments();
   if (arguments.size() > 1) {

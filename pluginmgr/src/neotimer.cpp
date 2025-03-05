@@ -10,7 +10,6 @@ using namespace std::literals;
 class Pool {
   std::mutex m_PoolMutex;
   std::set<NeoTimer*> m_Pool;
-  int m_Count = 0;
   std::condition_variable m_Condition;
 public:
   explicit Pool();
@@ -23,53 +22,36 @@ Pool::Pool() {}
 Pool::~Pool() {
   std::unique_lock locker(m_PoolMutex);
   for (auto timer : m_Pool) {
-#ifdef _DEBUG
-    std::cout << "destroy timer begin..." << std::endl;
-#endif
     timer->Expire();
-#ifdef _DEBUG
-    std::cout << "timer expired-----" << std::endl;
-#endif
-    timer->Destroy();
-#ifdef _DEBUG
-    std::cout << "destroy timer end." << std::endl;
-#endif
   }
-  m_Pool.clear();
-
-#ifdef _DEBUG
-  std::cout << "wait for " << m_Count << " tasks to expire..." << std::endl;
-#endif
-  m_Condition.wait(locker, [this] { return m_Count == 0; });
-#ifdef _DEBUG
-  std::cout << "all tasks expired." << std::endl;
-#endif
+  m_Condition.wait(locker, [this] { return m_Pool.empty(); });
 }
 
 NeoTimer* Pool::Add() {
   std::unique_lock _(m_PoolMutex);
   auto timer = NeoTimer::New();
   m_Pool.insert(timer);
-  ++m_Count;
   return timer;
 }
 
 void Pool::Remove(NeoTimer* timer) {
-#ifdef _DEBUG
-  std::cout << "remove timer from pool" << std::endl;
-#endif
   std::unique_lock _(m_PoolMutex);
-  auto iter = m_Pool.find(timer);
-  if (iter != m_Pool.end()) {
-    m_Pool.erase(iter);
-    timer->Destroy();
-  }
-  if (--m_Count == 0) {
+  m_Pool.erase(timer);
+  if (m_Pool.empty()) {
     m_Condition.notify_all();
   }
 }
 
-static Pool m_Pool = Pool();
+static Pool* st_Pool = nullptr;
+
+TimerGuard::TimerGuard() {
+  if (!st_Pool) st_Pool = new Pool();
+}
+
+TimerGuard::~TimerGuard() {
+  delete st_Pool;
+  st_Pool = nullptr;
+}
 
 NeoTimer::NeoTimer() : m_Expired(true), m_ToExpire(false) {}
 
@@ -177,40 +159,24 @@ void NeoTimer::StartTask(Task task) {
 }
 
 void NeoTimer::SingleShot(Ms duration, Task task) {
-  auto const timer = m_Pool.Add();
+  auto const timer = st_Pool->Add();
 
   Locker locker(timer->m_Mutex);
   timer->m_Expired = false;
 
   std::thread([timer, duration, task = std::move(task)] {
     Locker locker(timer->m_Mutex);
-#ifdef _DEBUG
-    std::cout << "start single shot timer " << duration << std::endl;
-#endif
-    // auto const r = timer->m_Condition.wait_for(locker, duration, [timer] {
-    //   return timer->m_ToExpire;
-    // });
-    locker.unlock();
-    for (auto i = 0; i < duration.count(); ++i) {
-      std::this_thread::sleep_for(1s);
-      std::cout << "timer " << i << std::endl;
-      locker.lock();
-      if (timer->m_ToExpire) break;
-      locker.unlock();
-    }
-    locker.lock();
-    auto r = false;
+    auto const r = timer->m_Condition.wait_for(locker, duration, [timer] {
+      return timer->m_ToExpire;
+    });
     if (!timer->m_ToExpire && !r) {
       task();
     }
     timer->m_ToExpire = false;
     timer->m_Expired = true;
     locker.unlock();
-#ifdef _DEBUG
-    std::cout << "timer expired" << std::endl;
-#endif
     timer->m_Condition.notify_all();
 
-    m_Pool.Remove(timer);
+    st_Pool->Remove(timer);
   }).detach();
 }
