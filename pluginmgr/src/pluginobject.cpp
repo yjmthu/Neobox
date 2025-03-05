@@ -5,8 +5,6 @@
 #include <neobox/menubase.hpp>
 #include <QAction>
 
-#include <vector>
-
 extern PluginMgr* mgr;
 
 PluginObject::PluginObject(YJson& settings, std::u8string name,

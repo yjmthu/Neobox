@@ -29,7 +29,7 @@ int main() {
   return 0;
 }
 
-#elif 1
+#elif 0
 
 int main() {
   std::mutex mutex;
@@ -49,6 +49,16 @@ int main() {
   cv.wait_for(lock, 5s, [&] { return ready; });
   std::cout << "Ready." << std::endl;
   t.join();
+  return 0;
+}
+
+#elif 1
+
+int main () {
+  NeoTimer::SingleShot(10s, [] {
+    std::cout << "Hello, world!" << std::endl;
+  });
+  std::this_thread::sleep_for(1s);
   return 0;
 }
 
