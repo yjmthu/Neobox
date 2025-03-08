@@ -390,6 +390,12 @@ void NeoProcess::CleanUp()
   handle.hPipeReadOutput = NULL;
   CloseHandle(handle.hPipeWriteOutput);
   handle.hPipeWriteOutput = NULL;
+
+  CloseHandle(handle.hPipeReadError);
+  handle.hPipeReadError = NULL;
+  CloseHandle(handle.hPipeWriteError);
+  handle.hPipeWriteError = NULL;
+
   CloseHandle(handle.hProcess);
   handle.hProcess = NULL;
 }

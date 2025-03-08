@@ -12,7 +12,8 @@ AsyncVoid Run(std::filesystem::path app, std::u8string args)
   if (re && *re == 0) {
     std::cout << "Process finished successfully." << std::endl;
 
-    std::cout << "StdOut: <" << process.GetStdOut() << ">." << std::endl;
+    std::cout << "StdOut: <\n" << process.GetStdOut() << ">." << std::endl;
+    std::cout << "StdError: <\n" << process.GetStdErr() << ">." << std::endl;
   } else {
     std::cout << "Process finished with error code: " << re << std::endl;
   }

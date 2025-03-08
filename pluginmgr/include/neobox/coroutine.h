@@ -40,6 +40,7 @@ public:
 
   void handle_exception() {
     if (m_ExceptionCallback) m_ExceptionCallback();
+    notify_return();
   }
 protected:
   std::mutex mutable m_Mutex {};
