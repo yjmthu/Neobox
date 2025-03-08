@@ -3,6 +3,7 @@
 
 namespace fs = std::filesystem;
 
+#ifdef _WIN32
 struct WinProcess {
   HANDLE hProcess;
   HANDLE hWaitHandle;
@@ -12,11 +13,25 @@ struct WinProcess {
   HANDLE hPipeWriteError;
 };
 
+typedef WinProcess ProcessHandle;
+#else
+#include <sys/types.h>
+#include <signal.h>
+#include <sys/wait.h>
+
+struct UnixProcess {
+  pid_t pid;
+  int pipFd[2];
+};
+
+typedef UnixProcess ProcessHandle;
+#endif
+
 NeoProcess::NeoProcess(const std::u8string& command)
   : m_AppPath()
   , m_Args(command)
   , m_WorkDir(fs::current_path())
-  , m_Handle(WinProcess {})
+  , m_Handle(ProcessHandle {})
 {
 }
 
@@ -24,7 +39,7 @@ NeoProcess::NeoProcess(const Path& app, const std::u8string& args)
   : m_AppPath(app)
   , m_Args(args)
   , m_WorkDir(fs::current_path())
-  , m_Handle(WinProcess {})
+  , m_Handle(ProcessHandle {})
 {
 }
 
@@ -53,13 +68,14 @@ void NeoProcess::SetEnvs(std::vector<std::u8string> envs)
   m_Envs = std::move(envs);
 }
 
+#ifdef _WIN32
 void NeoProcess::Stop(bool force)
 {
   if (!m_IsRunning) {
     return;
   }
 
-  auto& handle = std::any_cast<WinProcess&>(m_Handle);
+  auto& handle = std::any_cast<ProcessHandle&>(m_Handle);
 
   if (force) {
     TerminateProcess(handle.hProcess, 0);
@@ -73,6 +89,27 @@ void NeoProcess::Stop(bool force)
   m_IsRunning = false;
   m_ExitCode = -1;
 }
+#else
+void NeoProcess::Stop(bool force)
+{
+  if (!m_IsRunning) {
+    return;
+  }
+
+  auto& handle = std::any_cast<ProcessHandle&>(m_Handle);
+
+  if (force) {
+    kill(handle.pid, SIGKILL);
+  } else {
+    kill(handle.pid, SIGTERM);
+  }
+
+  CleanUp();
+
+  m_IsRunning = false;
+  m_ExitCode = -1;
+}
+#endif
 
 bool NeoProcess::ParseCommand(const std::u8string& command)
 {
@@ -122,6 +159,42 @@ bool NeoProcess::ParseCommand(const std::u8string& command)
   return true;
 }
 
+void NeoProcess::ParseArgs(const std::u8string& command, std::vector<std::string>& args)
+{
+  std::string arg;
+
+  char8_t quote = 0;
+  bool inQuote = false;
+
+  for (auto const c : command) {
+    if (c == u8'"' || c == u8'\'') {
+      if (inQuote) {
+        if (quote == c) {
+          inQuote = false;
+          continue;
+        }
+      } else {
+        inQuote = true;
+        quote = c;
+        continue;
+      }
+    } else if (c == u8' ' || c == u8'\t') {
+      if (!inQuote) {
+        if (!arg.empty()) {
+          args.push_back(arg);
+          arg.clear();
+        }
+        continue;
+      }
+    }
+    arg.push_back(c);
+  }
+
+  if (!arg.empty()) {
+    args.push_back(arg);
+  }
+}
+
 void NeoProcess::DoSuspend(std::coroutine_handle<> handle)
 {
   Base::DoSuspend(handle);
@@ -134,14 +207,7 @@ void NeoProcess::DoSuspend(std::coroutine_handle<> handle)
   }
 }
 
-// #define BUFFER_SIZE 4096
-
-// typedef struct {
-//     OVERLAPPED overlapped;
-//     CHAR buffer[BUFFER_SIZE];
-//     DWORD bytesRead;
-// } IO_CONTEXT;
-
+#ifdef _WIN32
 static std::optional<std::wstring> GetEnvBlock(const std::optional<std::vector<std::u8string>>& envs) {
   if (!envs) return std::nullopt;
 
@@ -157,6 +223,25 @@ static std::optional<std::wstring> GetEnvBlock(const std::optional<std::vector<s
 
   return envBlock;
 }
+#else
+static std::optional<std::vector<char*>> GetEnvBlock(std::optional<std::vector<std::u8string>>& envs) {
+  if (!envs) return std::nullopt;
+
+  if (envs->empty()) return std::vector<char*> { nullptr };
+
+  std::optional envBlock = std::vector<char*> {};
+
+  for (auto& env : *envs) {
+    if (!env.ends_with(u8'\0')) {
+      env.push_back(u8'\0');
+    }
+    envBlock->push_back(reinterpret_cast<char*>(env.data()));
+  }
+  envBlock->push_back(nullptr);
+
+  return envBlock;
+}
+#endif
 
 AsyncAwaiter<int> NeoProcess::Run()
 {
@@ -167,6 +252,7 @@ AsyncAwaiter<int> NeoProcess::Run()
   return { this };
 }
 
+#ifdef _WIN32
 bool NeoProcess::StartProcess() {
   struct Guard {
     ~Guard() {
@@ -176,7 +262,7 @@ bool NeoProcess::StartProcess() {
     bool m_Success = false;
   } guard(*this);
 
-  auto& handle = std::any_cast<WinProcess&>(m_Handle);
+  auto& handle = std::any_cast<ProcessHandle&>(m_Handle);
 
   // IO_CONTEXT ioContext {};
   // ioContext.overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
@@ -320,48 +406,96 @@ bool NeoProcess::StartProcess() {
     return false;
   }
 
-  // HANDLE hCompletionPort = CreateIoCompletionPort( INVALID_HANDLE_VALUE, NULL, 0, 0);
+  m_IsRunning = true;
+  guard.m_Success = true;
+  return true;
+}
+#else
+bool NeoProcess::StartProcess() {
+  struct Guard {
+    ~Guard() {
+      if (!m_Success) m_Process.CleanUp();
+    }
+    NeoProcess& m_Process;
+    bool m_Success = false;
+  } guard(*this);
 
-  // CreateIoCompletionPort(hPipeReadOutput, hCompletionPort, (ULONG_PTR)hPipeReadOutput, 0);
+  auto& handle = std::any_cast<ProcessHandle&>(m_Handle);
 
-  // BOOL bResult = ReadFile(
-  //   hPipeReadOutput,
-  //   ioContext.buffer,
-  //   BUFFER_SIZE - 1,
-  //   &ioContext.bytesRead,
-  //   &ioContext.overlapped
-  // );
+  void (*callback)(int);
 
-  // if (!bResult && GetLastError() != ERROR_IO_PENDING) {
-  //   // 错误处理
-  //   return false;
-  // }
+  callback = [](int sig) {
+#ifdef _DEBUG
+    std::cout << "子进程已退出，退出码：" << sig << std::endl;
+#endif
+    waitpid(-1, NULL, WNOHANG);
+    // auto self = static_cast<NeoProcess*>(sig);
+    // auto handle = std::any_cast<UnixProcess&>(self->m_Handle);
+
+    // int status;
+    // waitpid(handle.pid, &status, 0);
+
+    // self->m_ExitCode = WEXITSTATUS(status);
+
+    // self->ReadOutput();
+    // self->ReadError();
+
+    // self->CleanUp();
+    // self->m_IsRunning = false;
+
+    // self->Base::m_Handle.resume();
+  };
+
+  ::signal(SIGCHLD, callback);
+
+  if (pipe(handle.pipFd) == -1) {
+    return false;
+  }
+
+  handle.pid = fork();
+  if (handle.pid == -1) {
+    return false;
+  }
+
+  if (handle.pid == 0) { // 子进程
+    close(handle.pipFd[0]);
+    dup2(handle.pipFd[1], STDOUT_FILENO);
+    dup2(handle.pipFd[1], STDERR_FILENO);
+    close(handle.pipFd[1]);
+
+    auto app = fs::absolute(m_AppPath).make_preferred().string();
+    std::vector<std::string> argv = { m_AppPath.filename().string() };
+    ParseArgs(m_Args, argv);
+    std::vector<char*> cargv;
+    for (auto& arg : argv) {
+      arg.push_back('\0');
+      cargv.push_back(reinterpret_cast<char*>(arg.data()));
+    }
+    cargv.push_back(nullptr);
+
+    if (!m_WorkDir.empty()) {
+      fs::current_path(m_WorkDir);
+    }
+
+    auto envBlock = GetEnvBlock(m_Envs);
+    if (envBlock) {
+      execve(app.c_str(), cargv.data(), envBlock->data());
+    } else {
+      execv(app.c_str(), cargv.data());
+    }
+
+    exit(EXIT_FAILURE);
+  } else { // 父进程
+    close(handle.pipFd[1]);
+  }
 
   m_IsRunning = true;
   guard.m_Success = true;
   return true;
 }
+#endif
 
-// void Read(HANDLE hCompletionPort, HANDLE readPipe) {
-//   DWORD dwBytesTransferred;
-//   ULONG_PTR completionKey;
-//   LPOVERLAPPED pOverlapped;
-
-//   while (GetQueuedCompletionStatus(hCompletionPort, &dwBytesTransferred,
-//                                    &completionKey, &pOverlapped, INFINITE)) {
-//     IO_CONTEXT *pIoContext =
-//         CONTAINING_RECORD(pOverlapped, IO_CONTEXT, overlapped);
-//     pIoContext->buffer[dwBytesTransferred] = '\0';
-
-//     // 处理数据（如发送到UI线程）
-//     // PostMessage(hWnd, WM_USER_OUTPUT, (WPARAM)pIoContext, 0);
-
-//     // 继续发起下一个异步读取
-//     ReadFile(readPipe, pIoContext->buffer, BUFFER_SIZE - 1, NULL,
-//              &pIoContext->overlapped);
-//   }
-// }
-
+#ifdef _WIN32
 static void ReadOutput(HANDLE hPipeReadOutput, std::string& output) {
   DWORD dwRead;
   CHAR chBuf[4096];
@@ -376,10 +510,20 @@ static void ReadOutput(HANDLE hPipeReadOutput, std::string& output) {
     output += chBuf;
   }
 }
+#else
+static void ReadOutput(int fd, std::string& output) {
+  char buf[4096];
+  ssize_t n;
+  while ((n = read(fd, buf, sizeof(buf))) > 0) {
+    output.append(buf, n);
+  }
+}
+#endif
 
+#ifdef _WIN32
 void NeoProcess::CleanUp()
 {
-  auto& handle = std::any_cast<WinProcess&>(m_Handle);
+  auto& handle = std::any_cast<ProcessHandle&>(m_Handle);
 
   if (handle.hWaitHandle) {
     UnregisterWait(handle.hWaitHandle);
@@ -399,15 +543,32 @@ void NeoProcess::CleanUp()
   CloseHandle(handle.hProcess);
   handle.hProcess = NULL;
 }
+#else
+void NeoProcess::CleanUp()
+{
+  auto& handle = std::any_cast<ProcessHandle&>(m_Handle);
+
+  close(handle.pipFd[0]);
+  close(handle.pipFd[1]);
+}
+#endif
 
 void NeoProcess::ReadOutput()
 {
-  auto& handle = std::any_cast<WinProcess&>(m_Handle);
+  auto& handle = std::any_cast<ProcessHandle&>(m_Handle);
+#ifdef _WIN32
   ::ReadOutput(handle.hPipeReadOutput, m_StdOut);
+#else
+  ::ReadOutput(handle.pipFd[0], m_StdOut);
+#endif
 }
 
 void NeoProcess::ReadError()
 {
-  auto& handle = std::any_cast<WinProcess&>(m_Handle);
+  auto& handle = std::any_cast<ProcessHandle&>(m_Handle);
+#ifdef _WIN32
   ::ReadOutput(handle.hPipeReadError, m_StdErr);
+#else
+  ::ReadOutput(handle.pipFd[0], m_StdErr);
+#endif
 }

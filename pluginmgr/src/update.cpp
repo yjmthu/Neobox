@@ -23,9 +23,12 @@
 #include <QDir>
 
 using namespace std::literals;
+#ifdef _WIN32
 using namespace WinToastLib;
+#endif
 namespace fs = std::filesystem;
 
+#ifdef _WIN32
 class CutomHanderForUpdate : public IWinToastHandler
 {
 public:
@@ -73,13 +76,14 @@ public:
     // std::wcout << L"Error showing current toast" << std::endl;
   }
 };
+#endif
 
 PluginUpdate::PluginUpdate(YJson& settings)
   : m_Settings(InitSettings(settings))
 #ifdef _WIN32
 #endif
 {
-#if 1
+#ifdef _WIN32
   connect(this, &PluginUpdate::AskInstall, this, [this](){
     WinToastTemplate templ = WinToastTemplate(WinToastTemplate::ImageAndText01);
     templ.setTextField(L"Neobox有新版本，是否更新？", WinToastTemplate::FirstLine);
@@ -123,7 +127,9 @@ PluginUpdate::PluginUpdate(YJson& settings)
 
 PluginUpdate::~PluginUpdate()
 {
+#ifdef _WIN32
   WinToast::instance()->clear();
+#endif
   m_DataRequest = nullptr;
 }
 

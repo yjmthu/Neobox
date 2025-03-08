@@ -44,6 +44,7 @@ private:
   void ReadOutput();
   void ReadError();
   bool ParseCommand(const std::u8string& command);
+  static void ParseArgs(const std::u8string& line, std::vector<std::string>& args);
 };
 
 #endif // NEO_PROCESS_H
