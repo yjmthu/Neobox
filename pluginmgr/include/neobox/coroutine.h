@@ -205,9 +205,13 @@ private:
 template<typename  ReturnType>
 class AsyncAwaiterObject {
 public:
-  virtual void DoSuspend(std::coroutine_handle<>) = 0;
+  virtual void DoSuspend(std::coroutine_handle<> handle) {
+    m_Handle = handle;
+  };
   virtual ~AsyncAwaiterObject() = default;
   virtual ReturnType* GetResult() = 0;
+protected:
+  std::coroutine_handle<> m_Handle;
 };
 
 

@@ -9,8 +9,10 @@
       "name": "(Windows) 启动 Neobox",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}\\install\\bin\\neobox.exe",
-      "args": [],
+      "program": "${workspaceFolder}\\install\\bin\\test_proc.exe",
+      "args": [
+        "${workspaceFolder}\\install\\bin\\test_timer.exe"
+      ],
       "stopAtEntry": false,
       "cwd": "${fileDirname}",
       "environment": [

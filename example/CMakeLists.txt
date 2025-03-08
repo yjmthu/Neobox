@@ -48,7 +48,7 @@ elseif(WIN32)
   add_executable(tunet tunet/main.cpp tunet/portal.cpp)
   target_include_directories(tunet PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tunet)
   target_link_libraries(tunet pluginmgr)
-  install(TARGETS tunet test_timer test_print test_reco
+  install(TARGETS tunet test_proc
     RUNTIME DESTINATION bin
   )
 
