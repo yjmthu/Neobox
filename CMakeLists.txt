@@ -13,6 +13,7 @@ set(NEOBOX_BUILD_TIME ${COMPILE_TIME})
 
 set(target_name neobox)
 project(${target_name} VERSION 2.4.7 LANGUAGES CXX C)
+cmake_policy(SET CMP0095 OLD)
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
   add_definitions(-D_DEBUG)
@@ -62,10 +63,13 @@ target_link_libraries(${target_name} PUBLIC
   Qt6::Widgets
 )
 
-if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "None")
-  message("set runtime lib path.")
-  set_target_properties(${target_name} PROPERTIES
-    INSTALL_RPATH "$ORIGIN;/usr/lib;$ORIGIN/../lib")
+if(UNIX)
+  if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "None")
+    message("set runtime lib path.")
+    set_target_properties(${target_name} PROPERTIES
+      INSTALL_RPATH "$ORIGIN;/usr/lib;$ORIGIN/../lib")
+  endif()
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 endif()
 
 if(MSVC)

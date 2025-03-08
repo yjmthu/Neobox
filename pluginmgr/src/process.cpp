@@ -21,8 +21,31 @@ typedef WinProcess ProcessHandle;
 
 struct UnixProcess {
   pid_t pid;
-  int pipFd[2];
+  int pipeStdout[2];
+  int pipeStderr[2];
 };
+
+static std::map<int, NeoProcess*> st_Processes;
+static std::mutex st_ProcessesMutex;
+static std::condition_variable st_ProcessesCond;
+
+static void InsertProcess(pid_t pid, NeoProcess* process) {
+  std::lock_guard lock(st_ProcessesMutex);
+  st_Processes[pid] = process;
+}
+
+static void RemoveProcess(pid_t pid) {
+  std::lock_guard lock(st_ProcessesMutex);
+  st_Processes.erase(pid);
+}
+
+static NeoProcess* FindProcess(pid_t pid) {
+  std::lock_guard lock(st_ProcessesMutex);
+  if (auto iter = st_Processes.find(pid); iter != st_Processes.end()) {
+    return iter->second;
+  }
+  return nullptr;
+}
 
 typedef UnixProcess ProcessHandle;
 #endif
@@ -424,31 +447,45 @@ bool NeoProcess::StartProcess() {
 
   void (*callback)(int);
 
+
   callback = [](int sig) {
+    (void)sig;
 #ifdef _DEBUG
     std::cout << "子进程已退出，退出码：" << sig << std::endl;
 #endif
-    waitpid(-1, NULL, WNOHANG);
-    // auto self = static_cast<NeoProcess*>(sig);
-    // auto handle = std::any_cast<UnixProcess&>(self->m_Handle);
+    pid_t id;
+    int status;
+    while((id = waitpid(-1, &status, WNOHANG)) > 0) {   
+    printf("wait child success:%d\n", id);
+    auto const self = ::FindProcess(id);
+    if (nullptr == self) continue;
+    ::RemoveProcess(id);
 
-    // int status;
-    // waitpid(handle.pid, &status, 0);
+    self->m_ExitCode = WEXITSTATUS(status);
 
-    // self->m_ExitCode = WEXITSTATUS(status);
+    if (WIFEXITED(status)) {
+      printf("child exit normally\n");
+    } else {
+      printf("child exit abnormally\n");
+    }
 
-    // self->ReadOutput();
-    // self->ReadError();
+    self->ReadOutput();
+    self->ReadError();
 
-    // self->CleanUp();
-    // self->m_IsRunning = false;
+    self->CleanUp();
+    self->m_IsRunning = false;
 
-    // self->Base::m_Handle.resume();
+    self->Base::m_Handle.resume();
+    }
   };
 
   ::signal(SIGCHLD, callback);
 
-  if (pipe(handle.pipFd) == -1) {
+  if (pipe(handle.pipeStdout) == -1) {
+    return false;
+  }
+
+  if (pipe(handle.pipeStderr) == -1) {
     return false;
   }
 
@@ -458,10 +495,10 @@ bool NeoProcess::StartProcess() {
   }
 
   if (handle.pid == 0) { // 子进程
-    close(handle.pipFd[0]);
-    dup2(handle.pipFd[1], STDOUT_FILENO);
-    dup2(handle.pipFd[1], STDERR_FILENO);
-    close(handle.pipFd[1]);
+    close(handle.pipeStdout[0]);
+    dup2(handle.pipeStdout[1], STDOUT_FILENO);
+    close(handle.pipeStderr[0]);
+    dup2(handle.pipeStderr[1], STDERR_FILENO);
 
     auto app = fs::absolute(m_AppPath).make_preferred().string();
     std::vector<std::string> argv = { m_AppPath.filename().string() };
@@ -486,7 +523,10 @@ bool NeoProcess::StartProcess() {
 
     exit(EXIT_FAILURE);
   } else { // 父进程
-    close(handle.pipFd[1]);
+    ::InsertProcess(handle.pid, this);
+    // close(handle.pipFd[1]);
+    close(handle.pipeStdout[1]);
+    close(handle.pipeStderr[1]);
   }
 
   m_IsRunning = true;
@@ -548,8 +588,10 @@ void NeoProcess::CleanUp()
 {
   auto& handle = std::any_cast<ProcessHandle&>(m_Handle);
 
-  close(handle.pipFd[0]);
-  close(handle.pipFd[1]);
+  close(handle.pipeStdout[0]);
+  close(handle.pipeStdout[1]);
+  close(handle.pipeStderr[0]);
+  close(handle.pipeStderr[1]);
 }
 #endif
 
@@ -559,7 +601,7 @@ void NeoProcess::ReadOutput()
 #ifdef _WIN32
   ::ReadOutput(handle.hPipeReadOutput, m_StdOut);
 #else
-  ::ReadOutput(handle.pipFd[0], m_StdOut);
+  ::ReadOutput(handle.pipeStdout[0], m_StdOut);
 #endif
 }
 
@@ -569,6 +611,6 @@ void NeoProcess::ReadError()
 #ifdef _WIN32
   ::ReadOutput(handle.hPipeReadError, m_StdErr);
 #else
-  ::ReadOutput(handle.pipFd[0], m_StdErr);
+  ::ReadOutput(handle.pipeStderr[0], m_StdErr);
 #endif
 }

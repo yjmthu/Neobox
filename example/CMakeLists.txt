@@ -14,6 +14,11 @@ foreach(item ${sources})
   string(REGEX REPLACE "src/" "test_" target_name ${target_name})
   string(REGEX REPLACE "/|\\.cpp$" "" target_name ${target_name})
   add_executable(${target_name} ${item})
+  if (UNIX)
+    set_target_properties(${target_name} PROPERTIES
+      INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib;/usr/lib"
+    )
+  endif()
   target_link_libraries(${target_name} pluginmgr)
 endforeach()
 
@@ -46,6 +51,9 @@ endif()
 if(UNIX)
   add_executable(x11_test src/x11_test.cc)
   target_link_libraries(x11_test PUBLIC X11)
+  install(TARGETS test_proc test_print
+    RUNTIME DESTINATION bin
+  )
 elseif(WIN32)
   add_executable(tunet tunet/main.cpp tunet/portal.cpp)
   target_include_directories(tunet PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tunet)
