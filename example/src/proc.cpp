@@ -40,7 +40,10 @@ int main(int argc, char* argv[])
     args = argv[2];
   }
 
-  Run(app, Ansi2Utf8String(args)).get();
+  auto coro = Run(app, Ansi2Utf8String(args));
+  std::cout << "Running..." << std::endl;
+  coro.get();
+  std::cout << "Done." << std::endl;
 
   return 0;
 }
