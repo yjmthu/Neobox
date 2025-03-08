@@ -1,7 +1,10 @@
 #include <neobox/httplib.h>
 #include <fstream>
 #include <timeapi.hpp>
+
+#ifdef _WIN32
 #include <windows.h>
+#endif
 
 #include <regex>
 

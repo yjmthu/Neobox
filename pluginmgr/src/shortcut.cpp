@@ -87,7 +87,7 @@ bool Shortcut::nativeEventFilter(const QByteArray &eventType, void *message, qin
     keyName.data.nativeMods |= ShiftMask;
   
   keyName.data.nativeKey = kev->detail;
-  auto& keyString = GetCallbackInfo(keyName);
+  auto keyString = GetCallbackInfo(keyName);
 #endif
   auto iter = FindShortcutData(*keyString);
   if (!iter) return false;

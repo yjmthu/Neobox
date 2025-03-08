@@ -3,7 +3,9 @@
 #include <iostream>
 #include <filesystem>
 
+#ifdef _WIN32
 #include <Windows.h>
+#endif
 
 AsyncVoid Run(std::filesystem::path app, std::u8string args)
 {
@@ -26,7 +28,9 @@ int main(int argc, char* argv[])
     return 1;
   }
 
+#ifdef _WIN32
   SetConsoleOutputCP(CP_UTF8);
+#endif
 
   std::string app;
   std::string args;

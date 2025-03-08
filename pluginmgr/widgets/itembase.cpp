@@ -154,6 +154,11 @@ bool ItemBase::PluginDownload()
 
 bool ItemBase::ExtractZip(const fs::path& zipFile, const fs::path& dstDir)
 {
+  std::error_code error;
+  if (!fs::exists(dstDir) && !fs::create_directories(dstDir, error)) {
+    mgr->ShowMsgbox(L"失败", std::format(L"创建文件夹失败，错误码：{}。", error.value()));
+    return false;
+  }
 #ifdef _WIN32
   // auto temp = pluginTemp.string();
   // auto dst = pluginDst.string();
@@ -161,17 +166,12 @@ bool ItemBase::ExtractZip(const fs::path& zipFile, const fs::path& dstDir)
   auto dst = dstDir.string();
   return zip_extract(zip.c_str(), dst.c_str(), nullptr, nullptr) >= 0;
 #else
-  std::error_code error;
-  if (!fs::exists(dstDir) && !fs::create_directories(dstDir, error)) {
-    mgr->ShowMsgbox(L"失败", std::format(L"创建文件夹失败，错误码：{}。", error.value()));
-    return;
-  }
   QProcess process;
   const auto ret = process.execute("tar", QStringList {
     QStringLiteral("-xzf"),
-    QString::fromStdWString(pluginTemp.wstring()),
+    QString::fromStdWString(zipFile.wstring()),
     QStringLiteral("-C"),
-    QString::fromStdWString(pluginDst.wstring())
+    QString::fromStdWString(dstDir.wstring())
   });
   return ret == 0;
 #endif

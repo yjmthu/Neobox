@@ -30,16 +30,18 @@ install(TARGETS netbian
   RUNTIME DESTINATION bin
 )
 
-file(GLOB time_sources time/*.cpp)
-set(time_apps)
+if (WIN32)
+  file(GLOB time_sources time/*.cpp)
+  set(time_apps)
 
-foreach(absFilePath ${time_sources})
-  # file(BASENAME target_name ${absFilePath})
-  get_filename_component(target_name ${absFilePath} NAME_WE)
-  list(APPEND time_apps ${target_name})
-  add_executable(${target_name} ${absFilePath})
-  target_link_libraries(${target_name} pluginmgr)
-endforeach()
+  foreach(absFilePath ${time_sources})
+    # file(BASENAME target_name ${absFilePath})
+    get_filename_component(target_name ${absFilePath} NAME_WE)
+    list(APPEND time_apps ${target_name})
+    add_executable(${target_name} ${absFilePath})
+    target_link_libraries(${target_name} pluginmgr)
+  endforeach()
+endif()
 
 if(UNIX)
   add_executable(x11_test src/x11_test.cc)

@@ -14,7 +14,10 @@
 #endif
 #define USERAGENT u8"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36 Edg/93.0.961.47"s
 
+#ifdef _WIN32
 #include <windows.h>
+#undef max
+#endif
 
 using namespace std::literals;
 namespace fs = std::filesystem;
@@ -87,7 +90,11 @@ public:
 
 std::vector<IndexPage> GetIndexPages() {
   TargetPasser passer((HttpUrl(host)));
+#ifdef _WIN32
   passer.left = Wide2AnsiString(L"<li> <a href=\"javascript:;\" class=\"nav-link\">分类</a>"s);
+#else
+  passer.left = "<li> <a href=\"javascript:;\" class=\"nav-link\">分类</a>"s;
+#endif
   passer.right = "</li>"s;
   // <a href="/4Kxinnian/" title="4K新年图片">4K新年</a>
   passer.pattern = "<a href=\"(.+?)\" title=\"(.+?)\">(.+?)</a>";
@@ -120,7 +127,7 @@ int GetPageCount(const IndexPage& indexPage) {
 
   int pageCount = 1;
   for (auto& match: passer) {
-    pageCount = max(pageCount, std::stoi(match[1].str()));
+    pageCount = std::max(pageCount, std::stoi(match[1].str()));
   }
   return pageCount;
 }
@@ -270,7 +277,9 @@ void SleepRandom() {
 }
 
 int main(int argc, char** argv) {
+#ifdef _WIN32
   SetConsoleOutputCP(CP_UTF8);
+#endif
   auto indexPages = GetIndexPages();
   if (indexPages.empty()) {
     std::cerr << "Error: empty index pages" << std::endl;
