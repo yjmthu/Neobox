@@ -50,13 +50,13 @@ struct Portal {
   
   HttpLib client;
 
-  HttpAction<void> init();
-  HttpAction<void> login(Type type);
-  HttpAction<void> logout();
+  AsyncVoid init();
+  AsyncVoid login(Type type);
+  AsyncVoid logout();
 
-  HttpAwaiter<> getInfo();
-  HttpAwaiter<> sendAuth(std::u8string_view token);
-  HttpAwaiter<> getToken(std::u8string_view ip);
+  HttpAwaiter getInfo();
+  HttpAwaiter sendAuth(std::u8string_view token);
+  HttpAwaiter getToken(std::u8string_view ip);
   std::optional<YJson> parseJson(HttpResponse* res);
   std::u8string_view parseToken(YJson& json);
   // std::u8string_view parseInfo(YJson& json);

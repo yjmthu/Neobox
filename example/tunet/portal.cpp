@@ -85,7 +85,7 @@ std::optional<YJson> Portal::parseJson(HttpResponse* res) {
   return YJson(data.begin() + i, data.begin() + j + 1);
 }
 
-HttpAction<void> Portal::init() {
+AsyncVoid Portal::init() {
   
   UnicodeSearch search;
   
@@ -138,7 +138,7 @@ HttpAction<void> Portal::init() {
   }
 }
 
-HttpAwaiter<> Portal::getInfo() {
+HttpAwaiter Portal::getInfo() {
   HttpUrl url(subHost, ApiList::info, {
     { u8"callback", u8"_" },
     { u8"ip", userInfo.ip },
@@ -169,7 +169,7 @@ HttpAwaiter<> Portal::getInfo() {
   return client.GetAsync(std::move(cb));
 }
 
-HttpAction<void> Portal::login(Type type) {
+AsyncVoid Portal::login(Type type) {
   if (userInfo.ip.empty()) {
     std::cerr << "Network not found.\n";
     co_return;
@@ -201,7 +201,7 @@ HttpAction<void> Portal::login(Type type) {
   std::cout << *json << std::endl;
 }
 
-HttpAction<void> Portal::logout() {
+AsyncVoid Portal::logout() {
 
   if (!userInfo.isLogin) {
     std::cout << "Already logout\n";
@@ -241,7 +241,7 @@ HttpAction<void> Portal::logout() {
   std::cout << res->body << std::endl;
 }
 
-HttpAwaiter<> Portal::sendAuth(std::u8string_view token) {
+HttpAwaiter Portal::sendAuth(std::u8string_view token) {
   std::cout << "Token: " << std::string(token.begin(), token.end()) << std::endl;
   std::u8string const n = u8"200", type = u8"1";
   YJson info = YJson::O {
@@ -298,7 +298,7 @@ HttpAwaiter<> Portal::sendAuth(std::u8string_view token) {
   return client.GetAsync();
 }
 
-HttpAwaiter<> Portal::getToken(std::u8string_view ip) {
+HttpAwaiter Portal::getToken(std::u8string_view ip) {
   // if (!this->timestamp.empty()) {
   //   callback(this->token);
   //   return;

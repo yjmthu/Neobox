@@ -1085,25 +1085,17 @@ void HttpLib::SetTimeOut(std::chrono::seconds timeOut) {
 #endif
 }
 
-HttpAwaiter<HttpResponse> HttpLib::GetAsync(std::optional<Callback> callback)
+HttpLib::Awaiter HttpLib::GetAsync(Callback callback)
 {
   if (!m_AsyncSet) {
     // throw std::logic_error("HttpLib Error: HttpAync wasn't set!");
-    return HttpAwaiter<HttpResponse> { nullptr };
+    return Awaiter { nullptr };
   }
 
   m_Finished = false;
 
   m_Response.body.clear();
-  if (callback) {
-    m_AsyncCallback = std::move(*callback);
-  } else {
-    m_AsyncCallback = {
-      .onProcess = nullptr,
-      .onFinish = nullptr,
-      .onWrite = nullptr,
-    };
-  }
+  m_AsyncCallback = std::move(callback);
   m_DataBuffer = new std::u8string;
 
   if (!m_AsyncCallback.onWrite) {
@@ -1125,7 +1117,7 @@ HttpAwaiter<HttpResponse> HttpLib::GetAsync(std::optional<Callback> callback)
     };
   }
 
-  return HttpAwaiter {this};
+  return Awaiter {this};
 }
 
 void HttpLib::DoSuspend(std::coroutine_handle<> handle)

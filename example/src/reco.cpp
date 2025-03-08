@@ -6,7 +6,7 @@ std::ostream& operator<<(std::ostream& os, const std::u8string& res) {
   return os;
 }
 
-HttpAction<int> GetBaidu() {
+AsyncInt GetBaidu() {
   std::cout << "Begin." << std::endl;
   HttpLib clt(HttpUrl(u8"https://www.baidu.com"), true);
   auto res = co_await clt.GetAsync();
@@ -20,7 +20,7 @@ HttpAction<int> GetBaidu() {
   co_return res->status;
 }
 
-HttpAction<void> PrintBaidu() {
+AsyncVoid PrintBaidu() {
   auto& result = GetBaidu().cat([]{
     std::cerr << "Error: exception." << std::endl;
     try {

@@ -200,7 +200,7 @@ void PluginUpdate::CopyExecutable() const
 #endif
 }
 
-HttpAction<void> PluginUpdate::DownloadUpgrade()
+AsyncVoid PluginUpdate::DownloadUpgrade()
 {
   if (!m_LatestData) co_return;
 
@@ -237,7 +237,7 @@ HttpAction<void> PluginUpdate::DownloadUpgrade()
   }
 }
 
-HttpAction<bool> PluginUpdate::CheckUpdate()
+AsyncBool PluginUpdate::CheckUpdate()
 {
   if (IsBusy()) co_return false;
 
@@ -256,7 +256,7 @@ HttpAction<bool> PluginUpdate::CheckUpdate()
 }
 
 
-HttpAction<void> PluginUpdate::StartAutoCheck() {
+AsyncVoid PluginUpdate::StartAutoCheck() {
   auto result = co_await CheckUpdate().awaiter();
 
   if (!result || !*result || !m_LatestData) {
@@ -276,8 +276,10 @@ HttpAction<void> PluginUpdate::StartAutoCheck() {
 #ifdef _DEBUG
     std::cout << "Auto upgrade neobox." << std::endl;
 #endif
-    DownloadUpgrade().get();
+    co_await DownloadUpgrade().awaiter();
   } else {
     emit AskInstall();
   }
 }
+
+bool PluginUpdate::IsBusy() const { return m_DataRequest && !m_DataRequest->IsFinished(); }

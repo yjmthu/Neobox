@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
 #ifdef _WIN32
   SetConsoleOutputCP(CP_UTF8);
 #endif
-  auto fun = [] () -> HttpAction<int> {
+  auto fun = [] () -> AsyncInt {
     std::cout << "Begin." << std::endl;
 
     HttpLib clt(HttpUrl(u8"https://www.baidu.com"), true);

@@ -202,7 +202,7 @@ std::u8string GetPictureUrl(const PictureDetail& detail) {
   return host + json[u8"pic"].getValueString();
 }
 
-HttpAction<int> DownloadPicture(const fs::path folder, const PictureDetail& detail) {
+AsyncInt DownloadPicture(const fs::path folder, const PictureDetail& detail) {
   auto filePath = folder / (detail.name + u8".jpg"s);
   if (fs::exists(filePath)) {
     std::cout << "File exists: " << filePath.u8string() << std::endl;

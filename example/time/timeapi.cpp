@@ -207,7 +207,7 @@ void UpdateLogDate(const std::filesystem::path& filePath, uint64_t totalDays) {
   }
 }
 
-HttpAction<bool> GetNetworkTime(HttpUrl url, std::function<SYSTEMTIME* (const HttpLib::Response&)> callback) {
+AsyncBool GetNetworkTime(HttpUrl url, std::function<SYSTEMTIME* (const HttpLib::Response&)> callback) {
   bool success = false;
   HttpLib clt(std::move(url), true);
   auto res = co_await clt.GetAsync();
