@@ -26,15 +26,15 @@ public:
   void SetEnvs(std::vector<std::u8string> envs);
   AsyncInt Run();
   void Stop(bool force = false);
-  std::u8string GetStdOut() const { return m_StdOut; }
-  std::u8string GetStdErr() const { return m_StdErr; }
+  auto GetStdOut() const { return m_StdOut; }
+  auto GetStdErr() const { return m_StdErr; }
 private:
   std::filesystem::path m_AppPath;
   std::u8string m_Args;
   std::optional<std::vector<std::u8string>> m_Envs;
   std::filesystem::path m_WorkDir;
-  std::u8string m_StdOut;
-  std::u8string m_StdErr;
+  std::string m_StdOut;
+  std::string m_StdErr;
   bool m_IsRunning = false;
   int m_ExitCode = 0;
   std::any m_Handle;

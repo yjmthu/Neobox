@@ -12,7 +12,7 @@ public:
   virtual ~PluginCenter();
 public:
   bool UpdatePluginData();
-  std::u8string DownloadFile(std::u8string_view url);
+  std::string DownloadFile(std::u8string_view url);
 private:
   void SetupUi();
   void InitConnect();

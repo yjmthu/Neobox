@@ -255,7 +255,8 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
     return false;
   }
   try {
-    pluginInfo.plugin = newPlugin(m_Settings->find(u8"PluginsConfig")->second[pluginName], this);      // nice
+    auto& config = m_Settings->find(u8"PluginsConfig")->second[pluginName];
+    pluginInfo.plugin = newPlugin(config, this);      // nice
     auto const mainMenuAction = pluginInfo.plugin->InitMenuAction();
     if (mainMenuAction) {
       mainMenuAction->setProperty("pluginName", QString::fromUtf8(pluginName.data(), pluginName.size()));

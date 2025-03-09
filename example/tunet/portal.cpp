@@ -60,15 +60,13 @@ namespace ApiList {
 struct UnicodeSearch {
   std::match_results<std::string_view::const_iterator> match;
 
-  bool match_view(std::u8string_view str, std::string re) {
-    std::string_view strv(reinterpret_cast<const char*>(str.data()), str.size());
-    return std::regex_search(strv.begin(), strv.end(), match, std::regex(re));
+  bool match_view(std::string_view str, std::string re) {
+    return std::regex_search(str.begin(), str.end(), match, std::regex(re));
   }
 
-  std::u8string_view view(size_t n) {
-    const auto& result = match[n];
-    auto i = reinterpret_cast<const char8_t*>(&*result.first);
-    return std::u8string_view(i, result.second - result.first);
+  auto view(size_t n) {
+    auto& res = match[n];
+    return std::pair { res.first, res.second };
   }
 };
 
@@ -98,9 +96,10 @@ AsyncVoid Portal::init() {
 
   // std::cout << res->body << std::endl;
   if (search.match_view(res->body, R"((URL|href)="?(https://.+?index_\d+\.html))")) {
-    std::cout << "Find URL: <" << search.view(0) << ">\n";
-    auto url = search.view(2);
-    client.SetUrl(url);
+    auto url = search.view(0);
+    std::cout << "Find URL: <" << std::string(url.first, url.second) << ">\n";
+    auto [first, second] = search.view(2);
+    client.SetUrl(std::u8string(first, second));
     res = co_await client.GetAsync();
     if (res->status != 200) {
       std::cerr << "Can not go to <" << client.GetUrl() << ">\n";
@@ -110,8 +109,10 @@ AsyncVoid Portal::init() {
 
   // std::cout << res->body << std::endl;
   if (search.match_view(res->body, R"(url=(.*ac_id=(\d+)[^"]*))")) {
-    auto url = u8"https://" + subHost + search.view(1);
-    userInfo.acID = search.view(2);
+    auto [m, n] = search.view(1);
+    auto url = u8"https://" + subHost + std::u8string(m, n);
+    auto [i, j] = search.view(2);
+    userInfo.acID.assign(i, j);
     std::cout << "Find ac_id: " << userInfo.acID << std::endl
               << "URL: " << url << std::endl;
     client.SetUrl(url);
@@ -127,9 +128,11 @@ AsyncVoid Portal::init() {
 
   // std::cout << res->body << std::endl;
   if (search.match_view(res->body, R"(CONFIG = (\{[^}]+\}))")) {
-    auto config = search.view(1);
+    auto [i, j] = search.view(1);
+    auto config = std::string(i, j);
     if (search.match_view(config, R"(ip\s*:\s*"([^"]+)\")")) {
-      userInfo.ip = search.view(1);
+      auto [m, n] = search.view(1);
+      userInfo.ip.assign(m, n);
     } else {
       std::cerr << "Can not find ip.\n";
     }

@@ -81,7 +81,7 @@ struct HttpResponse {
   long status = -1;
   std::u8string reason;
   Headers headers;
-  std::u8string body;
+  std::string body;
   std::u8string location; // Redirect location
 };
 

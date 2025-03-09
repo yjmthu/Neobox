@@ -549,7 +549,7 @@ bool NeoProcess::StartProcess() {
 #endif
 
 #ifdef _WIN32
-static void ReadOutput(HANDLE hPipeReadOutput, std::u8string& output) {
+static void ReadOutput(HANDLE hPipeReadOutput, std::string& output) {
   DWORD dwRead;
   CHAR chBuf[4096];
   BOOL bSuccess = FALSE;
@@ -564,7 +564,7 @@ static void ReadOutput(HANDLE hPipeReadOutput, std::u8string& output) {
   }
 }
 #else
-static void ReadOutput(int fd, std::u8string& output) {
+static void ReadOutput(int fd, std::string& output) {
   char8_t buf[4096];
   ssize_t n;
   while ((n = read(fd, buf, sizeof(buf))) > 0) {

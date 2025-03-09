@@ -105,9 +105,9 @@ bool PluginCenter::UpdatePluginData()
   return true;
 }
 
-std::u8string PluginCenter::DownloadFile(std::u8string_view url)
+std::string PluginCenter::DownloadFile(std::u8string_view url)
 {
-  std::u8string result;
+  std::string result;
 
   if (!HttpLib::IsOnline()) {
     mgr->ShowMsg("请检查网络连接！");

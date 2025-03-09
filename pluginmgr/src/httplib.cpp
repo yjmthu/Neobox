@@ -99,7 +99,7 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
   case WINHTTP_CALLBACK_STATUS_DATA_AVAILABLE: {
     // Retrieve the number of bytes to read
     // Allocate a buffer for the data
-    auto buffer = reinterpret_cast<std::u8string*>(object.m_DataBuffer);
+    auto buffer = reinterpret_cast<std::string*>(object.m_DataBuffer);
     auto size = *reinterpret_cast<DWORD*>(lpvStatusInformation);
     if (!buffer) return;
     buffer->resize(size);
@@ -1022,7 +1022,7 @@ void HttpLib::EmitFinish(std::string message)
   }
 #endif
   // Locker locker(m_AsyncMutex);
-   delete reinterpret_cast<std::u8string*>(m_DataBuffer);
+   delete reinterpret_cast<std::string*>(m_DataBuffer);
    m_DataBuffer = nullptr;
 
   auto& callback = m_AsyncCallback.onFinish;
@@ -1097,13 +1097,13 @@ HttpLib::Awaiter HttpLib::GetAsync(Callback callback)
 
   m_Response.body.clear();
   m_AsyncCallback = std::move(callback);
-  m_DataBuffer = new std::u8string;
+  m_DataBuffer = new std::string;
 
   if (!m_AsyncCallback.onWrite) {
-    m_WriteCallback = [this](auto data, auto size){
+    m_WriteCallback = [this](const void* data, auto size){
       if (m_Finished) return false;
       m_RecieveSize += size;
-      m_Response.body.append(reinterpret_cast<const char8_t*>(data), size);
+      m_Response.body.append((const char*)data, size);
       EmitProcess();
       return true;
     };
