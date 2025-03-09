@@ -22,9 +22,11 @@ int main(int argc, char* argv[]) {
   std::filesystem::path p = u8"测试中文.txt";
   std::cout << p.string() << std::endl;
 
-#ifdef _WIN32
+#ifdef _WIN32 
+#ifdef _DEBUG
   std::locale::global(prev);
   std::cout << Utf82Ansi(u8"当前区域设置：") << std::locale().name() << std::endl;
+#endif
 #else
   std::locale::global(prev);
   std::cout << "当前区域设置：" << std::locale().name() << std::endl;
