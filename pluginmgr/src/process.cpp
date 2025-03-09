@@ -24,6 +24,7 @@ typedef WinProcess ProcessHandle;
 #include <sys/types.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <map>
 
 struct UnixProcess {
   pid_t pid;
@@ -563,8 +564,8 @@ static void ReadOutput(HANDLE hPipeReadOutput, std::u8string& output) {
   }
 }
 #else
-static void ReadOutput(int fd, std::string& output) {
-  char buf[4096];
+static void ReadOutput(int fd, std::u8string& output) {
+  char8_t buf[4096];
   ssize_t n;
   while ((n = read(fd, buf, sizeof(buf))) > 0) {
     output.append(buf, n);

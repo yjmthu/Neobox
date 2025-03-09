@@ -139,19 +139,19 @@ bool NeoMenu::IsAutoStart()
       return false;
     }
     auto output = process.GetStdOut();
-    std::istringstream iss(output);
-    std::string line;
-    while (std::getline(iss, line)) {
-      if (line.ends_with('\n')) {
-        line.pop_back();
-      }
-      if (line == start) {
+    for (auto i = output.begin(); i != output.end(); ) {
+      auto j = std::find(i, output.end(), '\n');
+
+      if (std::equal(start.begin(), start.end(), i, j)) {
         auto profile = QString::fromUtf8(GetProfilePath());
         QProcess::execute("sed", {
           "-i", QStringLiteral("\\#^%1$#d").arg(QString::fromStdString(start)), profile
         });
         break;
       }
+
+      i = j;
+      if (i != output.end()) ++i;
     }
   }
   auto autostart { GetHomePath() / ".config/autostart/neobox.desktop" };
