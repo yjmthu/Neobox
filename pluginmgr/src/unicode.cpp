@@ -54,6 +54,22 @@ std::string Wide2Ansi(std::wstring_view wStr) {
                       strResult.data(), nAnsiCount, NULL, NULL);
   return strResult;
 }
+
+std::vector<std::u8string> GetUtf8Argv() {
+  int argc;
+  LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+  if (argv == NULL) {
+    return {};
+  }
+
+  std::vector<std::u8string> args;
+  for (int i = 0; i < argc; ++i) {
+    args.push_back(Wide2Utf8(argv[i]));
+  }
+
+  LocalFree(argv);
+  return args;
+}
 #else
 // UTF-8 到 std::wstring (UTF-32)
 std::u8string Wide2Utf8(std::wstring_view wstr) {
@@ -131,5 +147,13 @@ std::wstring Utf82Wide(std::u8string_view str) {
     wstr += static_cast<wchar_t>(code_point);
   }
   return wstr;
+}
+
+std::vector<std::u8string> GetUtf8Argv() {
+  std::vector<std::u8string> args;
+  for (int i = 0; i < __argc; ++i) {
+    args.push_back(AnsiAsUtf8(__argv[i]));
+  }
+  return args;
 }
 #endif

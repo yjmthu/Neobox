@@ -15,80 +15,6 @@
 #include <tchar.h>
 #include <windows.h>
 
-#include "unicode.h"
-
-template <typename _Ty>
-void GetCmdOutput(std::wstring cmd, _Ty& result) {
-  cmd.push_back(L'\0');
-  constexpr auto bufSize = 256;
-
-  SECURITY_ATTRIBUTES sa {};                                              
-  HANDLE hPipRead = NULL, hPipWrite = NULL;                                                
-  sa.nLength = sizeof(SECURITY_ATTRIBUTES);    
-  sa.lpSecurityDescriptor = NULL;    
-  sa.bInheritHandle = TRUE;    
-  if (!CreatePipe(&hPipRead, &hPipWrite, &sa,0))                             
-      return;    
-
-  STARTUPINFO si {};
-  PROCESS_INFORMATION pi {};
-  si.cb = sizeof(STARTUPINFO);
-  GetStartupInfo(&si);
-  si.hStdError = hPipWrite;
-  si.hStdOutput = hPipWrite;
-  si.wShowWindow = SW_HIDE;
-  si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
-
-  if (CreateProcess(NULL, cmd.data(), NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi))             
-  {
-    char szRecvData[bufSize];
-    DWORD dwRecvSize;
-    std::stringstream stream;
-    std::string str;
-
-    if (NULL != hPipWrite)
-    {
-      CloseHandle(hPipWrite);
-      hPipWrite = NULL;
-    }
-
-    while(ReadFile(hPipRead, szRecvData, bufSize, &dwRecvSize, NULL))
-    {
-      stream.write(szRecvData, dwRecvSize);
-    }
-
-    while (std::getline(stream, str)) {
-      if (str.ends_with('\r')) str.pop_back();
-      result.emplace_back(Ansi2Wide(str));
-    }
-  }    
-    
-  if (NULL != hPipRead)
-	{
-		CloseHandle(hPipRead);
-		hPipRead = NULL;
-	}
-
-  if (NULL != hPipWrite)
-	{
-		CloseHandle(hPipWrite);
-		hPipWrite = NULL;
-	}
-
-  if (NULL != pi.hProcess)
-	{
-		CloseHandle(pi.hProcess);
-		pi.hProcess = NULL;
-	}
-
-	if (NULL != pi.hThread)
-	{
-		CloseHandle(pi.hThread);
-		pi.hThread = NULL;
-	}
-
-}
-
 inline std::wstring GetExeFullPath() {
   std::wstring exeFullPath(MAX_PATH, '\0');
   GetModuleFileNameW(NULL, exeFullPath.data(), MAX_PATH);
@@ -137,26 +63,23 @@ BOOL SetWindowCompositionAttribute(HWND hWnd,
 
 #elif defined (__linux__)
 
-#include <codecvt>
-#include <locale>
-
-template <typename _Ty>
-void GetCmdOutput(const char* cmd, _Ty& result) {
-  std::array<char, (1<<10)> buffer;
-  FILE* ptr;
-  result.emplace_back();
-  std::stringstream stream;
-  if ((ptr = popen(cmd, "r"))) {
-    while (fgets(buffer.data(), buffer.size(), ptr)) {
-      stream << buffer.data();
-    }
-    pclose(ptr);
-  }
-  std::string str;
-  while (std::getline(stream, str)) {
-    result.emplace_back(str.begin(), str.end());
-  }
-}
+// template <typename _Ty>
+// void GetCmdOutput(const char* cmd, _Ty& result) {
+//   std::array<char, (1<<10)> buffer;
+//   FILE* ptr;
+//   result.emplace_back();
+//   std::stringstream stream;
+//   if ((ptr = popen(cmd, "r"))) {
+//     while (fgets(buffer.data(), buffer.size(), ptr)) {
+//       stream << buffer.data();
+//     }
+//     pclose(ptr);
+//   }
+//   std::string str;
+//   while (std::getline(stream, str)) {
+//     result.emplace_back(str.begin(), str.end());
+//   }
+// }
 
 
 #endif
