@@ -1,4 +1,5 @@
 #include <neobox/unicode.h>
+#include <stdexcept>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -8,7 +9,7 @@ std::wstring Utf82Wide(std::u8string_view u8Str) {
       CP_UTF8, 0, reinterpret_cast<const char*>(u8Str.data()),
       (int)u8Str.size(), NULL, 0);
   if (nWideCount == 0) {
-    return std::wstring();
+    throw std::runtime_error("MultiByteToWideChar failed to get buffer size");
   }
   std::wstring strResult(nWideCount, 0);
   MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<const char*>(u8Str.data()),
@@ -21,7 +22,7 @@ std::u8string Wide2Utf8(std::wstring_view wStr) {
   int nU8Count = WideCharToMultiByte(CP_UTF8, 0, wStr.data(), (int)wStr.size(),
                                      NULL, 0, NULL, NULL);
   if (nU8Count == 0) {
-    return std::u8string();
+    throw std::runtime_error("WideCharToMultiByte failed to get buffer size");
   }
   std::u8string strResult(nU8Count, 0);
   WideCharToMultiByte(CP_UTF8, 0, wStr.data(), (int)wStr.size(),
@@ -30,30 +31,30 @@ std::u8string Wide2Utf8(std::wstring_view wStr) {
   return strResult;
 }
 
-std::wstring Ansi2Wide(std::string_view ansiStr) {
-  int nWideCount = MultiByteToWideChar(CP_ACP, 0, ansiStr.data(),
-                                       (int)ansiStr.size(), NULL, 0);
-  if (nWideCount == 0) {
-    return std::wstring();
-  }
-  std::wstring strResult(nWideCount, 0);
-  MultiByteToWideChar(CP_ACP, 0, ansiStr.data(), (int)ansiStr.size(),
-                      strResult.data(), nWideCount);
-  return strResult;
-}
+// std::wstring Ansi2Wide(std::string_view ansiStr) {
+//   int nWideCount = MultiByteToWideChar(CP_ACP, 0, ansiStr.data(),
+//                                        (int)ansiStr.size(), NULL, 0);
+//   if (nWideCount == 0) {
+//     throw std::runtime_error("MultiByteToWideChar failed to get buffer size");
+//   }
+//   std::wstring strResult(nWideCount, 0);
+//   MultiByteToWideChar(CP_ACP, 0, ansiStr.data(), (int)ansiStr.size(),
+//                       strResult.data(), nWideCount);
+//   return strResult;
+// }
 
-std::string Wide2Ansi(std::wstring_view wStr) {
-  //获取所需缓冲区大小
-  int nAnsiCount = WideCharToMultiByte(CP_ACP, 0, wStr.data(), (int)wStr.size(),
-                                       NULL, 0, NULL, NULL);
-  if (nAnsiCount == 0) {
-    return std::string();
-  }
-  std::string strResult(nAnsiCount, 0);
-  WideCharToMultiByte(CP_ACP, 0, wStr.data(), (int)wStr.size(),
-                      strResult.data(), nAnsiCount, NULL, NULL);
-  return strResult;
-}
+// std::string Wide2Ansi(std::wstring_view wStr) {
+//   //获取所需缓冲区大小
+//   int nAnsiCount = WideCharToMultiByte(CP_ACP, 0, wStr.data(), (int)wStr.size(),
+//                                        NULL, 0, NULL, NULL);
+//   if (nAnsiCount == 0) {
+//     throw std::runtime_error("WideCharToMultiByte failed to get buffer size");
+//   }
+//   std::string strResult(nAnsiCount, 0);
+//   WideCharToMultiByte(CP_ACP, 0, wStr.data(), (int)wStr.size(),
+//                       strResult.data(), nAnsiCount, NULL, NULL);
+//   return strResult;
+// }
 
 std::vector<std::u8string> GetUtf8Argv() {
   int argc;
@@ -71,6 +72,8 @@ std::vector<std::u8string> GetUtf8Argv() {
   return args;
 }
 #else
+#include <fstream>
+
 // UTF-8 到 std::wstring (UTF-32)
 std::u8string Wide2Utf8(std::wstring_view wstr) {
   static_assert(sizeof(wchar_t) == sizeof(char32_t), "wchar_t must be 32-bit");
@@ -151,9 +154,19 @@ std::wstring Utf82Wide(std::u8string_view str) {
 
 std::vector<std::u8string> GetUtf8Argv() {
   std::vector<std::u8string> args;
-  for (int i = 0; i < __argc; ++i) {
-    args.push_back(AnsiAsUtf8(__argv[i]));
+
+  std::ifstream file("/proc/self/cmdline", std::ios::binary);
+  if (!file.is_open()) {
+    throw std::runtime_error("Failed to open /proc/self/cmdline");
   }
+
+  std::string cmdline;
+  while (std::getline(file, cmdline, '\0')) {
+    args.push_back(std::u8string(cmdline.begin(), cmdline.end()));
+  }
+
+  file.close();
+
   return args;
 }
 #endif

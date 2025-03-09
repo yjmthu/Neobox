@@ -17,12 +17,47 @@
 #ifdef _WIN32
 #include <windows.h>
 #undef max
+#else
+#include <iconv.h>
 #endif
 
 using namespace std::literals;
 namespace fs = std::filesystem;
 const std::u8string domain = u8"pic.netbian.com";
-const std::u8string host = u8"https://" + domain;;
+const std::u8string host = u8"https://" + domain;
+
+#ifdef _WIN32
+std::u8string Gbk2Utf8(std::string_view gbk) {
+  // gbk -> unicode windows
+  int unicodeLen = MultiByteToWideChar(CP_ACP, 0, gbk.c_str(), -1, nullptr, 0);
+  std::wstring unicode(unicodeLen, 0);
+  MultiByteToWideChar(CP_ACP, 0, gbk.c_str(), -1, &unicode[0], unicodeLen);
+
+  // unicode windows -> utf-8
+  int utf8Len = WideCharToMultiByte(CP_UTF8, 0, unicode.c_str(), -1, nullptr, 0, nullptr, nullptr);
+  std::u8string utf8(utf8Len, 0);
+  WideCharToMultiByte(CP_UTF8, 0, unicode.c_str(), -1, reinterpret_cast<char*>(&utf8[0]), utf8Len, nullptr, nullptr);
+  return utf8;
+}
+#else
+std::u8string Gbk2Utf8(std::string_view gbk) {
+  iconv_t cd = iconv_open("UTF-8", "GBK");
+  if (cd == (iconv_t)-1) {
+    return {};
+  }
+
+  std::string in(gbk);
+  std::string out(2 * in.size(), 0);
+  char* inbuf = const_cast<char*>(in.data());
+  char* outbuf = out.data();
+  size_t inbytesleft = in.size();
+  size_t outbytesleft = out.size();
+  iconv(cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+  iconv_close(cd);
+
+  return std::u8string(out.begin(), out.end());
+}
+#endif
 
 std::ostream& operator<<(std::ostream& os, const std::u8string& res) {
   os.write(reinterpret_cast<const char*>(res.data()), res.size());
@@ -186,7 +221,7 @@ std::u8string GetPictureUrl(const PictureDetail& detail) {
     return {};
   }
   auto jsonGBK = std::string_view(reinterpret_cast<const char*>(res->body.data()), res->body.size());
-  auto jsonU8 = Ansi2Utf8(jsonGBK);
+  auto jsonU8 = Gbk2Utf8(jsonGBK);
   YJson json(jsonU8.begin(), jsonU8.end());
   
   auto const code = json[u8"msg"].getValueInt();

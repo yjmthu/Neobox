@@ -1,6 +1,7 @@
+#include <neobox/unicode.h>
 #include <neobox/neomenu.hpp>
 #include <neobox/pluginmgr.h>
-#include <neobox/systemapi.h>
+#include <neobox/process.h>
 
 #include <QApplication>
 #include <QDesktopServices>
@@ -18,7 +19,6 @@
 #include <Windows.h>
 #elif defined (__linux__)
 #include <QStandardPaths>
-#include <fstream>
 #include <filesystem>
 namespace fs = std::filesystem;
 #endif
@@ -129,10 +129,20 @@ bool NeoMenu::IsAutoStart()
     auto start = GetStartCommand().toStdString();
     auto cmd = std::format("grep '{}' '{}'", start, profile);
     std::vector<std::string> result;
-    GetCmdOutput(cmd.c_str(), result);
-    std::cout << result.front() << std::endl;
-    for (auto& data: result) {
-      if (data == start) {
+    // GetCmdOutput(cmd.c_str(), result);
+    auto process = NeoProcess(AnsiAsUtf8(cmd));
+    auto code = process.Run().get();
+    if (!code || code.value() != 0) {
+      return false;
+    }
+    auto output = process.GetStdOut();
+    std::istringstream iss(output);
+    std::string line;
+    while (std::getline(iss, line)) {
+      if (line.ends_with('\n')) {
+        line.pop_back();
+      }
+      if (line == start) {
         auto profile = QString::fromUtf8(GetProfilePath());
         QProcess::execute("sed", {
           "-i", QStringLiteral("\\#^%1$#d").arg(QString::fromStdString(start)), profile

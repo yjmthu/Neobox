@@ -24,7 +24,7 @@ public:
   void SetWorkDir(const std::u8string& dir);
   void SetArgs(const std::u8string& args);
   void SetEnvs(std::vector<std::u8string> envs);
-  AsyncAwaiter<int> Run();
+  AsyncInt Run();
   void Stop(bool force = false);
   std::string GetStdOut() const { return m_StdOut; }
   std::string GetStdErr() const { return m_StdErr; }

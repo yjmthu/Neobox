@@ -25,11 +25,13 @@ std::ostream& operator<<(std::ostream& o, const std::u8string& data) {
   return o.write(reinterpret_cast<const char*>(data.data()), data.size());
 }
 
-int main(int argc, char* argv[]) {
+int main() {
   SetLocale("zh_CN.UTF-8");
 
-  if (argc == 2) {
-    std::u8string key = Ansi2Utf8(argv[1]);
+  auto argv = GetUtf8Argv();
+
+  if (argv.size() == 2) {
+    std::u8string key = argv[1];
     std::cout << "your token is 【" << get_access_token(u8"enwvUXsYtstHiKPDOPShBOuE", key) << "】.\n";
   } else {
     std::cout << "you should parse the 'Secret Key' to this executable.\n";

@@ -266,13 +266,19 @@ static std::optional<std::vector<char*>> GetEnvBlock(std::optional<std::vector<s
 }
 #endif
 
-AsyncAwaiter<int> NeoProcess::Run()
+AsyncInt NeoProcess::Run()
 {
   if (m_IsRunning) {
-    return { nullptr };
+    throw std::runtime_error("Process is already running.");
   }
 
-  return { this };
+  auto res = co_await AsyncAwaiter<int> { this };
+
+  if (res) {
+    co_return *res;
+  }
+
+  throw std::runtime_error("Process failed to start.");
 }
 
 #ifdef _WIN32
