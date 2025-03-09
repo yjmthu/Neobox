@@ -214,7 +214,7 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
   path.make_preferred();
 #endif
   if (!LoadPlugEnv(path)) {
-    ShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件文件夹加载失败！"));
+    ShowMsg(path.string() + "插件文件夹加载失败！");
     return false;
   }
 #ifdef _WIN32
@@ -223,7 +223,7 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
   path /= u8"lib" + pluginName + u8".so";
 #endif
   if (!fs::exists(path)) {
-    ShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件文件加载失败！"));
+    ShowMsg(path.string() + "插件文件加载失败！");
     return false;
   }
   path.make_preferred();
@@ -238,7 +238,7 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
 #endif
 
   if (!hdll) {
-    ShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件动态库加载失败！"));
+    ShowMsg(path.string() + "插件动态库加载失败！");
     return false;
   }
   pluginInfo.handle = hdll;
@@ -250,7 +250,7 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
 #endif
   newPlugin = reinterpret_cast<decltype(newPlugin)>(pluginAdress);
   if (!newPlugin) {
-    ShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件函数加载失败！"));
+    ShowMsg(path.string() + "插件函数加载失败！");
     FreePlugin(pluginInfo);
     return false;
   }
@@ -267,7 +267,7 @@ bool PluginMgr::LoadPlugin(std::u8string pluginName, PluginMgr::PluginInfo& plug
     // pluginInfo.plugin = nullptr;
     FreePlugin(pluginInfo);
     pluginInfo.handle = nullptr;
-    ShowMsg(PluginObject::Utf82QString(path.u8string() + u8"插件初始化失败！"));
+    ShowMsg(path.string() + "插件初始化失败！");
   }
   return false;
 }
@@ -461,31 +461,24 @@ bool PluginMgr::IsPluginEnabled(const std::u8string& plugin) const
   return m_Plugins.find(plugin) != m_Plugins.end();
 }
 
-void PluginMgr::ShowMsgbox(const std::wstring& title,
-                 const std::wstring& text,
-                 MsgboxType type) {
+void PluginMgr::ShowMsgbox(std::string title, std::string text, MsgboxType type) {
   QMetaObject::invokeMethod(m_Menu, [=, this](){
     using enum MsgboxType;
     switch (type) {
     case Information:
-      QMessageBox::information(m_Menu, QString::fromStdWString(title),
-        QString::fromStdWString(text));
+      QMessageBox::information(m_Menu, QString::fromUtf8(title), QString::fromUtf8(text));
       break;
     case Critical:
-      QMessageBox::critical(m_Menu, QString::fromStdWString(title),
-        QString::fromStdWString(text));
+      QMessageBox::critical(m_Menu, QString::fromUtf8(title), QString::fromUtf8(text));
       break;
     case Warning:
-      QMessageBox::warning(m_Menu, QString::fromStdWString(title),
-        QString::fromStdWString(text));
+      QMessageBox::warning(m_Menu, QString::fromUtf8(title), QString::fromUtf8(text));
       break;
     case About:
-      QMessageBox::about(m_Menu, QString::fromStdWString(title),
-        QString::fromStdWString(text));
+      QMessageBox::about(m_Menu, QString::fromUtf8(title), QString::fromUtf8(text));
       break;
     case Question:
-      QMessageBox::question(m_Menu, QString::fromStdWString(title),
-        QString::fromStdWString(text));
+      QMessageBox::question(m_Menu, QString::fromUtf8(title), QString::fromUtf8(text));
       break;
     default:
       break;
@@ -493,9 +486,9 @@ void PluginMgr::ShowMsgbox(const std::wstring& title,
   });
 }
 
-void PluginMgr::ShowMsg(class QString text)
+void PluginMgr::ShowMsg(std::string text)
 {
-  m_MsgDlg->ShowMessage(text);
+  m_MsgDlg->ShowMessage(QString::fromUtf8(text));
 }
 
 int PluginMgr::Exec()

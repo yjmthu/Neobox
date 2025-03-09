@@ -102,7 +102,7 @@ public:
 
   typedef std::function<void(const void*, size_t)> WriteCallback;
   typedef std::function<void(size_t, size_t)> ProcessCallback;
-  typedef std::function<void(std::wstring, const Response*)> FinishCallback;
+  typedef std::function<void(std::string, const Response*)> FinishCallback;
   struct Callback {
     ProcessCallback onProcess = nullptr;
     FinishCallback onFinish = nullptr;
@@ -193,7 +193,7 @@ private:
   bool ReadBody();
 #endif
   void EmitProcess();
-  void EmitFinish(std::wstring message=L"");
+  void EmitFinish(std::string message="");
 private:
   static CallbackFunction WriteFile;
   static CallbackFunction WriteString;

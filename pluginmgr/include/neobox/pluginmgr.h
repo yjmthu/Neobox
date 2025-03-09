@@ -71,9 +71,8 @@ public:
   static void WriteSharedFlag(QSharedMemory*, int flag);
   static int ReadSharedFlag(QSharedMemory*);
 
-  void ShowMsg(class QString text);
-  void ShowMsgbox(const std::wstring& title,
-    const std::wstring& text,
+  void ShowMsg(std::string text);
+  void ShowMsgbox(std::string title, std::string text,
     MsgboxType type = MsgboxType::Information);
   static int Exec();
   static void Quit();

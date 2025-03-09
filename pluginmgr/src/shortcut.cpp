@@ -164,8 +164,8 @@ Shortcut::Shortcut(YJson& data)
     enabled = RegisterHotKey(keyString);
 
     if (!enabled.isTrue()) {
-      mgr->ShowMsgbox(L"出错",
-        L"RegisterHotKey failed: " + Utf82Wide(keyString),
+      mgr->ShowMsgbox("出错",
+        "RegisterHotKey failed: " + Utf8AsAnsi(keyString),
         MsgboxType::Warning
       );
     }

@@ -110,7 +110,7 @@ std::u8string PluginCenter::DownloadFile(std::u8string_view url)
   std::u8string result;
 
   if (!HttpLib::IsOnline()) {
-    mgr->ShowMsg(u8"请检查网络连接！");
+    mgr->ShowMsg("请检查网络连接！");
     return result;
   }
 
@@ -126,9 +126,7 @@ std::u8string PluginCenter::DownloadFile(std::u8string_view url)
       if (msg.empty() && res->status == 200) {
         result = std::move(res->body);
       } else {
-        mgr->ShowMsg(QStringLiteral("下载失败！\n状态码：%1。\n错误信息：%2。")
-          .arg(res->status)
-          .arg(QString::fromStdWString(msg)));
+        mgr->ShowMsg(std::format("下载失败！\n状态码：{}。\n错误信息：{}。", res->status, msg));
       }
       // if (res->status != -1) // 不是用户手动关闭对话框
       {

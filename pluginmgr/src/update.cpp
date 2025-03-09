@@ -114,7 +114,7 @@ PluginUpdate::PluginUpdate(YJson& settings)
   WinToast::instance()->setAppName(L"Neobox");
   WinToast::instance()->setAppUserModelId(WinToast::configureAUMI(L"yjmthu", L"neobox", L"neoboxupdate", L"20231226"));
   if (!WinToast::instance()->initialize()) {
-    mgr->ShowMsg(u8"Error, your system in not compatible!");
+    mgr->ShowMsg("Error, your system in not compatible!");
   }
 #endif
   if (m_Settings.GetAutoCheck()) {

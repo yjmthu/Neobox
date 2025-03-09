@@ -282,7 +282,7 @@ AsyncInt DownloadPicture(const fs::path folder, const PictureDetail& detail) {
       if (msg.empty() && res->status == 200) {
         std::cout << "Download success" << std::endl;
       } else {
-        std::cerr << "Error: " << Wide2Utf8(msg) << std::endl;
+        std::cerr << "Error: " << msg << std::endl;
       }
     },
     .onWrite = [&fileOut](auto data, auto size) {

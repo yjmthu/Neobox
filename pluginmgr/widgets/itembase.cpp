@@ -101,7 +101,7 @@ void ItemBase::SetVersionLabel(std::wstring_view preText, Version& version, QLab
 bool ItemBase::PluginDownload()
 {
   if (!HttpLib::IsOnline()) {
-    mgr->ShowMsgbox(L"失败", L"请检查网络连接！");
+    mgr->ShowMsgbox("失败", "请检查网络连接！");
     return false;
   }
   bool result = false;
@@ -129,11 +129,11 @@ bool ItemBase::PluginDownload()
       result = msg.empty() && res->status == 200;
 
       if (!result) {
-        mgr->ShowMsgbox(L"失败", L"下载清单失败！");
+        mgr->ShowMsgbox("失败", "下载清单失败！");
       } else {
         result = ExtractZip(pluginTemp, pluginDst);
         if (!result) {
-          mgr->ShowMsgbox(L"失败", L"无法解压文件");
+          mgr->ShowMsgbox("失败", "无法解压文件");
         }
       }
       fs::remove(pluginTemp);
@@ -156,7 +156,7 @@ bool ItemBase::ExtractZip(const fs::path& zipFile, const fs::path& dstDir)
 {
   std::error_code error;
   if (!fs::exists(dstDir) && !fs::create_directories(dstDir, error)) {
-    mgr->ShowMsgbox(L"失败", std::format(L"创建文件夹失败，错误码：{}。", error.value()));
+    mgr->ShowMsgbox("失败", std::format("创建文件夹失败，错误码：{}。", error.value()));
     return false;
   }
 #ifdef _WIN32

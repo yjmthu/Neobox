@@ -69,13 +69,13 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
     if (bResults) {
       bResults = object.m_Response.status < 400;
     } else {
-      object.EmitFinish(L"HttpLib Error: HttpLib ReadStatusCode Error.");
+      object.EmitFinish("HttpLib Error: HttpLib ReadStatusCode Error.");
       break;
     }
     if (bResults) {
       bResults = object.ReadHeaders();
     } else {
-      object.EmitFinish(L"HttpLib StatusCode Error.");
+      object.EmitFinish("HttpLib StatusCode Error.");
       break;
     }
     if (bResults) {
@@ -84,7 +84,7 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
       locker.unlock();
       WinHttpQueryDataAvailable(hInternet, nullptr);
     } else {
-      object.EmitFinish(L"HttpLib ReadHeaders Error.");
+      object.EmitFinish("HttpLib ReadHeaders Error.");
     }
     break;
   }
@@ -92,7 +92,7 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
   case WINHTTP_CALLBACK_STATUS_REDIRECT:
     /* Make sure we are not in a redirect loop. */
     if (object.m_RedirectDepth++ > 5) {
-      object.EmitFinish(L"HTTP request failed: too many redirects");
+      object.EmitFinish("HTTP request failed: too many redirects");
     }
     break;
   
@@ -127,7 +127,7 @@ void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DW
     auto const* pAsyncResult = (WINHTTP_ASYNC_RESULT*)lpvStatusInformation;
     auto dwError = pAsyncResult->dwError; // The error code
     auto dwResult = pAsyncResult->dwResult; // The ID of the called function
-    object.EmitFinish(std::format(L"Winhttp status error. Error code: {}, error id: {}.", dwError, dwResult));
+    object.EmitFinish(std::format("Winhttp status error. Error code: {}, error id: {}.", dwError, dwResult));
     break;
   }
   }
@@ -548,7 +548,7 @@ void HttpLib::HttpInitialize()
     WINHTTP_NO_PROXY_BYPASS,
     m_AsyncSet ? WINHTTP_FLAG_ASYNC: 0);
   if (!m_hSession) {
-    std::wcerr << L"HttpLib Error: " << GetLastError() << L" in WinHttpOpen.\n";
+    std::cerr << "HttpLib Error: " << GetLastError() << " in WinHttpOpen.\n";
     return;
   }
 
@@ -562,7 +562,7 @@ void HttpLib::HttpInitialize()
   if (m_hConnect) {
     SetProxyBefore();
   } else {
-    std::wcerr << L"HttpLib Error: " << GetLastError() << L" in WinHttpConnect.\n";
+    std::cerr << "HttpLib Error: " << GetLastError() << " in WinHttpConnect.\n";
   }
 
 #elif defined (__linux__)
@@ -672,7 +672,7 @@ bool HttpLib::SetProxyAfter()
       static_cast<DWORD>(password.size() * sizeof(wchar_t))
     );
   } else {
-    std::wcerr << L"Winhttp SetProxyAfter Failed!" << std::endl;
+    std::cerr << "Winhttp SetProxyAfter Failed!" << std::endl;
   }
 #endif
   return bResult;
@@ -765,7 +765,7 @@ bool HttpLib::SendHeaders()
   if (m_hRequest) {
     bResults = SetProxyAfter();
   } else {
-    std::wcerr << L"WinHttp openRequest failed!" << std::endl;
+    std::cerr << "WinHttp openRequest failed!" << std::endl;
   }
   if (bResults) {
     for (auto& [i, j]: m_Headers) {
@@ -773,12 +773,12 @@ bool HttpLib::SendHeaders()
       bResults = WinHttpAddRequestHeaders(
         m_hRequest, header.data(), static_cast<DWORD>(header.size()), WINHTTP_ADDREQ_FLAG_ADD);
       if (!bResults) {
-        std::wcerr << L"Winhttp add headers failed!" << std::endl;
+        std::cerr << "Winhttp add headers failed!" << std::endl;
         break;
       }
     }
   } else {
-    std::wcerr << L"Winhttp setProxyAfter failed!" << std::endl;
+    std::cerr << "Winhttp setProxyAfter failed!" << std::endl;
   }
   return bResults;
 #else
@@ -829,7 +829,7 @@ bool HttpLib::ReadStatusCode()
 
   if (bResults) {
     if(m_Response.status == 304) 
-      std::wcerr << L"Document has not been updated.\n";
+      std::cerr << "Document has not been updated.\n";
   }
   return bResults;
 #else
@@ -900,7 +900,7 @@ bool HttpLib::ReadHeaders()
 
     delete[] lpOutBuffer;
   } else {
-    std::wcerr << L"WinHttpQueryHeaders BufferSize Failed." << std::endl;
+    std::cerr << "WinHttpQueryHeaders BufferSize Failed." << std::endl;
   }
   return bResults;
 #elif defined (__linux__)
@@ -918,14 +918,14 @@ bool HttpLib::ReadBody()
   for (DWORD dwDownloaded = 0; !m_Finished; ) {
     bResults = WinHttpQueryDataAvailable(m_hRequest, &dwSize);
     if (!bResults) {
-      std::wcerr << L"WinHttpQueryDataAvailable failed: " << GetLastError() << std::endl;
+      std::cerr << "WinHttpQueryDataAvailable failed: " << GetLastError() << std::endl;
       break;
     }           
     if (dwSize == 0) break;
     strBuffer.resize(dwSize);
     bResults = WinHttpReadData(m_hRequest, strBuffer.data(), dwSize, &dwDownloaded);
     if (!bResults) {
-      std::wcerr << L"WinHttpQueryDataAvailable failed: " << GetLastError() << std::endl;
+      std::cerr << "WinHttpQueryDataAvailable failed: " << GetLastError() << std::endl;
     }
     if (!dwDownloaded) break;
     m_Callback(strBuffer.data(), sizeof(char), dwDownloaded, m_DataBuffer);
@@ -947,7 +947,7 @@ void HttpLib::HttpPerform()
   if (bResults) {
     bResults = SendRequest();
   } else {
-    std::wcerr << L"WinHttpSendHeasers failed." << std::endl;
+    std::cerr << "WinHttpSendHeasers failed." << std::endl;
   }
 #ifdef _WIN32
   if (m_AsyncSet) {
@@ -962,32 +962,32 @@ void HttpLib::HttpPerform()
   if (bResults) {
     bResults = RecvResponse();
   } else {
-    std::wcerr << L"WinHttpSendRequest failed." << std::endl;
+    std::cerr << "WinHttpSendRequest failed." << std::endl;
   }
   
 #ifdef _WIN32
   if (bResults) {
     bResults = ReadStatusCode();
   } else {
-    std::wcerr << L"WinHttpReceiveResponse failed." << std::endl;
+    std::cerr << "WinHttpReceiveResponse failed." << std::endl;
   }
 
   if (bResults) {
     bResults = m_Response.status == 200 || m_Response.status == 302;
   } else {
-    std::wcerr << L"WinHttp read status code failed." << std::endl;
+    std::cerr << "WinHttp read status code failed." << std::endl;
   }
 
   if (bResults) {
     bResults = ReadHeaders();
   } else {
-    std::wcerr << L"Winhttp status code is " << m_Response.status << L".\n";
+    std::cerr << "Winhttp status code is " << m_Response.status << ".\n";
   }
 
   if(bResults) {
     bResults = ReadBody();
   } else {
-    std::wcerr << L"WinHttp ReadHeaders Failed." << std::endl;
+    std::cerr << "WinHttp ReadHeaders Failed." << std::endl;
   }
 #elif defined (__linux__)
   if (!m_AsyncSet) return;
@@ -1008,7 +1008,7 @@ void HttpLib::EmitProcess()
   }
 }
 
-void HttpLib::EmitFinish(std::wstring message)
+void HttpLib::EmitFinish(std::string message)
 {
   m_Finished = true;
 #ifdef _WIN32
@@ -1078,7 +1078,7 @@ void HttpLib::SetTimeOut(std::chrono::seconds timeOut) {
 #ifdef _WIN32
   const auto t = static_cast<int>(m_TimeOut.count() * 1000);
   if (!WinHttpSetTimeouts(m_hSession, t, t, t, t)) {
-    std::wcerr << L"HttpLib Error: " << GetLastError() << L" in WinHttpSetTimeouts.\n";
+    std::cerr << "HttpLib Error: " << GetLastError() << " in WinHttpSetTimeouts.\n";
   }
 #elif defined (__linux__)
   curl_easy_setopt(m_hSession, CURLOPT_TIMEOUT, m_TimeOut.count());
@@ -1157,5 +1157,5 @@ void HttpLib::DoSuspend(std::coroutine_handle<> handle)
 void HttpLib::ExitAsync() {
   Locker locker(m_AsyncMutex);
   m_Response.status = -1;
-  EmitFinish(L"Httplib Error: User terminate.");
+  EmitFinish("Httplib Error: User terminate.");
 }

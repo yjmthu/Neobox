@@ -45,15 +45,15 @@ int main()
       .onProcess = [](size_t recieve, size_t total){
         std::cout << recieve << '/' << total << std::endl;
       },
-      .onFinish = [&clt, &quitLoop](std::wstring error, auto res){
+      .onFinish = [&clt, &quitLoop](std::string error, auto res){
         if (error.empty()) {
-          std::wcout << L"ALL OK.\n---------------" << res->status << std::endl;
+          std::cout << "ALL OK.\n---------------" << res->status << std::endl;
           for (auto [i, j]: res->headers) {
             std::cout << i << ": " << j << std::endl;
           }
-          std::wcout << L"---------------\n";
+          std::cout << "---------------\n";
         } else {
-          std::wcerr << error << std::endl;
+          std::cerr << error << std::endl;
         }
         quitLoop();
       },

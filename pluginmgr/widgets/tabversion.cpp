@@ -179,7 +179,7 @@ void TabVersion::GetUpdate()
 bool TabVersion::DownloadNew(std::u8string_view url[[maybe_unused]]) {
 #ifdef _WIN32
   if (!HttpLib::IsOnline()) {
-    mgr->ShowMsgbox(L"失败", L"请检查网络连接！");
+    mgr->ShowMsgbox("失败", "请检查网络连接！");
     return false;
   }
   bool result = false;
@@ -192,7 +192,7 @@ bool TabVersion::DownloadNew(std::u8string_view url[[maybe_unused]]) {
 
   std::ofstream file(pluginTemp, std::ios::binary | std::ios::out);
   if (!file.is_open()) {
-    mgr->ShowMsgbox(L"出错", L"无法写入文件！");
+    mgr->ShowMsgbox("出错", "无法写入文件！");
     return false;
   }
 
@@ -201,7 +201,7 @@ bool TabVersion::DownloadNew(std::u8string_view url[[maybe_unused]]) {
     .onProcess = [&](auto recieve, auto total) {
       dialog.emitProcess(recieve, total);
     },
-    .onFinish = [&](std::wstring msg, const HttpLib::Response* res) {
+    .onFinish = [&](auto msg, auto res) {
       file.close();
       if (msg.empty() && res->status == 200) {
         result = true;
@@ -209,10 +209,10 @@ bool TabVersion::DownloadNew(std::u8string_view url[[maybe_unused]]) {
         auto dst = pluginDst.string();
         const auto ret = zip_extract(temp.c_str(), dst.c_str(), nullptr, nullptr);
         if (ret < 0) {
-          mgr->ShowMsg(QString("无法解压文件！错误码：%d。").arg(ret));
+          mgr->ShowMsg(std::format("无法解压文件！\n错误码：{}。", ret));
         }
       } else {
-        mgr->ShowMsg("下载压缩包失败！");
+        mgr->ShowMsg(std::format("下载压缩包失败！\n状态码：{}。\n错误信息：{}。", res->status, msg));
       }
       fs::remove(pluginTemp);
       dialog.emitFinished();
