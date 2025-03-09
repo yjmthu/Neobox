@@ -26,7 +26,7 @@ std::ostream& operator<<(std::ostream& o, const std::u8string& data) {
 }
 
 int main() {
-  SetLocale("zh_CN.UTF-8");
+  SetLocale();
 
   auto argv = GetUtf8Argv();
 

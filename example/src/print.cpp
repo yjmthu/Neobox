@@ -10,7 +10,7 @@ std::ostream& operator<<(std::ostream& os, std::u8string res) {
 }
 
 int main(int argc, char* argv[]) {
-  SetLocale("zh_CN.UTF-8");
+  SetLocale("C.UTF-8");
 
   auto fun = [] () -> AsyncInt {
     std::cout << "Begin." << std::endl;

@@ -34,7 +34,7 @@ int main()
     return 1;
   }
 
-  SetLocale("zh_CN.UTF-8");
+  SetLocale();
 
   std::u8string app;
   std::u8string args;

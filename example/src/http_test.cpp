@@ -14,7 +14,7 @@ std::ostream& operator<<(std::ostream& out, const std::u8string& str) {
 
 int main()
 {
-  SetLocale("zh_CN.UTF-8");
+  SetLocale();
 
   std::cout << "============Begin============" << std::endl;
   std::mutex mutex;

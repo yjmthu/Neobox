@@ -1,12 +1,11 @@
 #include "portal.h"
 
-#include <Windows.h>
 #include <filesystem>
 #include <yjson/yjson.h>
 #include <neobox/unicode.h>
 
 int main() {
-  SetLocale("zh_CN.UTF-8");
+  SetLocale();
 
   std::filesystem::path path = __FILE__;
   YJson json(path.parent_path() / u8"pwd.json", YJson::UTF8);

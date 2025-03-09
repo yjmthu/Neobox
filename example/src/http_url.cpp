@@ -6,7 +6,7 @@ std::ostream& operator<<(std::ostream& out, const std::u8string& str) {
 }
 
 int main() {
-  SetLocale("zh_CN.UTF-8");
+  SetLocale();
 
   HttpUrl url1(u8"http://www.baidu.com/?q=123&p=345", {
     {u8"sdd", u8"华中科技大学"}

@@ -13,7 +13,7 @@ inline std::u8string AnsiAsUtf8(std::string_view ansiStr) {
   return std::u8string(ansiStr.begin(), ansiStr.end());
 }
 
-inline auto SetLocale(const std::string& locale = "zh_CN.UTF-8") {
+inline auto SetLocale(const std::string& locale = "C.UTF-8") {
   auto loc = std::locale(locale);
   auto prev = std::locale::global(loc);
 

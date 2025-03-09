@@ -4,8 +4,7 @@
 #include <neobox/unicode.h>
 
 int main(int argc, char* argv[]) {
-  // if (setlocale(LC_ALL, "zh_CN.UTF-8") == nullptr) {
-  auto loc = std::locale("zh_CN.UTF-8");
+  auto loc = std::locale("C.UTF-8");
   auto prev = std::locale::global(loc);
   auto cur = std::locale {};
   if (cur.name() != loc.name()) {

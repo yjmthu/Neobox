@@ -61,19 +61,19 @@ add_subdirectory(example)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 add_executable(${target_name} WIN32 main.cpp logo.rc)
+if(UNIX)
+  if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "None")
+    message("set runtime lib path.")
+    set_target_properties(${target_name} PROPERTIES
+      INSTALL_RPATH "\${ORIGIN};/usr/lib;\${ORIGIN}/../lib")
+  endif()
+endif()
+
 
 target_link_libraries(${target_name} PUBLIC
   pluginmgr
   Qt6::Widgets
 )
-
-if(UNIX)
-  if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "None")
-    message("set runtime lib path.")
-    # set_target_properties(${target_name} PROPERTIES
-    #   INSTALL_RPATH "\${ORIGIN};/usr/lib;\${ORIGIN}/../lib")
-  endif()
-endif()
 
 if(MSVC)
   target_compile_options(${target_name} PRIVATE /W4 /WX)

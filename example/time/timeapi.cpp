@@ -234,7 +234,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 #ifdef _DEBUG
   MessageBoxW(nullptr, L"==================Begin=================", L"Error", MB_OK);
 #endif
-  SetLocale("zh_CN.UTF-8");
+  SetLocale();
 
   if (lpCmdLine) {
     // check if lpCmdLine is interger
