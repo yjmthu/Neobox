@@ -5,6 +5,12 @@
 #include <locale>
 #include <vector>
 
+#ifdef _WIN32
+#define UTF8_DEFAULT_LOCALE ".UTF-8"
+#else
+#define UTF8_DEFAULT_LOCALE "C.UTF-8"
+#endif
+
 inline std::string Utf8AsAnsi(std::u8string_view u8Str) {
   return std::string(u8Str.begin(), u8Str.end());
 }
@@ -13,7 +19,7 @@ inline std::u8string AnsiAsUtf8(std::string_view ansiStr) {
   return std::u8string(ansiStr.begin(), ansiStr.end());
 }
 
-inline auto SetLocale(const std::string& locale = "C.UTF-8") {
+inline auto SetLocale(const std::string& locale = UTF8_DEFAULT_LOCALE) {
   auto loc = std::locale(locale);
   auto prev = std::locale::global(loc);
 
