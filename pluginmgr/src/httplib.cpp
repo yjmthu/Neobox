@@ -994,7 +994,7 @@ void HttpLib::HttpPerform()
   if (bResults) {
     EmitFinish();
   } else {
-    EmitFinish(L"HttpPerform Faield.");
+    EmitFinish("HttpPerform Faield.");
   }
   m_AsyncMutex.unlock();
 #endif
