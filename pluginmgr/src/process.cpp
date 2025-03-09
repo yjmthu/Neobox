@@ -513,7 +513,8 @@ bool NeoProcess::StartProcess() {
     close(handle.pipeStderr[0]);
     dup2(handle.pipeStderr[1], STDERR_FILENO);
 
-    auto app = fs::absolute(m_AppPath).make_preferred().string();
+    auto const isAppEnv = m_AppPath.string().find('/') == std::string::npos;
+    auto app = isAppEnv ? m_AppPath.string() : fs::absolute(m_AppPath).make_preferred().string();
     std::vector<std::string> argv = { m_AppPath.filename().string() };
     ParseArgs(m_Args, argv);
     std::vector<char*> cargv;
@@ -528,10 +529,18 @@ bool NeoProcess::StartProcess() {
     }
 
     auto envBlock = GetEnvBlock(m_Envs);
-    if (envBlock) {
-      execve(app.c_str(), cargv.data(), envBlock->data());
+    if (isAppEnv) {
+      if (envBlock) {
+        execvpe(app.c_str(), cargv.data(), envBlock->data());
+      } else {
+        execvp(app.c_str(), cargv.data());
+      }
     } else {
-      execv(app.c_str(), cargv.data());
+      if (envBlock) {
+        execve(app.c_str(), cargv.data(), envBlock->data());
+      } else {
+        execv(app.c_str(), cargv.data());
+      }
     }
 
     exit(EXIT_FAILURE);
