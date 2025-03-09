@@ -3,6 +3,7 @@
 
 #ifdef _WIN32
 #include <neobox/systemapi.h>
+#include <neobox/unicode.h>
 static const wchar_t regProxyPath[] = LR"(Software\Microsoft\Windows\CurrentVersion\Internet Settings)";
 #endif
 

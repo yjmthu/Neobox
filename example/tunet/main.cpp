@@ -3,7 +3,7 @@
 #include <Windows.h>
 #include <filesystem>
 #include <yjson/yjson.h>
-#include <neobox/systemapi.h>
+#include <neobox/unicode.h>
 
 int main() {
   SetLocale("zh_CN.UTF-8");

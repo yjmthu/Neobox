@@ -28,4 +28,11 @@ std::wstring Utf82Wide(std::u8string_view u8Str);
 std::u8string Wide2Utf8(std::wstring_view wStr);
 std::vector<std::u8string> GetUtf8Argv();
 
+#ifdef _WIN32
+std::wstring Ansi2Wide(std::string_view ansiStr);
+std::string Wide2Ansi(std::wstring_view wStr);
+std::string Utf82Ansi(std::u8string_view u8Str);
+std::u8string Ansi2Utf8(std::string_view ansiStr);
+#endif
+
 #endif // NEOBOX_UNICODE_H

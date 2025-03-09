@@ -5,6 +5,8 @@
 #include <Windows.h>
 
 std::wstring Utf82Wide(std::u8string_view u8Str) {
+  if (u8Str.empty()) return {};
+
   int nWideCount = MultiByteToWideChar(
       CP_UTF8, 0, reinterpret_cast<const char*>(u8Str.data()),
       (int)u8Str.size(), NULL, 0);
@@ -18,6 +20,8 @@ std::wstring Utf82Wide(std::u8string_view u8Str) {
 }
 
 std::u8string Wide2Utf8(std::wstring_view wStr) {
+  if (wStr.empty()) return {};
+
   //获取所需缓冲区大小
   int nU8Count = WideCharToMultiByte(CP_UTF8, 0, wStr.data(), (int)wStr.size(),
                                      NULL, 0, NULL, NULL);
@@ -31,30 +35,43 @@ std::u8string Wide2Utf8(std::wstring_view wStr) {
   return strResult;
 }
 
-// std::wstring Ansi2Wide(std::string_view ansiStr) {
-//   int nWideCount = MultiByteToWideChar(CP_ACP, 0, ansiStr.data(),
-//                                        (int)ansiStr.size(), NULL, 0);
-//   if (nWideCount == 0) {
-//     throw std::runtime_error("MultiByteToWideChar failed to get buffer size");
-//   }
-//   std::wstring strResult(nWideCount, 0);
-//   MultiByteToWideChar(CP_ACP, 0, ansiStr.data(), (int)ansiStr.size(),
-//                       strResult.data(), nWideCount);
-//   return strResult;
-// }
+std::wstring Ansi2Wide(std::string_view ansiStr) {
+  if (ansiStr.empty()) return {};
 
-// std::string Wide2Ansi(std::wstring_view wStr) {
-//   //获取所需缓冲区大小
-//   int nAnsiCount = WideCharToMultiByte(CP_ACP, 0, wStr.data(), (int)wStr.size(),
-//                                        NULL, 0, NULL, NULL);
-//   if (nAnsiCount == 0) {
-//     throw std::runtime_error("WideCharToMultiByte failed to get buffer size");
-//   }
-//   std::string strResult(nAnsiCount, 0);
-//   WideCharToMultiByte(CP_ACP, 0, wStr.data(), (int)wStr.size(),
-//                       strResult.data(), nAnsiCount, NULL, NULL);
-//   return strResult;
-// }
+  //获取所需缓冲区大小
+  int nWideCount = MultiByteToWideChar(CP_ACP, 0, ansiStr.data(),
+                                       (int)ansiStr.size(), NULL, 0);
+  if (nWideCount == 0) {
+    throw std::runtime_error("MultiByteToWideChar failed to get buffer size");
+  }
+  std::wstring strResult(nWideCount, 0);
+  MultiByteToWideChar(CP_ACP, 0, ansiStr.data(), (int)ansiStr.size(),
+                      strResult.data(), nWideCount);
+  return strResult;
+}
+
+std::string Wide2Ansi(std::wstring_view wStr) {
+  if (wStr.empty()) return {};
+
+  //获取所需缓冲区大小
+  int nAnsiCount = WideCharToMultiByte(CP_ACP, 0, wStr.data(), (int)wStr.size(),
+                                       NULL, 0, NULL, NULL);
+  if (nAnsiCount == 0) {
+    throw std::runtime_error("WideCharToMultiByte failed to get buffer size");
+  }
+  std::string strResult(nAnsiCount, 0);
+  WideCharToMultiByte(CP_ACP, 0, wStr.data(), (int)wStr.size(),
+                      strResult.data(), nAnsiCount, NULL, NULL);
+  return strResult;
+}
+
+std::string Utf82Ansi(std::u8string_view u8Str) {
+  return Wide2Ansi(Utf82Wide(u8Str));
+}
+
+std::u8string Ansi2Utf8(std::string_view ansiStr) {
+  return Wide2Utf8(Ansi2Wide(ansiStr));
+}
 
 std::vector<std::u8string> GetUtf8Argv() {
   int argc;

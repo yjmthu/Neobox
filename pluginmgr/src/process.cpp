@@ -1,9 +1,15 @@
 #include <neobox/process.h>
-#include <neobox/systemapi.h>
+#include <neobox/unicode.h>
 
 namespace fs = std::filesystem;
 
+#ifdef _DEBUG
+#include <iostream>
+#endif
+
 #ifdef _WIN32
+#include <Windows.h>
+
 struct WinProcess {
   HANDLE hProcess;
   HANDLE hWaitHandle;
@@ -542,7 +548,7 @@ bool NeoProcess::StartProcess() {
 #endif
 
 #ifdef _WIN32
-static void ReadOutput(HANDLE hPipeReadOutput, std::string& output) {
+static void ReadOutput(HANDLE hPipeReadOutput, std::u8string& output) {
   DWORD dwRead;
   CHAR chBuf[4096];
   BOOL bSuccess = FALSE;
@@ -553,7 +559,7 @@ static void ReadOutput(HANDLE hPipeReadOutput, std::string& output) {
       break;
     }
     chBuf[dwRead] = '\0';
-    output += chBuf;
+    output.append(chBuf, chBuf + dwRead);
   }
 }
 #else
@@ -600,6 +606,8 @@ void NeoProcess::CleanUp()
   close(handle.pipeStderr[1]);
 }
 #endif
+
+extern std::u8string Ansi2Utf8(std::string_view ansi);
 
 void NeoProcess::ReadOutput()
 {

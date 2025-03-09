@@ -17,6 +17,8 @@
 
 #ifdef _WIN32
 #include <Windows.h>
+#include <neobox/systemapi.h>
+using namespace std::literals;
 #elif defined (__linux__)
 #include <QStandardPaths>
 #include <filesystem>
@@ -75,7 +77,8 @@ void NeoMenu::InitSettingMenu()
 void NeoMenu::InitFunctionMap() {
 #ifdef _WIN32
   connect(m_SettingMenu->addAction("程序位置"), &QAction::triggered, this, [](){
-    std::wstring args = L"/select, " + GetExeFullPath();
+  std::filesystem::path exe = QApplication::applicationFilePath().toStdWString();
+    std::wstring args = L"/select, " + exe.make_preferred().wstring();
     ShellExecuteW(nullptr, L"open", L"explorer", args.c_str(), NULL, SW_SHOWNORMAL);
   });
 #else

@@ -29,14 +29,14 @@ const std::u8string host = u8"https://" + domain;
 #ifdef _WIN32
 std::u8string Gbk2Utf8(std::string_view gbk) {
   // gbk -> unicode windows
-  int unicodeLen = MultiByteToWideChar(CP_ACP, 0, gbk.c_str(), -1, nullptr, 0);
+  int unicodeLen = MultiByteToWideChar(CP_ACP, 0, gbk.data(), (int)gbk.size(), nullptr, 0);
   std::wstring unicode(unicodeLen, 0);
-  MultiByteToWideChar(CP_ACP, 0, gbk.c_str(), -1, &unicode[0], unicodeLen);
+  MultiByteToWideChar(CP_ACP, 0, gbk.data(), (int)gbk.size(), unicode.data(), unicodeLen);
 
   // unicode windows -> utf-8
-  int utf8Len = WideCharToMultiByte(CP_UTF8, 0, unicode.c_str(), -1, nullptr, 0, nullptr, nullptr);
+  int utf8Len = WideCharToMultiByte(CP_UTF8, 0, unicode.data(), (int)unicode.size(), nullptr, 0, nullptr, nullptr);
   std::u8string utf8(utf8Len, 0);
-  WideCharToMultiByte(CP_UTF8, 0, unicode.c_str(), -1, reinterpret_cast<char*>(&utf8[0]), utf8Len, nullptr, nullptr);
+  WideCharToMultiByte(CP_UTF8, 0, unicode.data(), (int)unicode.size(), (char*)utf8.data(), utf8Len, nullptr, nullptr);
   return utf8;
 }
 #else

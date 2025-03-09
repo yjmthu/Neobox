@@ -1,5 +1,6 @@
 #include <neobox/httplib.h>
 #include <neobox/systemapi.h>
+#include <neobox/unicode.h>
 #include <fstream>
 #include <timeapi.hpp>
 

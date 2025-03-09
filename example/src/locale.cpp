@@ -1,6 +1,8 @@
 #include <iostream>
 #include <filesystem>
 
+#include <neobox/unicode.h>
+
 int main(int argc, char* argv[]) {
   // if (setlocale(LC_ALL, "zh_CN.UTF-8") == nullptr) {
   auto loc = std::locale("zh_CN.UTF-8");
@@ -19,5 +21,9 @@ int main(int argc, char* argv[]) {
 
   std::filesystem::path p = u8"测试中文.txt";
   std::cout << p.string() << std::endl;
+
+  std::locale::global(prev);
+
+  std::cout << Utf82Ansi(u8"当前区域设置：") << std::locale().name() << std::endl;
   return 0;
 }
