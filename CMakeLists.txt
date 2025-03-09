@@ -25,6 +25,10 @@ endif()
 
 if (WIN32)
   add_definitions(-DUNICODE -D_UNICODE)
+elseif(UNIX)
+  set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
+  set(CMAKE_INSTALL_RPATH "\${ORIGIN}/../lib")
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 endif()
 
 if(MSVC)
@@ -66,10 +70,9 @@ target_link_libraries(${target_name} PUBLIC
 if(UNIX)
   if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "None")
     message("set runtime lib path.")
-    set_target_properties(${target_name} PROPERTIES
-      INSTALL_RPATH "$ORIGIN;/usr/lib;$ORIGIN/../lib")
+    # set_target_properties(${target_name} PROPERTIES
+    #   INSTALL_RPATH "\${ORIGIN};/usr/lib;\${ORIGIN}/../lib")
   endif()
-  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 endif()
 
 if(MSVC)

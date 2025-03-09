@@ -3,6 +3,7 @@
 #include <neobox/unicode.h>
 #include <Shlobj.h>
 #include <winhttp.h>
+#include <format>
 #else
 #include <curl/curl.h>
 #include <curl/easy.h>
@@ -18,7 +19,6 @@
 #include <iostream>
 #include <fstream>
 // #include <thread>
-#include <format>
 
 using namespace std::literals;
 namespace fs = std::filesystem;
