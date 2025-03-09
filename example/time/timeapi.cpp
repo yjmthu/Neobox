@@ -1,4 +1,5 @@
 #include <neobox/httplib.h>
+#include <neobox/systemapi.h>
 #include <fstream>
 #include <timeapi.hpp>
 
@@ -232,7 +233,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 #ifdef _DEBUG
   MessageBoxW(nullptr, L"==================Begin=================", L"Error", MB_OK);
 #endif
-  SetConsoleOutputCP(CP_UTF8);
+  SetLocale("zh_CN.UTF-8");
 
   if (lpCmdLine) {
     // check if lpCmdLine is interger

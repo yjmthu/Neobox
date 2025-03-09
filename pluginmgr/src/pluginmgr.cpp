@@ -500,9 +500,7 @@ void PluginMgr::ShowMsg(class QString text)
 
 int PluginMgr::Exec()
 {
-  if (setlocale(LC_ALL, "zh_CN.UTF-8") == nullptr) {
-    qDebug() << "setlocale failed!" << Qt::endl;
-  }
+  SetLocale("zh_CN.UTF-8");
 
   std::unique_ptr<TimerGuard> guard(new TimerGuard);
   auto* const manager = new PluginMgr;

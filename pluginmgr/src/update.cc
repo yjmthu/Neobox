@@ -296,12 +296,12 @@ int main(int argc, char*argv[]) {
           return 0;
         }
         auto message = std::format(
-          L"文件操作出错！\n错误描述：{}\n错误信息：{}\n错误码：{}。",
-          Ansi2WideString(err.what()),
-          Ansi2WideString(err.code().message()),
+          "文件操作出错！\n错误描述：{}\n错误信息：{}\n错误码：{}。",
+          err.what(),
+          err.code().message(),
           err.code().value()
         );
-        QMessageBox::critical(nullptr, "出错", QString::fromStdWString(message));
+        QMessageBox::critical(nullptr, "出错", QString::fromUtf8(message));
         return 0;
       }
     }

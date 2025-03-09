@@ -133,7 +133,7 @@ bool NeoMenu::IsAutoStart()
     std::cout << result.front() << std::endl;
     for (auto& data: result) {
       if (data == start) {
-        auto profile = QString::fromStdString(GetProfilePath());
+        auto profile = QString::fromUtf8(GetProfilePath());
         QProcess::execute("sed", {
           "-i", QStringLiteral("\\#^%1$#d").arg(QString::fromStdString(start)), profile
         });

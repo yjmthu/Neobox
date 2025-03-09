@@ -165,7 +165,7 @@ Shortcut::Shortcut(YJson& data)
 
     if (!enabled.isTrue()) {
       mgr->ShowMsgbox(L"出错",
-        L"RegisterHotKey failed: " + Utf82WideString(keyString),
+        L"RegisterHotKey failed: " + Utf82Wide(keyString),
         MsgboxType::Warning
       );
     }

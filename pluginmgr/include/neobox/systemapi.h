@@ -10,76 +10,19 @@
 #include <vector>
 #include <array>
 
+
 #ifdef _WIN32
 #include <tchar.h>
 #include <windows.h>
 
-inline std::wstring Utf82WideString(std::u8string_view u8Str) {
-  int nWideCount = MultiByteToWideChar(
-      CP_UTF8, 0, reinterpret_cast<const char*>(u8Str.data()),
-      (int)u8Str.size(), NULL, 0);
-  if (nWideCount == 0) {
-    return std::wstring();
-  }
-  std::wstring strResult(nWideCount, 0);
-  MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<const char*>(u8Str.data()),
-                      (int)u8Str.size(), strResult.data(), nWideCount);
-  return strResult;
-}
-
-inline std::u8string Wide2Utf8String(std::wstring_view wStr) {
-  //获取所需缓冲区大小
-  int nU8Count = WideCharToMultiByte(CP_UTF8, 0, wStr.data(), (int)wStr.size(),
-                                     NULL, 0, NULL, NULL);
-  if (nU8Count == 0) {
-    return std::u8string();
-  }
-  std::u8string strResult(nU8Count, 0);
-  WideCharToMultiByte(CP_UTF8, 0, wStr.data(), (int)wStr.size(),
-                      reinterpret_cast<char*>(strResult.data()), nU8Count, NULL,
-                      NULL);
-  return strResult;
-}
-
-inline std::wstring Ansi2WideString(std::string_view ansiStr) {
-  int nWideCount = MultiByteToWideChar(CP_ACP, 0, ansiStr.data(),
-                                       (int)ansiStr.size(), NULL, 0);
-  if (nWideCount == 0) {
-    return std::wstring();
-  }
-  std::wstring strResult(nWideCount, 0);
-  MultiByteToWideChar(CP_ACP, 0, ansiStr.data(), (int)ansiStr.size(),
-                      strResult.data(), nWideCount);
-  return strResult;
-}
-
-inline std::string Wide2AnsiString(std::wstring_view wStr) {
-  //获取所需缓冲区大小
-  int nAnsiCount = WideCharToMultiByte(CP_ACP, 0, wStr.data(), (int)wStr.size(),
-                                       NULL, 0, NULL, NULL);
-  if (nAnsiCount == 0) {
-    return std::string();
-  }
-  std::string strResult(nAnsiCount, 0);
-  WideCharToMultiByte(CP_ACP, 0, wStr.data(), (int)wStr.size(),
-                      strResult.data(), nAnsiCount, NULL, NULL);
-  return strResult;
-}
-
-inline std::string Utf82AnsiString(std::u8string_view u8Str) {
-  return Wide2AnsiString(Utf82WideString(u8Str));
-}
-
-inline std::u8string Ansi2Utf8String(std::string_view ansiStr) {
-  return Wide2Utf8String(Ansi2WideString(ansiStr));
-}
+#include "unicode.h"
 
 template <typename _Ty>
 void GetCmdOutput(std::wstring cmd, _Ty& result) {
   cmd.push_back(L'\0');
   constexpr auto bufSize = 256;
 
-  SECURITY_ATTRIBUTES sa = {0};                                              
+  SECURITY_ATTRIBUTES sa {};                                              
   HANDLE hPipRead = NULL, hPipWrite = NULL;                                                
   sa.nLength = sizeof(SECURITY_ATTRIBUTES);    
   sa.lpSecurityDescriptor = NULL;    
@@ -87,8 +30,8 @@ void GetCmdOutput(std::wstring cmd, _Ty& result) {
   if (!CreatePipe(&hPipRead, &hPipWrite, &sa,0))                             
       return;    
 
-  STARTUPINFO si = { 0 };
-  PROCESS_INFORMATION pi = { 0 };
+  STARTUPINFO si {};
+  PROCESS_INFORMATION pi {};
   si.cb = sizeof(STARTUPINFO);
   GetStartupInfo(&si);
   si.hStdError = hPipWrite;
@@ -116,7 +59,7 @@ void GetCmdOutput(std::wstring cmd, _Ty& result) {
 
     while (std::getline(stream, str)) {
       if (str.ends_with('\r')) str.pop_back();
-      result.emplace_back(Ansi2WideString(str));
+      result.emplace_back(Ansi2Wide(str));
     }
   }    
     
@@ -215,33 +158,6 @@ void GetCmdOutput(const char* cmd, _Ty& result) {
   }
 }
 
-inline std::wstring Utf82WideString(std::u8string_view u8Str) {
-  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-
-  auto buffer = new char[u8Str.size() + 1] { };
-  std::copy(u8Str.begin(), u8Str.end(), buffer);
-  std::wstring result = converter.from_bytes(buffer);
-  delete[] buffer;
-
-  return result;
-}
-
-inline std::u8string Wide2Utf8String(std::wstring_view wStr) {
-  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-
-  auto result = converter.to_bytes(wStr.data());
-
-  return std::u8string(result.begin(), result.end());
-}
-
-inline std::wstring Ansi2WideString(std::string_view ansiStr) {
-  return Utf82WideString(std::u8string_view(
-    reinterpret_cast<const char8_t*>(ansiStr.data()), ansiStr.size()));
-};
-
-inline std::u8string Ansi2Utf8String(std::string_view ansiStr) {
-  return std::u8string(ansiStr.begin(), ansiStr.end());
-}
 
 #endif
 

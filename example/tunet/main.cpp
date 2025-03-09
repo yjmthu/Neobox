@@ -3,9 +3,10 @@
 #include <Windows.h>
 #include <filesystem>
 #include <yjson/yjson.h>
+#include <neobox/systemapi.h>
 
 int main() {
-  SetConsoleOutputCP(CP_UTF8);
+  SetLocale("zh_CN.UTF-8");
 
   std::filesystem::path path = __FILE__;
   YJson json(path.parent_path() / u8"pwd.json", YJson::UTF8);

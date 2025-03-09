@@ -33,7 +33,7 @@ public:
   AsyncBool CheckUpdate();
   AsyncVoid DownloadUpgrade();
   bool NeedUpgrade() const;
-  static std::array<int, 3> ParseVersion(const std::wstring& vStr);
+  static std::array<int, 3> ParseVersion(const std::u8string& vStr);
   std::filesystem::path GetTempFilePath() const;
   UpgradeConfig m_Settings;
 private:

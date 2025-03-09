@@ -3,9 +3,8 @@
 #include <string>
 
 int main() {
-#ifdef _WIN32
-  SetConsoleOutputCP(65001);
-#endif
+  SetLocale("zh_CN.UTF-8");
+
   std::vector<std::wstring> data;
 
 #ifdef _WIN32
@@ -14,7 +13,7 @@ int main() {
   GetCmdOutput("pythons cripts/getpic.py", data);
 #endif
   for (auto i : data) {
-    auto str = Wide2Utf8String(i);
+    auto str = Wide2Utf8(i);
     std::cout.write((const char*)str.data(), str.size());
     std::cout.put('\n');
   }

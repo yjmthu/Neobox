@@ -149,12 +149,13 @@ YJson& PluginUpdate::InitSettings(YJson& settings)
   return settings;
 }
 
-std::array<int, 3> PluginUpdate::ParseVersion(const std::wstring& vStr)
+std::array<int, 3> PluginUpdate::ParseVersion(const std::u8string& vStr)
 {
   std::array<int, 3> version = {0, 0, 0};
-  std::wregex pattern(L"^v(\\d+).(\\d+).(\\d+)$");
-  std::wsmatch match;
-  if (std::regex_match(vStr, match, pattern)) {
+  std::regex pattern("^v(\\d+).(\\d+).(\\d+)$");
+  std::smatch match;
+  auto ansiStr = Utf8AsAnsi(vStr);
+  if (std::regex_match(ansiStr, match, pattern)) {
     version = { std::stoi(match[1]), std::stoi(match[2]), std::stoi(match[3]) };
   }
   return version;
@@ -165,8 +166,8 @@ bool PluginUpdate::NeedUpgrade() const
   if (!m_LatestData) return false;
 
   auto& versionString = (*m_LatestData)[u8"tag_name"].getValueString();
-  auto const vNew = PluginUpdate::ParseVersion(Utf82WideString(versionString));
-  auto const vOld = PluginUpdate::ParseVersion(L"" NEOBOX_VERSION);
+  auto const vNew = PluginUpdate::ParseVersion(versionString);
+  auto const vOld = PluginUpdate::ParseVersion(u8"" NEOBOX_VERSION);
 
   return vNew != vOld;
 }

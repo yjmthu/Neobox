@@ -239,7 +239,7 @@ static std::optional<std::wstring> GetEnvBlock(const std::optional<std::vector<s
   std::optional envBlock = std::wstring {};
 
   for (const auto& env : *envs) {
-    envBlock->append(Utf82WideString(env));
+    envBlock->append(Utf82Wide(env));
     envBlock->push_back(L'\0');
   }
   envBlock->push_back(L'\0');
@@ -338,7 +338,7 @@ bool NeoProcess::StartProcess() {
     szApp = app.data();
   }
 
-  auto cmdLine = Utf82WideString(m_Args);
+  auto cmdLine = Utf82Wide(m_Args);
   WCHAR* szCmdLine = nullptr;
   if (cmdLine.empty()) {
     if (!szApp) {

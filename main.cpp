@@ -2,10 +2,6 @@
 #include <neobox/pluginmgr.h>
 #include <QMessageBox>
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
 // #include <winrt/Windows.Foundation.h>
 
 int main(int argc, char* argv[]) {
@@ -22,9 +18,6 @@ int main(int argc, char* argv[]) {
     QMessageBox::critical(nullptr, "Logic Error", msg);
   }
 #else
-#ifdef _WIN32
-  SetConsoleOutputCP(CP_UTF8);
-#endif
   return PluginMgr::Exec();
 #endif
 }

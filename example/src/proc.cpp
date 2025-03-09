@@ -3,10 +3,6 @@
 #include <iostream>
 #include <filesystem>
 
-#ifdef _WIN32
-#include <Windows.h>
-#endif
-
 AsyncVoid Run(std::filesystem::path app, std::u8string args)
 {
   NeoProcess process(app, args);
@@ -28,9 +24,7 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-#ifdef _WIN32
-  SetConsoleOutputCP(CP_UTF8);
-#endif
+  SetLocale("zh_CN.UTF-8");
 
   std::string app;
   std::string args;
@@ -44,7 +38,7 @@ int main(int argc, char* argv[])
     args = argv[2];
   }
 
-  auto coro = Run(app, Ansi2Utf8String(args));
+  auto coro = Run(app, Ansi2Utf8(args));
   std::cout << "Running..." << std::endl;
   coro.get();
   std::cout << "Done." << std::endl;

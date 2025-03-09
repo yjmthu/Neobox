@@ -90,11 +90,7 @@ public:
 
 std::vector<IndexPage> GetIndexPages() {
   TargetPasser passer((HttpUrl(host)));
-#ifdef _WIN32
-  passer.left = Wide2AnsiString(L"<li> <a href=\"javascript:;\" class=\"nav-link\">分类</a>"s);
-#else
   passer.left = "<li> <a href=\"javascript:;\" class=\"nav-link\">分类</a>"s;
-#endif
   passer.right = "</li>"s;
   // <a href="/4Kxinnian/" title="4K新年图片">4K新年</a>
   passer.pattern = "<a href=\"(.+?)\" title=\"(.+?)\">(.+?)</a>";
@@ -105,10 +101,13 @@ std::vector<IndexPage> GetIndexPages() {
 
   std::vector<IndexPage> pages;
   for (auto& match: passer) {
+    auto const& href = match[1].str();
+    auto const& title = match[2].str();
+    auto const& text = match[3].str();
     pages.push_back(IndexPage {
-      .title = Ansi2Utf8String(match[2].str()),
-      .text = Ansi2Utf8String(match[3].str()),
-      .href = Ansi2Utf8String(match[1].str()),
+      .title = std::u8string(title.begin(), title.end()),
+      .text = std::u8string(text.begin(), text.end()),
+      .href = std::u8string(href.begin(), href.end()),
     });
   }
   return pages;
@@ -153,11 +152,12 @@ std::vector<PictureDetail> GetPictureList(const IndexPage& pageInfo, int pageInd
   std::vector<PictureDetail> pictures;
   for (auto& match: passer) {
     const auto href = match[1].str();
-    auto referer = host + Ansi2Utf8String(href);
+    auto referer = host + std::u8string(href.begin(), href.end());
     auto dataId = std::stoi(href.substr(8, href.size() - 13));
+    auto name = match[2].str();
     pictures.push_back(PictureDetail{
       .dataId = dataId,
-      .name = Ansi2Utf8String(match[2].str()),
+      .name = std::u8string(name.begin(), name.end()),
       .referer = referer
     });
   }
@@ -168,8 +168,8 @@ std::u8string GetPictureUrl(const PictureDetail& detail) {
   static auto engine = std::default_random_engine();
   static std::uniform_real_distribution<double> distribution(0.0, 1.0);
 
-  auto dataId = Wide2Utf8String(std::to_wstring(detail.dataId));
-  auto random = Wide2Utf8String(std::format(L"{}", distribution(engine)));
+  auto dataId = AnsiAsUtf8(std::to_string(detail.dataId));
+  auto random = AnsiAsUtf8(std::format("{}", distribution(engine)));
   HttpUrl url(domain, u8"/e/extend/downpic.php"s, {
     { u8"id"s, dataId },
     { u8"t"s, random },
@@ -186,7 +186,7 @@ std::u8string GetPictureUrl(const PictureDetail& detail) {
     return {};
   }
   auto jsonGBK = std::string_view(reinterpret_cast<const char*>(res->body.data()), res->body.size());
-  auto jsonU8 = Ansi2Utf8String(jsonGBK);
+  auto jsonU8 = Ansi2Utf8(jsonGBK);
   YJson json(jsonU8.begin(), jsonU8.end());
   
   auto const code = json[u8"msg"].getValueInt();
@@ -247,7 +247,7 @@ AsyncInt DownloadPicture(const fs::path folder, const PictureDetail& detail) {
       if (msg.empty() && res->status == 200) {
         std::cout << "Download success" << std::endl;
       } else {
-        std::cerr << "Error: " << Wide2Utf8String(msg) << std::endl;
+        std::cerr << "Error: " << Wide2Utf8(msg) << std::endl;
       }
     },
     .onWrite = [&fileOut](auto data, auto size) {
@@ -276,10 +276,10 @@ void SleepRandom() {
   std::cout << "End sleep." << std::endl;
 }
 
+
 int main(int argc, char** argv) {
-#ifdef _WIN32
-  SetConsoleOutputCP(CP_UTF8);
-#endif
+  ::SetLocale();
+
   auto indexPages = GetIndexPages();
   if (indexPages.empty()) {
     std::cerr << "Error: empty index pages" << std::endl;

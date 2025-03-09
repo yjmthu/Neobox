@@ -1,5 +1,6 @@
 #ifdef _WIN32
-#include <neobox/systemapi.h>
+// #include <neobox/systemapi.h>
+#include <neobox/unicode.h>
 #include <Shlobj.h>
 #include <winhttp.h>
 #else
@@ -554,7 +555,7 @@ void HttpLib::HttpInitialize()
   if (m_AsyncSet) {
     SetAsyncCallback();
   }
-  auto url = Utf82WideString(m_Url.host);
+  auto url = Utf82Wide(m_Url.host);
 
   SetTimeOut(m_TimeOut);
   m_hConnect = WinHttpConnect(m_hSession, url.c_str(), m_Url.port, 0);
@@ -621,7 +622,7 @@ void HttpLib::SetProxyBefore()
     if (!m_Proxy->IsSystemProxy()) return;
     m_Proxy->UpdateSystemProxy();
   }
-  auto proxyString = Utf82WideString(m_Proxy->GetProxy());
+  auto proxyString = Utf82Wide(m_Proxy->GetProxy());
   proxyString.push_back(L'\0');
   // if (proxyString.starts_with(L"http://")) {
   //   proxyString = L"http://" + proxyString;
@@ -657,8 +658,8 @@ bool HttpLib::SetProxyAfter()
   if (!m_ProxySet || !m_Proxy) return true;
 
 #ifdef _WIN32
-  auto username = Utf82WideString(m_Proxy->GetUsername());
-  auto password = Utf82WideString(m_Proxy->GetPassword());
+  auto username = Utf82Wide(m_Proxy->GetUsername());
+  auto password = Utf82Wide(m_Proxy->GetPassword());
 
   bResult = WinHttpSetOption(m_hRequest,
     WINHTTP_OPTION_PROXY_USERNAME,
@@ -751,7 +752,7 @@ bool HttpLib::SendHeaders()
 {
 #ifdef _WIN32
   bool bResults = false;
-  auto path = Utf82WideString(m_Url.GetObjectString());
+  auto path = Utf82Wide(m_Url.GetObjectString());
   m_hRequest = WinHttpOpenRequest(
     m_hConnect,
     m_PostData.data ? L"POST": L"GET",
@@ -768,7 +769,7 @@ bool HttpLib::SendHeaders()
   }
   if (bResults) {
     for (auto& [i, j]: m_Headers) {
-      auto header = Utf82WideString(i + u8": " + j);
+      auto header = Utf82Wide(i + u8": " + j);
       bResults = WinHttpAddRequestHeaders(
         m_hRequest, header.data(), static_cast<DWORD>(header.size()), WINHTTP_ADDREQ_FLAG_ADD);
       if (!bResults) {
@@ -894,7 +895,7 @@ bool HttpLib::ReadHeaders()
 
     if (bResults) { // regex expr: '/^([^:]+):([^\n]+)/'
       // std::istringstream strstream(Wide2AnsiString(lpOutBuffer));
-      ParseHeaders(Wide2Utf8String(lpOutBuffer));
+      ParseHeaders(Wide2Utf8(lpOutBuffer));
     }
 
     delete[] lpOutBuffer;

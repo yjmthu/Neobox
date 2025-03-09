@@ -241,8 +241,8 @@ bool TabVersion::DownloadNew(std::u8string_view url[[maybe_unused]]) {
 
 void TabVersion::DoUpgrade(const YJson& apiData)
 {
-  auto const vNew = PluginUpdate::ParseVersion(Utf82WideString(apiData[u8"tag_name"].getValueString()));
-  auto const vOld = PluginUpdate::ParseVersion(L"" NEOBOX_VERSION);
+  auto const vNew = PluginUpdate::ParseVersion(apiData[u8"tag_name"].getValueString());
+  auto const vOld = PluginUpdate::ParseVersion(u8"" NEOBOX_VERSION);
   // 只判断等于，方便debug
   if (vNew == vOld) {
     mgr->ShowMsg("当前已是最新版本！");

@@ -1,10 +1,7 @@
 ﻿#include <neobox/httplib.h>
+#include <neobox/systemapi.h>
 
 #include <iostream>
-
-#ifdef _WIN32
-#include <Windows.h>
-#endif
 
 std::ostream& operator<<(std::ostream& os, std::u8string res) {
   os.write(reinterpret_cast<const char*>(res.data()), res.size());
@@ -12,9 +9,8 @@ std::ostream& operator<<(std::ostream& os, std::u8string res) {
 }
 
 int main(int argc, char* argv[]) {
-#ifdef _WIN32
-  SetConsoleOutputCP(CP_UTF8);
-#endif
+  SetLocale("zh_CN.UTF-8");
+
   auto fun = [] () -> AsyncInt {
     std::cout << "Begin." << std::endl;
 
@@ -42,9 +38,6 @@ int main(int argc, char* argv[]) {
     try {
       std::rethrow_exception(std::current_exception());
     } catch (const std::exception& e) {
-#ifdef _WIN32
-      SetConsoleOutputCP(CP_ACP);
-#endif
       std::cerr << e.what() << std::endl;
     }
   }).get();
@@ -58,7 +51,6 @@ int main(int argc, char* argv[]) {
   try {
     fun().get();
   } catch (const std::exception& e) {
-    SetConsoleOutputCP(CP_ACP);
     std::cerr << e.what() << std::endl;
   }
 #endif

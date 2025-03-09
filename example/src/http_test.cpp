@@ -1,4 +1,5 @@
 ﻿#include <neobox/httplib.h>
+#include <neobox/systemapi.h>
 #include <stdexcept>
 #include <format>
 #include <regex>
@@ -8,10 +9,6 @@
 #include <mutex>
 #include <condition_variable>
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
 using namespace std::literals;
 
 std::ostream& operator<<(std::ostream& out, const std::u8string& str) {
@@ -20,9 +17,8 @@ std::ostream& operator<<(std::ostream& out, const std::u8string& str) {
 
 int main()
 {
-#ifdef _WIN32
-  SetConsoleOutputCP(CP_UTF8);
-#endif
+  SetLocale("zh_CN.UTF-8");
+
   std::cout << "============Begin============" << std::endl;
   std::mutex mutex;
   std::condition_variable cv;

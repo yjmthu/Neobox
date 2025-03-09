@@ -30,7 +30,7 @@ YJson& HttpProxy::InitSettings(YJson& settings)
 std::u8string HttpProxy::GetSystemProxy()
 {
 #ifdef _WIN32
-  return Wide2Utf8String(RegReadString(HKEY_CURRENT_USER, regProxyPath, L"ProxyServer"));
+  return Wide2Utf8(RegReadString(HKEY_CURRENT_USER, regProxyPath, L"ProxyServer"));
 #else
   auto const str = reinterpret_cast<const char8_t*>(std::getenv("HTTP_PROXY"));
   if (!str) return {};
