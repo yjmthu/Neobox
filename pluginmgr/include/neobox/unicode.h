@@ -20,14 +20,7 @@ inline std::u8string AnsiAsUtf8(std::string_view ansiStr) {
 }
 
 inline auto SetLocale(const std::string& locale = UTF8_DEFAULT_LOCALE) {
-  auto loc = std::locale(locale);
-  auto prev = std::locale::global(loc);
-
-  if (std::locale().name() != loc.name()) {
-    throw std::runtime_error("setlocale failed!");
-  }
-
-  return prev;
+  return std::locale::global(std::locale(locale));
 }
 
 std::wstring Utf82Wide(std::u8string_view u8Str);

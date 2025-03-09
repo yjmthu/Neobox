@@ -494,7 +494,7 @@ void PluginMgr::ShowMsg(std::string text)
 
 int PluginMgr::Exec()
 {
-  SetLocale();
+  SetLocale(UTF8_DEFAULT_LOCALE);
 
   std::unique_ptr<TimerGuard> guard(new TimerGuard);
   auto* const manager = new PluginMgr;

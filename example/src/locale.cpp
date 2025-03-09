@@ -3,8 +3,9 @@
 
 #include <neobox/unicode.h>
 
-int main(int argc, char* argv[]) {
-  auto loc = std::locale("C.UTF-8");
+int main(int argc, char* argv[]) try {
+  auto loc = std::locale { UTF8_DEFAULT_LOCALE };
+  std::cout << "======================" << std::endl;
   auto prev = std::locale::global(loc);
   auto cur = std::locale {};
   if (cur.name() != loc.name()) {
@@ -31,4 +32,7 @@ int main(int argc, char* argv[]) {
   std::cout << "当前区域设置：" << std::locale().name() << std::endl;
 #endif
   return 0;
+} catch (const std::exception& e) {
+  std::cerr << "Error: " << e.what() << std::endl;
+  return 1;
 }
