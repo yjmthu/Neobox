@@ -1,7 +1,7 @@
 #include <iostream>
 #include <neobox/httplib.h>
 #include <yjson/yjson.h>
-#include <neobox/systemapi.h>
+#include <neobox/unicode.h>
 
 #ifdef _WIN32
 #include <Windows.h>

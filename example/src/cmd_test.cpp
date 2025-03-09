@@ -1,5 +1,7 @@
-﻿#include <neobox/systemapi.h>
+﻿#include <neobox/unicode.h>
+#include <neobox/systemapi.h>
 #include <iostream>
+#include <vector>
 #include <string>
 
 int main() {

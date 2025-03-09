@@ -1,5 +1,5 @@
 ﻿#include <neobox/httplib.h>
-#include <neobox/systemapi.h>
+#include <neobox/unicode.h>
 
 std::ostream& operator<<(std::ostream& out, const std::u8string& str) {
   return out.write(reinterpret_cast<const char*>(str.data()), str.length());

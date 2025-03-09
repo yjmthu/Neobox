@@ -1,7 +1,7 @@
 #include <neobox/shortcut.h>
 #include <neobox/pluginobject.h>
 #include <yjson/yjson.h>
-#include <neobox/systemapi.h>
+#include <neobox/unicode.h>
 #include <neobox/pluginmgr.h>
 #include <../widgets/plugincenter.hpp>
 

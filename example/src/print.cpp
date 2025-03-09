@@ -1,4 +1,5 @@
 ﻿#include <neobox/httplib.h>
+#include <neobox/unicode.h>
 #include <neobox/systemapi.h>
 
 #include <iostream>

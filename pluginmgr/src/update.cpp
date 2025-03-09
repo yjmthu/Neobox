@@ -2,7 +2,7 @@
 #include <neobox/httplib.h>
 #include <config.h>
 #include <neobox/neotimer.h>
-#include <neobox/systemapi.h>
+#include <neobox/unicode.h>
 #include <neobox/neomenu.hpp>
 #include <neobox/neosystemtray.hpp>
 

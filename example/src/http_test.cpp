@@ -1,8 +1,5 @@
 ﻿#include <neobox/httplib.h>
-#include <neobox/systemapi.h>
-#include <stdexcept>
-#include <format>
-#include <regex>
+#include <neobox/unicode.h>
 #include <fstream>
 #include <iostream>
 #include <string>
