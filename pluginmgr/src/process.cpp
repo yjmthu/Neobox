@@ -612,6 +612,8 @@ extern std::u8string Ansi2Utf8(std::string_view ansi);
 
 void NeoProcess::ReadOutput()
 {
+  m_StdOut.clear();
+
   auto& handle = std::any_cast<ProcessHandle&>(m_Handle);
 #ifdef _WIN32
   ::ReadOutput(handle.hPipeReadOutput, m_StdOut);
@@ -622,6 +624,8 @@ void NeoProcess::ReadOutput()
 
 void NeoProcess::ReadError()
 {
+  m_StdErr.clear();
+
   auto& handle = std::any_cast<ProcessHandle&>(m_Handle);
 #ifdef _WIN32
   ::ReadOutput(handle.hPipeReadError, m_StdErr);
