@@ -13,7 +13,7 @@ set(NEOBOX_BUILD_TIME ${COMPILE_TIME})
 
 set(target_name neobox)
 project(${target_name} VERSION 2.4.7 LANGUAGES CXX C)
-cmake_policy(SET CMP0095 OLD)
+# cmake_policy(SET CMP0095 OLD)
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
   add_definitions(-D_DEBUG)
