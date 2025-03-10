@@ -281,7 +281,7 @@ bool WidgetBase::eventFilter(QObject *watched, QEvent *event) {
   return QWidget::eventFilter(watched, event);
 }
 
-void WidgetBase::AddTopButton()
+QPushButton* WidgetBase::AddTopButton()
 {
   auto const button = new QPushButton(this);
   button->setFixedSize(14, 14);
@@ -311,9 +311,11 @@ void WidgetBase::AddTopButton()
     SaveTopState(on);
   });
   m_Buttons.push_back(button);
+
+  return button;
 }
 
-void WidgetBase::AddCloseButton()
+QPushButton* WidgetBase::AddCloseButton()
 {
   auto const button = new QPushButton(this);
   button->setFixedSize(14, 14);
@@ -331,9 +333,11 @@ void WidgetBase::AddCloseButton()
   button->setToolTip("关闭");
   connect(button, &QPushButton::clicked, this, &QWidget::close);
   m_Buttons.push_back(button);
+
+  return button;
 }
 
-void WidgetBase::AddMinButton()
+QPushButton* WidgetBase::AddMinButton()
 {
   auto const button = new QPushButton(this);
   button->setFixedSize(14, 14);
@@ -351,12 +355,15 @@ void WidgetBase::AddMinButton()
   button->setToolTip("最小化");
   connect(button, &QPushButton::clicked, this, &QWidget::showMinimized);
   m_Buttons.push_back(button);
+
+  return button;
 }
 
-void WidgetBase::AddTitle(QString title)
+QLabel* WidgetBase::AddTitle(QString title)
 {
   auto const label = new QLabel(title, this);
   label->move(20, 12);
+  return label;
 }
 
 void WidgetBase::AddScrollBar(QScrollBar* bar, bool horizontal)

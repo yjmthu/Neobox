@@ -11,6 +11,8 @@
 #  define MYSHAREDLIB_EXPORT Q_DECL_EXPORT
 #endif
 
+class QPushButton;
+
 class MYSHAREDLIB_EXPORT WidgetBase: public QWidget
 {
   Q_OBJECT
@@ -30,10 +32,10 @@ public:
   static QString GetAppStyle();
 protected:
   virtual void SaveTopState(bool isTop[[maybe_unused]]) {}
-  void AddTopButton();
-  void AddCloseButton();
-  void AddMinButton();
-  void AddTitle(QString title);
+  QPushButton* AddTopButton();
+  QPushButton* AddCloseButton();
+  QPushButton* AddMinButton();
+  class QLabel* AddTitle(QString title);
   void AddScrollBar(class QScrollBar* bar, bool horizontal=false);
   void RemoveScrollBar(class QScrollBar* bar);
   void SetShadowAround(QWidget* widget, int radius=20, QColor col=Qt::black, int dx=0, int dy=0);
