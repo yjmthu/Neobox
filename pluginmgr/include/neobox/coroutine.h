@@ -39,7 +39,10 @@ public:
 #endif
 
   void handle_exception() {
+    m_Mutex.lock();
     if (m_ExceptionCallback) m_ExceptionCallback();
+    m_Mutex.unlock();
+
     notify_return();
   }
 protected:
@@ -116,11 +119,14 @@ public:
   }
 
   auto& then(Callback callback) {
+    std::lock_guard<std::mutex> lock(m_Mutex);
     m_Callback = std::move(callback);
+    if (m_Finished) m_Callback(m_Value);
     return *this;
   }
 
   auto& cat(std::function<void()> callback) {
+    std::lock_guard<std::mutex> lock(m_Mutex);
     m_ExceptionCallback = std::move(callback);
     return *this;
   }
@@ -141,8 +147,11 @@ public:
   }
 private:
   void return_value(ReturnType value) {
+    m_Mutex.lock();
     m_Value = std::move(value);
     if (m_Callback) m_Callback(m_Value);
+    m_Mutex.unlock();
+
     this->notify_return();
   }
   Callback m_Callback;
@@ -182,11 +191,14 @@ public:
   void get() { wait_return(); }
 
   auto& then(Callback callback) {
+    std::lock_guard<std::mutex> lock(m_Mutex);
     m_Callback = callback;
+    if (m_Finished) m_Callback();
     return *this;
   }
 
   auto& cat(std::function<void()> callback) {
+    std::lock_guard<std::mutex> lock(m_Mutex);
     m_ExceptionCallback = callback;
     return *this;
   }
@@ -196,7 +208,10 @@ public:
   }
 
   void return_void() {
+    m_Mutex.lock();
     if (m_Callback) m_Callback();
+    m_Mutex.unlock();
+
     this->notify_return();
   }
 private:
