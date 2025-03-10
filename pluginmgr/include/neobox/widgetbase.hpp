@@ -27,6 +27,7 @@ protected:
 public:
   explicit WidgetBase(QWidget* parent, bool resizeAble=false, bool stayTop=false);
   virtual ~WidgetBase();
+  static QString GetAppStyle();
 protected:
   virtual void SaveTopState(bool isTop[[maybe_unused]]) {}
   void AddTopButton();
@@ -36,6 +37,7 @@ protected:
   void AddScrollBar(class QScrollBar* bar, bool horizontal=false);
   void RemoveScrollBar(class QScrollBar* bar);
   void SetShadowAround(QWidget* widget, int radius=20, QColor col=Qt::black, int dx=0, int dy=0);
+  void LoadStyleSheet(const QString& path);
 private:
   QPoint m_ConstPos;
   std::vector<class QPushButton*> m_Buttons;

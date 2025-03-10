@@ -184,15 +184,27 @@ QPushButton:hover {
 }
 
 QCheckBox::indicator {
-  color: yellow;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background-color: white;
+  border: 1px solid black;
 }
 
 QCheckBox::indicator:hover {
-  color: blue;
+  background-color: blue;
+  border: 1px solid gray;
 }
 
 QCheckBox::indicator:checked {
-  color: green;
+  background-color: #3498db;
+  border: 1px solid #3498db;
+  image: url(:/icons/check-on.png);
+}
+
+QCheckBox::indicator:checked:hover {
+  background-color: #55007f;
+  border: 1px solid #55007f;
 }
 
 QGroupBox {

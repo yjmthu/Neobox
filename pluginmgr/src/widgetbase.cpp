@@ -44,6 +44,7 @@ WidgetBase::WidgetBase(QWidget* parent, bool resizeAble, bool stayTop)
     installEventFilter(this);
   }
 #endif
+  setStyleSheet(GetAppStyle());
 }
 
 WidgetBase::~WidgetBase()
@@ -383,6 +384,16 @@ void WidgetBase::SetShadowAround(QWidget* widget, int radius, QColor col, int dx
   effect->setColor(col);
   effect->setBlurRadius(radius);
   widget->setGraphicsEffect(effect);
+}
+
+void WidgetBase::LoadStyleSheet(const QString& path) {
+  if (!QFile::exists(path)) return;
+  setStyleSheet(ReadStyle(path));
+}
+
+QString WidgetBase::GetAppStyle()
+{
+  return ReadStyle(":/styles/AppStyle.qss");
 }
 
 void WidgetBase::UpdateBorderRect()

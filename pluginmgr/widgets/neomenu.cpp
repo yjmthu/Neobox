@@ -2,6 +2,7 @@
 #include <neobox/neomenu.hpp>
 #include <neobox/pluginmgr.h>
 #include <neobox/process.h>
+#include <neobox/widgetbase.hpp>
 
 #include <QApplication>
 #include <QDesktopServices>
@@ -45,15 +46,7 @@ NeoMenu::~NeoMenu() {
 
 void NeoMenu::InitStyleSheet()
 {
-  static const char szStylePath[] = ":/styles/AppStyle.qss";
-  if (QFile::exists(szStylePath)) {
-    QFile file(szStylePath);
-    if (file.open(QIODevice::ReadOnly)) {
-      setStyleSheet(file.readAll());
-      file.close();
-      return;
-    }
-  }
+  setStyleSheet(WidgetBase::GetAppStyle());
 }
 
 void NeoMenu::InitPluginMenu()
