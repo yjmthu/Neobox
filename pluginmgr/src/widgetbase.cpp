@@ -32,6 +32,7 @@ static QString ReadStyle(QString path) {
 
 WidgetBase::WidgetBase(QWidget* parent, bool resizeAble, bool stayTop)
   : QWidget(parent, Qt::FramelessWindowHint)
+  , m_Title(nullptr)
   , m_ResizeAble(resizeAble)
   , m_StayTop(stayTop)
 {
@@ -361,9 +362,13 @@ QPushButton* WidgetBase::AddMinButton()
 
 QLabel* WidgetBase::AddTitle(QString title)
 {
-  auto const label = new QLabel(title, this);
-  label->move(20, 12);
-  return label;
+  if (m_Title) {
+    m_Title->setText(title);
+    return m_Title;
+  }
+  m_Title = new QLabel(title, this);
+  m_Title->move(20, 12);
+  return m_Title;
 }
 
 void WidgetBase::AddScrollBar(QScrollBar* bar, bool horizontal)

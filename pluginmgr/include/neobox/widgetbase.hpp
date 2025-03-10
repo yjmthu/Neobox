@@ -43,6 +43,7 @@ protected:
 private:
   QPoint m_ConstPos;
   std::vector<class QPushButton*> m_Buttons;
+  QLabel* m_Title;
   const bool m_ResizeAble;
   uint8_t pressedArea;
   QRect mouseRect;
