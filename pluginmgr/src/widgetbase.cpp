@@ -45,7 +45,6 @@ WidgetBase::WidgetBase(QWidget* parent, bool resizeAble, bool stayTop)
     installEventFilter(this);
   }
 #endif
-  setStyleSheet(GetAppStyle());
 }
 
 WidgetBase::~WidgetBase()

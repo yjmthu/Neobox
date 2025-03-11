@@ -32,7 +32,6 @@ NeoMenu::NeoMenu()
   , m_ControlPanel(new QAction("控制面板"))
   , m_PluginMenu(new MenuBase(this))
 {
-  InitStyleSheet();
   InitSettingMenu();
   InitPluginMenu();
   InitFunctionMap();
@@ -42,11 +41,6 @@ NeoMenu::~NeoMenu() {
   delete m_PluginMenu;
   delete m_ControlPanel;
   delete m_SettingMenu;
-}
-
-void NeoMenu::InitStyleSheet()
-{
-  setStyleSheet(WidgetBase::GetAppStyle());
 }
 
 void NeoMenu::InitPluginMenu()

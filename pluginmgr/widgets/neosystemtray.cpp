@@ -1,4 +1,5 @@
 #include <neobox/pluginmgr.h>
+#include <neobox/widgetbase.hpp>
 #include <neobox/neosystemtray.hpp>
 
 #include <QDir>
@@ -8,6 +9,8 @@
 
 NeoSystemTray::NeoSystemTray()
 {
+  qApp->setStyleSheet(WidgetBase::GetAppStyle());
+
   setIcon(QIcon(QStringLiteral(":/icons/neobox.ico")));
   setToolTip("Neobox");
   InitDirs();

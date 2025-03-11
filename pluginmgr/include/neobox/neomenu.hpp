@@ -10,7 +10,6 @@ public:
   explicit NeoMenu();
   virtual ~NeoMenu();
 private:
-  void InitStyleSheet();
   void InitPluginMenu();
   void InitFunctionMap();
   void InitSettingMenu();
