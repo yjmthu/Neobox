@@ -3,8 +3,6 @@
 
 #include <QWidget>
 
-#include <set>
-
 #if defined(MYSHAREDLIB_LIBRARY)
 #  define MYSHAREDLIB_EXPORT Q_DECL_IMPORT
 #else
