@@ -44,8 +44,10 @@ QAction* PluginObject::InitMenuAction()
       const auto& func = funInfo.function;
       func(PluginEvent::BoolGet, &status);
       action->setChecked(status);
-      QObject::connect(action, &QAction::triggered, m_MainMenu, [func](bool on){
+      QObject::connect(action, &QAction::triggered, m_MainMenu, [func, action](bool on){
+        auto const last = on;
         func(PluginEvent::Bool, &on);
+        if (last != on) action->setChecked(on);
       });
     }
   }
