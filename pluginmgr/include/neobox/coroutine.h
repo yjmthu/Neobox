@@ -262,6 +262,56 @@ public:
   }
 };
 
+template<typename ReturnType>
+class AsyncThreadBase {
+protected:
+  typedef std::function<ReturnType(void)> FunctionType;
+  AsyncThreadBase(FunctionType function) : m_Function(std::move(function)) {}
+  AsyncThreadBase(AsyncThreadBase&& other) = delete;
+  AsyncThreadBase(AsyncThreadBase& other) = delete;
+  AsyncThreadBase(AsyncThreadBase const& other) = delete;
+
+public:
+  bool await_ready() const { return false; }
+  void await_suspend(std::coroutine_handle<> handle) {
+    std::thread([this, handle] {
+      this->m_Function();
+      handle.resume();
+    }).detach();
+  }
+
+  void await_resume() {}
+
+protected:
+  FunctionType m_Function;
+};
+
+template<typename ReturnType>
+class AsyncThread: public AsyncThreadBase<ReturnType> {
+  ReturnType m_Result;
+  typedef AsyncThreadBase<ReturnType> BaseType;
+  typedef BaseType::FunctionType FunctionType;
+public:
+  AsyncThread(FunctionType function)
+    : BaseType(std::move(function)) {}
+  void await_suspend(std::coroutine_handle<> handle) {
+    std::thread([this, handle] {
+      m_Result = this->m_Function();
+      handle.resume();
+    }).detach();
+  }
+  ReturnType await_resume() { return std::move(m_Result); }
+};
+
+template<>
+class AsyncThread<void> : public AsyncThreadBase<void> {
+  typedef AsyncThreadBase<void> BaseType;
+  typedef BaseType::FunctionType FunctionType;
+public:
+  AsyncThread(FunctionType function)
+    : BaseType(std::move(function)) {}
+};
+
 typedef AsyncAction<void> AsyncVoid;
 typedef AsyncAction<bool> AsyncBool;
 typedef AsyncAction<int> AsyncInt;
