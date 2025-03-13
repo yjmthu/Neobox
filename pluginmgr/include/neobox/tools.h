@@ -9,15 +9,23 @@ public:
     , m_Begin(begin)
     , m_End(end)
   {
-    m_Value = begin;
+    m_Value = m_Begin;
   }
   ~ValueGuard() {
-    m_Value = end;
+    if (!m_Released) {
+      m_Value = m_End;
+    }
   }
+
+  void set(const ValueType& value) { m_Value = value; }
+
+  void release() { m_Released = true; }
+  void retrieve() { m_Released = false; }
 private:
   ValueType& m_Value;
   ValueType m_Begin;
   ValueType m_End;
+  bool m_Released = false;
 };
 
 typedef ValueGuard<bool> BoolGuard;
