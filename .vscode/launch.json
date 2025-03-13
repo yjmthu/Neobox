@@ -18,7 +18,7 @@
       "environment": [
         {
           "name": "PATH",
-          "value": "${workspaceFolder}\\build\\Debug\\pluginmgr;${workspaceFolder}\\build\\Debug\\pluginmgr\\yjson;${workspaceFolder}\\install\\dbg;${workspaceFolder}\\..\\neobox-plugins\\install\\lugins;C:\\Qt\\6.8.2\\msvc2022_64\\bin;${env:PATH}"
+          "value": "${workspaceFolder}\\..\\vcpkg\\installed\\x64-windows\\bin;C:\\Qt\\6.8.2\\msvc2022_64\\bin;${env:PATH}"
         }
       ],
       "console": "externalTerminal"
