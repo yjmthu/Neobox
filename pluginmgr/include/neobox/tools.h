@@ -11,16 +11,30 @@ public:
   {
     m_Value = m_Begin;
   }
+
+  ValueGuard(const ValueGuard&) = delete;
+  ValueGuard& operator=(const ValueGuard&) = delete;
+
+  ValueGuard(ValueGuard&& other) noexcept
+    : m_Value(other.m_Value)
+    , m_Begin(other.m_Begin)
+    , m_End(other.m_End)
+    , m_Released(other.m_Released)
+  {
+    other.m_Released = true;
+  }
+
   ~ValueGuard() {
     if (!m_Released) {
       m_Value = m_End;
     }
   }
 
-  void set(const ValueType& value) { m_Value = value; }
-
-  void release() { m_Released = true; }
-  void retrieve() { m_Released = false; }
+  void Backward() { m_Value = m_Begin; }
+  void Forward() { m_Value = m_Begin; }
+  void Set(const ValueType& value) { m_Value = value; }
+  void Release() { m_Released = true; }
+  void Retrieve() { m_Released = false; }
 private:
   ValueType& m_Value;
   ValueType m_Begin;

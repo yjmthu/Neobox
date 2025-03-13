@@ -30,6 +30,7 @@ public:
   AsyncActionBase(AsyncActionBase&& other) = delete;
   AsyncActionBase(AsyncActionBase& other) = delete;
   AsyncActionBase(AsyncActionBase const& other) = delete;
+  AsyncActionBase& operator=(const AsyncActionBase&) = delete;
 #ifdef _DEBUG
   ~AsyncActionBase() {
     // std::cout << "~AsyncActionBase" << std::endl;
@@ -270,6 +271,7 @@ protected:
   AsyncThreadBase(AsyncThreadBase&& other) = delete;
   AsyncThreadBase(AsyncThreadBase& other) = delete;
   AsyncThreadBase(AsyncThreadBase const& other) = delete;
+  AsyncThreadBase& operator=(AsyncThreadBase const&) = delete;
 
 public:
   bool await_ready() const { return false; }
