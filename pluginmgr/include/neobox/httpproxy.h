@@ -7,6 +7,8 @@
 class HttpProxy: public NeoConfig
 {
 public:
+  enum class Type { System = 0, User = 1, None = 2 };
+
   explicit HttpProxy(YJson& settings);
 
   static std::u8string GetSystemProxy();

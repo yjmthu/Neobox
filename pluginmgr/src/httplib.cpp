@@ -618,14 +618,15 @@ void HttpLib::SetProxyBefore()
 {
   if (!m_Proxy) return;
 
-  auto const type = static_cast<int>(m_Proxy->GetType());
+  using Type = HttpProxy::Type;
+  auto const type = static_cast<Type>(m_Proxy->GetType());
 #ifdef _DEBUG
   std::cout << "Httplib proxy type: " << type << std::endl;
 #endif
-  if (type == 2) return;
+  if (type == Type::User) return;
 
 #ifdef _WIN32
-  if (type == 0) {
+  if (type == Type::System) {
     if (!m_Proxy->IsSystemProxy()) return;
     m_Proxy->UpdateSystemProxy();
   }

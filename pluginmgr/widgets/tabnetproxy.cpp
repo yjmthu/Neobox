@@ -34,9 +34,9 @@ void TabNetProxy::InitLayout()
   ui->setupUi(background);
   background->setObjectName("whiteBackground");
 
-  m_BtnGroup->addButton(ui->rBtnSystemProxy, 0);
-  m_BtnGroup->addButton(ui->rBtnUserProxy, 1);
-  m_BtnGroup->addButton(ui->rBtnNoProxy, 2);
+  m_BtnGroup->addButton(ui->rBtnSystemProxy, static_cast<int>(HttpProxy::Type::System));
+  m_BtnGroup->addButton(ui->rBtnUserProxy, static_cast<int>(HttpProxy::Type::User));
+  m_BtnGroup->addButton(ui->rBtnNoProxy, static_cast<int>(HttpProxy::Type::None));
 }
 
 void TabNetProxy::InitSignals()
@@ -72,7 +72,7 @@ void TabNetProxy::InitData()
   ui->linePassword->setText(toQs(HttpLib::m_Proxy->GetPassword()));
   ui->lineUsername->setText(toQs(HttpLib::m_Proxy->GetUsername()));
 
-  ui->gBoxProxyInfo->setEnabled(m_BtnGroup->checkedId() == 1);
+  ui->gBoxProxyInfo->setEnabled(m_BtnGroup->checkedId() == static_cast<int>(HttpProxy::Type::User));
 }
 
 
