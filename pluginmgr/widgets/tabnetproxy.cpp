@@ -50,9 +50,10 @@ void TabNetProxy::InitSignals()
 
 void TabNetProxy::SaveData()
 {
-  HttpLib::m_Proxy->SetProxy(PluginObject::QString2Utf8(ui->lineProxy->text()), false);
-  HttpLib::m_Proxy->SetUsername(PluginObject::QString2Utf8(ui->lineUsername->text()), false);
-  HttpLib::m_Proxy->SetPassword(PluginObject::QString2Utf8(ui->linePassword->text()), false);
+  constexpr auto toU8 = PluginObject::QString2Utf8;
+  HttpLib::m_Proxy->SetProxy(toU8(ui->lineProxy->text()), false);
+  HttpLib::m_Proxy->SetUsername(toU8(ui->lineUsername->text()), false);
+  HttpLib::m_Proxy->SetPassword(toU8(ui->linePassword->text()), false);
   // HttpLib::m_Proxy.port = m_Port = ui->linePort->text().toInt();
 
   HttpLib::m_Proxy->SetType(m_BtnGroup->checkedId(), false);
@@ -66,9 +67,10 @@ void TabNetProxy::InitData()
   if (!button) button = ui->rBtnNoProxy;
   button->setChecked(true);
 
-  ui->lineProxy->setText(PluginObject::Utf82QString(HttpLib::m_Proxy->GetProxy()));
-  ui->linePassword->setText(PluginObject::Utf82QString(HttpLib::m_Proxy->GetPassword()));
-  ui->lineUsername->setText(PluginObject::Utf82QString(HttpLib::m_Proxy->GetUsername()));
+  constexpr auto toQs = PluginObject::Utf82QString;
+  ui->lineProxy->setText(toQs(HttpLib::m_Proxy->GetProxy()));
+  ui->linePassword->setText(toQs(HttpLib::m_Proxy->GetPassword()));
+  ui->lineUsername->setText(toQs(HttpLib::m_Proxy->GetUsername()));
 
   ui->gBoxProxyInfo->setEnabled(m_BtnGroup->checkedId() == 1);
 }

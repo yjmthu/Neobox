@@ -29,6 +29,10 @@ static std::map<HttpLib::HttpId, HttpLib*> m_AsyncPool;
 static HttpLib::Mutex m_AsyncMutex;
 
 #ifdef _WIN32
+static const std::map<int, std::string> st_WinhttpError = {
+  { ERROR_WINHTTP_TIMEOUT, "TIME_OUT" }
+};
+
 // https://github.com/JGRennison/OpenTTD-patches/blob/dcc52f7696f4ef2601b9fbca1ca78abcd1211734/src/network/core/http_winhttp.cpp#L145
 void HttpLib::RequestStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DWORD dwInternetStatus, LPVOID lpvStatusInformation, DWORD dwInternetInformationLength) {
   // sometimes maybe nullptr
@@ -615,7 +619,10 @@ void HttpLib::SetProxyBefore()
   if (!m_Proxy) return;
 
   auto const type = static_cast<int>(m_Proxy->GetType());
-  if (type == 3) return;
+#ifdef _DEBUG
+  std::cout << "Httplib proxy type: " << type << std::endl;
+#endif
+  if (type == 2) return;
 
 #ifdef _WIN32
   if (type == 0) {
@@ -951,10 +958,7 @@ void HttpLib::HttpPerform()
   }
 #ifdef _WIN32
   if (m_AsyncSet) {
-    if (!bResults) {
-      // std::thread(&HttpLib::ExitAsync, this).detach();
-      ExitAsync();
-    }
+    if (!bResults) ExitAsync();
     return;
   }
 #endif
@@ -1010,6 +1014,10 @@ void HttpLib::EmitProcess()
 
 void HttpLib::EmitFinish(std::string message)
 {
+#ifdef _DEBUG
+  std::cerr << "Httplib finished with meassage: <"
+    << message << ">\n";
+#endif
   m_Finished = true;
 #ifdef _WIN32
   if (m_hSession) {
@@ -1090,6 +1098,9 @@ HttpLib::Awaiter HttpLib::GetAsync(Callback callback)
 {
   if (!m_AsyncSet) {
     // throw std::logic_error("HttpLib Error: HttpAync wasn't set!");
+#ifdef _DEBUG
+    std::cerr << "HttpLib Error: HttpAync wasn't set!\n";
+#endif
     return Awaiter { nullptr };
   }
 
@@ -1118,6 +1129,18 @@ HttpLib::Awaiter HttpLib::GetAsync(Callback callback)
     };
   }
 
+#ifdef _DEBUG
+  {
+    auto url = m_Url.GetUrl(true);
+    std::cout << "Start get <" << reinterpret_cast<std::string&>(url) << ">\n"
+      << "  Headers:\n";
+    for (auto& [key, name]: m_Headers) {
+      std:: cout << "    " << reinterpret_cast<const std::string&>(key)
+        << ": " << reinterpret_cast<const std::string&>(name) << std::endl;
+    }
+  }
+#endif
+
   return Awaiter {this};
 }
 
@@ -1143,7 +1166,9 @@ void HttpLib::DoSuspend(std::coroutine_handle<> handle)
 #endif
 
   if (!init) {
-    // std::thread(&HttpLib::ExitAsync, this).detach();
+#ifdef _DEBUG
+    std::cerr << "Http suspend init failed.\n";
+#endif
     ExitAsync();
     return;
   }
