@@ -621,7 +621,7 @@ void HttpLib::SetProxyBefore()
   using Type = HttpProxy::Type;
   auto const type = static_cast<Type>(m_Proxy->GetType());
 #ifdef _DEBUG
-  std::cout << "Httplib proxy type: " << type << std::endl;
+  std::cout << "Httplib proxy type: " << (int)type << std::endl;
 #endif
   if (type == Type::User) return;
 
