@@ -12,8 +12,8 @@
 
 namespace chrono = std::chrono;
 
-#define USE_TIME_API
-// #define USE_TAOBAO
+// #define USE_TIME_API
+#define USE_TAOBAO
 // #define USE_WORLD_TIME_API
 // #define USE_BEIJING_TIME
 
