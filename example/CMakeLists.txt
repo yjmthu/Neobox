@@ -31,6 +31,16 @@ endif()
 add_executable(netbian netbian/main.cpp)
 target_link_libraries(netbian pluginmgr)
 
+# netbian converts GBK to UTF-8 through iconv on non-Windows platforms. glibc
+# provides iconv as part of libc while conda-forge ships it as a separate
+# libiconv, so let CMake pick the right one.
+if (UNIX)
+  find_package(Iconv)
+  if (Iconv_FOUND)
+    target_link_libraries(netbian Iconv::Iconv)
+  endif()
+endif()
+
 install(TARGETS netbian
   RUNTIME DESTINATION bin
 )

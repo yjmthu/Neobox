@@ -1,0 +1,95 @@
+[workspace]
+name = "neobox"
+version = "2.4.8"
+channels = ["conda-forge"]
+# Both platforms pull the same conda-forge stack (Qt6 / cmake / ninja), so one
+# pixi.lock pins the complete build environment.
+platforms = ["win-64", "linux-64"]
+
+
+# ============================================================================
+# Build toolchain
+# ============================================================================
+[feature.build.dependencies]
+cmake = ">=3.25"
+ninja = ">=1.11"
+
+# MSVC and the Windows SDK are activated by the conda-forge toolchain package
+# itself, so no "Developer Command Prompt" and no explicit vcvars call is
+# needed.
+[feature.build.target.win-64.dependencies]
+vs2022_win-64 = "*"
+
+# gcc/g++/ld/ar plus the matching sysroot for the conda-forge builds.
+[feature.build.target.linux-64.dependencies]
+compilers = ">=1.11,<2"
+
+
+# ============================================================================
+# Runtime dependencies
+#
+# Design rule: Qt6 is provided by pixi instead of a separately installed Qt,
+# so every platform compiles against the exact versions recorded in pixi.lock.
+# ============================================================================
+[feature.deps.dependencies]
+qt6-main = "*"
+
+# pluginmgr links libcurl on Linux and includes <X11/Xlib.h> for the frameless
+# window drag handling.
+[feature.deps.target.linux-64.dependencies]
+libcurl = "*"
+xorg-libx11 = "*"
+
+
+[environments]
+default = { features = ["build", "deps"] }
+
+
+# ============================================================================
+# Activation
+#
+# The toolchain features activate themselves; the scripts below only expose the
+# Qt6 that lives inside this pixi environment to CMake.
+# ============================================================================
+[target.win-64.activation]
+scripts = ["scripts/activate_win.bat"]
+
+[target.linux-64.activation]
+scripts = ["scripts/activate_linux.sh"]
+
+
+# ============================================================================
+# Tasks
+# ============================================================================
+[tasks]
+# thirdlib/ is a set of git submodules.
+init = "git submodule update --init --recursive"
+clean = "cmake -E rm -rf build install"
+
+[tasks.configure]
+args = [{ arg = "build_type", default = "Debug" }]
+cmd = "cmake -S . -B build/{{ build_type }} -G Ninja -DCMAKE_BUILD_TYPE={{ build_type }} -DCMAKE_INSTALL_PREFIX=install"
+
+[tasks.build]
+args = [{ arg = "build_type", default = "Debug" }]
+depends-on = [{ task = "configure", args = [{ build_type = "{{ build_type }}" }] }]
+cmd = "cmake --build build/{{ build_type }} && cmake -E copy_if_different build/{{ build_type }}/compile_commands.json build/compile_commands.json"
+
+[tasks.install]
+args = [{ arg = "build_type", default = "Debug" }]
+depends-on = [{ task = "build", args = [{ build_type = "{{ build_type }}" }] }]
+cmd = "cmake --install build/{{ build_type }}"
+
+# CMake writes the compilation database next to the build files while clangd and
+# the VS Code C/C++ extension expect it at build/compile_commands.json. This task
+# refreshes that copy without recompiling anything.
+[tasks.compdb]
+args = [{ arg = "build_type", default = "Debug" }]
+cmd = "cmake -E copy_if_different build/{{ build_type }}/compile_commands.json build/compile_commands.json"
+
+# `pixi run run` compiles, installs and starts Neobox.
+[target.win-64.tasks]
+run = { cmd = "install/bin/neobox.exe", depends-on = ["install"] }
+
+[target.linux-64.tasks]
+run = { cmd = "install/bin/neobox", depends-on = ["install"] }

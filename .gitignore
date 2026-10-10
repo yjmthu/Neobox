@@ -16,6 +16,7 @@ Makefile
 build
 install
 out
+.pixi
 yjson
 CMakeCache.txt
 compile_commands.json

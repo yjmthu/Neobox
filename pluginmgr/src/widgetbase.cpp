@@ -24,7 +24,8 @@
 
 static QString ReadStyle(QString path) {
   QFile file(path);
-  file.open(QFile::ReadOnly);
+  if (!file.open(QFile::ReadOnly))
+    return {};
   QString res = file.readAll();
   file.close();
   return res;

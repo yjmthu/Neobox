@@ -32,30 +32,45 @@
 ## 编译环境
 
 - `Windows 10/11 x86_64`
-    - [VS 2022](https://visualstudio.microsoft.com/zh-hans/vs/)
-    - [Qt 6.5.x](https://www.qt.io/download)（最新版本）
-    - cmake
-    - ninja（可选）
-- `Arch Linux x86_64`
-    - qt6-base
-    - gcc
-    - curl
-    - cmake
-    - ninja
-- `Fedora Linux x86_64`
-    - qt6-base-dev
-    - libcurl
-    - gcc
-    - cmake
-    - ninja
+    - [pixi](https://pixi.sh)（推荐，见下文；提供 cmake / ninja / Qt6，并自动激活 MSVC）
+    - [VS 2022+](https://visualstudio.microsoft.com/zh-hans/vs/)（需勾选“使用 C++ 的桌面开发”，pixi 会自动定位）
+    - 仅手动编译需要：[Qt 6.5.x](https://www.qt.io/download)（最新版本）、cmake、ninja（可选）
+- `Linux x86_64`
+    - [pixi](https://pixi.sh)（推荐，见下文；提供 gcc / cmake / ninja / Qt6 / libcurl / libX11）
+    - 仅手动编译需要：
+        - `Arch Linux`：qt6-base、gcc、curl、cmake、ninja
+        - `Fedora Linux`：qt6-base-dev、libcurl、gcc、cmake、ninja
 
-- CMake 命令【windows】
+### 使用 pixi 编译（推荐）
+
+仓库根目录的 `pixi.toml` 把编译环境固定下来，Windows 与 Linux 共用同一份 `pixi.lock`：
+cmake、ninja、Qt6 全部来自 conda-forge，Windows 上还会自动激活 MSVC（`vs2022_win-64`）。
+因此既不需要单独安装 Qt，也不需要打开“VS 开发者命令提示符”。
+
+```powershell
+git clone https://github.com/yjmthu/Neobox.git
+cd Neobox
+pixi run init      # 拉取 thirdlib 子模块
+pixi run install   # 配置 + 编译 + 安装，产物在 build/Debug 与 install/
+pixi run run       # 运行刚编译好的 Neobox
+```
+
+Linux 上的命令完全相同。
+
+- `pixi run configure` / `pixi run build` 只做配置 / 编译，`pixi run clean` 清理 `build/` 与 `install/`。
+- 编译后 `compile_commands.json` 会同步到 `build/compile_commands.json`（clangd、VS Code 的默认查找位置）；
+  只想刷新它而不重新编译时用 `pixi run compdb`。
+- 默认构建 `Debug`，可切换构建类型：`pixi run install Release`（产物在 `build/Release`）。
+- `pixi shell` 可进入已激活的交互式环境（VS Code 里的终端同样适用）。
+- `pixi run init` 需要访问 GitHub，直连失败时请先配置代理。
+
+### 手动编译【windows】
 
 ```powershell
 git clone https://github.com/yjmthu/Neobox.git
 cd Neobox
 git submodule update --init --recursive
-cmake -S . -B -GNinja build/Debug -DCMAKE_INSTALL_PREFIX=install -DCMAKE_BUILD_TYPE="Debug"
+cmake -S . -B build/Debug -GNinja -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_INSTALL_PREFIX=install
 cmake --build "./build/Debug"
 cmake -P "./build/Debug/cmake_install.cmake"
 ```

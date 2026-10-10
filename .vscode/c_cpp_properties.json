@@ -13,7 +13,7 @@
             "windowsSdkVersion": "10.0.22621.0",
             "compilerPath": "cl.exe",
             "cStandard": "c17",
-            "cppStandard": "c++17",
+            "cppStandard": "c++20",
             "intelliSenseMode": "windows-msvc-x64",
             "compileCommands": "${workspaceFolder}/build/compile_commands.json"
         }
